@@ -33,7 +33,10 @@ import {
   validationError,
 } from '../_shared/responses.ts';
 import { JADE_MODEL } from '../_shared/ai/model.ts';
+import { logAiUsage } from '../_shared/ai/usage.ts';
 import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -70,7 +73,10 @@ async function requireUser(req: Request) {
 // Main handler
 // ---------------------------------------------------------------------------
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -117,6 +123,12 @@ serve(async (req: Request) => {
 
     // Download image from private storage using service-role client
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ── Credit check ─────────────────────────────────────────────────────────
+    const credit = await ensureAndCheckCredits(serviceClient, user.id, 'analyze-meal-photo');
+    if (!credit.allowed) {
+      return jsonResponse(insufficientCreditsBody(credit), 402);
+    }
 
     const { data: imageData, error: storageError } = await serviceClient.storage
       .from('meal-photos')
@@ -227,6 +239,20 @@ Return your answer as structured JSON matching the requested schema.`,
           }
         }),
     );
+    // Also record in the canonical, prod-safe ai_usage ledger (used for
+    // per-user token visibility + future throttling).
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      logAiUsage(serviceClient, {
+        userId: user.id,
+        functionName: 'analyze-meal-photo',
+        model: JADE_MODEL,
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+      }),
+    );
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(debitForUsage(serviceClient, user.id, 'analyze-meal-photo'));
 
     console.log(
       `[analyze-meal-photo] Success for user ${user.id}: "${analysis.name}", ` +
@@ -238,4 +264,4 @@ Return your answer as structured JSON matching the requested schema.`,
     console.error('[analyze-meal-photo] Fatal error:', error);
     return serverError(error);
   }
-});
+}));

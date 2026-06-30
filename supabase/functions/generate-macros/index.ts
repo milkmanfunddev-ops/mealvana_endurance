@@ -1,8 +1,13 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
+
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
 const LB_TO_KG = 0.45359237;
 const IN_TO_CM = 2.54;
 const MI_TO_KM = 1.60934;
@@ -1193,7 +1198,7 @@ function calculateBrickMacros(input) {
   };
 }
 
-serve(async (req)=>{
+serve(withSentry(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -1509,4 +1514,4 @@ serve(async (req)=>{
       }
     });
   }
-});
+}));

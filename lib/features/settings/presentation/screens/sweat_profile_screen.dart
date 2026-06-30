@@ -326,6 +326,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
@@ -442,7 +443,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _showOzHr ? 'mL/hr' : 'mL/hr',
+                      _showOzHr ? 'oz/hr' : 'mL/hr',
                       style: AppTextStyles.smallLabel.copyWith(
                         color: !_showOzHr
                             ? AppColors.orange
@@ -572,6 +573,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
     ];
 
     return DropdownButtonFormField<String>(
+      isExpanded: true,
       initialValue: s.sweatTestSource,
       hint: Text(
         'Select source',

@@ -18,6 +18,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { validateGarminRequest } from '../_shared/garmin/auth.ts';
 import type { GarminDeregistrationNotification } from '../_shared/garmin/types.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
 const GARMIN_CLIENT_ID = Deno.env.get('GARMIN_CLIENT_ID') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -27,7 +28,10 @@ declare const EdgeRuntime: {
   waitUntil(promise: Promise<unknown>): void;
 } | undefined;
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
@@ -64,7 +68,7 @@ serve(async (req: Request) => {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
-});
+}));
 
 async function processDeregistrationBody(
   body: GarminDeregistrationNotification,

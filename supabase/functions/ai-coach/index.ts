@@ -46,7 +46,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { generateText } from 'npm:ai@6';
 import { handleCors } from '../_shared/cors.ts';
 import { errorResponse, jsonResponse, serverError, validationError } from '../_shared/responses.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { COACH_INSIGHT_MODEL } from '../_shared/ai/model.ts';
+import { logAiUsage } from '../_shared/ai/usage.ts';
 import {
   buildInsightUserMessage,
   COACH_INSIGHT_SYSTEM_PROMPT,
@@ -55,6 +57,7 @@ import {
   type InsightContext,
   type InsightPhase,
 } from '../_shared/coach_insight/insight.ts';
+import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -131,7 +134,10 @@ function stringListOrNull(v: any): string[] | null {
 // Main handler
 // ---------------------------------------------------------------------------
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -215,6 +221,15 @@ serve(async (req: Request) => {
         `components=${components.length} carbs=${state.carbsG} model=${COACH_INSIGHT_MODEL}`,
     );
 
+    // ── Service-role client (reused for credits + ai_usage logging) ──────────
+    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ── Credit check ─────────────────────────────────────────────────────────
+    const credit = await ensureAndCheckCredits(serviceClient, user.id, 'ai-coach');
+    if (!credit.allowed) {
+      return jsonResponse(insufficientCreditsBody(credit), 402);
+    }
+
     // ── Call the model via Vercel AI Gateway ─────────────────────────────────
     const result = await generateText({
       model: COACH_INSIGHT_MODEL as Parameters<typeof generateText>[0]['model'],
@@ -239,6 +254,23 @@ serve(async (req: Request) => {
         `out=${usage?.outputTokens ?? 0} chars=${insight.length}`,
     );
 
+    // Record per-user token usage in the canonical ai_usage ledger
+    // (fire-and-forget; never fail the request). The client also logs this to
+    // Mixpanel as `coach_insight_generated`, but ai_usage is the prod-safe,
+    // server-side source of truth used for future throttling.
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      logAiUsage(serviceClient, {
+        userId: user.id,
+        functionName: 'ai-coach',
+        model: COACH_INSIGHT_MODEL,
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+      }),
+    );
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(debitForUsage(serviceClient, user.id, 'ai-coach'));
+
     return jsonResponse({
       insight,
       stale_marker: staleMarker,
@@ -252,4 +284,4 @@ serve(async (req: Request) => {
     console.error('[ai-coach] Fatal error:', error);
     return serverError(error);
   }
-});
+}));

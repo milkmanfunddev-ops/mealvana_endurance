@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../data/ai_coach_client.dart';
 import '../data/personal_formulas_repository.dart';
@@ -35,6 +36,31 @@ class CoachInsightController extends _$CoachInsightController {
   /// Fetch an insight for [context] and store it. Auto-persists to the
   /// formula's Drift row for existing formulas. Fires the
   /// `coach_insight_generated` analytics event on success.
+  ///
+  /// **402 / insufficient-credits handling**: [AiCoachClient.fetchInsight]
+  /// throws [InsufficientCreditsException] when the edge function returns
+  /// HTTP 402. [AsyncValue.guard] captures it as
+  /// `AsyncError(InsufficientCreditsException(...))` in [state]. The
+  /// presentation layer should use `ref.listen` on this controller's state
+  /// to detect that error type and open the `/buy-credits` paywall. Example:
+  ///
+  /// ```dart
+  /// ref.listen<AsyncValue<CoachInsight?>>(
+  ///   coachInsightControllerProvider(formulaId),
+  ///   (_, next) {
+  ///     if (next.error is InsufficientCreditsException) {
+  ///       MealvanaSnackbar.showError(context, 'Not enough credits',
+  ///           actionLabel: 'Buy Credits',
+  ///           onAction: () => context.pushNamed('buy-credits'));
+  ///     }
+  ///   },
+  /// );
+  /// ```
+  ///
+  /// TODO: adopt the same [InsufficientCreditsException] catch pattern in:
+  ///  - `jade_chat_repository.dart` (jade-chat edge function, HTTP 402)
+  ///  - describe-meal client (describe-meal edge function, HTTP 402)
+  ///  - analyze-meal-photo client (analyze-meal-photo edge function, HTTP 402)
   Future<void> generate(CoachInsightContext context) async {
     state = const AsyncLoading<CoachInsight?>();
     final sw = Stopwatch()..start();

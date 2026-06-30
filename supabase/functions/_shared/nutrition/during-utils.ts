@@ -164,7 +164,13 @@ export function clampServings(servings: number, food: Food): number {
   return clamped;
 }
 
-/** Apply macro high-bound caps to a food's servings, then clamp to valid increment/min/max. */
+/** Apply macro high-bound caps to a food's servings, then clamp to valid increment/min/max.
+ *
+ * After computing the upper-bound cap, `clampServings` rounds to the nearest
+ * 0.5 increment. When that rounding would push one or more macros past their
+ * upper bound, we floor to the previous increment instead of rounding up.
+ * This prevents, for example, a 1.375-serving water cap from being rounded to
+ * 1.5 and overshooting the fluid target by 120%. */
 export function capServingsByUpperBounds(
   food: Food,
   servings: number,
@@ -192,7 +198,77 @@ export function capServingsByUpperBounds(
   }
 
   if (capped <= 0) return 0;
-  return clampServings(capped, food);
+
+  // Clamp to valid serving increment/min/max.
+  const rounded = clampServings(capped, food);
+
+  // Safety check: if rounding UP would push a macro past its upper bound, floor
+  // to the previous valid increment instead. If even min_servings violates bounds,
+  // choose between min_servings and skipping (0) based on which is CLOSER to target.
+  //
+  // IMPORTANT: only trigger this path when `rounded` actually violates an upper
+  // bound (i.e. the rounded total exceeds carbUpper / fluidUpper / sodiumUpper).
+  // Do NOT trigger purely because `rounded > capped` — the capped value represents
+  // the "ideal" fractional servings needed to hit the target exactly; rounding it
+  // up by 0.5 to the nearest increment is normal and acceptable as long as it stays
+  // within the hard upper bound.
+  //
+  // This is particularly important for water allocation: after the carb foods have
+  // been selected, the remaining fluid need is a non-integer number of servings.
+  // Rounding to the next 0.5 increment should be accepted unless it would violate
+  // fluidUpper. Without this guard we would floor unnecessarily and deliver too
+  // little fluid (e.g. 1.5 servings = 360ml instead of 2.0 = 480ml for a 700ml
+  // target with fluidUpper=770ml).
+  const roundedCarbsCheck = food.per_serving.carbs_g * rounded + carbsAssigned;
+  const roundedFluidCheck = food.per_serving.water_ml * rounded + fluidAssigned;
+  const roundedSodiumCheck = food.per_serving.sodium_mg * rounded + sodiumAssigned;
+  const roundedViolatesBounds = !food.is_indivisible && (
+    (food.per_serving.carbs_g > 0 && Number.isFinite(carbUpper) && roundedCarbsCheck > carbUpper + 1e-6) ||
+    (food.per_serving.water_ml > 0 && Number.isFinite(fluidUpper) && roundedFluidCheck > fluidUpper + 1e-6) ||
+    (food.per_serving.sodium_mg > 0 && Number.isFinite(sodiumUpper) && roundedSodiumCheck > sodiumUpper + 1e-6)
+  );
+
+  if (roundedViolatesBounds) {
+    const increment = 0.5;
+    // Try the floored increment value (next step below rounded)
+    const floored = Math.floor(capped / increment) * increment;
+    if (floored >= food.min_servings - 1e-6 && floored > 0) {
+      // Floored value meets min_servings — check it doesn't violate bounds.
+      const carbsCheck = food.per_serving.carbs_g * floored + carbsAssigned;
+      const fluidCheck = food.per_serving.water_ml * floored + fluidAssigned;
+      const sodiumCheck = food.per_serving.sodium_mg * floored + sodiumAssigned;
+      const withinBounds =
+        (food.per_serving.carbs_g === 0 || !Number.isFinite(carbUpper) || carbsCheck <= carbUpper + 1e-6) &&
+        (food.per_serving.water_ml === 0 || !Number.isFinite(fluidUpper) || fluidCheck <= fluidUpper + 1e-6) &&
+        (food.per_serving.sodium_mg === 0 || !Number.isFinite(sodiumUpper) || sodiumCheck <= sodiumUpper + 1e-6);
+      if (withinBounds) return floored;
+    }
+    // Floored value is below min_servings (or itself violates bounds).
+    // We must use exactly min_servings or skip entirely (0).
+    // Choose based on which is CLOSER to the primary constrained macro target.
+    const minS = food.min_servings;
+    const withMinFluid = food.per_serving.water_ml * minS + fluidAssigned;
+    const fluidTargetProxy = Number.isFinite(fluidUpper) ? fluidUpper / 1.1 : 0; // recover approx target
+    // For fluid-only foods (e.g. water), use fluid distance heuristic.
+    if (food.per_serving.water_ml > 0 && food.per_serving.carbs_g === 0 && Number.isFinite(fluidUpper)) {
+      const deltaWithMin = Math.abs(withMinFluid - fluidTargetProxy);
+      const deltaSkip = Math.abs(fluidAssigned - fluidTargetProxy);
+      if (deltaWithMin <= deltaSkip) {
+        // min_servings gets us closer — accept even if it slightly exceeds fluidUpper
+        return minS;
+      }
+      // Skipping (0) is closer to target — skip this food.
+      return 0;
+    }
+    // For carb-containing foods: accept min_servings if carbs remain within bounds.
+    const withMinCarbs = food.per_serving.carbs_g * minS + carbsAssigned;
+    if (withMinCarbs <= (Number.isFinite(carbUpper) ? carbUpper : Infinity) + 1e-6) {
+      return minS;
+    }
+    return 0;
+  }
+
+  return rounded;
 }
 
 /** Enumerate feasible serving candidates for a food.

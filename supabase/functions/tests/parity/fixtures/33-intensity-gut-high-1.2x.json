@@ -1,0 +1,35 @@
+{
+  "description": "Gut training high (1.2× multiplier) — running 90 min. Elevated carb targets at 1.2× moderate baseline. Tests upper-gut fueling path with LP solver.",
+  "solver": "lp",
+  "knownFailure": false,
+  "athlete": {
+    "weight_kg": 70,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 90,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 65,
+      "sodium_mg": 850,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 65,
+      "protein_g": 28,
+      "sodium_mg": 750,
+      "water_ml": 850
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

@@ -975,6 +975,49 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// Get recent completed activities of a given sport, most-recent-first.
+  ///
+  /// Backs the post-workout carbs/hr baseline: returns the user's completed
+  /// activities of [activityType] ordered by completion time (newest first),
+  /// excluding soft-deleted rows, brick-archived rows, and [excludeActivityId]
+  /// (the session being reviewed). Caller filters/aggregates fuel data.
+  Future<List<domain.Activity>> getRecentCompletedActivitiesBySport(
+    String userId,
+    ActivityType activityType, {
+    String? excludeActivityId,
+    int limit = 12,
+  }) async {
+    try {
+      final query = _database.select(_database.activitiesTable)
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.activityType.equals(activityType.name) &
+              tbl.status.equals('completed') &
+              tbl.deletedAt.isNull(),
+        )
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.completedAt)])
+        // Fetch one extra so excluding the current activity still yields `limit`.
+        ..limit(limit + 1);
+
+      final rows = await query.get();
+      final activities = rows
+          .map(_mapper.fromDriftRow)
+          .where((a) => a.id != excludeActivityId)
+          .take(limit)
+          .toList();
+      return activities;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get recent completed activities by sport',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Insert a new activity directly (used by sync services)
   ///
   /// Unlike createActivity, this method doesn't immediately upload to Supabase.

@@ -40,7 +40,7 @@ final class MacroTargetsControllerProvider
 }
 
 String _$macroTargetsControllerHash() =>
-    r'562d78561c9d92b27dcfa38bcc2eacf8e159881c';
+    r'f2cefc9200ad16251b84b5b42fa87314bf35d7a2';
 
 /// Controller for distance page gut entry screen
 /// FOA COMPLIANT: Contains ALL business logic, no UI concerns
@@ -66,13 +66,23 @@ abstract class _$MacroTargetsController
   }
 }
 
-/// Provider for DraftActivityCleanupService
+/// Provider for DraftActivityCleanupService.
+///
+/// keepAlive so the service survives navigate-away (the [MacroTargetsController]
+/// schedules cleanup in its onDispose, and the timer must outlive that
+/// controller). Its own onDispose cancels any pending cleanup timers, which
+/// fires only at scope/app teardown — also keeping widget tests timer-clean.
 
 @ProviderFor(draftActivityCleanupService)
 const draftActivityCleanupServiceProvider =
     DraftActivityCleanupServiceProvider._();
 
-/// Provider for DraftActivityCleanupService
+/// Provider for DraftActivityCleanupService.
+///
+/// keepAlive so the service survives navigate-away (the [MacroTargetsController]
+/// schedules cleanup in its onDispose, and the timer must outlive that
+/// controller). Its own onDispose cancels any pending cleanup timers, which
+/// fires only at scope/app teardown — also keeping widget tests timer-clean.
 
 final class DraftActivityCleanupServiceProvider
     extends
@@ -82,14 +92,19 @@ final class DraftActivityCleanupServiceProvider
           DraftActivityCleanupService
         >
     with $Provider<DraftActivityCleanupService> {
-  /// Provider for DraftActivityCleanupService
+  /// Provider for DraftActivityCleanupService.
+  ///
+  /// keepAlive so the service survives navigate-away (the [MacroTargetsController]
+  /// schedules cleanup in its onDispose, and the timer must outlive that
+  /// controller). Its own onDispose cancels any pending cleanup timers, which
+  /// fires only at scope/app teardown — also keeping widget tests timer-clean.
   const DraftActivityCleanupServiceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'draftActivityCleanupServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -118,4 +133,4 @@ final class DraftActivityCleanupServiceProvider
 }
 
 String _$draftActivityCleanupServiceHash() =>
-    r'7acc74026b98fea0a8e028a578c1ff466754f5a0';
+    r'405a19f493c2fc77b9a39db290924aec6f12cc97';

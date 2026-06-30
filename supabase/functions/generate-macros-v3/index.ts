@@ -19,6 +19,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, serverError, validationError } from '../_shared/responses.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
 // ============================================================================
 // UNIT CONVERSIONS
@@ -1103,7 +1104,10 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
 // EDGE FUNCTION HANDLER
 // ============================================================================
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -1199,4 +1203,4 @@ serve(async (req: Request) => {
     console.error('❌ Error in generate-macros-v3:', error);
     return serverError(error);
   }
-});
+}));

@@ -1,0 +1,35 @@
+{
+  "description": "Cycling >240 min (band [80,100] g/h carbs) — high gut, ultra ride. Bike ceiling 120 g/h; 4.5hr × 90 g/h = 405g carbs. Tests rule solver upper extreme with extended catalog.",
+  "solver": "rule",
+  "knownFailure": false,
+  "athlete": {
+    "weight_kg": 90,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 270,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 290,
+      "sodium_mg": 2500,
+      "water_ml": 3000
+    },
+    "post_run": {
+      "carbs_g": 110,
+      "protein_g": 45,
+      "sodium_mg": 1600,
+      "water_ml": 2000
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

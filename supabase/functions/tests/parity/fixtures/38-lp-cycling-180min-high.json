@@ -1,0 +1,34 @@
+{
+  "description": "LP solver — cycling 180 min, high gut. Tests LP path for cycling with elevated carb targets. Bike ceiling 120 g/h; 3hr × 80 g/h = 240g carbs total.",
+  "solver": "lp",
+  "athlete": {
+    "weight_kg": 85,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 180,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 120,
+      "sodium_mg": 1600,
+      "water_ml": 2000
+    },
+    "post_run": {
+      "carbs_g": 85,
+      "protein_g": 36,
+      "sodium_mg": 1100,
+      "water_ml": 1400
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

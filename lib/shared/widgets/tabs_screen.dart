@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/activities/presentation/screens/activities_list_screen.dart';
-import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
-import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
-import '../../features/daily_macros/presentation/screens/daily_macros_screen.dart';
+import '../../features/fuel_timeline/presentation/screens/fuel_timeline_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -32,24 +29,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     _currentIndex = widget.initialTabIndex;
   }
 
-  // Tab indices (same on mobile and web now — coach portal is a separate route):
-  // Calendar(0) -> Nutrition(1) -> Coach(2, web only) -> Events(2 or 3) -> Learn(3 or 4)
-  int get _coachTabIndex => 2; // Only on web
-  int get _eventsTabIndex => kIsWeb ? 3 : 2;
-  int get _learnTabIndex => kIsWeb ? 4 : 3;
+  // Tab indices (Activities + Nutrition merged into one Fuel Timeline tab):
+  // FuelTimeline(0) -> Coach(1, web only) -> Events(1 or 2) -> Learn(2 or 3)
+  int get _coachTabIndex => 1; // Only on web
+  int get _eventsTabIndex => kIsWeb ? 2 : 1;
+  int get _learnTabIndex => kIsWeb ? 3 : 2;
 
   void _onTabSelected(int index) {
-    if (index == 0 && _currentIndex == 0) {
-      // Toggle calendar view when already on Activities tab
-      ref.read(calendarViewProvider.notifier).toggleView();
-      return;
-    }
     setState(() => _currentIndex = index);
-  }
-
-  void _onPlusTap() {
-    final selectedDate = ref.read(calendarSelectedDateProvider);
-    context.pushNamed('distancepacegut', extra: {'initialDate': selectedDate});
   }
 
   @override
@@ -70,14 +57,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       });
     }
 
-    // Build the list of screens dynamically
+    // Build the list of screens dynamically. Activities + Nutrition are merged
+    // into the single Fuel Timeline tab.
     final screens = [
-      const ActivitiesListScreen(), // 0: Activities (Calendar)
-      const DailyMacrosScreen(), // 1: Nutrition Diary
+      const FuelTimelineScreen(), // 0: Fuel Timeline (day + food + workouts)
       if (showCoachTab)
-        const SizedBox.shrink(), // 2: placeholder (coach portal rendered above)
-      const EventsListScreen(), // 2 or 3: Events
-      const EducationScreen(), // 3 or 4: Learn
+        const SizedBox.shrink(), // 1: placeholder (coach portal rendered above)
+      const EventsListScreen(), // 1 or 2: Events
+      const EducationScreen(), // 2 or 3: Learn
     ];
 
     // Adjust current index if it's out of bounds (safety check)
@@ -103,26 +90,28 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               currentIndex: _currentIndex,
               showCoachTab: showCoachTab,
               onTabSelected: _onTabSelected,
-              onPlusTap: _onPlusTap,
             ),
             const VerticalDivider(width: 1, thickness: 1),
             Expanded(
               child: Stack(
                 children: [
                   body,
-                  Positioned(
-                    top: MediaQuery.of(context).padding.top + 12,
-                    right: 16,
-                    child: GestureDetector(
-                      key: const ValueKey('calendar.settings_button'),
-                      onTap: () => context.push('/settings'),
-                      child: FaIcon(
-                        FontAwesomeIcons.gear,
-                        size: 18,
-                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                  if (_currentIndex != 0)
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 12,
+                      right: 16,
+                      child: GestureDetector(
+                        key: const ValueKey('calendar.settings_button'),
+                        onTap: () => context.push('/settings'),
+                        child: FaIcon(
+                          FontAwesomeIcons.gear,
+                          size: 18,
+                          color: isDark
+                              ? AppColors.cream
+                              : AppColors.blackberry,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -139,37 +128,37 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       body: Stack(
         children: [
           body,
-          // Settings gear — top-right on every tab
-          Positioned(
-            top: MediaQuery.of(context).padding.top,
-            right: 4,
-            child: Semantics(
-              button: true,
-              label: 'Settings',
-              child: GestureDetector(
-                key: const ValueKey('calendar.settings_button'),
-                behavior: HitTestBehavior.opaque,
-                onTap: () => context.push('/settings'),
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: FaIcon(
-                    FontAwesomeIcons.gear,
-                    size: 18,
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
+          // Settings gear — top-right. The Fuel Timeline tab (0) draws its own
+          // gear in its header, so skip it there to avoid a duplicate.
+          if (_currentIndex != 0)
+            Positioned(
+              top: MediaQuery.of(context).padding.top,
+              right: 4,
+              child: Semantics(
+                button: true,
+                label: 'Settings',
+                child: GestureDetector(
+                  key: const ValueKey('calendar.settings_button'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => context.push('/settings'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: FaIcon(
+                      FontAwesomeIcons.gear,
+                      size: 18,
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           FloatingActionButtonsBar(
             activeButton: _currentIndex,
             showCoachTab: showCoachTab,
-            onCalendarTap: () => _onTabSelected(0),
-            onNutritionTap: () => _onTabSelected(1),
+            onTimelineTap: () => _onTabSelected(0),
             onCoachTap: () => _onTabSelected(_coachTabIndex),
             onEventsTap: () => _onTabSelected(_eventsTabIndex),
             onLearnTap: () => _onTabSelected(_learnTabIndex),
-            onPlusTap: _onPlusTap,
           ),
         ],
       ),
@@ -186,13 +175,11 @@ class _NavigationRailSection extends StatelessWidget {
     required this.currentIndex,
     required this.showCoachTab,
     required this.onTabSelected,
-    required this.onPlusTap,
   });
 
   final int currentIndex;
   final bool showCoachTab;
   final ValueChanged<int> onTabSelected;
-  final VoidCallback onPlusTap;
 
   @override
   Widget build(BuildContext context) {
@@ -204,12 +191,7 @@ class _NavigationRailSection extends StatelessWidget {
       const NavigationRailDestination(
         icon: FaIcon(FontAwesomeIcons.calendar),
         selectedIcon: FaIcon(FontAwesomeIcons.solidCalendar),
-        label: Text('Calendar'),
-      ),
-      const NavigationRailDestination(
-        icon: FaIcon(FontAwesomeIcons.utensils),
-        selectedIcon: FaIcon(FontAwesomeIcons.utensils),
-        label: Text('Nutrition'),
+        label: Text('Today'),
       ),
       if (showCoachTab)
         const NavigationRailDestination(
@@ -249,19 +231,6 @@ class _NavigationRailSection extends StatelessWidget {
         fontSize: 11,
       ),
       indicatorColor: AppColors.orange.withValues(alpha: 0.15),
-      trailing: Expanded(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: FloatingActionButton(
-              onPressed: onPlusTap,
-              backgroundColor: AppColors.orange,
-              child: const Icon(Icons.add, color: AppColors.cream),
-            ),
-          ),
-        ),
-      ),
       destinations: destinations,
     );
   }

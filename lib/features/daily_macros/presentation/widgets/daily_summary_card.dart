@@ -98,12 +98,15 @@ class _DailySummaryCardState extends ConsumerState<DailySummaryCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                hasLogs ? 'Eaten today' : 'Planned today',
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
+              Flexible(
+                child: Text(
+                  hasLogs ? 'Eaten today' : 'Planned today',
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Row(
@@ -302,11 +305,15 @@ class _SummaryStat extends StatelessWidget {
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: textColor.withValues(alpha: 0.6),
-                fontSize: 11,
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: textColor.withValues(alpha: 0.6),
+                  fontSize: 11,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],

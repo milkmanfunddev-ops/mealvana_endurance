@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../activities/domain/activity.dart';
 import '../../../domain/carb_adjustment_level.dart';
+import '../../../domain/fuel_log_data.dart';
+import 'carbs_per_hour_card.dart';
 
 /// Feedback section at the bottom of fuel log: star rating, carb emoji, and notes.
 class FuelLogFeedbackSection extends StatefulWidget {
@@ -10,6 +13,8 @@ class FuelLogFeedbackSection extends StatefulWidget {
     this.initialNutritionRating,
     this.initialNotes,
     this.duringCarbRateGPerH,
+    this.activity,
+    this.fuelLog,
     required this.onRatingChanged,
     required this.onNutritionRatingChanged,
     required this.onNotesChanged,
@@ -18,7 +23,16 @@ class FuelLogFeedbackSection extends StatefulWidget {
   final int? initialRating;
   final int? initialNutritionRating;
   final String? initialNotes;
+
+  /// Planned during carb rate (g/hr); gates the carb-feel prompt and feeds the
+  /// trend's target line.
   final double? duringCarbRateGPerH;
+
+  /// When both [activity] and [fuelLog] are provided, the rich carbs/hr card
+  /// (with same-sport baseline trend) replaces the plain rate line.
+  final Activity? activity;
+  final FuelLogData? fuelLog;
+
   final ValueChanged<int> onRatingChanged;
   final ValueChanged<int?> onNutritionRatingChanged;
   final ValueChanged<String?> onNotesChanged;
@@ -141,7 +155,16 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        if (widget.duringCarbRateGPerH != null)
+        if (widget.activity != null && widget.fuelLog != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: CarbsPerHourCard(
+              activity: widget.activity!,
+              fuelLog: widget.fuelLog!,
+              targetGPerH: widget.duringCarbRateGPerH,
+            ),
+          )
+        else if (widget.duringCarbRateGPerH != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Text(

@@ -87,7 +87,7 @@ export interface MacroShortfall {
   delivered: number;
   target: number;
   unit: "g" | "mg" | "ml";
-  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered";
+  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered" | "template_constraint";
 }
 
 export interface TemplateSolverResult {
@@ -811,10 +811,17 @@ function generateDuringPhaseTemplateBySearch(
 }
 
 /**
- * Compute per-macro shortfalls for a phase result. Only emits a shortfall
- * when the cause is preference-driven (dislikedFoods provided) — true
- * algorithmic shortfalls without preference context aren't surfaced because
- * the user can't act on them.
+ * Compute per-macro shortfalls for a phase result.
+ *
+ * Emits a shortfall whenever a macro is delivered below the 90% threshold,
+ * regardless of whether user dislikes are present. This ensures the client
+ * always receives a signal when a phase cannot meet its targets — not just
+ * when the cause is preference-driven.
+ *
+ * The `reason` field indicates the likely cause:
+ *   - "all_disliked" : shortfall is traceable to disliked foods in the pool
+ *   - "template_constraint" : shortfall is from catalog/template limits
+ *     (dislikes not involved or not the primary cause)
  *
  * Threshold: shortfall is emitted when delivered < 90% of target. Above that
  * the gap is small enough to be noise.
@@ -824,9 +831,9 @@ function collectShortfalls(
   targets: MacroTargets,
   dislikedFoods?: Set<string>,
 ): MacroShortfall[] {
-  if (!dislikedFoods || dislikedFoods.size === 0) return [];
   const out: MacroShortfall[] = [];
   const SHORTFALL_THRESHOLD = 0.9;
+  const hasDislikedCause = !!dislikedFoods && dislikedFoods.size > 0;
   if (
     targets.sodium_mg > 0 &&
     totals.sodium_mg < targets.sodium_mg * SHORTFALL_THRESHOLD
@@ -836,7 +843,7 @@ function collectShortfalls(
       delivered: Math.round(totals.sodium_mg),
       target: targets.sodium_mg,
       unit: "mg",
-      reason: "all_disliked",
+      reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
   if (
@@ -848,7 +855,7 @@ function collectShortfalls(
       delivered: Math.round(totals.carbs_g),
       target: targets.carbs_g,
       unit: "g",
-      reason: "all_disliked",
+      reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
   if (
@@ -860,7 +867,7 @@ function collectShortfalls(
       delivered: Math.round(totals.water_ml),
       target: targets.water_ml,
       unit: "ml",
-      reason: "all_disliked",
+      reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
   return out;

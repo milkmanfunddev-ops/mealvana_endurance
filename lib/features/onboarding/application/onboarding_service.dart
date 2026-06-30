@@ -160,13 +160,14 @@ class OnboardingService {
       return OnboardingProgress.notStarted;
     }
 
-    final hasPreferences = await _authService.getFoodPreferences(user.id) != null;
+    // Food preferences are no longer collected during onboarding (2026-06-25),
+    // so completion is gated on the explicit onboarding_completed flag rather
+    // than the presence of food preferences.
+    final completed = await _authService.hasCompletedOnboarding();
 
-    if (!hasPreferences) {
-      return OnboardingProgress.profileComplete;
-    } else {
-      return OnboardingProgress.complete;
-    }
+    return completed
+        ? OnboardingProgress.complete
+        : OnboardingProgress.profileComplete;
   }
 
   /// Reset onboarding (for testing or re-onboarding)

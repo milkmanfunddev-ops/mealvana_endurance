@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/analytics/analytics_excluded_pref.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../providers/settings_controller.dart';
@@ -21,9 +23,29 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // Triple-tap debug feature
+  // Triple-tap debug feature (Profile & Preferences row → DebugScreen)
   int _tapCount = 0;
   DateTime? _lastTapTime;
+
+  // 7-tap reveal for "Developer / Tester" analytics exclusion section
+  int _versionTapCount = 0;
+  DateTime? _lastVersionTapTime;
+  bool _showTesterSection = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // If this device is already marked as excluded, auto-reveal the tester
+    // section so the tester can see the current state and toggle it off if
+    // needed — without requiring 7 taps every time they open Settings.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final excluded = ref.read(analyticsExcludedProvider);
+      if (excluded && !_showTesterSection) {
+        setState(() => _showTesterSection = true);
+      }
+    });
+  }
 
   void _handleProfileTap() {
     final now = DateTime.now();
@@ -47,6 +69,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => const DebugScreen()));
+    }
+  }
+
+  /// Counts taps on the version text. Seven taps within 3-second windows
+  /// reveals the hidden "Developer / Tester" section.
+  void _handleVersionTap() {
+    final now = DateTime.now();
+    if (_lastVersionTapTime != null &&
+        now.difference(_lastVersionTapTime!) > const Duration(seconds: 3)) {
+      _versionTapCount = 0;
+    }
+    _versionTapCount++;
+    _lastVersionTapTime = now;
+
+    if (_versionTapCount >= 7) {
+      _versionTapCount = 0;
+      if (!_showTesterSection) {
+        setState(() => _showTesterSection = true);
+      }
+    }
+  }
+
+  /// Handles toggling the "Exclude this device from analytics" switch.
+  ///
+  /// Order of operations when ENABLING exclusion:
+  ///   1. Call markInternal() on the live tracker (while analytics is still
+  ///      active) to flag the Mixpanel profile for dashboard filtering.
+  ///   2. Persist the exclusion pref — this causes analyticsTrackerProvider
+  ///      to rebuild and return NoopAnalyticsTracker.
+  ///
+  /// When DISABLING exclusion:
+  ///   1. Clear the pref so analyticsTrackerProvider returns
+  ///      MixpanelAnalyticsTracker on the next app launch.
+  Future<void> _onAnalyticsExcludedToggled(bool excluded) async {
+    if (excluded) {
+      // Mark the profile BEFORE suppressing — order matters.
+      await ref.read(analyticsTrackerProvider).markInternal();
+      await ref.read(analyticsExcludedProvider.notifier).setExcluded(true);
+      if (mounted) {
+        MealvanaSnackbar.showSuccess(
+          context,
+          'This device is excluded from analytics. Mixpanel profile flagged.',
+        );
+      }
+    } else {
+      await ref.read(analyticsExcludedProvider.notifier).setExcluded(false);
+      if (mounted) {
+        MealvanaSnackbar.showInfo(
+          context,
+          'Analytics re-enabled. Changes take full effect on next app launch.',
+        );
+      }
     }
   }
 
@@ -145,8 +219,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Version number
+          // Version number — tap 7 times to reveal the tester section below.
           _buildVersionInfo(context),
+
+          // Hidden "Developer / Tester" section: revealed after 7 taps on the
+          // version text, OR automatically when analytics is already excluded
+          // (so testers can easily toggle it off on repeat visits).
+          if (_showTesterSection) _buildTesterSection(context),
 
           const SizedBox(height: AppSpacing.xxxl),
         ],
@@ -161,20 +240,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Center(
       child: Column(
         children: [
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text(
-                  key: const ValueKey('settings.version_label'),
-                  'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
+          // Tapping this 7 times reveals the Developer / Tester section.
+          GestureDetector(
+            onTap: _handleVersionTap,
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Text(
+                    key: const ValueKey('settings.version_label'),
+                    'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
           if (userId != null) ...[
             const SizedBox(height: AppSpacing.xs),
@@ -204,6 +289,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// Hidden "Developer / Tester" section.
+  ///
+  /// Revealed after the user taps the version text 7 times (or automatically
+  /// when the exclusion pref is already active). Lets internal testers exclude
+  /// their device from production Mixpanel analytics without needing to know
+  /// their device ID.
+  Widget _buildTesterSection(BuildContext context) {
+    final isExcluded = ref.watch(analyticsExcludedProvider);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: BaseCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Developer / Tester',
+              style: AppTextStyles.subtitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'These settings are only visible to internal testers.',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SwitchListTile(
+              title: Text(
+                'Exclude this device from analytics (testers)',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                isExcluded
+                    ? 'No events are sent to Mixpanel from this device.'
+                    : 'Analytics are active. Toggle to stop tracking on this device.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              value: isExcluded,
+              onChanged: _onAnalyticsExcludedToggled,
+              activeThumbColor: AppColors.electrolyte,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -575,8 +715,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context: context,
             rowKey: const ValueKey('settings.food_prefs_row'),
             icon: FontAwesomeIcons.utensils.data,
-            title: 'Food Preferences',
-            subtitle: 'Diet, allergies, and food choices',
+            title: 'Diet, Allergies & Formulas',
+            subtitle: 'Dietary preference, allergies, and nutrition formulas',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_food_preferences_hub_tapped');

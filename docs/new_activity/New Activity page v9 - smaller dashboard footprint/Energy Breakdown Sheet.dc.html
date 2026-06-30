@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Medium.otf") format("opentype");font-weight:500;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
+@font-face{font-family:"Apercu Mono";src:url("fonts/Apercu-Mono.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Compadre";src:url("fonts/Compadre-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Sansita";src:url("fonts/Sansita-Bold.ttf") format("truetype");font-weight:700;font-display:swap;}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+:root{--me-blackberry:rgb(56,22,51);--me-cream:rgb(248,246,235);--me-orange:rgb(247,139,20);--me-electrolyte:rgb(28,249,207);--me-dragonfruit:rgb(220,37,151);}
+</style>
+</helmet>
+<div style="position:absolute;inset:0;background:rgba(20,8,18,0.55);display:flex;flex-direction:column;justify-content:flex-end;">
+  <div style="height:100%;background:rgb(48,18,44);display:flex;flex-direction:column;animation:sheetUp 320ms cubic-bezier(0.2,0.8,0.2,1);box-shadow:0 -18px 40px -12px rgba(0,0,0,0.5);">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid rgba(248,246,235,0.08);">
+      <button onClick="{{ onClose }}" style="width:32px;height:32px;border-radius:50%;background:var(--me-cream);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgb(56,22,51)" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </button>
+      <div style="flex:1;text-align:center;font-family:'Sansita',Georgia,serif;font-weight:700;font-size:17px;color:var(--me-cream);">Today's Fueling</div>
+      <div style="width:32px;"></div>
+    </div>
+
+    <div style="flex:1;overflow:auto;padding:22px 20px 28px;display:flex;flex-direction:column;">
+
+      <div style="text-align:center;">
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;">
+          <span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:42px;line-height:1;color:var(--me-cream);">{{ calTargetStr }}</span>
+          <span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:22px;color:rgba(248,246,235,0.55);">kcal target</span>
+        </div>
+        <div style="display:flex;justify-content:center;gap:34px;margin-top:18px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="display:flex;align-items:baseline;gap:1px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:26px;color:var(--me-electrolyte);">{{ carbStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:13px;color:var(--me-electrolyte);">g</span></div>
+            <div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.5);">Carbs</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="display:flex;align-items:baseline;gap:1px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:26px;color:rgb(167,139,250);">{{ proteinStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:13px;color:rgb(167,139,250);">g</span></div>
+            <div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.5);">Protein</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="display:flex;align-items:baseline;gap:1px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:26px;color:rgb(236,84,153);">{{ fatStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:13px;color:rgb(236,84,153);">g</span></div>
+            <div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.5);">Fat</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;background:rgba(248,246,235,0.08);border-radius:100px;padding:4px;margin:22px 0 4px;">
+        <button onClick="{{ setDaily }}" style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:9px;font-family:'Apercu',sans-serif;font-weight:500;font-size:13px;background:{{ dailyTabBg }};color:{{ dailyTabColor }};">Daily</button>
+        <button onClick="{{ setWeekly }}" style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:9px;font-family:'Apercu',sans-serif;font-weight:500;font-size:13px;background:{{ weeklyTabBg }};color:{{ weeklyTabColor }};">Weekly</button>
+      </div>
+
+      <sc-if value="{{ dailyTab }}" hint-placeholder-val="{{ true }}">
+      <div style="height:1px;background:rgba(248,246,235,0.1);margin:20px 0 20px;"></div>
+
+      <div style="font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);margin-bottom:12px;">Body Composition</div>
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <span style="font-family:'Apercu',sans-serif;font-weight:700;font-size:22px;color:var(--me-cream);">{{ weightStr }}</span>
+        <span style="font-family:'Apercu',sans-serif;font-size:13px;color:rgba(248,246,235,0.5);">Weight</span>
+      </div>
+
+      <div style="height:1px;background:rgba(248,246,235,0.1);margin:22px 0 16px;"></div>
+
+      <div style="font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);margin-bottom:6px;">Energy Breakdown</div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(248,246,235,0.07);">
+          <div style="font-family:'Apercu',sans-serif;font-size:14px;color:rgba(248,246,235,0.85);">{{ r.label }}</div>
+          <div style="font-family:'Apercu Mono',monospace;font-size:14px;color:var(--me-cream);font-variant-numeric:tabular-nums;">{{ r.value }}</div>
+        </div>
+      </sc-for>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0 4px;">
+        <div style="font-family:'Apercu',sans-serif;font-weight:700;font-size:15px;color:var(--me-cream);">Total Burn (TDEE)</div>
+        <div style="font-family:'Apercu Mono',monospace;font-weight:700;font-size:15px;color:var(--me-orange);font-variant-numeric:tabular-nums;">{{ tdeeStr }}</div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ weeklyTab }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:22px;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px;">
+          <div style="font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);">Weekly Overview</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(248,246,235,0.08);border-radius:16px;padding:16px 14px 12px;">
+          <svg viewBox="0 0 300 170" width="100%" style="display:block;overflow:visible;">
+            <sc-for list="{{ gridY }}" as="gy" hint-placeholder-count="3">
+              <line x1="0" y1="{{ gy }}" x2="300" y2="{{ gy }}" stroke="rgba(248,246,235,0.08)" stroke-width="1"></line>
+            </sc-for>
+            <sc-for list="{{ lines }}" as="ln" hint-placeholder-count="4">
+              <path d="{{ ln.d }}" fill="none" stroke="{{ ln.color }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+            </sc-for>
+            <sc-for list="{{ lines }}" as="ln" hint-placeholder-count="4">
+              <sc-for list="{{ ln.dots }}" as="dt" hint-placeholder-count="8">
+                <circle cx="{{ dt.cx }}" cy="{{ dt.cy }}" r="2.6" fill="{{ ln.color }}"></circle>
+              </sc-for>
+            </sc-for>
+          </svg>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;padding:0 2px;">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="8">
+              <span style="font-family:'Apercu',sans-serif;font-size:10px;color:rgba(248,246,235,0.4);">{{ d }}</span>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:center;gap:18px;margin-top:14px;flex-wrap:wrap;">
+            <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:{{ lg.color }};"></span>
+                <span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.7);">{{ lg.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="font-family:'Apercu',sans-serif;font-size:12px;line-height:1.5;color:rgba(248,246,235,0.55);margin-top:14px;">Your week builds toward Saturday's long effort — carbs ramp up while protein and fat hold steady. This is periodized fueling.</div>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:800},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;calTarget&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2,520&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;carbs&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;300&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;protein&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;140&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;fat&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;75&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { tab: "daily" };
+  buildLine(vals, color, min, max, w, h) {
+    const n = vals.length;
+    const x = (i) => (i / (n - 1)) * w;
+    const y = (v) => h - ((v - min) / (max - min)) * h;
+    const pts = vals.map((v, i) => [x(i), y(v)]);
+    let d = "M " + pts[0][0].toFixed(1) + " " + pts[0][1].toFixed(1);
+    for (let i = 1; i < pts.length; i++) {
+      const [px, py] = pts[i - 1], [cx, cy] = pts[i];
+      const mx = (px + cx) / 2;
+      d += " C " + mx.toFixed(1) + " " + py.toFixed(1) + " " + mx.toFixed(1) + " " + cy.toFixed(1) + " " + cx.toFixed(1) + " " + cy.toFixed(1);
+    }
+    return { d, color, dots: pts.map(([cx, cy]) => ({ cx: cx.toFixed(1), cy: cy.toFixed(1) })) };
+  }
+  renderVals() {
+    const resting = 1091, daily = 300, workout = 520;
+    const tdee = resting + daily + workout;
+    const f = (n) => n.toLocaleString();
+    const W = 300, H = 150;
+    const series = {
+      cal:     [2100, 2150, 2380, 2300, 2350, 2300, 2200, 2520],
+      carbs:   [240, 250, 300, 305, 290, 320, 380, 470],
+      protein: [135, 138, 150, 148, 150, 165, 150, 152],
+      fat:     [62, 62, 78, 75, 73, 80, 58, 88],
+    };
+    const lines = [
+      this.buildLine(series.cal, "var(--me-cream)", 0, 560, W, H),
+      this.buildLine(series.carbs, "var(--me-electrolyte)", 0, 560, W, H),
+      this.buildLine(series.protein, "var(--me-orange)", 0, 560, W, H),
+      this.buildLine(series.fat, "rgb(236,84,153)", 0, 560, W, H),
+    ];
+    const days = ["S", "M", "T", "W", "T", "F", "S", "S"];
+    const legend = [
+      { label: "Cal", color: "var(--me-cream)" },
+      { label: "Carbs", color: "var(--me-electrolyte)" },
+      { label: "Protein", color: "var(--me-orange)" },
+      { label: "Fat", color: "rgb(236,84,153)" },
+    ];
+    const tab = this.state.tab;
+    return {
+      onClose: this.props.onClose || (() => {}),
+      tab, dailyTab: tab === "daily", weeklyTab: tab === "weekly",
+      dailyTabBg: tab === "daily" ? "var(--me-cream)" : "transparent",
+      dailyTabColor: tab === "daily" ? "var(--me-blackberry)" : "rgba(248,246,235,0.6)",
+      weeklyTabBg: tab === "weekly" ? "var(--me-cream)" : "transparent",
+      weeklyTabColor: tab === "weekly" ? "var(--me-blackberry)" : "rgba(248,246,235,0.6)",
+      setDaily: () => this.setState({ tab: "daily" }),
+      setWeekly: () => this.setState({ tab: "weekly" }),
+      chartW: W, chartH: H, lines, days, legend,
+      gridY: [0.25, 0.5, 0.75].map((p) => (p * H).toFixed(1)),
+      calTargetStr: this.props.calTarget ?? "2,520",
+      carbStr: this.props.carbs ?? "300",
+      proteinStr: this.props.protein ?? "140",
+      fatStr: this.props.fat ?? "75",
+      weightStr: "110 lbs",
+      rows: [
+        { label: "Resting", value: f(resting) + " cal" },
+        { label: "Daily Activity", value: f(daily) + " cal" },
+        { label: "Workout", value: f(workout) + " cal" },
+      ],
+      tdeeStr: f(tdee) + " cal",
+    };
+  }
+}
+</script>
+</body>
+</html>

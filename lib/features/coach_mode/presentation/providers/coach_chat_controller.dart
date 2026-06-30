@@ -24,9 +24,14 @@ class CoachChatController extends _$CoachChatController {
 
   @override
   FutureOr<CoachChatState> build(String relationshipId) async {
-    // Setup cleanup on dispose
+    // Cache service reference BEFORE registering onDispose.
+    // ref.read() is forbidden inside onDispose callbacks in Riverpod 3.x —
+    // the ref is already invalidated at that point.
+    final coachService = ref.read(coachServiceProvider);
+
+    // Setup cleanup on dispose using the cached reference (not ref.read)
     ref.onDispose(() {
-      _unsubscribe();
+      _unsubscribeWithService(coachService);
     });
 
     return _loadChat(relationshipId);
@@ -172,6 +177,15 @@ class CoachChatController extends _$CoachChatController {
   Future<void> _unsubscribe() async {
     if (_channel != null) {
       await _coachService.unsubscribeFromConversation(_channel!);
+      _channel = null;
+    }
+  }
+
+  /// Unsubscribe using a pre-cached service reference.
+  /// Used by onDispose where ref.read() is forbidden (Riverpod 3.x).
+  Future<void> _unsubscribeWithService(CoachService service) async {
+    if (_channel != null) {
+      await service.unsubscribeFromConversation(_channel!);
       _channel = null;
     }
   }

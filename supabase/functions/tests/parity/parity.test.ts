@@ -75,7 +75,24 @@ import {
 } from "../../_shared/nutrition/personal-formula-pins.ts";
 import type { PersonalFormulaPin } from "../../_shared/nutrition/pins.ts";
 import type { Food, FoodResult, MacroTargets } from "../../_shared/nutrition/types.ts";
-import { makeFood, makeDuringFoods, makeDuringFoodsExtended, makeAfterFoods } from "../../_shared/nutrition/test-utils.ts";
+import {
+  makeFood,
+  makeDuringFoods,
+  makeDuringFoodsExtended,
+  makeAfterFoods,
+  makeRealDevDuringFoods,
+  makeRealDevDuringFoodsExtended,
+  makeRealDevAfterFoods,
+  makeRealDevDuringFoodsWithConstraints,
+} from "../../_shared/nutrition/test-utils.ts";
+import {
+  type DuringWorkoutTemplate,
+  type FoodWithConstraints,
+  generateDuringPhaseTemplate,
+  selectTemplate,
+} from "../../_shared/nutrition/during-template-solver.ts";
+import { buildLPModel, solveLPModel } from "../../_shared/nutrition/lp-solver.ts";
+import { DEFAULT_OPTIMIZATION_WEIGHTS } from "../../_shared/nutrition/constants.ts";
 
 // ============================================================================
 // Tolerance Constants
@@ -106,6 +123,39 @@ interface AthleteFixture {
   /** When true: test reports as WARNING instead of FAIL — known algorithm gap. */
   knownFailure?: boolean;
   knownFailureReason?: string;
+  /**
+   * Which solver path to exercise for the during phase.
+   *
+   * - "rule" (default): generateDuringPhaseRuleBased — the standard path.
+   * - "personal_formula": personal formula pin overlay (legacy default when
+   *   pins.personalFormulas is populated — still the default for back-compat).
+   * - "template": generateDuringPhaseTemplate via selectTemplate — used when
+   *   a templateFixture is provided in the fixture.
+   * - "lp": solveLPModel on the during-phase food catalog — tests the LP path
+   *   without DB (uses makeDuringFoodsExtended as the food pool).
+   */
+  solver?: "rule" | "template" | "lp" | "personal_formula";
+  /**
+   * For solver="template": the template definition to use.
+   * The fixture supplies one concrete DuringWorkoutTemplate; the harness
+   * builds the food-pool from makeDuringFoodsExtended mapped to
+   * FoodWithConstraints with sensible constraint defaults.
+   */
+  templateFixture?: {
+    template_number: number;
+    name: string;
+    formula?: string;
+    food_form?: string;
+    activity_types: string[];
+    duration_brackets: string[];
+    gut_training_levels: string[];
+    component_food_names: string[];
+    component_carb_ratios: Record<string, number>;
+    primary_to_secondary_ratio?: string | null;
+    allergens?: string[];
+    excluded_diets?: string[];
+    selection_priority?: number | null;
+  };
   athlete: {
     weight_kg: number;
     sex: "male" | "female";
@@ -135,27 +185,75 @@ interface AthleteFixture {
 }
 
 // ============================================================================
-// In-Memory Food Catalog (mirrors test-utils.ts catalog)
+// In-Memory Food Catalog (real dev Supabase snapshot)
 // ============================================================================
 
 /**
- * Build a rich in-memory during-phase catalog to simulate what the DB would
- * return. Extended catalog adds high-sodium/electrolyte options necessary for
- * ultra-distance fixtures that demand 2000mg+ sodium.
+ * Build the during-phase catalog using the real dev `template_foods` snapshot
+ * (92 active rows, dumped 2026-06-23). Mirrors the default running path:
+ * categories contains 'during_run' AND default_during=true OR is_essential=true.
  *
- * This is the same pattern used by algorithm-audit.test.ts — never touch a
- * real DB in unit/parity tests.
+ * REPLACES makeDuringFoodsExtended() in parity tests so knownFailure fixtures
+ * are validated against production-reality catalog capacity, not the synthetic
+ * 8-food catalog.
  */
 function buildDuringCatalog(): Food[] {
-  return makeDuringFoodsExtended();
+  return makeRealDevDuringFoodsExtended();
 }
 
 /**
- * Build a basic after-phase catalog. The after-phase parity tests only check
- * that personal formula foods appear (no LP/template solve without DB).
+ * Build the after-phase catalog using the real dev `template_foods` snapshot.
+ * Includes all 31 after_run-eligible foods.
+ *
+ * The after-phase parity tests only check personal formula structural
+ * invariants (no LP/template solve without DB), so catalog richness does not
+ * change pass/fail — but correct catalog data is included for completeness.
  */
 function buildAfterCatalog(): Food[] {
-  return makeAfterFoods();
+  return makeRealDevAfterFoods();
+}
+
+// ============================================================================
+// Template Food Pool Builder
+// ============================================================================
+
+/**
+ * Build the template-solver FoodWithConstraints pool from the real dev catalog
+ * snapshot. Uses makeRealDevDuringFoodsWithConstraints() which reads the
+ * committed __fixtures__/dev-food-catalog.json and maps:
+ *   max_per_hr_low/moderate/high, min_increment, sodium_top_up_eligible
+ * directly from the DB columns (no synthetic defaults needed).
+ *
+ * Also preserves the legacy synthetic-name aliases used by existing fixture
+ * templates (energy-gel, energy-chews, etc.) so those fixtures continue to
+ * resolve correctly via the real catalog entries.
+ */
+function buildTemplateFoodPool(): Map<string, FoodWithConstraints> {
+  // Real catalog keyed by name (primary) and id (secondary).
+  const pool = makeRealDevDuringFoodsWithConstraints();
+
+  // Synthetic-name aliases from the legacy fixtures. Map old synthetic names
+  // (energy-gel, sports-drink, etc.) to their real-catalog counterparts so
+  // fixture templateFixture.component_food_names still resolve.
+  const legacyAliasMap: Record<string, string> = {
+    "energy-gel": "energy_gel",
+    "energy-chews": "energy_chews",
+    "sports-drink": "sports_drink",
+    "high-carb-mix": "high_carb_drink_mix",
+    "electrolyte-tab": "electrolyte_tablet",
+    "energy-bar": "energy_bar",        // not in real catalog during_run; tolerate missing
+    "high-sodium-mix": "high_sodium_electrolyte_mix",
+    "electrolyte-capsule": "electrolyte_capsule",
+  };
+
+  for (const [legacyKey, realName] of Object.entries(legacyAliasMap)) {
+    const source = pool.get(realName);
+    if (source && !pool.has(legacyKey)) {
+      pool.set(legacyKey, source);
+    }
+  }
+
+  return pool;
 }
 
 // ============================================================================
@@ -369,10 +467,25 @@ async function loadFixtures(): Promise<AthleteFixture[]> {
 /**
  * Run the during-phase parity check for a single fixture.
  *
- * Pipeline:
- *   1. Check for in-scope personal formula → emit its components.
- *   2. If no personal formula in scope, run rule-based solver with in-memory catalog.
- *   3. Assert parity + invariants.
+ * Pipeline (solver routing):
+ *   personal_formula (explicit or auto-detected from pins.personalFormulas):
+ *     matchPersonalFormulaPin → personalFormulaToFoodResults
+ *     → check invariants only (parity bypassed by design — user-authored formula)
+ *
+ *   rule (default):
+ *     generateDuringPhaseRuleBased(in-memory catalog, targets, activity)
+ *     → check parity + invariants
+ *
+ *   template (fixture.solver === "template"):
+ *     selectTemplate → generateDuringPhaseTemplate(in-memory pool, targets)
+ *     → check parity + invariants
+ *     Requires fixture.templateFixture to be set. If selectTemplate returns
+ *     null (template not compatible) the test fails unless knownFailure.
+ *
+ *   lp (fixture.solver === "lp"):
+ *     buildLPModel + solveLPModel on makeDuringFoodsExtended()
+ *     → check parity + invariants
+ *     If LP returns null (infeasible), the test fails unless knownFailure.
  *
  * KEY DESIGN DECISION for personal formula fixtures:
  *   Personal formulas bypass macro targets BY DESIGN (locked pin policy
@@ -394,7 +507,12 @@ function runDuringPhaseParity(
 
   const personalFormulas: PersonalFormulaPin[] = pins?.personalFormulas ?? [];
 
-  // --- Step 1: personal formula override (new in-flight behavior) ---
+  // Determine effective solver: explicit field overrides auto-detection,
+  // but personal formula match always wins when it fires (matching existing
+  // behavior for back-compat with all existing fixtures).
+  const explicitSolver = fixture.solver ?? "rule";
+
+  // --- Step 1: personal formula override (fires regardless of explicit solver) ---
   const matchedFormula = personalFormulas.length > 0
     ? matchPersonalFormulaPin(
       personalFormulas,
@@ -408,10 +526,89 @@ function runDuringPhaseParity(
   let path: string;
 
   if (matchedFormula !== null) {
+    // Personal formula always wins when in scope — matches production behavior.
     duringFoods = personalFormulaToFoodResults(matchedFormula, "Throughout activity");
     path = "personal_formula";
+  } else if (explicitSolver === "template") {
+    // --- Template solver path ---
+    const tf = fixture.templateFixture;
+    if (!tf) {
+      return {
+        passed: false,
+        issues: ["solver='template' requires a templateFixture in the fixture JSON"],
+        path: "template",
+        formulaFired: false,
+      };
+    }
+
+    const templatePool = buildTemplateFoodPool();
+    const template: DuringWorkoutTemplate = {
+      id: `parity-template-${tf.template_number}`,
+      template_number: tf.template_number,
+      name: tf.name,
+      formula: tf.formula ?? tf.name,
+      food_form: tf.food_form ?? "Mixed",
+      activity_types: tf.activity_types,
+      duration_brackets: tf.duration_brackets,
+      gut_training_levels: tf.gut_training_levels as ("low" | "moderate" | "high")[],
+      component_food_names: tf.component_food_names,
+      component_carb_ratios: tf.component_carb_ratios,
+      primary_to_secondary_ratio: tf.primary_to_secondary_ratio ?? null,
+      allergens: tf.allergens ?? [],
+      excluded_diets: tf.excluded_diets ?? [],
+      notes: null,
+      is_active: true,
+      selection_priority: tf.selection_priority ?? null,
+    };
+
+    const templateResult = generateDuringPhaseTemplate(
+      template,
+      templatePool,
+      duringTargets,
+      workout.duration_minutes,
+      workout.gut_training_level,
+    );
+
+    if (templateResult === null) {
+      return {
+        passed: false,
+        issues: [
+          `Template solver returned null for template "${tf.name}" — targets may exceed template capacity. ` +
+            `carbs=${duringTargets.carbs_g}g sodium=${duringTargets.sodium_mg}mg fluid=${duringTargets.water_ml}ml ` +
+            `duration=${workout.duration_minutes}min gut=${workout.gut_training_level}`,
+        ],
+        path: "template",
+        formulaFired: false,
+      };
+    }
+
+    duringFoods = templateResult.foods;
+    path = "template";
+  } else if (explicitSolver === "lp") {
+    // --- LP solver path ---
+    const lpFoods = catalog; // uses the passed-in during catalog (makeDuringFoodsExtended)
+    const filteredLP = applyPreferenceFilters(lpFoods, preferences.disliked_foods);
+    const weights = DEFAULT_OPTIMIZATION_WEIGHTS.during;
+    const model = buildLPModel(filteredLP, duringTargets, "during", weights);
+    const lpResult = solveLPModel(model, filteredLP, "during");
+
+    if (lpResult === null) {
+      return {
+        passed: false,
+        issues: [
+          `LP solver returned null (infeasible) for during phase. ` +
+            `carbs=${duringTargets.carbs_g}g sodium=${duringTargets.sodium_mg}mg fluid=${duringTargets.water_ml}ml`,
+        ],
+        path: "lp",
+        formulaFired: false,
+      };
+    }
+
+    // Map PhaseSolution.foods to FoodResult[]
+    duringFoods = lpResult.foods;
+    path = "lp";
   } else {
-    // --- Step 2: rule-based solver with in-memory catalog ---
+    // --- Default: rule-based solver ---
     const filteredCatalog = applyPreferenceFilters(
       catalog,
       preferences.disliked_foods,
@@ -433,10 +630,9 @@ function runDuringPhaseParity(
     matchedFormula,
   );
 
-  // Macro parity: only for the algorithmic path (rule_solver).
-  // Personal formula path bypasses targets by design — skip parity.
+  // Macro parity: skip for personal_formula (user-authored, bypasses targets by design).
   let parityIssues: string[] = [];
-  if (matchedFormula === null) {
+  if (path !== "personal_formula") {
     const totals = sumFoods(duringFoods);
     const parityResult = checkParity("during", totals, duringTargets);
     parityIssues = parityResult.issues;
@@ -580,8 +776,8 @@ const _fixtures = await loadFixtures();
 // Sanity check: make sure we loaded the expected minimum number of fixtures.
 Deno.test("parity fixtures: minimum corpus size", () => {
   assert(
-    _fixtures.length >= 12,
-    `Expected at least 12 fixtures, found ${_fixtures.length}. ` +
+    _fixtures.length >= 30,
+    `Expected at least 30 fixtures, found ${_fixtures.length}. ` +
       `Check that supabase/functions/tests/parity/fixtures/*.json files exist.`,
   );
   console.log(`[PARITY] Loaded ${_fixtures.length} athlete scenario fixtures.`);
@@ -666,8 +862,12 @@ for (const fixture of _fixtures) {
         return; // pass the test as a warning
       }
 
-      // Build a detailed failure report for CI
+      // Build a detailed failure report for CI.
+      // Re-use the already-computed result from runDuringPhaseParity so we don't
+      // re-execute the solver. duringResult.issues already contains all failures.
       const duringFoods: FoodResult[] = (() => {
+        // Re-invoke the same runner to get the foods for the report.
+        // This is intentionally a second run (idempotent) — the solver is pure.
         const personalFormulas: PersonalFormulaPin[] = fixture.pins?.personalFormulas ?? [];
         const matchedFormula = personalFormulas.length > 0
           ? matchPersonalFormulaPin(
@@ -681,6 +881,39 @@ for (const fixture of _fixtures) {
           return personalFormulaToFoodResults(matchedFormula, "Throughout activity");
         }
         if (!fixture.targets.during_run) return [];
+        const explicitSolver = fixture.solver ?? "rule";
+        if (explicitSolver === "template" && fixture.templateFixture) {
+          const tf = fixture.templateFixture;
+          const pool = buildTemplateFoodPool();
+          const tmpl: DuringWorkoutTemplate = {
+            id: `parity-template-${tf.template_number}`,
+            template_number: tf.template_number,
+            name: tf.name,
+            formula: tf.formula ?? tf.name,
+            food_form: tf.food_form ?? "Mixed",
+            activity_types: tf.activity_types,
+            duration_brackets: tf.duration_brackets,
+            gut_training_levels: tf.gut_training_levels as ("low" | "moderate" | "high")[],
+            component_food_names: tf.component_food_names,
+            component_carb_ratios: tf.component_carb_ratios,
+            primary_to_secondary_ratio: tf.primary_to_secondary_ratio ?? null,
+            allergens: tf.allergens ?? [],
+            excluded_diets: tf.excluded_diets ?? [],
+            notes: null,
+            is_active: true,
+            selection_priority: tf.selection_priority ?? null,
+          };
+          return generateDuringPhaseTemplate(
+            tmpl, pool, fixture.targets.during_run,
+            fixture.workout.duration_minutes, fixture.workout.gut_training_level,
+          )?.foods ?? [];
+        }
+        if (explicitSolver === "lp") {
+          const filtered = applyPreferenceFilters(duringCatalog, fixture.preferences.disliked_foods);
+          const weights = DEFAULT_OPTIMIZATION_WEIGHTS.during;
+          const model = buildLPModel(filtered, fixture.targets.during_run, "during", weights);
+          return solveLPModel(model, filtered, "during")?.foods ?? [];
+        }
         const filtered = applyPreferenceFilters(duringCatalog, fixture.preferences.disliked_foods);
         return generateDuringPhaseRuleBased(
           filtered,

@@ -1,7 +1,7 @@
 {
   "description": "Light athlete (50kg female) — short easy 30-min run. Minimal fueling; tests degenerate low-target case.",
   "knownFailure": true,
-  "knownFailureReason": "GENUINE ALGORITHM PARITY VIOLATION: Rule solver cannot deliver fluid below its minimum serving floor (1 water serving = 240ml + 1 sports drink serving = 240ml = 480ml min). Small fluid targets (300ml) can never be satisfied because min_servings=1 on all catalog liquids. The solver overshoots fluid by ~60% on short workouts. TODO: Add fractional serving support for fluid items OR gate fluid selection on target size.",
+  "knownFailureReason": "CONFIRMED on real dev catalog: solver picks Sports Drink×0.5 + Water×1 delivering only 50mg sodium vs 200mg target (delta=150mg, above 100mg absolute floor). Real catalog electrolyte_capsule has 190mg sodium — even adding 1 capsule (190mg) would bring total to 240mg, exceeding target slightly; but the electrolyte top-up does not fire at this low carb anchor (10g). Same electrolyte-scoring-skip algorithm gap as fixture 17. Previously passed on synthetic catalog only because the synthetic electrolyte tab had an inflated 350mg.",
   "athlete": {
     "weight_kg": 50,
     "sex": "female"

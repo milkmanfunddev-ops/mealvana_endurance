@@ -134,14 +134,18 @@ class ActivityDetailAppBar extends ConsumerWidget
                   isNewActivity: isNewActivity,
                 ),
               );
-        final eventName = asyncState.whenOrNull(
-          data: (data) {
-            if (data is ActivityDetailState) return data.eventName;
-            return null;
-          },
-        );
-        final title =
-            eventName ?? (isNewActivity ? 'New Activity' : 'Activity Details');
+        final (String? eventName, String? activityTitle) = asyncState.whenOrNull(
+              data: (data) {
+                if (data is ActivityDetailState) {
+                  return (data.eventName, data.activity?.title);
+                }
+                return (null, null);
+              },
+            ) ??
+            (null, null);
+        final title = eventName ??
+            activityTitle ??
+            (isNewActivity ? 'New Activity' : 'Activity Details');
         return Text(
           key: const ValueKey('plan_detail.title'),
           title,

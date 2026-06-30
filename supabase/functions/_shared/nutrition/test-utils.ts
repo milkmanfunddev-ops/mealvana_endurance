@@ -6,6 +6,7 @@
  */
 
 import type { Food, MacroTargets, PhaseSolution, FoodNutrition } from './types.ts';
+import type { FoodWithConstraints } from './during-template-solver.ts';
 
 // ============================================================================
 // Log Capture
@@ -668,4 +669,216 @@ export function sumFoodResults(foods: Array<{ carbs_grams: number; sodium_mg: nu
     }),
     { carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0, water_ml: 0, calories: 0 },
   );
+}
+
+// ============================================================================
+// Real Dev Catalog Builders
+// ============================================================================
+//
+// These builders load the committed snapshot of the dev Supabase
+// `template_foods` table (92 active rows as of 2026-06-23) and convert rows
+// into the Food / FoodWithConstraints shapes the solvers expect.
+//
+// Phase eligibility mirrors template-food-queries.ts:
+//   DURING (default/running): categories contains 'during_run'
+//     AND (default_during=true OR is_essential=true)
+//     (same as the default allowNonDefaultDuring=false running path)
+//   DURING extended: ALL 'during_run' rows (allowNonDefaultDuring=true)
+//   AFTER: categories contains 'after_run'
+//
+// Column mapping mirrors template-food-queries.ts STEP 4:
+//   carbs_g        → per_serving.carbs_g
+//   protein_g      → per_serving.protein_g
+//   fat_g          → per_serving.fat_g
+//   sodium_mg      → per_serving.sodium_mg
+//   fluid_ml       → per_serving.water_ml
+//   calories       → per_serving.calories
+//   max_servings_during / max_servings_after → max_servings
+//   min_servings_during (default 1.0)        → min_servings
+//
+// PREFERENCE SCORES: all catalog foods score as "neutral" (20) here unless
+// their is_essential flag is set (→ score=50). Preference overlays (liked /
+// willing_to_try) are not simulated — tests that need custom scores should
+// use makeFood() directly.
+
+type RawCatalogRow = {
+  id: string;
+  name: string;
+  display_name?: string | null;
+  display_name_plural?: string | null;
+  serving_size?: string | null;
+  serving_unit?: string | null;
+  serving_qualifier?: string | null;
+  serving_amount?: number | null;
+  carbs_g: number;
+  protein_g: number;
+  fat_g: number;
+  sodium_mg: number;
+  fluid_ml: number;
+  calories: number;
+  max_servings_during?: number | null;
+  max_servings_after?: number | null;
+  min_servings_during?: number | null;
+  is_electrolyte?: boolean;
+  is_liquid?: boolean;
+  is_essential?: boolean;
+  is_indivisible?: boolean;
+  to_exclude_from_solver?: boolean;
+  product_type?: string | null;
+  categories?: string[];
+  activity_types?: string[] | null;
+  default_during?: boolean | null;
+  max_per_hr_low?: number | null;
+  max_per_hr_moderate?: number | null;
+  max_per_hr_high?: number | null;
+  min_increment?: number | null;
+  sodium_top_up_eligible?: boolean | null;
+  allergens?: string[] | null;
+  excluded_diets?: string[] | null;
+};
+
+/** Load and parse the committed dev catalog snapshot synchronously. */
+function loadCatalogSnapshot(): RawCatalogRow[] {
+  const snapshotPath = new URL(
+    './__fixtures__/dev-food-catalog.json',
+    import.meta.url,
+  ).pathname;
+  const raw = Deno.readTextFileSync(snapshotPath);
+  return JSON.parse(raw) as RawCatalogRow[];
+}
+
+/** Convert one raw catalog row to a Food object, using the same mapping as
+ *  template-food-queries.ts STEP 4 (template-food path, not user-food). */
+function rowToFood(row: RawCatalogRow, phase: 'during' | 'after'): Food {
+  const maxServings = phase === 'during'
+    ? (row.max_servings_during ?? 4)
+    : (row.max_servings_after ?? 4);
+  const minServings = row.min_servings_during ?? 1.0;
+  const prefScore = row.is_essential ? 50 : 20; // neutral baseline
+
+  return {
+    id: row.id,
+    name: row.name,
+    display_name: row.display_name ?? null,
+    display_name_plural: row.display_name_plural ?? null,
+    description: null, // dropped from snapshot
+    image_address: null, // dropped from snapshot
+    serving_size: row.serving_size ?? null,
+    serving_unit: row.serving_unit ?? null,
+    serving_qualifier: row.serving_qualifier ?? null,
+    serving_amount: row.serving_amount ?? null,
+    per_serving: {
+      carbs_g: row.carbs_g ?? 0,
+      protein_g: row.protein_g ?? 0,
+      fat_g: row.fat_g ?? 0,
+      sodium_mg: row.sodium_mg ?? 0,
+      water_ml: row.fluid_ml ?? 0,
+      calories: row.calories ?? 0,
+    },
+    min_servings: minServings,
+    max_servings: maxServings,
+    preference_score: prefScore,
+    is_electrolyte: row.is_electrolyte ?? false,
+    is_liquid: row.is_liquid ?? false,
+    is_essential: row.is_essential ?? false,
+    is_user_food: false,
+    is_indivisible: row.is_indivisible ?? false,
+    product_type: row.product_type ?? undefined,
+  };
+}
+
+/**
+ * Build the during-phase food pool from the real dev catalog.
+ *
+ * Mirrors the default running path in template-food-queries.ts:
+ *   - categories includes 'during_run'
+ *   - default_during=true OR is_essential=true (allowNonDefaultDuring=false)
+ *   - to_exclude_from_solver=false
+ *
+ * This is the default food pool for running during-phase, which excludes
+ * real/whole foods that are not default during foods (banana, dates, etc.)
+ * to match what a standard Mealvana user would see.
+ */
+export function makeRealDevDuringFoods(): Food[] {
+  const rows = loadCatalogSnapshot();
+  return rows
+    .filter(r =>
+      Array.isArray(r.categories) &&
+      r.categories.includes('during_run') &&
+      !r.to_exclude_from_solver &&
+      (r.default_during === true || r.is_essential === true)
+    )
+    .map(r => rowToFood(r, 'during'));
+}
+
+/**
+ * Build the extended during-phase food pool from the real dev catalog.
+ *
+ * Mirrors allowNonDefaultDuring=true: ALL during_run foods regardless of
+ * default_during flag. Includes real/whole foods like banana, dates, etc.
+ * Used when the user has liked/willing-to-try preferences or for cycling/bike.
+ */
+export function makeRealDevDuringFoodsExtended(): Food[] {
+  const rows = loadCatalogSnapshot();
+  return rows
+    .filter(r =>
+      Array.isArray(r.categories) &&
+      r.categories.includes('during_run') &&
+      !r.to_exclude_from_solver
+    )
+    .map(r => rowToFood(r, 'during'));
+}
+
+/**
+ * Build the after-phase food pool from the real dev catalog.
+ *
+ * Includes all foods with categories containing 'after_run',
+ * excluding to_exclude_from_solver=true.
+ */
+export function makeRealDevAfterFoods(): Food[] {
+  const rows = loadCatalogSnapshot();
+  return rows
+    .filter(r =>
+      Array.isArray(r.categories) &&
+      r.categories.includes('after_run') &&
+      !r.to_exclude_from_solver
+    )
+    .map(r => rowToFood(r, 'after'));
+}
+
+/**
+ * Build the during-phase food pool as FoodWithConstraints from the real dev
+ * catalog. Used by the template solver (parity.test.ts buildTemplateFoodPool).
+ *
+ * Includes ALL during_run foods (allowNonDefaultDuring=true equivalent)
+ * plus the FoodWithConstraints columns from the DB:
+ *   max_per_hr_low/moderate/high, min_increment, sodium_top_up_eligible.
+ */
+export function makeRealDevDuringFoodsWithConstraints(): Map<string, FoodWithConstraints> {
+  const rows = loadCatalogSnapshot();
+  const pool = new Map<string, FoodWithConstraints>();
+
+  const duringRows = rows.filter(r =>
+    Array.isArray(r.categories) &&
+    r.categories.includes('during_run') &&
+    !r.to_exclude_from_solver
+  );
+
+  for (const row of duringRows) {
+    const base = rowToFood(row, 'during');
+    const withConstraints: FoodWithConstraints = {
+      ...base,
+      max_per_hr_low: row.max_per_hr_low ?? null,
+      max_per_hr_moderate: row.max_per_hr_moderate ?? null,
+      max_per_hr_high: row.max_per_hr_high ?? null,
+      min_increment: row.min_increment ?? null,
+      sodium_top_up_eligible: row.sodium_top_up_eligible ?? null,
+    };
+    // Key by name (primary key used by template solver)
+    pool.set(row.name, withConstraints);
+    // Also key by id for lookup flexibility
+    pool.set(row.id, withConstraints);
+  }
+
+  return pool;
 }

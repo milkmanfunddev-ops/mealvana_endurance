@@ -1,248 +1,235 @@
 import 'dart:math' as math;
 
-/// Offline calculator for macro recommendations when edge function is unavailable
-/// Based on ISSN Position Stand recommendations for running nutrition
+/// Offline calculator for macro recommendations when edge function is unavailable.
+///
+/// Math mirrors the generate-macros-v4 Supabase edge function exactly:
+///   supabase/functions/generate-macros-v4/single-sport.ts
+///   supabase/functions/generate-macros-v4/pre-workout.ts
+///
+/// Hydration & sodium (lines below the HYDRATION section header) were already
+/// correct and are NOT changed by this update.
 class OfflineMacroCalculator {
-  static const double _lbToKg = 0.45359237;
   static const double _miToKm = 1.60934;
   static const double _mlToFlOz = 0.033814;
   static const double _mphToMPerMin = 26.8224;
 
-  /// Calculate macro recommendations offline based on ISSN research
-  static Map<String, dynamic> calculateMacros({
-    required double weight,
-    required String weightUnit,
-    required double height, 
-    required String heightUnit,
-    required double runDistance,
-    required String distanceUnit,
-    required String runPace, // Format: "MM:SS" or minutes as double
-    required String paceUnit,
-    required double timeBeforeRunMin,
+  // ============================================================================
+  // DURATION CARB BANDS (mirrors getDurationCarbBand in single-sport.ts)
+  // ============================================================================
+
+  /// Returns [baseLow, baseHigh] g/hr raw band for a given duration in minutes.
+  static List<int> getDurationCarbBand(double durationMin) {
+    if (durationMin < 60) return [0, 30];
+    if (durationMin < 90) return [30, 60];
+    if (durationMin < 150) return [45, 60];
+    if (durationMin < 240) return [60, 90];
+    return [80, 100];
+  }
+
+  /// Gut-training multiplier (mirrors getGutTrainingMultiplier).
+  static double getGutTrainingMultiplier(String gutTraining) {
+    switch (gutTraining) {
+      case 'low':
+        return 0.7;
+      case 'high':
+        return 1.2;
+      default:
+        return 1.0; // 'moderate' or unknown
+    }
+  }
+
+  /// Sport carb ceiling g/hr (mirrors getSportCarbCeiling).
+  static int getSportCarbCeiling(String activityType) {
+    switch (activityType) {
+      case 'running':
+        return 70;
+      case 'cycling':
+        return 120;
+      case 'swimming':
+        return 0;
+      default:
+        return 70;
+    }
+  }
+
+  /// Calculate during-workout carb rate (mirrors calculateDuringWorkoutCarbRate).
+  ///
+  /// Returns a map with keys matching the edge-function response shape:
+  ///   rate_gph, band_low, band_high, raw_band_low, raw_band_high,
+  ///   gut_multiplier, sport_ceiling.
+  static Map<String, dynamic> calculateDuringWorkoutCarbRate({
+    required double durationMin,
+    required String activityType,
     required String gutTraining,
-    required int age,
-    required String gender,
   }) {
-    // Convert to standard units
-    final weightKg = weightUnit == 'kg' ? weight : weight * _lbToKg;
-    final distanceMi = distanceUnit == 'mi' ? runDistance : runDistance / _miToKm;
-    final distanceKm = distanceMi * _miToKm;
-    
-    // Parse pace to minutes per mile
-    final paceMinPerMile = _parsePaceToMinPerMile(runPace, paceUnit);
-    
-    // Calculate run metrics
-    final durationMin = distanceMi * paceMinPerMile;
-    final durationH = durationMin / 60.0;
-    final speedMph = 60.0 / paceMinPerMile;
-    
-    // Calculate energy expenditure using ACSM formula
-    final met = _calculateMET(paceMinPerMile);
-    final caloriesNet = weightKg * distanceKm; // 1 kcal per kg per km
-    final caloriesGross = met * weightKg * durationH;
-    
-    // Pre-run nutrition calculations
-    final preRunMacros = _calculatePreRunMacros(
-      weightKg: weightKg,
-      timeBeforeH: timeBeforeRunMin / 60.0,
-    );
-    
-    // During-run nutrition calculations
-    final duringRunMacros = _calculateDuringRunMacros(
-      weightKg: weightKg,
-      durationH: durationH,
-      gutTraining: gutTraining,
-      met: met,
-    );
-    
-    // Post-run nutrition calculations
-    final postRunMacros = _calculatePostRunMacros(
-      weightKg: weightKg,
-      durationH: durationH,
-      duringWaterMl: (duringRunMacros['water_total_ml'] as num).toDouble(),
-    );
-    
+    final band = getDurationCarbBand(durationMin);
+    final baseLow = band[0].toDouble();
+    final baseHigh = band[1].toDouble();
+    final gutMult = getGutTrainingMultiplier(gutTraining);
+    final scaledLow = baseLow * gutMult;
+    final scaledHigh = baseHigh * gutMult;
+    final carbRate = (scaledLow + scaledHigh) / 2.0;
+    final sportCeiling = getSportCarbCeiling(activityType);
+    final finalRate = math.min(carbRate, sportCeiling.toDouble());
+
     return {
-      'success': true,
-      'macros': {
-        // Run metrics
-        'duration_min': durationMin,
-        'duration_h': durationH,
-        'pace_min_per_mile': paceMinPerMile,
-        'speed_mph': speedMph,
-        'distance_mi': distanceMi,
-        'distance_km': distanceKm,
-        'calories_net_kcal': caloriesNet.round(),
-        'calories_gross_kcal': caloriesGross.round(),
-        'MET': met,
-        
-        // Pre-run
-        'pre_run_carbs_g': preRunMacros['carbs_g'],
-        'pre_run_carbs_rule': preRunMacros['rule'],
-        'pre_run_protein_g_optional': preRunMacros['protein_g'],
-        'pre_run_fat_g_cap': preRunMacros['fat_cap_g'],
-        'pre_run_water_ml': preRunMacros['water_ml'],
-        'pre_run_sodium_mg': preRunMacros['sodium_mg'],
-        'pre_run_hydration_tier': preRunMacros['hydration_tier'],
-        
-        // During-run
-        'during_rate_g_per_h': duringRunMacros['carb_rate_g_h'],
-        'during_total_g': duringRunMacros['carb_total_g'],
-        'during_mass_norm_rate_g_per_h': duringRunMacros['mass_norm_rate'],
-        'during_abs_clamp_range_g_per_h': [30, 60],
-        'during_water_rate_ml_per_h': duringRunMacros['water_rate_ml_h'],
-        'during_water_total_ml': duringRunMacros['water_total_ml'],
-        'during_sodium_rate_mg_per_h': duringRunMacros['sodium_rate_mg_h'],
-        'during_sodium_total_mg': duringRunMacros['sodium_total_mg'],
-        
-        // Post-run
-        'post_run_carbs_g': postRunMacros['carbs_g'],
-        'post_run_protein_g': postRunMacros['protein_g'],
-        'post_run_water_ml': postRunMacros['water_ml'],
-        'post_run_sodium_mg': postRunMacros['sodium_mg'],
-      }
+      'rate_gph': (finalRate * 10).round() / 10.0,
+      'band_low': scaledLow.round(),
+      'band_high': scaledHigh.round(),
+      'raw_band_low': baseLow.round(),
+      'raw_band_high': baseHigh.round(),
+      'gut_multiplier': gutMult,
+      'sport_ceiling': sportCeiling,
     };
   }
-  
-  static double _parsePaceToMinPerMile(String pace, String unit) {
-    double minutes;
-    
-    if (pace.contains(':')) {
-      final parts = pace.split(':');
-      minutes = double.parse(parts[0]) + double.parse(parts[1]) / 60.0;
-    } else {
-      minutes = double.parse(pace);
-    }
-    
-    return unit == 'min_per_mile' ? minutes : minutes * _miToKm;
-  }
-  
-  static double _calculateMET(double paceMinPerMile) {
-    // ACSM running equation for level ground
-    final mph = 60.0 / paceMinPerMile;
-    final vMPerMin = mph * _mphToMPerMin;
-    final vo2 = 0.2 * vMPerMin + 3.5;
-    return vo2 / 3.5;
-  }
-  
-  static Map<String, dynamic> _calculatePreRunMacros({
+
+  // ============================================================================
+  // PRE-WORKOUT TARGETS (mirrors calculatePreWorkoutTargets in pre-workout.ts)
+  // ============================================================================
+
+  /// Calculate pre-workout macro targets with low/high ranges.
+  ///
+  /// Algorithm C (V4):
+  ///   - fasted  → all zeros, meal_type='fasted'
+  ///   - carbs   = max(0.5, min(hoursBefore, 4.0)) g/kg, ±12.5% band
+  ///   - full_meal  (≥2.5h): protein=0.25g/kg [0.15–0.35], fat=0.4g/kg
+  ///   - snack      (1–2.5h): protein=0.15g/kg [0–0.25], fat=5g
+  ///   - top_up     (<1h):    protein=0 [0–10g], fat=0
+  static Map<String, dynamic> calculatePreWorkoutTargets({
     required double weightKg,
-    required double timeBeforeH,
+    required double hoursBefore,
+    required bool isFasted,
+    String sweatSodiumCat = 'average',
+    String envLabel = 'normal',
   }) {
-    double carbsG;
-    String rule;
-    
-    // ISSN recommendations based on timing
-    if (timeBeforeH >= 4.0) {
-      carbsG = 4.0 * weightKg;
-      rule = '4 g/kg (4+ hours before)';
-    } else if (timeBeforeH >= 3.0) {
-      carbsG = 3.0 * weightKg;
-      rule = '3 g/kg (3 hours before)';
-    } else if (timeBeforeH >= 2.0) {
-      carbsG = 2.0 * weightKg;
-      rule = '2 g/kg (2 hours before)';
-    } else if (timeBeforeH >= 1.0) {
-      carbsG = 1.0 * weightKg;
-      rule = '1 g/kg (1 hour before)';
-    } else if (timeBeforeH >= 0.25) {
-      carbsG = 0.5 * weightKg;
-      rule = '0.5 g/kg (15-60 min window)';
-    } else {
-      carbsG = 0.25 * weightKg;
-      rule = '<15 min → 0.25 g/kg top-up';
+    if (isFasted) {
+      return {
+        'carbs_g': 0,
+        'carbs_low_g': 0,
+        'carbs_high_g': 0,
+        'protein_g': 0,
+        'protein_low_g': 0,
+        'protein_high_g': 0,
+        'fat_g': 0,
+        'sodium_mg': 0,
+        'sodium_low_mg': 0,
+        'sodium_high_mg': 0,
+        'water_ml': 0,
+        'water_low_ml': 0,
+        'water_high_ml': 0,
+        'meal_type': 'fasted',
+      };
     }
-    
-    // Other macros based on ISSN guidelines
-    final proteinG = 0.2 * weightKg; // Optional pre-run protein
-    final fatCapG = timeBeforeH > 2.0 ? 0.2 * weightKg : 0.1 * weightKg;
-    
-    // Hydration: 5-7 ml/kg
-    final waterMl = timeBeforeH >= 2.0 
-        ? (6.0 * weightKg).round()
-        : timeBeforeH >= 1.0
-            ? (5.0 * weightKg).round()
-            : (3.0 * weightKg).round();
-    
-    // Sodium
-    final sodiumMg = timeBeforeH >= 2.0 ? 400 : 200;
 
-    // Hydration tier mirrors edge-function semantics so UI explanation can
-    // branch on tier instead of inferring from fluid magnitude:
-    //   tier 1: >= 2 h before (body-weight scaled)
-    //   tier 2: 10 min - 2 h before (fixed top-up)
-    //   tier 3: < 10 min before
-    final int hydrationTier = timeBeforeH >= 2.0
-        ? 1
-        : timeBeforeH >= (10.0 / 60.0)
-            ? 2
-            : 3;
+    // Carbs: 1 g/kg per hour, capped at 4h, floor 0.5
+    final carbPerKg = math.max(0.5, math.min(hoursBefore, 4.0));
+    final carbs = (weightKg * carbPerKg).round();
+    final carbsLow = (carbs * 0.875).round();
+    final carbsHigh = (carbs * 1.125).round();
+
+    // Sodium base by sweat category
+    final baseSodium = sweatSodiumCat == 'low'
+        ? 300
+        : sweatSodiumCat == 'medium'
+            ? 450
+            : 600;
+    final envBump = (envLabel == 'hot' || envLabel == 'very_hot') ? 100 : 0;
+    final mealSodium = baseSodium + envBump;
+    final snackSodium = ((baseSodium + envBump) * 0.5).round();
+    final topUpSodium = envBump + 100;
+
+    int protein;
+    int proteinLow;
+    int proteinHigh;
+    int fat;
+    int sodium;
+    int sodiumLow;
+    int sodiumHigh;
+    int hydration;
+    int hydrationLow;
+    int hydrationHigh;
+    String mealType;
+
+    if (hoursBefore >= 2.5) {
+      // Full meal
+      protein = (weightKg * 0.25).round();
+      proteinLow = (weightKg * 0.15).round();
+      proteinHigh = (weightKg * 0.35).round();
+      fat = (weightKg * 0.4).round();
+      sodium = mealSodium + snackSodium + topUpSodium;
+      hydration = (weightKg * 6.5).round();
+      mealType = 'full_meal';
+      sodiumLow = 200;
+      sodiumHigh = 2000;
+      hydrationLow = math.max(200, (hydration * 0.50).round());
+      hydrationHigh = math.max(600, (hydration * 1.50).round());
+    } else if (hoursBefore >= 1.0) {
+      // Snack
+      protein = (weightKg * 0.15).round();
+      proteinLow = 0;
+      proteinHigh = (weightKg * 0.25).round();
+      fat = 5;
+      sodium = snackSodium + topUpSodium;
+      hydration = (weightKg * 5.5).round();
+      mealType = 'snack';
+      sodiumLow = 100;
+      sodiumHigh = 1000;
+      hydrationLow = math.max(150, (hydration * 0.50).round());
+      hydrationHigh = math.max(500, (hydration * 1.50).round());
+    } else {
+      // Top-up
+      protein = 0;
+      proteinLow = 0;
+      proteinHigh = 10;
+      fat = 0;
+      sodium = topUpSodium;
+      hydration = 250;
+      mealType = 'top_up';
+      sodiumLow = 0;
+      sodiumHigh = 400;
+      hydrationLow = 0;
+      hydrationHigh = 500;
+    }
 
     return {
-      'carbs_g': carbsG.round(),
-      'rule': rule,
-      'protein_g': proteinG.round(),
-      'fat_cap_g': (fatCapG * 10).round() / 10,
-      'water_ml': waterMl,
-      'sodium_mg': sodiumMg,
-      'hydration_tier': hydrationTier,
+      'carbs_g': carbs,
+      'carbs_low_g': carbsLow,
+      'carbs_high_g': carbsHigh,
+      'protein_g': protein,
+      'protein_low_g': proteinLow,
+      'protein_high_g': proteinHigh,
+      'fat_g': fat,
+      'sodium_mg': sodium,
+      'sodium_low_mg': sodiumLow,
+      'sodium_high_mg': sodiumHigh,
+      'water_ml': hydration,
+      'water_low_ml': hydrationLow,
+      'water_high_ml': hydrationHigh,
+      'meal_type': mealType,
     };
   }
-  
-  static Map<String, dynamic> _calculateDuringRunMacros({
+
+  // ============================================================================
+  // POST-WORKOUT (mirrors post-workout functions in single-sport.ts)
+  // ============================================================================
+
+  /// Post-workout carbs (mirrors calculatePostWorkoutCarbs).
+  static int calculatePostWorkoutCarbs({
     required double weightKg,
     required double durationH,
-    required String gutTraining,
-    required double met,
+    required bool isFasted,
   }) {
-    // Gut training affects carb absorption capacity
-    final gutRate = {
-      'low': 0.7,
-      'moderate': 1.0,
-      'high': 1.2,
-    }[gutTraining] ?? 1.0;
-    
-    // ISSN: 30-60g/h for runs >2.5h, scaled by gut training
-    final massNormRate = gutRate * weightKg;
-    final carbRateGH = _clamp(massNormRate, 30, 60);
-    final carbTotalG = carbRateGH * durationH;
-    
-    // Hydration based on duration and intensity (ISSN: 450-750 ml/h)
-    double waterRateMlH;
-    if (durationH <= 1.0) {
-      waterRateMlH = 400; // Lower for shorter runs
-    } else if (met >= 8.0) {
-      waterRateMlH = 750; // Higher for intense efforts
-    } else if (met >= 6.0) {
-      waterRateMlH = 600;
-    } else {
-      waterRateMlH = 500;
-    }
-    
-    // Sodium: 500-700 mg/L for runs >1h
-    final sodiumRateMgH = durationH <= 1.0 ? 0 : 250;
-    
-    return {
-      'carb_rate_g_h': (carbRateGH * 10).round() / 10,
-      'carb_total_g': carbTotalG.round(),
-      'mass_norm_rate': (massNormRate * 10).round() / 10,
-      'water_rate_ml_h': waterRateMlH.round(),
-      'water_total_ml': (waterRateMlH * durationH).round(),
-      'sodium_rate_mg_h': sodiumRateMgH,
-      'sodium_total_mg': (sodiumRateMgH * durationH).round(),
-    };
+    final durationMultiplier = durationH > 2 ? 1.2 : 1.0;
+    final fastedMultiplier = isFasted ? 1.2 : 1.0;
+    return (weightKg * durationMultiplier * fastedMultiplier).round();
   }
-  
-  static Map<String, dynamic> _calculatePostRunMacros({
+
+  /// Post-workout protein (mirrors calculatePostWorkoutProtein).
+  static int calculatePostWorkoutProtein({
     required double weightKg,
     required double durationH,
-    required double duringWaterMl,
+    required bool isFasted,
   }) {
-    // ISSN recommendations for recovery
-    final carbsG = _clamp(weightKg * 1.0, 30, 140);
-
-    // Duration-tiered protein: shorter workouts need less, longer need more
-    // Clamped to 20–40g (evidence-based range)
     double proteinPerKg;
     if (durationH <= 0.75) {
       proteinPerKg = 0.25;
@@ -253,26 +240,532 @@ class OfflineMacroCalculator {
     } else {
       proteinPerKg = 0.40;
     }
-    final proteinG = _clamp(weightKg * proteinPerKg, 20, 40);
-    
-    // 150% of fluid lost (estimated from during-run needs)
-    final waterMl = _clamp(duringWaterMl * 1.5, 500, 1200);
-    
-    // Fixed sodium for recovery
-    final sodiumMg = 500;
-    
+    if (isFasted) proteinPerKg += 0.05;
+    return math.min(40, math.max(20, (weightKg * proteinPerKg).round()));
+  }
+
+  /// Post-workout fat (mirrors calculatePostWorkoutFat).
+  static int calculatePostWorkoutFat(double weightKg) {
+    return (weightKg * 0.2).round();
+  }
+
+  /// Post-workout hydration (mirrors calculatePostWorkoutHydration).
+  ///
+  /// Returns {sodium_mg, hydration_ml}.
+  static Map<String, int> calculatePostWorkoutHydration({
+    required double durationH,
+    required double actualSweatRateLph,
+    required int sodiumConcMgPerL,
+    required int duringHydrationMl,
+  }) {
+    final totalSodiumLossMg = actualSweatRateLph * sodiumConcMgPerL * durationH;
+    final duringSodiumMg =
+        (actualSweatRateLph * sodiumConcMgPerL * 0.6 * durationH).round();
+    final sodiumDeficitMg = totalSodiumLossMg - duringSodiumMg;
+    final postSodiumMg =
+        math.max(300, math.min(700, (sodiumDeficitMg * 0.5).round()));
+    final totalHydrationLossMl = actualSweatRateLph * 1000.0 * durationH;
+    final hydrationDeficitMl = totalHydrationLossMl - duringHydrationMl;
+    final postHydrationMl =
+        math.max(500, (hydrationDeficitMl * 1.5).round());
+
     return {
-      'carbs_g': carbsG.round(),
-      'protein_g': proteinG.round(),
-      'water_ml': waterMl.round(),
-      'sodium_mg': sodiumMg,
+      'sodium_mg': postSodiumMg,
+      'hydration_ml': postHydrationMl,
     };
   }
-  
+
+  // ============================================================================
+  // MET & ENERGY (mirrors MET/energy functions in single-sport.ts)
+  // ============================================================================
+
+  /// Running MET from pace in min/mile (mirrors runningMETFromPace).
+  static double runningMETFromPace(double paceMinPerMile) {
+    final speedMph = 60.0 / paceMinPerMile;
+    final speedMPerMin = speedMph * _mphToMPerMin;
+    final vo2 = speedMph >= 4.0
+        ? 0.2 * speedMPerMin + 3.5
+        : 0.1 * speedMPerMin + 3.5;
+    return vo2 / 3.5;
+  }
+
+  /// Cycling MET from speed (mirrors cyclingMETFromSpeed).
+  static double cyclingMETFromSpeed(double speedKph, String terrain) {
+    double met;
+    if (speedKph <= 16) {
+      met = 6.0;
+    } else if (speedKph <= 19) {
+      met = 8.0;
+    } else if (speedKph <= 22) {
+      met = 10.0;
+    } else if (speedKph <= 25) {
+      met = 12.0;
+    } else if (speedKph <= 30) {
+      met = 14.0;
+    } else {
+      met = 16.0;
+    }
+    if (terrain == 'rolling') {
+      met *= 1.1;
+    } else if (terrain == 'hilly') {
+      met *= 1.25;
+    }
+    return met;
+  }
+
+  /// Swimming MET from pace (mirrors swimmingMETFromPace).
+  static double swimmingMETFromPace({
+    required double pacePer100m,
+    required String poolOrOpenWater,
+    required double waterTempC,
+  }) {
+    double met;
+    if (pacePer100m >= 180) {
+      met = 6.0;
+    } else if (pacePer100m >= 150) {
+      met = 8.0;
+    } else if (pacePer100m >= 120) {
+      met = 10.0;
+    } else if (pacePer100m >= 90) {
+      met = 11.0;
+    } else {
+      met = 13.0;
+    }
+    if (poolOrOpenWater == 'open_water') met *= 1.15;
+    if (waterTempC < 20) {
+      met *= 1.1;
+    } else if (waterTempC > 28) {
+      met *= 0.95;
+    }
+    return met;
+  }
+
+  /// Gross calories (mirrors calculateGrossCalories).
+  static int calculateGrossCalories({
+    required double weightKg,
+    required double durationMin,
+    required double met,
+  }) {
+    return (met * 3.5 * weightKg / 200.0 * durationMin).round();
+  }
+
+  /// Net calories (mirrors calculateNetCalories).
+  static int calculateNetCalories({
+    required String activityType,
+    required double weightKg,
+    required double distanceKm,
+    double? speedKph,
+  }) {
+    if (activityType == 'running') {
+      return (1.0 * weightKg * distanceKm).round();
+    } else if (activityType == 'cycling') {
+      final speed = speedKph ?? 25.0;
+      double costPerKgKm;
+      if (speed <= 20) {
+        costPerKgKm = 0.3;
+      } else if (speed <= 25) {
+        costPerKgKm = 0.35;
+      } else if (speed <= 30) {
+        costPerKgKm = 0.4;
+      } else {
+        costPerKgKm = 0.5;
+      }
+      return (weightKg * distanceKm * costPerKgKm).round();
+    } else if (activityType == 'swimming') {
+      return (3.5 * weightKg * distanceKm).round();
+    }
+    return (1.0 * weightKg * distanceKm).round();
+  }
+
+  // ============================================================================
+  // SPORT ENTRY POINTS — produce a Map<String, dynamic> matching the edge
+  // function's `macros` response object so _parseMacroTargets() can parse it
+  // without modification.
+  // ============================================================================
+
+  /// Backward-compatible entry point used by the legacy [MacroRepository]
+  /// offline path. Parses the string/unit inputs and delegates to the
+  /// server-parity [calculateRunningMacros], returning the legacy
+  /// `{success, macros}` envelope.
+  static Map<String, dynamic> calculateMacros({
+    required double weight,
+    required String weightUnit,
+    required double height, // kept for API compatibility (unused)
+    required String heightUnit, // kept for API compatibility (unused)
+    required double runDistance,
+    required String distanceUnit,
+    required String runPace,
+    required String paceUnit,
+    required double timeBeforeRunMin,
+    required String gutTraining,
+    required int age, // kept for API compatibility (unused)
+    required String gender, // kept for API compatibility (unused)
+    bool isFasted = false,
+  }) {
+    final weightKg =
+        weightUnit.toLowerCase() == 'kg' ? weight : weight * 0.45359237;
+    final distanceMiles = distanceUnit.toLowerCase().startsWith('k')
+        ? runDistance / _miToKm
+        : runDistance;
+    final paceMinPerMile = _parsePaceToMinPerMile(runPace, paceUnit);
+    final macros = calculateRunningMacros(
+      weightKg: weightKg,
+      distanceMiles: distanceMiles,
+      paceMinPerMile: paceMinPerMile,
+      hoursBefore: timeBeforeRunMin / 60.0,
+      isFasted: isFasted,
+      gutTraining: gutTraining,
+    );
+    return {'success': true, 'macros': macros};
+  }
+
+  /// Parse a pace string (`"MM:SS"` or decimal minutes) plus its unit into
+  /// minutes-per-mile.
+  static double _parsePaceToMinPerMile(String pace, String unit) {
+    double minutes;
+    if (pace.contains(':')) {
+      final parts = pace.split(':');
+      minutes = (double.tryParse(parts[0].trim()) ?? 0) +
+          (double.tryParse(parts.length > 1 ? parts[1].trim() : '0') ?? 0) /
+              60.0;
+    } else {
+      minutes = double.tryParse(pace.trim()) ?? 0;
+    }
+    // min/km → min/mile
+    if (unit.toLowerCase().contains('km')) minutes *= _miToKm;
+    return minutes;
+  }
+
+  /// Offline fallback for running macro calculation.
+  static Map<String, dynamic> calculateRunningMacros({
+    required double weightKg,
+    required double distanceMiles,
+    required double paceMinPerMile,
+    required double hoursBefore,
+    required bool isFasted,
+    required String gutTraining,
+    String sweatRateCategory = 'medium',
+    String sweatSodiumCat = 'average',
+    double? tempC,
+    double? humidityPct,
+    bool isIndoor = false,
+    double? knownSweatRateMlPerHour,
+    double? knownSodiumConcMgPerL,
+  }) {
+    const activityType = 'running';
+    final distanceKm = distanceMiles * _miToKm;
+    final durationMin = distanceMiles * paceMinPerMile;
+    final durationH = durationMin / 60.0;
+    final speedKph = (60.0 / paceMinPerMile) * _miToKm;
+    final met = runningMETFromPace(paceMinPerMile);
+
+    return _buildMacrosMap(
+      activityType: activityType,
+      weightKg: weightKg,
+      distanceKm: distanceKm,
+      durationMin: durationMin,
+      durationH: durationH,
+      met: met,
+      speedKph: speedKph,
+      hoursBefore: hoursBefore,
+      isFasted: isFasted,
+      gutTraining: gutTraining,
+      sweatRateCategory: sweatRateCategory,
+      sweatSodiumCat: sweatSodiumCat,
+      tempC: tempC,
+      humidityPct: humidityPct,
+      isIndoor: isIndoor,
+      knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+      knownSodiumConcMgPerL: knownSodiumConcMgPerL,
+    );
+  }
+
+  /// Offline fallback for cycling macro calculation.
+  static Map<String, dynamic> calculateCyclingMacros({
+    required double weightKg,
+    required double distanceMiles,
+    required double speedMph,
+    required String terrain,
+    required double hoursBefore,
+    required bool isFasted,
+    required String gutTraining,
+    String sweatRateCategory = 'medium',
+    String sweatSodiumCat = 'average',
+    double? tempC,
+    double? humidityPct,
+    bool isIndoor = false,
+    double? knownSweatRateMlPerHour,
+    double? knownSodiumConcMgPerL,
+  }) {
+    const activityType = 'cycling';
+    final distanceKm = distanceMiles * _miToKm;
+    final speedKph = speedMph * _miToKm;
+    final durationMin = (distanceMiles / speedMph) * 60.0;
+    final durationH = durationMin / 60.0;
+    final met = cyclingMETFromSpeed(speedKph, terrain);
+
+    return _buildMacrosMap(
+      activityType: activityType,
+      weightKg: weightKg,
+      distanceKm: distanceKm,
+      durationMin: durationMin,
+      durationH: durationH,
+      met: met,
+      speedKph: speedKph,
+      hoursBefore: hoursBefore,
+      isFasted: isFasted,
+      gutTraining: gutTraining,
+      sweatRateCategory: sweatRateCategory,
+      sweatSodiumCat: sweatSodiumCat,
+      tempC: tempC,
+      humidityPct: humidityPct,
+      isIndoor: isIndoor,
+      knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+      knownSodiumConcMgPerL: knownSodiumConcMgPerL,
+    );
+  }
+
+  /// Offline fallback for swimming macro calculation.
+  static Map<String, dynamic> calculateSwimmingMacros({
+    required double weightKg,
+    required int distanceMeters,
+    required int paceSecondsper100m,
+    required String poolOrOpenWater,
+    required double hoursBefore,
+    String sweatRateCategory = 'medium',
+    String sweatSodiumCat = 'average',
+    double waterTempC = 26.0,
+    double? knownSweatRateMlPerHour,
+    double? knownSodiumConcMgPerL,
+  }) {
+    const activityType = 'swimming';
+    final distanceKm = distanceMeters / 1000.0;
+    final durationMin =
+        (distanceMeters / 100.0) * paceSecondsper100m / 60.0;
+    final durationH = durationMin / 60.0;
+    final met = swimmingMETFromPace(
+      pacePer100m: paceSecondsper100m.toDouble(),
+      poolOrOpenWater: poolOrOpenWater,
+      waterTempC: waterTempC,
+    );
+    // Pool = indoor for sweat-rate purposes
+    final isIndoor = poolOrOpenWater == 'pool';
+
+    return _buildMacrosMap(
+      activityType: activityType,
+      weightKg: weightKg,
+      distanceKm: distanceKm,
+      durationMin: durationMin,
+      durationH: durationH,
+      met: met,
+      speedKph: null,
+      // Swimming doesn't support fasted in the service, always false
+      hoursBefore: hoursBefore,
+      isFasted: false,
+      gutTraining: 'moderate',
+      sweatRateCategory: sweatRateCategory,
+      sweatSodiumCat: sweatSodiumCat,
+      tempC: null,
+      humidityPct: null,
+      isIndoor: isIndoor,
+      knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+      knownSodiumConcMgPerL: knownSodiumConcMgPerL,
+    );
+  }
+
+  // ============================================================================
+  // SHARED BUILD HELPER
+  // ============================================================================
+
+  static Map<String, dynamic> _buildMacrosMap({
+    required String activityType,
+    required double weightKg,
+    required double distanceKm,
+    required double durationMin,
+    required double durationH,
+    required double met,
+    required double? speedKph,
+    required double hoursBefore,
+    required bool isFasted,
+    required String gutTraining,
+    required String sweatRateCategory,
+    required String sweatSodiumCat,
+    required double? tempC,
+    required double? humidityPct,
+    required bool isIndoor,
+    required double? knownSweatRateMlPerHour,
+    required double? knownSodiumConcMgPerL,
+  }) {
+    // Pre-workout targets
+    final pre = calculatePreWorkoutTargets(
+      weightKg: weightKg,
+      hoursBefore: hoursBefore,
+      isFasted: isFasted,
+      sweatSodiumCat: sweatSodiumCat,
+    );
+
+    // During-workout carbs
+    final duringCarbs = calculateDuringWorkoutCarbRate(
+      durationMin: durationMin,
+      activityType: activityType,
+      gutTraining: gutTraining,
+    );
+    final duringCarbRate =
+        (duringCarbs['rate_gph'] as num).toDouble();
+    final duringCarbTotal = (duringCarbRate * durationH).round();
+
+    // During-workout hydration
+    final duringHydration = calculateDuringWorkoutHydration(
+      durationMin: durationMin,
+      weightKg: weightKg,
+      sweatRateCategory: sweatRateCategory,
+      sweatSodiumCat: sweatSodiumCat,
+      tempC: tempC,
+      humidityPct: humidityPct,
+      isIndoor: isIndoor,
+      sport: activityType,
+      knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+      knownSodiumConcMgPerL: knownSodiumConcMgPerL,
+    );
+
+    // Post-workout
+    final postCarbs = calculatePostWorkoutCarbs(
+      weightKg: weightKg,
+      durationH: durationH,
+      isFasted: isFasted,
+    );
+    final postProtein = calculatePostWorkoutProtein(
+      weightKg: weightKg,
+      durationH: durationH,
+      isFasted: isFasted,
+    );
+    final postFat = calculatePostWorkoutFat(weightKg);
+    final postHydration = calculatePostWorkoutHydration(
+      durationH: durationH,
+      actualSweatRateLph: duringHydration.sweatRateLph,
+      sodiumConcMgPerL: duringHydration.sodiumConcMgPerL,
+      duringHydrationMl: duringHydration.hydrationTotalMl,
+    );
+
+    // Energy
+    final caloriesGross = calculateGrossCalories(
+      weightKg: weightKg,
+      durationMin: durationMin,
+      met: met,
+    );
+    final caloriesNet = calculateNetCalories(
+      activityType: activityType,
+      weightKg: weightKg,
+      distanceKm: distanceKm,
+      speedKph: speedKph,
+    );
+
+    // Low/high bands
+    final bandLow = duringCarbs['band_low'] as int;
+    final bandHigh = duringCarbs['band_high'] as int;
+    final postCarbsLow = (postCarbs * 0.8).round();
+    final postCarbsHigh = (postCarbs * 1.2).round();
+    final postProteinLow = (postProtein * 0.8).round();
+    final postProteinHigh = (postProtein * 1.2).round();
+    final postSodium = postHydration['sodium_mg']!;
+    final postSodiumLow = (postSodium * 0.7).round();
+    final postSodiumHigh = (postSodium * 1.3).round();
+    final postWater = postHydration['hydration_ml']!;
+    final postWaterLow = (postWater * 0.8).round();
+    final postWaterHigh = (postWater * 1.2).round();
+
+    final durSodiumRate = duringHydration.sodiumRateMgph;
+    final durSodium = (durSodiumRate * durationH).round();
+    final durWaterRate = duringHydration.hydrationRateMlph;
+    final durWater = (durWaterRate * durationH).round();
+
+    final massNormRate = weightKg > 0
+        ? (duringCarbRate / weightKg * 100).round() / 100.0
+        : 0.0;
+
+    return {
+      'success': true,
+      'algorithm_version': 'v4_offline',
+      'activity_type': activityType,
+      // Duration & distance
+      'duration_min': (durationMin * 100).round() / 100.0,
+      'duration_h': (durationH * 10000).round() / 10000.0,
+      'distance_km': (distanceKm * 1000).round() / 1000.0,
+      // Energy
+      'calories_gross_kcal': caloriesGross,
+      'calories_net_kcal': caloriesNet,
+      'MET': (met * 100).round() / 100.0,
+      // Pre-workout
+      'pre_run_carbs_g': pre['carbs_g'],
+      'pre_run_carbs_low_g': pre['carbs_low_g'],
+      'pre_run_carbs_high_g': pre['carbs_high_g'],
+      'pre_run_protein_g': pre['protein_g'],
+      'pre_run_protein_low_g': pre['protein_low_g'],
+      'pre_run_protein_high_g': pre['protein_high_g'],
+      'pre_run_fat_g': pre['fat_g'],
+      'pre_run_sodium_mg': pre['sodium_mg'],
+      'pre_run_sodium_low_mg': pre['sodium_low_mg'],
+      'pre_run_sodium_high_mg': pre['sodium_high_mg'],
+      'pre_run_water_ml': pre['water_ml'],
+      'pre_run_water_low_ml': pre['water_low_ml'],
+      'pre_run_water_high_ml': pre['water_high_ml'],
+      'pre_run_meal_type': pre['meal_type'],
+      'pre_run_carbs_rule': 'offline_fallback',
+      'pre_run_hydration_tier': null,
+      'pre_run_selections': null,
+      // During-workout
+      'during_rate_g_per_h': duringCarbRate,
+      'during_total_g': duringCarbTotal,
+      'during_band_low_g_per_h': bandLow,
+      'during_band_high_g_per_h': bandHigh,
+      'during_raw_band_low_g_per_h': duringCarbs['raw_band_low'],
+      'during_raw_band_high_g_per_h': duringCarbs['raw_band_high'],
+      'during_gut_multiplier': duringCarbs['gut_multiplier'],
+      'during_sport_ceiling_g_per_h': duringCarbs['sport_ceiling'],
+      'during_sodium_rate_mg_per_h': durSodiumRate,
+      'during_sodium_total_mg': durSodium,
+      'during_sodium_low_mg': (durSodium * 0.8).round(),
+      'during_sodium_high_mg': (durSodium * 1.2).round(),
+      'during_water_rate_ml_per_h': durWaterRate,
+      'during_water_total_ml': durWater,
+      'during_water_low_ml': (durWater * 0.85).round(),
+      'during_water_high_ml': (durWater * 1.15).round(),
+      'during_mass_norm_rate_g_per_h': massNormRate,
+      'during_abs_clamp_range_g_per_h': [bandLow, bandHigh],
+      // Post-workout
+      'post_run_carbs_g': postCarbs,
+      'post_run_carbs_low_g': postCarbsLow,
+      'post_run_carbs_high_g': postCarbsHigh,
+      'post_run_protein_g': postProtein,
+      'post_run_protein_low_g': postProteinLow,
+      'post_run_protein_high_g': postProteinHigh,
+      'post_run_fat_g': postFat,
+      'post_run_sodium_mg': postSodium,
+      'post_run_sodium_low_mg': postSodiumLow,
+      'post_run_sodium_high_mg': postSodiumHigh,
+      'post_run_water_ml': postWater,
+      'post_run_water_low_ml': postWaterLow,
+      'post_run_water_high_ml': postWaterHigh,
+      // Hydration detail
+      'sweat_rate_lph': duringHydration.sweatRateLph,
+      'sodium_conc_mg_per_l': duringHydration.sodiumConcMgPerL,
+      'effective_sweat_rate_lph': duringHydration.effectiveSweatRateLph,
+      'replacement_pct': duringHydration.replacementPct,
+      'floor_ml_hr': duringHydration.floorMlHr,
+      'ceiling_ml_hr': duringHydration.ceilingMlHr,
+      'safety_flags': duringHydration.safetyFlags,
+      'is_tested': duringHydration.isTested,
+      'is_tested_sodium': false,
+      'temp_c': tempC,
+      'humidity_pct': humidityPct,
+      'is_indoor': isIndoor,
+    };
+  }
+
   static double _clamp(double value, double min, double max) {
     return math.max(min, math.min(max, value));
   }
-  
+
   /// Convert ml to fl oz for display
   static double mlToFlOz(double ml) => ml * _mlToFlOz;
 

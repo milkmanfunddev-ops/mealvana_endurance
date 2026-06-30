@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/coach_insight.dart';
 
@@ -112,6 +113,8 @@ class AiCoachClient {
       );
     } on AiCoachException {
       rethrow;
+    } on InsufficientCreditsException {
+      rethrow;
     } on SocketException catch (e) {
       throw AiCoachException(
         kind: AiCoachFailureKind.offline,
@@ -120,6 +123,24 @@ class AiCoachClient {
       );
     } on FunctionException catch (e) {
       if (kDebugMode) debugPrint('[AiCoachClient] FunctionException: $e');
+
+      // HTTP 402 → the user has run out of AI credits.
+      // Parse the structured error body and throw a typed exception so the
+      // presentation layer can route the user to the buy-credits paywall.
+      if (e.status == 402) {
+        final body = e.details;
+        final map = body is Map<String, dynamic> ? body : <String, dynamic>{};
+        if (map['error'] == 'insufficient_credits') {
+          throw InsufficientCreditsException.fromMap(map);
+        }
+        // Malformed 402 — still treat as credits error with safe defaults.
+        throw InsufficientCreditsException(
+          balance: (map['balance'] as num?)?.toInt() ?? 0,
+          cost: (map['cost'] as num?)?.toInt() ?? 0,
+          message: (map['message'] as String?) ?? 'Not enough AI credits.',
+        );
+      }
+
       throw AiCoachException(
         kind: AiCoachFailureKind.serverError,
         userMessage: 'Coach insight is unavailable right now. Please try again.',

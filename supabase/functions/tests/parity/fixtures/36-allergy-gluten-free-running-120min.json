@@ -1,0 +1,34 @@
+{
+  "description": "Gluten-free allergy — running 120 min, moderate gut. Allergy filtering should exclude gluten-containing bars/waffles from the catalog. Rule solver on filtered catalog.",
+  "solver": "rule",
+  "athlete": {
+    "weight_kg": 68,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 60,
+      "sodium_mg": 900,
+      "water_ml": 1000
+    },
+    "post_run": {
+      "carbs_g": 60,
+      "protein_g": 26,
+      "sodium_mg": 700,
+      "water_ml": 800
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": ["Stroopwafel", "Energy Bar"],
+    "allergies": ["gluten"],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

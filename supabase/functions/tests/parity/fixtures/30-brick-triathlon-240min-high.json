@@ -1,0 +1,43 @@
+{
+  "description": "Brick/triathlon 240 min — high gut, long-course race. Tests template solver with gel+sports-drink running template for the triathlon run segment.",
+  "solver": "template",
+  "athlete": {
+    "weight_kg": 80,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "triathlon",
+    "duration_minutes": 240,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 120,
+      "sodium_mg": 1600,
+      "water_ml": 2000
+    },
+    "post_run": {
+      "carbs_g": 90,
+      "protein_g": 38,
+      "sodium_mg": 1200,
+      "water_ml": 1500
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null,
+  "templateFixture": {
+    "template_number": 2,
+    "name": "Gel + Sports Drink + Water",
+    "activity_types": ["running", "triathlon"],
+    "duration_brackets": ["150-240 min", "> 240 min"],
+    "gut_training_levels": ["moderate", "high"],
+    "component_food_names": ["energy_gel", "water", "sports_drink"],
+    "component_carb_ratios": { "energy_gel": 0.7, "sports_drink": 0.3 }
+  }
+}

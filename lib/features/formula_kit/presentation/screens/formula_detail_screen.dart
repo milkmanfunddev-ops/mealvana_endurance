@@ -45,14 +45,35 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
   Widget build(BuildContext context) {
     final asyncState = ref.watch(formulaLibraryControllerProvider);
 
+    // Only fire the analytics event once, and only when we have confirmed data
+    // with a matching formula. Guard against the not-found path to avoid
+    // logging a formula_detail_viewed event for a non-existent template.
     if (!_trackedView) {
-      _trackedView = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(formulaLibraryControllerProvider.notifier).trackDetailViewed(
-              templateId: widget.id,
-              phase: widget.phase,
-              isPersonal: false,
-            );
+      asyncState.whenData((state) {
+        final found = switch (widget.phase) {
+          FormulaPhase.before => state.beforeFormulas
+              .cast<BeforeFormulaView?>()
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
+          FormulaPhase.during => state.duringFormulas
+              .cast<DuringFormulaView?>()
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
+          FormulaPhase.after => state.afterFormulas
+              .cast<AfterFormulaView?>()
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
+        };
+        if (found != null) {
+          _trackedView = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ref
+                .read(formulaLibraryControllerProvider.notifier)
+                .trackDetailViewed(
+                  templateId: widget.id,
+                  phase: widget.phase,
+                  isPersonal: false,
+                );
+          });
+        }
       });
     }
 
@@ -119,7 +140,7 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
                 (f) => f?.id == widget.id,
                 orElse: () => null,
               );
-          if (beforeFormula != null) title = beforeFormula!.name;
+          title = beforeFormula != null ? beforeFormula!.name : 'Not found';
         case FormulaPhase.during:
           duringFormula = state.duringFormulas
               .cast<DuringFormulaView?>()
@@ -127,7 +148,7 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
                 (f) => f?.id == widget.id,
                 orElse: () => null,
               );
-          if (duringFormula != null) title = duringFormula!.formula;
+          title = duringFormula != null ? duringFormula!.formula : 'Not found';
         case FormulaPhase.after:
           afterFormula = state.afterFormulas
               .cast<AfterFormulaView?>()
@@ -135,7 +156,7 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
                 (f) => f?.id == widget.id,
                 orElse: () => null,
               );
-          if (afterFormula != null) title = afterFormula!.name;
+          title = afterFormula != null ? afterFormula!.name : 'Not found';
       }
     });
 

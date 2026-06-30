@@ -62,6 +62,7 @@ import '../../features/race_checklist/presentation/screens/race_checklist_screen
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
+import '../../features/ai_credits/presentation/screens/buy_credits_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
@@ -373,18 +374,21 @@ class AppRouter {
             // Web:    0=activities, 1=nutrition, 2=coach, 3=events, 4=learn
             final hasCoachTab = kIsWeb;
 
+            // Activities + Nutrition merged into the single Fuel Timeline tab (0).
             switch (tabParam) {
               case 'nutrition':
-                initialTab = 1;
+              case 'activities':
+              case 'calendar':
+                initialTab = 0;
                 break;
               case 'notes':
               case 'workout-notes':
               case 'events':
-                initialTab = hasCoachTab ? 3 : 2;
+                initialTab = hasCoachTab ? 2 : 1;
                 break;
               case 'survey':
               case 'learn':
-                initialTab = hasCoachTab ? 4 : 3;
+                initialTab = hasCoachTab ? 3 : 2;
                 break;
               default:
                 initialTab = 0;
@@ -526,6 +530,13 @@ class AppRouter {
           path: '/pro',
           name: 'pro-version',
           builder: (context, state) => const ProVersionScreen(),
+        ),
+
+        // AI Credits Paywall - purchase credit packs for AI features
+        GoRoute(
+          path: '/buy-credits',
+          name: 'buy-credits',
+          builder: (context, state) => const BuyCreditsScreen(),
         ),
 
         // Settings Screen - User profile and preferences
@@ -742,8 +753,7 @@ class AppRouter {
             final isCoachView = extra?['isCoachView'] as bool? ?? false;
             // Return-selection mode (e.g. personal-formula editor) reuses this
             // screen without an activity — it pops a SwapFoodSelection instead.
-            final returnSelection =
-                extra?['returnSelection'] as bool? ?? false;
+            final returnSelection = extra?['returnSelection'] as bool? ?? false;
             if (activityId == null && !returnSelection) {
               return const Scaffold(
                 body: Center(child: Text('Missing activity')),
@@ -907,7 +917,6 @@ class AppRouter {
         // ====================================================================
         // MEAL LOGGING ROUTES
         // ====================================================================
-
         GoRoute(
           path: '/meal-log/edit',
           name: 'meal-log-edit',
@@ -953,7 +962,6 @@ class AppRouter {
         // ====================================================================
         // JADE AI COACH
         // ====================================================================
-
         GoRoute(
           path: '/jade',
           name: 'jade-chat',

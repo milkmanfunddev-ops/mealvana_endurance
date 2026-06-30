@@ -98,6 +98,10 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
     _flushCount++;
   }
 
+  @override
+  Future<void> markInternal() async {}
+
+
   // Test helpers
   bool get isInitialized => _initialized;
   bool get wasUserReset => _userReset;

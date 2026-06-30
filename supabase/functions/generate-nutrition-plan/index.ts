@@ -12,6 +12,7 @@ import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, serverError } from '../_shared/responses.ts';
 import { createServiceClient } from '../_shared/supabase-client.ts';
 import { safe } from '../_shared/utils.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
 // Nutrition module
 import {
@@ -655,7 +656,10 @@ async function getTransitionFoods(
 // Request Handler
 // ============================================================================
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -756,4 +760,4 @@ serve(async (req) => {
     console.error('[NUTRITION-PLAN] Error:', error);
     return serverError(error, true);
   }
-});
+}));

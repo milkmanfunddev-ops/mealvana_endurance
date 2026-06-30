@@ -91,7 +91,7 @@ class CarbLoadingScreen extends ConsumerWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withOpacity(0.2),
+                  color: AppColors.electrolyte.withValues(alpha: 0.2),
                   borderRadius: AppRadius.cardRadius,
                 ),
                 child: FaIcon(
@@ -259,7 +259,7 @@ class CarbLoadingScreen extends ConsumerWidget {
               ),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 ),
                 borderRadius: AppRadius.smRadius,
               ),
@@ -342,7 +342,7 @@ class CarbLoadingScreen extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.electrolyte.withOpacity(0.2),
+                color: AppColors.electrolyte.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -458,7 +458,7 @@ class CarbLoadingScreen extends ConsumerWidget {
         width: 100,
         height: 80,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: AppRadius.cardRadius,
         ),
         child: Column(
@@ -685,7 +685,7 @@ class _MealDetailsDialog extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
         ),
         borderRadius: AppRadius.cardRadius,
       ),

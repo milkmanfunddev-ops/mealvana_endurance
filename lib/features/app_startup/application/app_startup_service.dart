@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -318,7 +319,12 @@ class AppStartupService {
       final supabaseUser = _supabase.auth.currentUser;
       final userId = supabaseUser?.id ?? 'anonymous';
 
-      await _sentry.setUserContext(deviceId: userId, appVersion: '1.1.0+8');
+      // Derive version dynamically so it stays accurate across releases.
+      final packageInfo = await PackageInfo.fromPlatform();
+      final appVersion =
+          '${packageInfo.version}+${packageInfo.buildNumber}';
+
+      await _sentry.setUserContext(deviceId: userId, appVersion: appVersion);
     } catch (e, stackTrace) {
       // Don't use Sentry to report Sentry initialization errors
       _logger.error(

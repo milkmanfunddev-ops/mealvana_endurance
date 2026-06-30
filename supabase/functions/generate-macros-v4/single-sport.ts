@@ -59,7 +59,7 @@ export {
 // DURING-WORKOUT NUTRITION
 // ============================================================================
 
-function getDurationCarbBand(durationMin: number): [number, number] {
+export function getDurationCarbBand(durationMin: number): [number, number] {
   if (durationMin < 60) return [0, 30];
   else if (durationMin < 90) return [30, 60];
   else if (durationMin < 150) return [45, 60];
@@ -67,14 +67,14 @@ function getDurationCarbBand(durationMin: number): [number, number] {
   else return [80, 100];
 }
 
-function getGutTrainingMultiplier(gutTraining: string): number {
+export function getGutTrainingMultiplier(gutTraining: string): number {
   if (gutTraining === "low") return 0.7;
   if (gutTraining === "moderate") return 1.0;
   if (gutTraining === "high") return 1.2;
   return 1.0;
 }
 
-function getSportCarbCeiling(activityType: string): number {
+export function getSportCarbCeiling(activityType: string): number {
   if (activityType === "running") return 70;
   if (activityType === "cycling") return 120;
   if (activityType === "swimming") return 0;
@@ -494,12 +494,17 @@ export function getIntensityDistribution(
 // DATABASE QUERY
 // ============================================================================
 
-export async function loadPreWorkoutTemplates(): Promise<{
+export async function loadPreWorkoutTemplates(
+  // Optional client injection for unit tests — production path uses
+  // createServiceClient() when no client is provided.
+  // deno-lint-ignore no-explicit-any
+  clientOverride?: any,
+): Promise<{
   food: PreWorkoutTemplate[];
   drink: PreWorkoutTemplate[];
   electrolyte: PreWorkoutTemplate[];
 }> {
-  const supabase = createServiceClient();
+  const supabase = clientOverride ?? createServiceClient();
 
   const [foodResult, drinkResult, electrolyteResult] = await Promise.all([
     supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(

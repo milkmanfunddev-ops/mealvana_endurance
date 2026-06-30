@@ -9,6 +9,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse } from '../_shared/responses.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
 // Columns to select from template_foods (avoids SELECT *)
 const TEMPLATE_FOODS_COLUMNS = `
@@ -44,7 +45,10 @@ const TEMPLATE_FOODS_COLUMNS = `
   created_at
 `;
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -155,4 +159,4 @@ serve(async (req) => {
     console.error('Error fetching foods:', error);
     return errorResponse(error instanceof Error ? error.message : 'Unknown error', 400);
   }
-});
+}));

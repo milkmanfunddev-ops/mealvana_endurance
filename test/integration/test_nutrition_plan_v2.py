@@ -8,14 +8,25 @@ Uses only Python standard library (no pip install needed).
 """
 
 import json
+import os
 import sys
 import urllib.request
 import urllib.error
 from dataclasses import dataclass, field
 from typing import Optional
 
-SUPABASE_URL = "https://vlmtsdzpnjnavdgytcmi.supabase.co"
-SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbXRzZHpwbmpuYXZkZ3l0Y21pIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg1Mjc5MCwiZXhwIjoyMDc1NDI4NzkwfQ.ugFmXxvIEYZPNMzIhPRB6x-MGbODfE1BXVdKyLpngO0"
+# Credentials come from the environment — never hardcode keys (they end up in git).
+# Set these before running, e.g.:
+#   export SUPABASE_URL=https://<project-ref>.supabase.co
+#   export SUPABASE_SERVICE_KEY=<dev service_role or sb_secret_ key>
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://vlmtsdzpnjnavdgytcmi.supabase.co")
+SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+if not SERVICE_KEY:
+    sys.exit(
+        "ERROR: set SUPABASE_SERVICE_KEY (dev service_role or sb_secret_ key) in the environment.\n"
+        "  export SUPABASE_URL=https://vlmtsdzpnjnavdgytcmi.supabase.co\n"
+        "  export SUPABASE_SERVICE_KEY=<key>"
+    )
 HEADERS = {
     "Authorization": f"Bearer {SERVICE_KEY}",
     "Content-Type": "application/json",

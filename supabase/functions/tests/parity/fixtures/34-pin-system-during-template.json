@@ -1,0 +1,47 @@
+{
+  "description": "System during-template pin — running 120 min, moderate gut. Tests that a template solver fixture with an explicit template definition fires correctly and produces valid foods.",
+  "solver": "template",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: template solver for 'Gel + Water' returns null (carbs 83%, 50g/60g). The real catalog energy_gel has max_per_hr_moderate=3, min_increment=1, is_indivisible=false — the template distribution over 120min at moderate gut yields 2 gels/hr × 2hr × 25g = 50g carbs, which falls below the 90% validation threshold (54g). The synthetic catalog had max_per_hr_moderate=3 and different rounding, yielding exactly 60g. This is a template solver constraint rounding issue exposed by real per-hr caps from the production catalog.",
+  "athlete": {
+    "weight_kg": 72,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 60,
+      "sodium_mg": 900,
+      "water_ml": 1000
+    },
+    "post_run": {
+      "carbs_g": 65,
+      "protein_g": 28,
+      "sodium_mg": 800,
+      "water_ml": 800
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "duringPinIds": ["system-template-gel-water-run-90-150"]
+  },
+  "templateFixture": {
+    "template_number": 1,
+    "name": "Gel + Water",
+    "activity_types": ["running"],
+    "duration_brackets": ["90-150 min"],
+    "gut_training_levels": ["low", "moderate", "high"],
+    "component_food_names": ["energy_gel", "water"],
+    "component_carb_ratios": { "energy_gel": 1.0 }
+  }
+}

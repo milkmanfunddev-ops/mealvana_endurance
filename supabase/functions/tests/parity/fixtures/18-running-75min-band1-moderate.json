@@ -1,0 +1,36 @@
+{
+  "description": "Running ~75 min (band [30,60] g/h carbs) — moderate gut intensity. Targets ~45g carbs at 1.0× gut multiplier.",
+  "solver": "rule",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: rule solver exhibits non-determinism at this target (45g carbs, 600mg sodium) — one solve path picks high_carb_drink_mix×0.5 + electrolyte_capsule×2 delivering 480mg sodium (delta=120mg, above 100mg floor), while another path picks carb_drink_mix + sports_drink + electrolyte_capsule×2 delivering 560mg (passes). The real catalog carb_drink_mix (160mg sodium/serving) vs high_carb_drink_mix (200mg sodium/serving) creates divergent electrolyte-fill paths depending on which carb source scores highest. This non-determinism was masked by the synthetic catalog which had a fixed food set. Underlying issue: primary-carb selection score is not always deterministic between these two similarly-scored drink mixes.",
+  "athlete": {
+    "weight_kg": 70,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 75,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 45,
+      "sodium_mg": 600,
+      "water_ml": 700
+    },
+    "post_run": {
+      "carbs_g": 55,
+      "protein_g": 25,
+      "sodium_mg": 650,
+      "water_ml": 700
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

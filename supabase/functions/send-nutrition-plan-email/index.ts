@@ -1,8 +1,14 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_DHjg7ayY_PmqLvMtUm7W5GXJaugAtQn93';
 // const FROM_EMAIL = 'onboarding@resend.dev'; // Will change to support@mealvana.io after DNS verification
 const FROM_EMAIL = 'support@mealvana.io'; // Will change to support@mealvana.io after DNS verification
-serve(async (req)=>{
+
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -156,4 +162,4 @@ serve(async (req)=>{
       }
     });
   }
-});
+}));

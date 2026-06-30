@@ -244,6 +244,10 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// without reading `state` (which is forbidden inside Riverpod lifecycle callbacks).
   String? _lastKnownActivityId;
 
+  /// Tracks the last-resolved userId so onDispose can pass it to cleanup
+  /// without touching `ref` after the provider is disposed.
+  String? _lastKnownUserId;
+
   String _resolveActivityOwnerId({
     required String currentUserId,
     String? forUserId,
@@ -293,9 +297,12 @@ class MacroTargetsController extends _$MacroTargetsController {
     });
 
     // ✨ DRAFT ACTIVITY CLEANUP (Andrea Bizzotto FOA Pattern)
-    // Register cleanup when provider is disposed to handle abandoned drafts
+    // Register cleanup when provider is disposed to handle abandoned drafts.
+    // Capture the service NOW (while ref is still alive) so the closure
+    // never touches ref after disposal.
+    final cleanupService = ref.read(draftActivityCleanupServiceProvider);
     ref.onDispose(() {
-      _scheduleCleanupIfNeeded();
+      _scheduleCleanupIfNeeded(cleanupService);
     });
 
     // Load content synchronously from in-memory cache
@@ -1824,6 +1831,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         final nutritionPlanService = ref.read(nutritionPlanServiceProvider);
         final currentStateValue = state.value;
         final userId = await ref.read(userIdProvider.future);
+        _lastKnownUserId = userId; // capture for onDispose cleanup
         final activityOwnerUserId = _resolveActivityOwnerId(
           currentUserId: userId,
           forUserId: currentStateValue?.forUserId,
@@ -1938,6 +1946,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Get the existing draft activity and update it
         try {
           final userId = await ref.read(userIdProvider.future);
+          _lastKnownUserId = userId; // capture for onDispose cleanup
           final activitiesService = ref.read(activitiesServiceProvider);
           final existingActivity = await activitiesService.getActivityById(
             activityOwnerUserId,
@@ -2261,28 +2270,25 @@ class MacroTargetsController extends _$MacroTargetsController {
     );
   }
 
-  /// Schedule cleanup of draft activity if provider is being disposed
-  /// This handles the case where user navigates away before finalizing the plan
+  /// Schedule cleanup of draft activity if provider is being disposed.
+  /// This handles the case where user navigates away before finalizing the plan.
   ///
-  /// NOTE: Uses [_lastKnownActivityId] instead of [state.value] because this
-  /// is called from ref.onDispose(), where accessing state is forbidden by Riverpod.
-  void _scheduleCleanupIfNeeded() async {
+  /// NOTE: Uses [_lastKnownActivityId] and [_lastKnownUserId] instead of
+  /// reading from state or ref, because this is called from ref.onDispose()
+  /// where both state access and ref.read() are forbidden by Riverpod.
+  /// The [cleanupService] is captured BEFORE disposal and passed in so the
+  /// closure contains zero ref access.
+  void _scheduleCleanupIfNeeded(DraftActivityCleanupService cleanupService) {
     final activityId = _lastKnownActivityId;
+    final userId = _lastKnownUserId;
 
-    // Get userId in a delayed Future (safe after disposal)
-    Future.delayed(const Duration(seconds: 2), () async {
-      try {
-        final userId = await ref.read(userIdProvider.future);
-        final cleanupService = ref.read(draftActivityCleanupServiceProvider);
+    // If no userId was ever resolved (user never got to macro generation),
+    // there is no draft to clean up.
+    if (activityId == null || activityId.isEmpty || userId == null) return;
 
-        await cleanupService.cleanupIfNeeded(
-          activityId: activityId ?? '',
-          userId: userId,
-        );
-      } catch (e) {
-        DebugLogger.error('Failed to schedule cleanup: $e');
-      }
-    });
+    // DraftActivityCleanupService.scheduleCleanup() owns the Future.delayed
+    // internally — no ref access here, safe after disposal.
+    cleanupService.scheduleCleanup(activityId: activityId, userId: userId);
   }
 
   /// Load user overrides for the edge function, applying sport-specific
@@ -2446,10 +2452,17 @@ class MacroTargetsController extends _$MacroTargetsController {
   }
 }
 
-/// Provider for DraftActivityCleanupService
-@riverpod
+/// Provider for DraftActivityCleanupService.
+///
+/// keepAlive so the service survives navigate-away (the [MacroTargetsController]
+/// schedules cleanup in its onDispose, and the timer must outlive that
+/// controller). Its own onDispose cancels any pending cleanup timers, which
+/// fires only at scope/app teardown — also keeping widget tests timer-clean.
+@Riverpod(keepAlive: true)
 DraftActivityCleanupService draftActivityCleanupService(Ref ref) {
-  return DraftActivityCleanupService(
+  final service = DraftActivityCleanupService(
     activitiesService: ref.read(activitiesServiceProvider),
   );
+  ref.onDispose(service.dispose);
+  return service;
 }
