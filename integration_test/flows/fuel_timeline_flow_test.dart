@@ -9,7 +9,7 @@
 ///
 /// Flow:
 ///   ensureAuthenticated (reuse session, else email login)
-///     → calendar → Nutrition (diary) tab → Fuel Timeline
+///     → Fuel Timeline tab (already active at startup)
 ///     → assert the filter row rendered (All pill visible)
 ///     → cycle filters: Workout → Meals → All
 ///     → toggle tracking off then on
@@ -41,11 +41,10 @@ void main() {
     'fuel timeline — filter + tracking/timeline toggles',
     ($) async {
       await app.main();
-      await $.tester.pumpAndSettle(
-        const Duration(milliseconds: 100),
-        EnginePhase.sendSemanticsUpdate,
-        const Duration(minutes: 2),
-      );
+      // Do NOT call pumpAndSettle: the app may have a persistent loading
+      // spinner during startup. _ensureAuthenticated uses explicit
+      // waitUntilVisible gates instead.
+      await $.pump(const Duration(milliseconds: 500));
 
       final onCalendar = await _ensureAuthenticated($);
       if (!onCalendar) {
@@ -57,8 +56,13 @@ void main() {
         return;
       }
 
-      // ---- 1. Calendar → Nutrition (diary) tab → Fuel Timeline ------------
-      await $(const ValueKey('bottom_nav.diary_tab')).tap();
+      // ---- 1. Ensure Fuel Timeline tab is active ---------------------------
+      // The app opens on the Fuel Timeline (index 0). Tapping the nav button
+      // is harmless if we're already there and guarantees the screen is active.
+      // Key is bottom_nav.timeline_tab — the Activities + Nutrition tabs were
+      // merged into one Fuel Timeline tab in the carbs-per-hour refactor.
+      // The old key bottom_nav.diary_tab no longer exists.
+      await $(const ValueKey('bottom_nav.timeline_tab')).tap();
       await $(const ValueKey('fuel_timeline.filter_all')).waitUntilVisible(
         timeout: const Duration(seconds: 20),
       );
@@ -83,17 +87,44 @@ void main() {
 }
 
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+  // `calendar.create_activity_fab` was removed when Activities + Nutrition
+  // merged into the Fuel Timeline tab. The settings gear in the Fuel Timeline
+  // header is always present on the main authenticated screen.
+  const sentinel = ValueKey('fuel_timeline.settings');
 
-  if ($(fab).exists) return true;
-  if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
+  // Poll up to 90 s for the sentinel (already authed) or the welcome button.
+  bool sentinelFound = false;
+  bool welcomeFound = false;
+  const welcome = ValueKey('welcome.log_in_button');
+  for (var i = 0; i < 180; i++) {
+    await $.pump(const Duration(milliseconds: 500));
+    if ($(sentinel).exists) {
+      sentinelFound = true;
+      break;
+    }
+    if ($(welcome).exists) {
+      welcomeFound = true;
+      break;
+    }
+  }
 
-  await $(const ValueKey('welcome.log_in_button')).tap();
+  if (sentinelFound) return true;
+  if (!welcomeFound || _loginEmail.isEmpty || _loginPassword.isEmpty) {
+    return false;
+  }
+
+  await $(welcome).tap();
+  await $(const ValueKey('login_options.email_button')).waitUntilVisible(
+    timeout: const Duration(seconds: 15),
+  );
   await $(const ValueKey('login_options.email_button')).tap();
+  await $(const ValueKey('login.email_field')).waitUntilVisible(
+    timeout: const Duration(seconds: 15),
+  );
   await $(const ValueKey('login.email_field')).enterText(_loginEmail);
   await $(const ValueKey('login.password_field')).enterText(_loginPassword);
   await $(const ValueKey('login.log_in_button')).tap();
 
-  await $(fab).waitUntilVisible(timeout: const Duration(seconds: 40));
-  return $(fab).exists;
+  await $(sentinel).waitUntilVisible(timeout: const Duration(seconds: 40));
+  return $(sentinel).exists;
 }

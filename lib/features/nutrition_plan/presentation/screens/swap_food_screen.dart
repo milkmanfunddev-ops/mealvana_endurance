@@ -783,6 +783,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   hintText: 'Search for food...',
                   useDarkStyle:
                       Theme.of(context).brightness == Brightness.dark,
+                  fieldKey: const ValueKey('swap_food.search_field'),
                 ),
 
                 // Clear search button (when showing OpenFoodFacts results)
@@ -843,6 +844,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                       : UnifiedFoodSearchResults(
                           controllerKey: _searchControllerKey,
                           userFoodItemBuilder: (food) => FoodCardWidget(
+                            key: ValueKey('swap_food.food_tile_${food.id}'),
                             food: food,
                             isUserFood: _isUserFood(food, state),
                             onTap: () => _selectFood(food),
@@ -850,6 +852,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                             onEdit: () => _showUserFoodEditSheet(food),
                           ),
                           templateFoodItemBuilder: (food) => FoodCardWidget(
+                            key: ValueKey('swap_food.food_tile_${food.id}'),
                             food: food,
                             isUserFood: false,
                             onTap: () => _selectFood(food),
@@ -878,6 +881,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: KylePrimaryButton(
+                key: const ValueKey('swap_food.confirm_button'),
                 text: _isSwapping ? 'SWAP FOOD' : 'ADD FOOD',
                 isLoading: _isProcessing,
                 onPressed: _handleConfirm,
