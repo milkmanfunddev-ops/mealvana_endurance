@@ -387,9 +387,10 @@ class AppDatabase extends _$AppDatabase {
           // Repair the integrations.provider CHECK in place before validating.
           // CHECK constraints are baked into the table at CREATE time, so
           // adding 'vdot' to the Dart definition doesn't update tables that
-          // already exist on-device. We keep schemaVersion at 9, so this
-          // idempotent repair (not a version bump) is what fixes existing
-          // installs that reject `provider = 'vdot'` inserts.
+          // already exist on-device. We deliberately do NOT bump schemaVersion
+          // for this CHECK fix, so this idempotent in-place repair (not a
+          // version bump) is what fixes existing installs that reject
+          // `provider = 'vdot'` inserts.
           await _ensureIntegrationsProviderCheck();
 
           await _validateSchemaIntegrity();
