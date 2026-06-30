@@ -56,10 +56,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { stepCountIs, streamText } from 'npm:ai@6';
 import { corsHeaders } from '../_shared/cors.ts';
-import { errorResponse, validationError, serverError } from '../_shared/responses.ts';
+import { errorResponse, jsonResponse, validationError, serverError } from '../_shared/responses.ts';
 import { JADE_MODEL } from '../_shared/ai/model.ts';
+import { logAiUsage } from '../_shared/ai/usage.ts';
 import { buildSystemPrompt } from '../_shared/jade/persona.ts';
 import { makeJadeTools } from '../_shared/jade/tools.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -198,7 +201,10 @@ function todayInTz(timezone: string): string {
 // Main handler
 // ---------------------------------------------------------------------------
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   // Handle CORS preflight — must use expanded headers
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: chatCorsHeaders });
@@ -383,6 +389,12 @@ serve(async (req: Request) => {
     // ── Collect ui parts for persistence ────────────────────────────────────
     const collectedUiParts: JadeUiPart[] = [];
 
+    // ── Credit check ─────────────────────────────────────────────────────────
+    const credit = await ensureAndCheckCredits(serviceClient, user.id, 'jade-chat');
+    if (!credit.allowed) {
+      return jsonResponse(insufficientCreditsBody(credit), 402);
+    }
+
     // ── Stream the reply via fullStream → NDJSON ────────────────────────────
     // In opener mode there is no real user turn — feed a short internal
     // instruction so the model produces the proactive greeting per the
@@ -447,6 +459,20 @@ serve(async (req: Request) => {
               output_tokens: usage?.outputTokens ?? 0,
             });
           if (logError) console.error('[jade-chat] jade_calls log error:', logError);
+
+          // Also record in the canonical, prod-safe ai_usage ledger (used for
+          // per-user token visibility + future throttling). Already inside the
+          // onFinish persist closure, so await directly.
+          await logAiUsage(serviceClient, {
+            userId: user.id,
+            functionName: 'jade-chat',
+            model: JADE_MODEL,
+            inputTokens: usage?.inputTokens ?? 0,
+            outputTokens: usage?.outputTokens ?? 0,
+          });
+
+          // Debit credits for the successful AI call.
+          await debitForUsage(serviceClient, user.id, 'jade-chat');
 
           console.log(
             `[jade-chat] onFinish user=${user.id} conv=${resolvedConversationId} ` +
@@ -551,4 +577,4 @@ serve(async (req: Request) => {
     console.error('[jade-chat] Fatal error:', error);
     return serverError(error);
   }
-});
+}));

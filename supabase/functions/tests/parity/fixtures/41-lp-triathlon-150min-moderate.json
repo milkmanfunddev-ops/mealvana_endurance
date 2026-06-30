@@ -1,0 +1,34 @@
+{
+  "description": "LP solver — triathlon 150 min, moderate gut. Exercises the LP path for triathlon activity type. Validates LP produces non-null result within parity tolerance.",
+  "solver": "lp",
+  "athlete": {
+    "weight_kg": 76,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "triathlon",
+    "duration_minutes": 150,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 75,
+      "sodium_mg": 1100,
+      "water_ml": 1300
+    },
+    "post_run": {
+      "carbs_g": 70,
+      "protein_g": 30,
+      "sodium_mg": 900,
+      "water_ml": 1000
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

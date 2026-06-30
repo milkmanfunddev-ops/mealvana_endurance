@@ -1,0 +1,34 @@
+{
+  "description": "Running ~120 min (band [45,60] g/h carbs) — high gut training, 1.2× multiplier. Targets 90g carbs total, run ceiling 70 g/h respected.",
+  "solver": "rule",
+  "athlete": {
+    "weight_kg": 75,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 90,
+      "sodium_mg": 1100,
+      "water_ml": 1200
+    },
+    "post_run": {
+      "carbs_g": 75,
+      "protein_g": 30,
+      "sodium_mg": 900,
+      "water_ml": 900
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

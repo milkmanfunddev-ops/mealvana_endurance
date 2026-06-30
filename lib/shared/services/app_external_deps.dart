@@ -4,8 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'analytics/analytics_tracker.dart';
 import 'logging_service.dart';
+import 'prefs_provider.dart';
 import 'sentry/sentry_reporter.dart';
 import 'supabase/supabase_client_provider.dart';
+
+// Re-export so all existing importers of app_external_deps.dart continue to
+// find sharedPreferencesProvider without any import-site changes.
+export 'prefs_provider.dart' show sharedPreferencesProvider;
 
 class AppExternalDeps {
   const AppExternalDeps({
@@ -22,14 +27,6 @@ class AppExternalDeps {
   final AppLogger logger;
   final SharedPreferences sharedPreferences;
 }
-
-/// Provider for SharedPreferences - must be overridden at app startup
-/// This is initialized in main.dart before runApp() and provided via override
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-    'sharedPreferencesProvider must be overridden with an initialized instance',
-  );
-});
 
 final appExternalDepsProvider = Provider<AppExternalDeps>((ref) {
   final analytics = ref.watch(analyticsTrackerProvider);

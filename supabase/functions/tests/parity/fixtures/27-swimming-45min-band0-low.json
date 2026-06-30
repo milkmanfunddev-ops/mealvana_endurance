@@ -1,0 +1,36 @@
+{
+  "description": "Swimming 45 min (swim ceiling 0 g/h carbs) — low gut. During carbs target = 0; only hydration. Rule solver should return empty/near-empty during foods.",
+  "solver": "rule",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: rule solver selects only Water×1 (240ml), delivering 0mg sodium vs 150mg target (delta=150mg, above 100mg absolute floor). The real catalog has 7 high-fluid, high-sodium sources in during_swim (electrolyte_drink_mix 400mg/500ml, electrolyte_packet 510mg/480ml, high_sodium_electrolyte_mix 1000mg/480ml, etc.) but the rule solver returns no foods when carbs_g=0 on swim activity — electrolyte top-up does not fire without a primary carb food anchor. Algorithm gap confirmed in production catalog: standalone electrolyte-only fill for zero-carb swim is not implemented.",
+  "athlete": {
+    "weight_kg": 65,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "swimming",
+    "duration_minutes": 45,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 0,
+      "sodium_mg": 150,
+      "water_ml": 300
+    },
+    "post_run": {
+      "carbs_g": 45,
+      "protein_g": 20,
+      "sodium_mg": 400,
+      "water_ml": 500
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

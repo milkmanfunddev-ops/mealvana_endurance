@@ -385,6 +385,57 @@ CREATE UNIQUE INDEX IF NOT EXISTS public_events_canonical_key_uniq
   ON public.public_events (lower(event_name), event_date, lower(coalesce(city, '')));
 
 
+-- ── 5. ai_usage — per-user AI token ledger (DEV + PROD: apply now) ────────────
+-- Canonical, prod-safe record of every AI model invocation across all four AI
+-- edge functions (jade-chat, describe-meal, analyze-meal-photo, ai-coach).
+-- Server-side and service-role-written, so it cannot be spoofed by the client
+-- (unlike Mixpanel events). The older `jade_calls` table is dev-only and does
+-- not cover ai-coach, which is the only AI function live for prod users today.
+--
+-- Purpose: "track now, throttle later". Nothing reads this back to enforce
+-- limits yet — a future per-user throttle will query
+--   sum(input_tokens + output_tokens) over a rolling window per user_id
+-- before invoking the model. The (user_id, created_at DESC) index supports it.
+--
+-- RLS: users may read ONLY their own rows; inserts happen via the service role
+-- in edge functions (service role bypasses RLS), so no INSERT policy is needed.
+-- Idempotent: CREATE ... IF NOT EXISTS + DROP POLICY IF EXISTS.
+
+CREATE TABLE IF NOT EXISTS public.ai_usage (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id        UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  function_name  TEXT NOT NULL,   -- 'jade-chat' | 'describe-meal' | 'analyze-meal-photo' | 'ai-coach'
+  model          TEXT NOT NULL,   -- provider/model string actually used
+  input_tokens   INT NOT NULL DEFAULT 0,
+  output_tokens  INT NOT NULL DEFAULT 0,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ai_usage_user_created
+  ON public.ai_usage (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ai_usage_created
+  ON public.ai_usage (created_at DESC);
+
+ALTER TABLE public.ai_usage ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users read own ai usage" ON public.ai_usage;
+CREATE POLICY "Users read own ai usage"
+  ON public.ai_usage FOR SELECT
+  USING (user_id = auth.uid());
+
+-- Admin query (run in DataGrip as service role) — tokens per user, last 30 days:
+--   SELECT user_id,
+--          count(*)                              AS calls,
+--          sum(input_tokens)                     AS input_tokens,
+--          sum(output_tokens)                    AS output_tokens,
+--          sum(input_tokens + output_tokens)     AS total_tokens,
+--          max(created_at)                        AS last_call_at
+--   FROM public.ai_usage
+--   WHERE created_at > now() - interval '30 days'
+--   GROUP BY user_id
+--   ORDER BY total_tokens DESC;
+
+
 -- ============================================================================
 -- END
 -- ============================================================================

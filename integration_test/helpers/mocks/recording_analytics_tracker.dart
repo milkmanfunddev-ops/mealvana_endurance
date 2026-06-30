@@ -69,6 +69,9 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
     flushCalls.add(DateTime.now().toIso8601String());
   }
 
+  @override
+  Future<void> markInternal() async {}
+
   // Helper methods for test assertions
   bool hasEvent(String eventName) {
     return trackedEvents.any((call) => call.eventName == eventName);

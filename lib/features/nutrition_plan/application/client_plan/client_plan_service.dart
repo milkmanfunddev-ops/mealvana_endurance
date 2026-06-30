@@ -23,6 +23,7 @@ import '../../domain/nutrition_plan.dart';
 import '../../domain/solver_food.dart';
 import '../../domain/solver_types.dart';
 import '../../domain/sport_config.dart';
+import 'client_during_phase_solver.dart';
 import 'client_food_pool_service.dart';
 import 'client_greedy_solver.dart';
 
@@ -37,6 +38,7 @@ class ClientPlanService {
   final Ref _ref;
 
   static const _solver = ClientGreedySolver();
+  static const _duringSolver = ClientDuringPhaseSolver();
 
   ClientFoodPoolService get _foodPool =>
       _ref.read(clientFoodPoolServiceProvider);
@@ -52,12 +54,17 @@ class ClientPlanService {
   ///
   /// Throws if the food pool is completely empty (no template or user foods
   /// available), signalling the caller to fall back to the generic plan.
+  ///
+  /// [durationMinutes] and [gutTrainingLevel] are forwarded to the during-phase
+  /// solver to improve parity with the server algorithm.
   Future<NutritionPlan> generatePlan({
     required String userId,
     required MacroTargets macroTargets,
     String? activityId,
     required double timeBeforeRunHours,
     required ActivityType activityType,
+    int? durationMinutes,
+    String? gutTrainingLevel,
   }) async {
     final uuid = const Uuid();
     final now = DateTime.now();
@@ -80,6 +87,8 @@ class ClientPlanService {
       userId: userId,
       macroTargets: macroTargets,
       activityType: activityType,
+      durationMinutes: durationMinutes,
+      gutTrainingLevel: gutTrainingLevel,
     );
 
     // After phase
@@ -232,12 +241,14 @@ class ClientPlanService {
     );
   }
 
-  /// During phase: honor a pinned personal formula, else greedy solver focused
-  /// on carbs + sodium + fluids.
+  /// During phase: honor a pinned personal formula, else the server-parity
+  /// rule-based during solver, else generic greedy solver.
   Future<List<FoodItemData>> _solveDuring({
     required String userId,
     required MacroTargets macroTargets,
     required ActivityType activityType,
+    int? durationMinutes,
+    String? gutTrainingLevel,
   }) async {
     final pinned = await _tryPinnedPersonalFormula(
       userId: userId,
@@ -250,16 +261,96 @@ class ClientPlanService {
     );
     if (pinned != null && pinned.isNotEmpty) return pinned;
 
-    return _solvePhase(
+    // Rule-based during solver (server-parity path)
+    return _solvePhaseWithRules(
       userId: userId,
-      phase: 'during',
-      targets: SolverTargets(
+      macroTargets: macroTargets,
+      activityType: activityType,
+      durationMinutes: durationMinutes,
+      gutTrainingLevel: gutTrainingLevel,
+    );
+  }
+
+  /// Run the server-parity rule-based solver for the during phase.
+  ///
+  /// Falls back to the generic greedy solver if the rule solver produces no
+  /// results (empty pool or error).
+  Future<List<FoodItemData>> _solvePhaseWithRules({
+    required String userId,
+    required MacroTargets macroTargets,
+    required ActivityType activityType,
+    int? durationMinutes,
+    String? gutTrainingLevel,
+  }) async {
+    try {
+      final foods = await _foodPool.getFoodsForPhase(
+        phase: 'during',
+        userId: userId,
+        activityType: activityType,
+      );
+
+      if (foods.isEmpty) {
+        _logger.warning(
+          'No foods available for during phase (rule solver)',
+          context: 'CLIENT_PLAN_SERVICE',
+        );
+        return [];
+      }
+
+      final targets = SolverTargets(
         carbsG: macroTargets.duringRun.carbTotalG,
         sodiumMg: macroTargets.duringRun.sodiumTotalMg,
         fluidMl: macroTargets.duringRun.fluidTotalMl,
-      ),
-      activityType: activityType,
-    );
+      );
+
+      final selections = _duringSolver.solve(
+        foods: foods,
+        targets: targets,
+        activityType: activityType,
+        gutTrainingLevel: gutTrainingLevel,
+        durationMinutes: durationMinutes,
+      );
+
+      if (selections.isEmpty) {
+        // Rule solver produced nothing — fall back to generic greedy
+        _logger.info(
+          'During rule solver produced no selections; falling back to greedy',
+          context: 'CLIENT_PLAN_SERVICE',
+        );
+        return _solvePhase(
+          userId: userId,
+          phase: 'during',
+          targets: targets,
+          activityType: activityType,
+        );
+      }
+
+      _logger.info(
+        'During phase (rule solver): ${selections.length} foods selected',
+        context: 'CLIENT_PLAN_SERVICE',
+      );
+
+      return selections.map((s) {
+        final solverFood = foods.firstWhere((f) => f.id == s.foodId);
+        return solverFood.toFoodItemData(s.quantity);
+      }).toList();
+    } catch (e) {
+      _logger.warning(
+        'During rule solver failed; falling back to greedy',
+        context: 'CLIENT_PLAN_SERVICE',
+        error: e,
+      );
+      return _solvePhase(
+        userId: userId,
+        phase: 'during',
+        targets: SolverTargets(
+          carbsG: macroTargets.duringRun.carbTotalG,
+          sodiumMg: macroTargets.duringRun.sodiumTotalMg,
+          fluidMl: macroTargets.duringRun.fluidTotalMl,
+        ),
+        activityType: activityType,
+      );
+    }
   }
 
   /// After phase: honor a pinned personal formula, else greedy solver with

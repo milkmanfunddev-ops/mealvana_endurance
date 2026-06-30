@@ -77,6 +77,20 @@ class PreferencesService {
     await _prefs.setBool(_keyJadeBaselineTipDismissed, true);
   }
 
+  // ─── Fuel Timeline Tracking ───
+
+  static const String _keyFuelTrackingEnabled = 'fuel_tracking_enabled';
+
+  /// Whether calorie/macro tracking is shown on the Fuel Timeline (default ON).
+  /// When off, the energy dashboard is hidden and meal cards drop their macro
+  /// line — a "log without numbers" mode. Global, persisted across sessions.
+  bool get fuelTrackingEnabled =>
+      _prefs.getBool(_keyFuelTrackingEnabled) ?? true;
+
+  Future<void> setFuelTrackingEnabled(bool enabled) async {
+    await _prefs.setBool(_keyFuelTrackingEnabled, enabled);
+  }
+
   /// Clear all preferences (useful for testing or logout)
   Future<void> clearAll() async {
     await _prefs.clear();

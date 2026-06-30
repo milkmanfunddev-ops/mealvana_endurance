@@ -16,6 +16,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -223,7 +224,10 @@ interface RequestBody {
 // MAIN HANDLER
 // ============================================================================
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -398,7 +402,7 @@ serve(async (req) => {
       error instanceof Error ? error.message : 'Unknown error'
     );
   }
-});
+}));
 
 // ============================================================================
 // HELPER FUNCTIONS

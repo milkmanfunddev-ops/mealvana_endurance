@@ -60,7 +60,7 @@ dependencies:
   pub_semver: ^2.1.4
   
   # Analytics
-  mixpanel_flutter: ^2.4.4
+  mixpanel_flutter: ^2.10.0
   
   # Backend & Auth
   supabase_flutter: ^2.10.0  # Required for linkIdentityWithIdToken() (gotrue 2.15.0+)
@@ -122,6 +122,7 @@ dependencies:
   # reload so panel overrides (text scale, color mode, etc.) cannot leak
   # across sessions — see lib/shared/widgets/root_app_widget.dart.
   accessibility_tools: 2.2.3
+  purchases_flutter: ^10.3.0
 
 
 dev_dependencies:
@@ -236,11 +237,16 @@ flutter:
       fonts:
         - asset: assets/fonts/Compadre/Compadre-Demo-Regular.otf
           weight: 400
-        - asset: assets/fonts/Compadre/Compadre-Demo-Wide.otf
-          weight: 400
         - asset: assets/fonts/Compadre/Compadre-Demo-Extended.otf
-          weight: 400
+          weight: 700
         - asset: assets/fonts/Compadre/Compadre-Demo-Narrow.otf
+          weight: 300
+
+    # Wide variant as its own family so it's selectable (the mockup uses it for
+    # the BY WEEK / BY MONTH toggle). Same bundled asset, just addressable.
+    - family: Compadre Wide
+      fonts:
+        - asset: assets/fonts/Compadre/Compadre-Demo-Wide.otf
           weight: 400
   
   # For details regarding fonts from package dependencies,

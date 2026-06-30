@@ -734,14 +734,17 @@ class _PostOnboardingAuthScreenState
                 color: AppColors.electrolyte,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                contentService.getValue(
-                  'auth.post_onboarding.benefits_card_title',
-                  defaultValue: 'Account Benefits',
-                ),
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 18,
+              Flexible(
+                child: Text(
+                  contentService.getValue(
+                    'auth.post_onboarding.benefits_card_title',
+                    defaultValue: 'Account Benefits',
+                  ),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -826,10 +829,14 @@ class _PostOnboardingAuthScreenState
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    label,
-                    style: AppTextStyles.buttonPrimary.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.buttonPrimary.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],

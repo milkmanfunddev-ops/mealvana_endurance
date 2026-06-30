@@ -1,0 +1,43 @@
+{
+  "description": "Cycling ~120 min (band [45,60] g/h carbs) — high gut, 1.2× multiplier. Targets 90g carbs; bike ceiling 120 g/h. Tests template solver path with Gel + Sports Drink + Water.",
+  "solver": "template",
+  "athlete": {
+    "weight_kg": 80,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 120,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 90,
+      "sodium_mg": 1200,
+      "water_ml": 1400
+    },
+    "post_run": {
+      "carbs_g": 75,
+      "protein_g": 32,
+      "sodium_mg": 900,
+      "water_ml": 1000
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null,
+  "templateFixture": {
+    "template_number": 7,
+    "name": "Bar + Sports Drink + Water",
+    "activity_types": ["cycling"],
+    "duration_brackets": ["90-150 min"],
+    "gut_training_levels": ["low", "moderate", "high"],
+    "component_food_names": ["energy_bar", "sports_drink", "water"],
+    "component_carb_ratios": { "energy_bar": 0.55, "sports_drink": 0.45 }
+  }
+}

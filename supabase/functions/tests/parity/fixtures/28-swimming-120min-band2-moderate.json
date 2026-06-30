@@ -1,0 +1,36 @@
+{
+  "description": "Swimming 120 min (swim ceiling 0 g/h carbs) — moderate gut, 2-hour open water. During carbs target = 0; hydration only. Tests that zero-carb swim target passes invariants.",
+  "solver": "rule",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: rule solver selects Water×2 + Electrolyte Capsule×1 delivering 190mg sodium vs 300mg target (delta=110mg, above 100mg absolute floor). Real catalog electrolyte_capsule has 190mg sodium per serving; additional capsules would exceed max_per_hr constraints. Previously passed on synthetic catalog where the electrolyte tab had 350mg per serving (delta=350-300=50mg < 100mg floor, passing). This is the same zero-carb swim algorithm gap as fixture 27 — standalone electrolyte fill is not sufficient when the only capsule source is 190mg and the sodium target is 300mg.",
+  "athlete": {
+    "weight_kg": 72,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "swimming",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 0,
+      "sodium_mg": 300,
+      "water_ml": 500
+    },
+    "post_run": {
+      "carbs_g": 65,
+      "protein_g": 28,
+      "sodium_mg": 700,
+      "water_ml": 800
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

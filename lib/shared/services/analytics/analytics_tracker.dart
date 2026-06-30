@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../app_config.dart';
 import '../device_info_service.dart';
 import '../logging_service.dart';
+import 'analytics_excluded_pref.dart';
 
 /// Abstraction over analytics tracking so we can swap implementations in tests.
 abstract class AnalyticsTracker {
@@ -22,6 +24,15 @@ abstract class AnalyticsTracker {
   Future<void> track(String eventName, {Map<String, dynamic>? properties});
   Future<void> timeEvent(String eventName);
   Future<void> flush();
+
+  /// Flag the current Mixpanel profile as an internal/test device so that
+  /// historical events can be filtered out in the dashboard.
+  ///
+  /// Sets People property `is_internal = true` and flushes immediately.
+  /// Call this **before** suppressing analytics (i.e. before persisting the
+  /// excluded pref), so the event still reaches Mixpanel.
+  /// No-op on [NoopAnalyticsTracker].
+  Future<void> markInternal();
 }
 
 /// Default tracker that talks to Mixpanel.
@@ -201,6 +212,31 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     }
   }
 
+  /// Flag this device as internal so historical events can be filtered in the
+  /// Mixpanel dashboard. Sets `is_internal = true` on the People profile and
+  /// flushes immediately.
+  ///
+  /// Must be called **before** suppressing analytics (before setting the
+  /// excluded pref) so the People update still reaches Mixpanel.
+  @override
+  Future<void> markInternal() async {
+    final mixpanel = _mixpanel;
+    if (mixpanel == null) return;
+
+    try {
+      final people = mixpanel.getPeople();
+      people.set('is_internal', true);
+      mixpanel.flush();
+    } catch (error, stackTrace) {
+      _logger.error(
+        'Failed to mark device as internal in Mixpanel',
+        context: 'ANALYTICS',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   Future<void> _setupSuperProperties() async {
     final mixpanel = _mixpanel;
     if (mixpanel == null) return;
@@ -212,8 +248,18 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
           ? deviceInfoService.deviceInfo
           : {'os_version': 'unknown', 'device_model': 'unknown'};
 
+      // Derive the real app version from PackageInfo so this stays accurate
+      // across releases without requiring a code change.
+      String appVersion = 'unknown';
+      try {
+        final packageInfo = await PackageInfo.fromPlatform();
+        appVersion = packageInfo.version;
+      } catch (_) {
+        // Fallback handled above; analytics should not crash the app.
+      }
+
       final superProps = <String, dynamic>{
-        'app_version': '1.3.0',
+        'app_version': appVersion,
         'platform': deviceInfo['device_model']?.contains('iPhone') == true ? 'iOS' : 'Android',
         'os_version': deviceInfo['os_version'] ?? 'unknown',
         'device_model': deviceInfo['device_model'] ?? 'unknown',
@@ -253,6 +299,9 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
   Future<void> initialize() async {}
 
   @override
+  Future<void> markInternal() async {}
+
+  @override
   Future<void> resetUser() async {}
 
   @override
@@ -273,17 +322,24 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 }
 
 /// Provider exposing the default analytics tracker.
-/// In development environment, returns NoopAnalyticsTracker (no tracking).
-/// In production environment, returns MixpanelAnalyticsTracker.
+///
+/// Returns [NoopAnalyticsTracker] when:
+/// - Running in the development environment (`config.devModeEnabled`), OR
+/// - The user has explicitly opted this device out of analytics via the hidden
+///   "Developer / Tester" toggle in Settings (`analyticsExcludedProvider`).
+///
+/// In all other cases (prod build, not excluded) returns
+/// [MixpanelAnalyticsTracker].
 final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
   final config = ref.watch(appConfigProvider);
+  final analyticsExcluded = ref.watch(analyticsExcludedProvider);
 
-  // Disable analytics in development environment
-  if (config.devModeEnabled) {
+  // Disable analytics in development environment OR on opted-out devices.
+  if (config.devModeEnabled || analyticsExcluded) {
     return const NoopAnalyticsTracker();
   }
 
-  // Enable analytics in production environment
+  // Enable analytics in production environment.
   final logger = ref.watch(appLoggerProvider);
   return MixpanelAnalyticsTracker(
     config: config,

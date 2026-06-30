@@ -29,58 +29,62 @@ class NewActivityDateTimeSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Date and Time side-by-side
-        Row(
-          key: const ValueKey('activity_create.datetime_labels'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // DATE section
-            Column(
-              children: [
-                Text(
-                  'DATE',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 12,
+        // Date and Time side-by-side. FittedBox scales the pair down so a long
+        // date string never overflows a narrow phone.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            key: const ValueKey('activity_create.datetime_labels'),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // DATE section
+              Column(
+                children: [
+                  Text(
+                    'DATE',
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  key: const ValueKey('activity_create.datetime_display'),
-                  _formatDate(selectedDate),
-                  style: AppTextStyles.dataNumber.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    key: const ValueKey('activity_create.datetime_display'),
+                    _formatDate(selectedDate),
+                    style: AppTextStyles.dataNumber.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
 
-            const SizedBox(width: AppSpacing.xxl),
+              const SizedBox(width: AppSpacing.xxl),
 
-            // TIME section
-            Column(
-              children: [
-                Text(
-                  'TIME',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 12,
+              // TIME section
+              Column(
+                children: [
+                  Text(
+                    'TIME',
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _formatTime(selectedTime),
-                  style: AppTextStyles.dataNumber.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _formatTime(selectedTime),
+                    style: AppTextStyles.dataNumber.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
 
         const SizedBox(height: AppSpacing.sm),

@@ -43,7 +43,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       ),
       title: Text(
         key: const ValueKey('food_prefs.title'),
-        'Food Preferences',
+        'Diet, Allergies & Formulas',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -118,19 +118,9 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                   analyticsEvent: 'settings_allergies_tapped',
                 ),
 
-                const SizedBox(height: AppSpacing.sm),
-
-                // Food Likes & Dislikes
-                _buildHubTile(
-                  context: context,
-                  ref: ref,
-                  tileKey: const ValueKey('food_prefs.likes_dislikes_row'),
-                  icon: FontAwesomeIcons.heart.data,
-                  title: 'Food Likes & Dislikes',
-                  subtitle: 'Manage your food preferences',
-                  route: '/settings/food-preferences',
-                  analyticsEvent: 'settings_food_likes_dislikes_tapped',
-                ),
+                // Food Likes & Dislikes tile removed (2026-06-25): food
+                // preferences are no longer collected. Dietary preference,
+                // allergies, and formulas remain below.
 
                 const SizedBox(height: AppSpacing.sm),
 

@@ -1,9 +1,13 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 
 const CUSTOM_SCHEME = "com.milkman.mealvanaendurance://callback";
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -37,4 +41,4 @@ serve(async (req: Request) => {
       },
     }
   );
-});
+}));

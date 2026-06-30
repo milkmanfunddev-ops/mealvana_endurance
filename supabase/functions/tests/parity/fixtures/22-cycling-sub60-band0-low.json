@@ -1,0 +1,35 @@
+{
+  "description": "Cycling <60 min (band [0,30] g/h carbs) — low gut, recovery ride. Bike ceiling 120 g/h but band is [0,30] so target is low.",
+  "solver": "rule",
+  "knownFailure": false,
+  "athlete": {
+    "weight_kg": 78,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 50,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 20,
+      "sodium_mg": 300,
+      "water_ml": 500
+    },
+    "post_run": {
+      "carbs_g": 50,
+      "protein_g": 22,
+      "sodium_mg": 500,
+      "water_ml": 600
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

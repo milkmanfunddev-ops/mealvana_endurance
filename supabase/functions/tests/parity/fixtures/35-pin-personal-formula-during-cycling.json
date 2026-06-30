@@ -1,0 +1,73 @@
+{
+  "description": "Personal formula during pin — cycling 150 min, high gut. Formula fires for cycling/150-240 bracket. Checks components appear + invariants; macro parity bypassed (user-authored formula).",
+  "solver": "personal_formula",
+  "athlete": {
+    "weight_kg": 82,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 150,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 90,
+      "sodium_mg": 1400,
+      "water_ml": 1600
+    },
+    "post_run": {
+      "carbs_g": 80,
+      "protein_g": 35,
+      "sodium_mg": 1100,
+      "water_ml": 1200
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "personalFormulas": [
+      {
+        "id": "pf-cycling-150-240",
+        "name": "Cycling Long Ride Stack",
+        "phase": "during",
+        "activities": ["cycling"],
+        "durations": ["90-150 min", "150-240 min"],
+        "subPhase": null,
+        "components": [
+          {
+            "food_id": "high-carb-mix",
+            "food_name": "High Carb Drink Mix",
+            "quantity": 2,
+            "serving_unit": "bottle",
+            "source": "template",
+            "carbs_per_serving": 45,
+            "protein_per_serving": 0,
+            "fat_per_serving": 0,
+            "sodium_mg": 200,
+            "fluid_ml_per_serving": 500,
+            "calories_per_serving": 180
+          },
+          {
+            "food_id": "electrolyte-tab",
+            "food_name": "Electrolyte Tablet",
+            "quantity": 3,
+            "serving_unit": "tablet",
+            "source": "template",
+            "carbs_per_serving": 1,
+            "protein_per_serving": 0,
+            "fat_per_serving": 0,
+            "sodium_mg": 350,
+            "fluid_ml_per_serving": 0,
+            "calories_per_serving": 10
+          }
+        ]
+      }
+    ]
+  }
+}

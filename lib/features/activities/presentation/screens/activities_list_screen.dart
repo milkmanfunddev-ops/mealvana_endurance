@@ -337,11 +337,12 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   Widget _buildErrorState(Object error) {
     return Center(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.error_outline, size: 48, color: Colors.red),
           const SizedBox(height: 16),
-          Text('Error loading activities: $error'),
+          const Text('Unable to load activities. Please try again.'),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {

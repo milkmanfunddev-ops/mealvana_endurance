@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
@@ -6,13 +8,18 @@ const corsHeaders = {
 // Default weather values (matches current app defaults)
 const DEFAULT_TEMP_C = 20;
 const DEFAULT_HUMIDITY_PCT = 60;
+
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
 /**
  * Fetches weather data from Open-Meteo API
  * Supports:
  * - Future forecasts (0-16 days ahead)
  * - Historical forecasts (0-92 days back)
  * - Graceful fallback to defaults
- */ serve(async (req)=>{
+ */
+serve(withSentry(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -118,7 +125,7 @@ const DEFAULT_HUMIDITY_PCT = 60;
       }
     });
   }
-});
+}));
 /**
  * Fetch future weather forecast from Open-Meteo
  */ async function fetchFutureForecast(latitude, longitude, activityDate, daysAhead) {

@@ -19,6 +19,7 @@ import {
   validationError,
   serverError,
 } from '../_shared/responses.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 import type {
   DailyMacroInput,
   GarminActivityForSession,
@@ -360,7 +361,10 @@ async function attachWeekGarminContext(
 // Main handler
 // ---------------------------------------------------------------------------
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -437,4 +441,4 @@ serve(async (req) => {
     console.error('[CALCULATE_DAILY_MACROS_ERROR]', error);
     return serverError(error);
   }
-});
+}));

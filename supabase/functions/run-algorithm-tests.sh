@@ -109,6 +109,116 @@ run_test \
   "$SCRIPT_DIR/tests/parity/parity.test.ts" \
   --allow-read --allow-write --node-modules-dir=none
 
+run_test \
+  "1h. During Phase — Empty Pool Failure Modes (P1 bug tracking)" \
+  "$E2E_DIR/during-phase-empty-pool.test.ts" \
+  --allow-write --node-modules-dir=none
+
+run_test \
+  "1i. During Template — Missing Component Food Failure Modes (P6)" \
+  "$SHARED_DIR/during-template-missing-component.test.ts" \
+  --allow-write --node-modules-dir=none
+
+run_test \
+  "1j. Macro-Target Adherence — during-phase rule solver + shortfall asymmetry (P3)" \
+  "$E2E_DIR/macro-adherence.test.ts" \
+  --allow-read --allow-write --node-modules-dir=none
+
+run_test \
+  "1k. After-Phase Adherence — canonical portioning mismatch detection (P4)" \
+  "$E2E_DIR/after-phase-adherence.test.ts" \
+  --allow-write --node-modules-dir=none
+
+run_test \
+  "1l. Diet & Allergy Filtering — allergen exclusion, gluten/dairy/peanut-free, vegan/vegetarian known-failure, dislike scoring, pin bypass (P2)" \
+  "$E2E_DIR/diet-allergy-filtering.test.ts" \
+  --allow-write --node-modules-dir=none
+
+run_test \
+  "1m. LP Solver — infeasibility & empty-pool fallback (P5)" \
+  "$SHARED_DIR/lp-infeasibility.test.ts" \
+  --allow-read --allow-write --node-modules-dir=none
+
+run_test \
+  "1n. Macro Engine — duration bands, sport ceilings, gut multipliers" \
+  "$SCRIPT_DIR/generate-macros-v4/macro-bands.test.ts" \
+  --allow-read --allow-write --allow-env --node-modules-dir=none
+
+run_test \
+  "1o. Pre-Workout Template DB Failure — throws → HTTP 500 (P7)" \
+  "$SCRIPT_DIR/generate-macros-v4/pre-workout-db-failure.test.ts" \
+  --allow-read --allow-write --allow-env --node-modules-dir=none
+
+run_test \
+  "1p. AI Coach — validation, prompt wiring, guardrails, model env override" \
+  "$SCRIPT_DIR/ai-coach/index.test.ts" \
+  --allow-env --allow-read --allow-net
+
+run_test \
+  "1q. Analyze Meal Photo — schema, auth authz, MIME inference, base64, not_food" \
+  "$SCRIPT_DIR/analyze-meal-photo/index.test.ts" \
+  --allow-env --allow-read --allow-net
+
+run_test \
+  "1r. Describe Meal — validation, schema, prompt embedding, credit cost" \
+  "$SCRIPT_DIR/describe-meal/index.test.ts" \
+  --allow-env --allow-read --allow-net
+
+run_test \
+  "1s. Jade Chat — NDJSON envelope, validation, opener mode, system prompt, CORS, date math" \
+  "$SCRIPT_DIR/jade-chat/index.test.ts" \
+  --allow-env --allow-read --allow-net
+
+run_test \
+  "1t. lookup-product — detectProductType (3-stage: taxonomy, brand, keyword), sodium ×1000, catalog mapping" \
+  "$SCRIPT_DIR/lookup-product/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1u. get-foods — deduplication, column rename mapping, suitability flags, null-safety" \
+  "$SCRIPT_DIR/get-foods/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1v. search-catalog — query validation, limit clamping, has_nutrition derived field, response shape" \
+  "$SCRIPT_DIR/search-catalog/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1w. save-user-food — required field validation, category ID→enum mapping, RLS intent, response shape" \
+  "$SCRIPT_DIR/save-user-food/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1x. search-public-events — query validation (≥2 chars), response assembly, match flags, RPC arg wiring" \
+  "$SCRIPT_DIR/search-public-events/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1y. create-user — validation, default fields, onboarding_completed, food-prefs side-effect, duplicate 409" \
+  "$SCRIPT_DIR/create-user/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1z. delete-user — auth enforcement, cascade order, idempotency, auth admin error propagation" \
+  "$SCRIPT_DIR/delete-user/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1aa. upsert-user-profile — partial update merge, enum validation, food-pref upsert, RLS intent" \
+  "$SCRIPT_DIR/upsert-user-profile/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1ab. get-weather-forecast — date routing, Open-Meteo shape, WMO conditions, fallback defaults, hydration contract" \
+  "$SCRIPT_DIR/get-weather-forecast/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
+run_test \
+  "1ac. send-nutrition-plan-email — validation, Resend call assembly, HTML template, error handling" \
+  "$SCRIPT_DIR/send-nutrition-plan-email/index.test.ts" \
+  --allow-env --node-modules-dir=none
+
 # ─── Section 2: E2E Tests (optional) ───────────────────────────────────────
 
 if [ "$1" = "--e2e" ]; then

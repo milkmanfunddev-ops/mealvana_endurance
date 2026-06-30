@@ -82,6 +82,23 @@ definitions:
         echo "PATH=$HOME/.shorebird/bin:$PATH" >> $CM_ENV
         shorebird doctor
 
+    - &upload_sentry_symbols
+      # Upload debug symbols / source maps to Sentry so stack traces are
+      # de-obfuscated in the Sentry dashboard.
+      #
+      # REQUIRED: Add SENTRY_AUTH_TOKEN to the Codemagic variable group
+      # (mealvana_dev and/or mealvana_prod) before this step will succeed.
+      # Create the token at https://sentry.io/settings/account/api/auth-tokens/
+      # with scopes: project:releases, org:read. Then in Codemagic:
+      #   Team Settings → Environment variables → add SENTRY_AUTH_TOKEN
+      #   to the relevant variable group(s).
+      #
+      # The sentry: block in pubspec.yaml already has org: milkman-24 and
+      # project: mealvana-endurance configured for the plugin.
+      name: Upload debug symbols to Sentry
+      script: |
+        dart run sentry_dart_plugin
+
     - &install_cocoapods
       name: Install CocoaPods dependencies
       script: cd ios && pod install
@@ -258,6 +275,8 @@ workflows:
             --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
+      - *upload_sentry_symbols
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -344,6 +363,8 @@ workflows:
             --flavor dev \
             --target lib/main_dev.dart \
             --build-number=$BUILD_NUMBER
+
+      - *upload_sentry_symbols
 
     artifacts:
       - build/**/outputs/**/*.aab
@@ -452,6 +473,8 @@ workflows:
           echo "You can now create patches using prod-ios-patch workflow"
           echo "=========================================="
 
+      - *upload_sentry_symbols
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -552,6 +575,8 @@ workflows:
           echo "Shorebird Android release created successfully!"
           echo "You can now create patches using prod-android-patch workflow"
           echo "=========================================="
+
+      - *upload_sentry_symbols
 
     artifacts:
       - build/**/outputs/**/*.aab
@@ -655,6 +680,8 @@ workflows:
             --export-options-plist=/Users/builder/export_options.plist \
             --build-number=$BUILD_NUMBER
 
+      - *upload_sentry_symbols
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -744,6 +771,8 @@ workflows:
             --artifact=aab \
             --build-number=$BUILD_NUMBER
 
+      - *upload_sentry_symbols
+
     artifacts:
       - build/**/outputs/**/*.aab
       - build/**/outputs/**/*.apk
@@ -831,6 +860,8 @@ workflows:
             --target lib/main_prod.dart \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
+
+      - *upload_sentry_symbols
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -1127,6 +1158,8 @@ workflows:
             --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
+      - *upload_sentry_symbols
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -1194,6 +1227,8 @@ workflows:
             --flavor prod \
             --target lib/main_prod.dart \
             --build-number=$BUILD_NUMBER
+
+      - *upload_sentry_symbols
 
     artifacts:
       - build/**/outputs/**/*.aab

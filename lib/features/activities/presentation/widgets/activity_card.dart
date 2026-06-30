@@ -244,10 +244,12 @@ class ActivityCard extends ConsumerWidget {
           content: Text('Are you sure you want to delete "$activityTitle"?'),
           actions: [
             TextButton(
+              key: const ValueKey('activity_delete.cancel_button'),
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancel'),
             ),
             TextButton(
+              key: const ValueKey('activity_delete.confirm_button'),
               onPressed: () => Navigator.of(context).pop(true),
               style: TextButton.styleFrom(foregroundColor: AppColors.error),
               child: const Text('Delete'),

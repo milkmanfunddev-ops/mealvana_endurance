@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Medium.otf") format("opentype");font-weight:500;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
+@font-face{font-family:"Compadre";src:url("fonts/Compadre-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Sansita";src:url("fonts/Sansita-Bold.ttf") format("truetype");font-weight:700;font-display:swap;}
+@keyframes sheetUp2{from{transform:translateY(100%);}to{transform:translateY(0);}}
+:root{--me-blackberry:rgb(56,22,51);--me-cream:rgb(248,246,235);--me-orange:rgb(247,139,20);--me-electrolyte:rgb(28,249,207);--me-dragonfruit:rgb(220,37,151);}
+</style>
+</helmet>
+<div onClick="{{ onClose }}" style="position:absolute;inset:0;background:rgba(20,8,18,0.55);display:flex;flex-direction:column;justify-content:flex-end;">
+  <div onClick="{{ stop }}" style="background:rgb(48,18,44);border-radius:24px 24px 0 0;display:flex;flex-direction:column;max-height:80%;animation:sheetUp2 320ms cubic-bezier(0.2,0.8,0.2,1);box-shadow:0 -18px 40px -12px rgba(0,0,0,0.5);">
+    <div style="display:flex;justify-content:center;padding:10px 0 2px;"><div style="width:40px;height:4px;border-radius:2px;background:rgba(248,246,235,0.25);"></div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 12px;">
+      <div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:19px;color:var(--me-cream);">Add to {{ mealLabel }}</div>
+      <button onClick="{{ onClose }}" style="background:transparent;border:none;color:rgba(248,246,235,0.55);font-family:'Apercu',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+    </div>
+    <div style="padding:0 18px 10px;">
+      <div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(248,246,235,0.1);border-radius:100px;padding:9px 15px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(248,246,235,0.5)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+        <div style="font-family:'Apercu',sans-serif;font-size:13.5px;color:rgba(248,246,235,0.45);">Search foods\u2026</div>
+      </div>
+    </div>
+    <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:6px 18px 4px;">Quick add</div>
+    <div style="flex:1;overflow:auto;padding:2px 18px 22px;display:flex;flex-direction:column;gap:9px;">
+      <sc-for list="{{ foods }}" as="f" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.045);border:1px solid rgba(248,246,235,0.08);border-radius:14px;padding:12px 14px;">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--me-orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgb(56,22,51)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a3 3 0 0 0 3 3v8M7 3v7M10 3v7M18 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4v9"></path></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:'Compadre',Georgia,serif;font-size:16px;color:var(--me-cream);">{{ f.name }}</div>
+            <div style="font-family:'Apercu',sans-serif;font-size:11.5px;color:rgba(248,246,235,0.55);margin-top:2px;font-variant-numeric:tabular-nums;">{{ f.kcal }} kcal &middot; {{ f.c }}C &middot; {{ f.p }}P &middot; {{ f.f }}F</div>
+          </div>
+          <button onClick="{{ f.add }}" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid var(--me-orange);color:var(--me-orange);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-family:'Apercu',sans-serif;">+</button>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:800},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onPick&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(food: any) =&gt; void&quot;},&quot;mealLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Dinner&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const onPick = this.props.onPick || (() => {});
+    const raw = [
+      { name: "Grilled Chicken Bowl", kcal: 520, c: 45, p: 42, f: 16 },
+      { name: "Spaghetti & Meatballs", kcal: 640, c: 72, p: 34, f: 22 },
+      { name: "Greek Yogurt + Berries", kcal: 180, c: 22, p: 15, f: 4 },
+      { name: "Banana", kcal: 105, c: 27, p: 1, f: 0 },
+      { name: "Salmon & Rice", kcal: 560, c: 48, p: 38, f: 24 },
+    ];
+    return {
+      onClose: this.props.onClose || (() => {}),
+      mealLabel: this.props.mealLabel || "Dinner",
+      stop: (e) => e.stopPropagation(),
+      foods: raw.map((f) => ({ ...f, add: (e) => { e.stopPropagation(); onPick(f); } })),
+    };
+  }
+}
+</script>
+</body>
+</html>

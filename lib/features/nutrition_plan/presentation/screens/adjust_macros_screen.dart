@@ -415,6 +415,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           CircularProgressIndicator(color: AppColors.orange),
           const SizedBox(height: AppSpacing.md),
@@ -430,40 +431,39 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FaIcon(
-              FontAwesomeIcons.triangleExclamation,
-              size: 48,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(
+            FontAwesomeIcons.triangleExclamation,
+            size: 48,
+            color: AppColors.dragonfruit,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Error loading macros',
+            style: AppTextStyles.sectionTitle.copyWith(
               color: AppColors.dragonfruit,
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Error loading macros',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: AppColors.dragonfruit,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            error.toString(),
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              error.toString(),
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            KyleSecondaryButton(
-              text: 'Go Back',
-              onPressed: () => context.pop(),
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          KyleSecondaryButton(
+            text: 'Go Back',
+            onPressed: () => context.pop(),
+          ),
+        ],
       ),
     );
   }
@@ -474,6 +474,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             FaIcon(
               FontAwesomeIcons.circleInfo,

@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_target_overrides.dart';
 import '../domain/intensity_distribution.dart';
 import '../data/macro_repository.dart';
+import '../data/offline_macro_calculator.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../../shared/domain/activity_type.dart';
@@ -534,57 +538,218 @@ class MacroGenerationService {
       '📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...',
     );
 
-    final response = await supabaseClient.functions.invoke(
-      'generate-macros-v4',
-      body: requestData,
-    );
-
-    DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
-
-    if (response.status >= 400) {
-      final data = response.data as Map<String, dynamic>?;
-      final errorMessage =
-          data?['message'] ?? 'Failed to generate macro targets';
-      DebugLogger.error(
-        '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
-      );
-      throw Exception(errorMessage);
-    }
-
-    final data = response.data as Map<String, dynamic>;
-    DebugLogger.info(
-      '📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}',
-    );
-
-    if (data['success'] != true) {
-      final errorMessage =
-          data['message'] ?? 'Failed to generate macro targets';
-      DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
-      throw Exception(errorMessage);
-    }
-
-    final macrosData = data['macros'] as Map<String, dynamic>;
-    final activityTypeString =
-        data['activity_type'] as String? ?? expectedActivityType.name;
-    DebugLogger.info(
-      '✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys',
-    );
-
+    Map<String, dynamic> macrosData;
     ActivityType activityType = expectedActivityType;
+    String calculationRule;
+
     try {
-      activityType = ActivityType.values.byName(activityTypeString);
-    } catch (e) {
-      DebugLogger.warning(
-        '⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType',
+      final response = await supabaseClient.functions.invoke(
+        'generate-macros-v4',
+        body: requestData,
       );
+
+      DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
+
+      if (response.status >= 400) {
+        final data = response.data as Map<String, dynamic>?;
+        final errorMessage =
+            data?['message'] ?? 'Failed to generate macro targets';
+        DebugLogger.error(
+          '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+        );
+        throw Exception(errorMessage);
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      DebugLogger.info(
+        '📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}',
+      );
+
+      if (data['success'] != true) {
+        final errorMessage =
+            data['message'] ?? 'Failed to generate macro targets';
+        DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
+        throw Exception(errorMessage);
+      }
+
+      macrosData = data['macros'] as Map<String, dynamic>;
+      final activityTypeString =
+          data['activity_type'] as String? ?? expectedActivityType.name;
+      DebugLogger.info(
+        '✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys',
+      );
+
+      try {
+        activityType = ActivityType.values.byName(activityTypeString);
+      } catch (e) {
+        DebugLogger.warning(
+          '⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType',
+        );
+      }
+
+      calculationRule =
+          macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function';
+    } on SocketException catch (e) {
+      DebugLogger.warning(
+        '📵 EDGE FUNCTION: Network unavailable (SocketException: $e) — using offline fallback',
+      );
+      macrosData = _computeOfflineMacros(requestData, expectedActivityType);
+      calculationRule = 'offline_fallback';
+    } on TimeoutException catch (e) {
+      DebugLogger.warning(
+        '⏱️ EDGE FUNCTION: Timeout ($e) — using offline fallback',
+      );
+      macrosData = _computeOfflineMacros(requestData, expectedActivityType);
+      calculationRule = 'offline_fallback';
+    } catch (e) {
+      // Re-check: if the error message suggests a host-lookup / network failure,
+      // fall back offline. Otherwise rethrow (HTTP 4xx / logic errors must propagate).
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('failed host lookup') ||
+          msg.contains('network is unreachable') ||
+          msg.contains('connection refused') ||
+          msg.contains('no address associated') ||
+          msg.contains('clientexception')) {
+        DebugLogger.warning(
+          '📵 EDGE FUNCTION: Network failure ($e) — using offline fallback',
+        );
+        macrosData = _computeOfflineMacros(requestData, expectedActivityType);
+        calculationRule = 'offline_fallback';
+      } else {
+        rethrow;
+      }
     }
 
     final macroTargets = _parseMacroTargets(macrosData, activityType);
     DebugLogger.info(
-      '✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal',
+      '✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal, rule: $calculationRule',
     );
 
+    if (calculationRule == 'offline_fallback') {
+      return MacroTargets(
+        id: macroTargets.id,
+        activityType: macroTargets.activityType,
+        preRun: macroTargets.preRun,
+        duringRun: macroTargets.duringRun,
+        postRun: macroTargets.postRun,
+        metrics: macroTargets.metrics,
+        calculationRule: 'offline_fallback',
+        timestamp: macroTargets.timestamp,
+        isUserModified: macroTargets.isUserModified,
+        modifiedFields: macroTargets.modifiedFields,
+        preRunSelections: null,
+        brickSegments: macroTargets.brickSegments,
+        brickPhaseTargets: macroTargets.brickPhaseTargets,
+      );
+    }
+
     return macroTargets;
+  }
+
+  /// Compute macro targets offline from the already-assembled [requestData].
+  ///
+  /// Dispatches to the correct [OfflineMacroCalculator] entry point based on
+  /// [activityType] and returns the raw macros map (same shape as the edge
+  /// function's `macros` object) so [_parseMacroTargets] can parse it unchanged.
+  Map<String, dynamic> _computeOfflineMacros(
+    Map<String, dynamic> requestData,
+    ActivityType activityType,
+  ) {
+    final weightKg = (requestData['weight'] as num?)?.toDouble() ?? 70.0;
+    final hoursBefore =
+        (requestData['hours_before'] as num?)?.toDouble() ?? 2.0;
+    final isFasted = requestData['is_fasted'] as bool? ?? false;
+    final gutTraining = requestData['gut_training'] as String? ?? 'moderate';
+    final sweatRateCategory =
+        requestData['sweat_rate_category'] as String? ?? 'medium';
+    final sweatSodiumCat =
+        requestData['sweat_sodium'] as String? ?? 'average';
+    final tempC = (requestData['temp_c'] as num?)?.toDouble();
+    final humidityPct = (requestData['humidity_pct'] as num?)?.toDouble();
+    final isIndoor = requestData['is_indoor'] as bool? ?? false;
+    final knownSweatRateMlHr =
+        (requestData['known_sweat_rate_ml_hr'] as num?)?.toDouble();
+    final knownSodiumConcMgL =
+        (requestData['known_sodium_concentration_mg_l'] as num?)?.toDouble();
+
+    switch (activityType) {
+      case ActivityType.running:
+        final distanceMiles =
+            (requestData['run_distance'] as num?)?.toDouble() ?? 0.0;
+        final paceMinPerMile =
+            (requestData['run_pace'] as num?)?.toDouble() ?? 10.0;
+        return OfflineMacroCalculator.calculateRunningMacros(
+          weightKg: weightKg,
+          distanceMiles: distanceMiles,
+          paceMinPerMile: paceMinPerMile,
+          hoursBefore: hoursBefore,
+          isFasted: isFasted,
+          gutTraining: gutTraining,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          tempC: tempC,
+          humidityPct: humidityPct,
+          isIndoor: isIndoor,
+          knownSweatRateMlPerHour: knownSweatRateMlHr,
+          knownSodiumConcMgPerL: knownSodiumConcMgL,
+        );
+
+      case ActivityType.cycling:
+        final distanceMiles =
+            (requestData['distance_miles'] as num?)?.toDouble() ?? 0.0;
+        final speedMph =
+            (requestData['speed_mph'] as num?)?.toDouble() ?? 20.0;
+        final terrain = requestData['terrain'] as String? ?? 'flat';
+        return OfflineMacroCalculator.calculateCyclingMacros(
+          weightKg: weightKg,
+          distanceMiles: distanceMiles,
+          speedMph: speedMph,
+          terrain: terrain,
+          hoursBefore: hoursBefore,
+          isFasted: isFasted,
+          gutTraining: gutTraining,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          tempC: tempC,
+          humidityPct: humidityPct,
+          isIndoor: isIndoor,
+          knownSweatRateMlPerHour: knownSweatRateMlHr,
+          knownSodiumConcMgPerL: knownSodiumConcMgL,
+        );
+
+      case ActivityType.swimming:
+        final distanceMeters =
+            (requestData['distance_meters'] as num?)?.toInt() ?? 0;
+        final paceSecondsper100m =
+            (requestData['pace_per_100m_seconds'] as num?)?.toInt() ?? 120;
+        final poolOrOpenWater =
+            requestData['pool_or_open_water'] as String? ?? 'pool';
+        final waterTempC =
+            (requestData['water_temp_c'] as num?)?.toDouble() ?? 26.0;
+        return OfflineMacroCalculator.calculateSwimmingMacros(
+          weightKg: weightKg,
+          distanceMeters: distanceMeters,
+          paceSecondsper100m: paceSecondsper100m,
+          poolOrOpenWater: poolOrOpenWater,
+          hoursBefore: hoursBefore,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          waterTempC: waterTempC,
+          knownSweatRateMlPerHour: knownSweatRateMlHr,
+          knownSodiumConcMgPerL: knownSodiumConcMgL,
+        );
+
+      default:
+        // Brick/unknown — brick workouts have their own edge function path.
+        return OfflineMacroCalculator.calculateRunningMacros(
+          weightKg: weightKg,
+          distanceMiles: 0,
+          paceMinPerMile: 10,
+          hoursBefore: hoursBefore,
+          isFasted: isFasted,
+          gutTraining: gutTraining,
+        );
+    }
   }
 
   MacroTargets _parseMacroTargets(

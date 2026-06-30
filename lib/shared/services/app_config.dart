@@ -30,6 +30,9 @@ class AppConfig {
     required this.vdotUseSandbox,
     required this.devModeEnabled,
     required this.appEnvironment,
+    required this.revenueCatApiKeyApple,
+    required this.revenueCatApiKeyGoogle,
+    required this.aiCreditsEnabled,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
   });
@@ -91,6 +94,31 @@ class AppConfig {
   // Environment configuration
   final bool devModeEnabled;
   final String appEnvironment; // 'dev' or 'prod'
+
+  // RevenueCat (AI Credit Packs)
+  final String revenueCatApiKeyApple;
+  final String revenueCatApiKeyGoogle;
+
+  /// Feature flag controlling AI credit purchasing UI.
+  ///
+  /// Default false — the paywall and balance chip are hidden until explicitly
+  /// enabled via the `AI_CREDITS_ENABLED=true` env var.
+  final bool aiCreditsEnabled;
+
+  /// Platform-appropriate RevenueCat public API key.
+  ///
+  /// Returns the Apple key on iOS/macOS and the Google key on Android.
+  /// Empty string on web or when the keys have not been configured.
+  String get revenueCatApiKey {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return revenueCatApiKeyApple;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return revenueCatApiKeyGoogle;
+    }
+    return ''; // Web / other platforms: RC not supported
+  }
 
   // Feature flags / debug settings
   final bool enableDebugLogging;
@@ -199,6 +227,18 @@ class AppConfig {
       vdotUseSandbox:
           dotenv.get('VDOT_USE_SANDBOX', fallback: 'true') == 'true',
 
+      // RevenueCat (AI Credit Packs)
+      revenueCatApiKeyApple: dotenv.get(
+        'REVENUECAT_API_KEY_APPLE',
+        fallback: '',
+      ),
+      revenueCatApiKeyGoogle: dotenv.get(
+        'REVENUECAT_API_KEY_GOOGLE',
+        fallback: '',
+      ),
+      aiCreditsEnabled:
+          dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
+
       // Debug settings
       enableDebugLogging: kDebugMode,
       enableSentryProfiling: !kDebugMode, // Disabled in debug due to iOS crash
@@ -233,6 +273,9 @@ class AppConfig {
     bool vdotUseSandbox = true,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
+    String revenueCatApiKeyApple = '',
+    String revenueCatApiKeyGoogle = '',
+    bool aiCreditsEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
   }) {
@@ -264,6 +307,9 @@ class AppConfig {
       vdotUseSandbox: vdotUseSandbox,
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,
+      revenueCatApiKeyApple: revenueCatApiKeyApple,
+      revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
+      aiCreditsEnabled: aiCreditsEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
     );
@@ -422,6 +468,22 @@ class AppConfig {
           const String.fromEnvironment(
             'VDOT_USE_SANDBOX',
             defaultValue: 'true',
+          ) ==
+          'true',
+
+      // RevenueCat (AI Credit Packs)
+      revenueCatApiKeyApple: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_APPLE',
+        defaultValue: '',
+      ),
+      revenueCatApiKeyGoogle: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_GOOGLE',
+        defaultValue: '',
+      ),
+      aiCreditsEnabled:
+          const String.fromEnvironment(
+            'AI_CREDITS_ENABLED',
+            defaultValue: 'false',
           ) ==
           'true',
 

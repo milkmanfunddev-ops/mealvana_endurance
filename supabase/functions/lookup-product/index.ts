@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -267,7 +268,10 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
   }
 }
 
-serve(async (req)=>{
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -444,4 +448,4 @@ serve(async (req)=>{
       }
     });
   }
-});
+}));

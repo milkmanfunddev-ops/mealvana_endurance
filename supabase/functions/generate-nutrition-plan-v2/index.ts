@@ -21,6 +21,7 @@ import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, serverError } from '../_shared/responses.ts';
 import { createServiceClient } from '../_shared/supabase-client.ts';
 import { generateUUID, roundToIncrement } from '../_shared/utils.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
 // Nutrition types and LP solver (unchanged)
 import {
@@ -1335,7 +1336,10 @@ async function handleBrickPlan(
 // Main Handler
 // ============================================================================
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -1425,4 +1429,4 @@ serve(async (req) => {
     console.error('[PLAN-V2] Error:', error);
     return serverError(error, true);
   }
-});
+}));

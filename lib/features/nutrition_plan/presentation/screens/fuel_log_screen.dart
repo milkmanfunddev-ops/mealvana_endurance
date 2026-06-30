@@ -228,6 +228,8 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
             initialRating: _fuelLogRating,
             initialNutritionRating: _fuelLogNutritionRating,
             initialNotes: _fuelLogNotes,
+            activity: state.activity,
+            fuelLog: fuelLog,
             duringCarbRateGPerH:
                 ActivityDetailHelpers.computeDuringCarbRateGPerH(
                   activity: state.activity,

@@ -66,13 +66,18 @@ class ActivityScheduleInfo extends StatelessWidget {
           _buildActivitySummary(context),
         ],
         const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildDateColumn(context),
-            const SizedBox(width: AppSpacing.xxl),
-            _buildTimeColumn(context),
-          ],
+        // FittedBox scales the date/time pair down so it never overflows a
+        // narrow phone.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildDateColumn(context),
+              const SizedBox(width: AppSpacing.xxl),
+              _buildTimeColumn(context),
+            ],
+          ),
         ),
       ],
     );

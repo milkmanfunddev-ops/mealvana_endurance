@@ -42,8 +42,12 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
     NotificationService.setDailyMacroCacheInvalidator((DateTime date) async {
       if (!mounted) return;
       // Use Supabase auth directly — no async wait required.
-      final userId = ref.read(appExternalDepsProvider).supabaseClient
-          .auth.currentUser?.id;
+      final userId = ref
+          .read(appExternalDepsProvider)
+          .supabaseClient
+          .auth
+          .currentUser
+          ?.id;
       if (userId == null) return;
       final repo = ref.read(dailyMacroTargetsRepositoryProvider);
       await repo.invalidateForDate(userId, date);
@@ -259,19 +263,12 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// compile-time constant so any release/profile build tree-shakes the
 /// AccessibilityTools branch entirely. `isDev` (runtime, from AppConfig)
 /// further blocks prod-flavor debug runs from showing the overlay.
-Widget _appShell(
-  BuildContext context,
-  Widget child, {
-  required bool isDev,
-}) {
+Widget _appShell(BuildContext context, Widget child, {required bool isDev}) {
   final mq = MediaQuery.of(context);
   final showA11yOverlay = kDebugMode && isDev;
   return MediaQuery(
     data: mq.copyWith(
-      textScaler: mq.textScaler.clamp(
-        minScaleFactor: 1.0,
-        maxScaleFactor: 1.6,
-      ),
+      textScaler: mq.textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.6),
     ),
     child: showA11yOverlay ? _DevAccessibilityTools(child: child) : child,
   );
@@ -311,6 +308,9 @@ class _DevAccessibilityToolsState extends State<_DevAccessibilityTools> {
   Widget build(BuildContext context) {
     return AccessibilityTools(
       key: ValueKey('accessibility-tools-$_resetGeneration'),
+      // Silence the per-rebuild console report (it flooded the logs and buried
+      // real errors). The on-screen overlay + testing panel still work.
+      logLevel: LogLevel.none,
       child: widget.child,
     );
   }

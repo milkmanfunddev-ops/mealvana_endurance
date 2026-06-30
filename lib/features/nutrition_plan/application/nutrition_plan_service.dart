@@ -431,6 +431,8 @@ class NutritionPlanService {
         hoursBefore: hoursBefore,
         activityId: activityId,
         userId: userId,
+        durationMinutes: durationMinutes,
+        gutTrainingLevel: gutTrainingLevel,
       );
     }
   }
@@ -440,6 +442,8 @@ class NutritionPlanService {
     required double hoursBefore,
     String? activityId,
     String? userId,
+    int? durationMinutes,
+    String? gutTrainingLevel,
   }) async {
     final resolvedUserId = (userId != null && userId.isNotEmpty)
         ? userId
@@ -457,6 +461,8 @@ class NutritionPlanService {
           activityId: activityId,
           timeBeforeRunHours: hoursBefore,
           activityType: macroTargets.activityType,
+          durationMinutes: durationMinutes,
+          gutTrainingLevel: gutTrainingLevel,
         );
       } catch (fallbackError) {
         _logger.warning(

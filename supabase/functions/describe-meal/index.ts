@@ -30,7 +30,10 @@ import {
   validationError,
 } from '../_shared/responses.ts';
 import { JADE_MODEL } from '../_shared/ai/model.ts';
+import { logAiUsage } from '../_shared/ai/usage.ts';
 import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -70,7 +73,10 @@ async function requireUser(req: Request) {
 // Main handler
 // ---------------------------------------------------------------------------
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -118,6 +124,15 @@ serve(async (req: Request) => {
         `length: ${description.length} chars, model: ${JADE_MODEL}`,
     );
 
+    // ── Service-role client (reused for credits + jade_calls/ai_usage logging) ─
+    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ── Credit check ─────────────────────────────────────────────────────────
+    const credit = await ensureAndCheckCredits(serviceClient, user.id, 'describe-meal');
+    if (!credit.allowed) {
+      return jsonResponse(insufficientCreditsBody(credit), 402);
+    }
+
     // Call Claude via Vercel AI Gateway
     const result = await generateObject({
       model: JADE_MODEL as Parameters<typeof generateObject>[0]['model'],
@@ -148,7 +163,6 @@ Return your answer as structured JSON matching the requested schema.`,
     const usage = result.usage;
 
     // Log usage to jade_calls (fire-and-forget)
-    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     // Register with waitUntil so the insert survives isolate shutdown
     // after the response is returned.
     // deno-lint-ignore no-explicit-any
@@ -169,6 +183,20 @@ Return your answer as structured JSON matching the requested schema.`,
           }
         }),
     );
+    // Also record in the canonical, prod-safe ai_usage ledger (used for
+    // per-user token visibility + future throttling).
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      logAiUsage(serviceClient, {
+        userId: user.id,
+        functionName: 'describe-meal',
+        model: JADE_MODEL,
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+      }),
+    );
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(debitForUsage(serviceClient, user.id, 'describe-meal'));
 
     console.log(
       `[describe-meal] Success for user ${user.id}: "${analysis.name}", ` +
@@ -180,4 +208,4 @@ Return your answer as structured JSON matching the requested schema.`,
     console.error('[describe-meal] Fatal error:', error);
     return serverError(error);
   }
-});
+}));

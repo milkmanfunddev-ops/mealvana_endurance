@@ -270,6 +270,7 @@ class EventDetailScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
+            key: const ValueKey('event_details.delete_cancel'),
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'Cancel',
@@ -279,6 +280,7 @@ class EventDetailScreen extends ConsumerWidget {
             ),
           ),
           TextButton(
+            key: const ValueKey('event_details.delete_confirm'),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'Delete',

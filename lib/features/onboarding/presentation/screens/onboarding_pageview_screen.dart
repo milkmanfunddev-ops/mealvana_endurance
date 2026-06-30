@@ -7,9 +7,7 @@ import 'user_profile_screen.dart';
 import 'sports_selection_screen.dart';
 import 'dietary_preference_screen.dart';
 import 'allergies_screen.dart';
-import 'food_preferences_v2_screen.dart';
 import '../../../settings/presentation/screens/connected_apps_screen.dart';
-import '../../../../shared/widgets/content_area.dart';
 
 /// Onboarding PageView Screen - Wrapper for all onboarding steps
 ///
@@ -24,8 +22,7 @@ import '../../../../shared/widgets/content_area.dart';
 /// 3. Sports Selection
 /// 4-6. [Dynamic] Sport Details (Running, Cycling, Swimming based on selection)
 /// 7. Dietary Preference
-/// 8. Allergies
-/// 9. Food Preferences V2
+/// 8. Allergies (final step)
 class OnboardingPageViewScreen extends ConsumerStatefulWidget {
   const OnboardingPageViewScreen({super.key});
 
@@ -88,7 +85,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         ),
       ),
 
-      // 7. Allergies
+      // 7. Allergies (final onboarding step — its Continue routes to post-onboarding auth)
       PageKeepAliveWrapper(
         child: AllergiesScreen(
           onContinue: _nextPage,
@@ -96,13 +93,9 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         ),
       ),
 
-      // 8. Food Preferences V2
-      PageKeepAliveWrapper(
-        child: FoodPreferencesV2Screen(
-          onContinue: _nextPage,
-          onBack: _previousPage,
-        ),
-      ),
+      // Food Preferences step removed (2026-06-25): food likes/dislikes are no
+      // longer collected. Allergies + dietary restrictions are kept; nutrition
+      // planning is driven by formulas/pinned formulas, not food preferences.
     ];
   }
 
