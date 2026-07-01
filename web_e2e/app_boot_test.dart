@@ -45,19 +45,30 @@ void main() {
       ),
     );
 
-    // Let startup (DB init, auth restore, first route) settle. The real app on
-    // web takes a beat; pumpAndSettle with a generous timeout, then assert the
-    // unauthenticated landing surface is present.
-    await tester.pumpAndSettle(const Duration(seconds: 20));
+    // Poll for the welcome surface. We deliberately do NOT use pumpAndSettle:
+    // the real app has continuous work (Sentry, Supabase, splash animations,
+    // timers) that can keep the frame scheduler busy indefinitely, so
+    // pumpAndSettle would time out even on a healthy boot. Instead, pump in
+    // fixed steps and check each frame — this tolerates slow web startup and
+    // never hangs.
+    bool welcomeVisible() =>
+        find.text('Get Started').evaluate().isNotEmpty ||
+        find.text('Log In').evaluate().isNotEmpty;
 
-    // Welcome screen CTAs. If the boot crashed (white screen / exception) these
-    // would be absent and the test fails — exactly what we want to catch.
-    final getStarted = find.text('Get Started');
-    final logIn = find.text('Log In');
+    const deadline = Duration(seconds: 40);
+    final sw = Stopwatch()..start();
+    while (!welcomeVisible() && sw.elapsed < deadline) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
+    // If the boot crashed (white screen / DB failure) the welcome CTAs never
+    // appear and this fails — exactly what we want to catch (e.g. the migration
+    // "duplicate column" boot crash, or the CORS storm stalling startup).
     expect(
-      getStarted.evaluate().isNotEmpty || logIn.evaluate().isNotEmpty,
+      welcomeVisible(),
       isTrue,
-      reason: 'Expected the welcome screen (Get Started / Log In) after boot.',
+      reason: 'Expected the welcome screen (Get Started / Log In) within '
+          '${deadline.inSeconds}s of boot; the app likely crashed on startup.',
     );
 
     // No unhandled framework exceptions during boot.

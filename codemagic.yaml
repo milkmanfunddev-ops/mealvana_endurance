@@ -1096,6 +1096,66 @@ workflows:
       - test-results/**
 
   # ============================================================
+  # WEB E2E — boots the real Flutter web app in real Chrome via
+  # `flutter drive` (the only e2e that sees a canvas-rendered UI; DOM tools
+  # like Playwright cannot). Catches web-only boot failures that VM unit/widget
+  # tests miss (e.g. the edge-CORS storm and the drift migration boot crash).
+  # Separate, non-gating workflow — a failure here does NOT block pr-validation.
+  # Promote to a required check once it has proven stable, or move to a schedule.
+  #
+  # Requires a `DOTENV_WEB_LOCAL` secret in the mealvana_dev group: the JSON
+  # contents of .env.web.local (at minimum APP_ENVIRONMENT / SUPABASE_URL /
+  # SUPABASE_ANON_KEY). chromedriver is auto-provisioned to match the runner's
+  # Chrome by scripts/run_web_e2e.sh, so no driver setup step is needed.
+  # ============================================================
+  web-e2e:
+    name: Web E2E (flutter drive)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+
+    environment:
+      flutter: stable
+      groups:
+        - mealvana_dev
+      vars:
+        FLUTTER_ENV: dev
+
+    triggering:
+      events:
+        - pull_request
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+        - pattern: 'feature/*'
+          include: true
+        - pattern: 'fix/*'
+          include: true
+        - pattern: 'release/*'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *write_dotenv_files
+      - name: Write .env.web.local from Codemagic secret
+        script: |
+          set -euo pipefail
+          printf '%s' "${DOTENV_WEB_LOCAL:-}" > .env.web.local
+          echo "wrote .env.web.local ($(wc -c < .env.web.local) bytes)"
+          if [ ! -s .env.web.local ]; then
+            echo "ERROR: DOTENV_WEB_LOCAL secret is empty — add it to the mealvana_dev group." >&2
+            exit 1
+          fi
+      - *flutter_pub_get
+      - *run_build_runner
+      - name: Run web e2e (boot smoke)
+        script: |
+          mkdir -p test-results
+          bash scripts/run_web_e2e.sh 2>&1 | tee test-results/web-e2e.log
+
+    artifacts:
+      - test-results/**
+
+  # ============================================================
   # LEGACY BUILD WORKFLOWS (Fallback without Shorebird)
   # ============================================================
 

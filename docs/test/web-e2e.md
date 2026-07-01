@@ -25,17 +25,18 @@ is what catches **web-only** regressions like the edge-function CORS bug
 - `scripts/run_web_e2e.sh` — starts chromedriver, runs the drive with dev defines.
 
 ## Running
-One-time: install a chromedriver matching your installed Chrome version.
-```bash
-brew install chromedriver
-chromedriver --version            # must match Chrome major version
-xattr -d com.apple.quarantine "$(which chromedriver)"   # macOS Gatekeeper
-```
-Then:
+No manual chromedriver setup: `scripts/run_web_e2e.sh` detects your installed
+Chrome and auto-provisions a **version-matched** chromedriver from Chrome for
+Testing (cached under `.dart_tool/chromedriver/<major>/`, gitignored). This
+matters because ChromeDriver enforces a matching major version — `brew install
+chromedriver` gives the latest and often mismatches.
 ```bash
 scripts/run_web_e2e.sh                              # dev (.env.web.local)
 ENV_FILE=.env.web.prod.local scripts/run_web_e2e.sh # prod defines
+CHROMEDRIVER=/path/to/chromedriver scripts/run_web_e2e.sh  # force a binary
 ```
+Status: **green** — boots the real app in real Chrome and asserts the welcome
+screen renders. (It already caught a real `AppStartupService` teardown-race.)
 
 ## Extending to authenticated flows (recommended next step)
 The boot smoke intentionally skips login. To cover real coach/athlete flows:
@@ -49,7 +50,16 @@ The boot smoke intentionally skips login. To cover real coach/athlete flows:
 4. This would have caught the CORS storm directly: the Today view never settles
    while macros fail, so a `pumpAndSettle` timeout = regression.
 
-## CI
-chromedriver + headless Chrome run in CI. Gate it as a separate job from the
-Patrol mobile suite (different runner, different device). Keep it off the
-per-PR critical path if flaky; run on merge to main / nightly.
+## CI (Codemagic)
+Wired as the **`web-e2e`** workflow in `codemagic.yaml` (separate, non-gating —
+a failure does NOT block `pr-validation`). Triggers on pull_request for
+develop / feature/* / fix/* / release/*. chromedriver is auto-provisioned by the
+script, so there's no driver setup step.
+
+**One-time setup:** add a `DOTENV_WEB_LOCAL` secret to the Codemagic
+`mealvana_dev` variable group — the JSON contents of your `.env.web.local` (at
+minimum `APP_ENVIRONMENT`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`). The workflow
+writes it to `.env.web.local` before running.
+
+Promote it to a required check once it has proven stable across a few runs, or
+move it to a `schedule` trigger if you prefer nightly over per-PR.
