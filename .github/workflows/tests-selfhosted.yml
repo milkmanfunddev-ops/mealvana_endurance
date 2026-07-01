@@ -1,0 +1,91 @@
+# Tests on a self-hosted macOS runner (Lee's Mac mini M1).
+#
+# Split CI: Codemagic keeps doing build/deploy (signing, TestFlight, Play,
+# Shorebird). This workflow runs the TEST suites on owned hardware to save
+# Codemagic minutes. Results show as PR status checks in GitHub.
+#
+# Requires:
+#  - A self-hosted runner registered on the M1 with labels: [self-hosted, macOS, ARM64]
+#    (scripts/setup_m1_runner.sh sets this up).
+#  - Repo secrets DOTENV_ROOT / DOTENV_DEV_LOCAL / DOTENV_WEB_LOCAL (mirrors of the
+#    gitignored .env files; the Flutter app bundles the first two as assets and the
+#    web e2e reads .env.web.local). Added via `gh secret set`.
+#
+# Until a runner is online, these jobs simply queue (pending) — they don't fail.
+name: Tests (self-hosted M1)
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+# One in-flight run per ref; newer pushes cancel older.
+concurrency:
+  group: tests-selfhosted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Device-less suites — fast, reliable, no Xcode/emulator needed.
+  unit-web-deno:
+    name: Unit + Web e2e + Deno
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write gitignored .env files from secrets
+        run: |
+          printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
+          printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
+          printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
+          : > .env.prod.local   # empty stub; asset bundler just needs the file
+          test -s .env.web.local || { echo "::error::DOTENV_WEB_LOCAL secret is empty"; exit 1; }
+
+      - name: Flutter deps
+        run: flutter pub get
+
+      - name: Code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Unit + widget tests
+        run: |
+          mkdir -p test-results
+          flutter test --exclude-tags="integration || e2e"
+
+      - name: Nutrition algorithm tests (Deno)
+        run: bash supabase/functions/run-algorithm-tests.sh
+
+      - name: Web e2e (flutter drive boot smoke)
+        run: bash scripts/run_web_e2e.sh
+
+  # Patrol integration flows on iOS + Android. Disabled until the M1 has Xcode +
+  # Android SDK/emulator provisioned (see scripts/setup_m1_runner.sh notes).
+  # Flip `if:` to true (or gate on a label) once the toolchain is in place.
+  integration-patrol:
+    name: Patrol (iOS + Android)
+    if: false
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write gitignored .env files from secrets
+        run: |
+          printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
+          printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
+          printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
+          : > .env.prod.local
+      - name: Flutter deps + codegen
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+      - name: Boot an iOS simulator
+        run: |
+          RUNTIME=$(xcrun simctl list runtimes | grep -oE 'com.apple.CoreSimulator.SimRuntime.iOS[^ ]*' | tail -1)
+          DEV=$(xcrun simctl create "CI iPhone" "iPhone 15 Pro" "$RUNTIME")
+          xcrun simctl boot "$DEV"
+          echo "TEST_DEVICE=$DEV" >> "$GITHUB_ENV"
+      - name: Patrol integration tests (iOS)
+        run: flutter test integration_test/test_runner.dart -d "$TEST_DEVICE" --reporter expanded
