@@ -88,7 +88,10 @@ class FoodMappingService {
     if (existingFood == null) return false;
 
     final categories = await _foodRepository.getFoodCategories(existingFood.id);
-    return categories.contains(1); // category_id = 1 for before_run
+    // getFoodCategories returns category strings ("before_run"/"during_run"/
+    // "after_run"), not ids — comparing against ints always returned false and
+    // silently disabled before-run suitability for every known food.
+    return categories.contains('before_run');
   }
 
   /// Get during run suitability from database categories
@@ -96,7 +99,8 @@ class FoodMappingService {
     if (existingFood == null) return false;
 
     final categories = await _foodRepository.getFoodCategories(existingFood.id);
-    return categories.contains(2); // category_id = 2 for during_run
+    // See _getBeforeRunSuitability: categories are strings, not ids.
+    return categories.contains('during_run');
   }
 
   /// Convert FoodItem from repository to Food domain model
