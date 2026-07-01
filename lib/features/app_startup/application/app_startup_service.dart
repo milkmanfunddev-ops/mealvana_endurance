@@ -22,6 +22,7 @@ import '../../settings/presentation/providers/settings_controller.dart';
 import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
+import '../../ai_credits/data/revenuecat_service.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -226,6 +227,12 @@ class AppStartupService {
     // Wait for first frame to render before initializing these services
     // This avoids Android DeviceInfoPlugin deadlock
     SchedulerBinding.instance.addPostFrameCallback((_) async {
+      // The provider (and its Ref) can be disposed before/while this deferred
+      // chain runs — e.g. a sign-out that tears down the scope during startup,
+      // or a test harness disposing the ProviderScope. Reading `ref` after that
+      // throws UnmountedRefException, so bail early and re-check `ref.mounted`
+      // before any post-async-gap `ref` use (including logging).
+      if (!ref.mounted) return;
       try {
         // 1. Initialize device info (safe after first frame)
         await DeviceInfoService.instance.initialize();
@@ -242,13 +249,21 @@ class AppStartupService {
         // 5. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
         await _syncCoachStatus();
+
+        // 6. Initialize RevenueCat for AI credits.
+        // No-op unless aiCreditsEnabled + a RevenueCat key are configured.
+        await _initializeRevenueCat();
       } catch (e, stackTrace) {
-        _logger.error(
-          'Deferred initialization failed',
-          context: 'DEFERRED_INIT',
-          error: e,
-          stackTrace: stackTrace,
-        );
+        // Skip logging if the scope was disposed mid-chain — `_logger` reads
+        // `ref` and would throw over the original error.
+        if (ref.mounted) {
+          _logger.error(
+            'Deferred initialization failed',
+            context: 'DEFERRED_INIT',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
         // Don't rethrow - app should continue even if deferred services fail
       }
     });
@@ -285,6 +300,30 @@ class AppStartupService {
         stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if analytics fails
+    }
+  }
+
+  /// Initialize RevenueCat for the AI-credits feature.
+  ///
+  /// No-op unless [AppConfig.aiCreditsEnabled] is true and a RevenueCat key is
+  /// configured (see [RevenueCatService.configureIfPossible]). Identifies the
+  /// RevenueCat customer with the Supabase auth user id so purchase webhooks
+  /// credit the correct wallet (token_wallets.user_id == auth.users.id).
+  Future<void> _initializeRevenueCat() async {
+    try {
+      final revenueCat = ref.read(revenueCatServiceProvider);
+      await revenueCat.configureIfPossible();
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId != null && userId.isNotEmpty) {
+        await revenueCat.logIn(userId);
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'RevenueCat initialization failed',
+        context: 'DEFERRED_INIT',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -350,7 +389,7 @@ class AppStartupService {
   Future<void> checkUserSession() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final user = await database.userDao.getCurrentUserProfile();
+      final user = await database.userDao.getLocalUserProfile();
 
       if (user != null) {
         // User exists locally - identify them properly in analytics
