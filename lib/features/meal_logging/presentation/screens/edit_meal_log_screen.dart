@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_component.dart';
@@ -40,11 +41,20 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   final _sodiumCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
+  static final _timeFmt = DateFormat('h:mm a');
+
   MealLog? _originalLog;
   MealSlot _slot = MealSlot.breakfast;
   List<MealComponent> _components = const [];
   bool _showExtra = false;
   bool _initialized = false;
+
+  /// The time the meal was eaten. Anchored to the log's calendar day
+  /// ([MealLog.logDate]); only the time-of-day is user-editable here so an
+  /// entry can be moved to the moment it was actually eaten without changing
+  /// which day it counts toward. Seeded from the real log in
+  /// [didChangeDependencies]; the default only covers the no-extra fallback.
+  DateTime _eatenAt = DateTime.now();
 
   @override
   void didChangeDependencies() {
@@ -59,6 +69,15 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     _originalLog = log;
     _slot = log.slot;
     _components = List<MealComponent>.from(log.components);
+
+    // Seed the eaten-time from the existing value (falling back to the recorded
+    // time), but anchor the date to the log's calendar day so editing the time
+    // never silently moves the entry to a different day's totals.
+    final base = log.eatenAt ?? log.createdAt;
+    final day = DateTime.tryParse(log.logDate) ??
+        DateTime(base.year, base.month, base.day);
+    _eatenAt =
+        DateTime(day.year, day.month, day.day, base.hour, base.minute);
 
     _nameCtrl.text = log.name;
     _notesCtrl.text = log.notes ?? '';
@@ -89,6 +108,24 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     super.dispose();
   }
 
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_eatenAt),
+      helpText: 'Time eaten',
+    );
+    if (picked == null) return;
+    setState(() {
+      _eatenAt = DateTime(
+        _eatenAt.year,
+        _eatenAt.month,
+        _eatenAt.day,
+        picked.hour,
+        picked.minute,
+      );
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final original = _originalLog;
@@ -101,6 +138,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         name: _nameCtrl.text.trim(),
         slot: _slot,
         components: _components,
+        eatenAt: _eatenAt,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       );
     } else {
@@ -113,6 +151,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         proteinG: double.tryParse(_protCtrl.text),
         fatG: double.tryParse(_fatCtrl.text),
         sodiumMg: double.tryParse(_sodiumCtrl.text),
+        eatenAt: _eatenAt,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       );
     }
@@ -179,6 +218,46 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
               SlotChipSelector(
                 selectedSlot: _slot,
                 onSlotSelected: (s) => setState(() => _slot = s),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Time eaten — editable so a meal logged after the fact sits at
+              // the time it was actually eaten (not when it was recorded).
+              Text(
+                'Time eaten',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 6),
+              InkWell(
+                onTap: _pickTime,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.schedule, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        _timeFmt.format(_eatenAt),
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const Spacer(),
+                      Text(
+                        'Change',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
 
