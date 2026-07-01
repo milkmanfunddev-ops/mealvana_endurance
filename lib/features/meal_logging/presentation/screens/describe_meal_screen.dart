@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../application/meal_ai_service.dart';
 
 /// Natural-language meal description screen.
@@ -69,6 +71,8 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
           'photoPath': null,
         },
       );
+    } on InsufficientCreditsException catch (e) {
+      maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
       if (!mounted) return;
       MealvanaSnackbar.showError(context, e.userMessage);

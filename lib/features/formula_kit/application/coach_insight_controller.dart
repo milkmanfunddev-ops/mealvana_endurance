@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../data/ai_coach_client.dart';
 import '../data/personal_formulas_repository.dart';
@@ -95,6 +96,14 @@ class CoachInsightController extends _$CoachInsightController {
 
       return insight;
     });
+
+    // If the call failed because the user is out of AI credits, surface the
+    // buy-credits paywall. The error also stays in [state] so the panel can
+    // render its inline error.
+    final result = state;
+    if (result is AsyncError) {
+      maybeShowInsufficientCreditsPaywall(result.error);
+    }
   }
 
   /// Fire the refresh-tapped analytics event, then re-fetch for [context].

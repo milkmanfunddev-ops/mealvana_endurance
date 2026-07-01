@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../application/meal_ai_service.dart';
 
 /// Screen for selecting or capturing a meal photo.
@@ -90,6 +92,8 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
           'photoPath': analysis.storagePath,
         },
       );
+    } on InsufficientCreditsException catch (e) {
+      maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
       if (!mounted) return;
       switch (e.kind) {

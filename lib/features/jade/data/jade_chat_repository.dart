@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
@@ -290,6 +291,11 @@ class JadeChatRepository {
       _logger.error(
         'JadeChatRepository._streamRequest HTTP ${streamed.statusCode}: $responseBody',
       );
+      // 402 → out of AI credits. Throw the typed exception so the presentation
+      // layer can route the user to the buy-credits paywall.
+      if (streamed.statusCode == 402) {
+        throw _insufficientCreditsFromBody(responseBody);
+      }
       throw JadeChatServerError(streamed.statusCode, responseBody);
     }
 
@@ -305,6 +311,25 @@ class JadeChatRepository {
     return JadeSendResult(
       conversationId: resolvedConversationId,
       eventStream: _parseNdjsonStream(streamed.stream),
+    );
+  }
+
+  /// Parse a jade-chat 402 body into an [InsufficientCreditsException].
+  /// The body is expected to be the standard
+  /// `{ error, message, balance, cost }` shape but degrades gracefully.
+  InsufficientCreditsException _insufficientCreditsFromBody(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return InsufficientCreditsException.fromMap(decoded);
+      }
+    } catch (_) {
+      // fall through to defaults
+    }
+    return const InsufficientCreditsException(
+      balance: 0,
+      cost: 0,
+      message: 'Not enough AI credits.',
     );
   }
 

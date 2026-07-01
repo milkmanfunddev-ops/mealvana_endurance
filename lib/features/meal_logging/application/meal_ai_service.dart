@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/meal_analysis_result.dart';
 
@@ -145,6 +146,8 @@ class MealAiService {
       return _parseAnalysisResponse(response, functionName: 'describe-meal');
     } on MealAiException {
       rethrow;
+    } on InsufficientCreditsException {
+      rethrow;
     } on SocketException catch (e) {
       throw MealAiException(
         kind: MealAiFailureKind.offline,
@@ -214,6 +217,8 @@ class MealAiService {
       return MealPhotoAnalysis(result: result, storagePath: photoPath);
     } on MealAiException {
       rethrow;
+    } on InsufficientCreditsException {
+      rethrow;
     } on SocketException catch (e) {
       throw MealAiException(
         kind: MealAiFailureKind.offline,
@@ -250,6 +255,12 @@ class MealAiService {
       );
     }
 
+    // 402 → out of AI credits. Throw the typed exception so the presentation
+    // layer can route the user to the buy-credits paywall.
+    if (response.status == 402) {
+      throw _insufficientCreditsFrom(response.data);
+    }
+
     if (response.status != 200) {
       final message = _extractErrorMessage(response.data);
       if (kDebugMode) {
@@ -282,6 +293,12 @@ class MealAiService {
   }) {
     if (kDebugMode) debugPrint('[MealAiService] FunctionException from $functionName: $e');
 
+    // 402 → out of AI credits. Throw the typed exception (this method's callers
+    // `throw` its result, so throwing here propagates identically).
+    if (e.status == 402) {
+      throw _insufficientCreditsFrom(e.details);
+    }
+
     // FunctionException.status is non-nullable (int).
     if (e.status == 422) {
       return MealAiException(
@@ -297,6 +314,12 @@ class MealAiService {
       userMessage: 'The AI service returned an error. Please try again.',
       debugMessage: 'FunctionException ${e.status} from $functionName: $e',
     );
+  }
+
+  /// Build an [InsufficientCreditsException] from a 402 response body.
+  InsufficientCreditsException _insufficientCreditsFrom(dynamic body) {
+    final map = body is Map<String, dynamic> ? body : <String, dynamic>{};
+    return InsufficientCreditsException.fromMap(map);
   }
 
   /// Extract the `error` field from an edge function error JSON body.

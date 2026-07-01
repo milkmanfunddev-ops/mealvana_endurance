@@ -89,14 +89,29 @@ export async function debitForUsage(
   fn: string,
 ): Promise<void> {
   if (!CREDITS_ENFORCED) return;
+  const cost = creditCost(fn);
   try {
-    const { error } = await client.rpc('debit_credits', {
+    const { data, error } = await client.rpc('debit_credits', {
       p_user_id: userId,
-      p_amount: creditCost(fn),
+      p_amount: cost,
       p_reason: 'debit_usage',
       p_ref: fn,
     });
-    if (error) console.error('[credits] debit_credits error:', error.message);
+    if (error) {
+      console.error('[credits] debit_credits error:', error.message);
+      return;
+    }
+    // debit_credits returns { success, balance }. success:false (no error)
+    // means the balance was drained between the pre-call check and this debit
+    // (check-then-debit race). The action was already served, so we can't
+    // reclaim it — but log it instead of silently swallowing the shortfall.
+    const result = data as { success?: boolean; balance?: number } | null;
+    if (result && result.success === false) {
+      console.warn(
+        `[credits] debit declined for ${fn} (user ${userId}): balance ` +
+          `${result.balance ?? '?'} < cost ${cost} — served without charge`,
+      );
+    }
   } catch (e) {
     console.error('[credits] debit exception:', e);
   }

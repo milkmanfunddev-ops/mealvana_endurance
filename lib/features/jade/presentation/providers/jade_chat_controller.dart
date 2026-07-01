@@ -4,6 +4,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../data/jade_chat_repository.dart';
 import '../../domain/jade_message.dart';
 import '../../domain/jade_ui_part.dart';
@@ -233,6 +235,14 @@ class JadeChatController extends _$JadeChatController {
         'jade.error_offline',
         defaultValue: 'No connection. Check your network and try again.',
       ));
+    } on InsufficientCreditsException catch (e) {
+      if (!ref.mounted) return;
+      _logger.error('JadeChatController.send out of AI credits', error: e);
+      maybeShowInsufficientCreditsPaywall(e);
+      _handleSendError(
+        currentState,
+        e.message.trim().isNotEmpty ? e.message : 'You are out of AI credits.',
+      );
     } on JadeChatServerError catch (e) {
       if (!ref.mounted) return;
       _logger.error(
