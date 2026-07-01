@@ -111,7 +111,9 @@ export function mapGarminActivityToActivity(
       activity.average_pace_minutes_per_mile =
         garminActivity.averagePaceInMinutesPerKilometer * 1.60934;
     }
-    if (garminActivity.distanceInMeters) {
+    // Include an explicit 0 (started-and-stopped run) so it overwrites a stale
+    // planned distance; only skip when Garmin omitted distance entirely.
+    if (typeof garminActivity.distanceInMeters === 'number') {
       activity.distance_miles = garminActivity.distanceInMeters / 1609.34;
     }
   }

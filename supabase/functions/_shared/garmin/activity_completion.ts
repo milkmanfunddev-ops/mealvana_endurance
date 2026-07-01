@@ -175,12 +175,18 @@ export function buildGarminCompletionUpdate(
     updateFields.distance_meters = distanceMeters;
   }
 
+  // Reconcile the *displayed* mileage to what actually happened. When Garmin
+  // completes a planned activity we must replace the planned distance with the
+  // synced activity's actual distance (feature request 390e3fdb…6916): a run
+  // that was started and immediately stopped reports ~0 mi and must not keep
+  // showing the planned 12 mi (which also inflates any distance-derived
+  // calorie estimate). We only overwrite when Garmin actually reported a
+  // distance (a number, including 0). When Garmin omits distance entirely
+  // (e.g. some indoor activities) we leave the planned value untouched rather
+  // than zeroing out a legitimate workout.
   if (derivedDistanceMiles !== null) {
     updateFields.actual_distance_miles = derivedDistanceMiles;
-  }
-
-  if (typeof mappedActivity.distance_miles === "number") {
-    updateFields.distance_miles = mappedActivity.distance_miles;
+    updateFields.distance_miles = derivedDistanceMiles;
   }
 
   if (typeof mappedActivity.average_pace_minutes_per_mile === "number") {
