@@ -30,111 +30,17 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
     _items = List.from(widget.initialItems);
   }
 
-  void _editItem(int index) {
-    final item = _items[index];
-    final nameCtrl = TextEditingController(text: item.name);
-    final portionCtrl = TextEditingController(text: item.portion);
-    final calCtrl =
-        TextEditingController(text: item.calories.toString());
-    final carbCtrl =
-        TextEditingController(text: item.carbG.toStringAsFixed(1));
-    final protCtrl =
-        TextEditingController(text: item.proteinG.toStringAsFixed(1));
-    final fatCtrl =
-        TextEditingController(text: item.fatG.toStringAsFixed(1));
-    final sodiumCtrl =
-        TextEditingController(text: item.sodiumMg.toStringAsFixed(0));
-
-    showDialog<void>(
+  Future<void> _editItem(int index) async {
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _field('Name', nameCtrl),
-              const SizedBox(height: 8),
-              _field('Portion', portionCtrl),
-              const SizedBox(height: 8),
-              _numField('Calories', calCtrl),
-              const SizedBox(height: 8),
-              _numField('Carbs (g)', carbCtrl),
-              const SizedBox(height: 8),
-              _numField('Protein (g)', protCtrl),
-              const SizedBox(height: 8),
-              _numField('Fat (g)', fatCtrl),
-              const SizedBox(height: 8),
-              _numField('Sodium (mg)', sodiumCtrl),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final updated = MealAnalysisItem(
-                name: nameCtrl.text.trim().isEmpty
-                    ? item.name
-                    : nameCtrl.text.trim(),
-                portion: portionCtrl.text.trim().isEmpty
-                    ? item.portion
-                    : portionCtrl.text.trim(),
-                calories: int.tryParse(calCtrl.text) ?? item.calories,
-                carbG: double.tryParse(carbCtrl.text) ?? item.carbG,
-                proteinG: double.tryParse(protCtrl.text) ?? item.proteinG,
-                fatG: double.tryParse(fatCtrl.text) ?? item.fatG,
-                sodiumMg: double.tryParse(sodiumCtrl.text) ?? item.sodiumMg,
-              );
-              setState(() {
-                _items[index] = updated;
-              });
-              widget.onItemsChanged(List.unmodifiable(_items));
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    ).then((_) {
-      // Controllers outlive the dialog route; dispose once it closes.
-      nameCtrl.dispose();
-      portionCtrl.dispose();
-      calCtrl.dispose();
-      carbCtrl.dispose();
-      protCtrl.dispose();
-      fatCtrl.dispose();
-      sodiumCtrl.dispose();
-    });
-  }
-
-  Widget _field(String label, TextEditingController ctrl) {
-    return TextField(
-      controller: ctrl,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-    );
-  }
-
-  Widget _numField(String label, TextEditingController ctrl) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-      ],
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      builder: (ctx) => _EditItemDialog(
+        item: _items[index],
+        onSave: (updated) {
+          setState(() {
+            _items[index] = updated;
+          });
+          widget.onItemsChanged(List.unmodifiable(_items));
+        },
       ),
     );
   }
@@ -207,5 +113,204 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
         ),
       ],
     );
+  }
+}
+
+/// Per-item "Edit Item" dialog for a [MealAnalysisItem].
+///
+/// Owns its own [TextEditingController]s so their lifetime is tied to the dialog
+/// element (disposed in [dispose]) rather than a fragile post-close callback.
+///
+/// The recognized macros are absolute for [MealAnalysisItem.portion]. The
+/// dialog captures that portion's leading number as the baseline quantity and
+/// lets the user change the **Quantity** field to scale every macro
+/// proportionally, mirroring the ratio approach in `TemplateScalingService`.
+class _EditItemDialog extends StatefulWidget {
+  const _EditItemDialog({required this.item, required this.onSave});
+
+  final MealAnalysisItem item;
+  final ValueChanged<MealAnalysisItem> onSave;
+
+  @override
+  State<_EditItemDialog> createState() => _EditItemDialogState();
+}
+
+class _EditItemDialogState extends State<_EditItemDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _portionCtrl;
+  late final TextEditingController _qtyCtrl;
+  late final TextEditingController _calCtrl;
+  late final TextEditingController _carbCtrl;
+  late final TextEditingController _protCtrl;
+  late final TextEditingController _fatCtrl;
+  late final TextEditingController _sodiumCtrl;
+
+  late final double _baseQty;
+  late final String _basePortion;
+  late final double _baseCal;
+  late final double _baseCarb;
+  late final double _baseProt;
+  late final double _baseFat;
+  late final double _baseSodium;
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.item;
+    _nameCtrl = TextEditingController(text: item.name);
+    _portionCtrl = TextEditingController(text: item.portion);
+    _calCtrl = TextEditingController(text: item.calories.toString());
+    _carbCtrl = TextEditingController(text: item.carbG.toStringAsFixed(1));
+    _protCtrl = TextEditingController(text: item.proteinG.toStringAsFixed(1));
+    _fatCtrl = TextEditingController(text: item.fatG.toStringAsFixed(1));
+    _sodiumCtrl = TextEditingController(text: item.sodiumMg.toStringAsFixed(0));
+
+    _baseQty = _parseLeadingQuantity(item.portion) ?? 1.0;
+    _basePortion = item.portion;
+    _baseCal = item.calories.toDouble();
+    _baseCarb = item.carbG;
+    _baseProt = item.proteinG;
+    _baseFat = item.fatG;
+    _baseSodium = item.sodiumMg;
+    _qtyCtrl = TextEditingController(text: _fmtQty(_baseQty));
+    _qtyCtrl.addListener(_recompute);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _portionCtrl.dispose();
+    _qtyCtrl.dispose();
+    _calCtrl.dispose();
+    _carbCtrl.dispose();
+    _protCtrl.dispose();
+    _fatCtrl.dispose();
+    _sodiumCtrl.dispose();
+    super.dispose();
+  }
+
+  void _recompute() {
+    final qty = double.tryParse(_qtyCtrl.text.trim());
+    if (qty == null || qty <= 0) return;
+    final ratio = qty / _baseQty;
+    _calCtrl.text = (_baseCal * ratio).round().toString();
+    _carbCtrl.text = (_baseCarb * ratio).toStringAsFixed(1);
+    _protCtrl.text = (_baseProt * ratio).toStringAsFixed(1);
+    _fatCtrl.text = (_baseFat * ratio).toStringAsFixed(1);
+    _sodiumCtrl.text = (_baseSodium * ratio).toStringAsFixed(0);
+    final rewritten = _replaceLeadingQuantity(_basePortion, qty);
+    if (rewritten != null) _portionCtrl.text = rewritten;
+  }
+
+  void _save() {
+    final item = widget.item;
+    final updated = MealAnalysisItem(
+      name: _nameCtrl.text.trim().isEmpty ? item.name : _nameCtrl.text.trim(),
+      portion: _portionCtrl.text.trim().isEmpty
+          ? item.portion
+          : _portionCtrl.text.trim(),
+      calories: int.tryParse(_calCtrl.text) ?? item.calories,
+      carbG: double.tryParse(_carbCtrl.text) ?? item.carbG,
+      proteinG: double.tryParse(_protCtrl.text) ?? item.proteinG,
+      fatG: double.tryParse(_fatCtrl.text) ?? item.fatG,
+      sodiumMg: double.tryParse(_sodiumCtrl.text) ?? item.sodiumMg,
+    );
+    widget.onSave(updated);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Item'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _field('Name', _nameCtrl),
+            const SizedBox(height: 8),
+            _field('Portion', _portionCtrl),
+            const SizedBox(height: 8),
+            _numField('Quantity', _qtyCtrl,
+                helperText: 'Scales the nutrients below'),
+            const SizedBox(height: 8),
+            _numField('Calories', _calCtrl),
+            const SizedBox(height: 8),
+            _numField('Carbs (g)', _carbCtrl),
+            const SizedBox(height: 8),
+            _numField('Protein (g)', _protCtrl),
+            const SizedBox(height: 8),
+            _numField('Fat (g)', _fatCtrl),
+            const SizedBox(height: 8),
+            _numField('Sodium (mg)', _sodiumCtrl),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl) {
+    return TextField(
+      controller: ctrl,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+  }
+
+  Widget _numField(String label, TextEditingController ctrl,
+      {String? helperText}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+      ],
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: helperText,
+        border: const OutlineInputBorder(),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+  }
+
+  /// Parses the leading numeric quantity from a portion string, e.g. "2 cups"
+  /// → 2.0, "1.5 oz" → 1.5. Returns null when the portion has no leading
+  /// number (e.g. "a handful").
+  double? _parseLeadingQuantity(String portion) {
+    final match = RegExp(r'^\s*(\d+(?:\.\d+)?)').firstMatch(portion);
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+
+  /// Rewrites the leading number of [portion] to [qty], preserving the unit
+  /// suffix (e.g. "1 cup" + 2 → "2 cup"). Returns null when there is no leading
+  /// number to replace, leaving the caller's portion text untouched.
+  String? _replaceLeadingQuantity(String portion, double qty) {
+    final match =
+        RegExp(r'^(\s*)(\d+(?:\.\d+)?)(.*)$').firstMatch(portion);
+    if (match == null) return null;
+    return '${match.group(1)}${_fmtQty(qty)}${match.group(3)}';
+  }
+
+  /// Formats a quantity without a trailing ".0" for whole numbers.
+  String _fmtQty(double qty) {
+    if (qty == qty.roundToDouble()) return qty.toInt().toString();
+    return qty.toString();
   }
 }
