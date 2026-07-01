@@ -252,31 +252,49 @@ class AppDatabase extends _$AppDatabase {
       // via VersionCheckService before the database is even opened.
       // If we somehow get here with a version mismatch, recreate all tables.
       onUpgrade: (Migrator m, int from, int to) async {
+        // Idempotent migration primitives. SQLite has no `ADD COLUMN IF NOT
+        // EXISTS` / `CREATE TABLE` guard that plays nicely with drift's
+        // Migrator, and on WEB the persisted `user_version` does not reliably
+        // advance after a migration commits (drift wasm / IndexedDB quirk) — so
+        // the same `from < N` step can re-run on the next launch and blow up
+        // with "duplicate column" / "table already exists", which then trips
+        // the recovery path (fatal on web, no file to delete). Guarding every
+        // step on the actual schema makes re-runs harmless.
+        Future<bool> columnExists(String table, String column) async {
+          final rows = await customSelect('PRAGMA table_info($table)').get();
+          return rows.any((r) => r.read<String>('name') == column);
+        }
+
+        Future<void> addColumn(String table, String column, String type) async {
+          if (!await columnExists(table, column)) {
+            await customStatement('ALTER TABLE $table ADD COLUMN $column $type');
+          }
+        }
+
+        Future<bool> tableExists(String table) async {
+          final rows = await customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+            variables: [Variable.withString(table)],
+          ).get();
+          return rows.isNotEmpty;
+        }
+
+        Future<void> ensureTable(TableInfo table) async {
+          if (!await tableExists(table.actualTableName)) {
+            await m.createTable(table);
+          }
+        }
+
         // v7: Add sweat profile + body-comp precedence columns to users.
-        // Note: SQLite does NOT support `ADD COLUMN IF NOT EXISTS`. The
-        // `from < 7` guard provides idempotency by version.
         if (from < 7) {
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN sweat_sodium TEXT',
-          );
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN known_sweat_rate_ml_per_hour INTEGER',
-          );
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN known_sodium_concentration_mg_per_liter INTEGER',
-          );
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN sweat_test_date INTEGER',
-          );
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN sweat_test_source TEXT',
-          );
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN weight_pounds_updated_at INTEGER',
-          );
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN body_fat_pct_updated_at INTEGER',
-          );
+          await addColumn('users', 'sweat_sodium', 'TEXT');
+          await addColumn('users', 'known_sweat_rate_ml_per_hour', 'INTEGER');
+          await addColumn(
+              'users', 'known_sodium_concentration_mg_per_liter', 'INTEGER');
+          await addColumn('users', 'sweat_test_date', 'INTEGER');
+          await addColumn('users', 'sweat_test_source', 'TEXT');
+          await addColumn('users', 'weight_pounds_updated_at', 'INTEGER');
+          await addColumn('users', 'body_fat_pct_updated_at', 'INTEGER');
         }
 
         // v8: Add needs_upload column to integrations so existing OAuth
@@ -284,57 +302,38 @@ class AppDatabase extends _$AppDatabase {
         // every pre-existing row is treated as dirty exactly once — Supabase
         // had no integrations table before this, so we need to seed it.
         if (from < 8) {
-          await customStatement(
-            'ALTER TABLE integrations ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 1',
-          );
+          await addColumn(
+              'integrations', 'needs_upload', 'INTEGER NOT NULL DEFAULT 1');
         }
 
-        // v9: Formula Kit local tables — a single consolidated step from the
-        // last released schema (v8). Creates all four mirrors/pin tables for a
-        // user upgrading from v8: the during/pre/post workout template mirrors
-        // plus formula_pins. These were developed across unreleased interim
-        // versions (during=9, pre=10, formula_pins=11, post=12 on the feature
-        // branch); none shipped, so they collapse into one step. None of them
-        // reference each other via FK locally, so creation order is for
-        // readability only. (Previously post_workout_templates was added to
-        // the @DriftDatabase table set + the schemaVersion bump but never to
-        // this ladder, so upgrading users hit the schema-integrity safety net
-        // and were force-wiped — folding it in here is the fix.)
+        // v9: Formula Kit local tables — during/pre/post workout template
+        // mirrors plus formula_pins. Consolidated from unreleased interim
+        // versions; no local FK references, so creation order is readability.
         if (from < 9) {
-          await m.createTable(duringWorkoutTemplatesTable);
-          await m.createTable(preWorkoutTemplatesTable);
-          await m.createTable(postWorkoutTemplatesTable);
-          await m.createTable(formulaPinsTable);
+          await ensureTable(duringWorkoutTemplatesTable);
+          await ensureTable(preWorkoutTemplatesTable);
+          await ensureTable(postWorkoutTemplatesTable);
+          await ensureTable(formulaPinsTable);
         }
 
-        // v10: Formula Kit personal formulas — user-authored fueling recipes
-        // (forked from a system formula or built from scratch), tied to a
-        // phase. A distinct concept from personal_templates, so it gets its
-        // own table. Soft-deleted via is_deleted. No local FK references, so
-        // creation is standalone.
+        // v10: Formula Kit personal formulas — user-authored fueling recipes.
         if (from < 10) {
-          await m.createTable(personalFormulasTable);
+          await ensureTable(personalFormulasTable);
         }
 
-        // v11: Meal logging + Jade groundwork — meal_logs (offline-first log
-        // entries), saved_meals (user favorites), recipes (read-only catalog
-        // mirror). No local FK references between them, so creation order is
-        // for readability only.
+        // v11: Meal logging + Jade groundwork — meal_logs, saved_meals,
+        // recipes. No local FK references between them.
         if (from < 11) {
-          await m.createTable(mealLogsTable);
-          await m.createTable(savedMealsTable);
-          await m.createTable(recipesTable);
+          await ensureTable(mealLogsTable);
+          await ensureTable(savedMealsTable);
+          await ensureTable(recipesTable);
         }
 
         // v12: Coach AI insight persistence — two nullable TEXT columns on
         // personal_formulas so the generated insight survives navigation.
         if (from < 12) {
-          await customStatement(
-            'ALTER TABLE personal_formulas ADD COLUMN coach_insight_text TEXT',
-          );
-          await customStatement(
-            'ALTER TABLE personal_formulas ADD COLUMN coach_insight_marker TEXT',
-          );
+          await addColumn('personal_formulas', 'coach_insight_text', 'TEXT');
+          await addColumn('personal_formulas', 'coach_insight_marker', 'TEXT');
         }
       },
 
@@ -663,6 +662,21 @@ class AppDatabase extends _$AppDatabase {
   /// 3. Re-initialize fresh database
   /// 4. Trigger full sync from Supabase
   static Future<void> deleteAndResync() async {
+    // On web there is no database file to delete — the drift data lives in
+    // OPFS / IndexedDB, and there is no supported cross-implementation delete
+    // we can call here. Recovery-by-file-deletion is native-only. Surface an
+    // actionable schema exception instead of the previous cryptic
+    // `UnsupportedError: Database file path not available on web`, which used
+    // to bubble up as a fatal "Database recovery failed" white screen. Note
+    // this path should be rare now that migrations are idempotent (see the
+    // onUpgrade helpers) — it is reserved for genuine local-store corruption.
+    if (kIsWeb) {
+      throw DatabaseSchemaException(
+        'Local database recovery is not available on web. Clear this site\'s '
+        'data (browser Settings → Privacy → clear site data) and reload — your '
+        'data re-syncs from the server on next sign-in.',
+      );
+    }
     try {
       final dbPath = await _getDatabasePath();
 
@@ -686,7 +700,8 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Get the platform-specific database file path
+  /// Get the platform-specific database file path (native only — web has no
+  /// file path; see [deleteAndResync]).
   static Future<String> _getDatabasePath() async {
     if (kIsWeb) {
       throw UnsupportedError('Database file path not available on web');
