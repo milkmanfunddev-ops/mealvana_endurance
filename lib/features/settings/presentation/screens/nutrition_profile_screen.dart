@@ -199,6 +199,7 @@ class _NutritionProfileScreenState
         actions: [
           if (_hasChanges)
             TextButton(
+              key: const ValueKey('nutrition_profile.save_button'),
               onPressed: _isSaving ? null : _save,
               child: Text(
                 _isSaving ? 'Saving...' : 'Save',

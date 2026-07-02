@@ -25,7 +25,6 @@ import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
-import '../../data/integrations_repository.dart';
 import 'integrations_providers.dart';
 
 part 'connect_training_controller.g.dart';
@@ -200,8 +199,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   GarminOAuthService get _garminOAuth => ref.read(garminOAuthServiceProvider);
   VdotOAuthService get _vdotOAuth => ref.read(vdotOAuthServiceProvider);
   VdotSyncService get _vdotSync => ref.read(vdotSyncServiceProvider);
-  IntegrationsRepository get _integrationsRepo =>
-      ref.read(integrationsRepositoryProvider);
   ActivitiesRepository get _activitiesRepo =>
       ref.read(activitiesRepositoryProvider);
   static const _uuid = Uuid();
@@ -243,6 +240,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     final database = ref.read(appDatabaseProvider);
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final currentAuthUserId = supabaseClient.auth.currentUser?.id;
+
+    // Capture the repository up-front, before any `await`. build() has several
+    // async gaps and this auto-dispose provider can be disposed mid-build (e.g.
+    // the user navigates away). Reading `ref` again after disposal throws
+    // UnmountedRefException — the cause of Sentry MEALVANA-ENDURANCE-A0. Holding
+    // a plain reference lets the remaining work finish without touching `ref`.
+    final integrationsRepo = ref.read(integrationsRepositoryProvider);
 
     // Get user profile for current auth session
     // Returns null if no auth session or no matching profile
@@ -291,7 +295,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // If onboarding flag is false/missing but integrations already exist for this
     // user, prefer real ID so connection state remains stable across sessions.
     if (!useRealUserId && candidateRealUserId != null) {
-      final existingIntegrations = await _integrationsRepo
+      final existingIntegrations = await integrationsRepo
           .getIntegrationsForUser(candidateRealUserId);
       useRealUserId = existingIntegrations.isNotEmpty;
     }
@@ -331,20 +335,25 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       );
     }
 
+    // If the provider was disposed during the async work above, bail out with a
+    // default (all-disconnected) state rather than continuing to query and
+    // rebuild for a controller nobody is listening to.
+    if (!ref.mounted) return const ConnectTrainingState();
+
     // Check for existing integrations (may exist from previous onboarding attempt)
-    final finalSurgeIntegration = await _integrationsRepo.getIntegration(
+    final finalSurgeIntegration = await integrationsRepo.getIntegration(
       _currentUserId!,
       'final_surge',
     );
-    final trainingPeaksIntegration = await _integrationsRepo.getIntegration(
+    final trainingPeaksIntegration = await integrationsRepo.getIntegration(
       _currentUserId!,
       'training_peaks',
     );
-    final garminIntegration = await _integrationsRepo.getIntegration(
+    final garminIntegration = await integrationsRepo.getIntegration(
       _currentUserId!,
       'garmin',
     );
-    final vdotIntegration = await _integrationsRepo.getIntegration(
+    final vdotIntegration = await integrationsRepo.getIntegration(
       _currentUserId!,
       'vdot',
     );
@@ -567,12 +576,22 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
   }
 
-  Future<bool> connectGarmin() async {
+  /// Connect Garmin.
+  ///
+  /// [isOnboarding] must be `true` when called from the onboarding flow: at that
+  /// point the user's `users` row does not exist yet (it's created when
+  /// onboarding is finalized), so writing `garmin_user_mappings` now would
+  /// FK-violate `garmin_user_mappings_user_id_fkey` and the edge function
+  /// returns 500 (Sentry MEALVANA-ENDURANCE-AF). The mapping is instead deferred
+  /// to onboarding completion (`upsertUserMapping`, via
+  /// `_syncGarminMappingIfNeeded`). From settings the row already exists, so the
+  /// mapping is written immediately.
+  Future<bool> connectGarmin({bool isOnboarding = false}) async {
     return _connectProvider(
       providerId: 'garmin',
       authenticate: () => _garminOAuth.authenticate(
         _currentUserId!,
-        skipRemoteMapping: _isUsingTempUserId,
+        skipRemoteMapping: _isUsingTempUserId || isOnboarding,
       ),
       updateState: (athleteName) => state.value!.copyWith(
         isConnecting: false,

@@ -7,8 +7,20 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/controllers/food_search_controller.dart';
+import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
+import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../barcode_scanning/application/catalog_search_service.dart';
+import '../../../barcode_scanning/application/food_mapping_service.dart';
+import '../../../barcode_scanning/application/product_detail_service.dart';
+import '../../../nutrition_plan/data/food_repository.dart';
+import '../../../nutrition_plan/domain/food.dart';
+import '../../../nutrition_plan/domain/food_item.dart';
+import '../../../nutrition_plan/presentation/widgets/swap_food/catalog_section_widget.dart';
+import '../../../nutrition_plan/presentation/widgets/swap_food/food_card_widget.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
@@ -29,10 +41,7 @@ import 'slot_chip_selector.dart';
 ///
 /// Replaces the old [MealLogMethodSheet] five-button list. Titled by date,
 /// defaulting to the **Yours** tab.
-void showTabbedLogSheet(
-  BuildContext context, {
-  required String logDate,
-}) {
+void showTabbedLogSheet(BuildContext context, {required String logDate}) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -55,7 +64,7 @@ extension _LogTabLabel on _LogTab {
       case _LogTab.favorites:
         return 'Favorites';
       case _LogTab.search:
-        return 'Search';
+        return 'Discover';
       case _LogTab.describe:
         return 'Describe';
       case _LogTab.manual:
@@ -107,10 +116,13 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     try {
       final date = DateTime.parse(widget.logDate);
       final today = DateTime.now();
-      final isToday = date.year == today.year &&
+      final isToday =
+          date.year == today.year &&
           date.month == today.month &&
           date.day == today.day;
-      return isToday ? 'Log a Meal' : 'Log — ${DateFormat('MMM d').format(date)}';
+      return isToday
+          ? 'Log a Meal'
+          : 'Log — ${DateFormat('MMM d').format(date)}';
     } catch (_) {
       return 'Log a Meal';
     }
@@ -128,7 +140,8 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom +
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
             MediaQuery.of(context).padding.bottom,
       ),
       child: DraggableScrollableSheet(
@@ -172,9 +185,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
                 ),
               ),
               // ── Scrollable tab body ──────────────────────────────────────
-              Expanded(
-                child: _buildTabBody(ctx, scrollController, isDark),
-              ),
+              Expanded(child: _buildTabBody(ctx, scrollController, isDark)),
             ],
           );
         },
@@ -275,16 +286,18 @@ class _TabBar extends StatelessWidget {
                         maxLines: 1,
                         style: TextStyle(
                           fontSize: 12.5,
-                          fontWeight:
-                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: isSelected
                               ? (isDark
-                                  ? AppColors.blackberry
-                                  : AppColors.cream)
+                                    ? AppColors.blackberry
+                                    : AppColors.cream)
                               : (isDark
-                                  ? AppColors.cream.withValues(alpha: 0.7)
-                                  : AppColors.blackberry
-                                      .withValues(alpha: 0.6)),
+                                    ? AppColors.cream.withValues(alpha: 0.7)
+                                    : AppColors.blackberry.withValues(
+                                        alpha: 0.6,
+                                      )),
                         ),
                       ),
                     ),
@@ -317,19 +330,24 @@ class _RecentTab extends ConsumerWidget {
   final VoidCallback onLogError;
 
   void _logRecent(BuildContext context, WidgetRef ref, MealLog log) {
-    showSlotPickerSheet(context, onSelected: (slot) async {
-      final component = syntheticFromLog(log);
-      await ref.read(mealLogControllerProvider.notifier).logFromComponents(
-            name: log.name,
-            slot: slot,
-            logDate: logDate,
-            source: MealLogSource.saved,
-            components: [component],
-          );
-      if (!context.mounted) return;
-      final s = ref.read(mealLogControllerProvider);
-      s is AsyncData ? onLogged() : onLogError();
-    });
+    showSlotPickerSheet(
+      context,
+      onSelected: (slot) async {
+        final component = syntheticFromLog(log);
+        await ref
+            .read(mealLogControllerProvider.notifier)
+            .logFromComponents(
+              name: log.name,
+              slot: slot,
+              logDate: logDate,
+              source: MealLogSource.saved,
+              components: [component],
+            );
+        if (!context.mounted) return;
+        final s = ref.read(mealLogControllerProvider);
+        s is AsyncData ? onLogged() : onLogError();
+      },
+    );
   }
 
   @override
@@ -350,13 +368,17 @@ class _RecentTab extends ConsumerWidget {
         return ListView(
           controller: scrollController,
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           children: logs
-              .map((log) => _RecentMealRow(
-                    log: log,
-                    onTap: () => _logRecent(context, ref, log),
-                    isDark: isDark,
-                  ))
+              .map(
+                (log) => _RecentMealRow(
+                  log: log,
+                  onTap: () => _logRecent(context, ref, log),
+                  isDark: isDark,
+                ),
+              )
               .toList(),
         );
       },
@@ -384,16 +406,17 @@ class _FavoritesTab extends ConsumerWidget {
   final VoidCallback onLogError;
 
   void _logFavorite(BuildContext context, WidgetRef ref, SavedMeal meal) {
-    showSlotPickerSheet(context, onSelected: (slot) async {
-      await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
-            savedMeal: meal,
-            slot: slot,
-            logDate: logDate,
-          );
-      if (!context.mounted) return;
-      final s = ref.read(mealLogControllerProvider);
-      s is AsyncData ? onLogged() : onLogError();
-    });
+    showSlotPickerSheet(
+      context,
+      onSelected: (slot) async {
+        await ref
+            .read(mealLogControllerProvider.notifier)
+            .logSavedMeal(savedMeal: meal, slot: slot, logDate: logDate);
+        if (!context.mounted) return;
+        final s = ref.read(mealLogControllerProvider);
+        s is AsyncData ? onLogged() : onLogError();
+      },
+    );
   }
 
   @override
@@ -415,16 +438,20 @@ class _FavoritesTab extends ConsumerWidget {
         return ListView(
           controller: scrollController,
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           children: meals
-              .map((meal) => _SavedMealRow(
-                    meal: meal,
-                    onTap: () => _logFavorite(context, ref, meal),
-                    onDelete: () => ref
-                        .read(mealLogControllerProvider.notifier)
-                        .deleteSavedMeal(meal.id),
-                    isDark: isDark,
-                  ))
+              .map(
+                (meal) => _SavedMealRow(
+                  meal: meal,
+                  onTap: () => _logFavorite(context, ref, meal),
+                  onDelete: () => ref
+                      .read(mealLogControllerProvider.notifier)
+                      .deleteSavedMeal(meal.id),
+                  isDark: isDark,
+                ),
+              )
               .toList(),
         );
       },
@@ -459,8 +486,9 @@ class _EmptyTabMessage extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: textColor.withValues(alpha: 0.5)),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: textColor.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ),
@@ -544,13 +572,23 @@ class _SavedMealRow extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: _macroLine(context, meal.calories, meal.carbsG, meal.proteinG, meal.fatG),
+        subtitle: _macroLine(
+          context,
+          meal.calories,
+          meal.carbsG,
+          meal.proteinG,
+          meal.fatG,
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             GestureDetector(
               onTap: onDelete,
-              child: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+              child: const Icon(
+                Icons.delete_outline,
+                size: 18,
+                color: Colors.red,
+              ),
             ),
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right, size: 18),
@@ -588,7 +626,13 @@ class _RecentMealRow extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: _macroLine(context, log.calories, log.carbsG, log.proteinG, log.fatG),
+        subtitle: _macroLine(
+          context,
+          log.calories,
+          log.carbsG,
+          log.proteinG,
+          log.fatG,
+        ),
         trailing: const Icon(Icons.chevron_right, size: 18),
         onTap: onTap,
       ),
@@ -642,11 +686,17 @@ class _SearchTab extends ConsumerStatefulWidget {
 }
 
 class _SearchTabState extends ConsumerState<_SearchTab> {
+  /// Controller key for the shared [FoodSearchController] instance backing
+  /// this tab's product/food search bar.
+  static const _foodSearchControllerKey = 'discover_log';
+
   List<Recipe> _recipes = [];
   List<Recipe> _filtered = [];
   RecipeType? _selectedType;
   bool _isLoading = false;
   bool _loadStarted = false;
+
+  final TextEditingController _foodSearchController = TextEditingController();
 
   static const List<RecipeType> _chipOrder = [
     RecipeType.breakfast,
@@ -662,6 +712,7 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
     if (widget.shouldLoad && !_loadStarted) {
       _loadStarted = true;
       _loadRecipes();
+      _seedFoodPool();
     }
   }
 
@@ -671,8 +722,17 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
     if (widget.shouldLoad) {
       _loadStarted = true;
       // defer to avoid calling setState during build
-      WidgetsBinding.instance.addPostFrameCallback((_) => _loadRecipes());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadRecipes();
+        _seedFoodPool();
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    _foodSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRecipes() async {
@@ -701,18 +761,169 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
     }
   }
 
-  void _applyFilter(RecipeType? type) {
-    setState(() {
-      _selectedType = type;
-      _filtered = type == null
-          ? _recipes
-          : _recipes.where((r) => r.type == type).toList();
-    });
+  // -- Food search (product/food search bar) --------------------------------
+
+  /// Seed the shared [FoodSearchController]'s local pool with curated +
+  /// user foods so typed queries surface instant local matches alongside the
+  /// debounced catalog/OpenFoodFacts results. Best-effort — catalog and
+  /// OpenFoodFacts search still work even if this fails.
+  Future<void> _seedFoodPool() async {
+    try {
+      final foodRepository = ref.read(foodRepositoryProvider);
+      final database = ref.read(appDatabaseProvider);
+      final userProfile = await database.userDao.getCurrentUserProfile();
+      final deviceId = userProfile?.id ?? 'unknown';
+
+      final results = await Future.wait([
+        foodRepository.getPrimaryFoodsForPreferences(),
+        foodRepository.getAdditionalFoodsForPreferences(),
+        database.foodsDao.getUserFoods(deviceId),
+      ]);
+
+      final primary = (results[0] as List<FoodItem>).map(_foodItemToFood);
+      final additional = (results[1] as List<FoodItem>).map(_foodItemToFood);
+      final userFoods = (results[2] as List<dynamic>)
+          .map((uf) => database.foodsDao.convertUserFoodToFoodItem(uf))
+          .map(_foodItemToFood)
+          .toList();
+
+      if (!mounted) return;
+      ref
+          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
+          .updateFoodPool(
+            allFoods: [...primary, ...additional, ...userFoods],
+            userFoods: userFoods,
+          );
+    } catch (_) {
+      // Non-fatal — search bar still works via catalog + OpenFoodFacts.
+    }
   }
 
-  void _showLogSheet(Recipe recipe) {
+  Food _foodItemToFood(FoodItem item) {
+    return Food(
+      id: item.id,
+      name: item.name,
+      imageAddress: item.imageAddress,
+      description: item.description,
+      displayName: item.displayName,
+      displayNamePlural: item.displayNamePlural,
+      servingSize: item.servingSize,
+      servingAmount: item.servingAmount,
+      servingUnit: item.servingUnit,
+      servingQualifier: item.servingQualifier,
+      carbsPerServing: item.carbsPerServing,
+      proteinPerServing: item.proteinPerServing,
+      fatPerServing: item.fatPerServing,
+      sodiumMg: item.sodiumMg,
+      caloriesPerServing: item.caloriesPerServing,
+      fluidMlPerServing: item.fluidMlPerServing,
+      productTypeId: item.productTypeId,
+      caffeineMg: item.caffeineMg,
+      potassiumMg: item.potassiumMg,
+      categories: item.categories.map((c) {
+        switch (c) {
+          case FoodCategory.beforeRun:
+            return 'before_run';
+          case FoodCategory.duringRun:
+            return 'during_run';
+          case FoodCategory.afterRun:
+            return 'after_run';
+        }
+      }).toList(),
+    );
+  }
+
+  Food _catalogResultToFood(CatalogSearchResult result) {
+    return Food(
+      id: result.id,
+      name: result.title,
+      displayName: result.variantTitle ?? result.title,
+      imageAddress: result.imageUrl,
+      servingSize: result.servingSize,
+      caloriesPerServing: result.caloriesPerServing,
+      carbsPerServing: result.carbsG,
+      proteinPerServing: result.proteinG,
+      fatPerServing: result.fatG,
+      sodiumMg: result.sodiumMg,
+      productTypeId: result.productTypeId,
+    );
+  }
+
+  void _onFoodSearchChanged(String query) {
+    ref
+        .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
+        .updateSearch(query);
+  }
+
+  Future<void> _onFoodSearchButtonPressed(String query) async {
+    if (query.trim().isNotEmpty) {
+      await ref
+          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
+          .searchOpenFoodFacts(query.trim());
+    }
+  }
+
+  Future<void> _onFoodBarcodeScan() async {
+    final result = await context.pushNamed<dynamic>(
+      'barcode-scanner',
+      extra: {'category': 'add_food', 'context': 'meal_log_discover'},
+    );
+    if (result != null && mounted) {
+      _showFoodLogSheet(result as Food);
+    }
+  }
+
+  Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
+    if (!(result.hasValidId as bool)) {
+      MealvanaSnackbar.showError(
+        context,
+        'Cannot load details for this product',
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final productDetailService = ref.read(productDetailServiceProvider);
+      final apiProduct = await productDetailService.getProductDetails(
+        openFoodFactsId: result.id as String,
+      );
+
+      if (mounted) Navigator.of(context).pop(); // close loading dialog
+
+      if (apiProduct == null) {
+        if (mounted) {
+          MealvanaSnackbar.showError(context, 'Unable to load product details');
+        }
+        return;
+      }
+
+      final mappingService = ref.read(foodMappingServiceProvider);
+      final food = await mappingService.mapToFood(apiProduct);
+
+      if (!mounted) return;
+      _showFoodLogSheet(food);
+    } catch (_) {
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to load product details');
+      }
+    }
+  }
+
+  /// Shows the servings + slot picker for a searched [food], then logs it via
+  /// [mealLogControllerProvider.logFromComponents].
+  void _showFoodLogSheet(Food food) {
     double servings = 1.0;
     MealSlot slot = MealSlot.breakfast;
+    final title = food.displayName ?? food.name;
 
     showModalBottomSheet<void>(
       context: context,
@@ -721,19 +932,20 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final scaledCal = (recipe.nutrition.calories * servings).round();
-          final scaledCarb =
-              (recipe.nutrition.carbohydratesGrams * servings).toStringAsFixed(0);
-          final scaledProt =
-              (recipe.nutrition.proteinGrams * servings).toStringAsFixed(0);
-          final scaledFat =
-              (recipe.nutrition.fatGrams * servings).toStringAsFixed(0);
+          final scaledCal = ((food.caloriesPerServing ?? 0) * servings).round();
+          final scaledCarb = ((food.carbsPerServing ?? 0) * servings)
+              .toStringAsFixed(0);
+          final scaledProt = ((food.proteinPerServing ?? 0) * servings)
+              .toStringAsFixed(0);
+          final scaledFat = ((food.fatPerServing ?? 0) * servings)
+              .toStringAsFixed(0);
 
           return Container(
             decoration: BoxDecoration(
               color: isDark ? AppColors.blackberry : AppColors.cream,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             padding: EdgeInsets.only(
               left: AppSpacing.lg,
@@ -757,8 +969,11 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                       ),
                     ),
                   ),
-                  Text(recipe.name,
-                      style: AppTextStyles.subtitle, textAlign: TextAlign.center),
+                  Text(
+                    title,
+                    style: AppTextStyles.subtitle,
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     '$scaledCal kcal  ·  C ${scaledCarb}g  P ${scaledProt}g  F ${scaledFat}g',
@@ -766,8 +981,7 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('Servings',
-                      style: Theme.of(ctx).textTheme.labelLarge),
+                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -775,8 +989,12 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                       IconButton(
                         icon: const Icon(Icons.remove_circle_outline),
                         onPressed: servings > 0.5
-                            ? () => setModalState(() =>
-                                servings = (servings - 0.5).clamp(0.5, 10.0))
+                            ? () => setModalState(
+                                () => servings = (servings - 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
+                              )
                             : null,
                       ),
                       SizedBox(
@@ -795,15 +1013,196 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                       IconButton(
                         icon: const Icon(Icons.add_circle_outline),
                         onPressed: servings < 10
-                            ? () => setModalState(() =>
-                                servings = (servings + 0.5).clamp(0.5, 10.0))
+                            ? () => setModalState(
+                                () => servings = (servings + 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
+                              )
                             : null,
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text('Meal type',
-                      style: Theme.of(ctx).textTheme.labelLarge),
+                  Text('Meal type', style: Theme.of(ctx).textTheme.labelLarge),
+                  const SizedBox(height: 6),
+                  SlotChipSelector(
+                    selectedSlot: slot,
+                    onSlotSelected: (s) => setModalState(() => slot = s),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  KylePrimaryButton(
+                    text: 'Log Food',
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      _logFoodComponent(food, servings, slot);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _logFoodComponent(
+    Food food,
+    double servings,
+    MealSlot slot,
+  ) async {
+    final name = food.displayName ?? food.name;
+    final component = MealComponent(
+      name: name,
+      portion: servings == servings.truncateToDouble()
+          ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
+          : '${servings.toStringAsFixed(1)} servings',
+      calories: food.caloriesPerServing != null
+          ? (food.caloriesPerServing! * servings).round()
+          : null,
+      carbG: food.carbsPerServing != null
+          ? food.carbsPerServing! * servings
+          : null,
+      proteinG: food.proteinPerServing != null
+          ? food.proteinPerServing! * servings
+          : null,
+      fatG: food.fatPerServing != null ? food.fatPerServing! * servings : null,
+      sodiumMg: food.sodiumMg != null ? food.sodiumMg! * servings : null,
+    );
+
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
+          name: name,
+          slot: slot,
+          logDate: widget.logDate,
+          source: MealLogSource.manual,
+          components: [component],
+        );
+
+    if (!mounted) return;
+    final s = ref.read(mealLogControllerProvider);
+    if (s is AsyncData) {
+      widget.onLogged();
+    } else {
+      widget.onLogError();
+    }
+  }
+
+  void _applyFilter(RecipeType? type) {
+    setState(() {
+      _selectedType = type;
+      _filtered = type == null
+          ? _recipes
+          : _recipes.where((r) => r.type == type).toList();
+    });
+  }
+
+  void _showLogSheet(Recipe recipe) {
+    double servings = 1.0;
+    MealSlot slot = MealSlot.breakfast;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final scaledCal = (recipe.nutrition.calories * servings).round();
+          final scaledCarb = (recipe.nutrition.carbohydratesGrams * servings)
+              .toStringAsFixed(0);
+          final scaledProt = (recipe.nutrition.proteinGrams * servings)
+              .toStringAsFixed(0);
+          final scaledFat = (recipe.nutrition.fatGrams * servings)
+              .toStringAsFixed(0);
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.blackberry : AppColors.cream,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            padding: EdgeInsets.only(
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.md,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    recipe.name,
+                    style: AppTextStyles.subtitle,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '$scaledCal kcal  ·  C ${scaledCarb}g  P ${scaledProt}g  F ${scaledFat}g',
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        onPressed: servings > 0.5
+                            ? () => setModalState(
+                                () => servings = (servings - 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
+                              )
+                            : null,
+                      ),
+                      SizedBox(
+                        width: 60,
+                        child: Text(
+                          servings == servings.truncateToDouble()
+                              ? servings.toInt().toString()
+                              : servings.toStringAsFixed(1),
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: servings < 10
+                            ? () => setModalState(
+                                () => servings = (servings + 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text('Meal type', style: Theme.of(ctx).textTheme.labelLarge),
                   const SizedBox(height: 6),
                   SlotChipSelector(
                     selectedSlot: slot,
@@ -851,33 +1250,94 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
   }
 
   void _logAssembly(QuickAssembly assembly) {
-    showSlotPickerSheet(context, onSelected: (slot) async {
-      await ref.read(mealLogControllerProvider.notifier).logFromComponents(
-            name: assembly.name,
-            slot: slot,
-            logDate: widget.logDate,
-            source: MealLogSource.manual,
-            components: assembly.components,
-          );
-      if (!mounted) return;
-      final s = ref.read(mealLogControllerProvider);
-      if (s is AsyncData) {
-        widget.onLogged();
-      } else {
-        widget.onLogError();
-      }
-    });
+    showSlotPickerSheet(
+      context,
+      onSelected: (slot) async {
+        await ref
+            .read(mealLogControllerProvider.notifier)
+            .logFromComponents(
+              name: assembly.name,
+              slot: slot,
+              logDate: widget.logDate,
+              source: MealLogSource.manual,
+              components: assembly.components,
+            );
+        if (!mounted) return;
+        final s = ref.read(mealLogControllerProvider);
+        if (s is AsyncData) {
+          widget.onLogged();
+        } else {
+          widget.onLogError();
+        }
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final foodSearchState = ref.watch(
+      foodSearchControllerProvider(_foodSearchControllerKey),
+    );
+    final isSearchingFood = foodSearchState.searchQuery.isNotEmpty;
 
     if (!widget.shouldLoad || (_isLoading && _recipes.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
     }
 
+    return Column(
+      children: [
+        // Product/food search bar — pinned above the recipe browser/results.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.xs,
+          ),
+          child: FoodSearchBar(
+            controller: _foodSearchController,
+            hintText: 'Search foods to log...',
+            onChanged: _onFoodSearchChanged,
+            onSearch: _onFoodSearchButtonPressed,
+            onBarcodeScan: _onFoodBarcodeScan,
+          ),
+        ),
+        Expanded(
+          child: isSearchingFood
+              ? UnifiedFoodSearchResults(
+                  controllerKey: _foodSearchControllerKey,
+                  scrollController: widget.scrollController,
+                  userFoodItemBuilder: (food) => FoodCardWidget(
+                    food: food,
+                    isUserFood: true,
+                    onTap: () => _showFoodLogSheet(food),
+                  ),
+                  templateFoodItemBuilder: (food) => FoodCardWidget(
+                    food: food,
+                    isUserFood: false,
+                    onTap: () => _showFoodLogSheet(food),
+                  ),
+                  catalogItemBuilder: (result) => CatalogCard(
+                    result: result,
+                    onTap: () =>
+                        _showFoodLogSheet(_catalogResultToFood(result)),
+                  ),
+                  onSearchOpenFoodFacts: () =>
+                      _onFoodSearchButtonPressed(foodSearchState.searchQuery),
+                  onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
+                  emptyQueryContent: const SizedBox.shrink(),
+                )
+              : _buildRecipeBrowser(isDark, textColor),
+        ),
+      ],
+    );
+  }
+
+  /// Recipe browsing UI (quick-add assemblies + category chips + recipes) —
+  /// shown when the food search bar is empty.
+  Widget _buildRecipeBrowser(bool isDark, Color textColor) {
     return Column(
       children: [
         // Category filter chips
@@ -886,7 +1346,9 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md, vertical: 4),
+              horizontal: AppSpacing.md,
+              vertical: 4,
+            ),
             children: [
               _TypeChip(
                 label: 'All',
@@ -913,7 +1375,9 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
           child: ListView(
             controller: widget.scrollController,
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             children: [
               // Quick add — preset assemblies, only on the unfiltered view.
               if (_selectedType == null) ...[
@@ -928,14 +1392,18 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                         width: 40,
                         height: 40,
                         child: Center(
-                          child: Text(assembly.emoji,
-                              style: const TextStyle(fontSize: 22)),
+                          child: Text(
+                            assembly.emoji,
+                            style: const TextStyle(fontSize: 22),
+                          ),
                         ),
                       ),
                       title: Text(
                         assembly.name,
                         style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                       subtitle: _macroLine(
                         context,
@@ -957,15 +1425,17 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                   child: Center(
-                    child: Text('No recipes found.',
-                        style: AppTextStyles.bodyMedium),
+                    child: Text(
+                      'No recipes found.',
+                      style: AppTextStyles.bodyMedium,
+                    ),
                   ),
                 )
               else
                 ..._filtered.map((recipe) {
                   final cal = recipe.nutrition.calories.round();
-                  final carb =
-                      recipe.nutrition.carbohydratesGrams.toStringAsFixed(0);
+                  final carb = recipe.nutrition.carbohydratesGrams
+                      .toStringAsFixed(0);
                   final prot = recipe.nutrition.proteinGrams.toStringAsFixed(0);
                   final fat = recipe.nutrition.fatGrams.toStringAsFixed(0);
 
@@ -981,7 +1451,9 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                       title: Text(
                         recipe.name,
                         style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
@@ -1103,8 +1575,8 @@ class _TypeChip extends StatelessWidget {
           color: selected
               ? AppColors.electrolyte
               : (isDark
-                  ? Colors.white12
-                  : Colors.black.withValues(alpha: 0.08)),
+                    ? Colors.white12
+                    : Colors.black.withValues(alpha: 0.08)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -1162,18 +1634,23 @@ class _AiTabState extends ConsumerState<_AiTab> {
       // Capture router before closing the sheet.
       final router = GoRouter.of(context);
       widget.onNavigateAway();
-      router.push('/meal-log/review', extra: {
-        'result': result,
-        'source': 'describe',
-        'logDate': widget.logDate,
-        'photoPath': null,
-      });
+      router.push(
+        '/meal-log/review',
+        extra: {
+          'result': result,
+          'source': 'describe',
+          'logDate': widget.logDate,
+          'photoPath': null,
+        },
+      );
     } on MealAiException catch (e) {
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
       if (mounted) {
         MealvanaSnackbar.showError(
-            context, 'Something went wrong. Please try again.');
+          context,
+          'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -1185,10 +1662,16 @@ class _AiTabState extends ConsumerState<_AiTab> {
     XFile? file;
     try {
       file = await picker.pickImage(
-          source: source, imageQuality: 85, maxWidth: 1200);
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1200,
+      );
     } catch (_) {
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Could not access the camera or gallery.');
+        MealvanaSnackbar.showError(
+          context,
+          'Could not access the camera or gallery.',
+        );
       }
       return;
     }
@@ -1210,18 +1693,23 @@ class _AiTabState extends ConsumerState<_AiTab> {
       // Capture router before closing the sheet.
       final router = GoRouter.of(context);
       widget.onNavigateAway();
-      router.push('/meal-log/review', extra: {
-        'result': analysis.result,
-        'source': 'photo',
-        'logDate': widget.logDate,
-        'photoPath': analysis.storagePath,
-      });
+      router.push(
+        '/meal-log/review',
+        extra: {
+          'result': analysis.result,
+          'source': 'photo',
+          'logDate': widget.logDate,
+          'photoPath': analysis.storagePath,
+        },
+      );
     } on MealAiException catch (e) {
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
       if (mounted) {
         MealvanaSnackbar.showError(
-            context, 'Something went wrong. Please try again.');
+          context,
+          'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -1238,7 +1726,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
         ListView(
           controller: widget.scrollController,
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
           children: [
             Text(
               'Describe what you ate and Jade will estimate the macros.',
@@ -1262,10 +1752,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
                   border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().length < 5)
-                        ? 'Please describe your meal'
-                        : null,
+                validator: (v) => (v == null || v.trim().length < 5)
+                    ? 'Please describe your meal'
+                    : null,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -1305,8 +1794,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
               _OutlineButton(
                 label: 'Choose Photo',
                 emoji: '🖼',
-                onTap:
-                    _isAnalyzing ? null : () => _pickPhoto(ImageSource.gallery),
+                onTap: _isAnalyzing
+                    ? null
+                    : () => _pickPhoto(ImageSource.gallery),
                 isDark: isDark,
               ),
             const SizedBox(height: AppSpacing.xl),
@@ -1323,7 +1813,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     'Jade is thinking...',
-                    style: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -1382,4 +1874,3 @@ class _OutlineButton extends StatelessWidget {
     );
   }
 }
-

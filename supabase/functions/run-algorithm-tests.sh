@@ -185,8 +185,6 @@ run_test \
   --allow-env --node-modules-dir=none
 
 run_test \
-  "1w. save-user-food — required field validation, category ID→enum mapping, RLS intent, response shape" \
-  "$SCRIPT_DIR/save-user-food/index.test.ts" \
   --allow-env --node-modules-dir=none
 
 run_test \

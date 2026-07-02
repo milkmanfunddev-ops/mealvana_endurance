@@ -43,6 +43,13 @@ class AppConfig {
   final String supabasePublishableKey;
   final String supabaseSecretKey;
 
+  /// The client-facing key for `Supabase.initialize`. Prefers the new
+  /// publishable key (`sb_publishable_…`) when present, falling back to the
+  /// legacy anon JWT — so the legacy anon key can eventually be disabled once
+  /// every build ships the publishable key.
+  String get supabaseClientKey =>
+      supabasePublishableKey.isNotEmpty ? supabasePublishableKey : supabaseAnonKey;
+
   // Sentry configuration
   final String sentryDsn;
   final String sentryEnvironment;

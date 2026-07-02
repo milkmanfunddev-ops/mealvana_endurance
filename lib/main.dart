@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
 import 'shared/services/app_external_deps.dart';
+import 'shared/services/sentry/sentry_event_filter.dart';
 import 'shared/services/sentry/sentry_provider_observer.dart';
 import 'shared/widgets/root_app_widget.dart';
 
@@ -97,6 +98,12 @@ Future<void> main() async {
         options.sendDefaultPii = false; // Privacy-first approach
         options.maxBreadcrumbs = 100; // Increased for better debugging
         
+        // App-hang detection is only meaningful for release builds on real
+        // devices. In debug/simulator the debugger, hot reload and JIT GC
+        // pauses routinely trip the 2s threshold (Sentry DEV-53/DEV-4D/DEV-4Y
+        // are all simulator GC pauses), so disable it there.
+        options.enableAppHangTracking = !kDebugMode;
+
         // Filter sensitive errors
         options.beforeSend = (event, hint) {
           // Don't send debug/info logs in production
@@ -104,11 +111,12 @@ Future<void> main() async {
             return null;
           }
           
-          // Filter out network timeouts (common and not actionable)
-          if (event.throwable.toString().contains('TimeoutException')) {
+          // Drop known low-signal noise (offline/DNS, transient TLS resets,
+          // cancelled sign-ins, debug assertions, test-runner failures).
+          if (isSentryNoise(event)) {
             return null;
           }
-          
+
           return event;
         };
         
@@ -157,7 +165,7 @@ Future<void> _runMealvanaApp(AppConfig config) async {
   // no 9.6.x release compatible with this project's sentry_flutter version.
   await Supabase.initialize(
     url: config.supabaseUrl,
-    anonKey: config.supabaseAnonKey,
+    anonKey: config.supabaseClientKey,
     httpClient: SentryHttpClient(),
   );
 

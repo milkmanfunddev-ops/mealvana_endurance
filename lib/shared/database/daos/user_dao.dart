@@ -43,6 +43,22 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     return getUserProfileByAuthUserId(currentAuthUserId);
   }
 
+  /// Returns the most-recently-updated local user profile regardless of auth
+  /// state.  Used by [AppStartupService.checkUserSession] to identify the user
+  /// in analytics even before a Supabase session is established (e.g. on first
+  /// launch after an anonymous session or a local-only account).
+  ///
+  /// Returns null when the database is empty.
+  Future<domain.UserProfile?> getLocalUserProfile() async {
+    final result = await (select(userProfilesTable)
+          ..orderBy([(u) => OrderingTerm.desc(u.updatedAt)])
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (result == null) return null;
+    return _convertToDomainUserProfile(result);
+  }
+
   /// Look up a user profile by Supabase auth user ID.
   Future<domain.UserProfile?> getUserProfileByAuthUserId(String authUserId) async {
     final result = await (select(userProfilesTable)

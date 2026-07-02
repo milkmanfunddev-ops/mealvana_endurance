@@ -20,7 +20,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/new_activity_screen.dart';
-import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_loading_screen.dart';
 
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_controller.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_state.dart';
@@ -336,59 +335,11 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // CarbLoadingScreen — static content test (no controller required)
+  // CarbLoadingScreen — DELETED (2026-07-01)
   // ---------------------------------------------------------------------------
-
-  group('CarbLoadingScreen — static content', () {
-    testWidgets(
-      'renders "Carb Loading" title in app bar',
-      (tester) async {
-        // CarbLoadingScreen is currently a static mock — it holds hardcoded
-        // display strings and does NOT read a controller.  pumpSeeded without
-        // any overrides should render it cleanly.
-        await pumpSeeded(tester, const CarbLoadingScreen());
-
-        expect(find.text('Carb Loading'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'renders "Current Protocol" section heading',
-      (tester) async {
-        await pumpSeeded(tester, const CarbLoadingScreen());
-
-        expect(find.text('Current Protocol'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'renders "3-Day Loading Protocol" protocol name',
-      (tester) async {
-        await pumpSeeded(tester, const CarbLoadingScreen());
-
-        // Confirms hardcoded protocol display value is rendered correctly.
-        expect(find.text('3-Day Loading Protocol'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      "renders Today's Plan section",
-      (tester) async {
-        await pumpSeeded(tester, const CarbLoadingScreen());
-
-        expect(find.text("Today's Plan"), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'renders Day 1 label for the first carb-loading day',
-      (tester) async {
-        await pumpSeeded(tester, const CarbLoadingScreen());
-
-        expect(find.text('Day 1'), findsOneWidget);
-      },
-    );
-  });
+  // lib/features/carb_loading/presentation/screens/carb_loading_screen.dart
+  // was a pure mock-data screen with 0 nav references. File deleted.
+  // The live entry point is carb_loading_day_detail_page.dart.
 
   // ---------------------------------------------------------------------------
   // NewActivityScreen — sport selector tab content tests

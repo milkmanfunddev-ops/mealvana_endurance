@@ -9,6 +9,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/analytics/analytics_excluded_pref.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../providers/settings_controller.dart';
 import 'debug_screen.dart';
@@ -148,7 +149,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       leading: IconButton(
         key: const ValueKey('settings.back_button'),
         tooltip: 'Back',
-        onPressed: () => context.pop(),
+        // Guard against popping when there's nothing to pop (e.g. a rapid
+        // double-tap where the first tap already popped this route) — that
+        // throws GoError "There is nothing to pop" (Sentry MEALVANA-ENDURANCE-8Y).
+        onPressed: () {
+          if (context.canPop()) context.pop();
+        },
         icon: Icon(
           Icons.arrow_back_ios_new,
           color: Theme.of(context).colorScheme.onSurface,
@@ -342,6 +348,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               activeThumbColor: AppColors.electrolyte,
               contentPadding: EdgeInsets.zero,
             ),
+            // Hidden paywall entry for purchase testing. Only present when the
+            // AI-credits feature flag is on; keeps it out of the normal user UI.
+            if (ref.watch(appConfigProvider).aiCreditsEnabled) ...[
+              const Divider(),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.bolt, color: AppColors.electrolyte),
+                title: Text(
+                  'Buy AI Credits (tester)',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  'Opens the credits paywall for purchase testing.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/buy-credits'),
+              ),
+            ],
           ],
         ),
       ),

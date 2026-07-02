@@ -56,6 +56,55 @@ class DailyMacroTargetsRepository {
     return _mapRowToDomain(row);
   }
 
+  /// Batched variant of [getCachedForDate] for the 7-day window starting at
+  /// [startOfWeek].
+  ///
+  /// Fetches the whole week in ONE query instead of one-per-day, eliminating
+  /// the week-overview N+1 (Sentry MEALVANA-ENDURANCE-DEV-4C / DEV-49). Applies
+  /// the same algorithm-version staleness check as [getCachedForDate], dropping
+  /// stale rows so the caller recalculates them.
+  ///
+  /// Returns a map keyed by the row's normalized `target_date`
+  /// (millisecondsSinceEpoch) for O(1) per-day lookup.
+  Future<Map<int, DailyMacroTargets>> getCachedForWeek(
+    String userId,
+    DateTime startOfWeek,
+  ) async {
+    final normalizedStart =
+        DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+    final normalizedEnd = normalizedStart.add(const Duration(days: 6));
+
+    final results = await _database.customSelect(
+      '''SELECT * FROM daily_macro_targets
+         WHERE user_id = ? AND target_date >= ? AND target_date <= ?''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withInt(normalizedStart.millisecondsSinceEpoch),
+        Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
+      ],
+    ).get();
+
+    final map = <int, DailyMacroTargets>{};
+    final staleDates = <DateTime>[];
+    for (final row in results) {
+      final targetMillis = row.read<int>('target_date');
+      final cachedVersion = row.read<String>('algorithm_version');
+      if (cachedVersion != _expectedAlgorithmVersion) {
+        staleDates.add(DateTime.fromMillisecondsSinceEpoch(targetMillis));
+        continue;
+      }
+      map[targetMillis] = _mapRowToDomain(row);
+    }
+
+    // Drop stale-version rows so the next calc refreshes them (mirrors the
+    // single-date path in getCachedForDate).
+    for (final date in staleDates) {
+      await invalidateForDate(userId, date);
+    }
+
+    return map;
+  }
+
   /// Save macro targets to local Drift database
   Future<void> saveToLocal(DailyMacroTargets targets) async {
     final normalizedDate = DateTime(

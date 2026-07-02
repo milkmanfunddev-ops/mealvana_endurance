@@ -880,7 +880,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     WidgetRef ref,
   ) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    final success = await controller.connectGarmin();
+    // Onboarding: defer the garmin_user_mappings upsert until the user's `users`
+    // row exists (created at onboarding completion). See connectGarmin docs /
+    // Sentry MEALVANA-ENDURANCE-AF.
+    final success = await controller.connectGarmin(isOnboarding: true);
 
     if (success && context.mounted) {
       final notificationsGranted =

@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
 import 'shared/services/app_external_deps.dart';
+import 'shared/services/sentry/sentry_event_filter.dart';
 import 'shared/services/sentry/sentry_provider_observer.dart';
 import 'shared/widgets/root_app_widget.dart';
 
@@ -82,7 +83,9 @@ Future<void> main() async {
           if (!kDebugMode && (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
             return null;
           }
-          if (event.throwable.toString().contains('TimeoutException')) {
+          // Drop known low-signal noise (offline/DNS, transient TLS resets,
+          // cancelled sign-ins, debug assertions, test-runner failures).
+          if (isSentryNoise(event)) {
             return null;
           }
           return event;
@@ -114,7 +117,7 @@ Future<void> _runMealvanaApp(AppConfig config) async {
   // Initialize Supabase with SentryHttpClient to instrument network calls.
   await Supabase.initialize(
     url: config.supabaseUrl,
-    anonKey: config.supabaseAnonKey,
+    anonKey: config.supabaseClientKey,
     httpClient: SentryHttpClient(),
   );
 

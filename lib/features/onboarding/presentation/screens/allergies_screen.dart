@@ -182,7 +182,9 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           ref.invalidate(settingsControllerProvider);
 
           MealvanaSnackbar.showSuccess(context, 'Allergies updated');
-          context.pop();
+          // Guard the pop: a rapid double-tap can fire this after the route is
+          // already gone, throwing GoError "nothing to pop" (MEALVANA-ENDURANCE-DEV-41).
+          if (context.canPop()) context.pop();
         } else {
           MealvanaSnackbar.showError(
             context,

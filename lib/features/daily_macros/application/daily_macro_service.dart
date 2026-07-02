@@ -182,13 +182,15 @@ class DailyMacroService {
     // Start of week (Sunday) — matches calendar_week_view_kyle.dart
     final startOfWeek = normalizedDate.subtract(Duration(days: normalizedDate.weekday % 7));
 
-    final results = <DailyMacroTargets?>[];
-    for (int i = 0; i < 7; i++) {
+    // Single batched query for the whole week (avoids the per-day N+1 —
+    // Sentry MEALVANA-ENDURANCE-DEV-4C / DEV-49).
+    final cachedByDate = await _repository.getCachedForWeek(userId, startOfWeek);
+    return List.generate(7, (i) {
       final day = startOfWeek.add(Duration(days: i));
-      final cached = await _repository.getCachedForDate(userId, day);
-      results.add(cached);
-    }
-    return results;
+      final key =
+          DateTime(day.year, day.month, day.day).millisecondsSinceEpoch;
+      return cachedByDate[key];
+    });
   }
 
   /// Calculate all 7 days of the week in a single edge function call.
@@ -201,12 +203,16 @@ class DailyMacroService {
     final normalized = DateTime(anyDateInWeek.year, anyDateInWeek.month, anyDateInWeek.day);
     final startOfWeek = normalized.subtract(Duration(days: normalized.weekday % 7));
 
-    // 1. Check cache for all 7 days
+    // 1. Check cache for all 7 days — single batched query (avoids the per-day
+    //    N+1: Sentry MEALVANA-ENDURANCE-DEV-4C / DEV-49).
+    final cachedByDate = await _repository.getCachedForWeek(userId, startOfWeek);
     final cached = <int, DailyMacroTargets>{};
     final uncachedIndices = <int>[];
     for (int i = 0; i < 7; i++) {
       final day = startOfWeek.add(Duration(days: i));
-      final c = await _repository.getCachedForDate(userId, day);
+      final key =
+          DateTime(day.year, day.month, day.day).millisecondsSinceEpoch;
+      final c = cachedByDate[key];
       if (c != null) {
         cached[i] = c;
       } else {

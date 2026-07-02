@@ -1,10 +1,13 @@
 // Screen smoke suite — auth screens + miscellaneous feature screens.
 //
-// Coverage: 15 screens (EmailLoginScreen, EmailSignupScreen,
+// Coverage: 13 screens (EmailLoginScreen, EmailSignupScreen,
 // ForgotPasswordScreen, VerifyResetCodeScreen, SetNewPasswordScreen,
-// DailyMacrosScreen, ActivitiesListScreen, JadeChatScreen,
-// CalendarMonthScreen, RecipesScreen, ShareNutritionPlanScreen,
+// ActivitiesListScreen, JadeChatScreen,
+// RecipesScreen, ShareNutritionPlanScreen,
 // SurveyScreen, VideoPlayerScreen, FoodDetailScreen, BarcodeScannerScreen).
+//
+// NOTE: CalendarMonthScreen was a dead mock-data screen (0 nav references).
+// Deleted 2026-07-01; its smoke test group removed from this file.
 //
 // Auth screens read contentServiceProvider (synchronous Provider) and the
 // auth controllers (AsyncNotifier<void> that returns synchronously), so
@@ -27,7 +30,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Auth screens
 import 'package:mealvana_endurance/features/auth/presentation/screens/email_login_screen.dart';
@@ -40,25 +42,12 @@ import 'package:mealvana_endurance/features/auth/presentation/screens/set_new_pa
 import 'package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart';
 import 'package:mealvana_endurance/features/auth/presentation/providers/password_recovery_controller.dart';
 
-// Daily Macros screen + required overrides (mirrors daily_macros_screen_layout_test.dart)
-import 'package:mealvana_endurance/features/daily_macros/presentation/screens/daily_macros_screen.dart';
-import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
-import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
-import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
-import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
-import 'package:mealvana_endurance/features/auth/application/auth_service.dart';
-import 'package:mealvana_endurance/shared/services/preferences_service.dart';
-
 // Activities list screen
 import 'package:mealvana_endurance/features/activities/presentation/screens/activities_list_screen.dart';
 
 // Jade chat screen + controller override
 import 'package:mealvana_endurance/features/jade/presentation/screens/jade_chat_screen.dart';
 import 'package:mealvana_endurance/features/jade/presentation/providers/jade_chat_controller.dart';
-
-// Calendar month screen
-import 'package:mealvana_endurance/features/calendar/presentation/screens/calendar_month_screen.dart';
 
 // Recipes screen
 import 'package:mealvana_endurance/features/recipes/presentation/screens/recipes_screen.dart';
@@ -86,35 +75,6 @@ import '../helpers/widget_test_harness.dart';
 // ---------------------------------------------------------------------------
 // Fake controllers
 // ---------------------------------------------------------------------------
-
-/// Fake DailyMacrosController that seeds a minimal state so pumpAndSettle can
-/// settle (mirrors the approach in daily_macros_screen_layout_test.dart).
-class _FakeDailyMacrosController extends DailyMacrosController {
-  @override
-  Future<DailyMacrosState> build() async {
-    final now = DateTime.now();
-    final targets = DailyMacroTargets(
-      id: 'smoke-test',
-      userId: 'u1',
-      targetDate: now,
-      carbG: 300,
-      protG: 100,
-      fatG: 90,
-      tdee: 2400,
-      rmr: 1500,
-      sessionKcal: 400,
-      mode: 'standard',
-      algorithmVersion: 'v1',
-      createdAt: now,
-      updatedAt: now,
-    );
-    return DailyMacrosState(
-      selectedDate: now,
-      dailyMacros: targets,
-      weeklyMacros: List<DailyMacroTargets?>.filled(7, targets),
-    );
-  }
-}
 
 /// Fake PostOnboardingAuthController that resolves immediately so auth screens
 /// can settle without hitting Supabase.
@@ -235,43 +195,6 @@ void main() {
     });
   });
 
-  group('Daily Macros screen smoke test', () {
-    // Replicates the minimal provider wiring from
-    // test/features/daily_macros/daily_macros_screen_layout_test.dart.
-    //
-    testWidgets('DailyMacrosScreen builds without overflow', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-
-      await smokeScreen(
-        tester,
-        const DailyMacrosScreen(),
-        overrides: [
-          dailyMacrosControllerProvider
-              .overrideWith(_FakeDailyMacrosController.new),
-          mealLogsForDateProvider
-              .overrideWith((ref, date) => Stream.value(const <MealLog>[])),
-          consumedTotalsForDateProvider.overrideWith(
-            (ref, date) => Stream.value(
-              const ConsumedTotals(
-                calories: 0,
-                carbsG: 0,
-                proteinG: 0,
-                fatG: 0,
-                sodiumMg: 0,
-              ),
-            ),
-          ),
-          preferencesServiceProvider
-              .overrideWith((ref) => PreferencesService(prefs)),
-          currentUserProvider.overrideWith((ref) async => null),
-        ],
-        // settle:false avoids potential background-timer timeouts.
-        settle: false,
-      );
-    });
-  });
-
   group('Activities list screen smoke test', () {
     // ActivitiesListScreen watches several async providers (activitiesController,
     // allEventsProvider, nextUpcomingEventProvider, carbLoadingDaysForRange).
@@ -298,17 +221,6 @@ void main() {
         ],
         // Settle is fine because the fake build() returns synchronously.
         settle: true,
-      );
-    });
-  });
-
-  group('Calendar month screen smoke test', () {
-    // CalendarMonthScreen is a pure-UI screen; it only reads
-    // appExternalDepsProvider on gesture events (analytics), not during build.
-    testWidgets('CalendarMonthScreen renders without overflow', (tester) async {
-      await smokeScreen(
-        tester,
-        const CalendarMonthScreen(),
       );
     });
   });

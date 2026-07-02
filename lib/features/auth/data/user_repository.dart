@@ -724,81 +724,6 @@ class UserRepository with SyncableRepository {
 
   // SUPABASE SYNC METHODS
 
-  /// Sync local user data with Supabase and return updated user
-  Future<UserProfile> syncUserWithSupabase(
-    String deviceId,
-    UserProfile localUser,
-  ) async {
-    try {
-      // Convert user profile to JSON for Supabase
-      final userData = {
-        'gender': localUser.gender.name,
-        'birthday': localUser.birthday.toIso8601String().split(
-          'T',
-        )[0], // Date only
-        'height_feet': localUser.heightFeet,
-        'height_inches': localUser.heightInches,
-        'weight_pounds': localUser.weightPounds,
-        'runs_with_water_bottle': localUser.runsWithWaterBottle,
-        'food_preferences': {}, // TODO: Implement food preferences sync
-        'gut_training_level': localUser.gutTraining.name,
-        'onboarding_completed': true,
-        'app_version': '1.0.0', // TODO: Get from package info
-      };
-
-      // Use the upsert function from SQL script
-      final response = await supabase.rpc(
-        'upsert_user_by_device_id',
-        params: {'p_device_id': deviceId, 'p_user_data': userData},
-      );
-
-      if (response != null) {
-        // Convert response back to UserProfile
-        final updatedUser = _parseUserFromSupabase(response, deviceId);
-
-        // Update local cache
-        await saveUserProfile(updatedUser);
-
-        return updatedUser;
-      } else {
-        return localUser;
-      }
-    } catch (e, stackTrace) {
-      // Log error but don't throw - continue with local data
-      await sentry.reportNetworkError(
-        e,
-        url: 'supabase:upsert_user_by_device_id',
-        method: 'RPC',
-        stackTrace: stackTrace,
-      );
-      return localUser;
-    }
-  }
-
-  /// Get user from Supabase by device ID
-  Future<UserProfile?> getUserFromSupabase(String deviceId) async {
-    try {
-      final response = await supabase.rpc(
-        'get_user_by_device_id',
-        params: {'p_device_id': deviceId},
-      );
-
-      if (response != null) {
-        return _parseUserFromSupabase(response, deviceId);
-      } else {
-        return null;
-      }
-    } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
-        e,
-        url: 'supabase:get_user_by_device_id',
-        method: 'RPC',
-        stackTrace: stackTrace,
-      );
-      return null;
-    }
-  }
-
   /// Fetch user profile from Supabase by ID and save to local DB
   /// Used when signing in to an existing account to sync profile
   Future<UserProfile?> fetchAndSaveRemoteProfile(String userId) async {
@@ -928,47 +853,31 @@ class UserRepository with SyncableRepository {
     }
   }
 
-  /// Create new user in Supabase (called after onboarding)
+  /// Create/sync a user row in Supabase (called after onboarding and on fresh
+  /// login).
+  ///
+  /// Writes directly to the `users` table via [UserProfile.toJson()] — the
+  /// same path used by [_upsertUserProfileToSupabase]. The legacy
+  /// `upsert_user_by_device_id` RPC this used to call never existed in the
+  /// deployed schema, so every call threw PGRST202 and silently fell back to a
+  /// local-only save — meaning fresh-login profiles were never persisted
+  /// remotely. See Sentry MEALVANA-ENDURANCE-3W.
   Future<UserProfile> createUserInSupabase(
     String deviceId,
     UserProfile userProfile,
   ) async {
     try {
-      final userData = {
-        'gender': userProfile.gender.name,
-        'birthday': userProfile.birthday.toIso8601String().split('T')[0],
-        'height_feet': userProfile.heightFeet,
-        'height_inches': userProfile.heightInches,
-        'weight_pounds': userProfile.weightPounds,
-        'runs_with_water_bottle': userProfile.runsWithWaterBottle,
-        'food_preferences': {}, // TODO: Add food preferences
-        'gut_training_level': userProfile.gutTraining.name,
-        'onboarding_completed': true,
-        'app_version': '1.0.0',
-      };
-
-      final response = await supabase.rpc(
-        'upsert_user_by_device_id',
-        params: {'p_device_id': deviceId, 'p_user_data': userData},
-      );
-
-      if (response != null) {
-        final createdUser = _parseUserFromSupabase(response, deviceId);
-        await saveUserProfile(createdUser);
-        return createdUser;
-      } else {
-        // Fallback to local save if Supabase fails
-        await saveUserProfile(userProfile);
-        return userProfile;
-      }
+      await supabase.from('users').upsert(userProfile.toJson());
+      await saveUserProfile(userProfile);
+      return userProfile;
     } catch (e, stackTrace) {
       await sentry.reportNetworkError(
         e,
-        url: 'supabase:upsert_user_by_device_id',
-        method: 'RPC',
+        url: 'supabase:users.upsert',
+        method: 'UPSERT',
         stackTrace: stackTrace,
       );
-      // Fallback to local save
+      // Fallback to local save so onboarding/login still completes offline.
       await saveUserProfile(userProfile);
       return userProfile;
     }

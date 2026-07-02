@@ -114,6 +114,16 @@ hardcoded placeholder data to every user** — they look shipped but aren't wire
 
 ## Flutter unit-test sweep bugs (2026-06-30)
 
+- **🔴 `UserProfile.copyWith()` drops 3 fields — DATA LOSS (FIXED).** `copyWith`
+  omitted `defaultRunningPaceMinPerMile` / `defaultCyclingSpeedMph` /
+  `defaultSwimmingPacePer100Sec` from its params+body, so `updateUserProfile()`
+  (which calls `copyWith(updatedAt:)` on every save) **zeroed those fields on
+  every settings save** — users lost their cycling speed / swim pace. Fixed in
+  `user_preferences.dart`.
+- **🟠 Startup analytics broken (FIXED).** `AppStartupService.checkUserSession()`
+  called `getCurrentUserProfile()` with no `currentAuthUserId` → always null →
+  `identifyUser` never fired at startup. Fixed via new `UserDao.getLocalUserProfile()`.
+
 - **`coach_chat_controller` — production crash on dispose (HIGH, FIXED).** `ref.read`
   inside `onDispose` → `AssertionError: Cannot use Ref … inside life-cycles` in
   Riverpod 3.x — crashes every time the chat screen is left. Agent fixed it (cache
@@ -128,6 +138,28 @@ hardcoded placeholder data to every user** — they look shipped but aren't wire
 - **`CarbLoadingPlanSimple.fromJson` crash (MEDIUM).** `json['daySelections'] as
   Map<String,dynamic>?` throws `TypeError` on a `Map<dynamic,dynamic>` (from JSON
   bytes / `{}` literal). Fix: `Map<String,dynamic>.from(... ?? {})`. (`carb_loading_plan_simple.dart:133`.)
+- **`NutritionData.fromJson` crash (MEDIUM).** Same unsafe cast —
+  `json['macroTargets'] as Map<String,dynamic>` throws `TypeError` on a
+  `Map<dynamic,dynamic>` (`nutrition_data.dart:32`). Fix with `Map<String,dynamic>.from(...)`.
+- **⚠️ Pattern: `as Map<String,dynamic>` in `fromJson`.** 106 sites use this cast,
+  but MOST are safe — `json.decode` yields correctly-typed maps throughout. The
+  crash only bites when the map comes from a **non-json.decode source** (Drift
+  JSONB columns, `{}` literals, `Map.from`), which is exactly the 2 confirmed
+  cases (CarbLoadingPlanSimple, NutritionData). **Action = targeted review of the
+  fromJson sites that parse from Drift/internal maps** (use `Map<String,dynamic>.from(...)`),
+  NOT a 106-site codemod.
+- `RecipeRepository.getRecipeById` does NOT filter `isActive` (returns inactive
+  recipes by id) — verify intended. `getFavoriteRecipes`/`toggleFavorite` are
+  no-op stubs (tests pin the contract).
+- **🟠 IAP: balance stale after a successful purchase (revenue UX).** If
+  `fetchWallet` keeps failing (offline) during the post-purchase poll loop, the
+  user **pays but the displayed credit balance never updates until app restart**.
+  Fix: persist a "pending credit update" flag so the next successful fetch refreshes.
+- **IAP: silent SDK errors.** `RevenueCatService.purchase()` swallows all errors →
+  `false`, and `buy()` treats `false` as user-cancel — a **declined card is
+  indistinguishable from a tap-away** (no error/retry surfaced). + no double-buy
+  guard in the controller (UI must disable the button). (402→InsufficientCredits
+  paywall routing verified working.)
 - **Carb-loading protocol logic (MEDIUM).** `isCarbLoadingActive` hardcodes a
   **2-day** window (`raceDate - 2d`) regardless of protocol length → a 3-day
   protocol's day -3 isn't "active" (`carb_loading_plan_simple.dart:236`). And

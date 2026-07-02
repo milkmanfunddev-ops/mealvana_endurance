@@ -24,6 +24,7 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
     required this.emptyQueryContent,
     this.isMyFoodsExpanded = true,
     this.onMyFoodsSectionToggle,
+    this.scrollController,
   });
 
   /// Controller key to read the right FoodSearchController instance.
@@ -53,10 +54,14 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
   /// Toggle callback for My Foods section.
   final VoidCallback? onMyFoodsSectionToggle;
 
+  /// Optional external scroll controller for the results list — lets callers
+  /// (e.g. a [DraggableScrollableSheet]) drive the sheet's drag/resize
+  /// behavior from this list when it's the active scrollable.
+  final ScrollController? scrollController;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchState =
-        ref.watch(foodSearchControllerProvider(controllerKey));
+    final searchState = ref.watch(foodSearchControllerProvider(controllerKey));
 
     // When search query is empty, show default content
     if (searchState.searchQuery.isEmpty) {
@@ -77,7 +82,8 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
       );
     }
 
-    final hasNoResults = searchState.userFoodResults.isEmpty &&
+    final hasNoResults =
+        searchState.userFoodResults.isEmpty &&
         searchState.templateFoodResults.isEmpty &&
         searchState.catalogResults.isEmpty &&
         !searchState.isSearchingCatalog;
@@ -98,10 +104,12 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
     final catalogToShow = searchState.isCatalogExpanded
         ? searchState.catalogResults
         : searchState.catalogResults.take(20).toList();
-    final hasMoreCatalog = !searchState.isCatalogExpanded &&
+    final hasMoreCatalog =
+        !searchState.isCatalogExpanded &&
         searchState.catalogResults.length > 20;
 
     return ListView(
+      controller: scrollController,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       children: [
         // My Foods section
@@ -198,8 +206,9 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
                 child: TextButton(
                   onPressed: () {
                     ref
-                        .read(foodSearchControllerProvider(controllerKey)
-                            .notifier)
+                        .read(
+                          foodSearchControllerProvider(controllerKey).notifier,
+                        )
                         .expandCatalogResults();
                   },
                   child: Text(
@@ -218,11 +227,11 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
 
         // Search Open Food Facts button - ALWAYS visible when query is non-empty
         Padding(
-          padding:
-              const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.md),
-          child: SearchOpenFoodFactsButton(
-            onPressed: onSearchOpenFoodFacts,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.sm,
+            bottom: AppSpacing.md,
           ),
+          child: SearchOpenFoodFactsButton(onPressed: onSearchOpenFoodFacts),
         ),
       ],
     );
@@ -238,10 +247,9 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
             FaIcon(
               FontAwesomeIcons.magnifyingGlass,
               size: AppIconSizes.xl,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -253,9 +261,7 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             // OFF button still visible in empty state
-            SearchOpenFoodFactsButton(
-              onPressed: onSearchOpenFoodFacts,
-            ),
+            SearchOpenFoodFactsButton(onPressed: onSearchOpenFoodFacts),
           ],
         ),
       ),

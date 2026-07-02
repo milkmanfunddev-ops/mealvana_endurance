@@ -88,15 +88,36 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _controller!.start();
+        _safeStartScanner();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        _controller!.stop();
+        _safeStopScanner();
         break;
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
         break;
+    }
+  }
+
+  /// Start the scanner, tolerating the race where the controller is still
+  /// initializing (autoStart in flight). In that window `start()` throws
+  /// `MobileScannerException(controllerInitializing)` — safe to ignore since
+  /// the controller will be running once init completes. Fixes an app-resume
+  /// crash: Sentry MEALVANA-ENDURANCE-79.
+  Future<void> _safeStartScanner() async {
+    try {
+      await _controller?.start();
+    } on MobileScannerException catch (_) {
+      // Already starting / still initializing — ignore.
+    }
+  }
+
+  Future<void> _safeStopScanner() async {
+    try {
+      await _controller?.stop();
+    } on MobileScannerException catch (_) {
+      // Not initialized yet — nothing to stop.
     }
   }
 

@@ -484,6 +484,10 @@ class UserProfile {
     int? knownSodiumConcentrationMgPerLiter,
     DateTime? sweatTestDate,
     String? sweatTestSource,
+    // Default pace/speed for workout estimation
+    double? defaultRunningPaceMinPerMile,
+    double? defaultCyclingSpeedMph,
+    int? defaultSwimmingPacePer100Sec,
     // Garmin precedence timestamps
     DateTime? weightPoundsUpdatedAt,
     DateTime? bodyFatPctUpdatedAt,
@@ -518,6 +522,10 @@ class UserProfile {
       cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
       typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
       typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
+      // Default pace/speed for workout estimation
+      defaultRunningPaceMinPerMile: defaultRunningPaceMinPerMile ?? this.defaultRunningPaceMinPerMile,
+      defaultCyclingSpeedMph: defaultCyclingSpeedMph ?? this.defaultCyclingSpeedMph,
+      defaultSwimmingPacePer100Sec: defaultSwimmingPacePer100Sec ?? this.defaultSwimmingPacePer100Sec,
       // Dietary preference and allergies
       dietaryPreference: dietaryPreference ?? this.dietaryPreference,
       allergies: allergies ?? this.allergies,

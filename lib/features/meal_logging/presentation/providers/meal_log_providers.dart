@@ -143,8 +143,6 @@ class MealLogController extends _$MealLogController {
     return null;
   }
 
-  MealLoggingService get _service => ref.read(mealLoggingServiceProvider);
-
   AppLogger get _logger => ref.read(appLoggerProvider);
 
   /// Runs [action] inside [AsyncValue.guard], but only writes the result back
@@ -153,11 +151,19 @@ class MealLogController extends _$MealLogController {
   /// Meal-logging actions routinely outlive the screen that triggered them
   /// (e.g. the user taps "Log" and the picker pops immediately). Because this
   /// is an auto-dispose provider, that pops disposes it while the write is
-  /// still in flight. Without the [ref.mounted] gate, assigning [state] after
-  /// the await throws [UnmountedRefException].
-  Future<void> _runGuarded(Future<void> Function() action) async {
+  /// still in flight. Two failure modes follow, both guarded here:
+  /// - assigning [state] after the await throws [UnmountedRefException] — hence
+  ///   the [ref.mounted] gate before the write; and
+  /// - reading `ref` (e.g. the `MealLoggingService`) *after* an async gap
+  ///   inside [action] throws the same exception — so the service is read once,
+  ///   before the first await, and passed into [action] (Sentry
+  ///   MEALVANA-ENDURANCE-DEV-4X).
+  Future<void> _runGuarded(
+    Future<void> Function(MealLoggingService service) action,
+  ) async {
+    final service = ref.read(mealLoggingServiceProvider);
     state = const AsyncLoading();
-    final result = await AsyncValue.guard(action);
+    final result = await AsyncValue.guard(() => action(service));
     if (!ref.mounted) return;
     state = result;
   }
@@ -185,11 +191,11 @@ class MealLogController extends _$MealLogController {
     String? notes,
     DateTime? eatenAt,
   }) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
-      await _service.logManualMeal(
+      await service.logManualMeal(
         userId: userId,
         name: name,
         slot: slot,
@@ -218,11 +224,11 @@ class MealLogController extends _$MealLogController {
     required String logDate,
     DateTime? eatenAt,
   }) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
-      await _service.logSavedMeal(
+      await service.logSavedMeal(
         savedMeal: savedMeal,
         userId: userId,
         slot: slot,
@@ -247,11 +253,11 @@ class MealLogController extends _$MealLogController {
     DateTime? eatenAt,
     String? notes,
   }) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
-      await _service.logRecipe(
+      await service.logRecipe(
         params: params,
         userId: userId,
         slot: slot,
@@ -281,10 +287,10 @@ class MealLogController extends _$MealLogController {
     String? notes,
     DateTime? eatenAt,
   }) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
-      await _service.logFromComponents(
+      await service.logFromComponents(
         userId: userId,
         name: name,
         slot: slot,
@@ -309,8 +315,8 @@ class MealLogController extends _$MealLogController {
   /// Passes the full updated [MealLog] to the service which recomputes totals
   /// when components are present, then writes via the repository.
   Future<void> updateLog(MealLog log) async {
-    await _runGuarded(() async {
-      await _service.updateLog(log);
+    await _runGuarded((service) async {
+      await service.updateLog(log);
 
       _logger.info(
         'Meal log updated',
@@ -327,13 +333,14 @@ class MealLogController extends _$MealLogController {
 
   /// Restore a previously soft-deleted meal log entry (used by undo-delete).
   Future<void> restoreLog(String logId) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
+      // Read the repo before the async gap below so a mid-action disposal
+      // can't trigger a `ref.read` on a disposed ref (UnmountedRefException).
+      final repo = ref.read(mealLogRepositoryProvider);
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
-      await ref
-          .read(mealLogRepositoryProvider)
-          .restoreLog(id: logId, userId: userId);
+      await repo.restoreLog(id: logId, userId: userId);
 
       if (!ref.mounted) return;
       _logger.info(
@@ -348,13 +355,14 @@ class MealLogController extends _$MealLogController {
 
   /// Soft-delete a meal log entry.
   Future<void> deleteLog(String logId) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
+      // Read the repo before the async gap below so a mid-action disposal
+      // can't trigger a `ref.read` on a disposed ref (UnmountedRefException).
+      final repo = ref.read(mealLogRepositoryProvider);
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
-      await ref
-          .read(mealLogRepositoryProvider)
-          .softDeleteLog(id: logId, userId: userId);
+      await repo.softDeleteLog(id: logId, userId: userId);
 
       if (!ref.mounted) return;
       _logger.info(
@@ -373,8 +381,8 @@ class MealLogController extends _$MealLogController {
 
   /// Save a log entry as a user favorite.
   Future<void> saveLogAsFavorite(MealLog log, {String? customName}) async {
-    await _runGuarded(() async {
-      await _service.saveLogAsFavorite(log, customName: customName);
+    await _runGuarded((service) async {
+      await service.saveLogAsFavorite(log, customName: customName);
       if (ref.mounted) ref.invalidate(savedMealsProvider);
 
       await _trackEvent('meal_saved_as_favorite', {
@@ -386,7 +394,7 @@ class MealLogController extends _$MealLogController {
 
   /// Soft-delete a saved meal.
   Future<void> deleteSavedMeal(String mealId) async {
-    await _runGuarded(() async {
+    await _runGuarded((service) async {
       await ref.read(savedMealsRepositoryProvider).softDelete(mealId);
       if (ref.mounted) ref.invalidate(savedMealsProvider);
 

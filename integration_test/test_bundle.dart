@@ -9,15 +9,7 @@ import 'package:patrol/src/platform/contracts/contracts.dart';
 import 'package:test_api/src/backend/invoker.dart';
 
 // START: GENERATED TEST IMPORTS
-import 'flows/activities_crud_flow_test.dart' as flows__activities_crud_flow_test;
-import 'flows/auth_flow_test.dart' as flows__auth_flow_test;
-import 'flows/events_crud_flow_test.dart' as flows__events_crud_flow_test;
-import 'flows/formula_create_pin_flow_test.dart' as flows__formula_create_pin_flow_test;
-import 'flows/formula_pin_flow_test.dart' as flows__formula_pin_flow_test;
-import 'flows/fuel_timeline_flow_test.dart' as flows__fuel_timeline_flow_test;
-import 'flows/google_login_flow_test.dart' as flows__google_login_flow_test;
-import 'flows/integrations_connect_flow_test.dart' as flows__integrations_connect_flow_test;
-import 'flows/onboarding_signup_flow_test.dart' as flows__onboarding_signup_flow_test;
+import 'flows/settings_persist_flow_test.dart' as flows__settings_persist_flow_test;
 // END: GENERATED TEST IMPORTS
 
 Future<void> main() async {
@@ -43,8 +35,6 @@ Future<void> main() async {
   //
   // Once the native runner has the list of Dart tests, it dynamically creates
   // native test cases from them. On Android, this is done using the
-  // Parametrized JUnit runner. On iOS, new test case methods are swizzled into
-  // the RunnerUITests class, taking advantage of the very dynamic nature of
   // Parametrized JUnit runner. On iOS, new test case methods are swizzled into
   // the RunnerUITests class, taking advantage of the very dynamic nature of
   // Objective-C runtime.
@@ -82,15 +72,7 @@ Future<void> main() async {
   });
 
 // START: GENERATED TEST GROUPS
-  group('flows.activities_crud_flow_test', flows__activities_crud_flow_test.main);
-  group('flows.auth_flow_test', flows__auth_flow_test.main);
-  group('flows.events_crud_flow_test', flows__events_crud_flow_test.main);
-  group('flows.formula_create_pin_flow_test', flows__formula_create_pin_flow_test.main);
-  group('flows.formula_pin_flow_test', flows__formula_pin_flow_test.main);
-  group('flows.fuel_timeline_flow_test', flows__fuel_timeline_flow_test.main);
-  group('flows.google_login_flow_test', flows__google_login_flow_test.main);
-  group('flows.integrations_connect_flow_test', flows__integrations_connect_flow_test.main);
-  group('flows.onboarding_signup_flow_test', flows__onboarding_signup_flow_test.main);
+  group('flows.settings_persist_flow_test', flows__settings_persist_flow_test.main);
 // END: GENERATED TEST GROUPS
 
   final dartTestGroup = await testExplorationCompleter.future;

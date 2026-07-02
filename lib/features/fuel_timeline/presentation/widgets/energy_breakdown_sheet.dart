@@ -123,36 +123,42 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
   }
 
   Widget _targetHeadline(double cals, Color onSurface) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Text(
-          _fmt.format(cals.round()),
-          style: FtType.sheetBig.copyWith(color: onSurface, fontSize: 42),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'kcal target',
-          style: FtType.sheetTitle.copyWith(
-            color: onSurface.withValues(alpha: 0.55),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            _fmt.format(cals.round()),
+            style: FtType.sheetBig.copyWith(color: onSurface, fontSize: 42),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Text(
+            'kcal target',
+            style: FtType.sheetTitle.copyWith(
+              color: onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _macroChips(double carb, double prot, double fat) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _chip(carb, 'Carbs', kMacroColorCarbs),
-        const SizedBox(width: 34),
-        _chip(prot, 'Protein', kMacroColorProtein),
-        const SizedBox(width: 34),
-        _chip(fat, 'Fat', kMacroColorFat),
-      ],
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _chip(carb, 'Carbs', kMacroColorCarbs),
+          const SizedBox(width: 34),
+          _chip(prot, 'Protein', kMacroColorProtein),
+          const SizedBox(width: 34),
+          _chip(fat, 'Fat', kMacroColorFat),
+        ],
+      ),
     );
   }
 

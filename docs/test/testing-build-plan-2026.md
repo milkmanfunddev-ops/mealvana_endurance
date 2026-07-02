@@ -67,6 +67,20 @@ This supersedes scope assumptions below. Direction from Lee:
   Resend key), and the big one: **Calendar + CarbLoading screens render hardcoded
   MOCK data** (not wired to their controllers).
 
+### 2026-06-30 — resume wave (after spend-limit reset)
+- **Patrol `formula_create_pin_flow_test` GREEN on device** (36 steps, 29s): the full
+  personal-formula lifecycle — auth → Formula Library → create → add food (swap-food)
+  → save → pin → verify → unpin. Added missing `swap_food.*` ValueKeys + `figma_search_bar`
+  `fieldKey` to prod (restored from develop). `fuel_timeline_flow_test` sentinel fixed
+  (Journey 2 authored, device-verify pending).
+- **Salvaged + repaired** the spend-limit-killed drafts: settings/credits/app_startup
+  (82 tests) + template_scaling/fuel_timeline (49) + events/user_foods/templates CRUD.
+- **More real bugs found & FIXED:** `UserProfile.copyWith` dropped 3 fields → settings
+  DATA LOSS; startup analytics never fired; `EnergyBreakdownSheet` overflow (every
+  4-digit-calorie user); all **6 edge-fn bugs** (incl. the `save-user-food` security
+  hole); WeatherDetail invisible AppBar. + weather units (40).
+- Full report + obsolete/combinable analysis: `TEST_STATUS_REPORT.md`.
+
 ### Coverage snapshot (2026-06-25) & gaps
 - **Strong:** nutrition engine (`_shared/nutrition` — 12 Deno test files), `new_sync`
   repos (24), nutrition_plan + formula_kit Flutter units, widget smoke (159) + seeded.

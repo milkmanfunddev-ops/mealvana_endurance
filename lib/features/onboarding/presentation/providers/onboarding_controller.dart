@@ -585,11 +585,28 @@ class OnboardingController extends _$OnboardingController {
     DebugLogger.info(
       '📦 Starting batch save of all onboarding data (authProvider: $authProvider, isAnonymous: $isAnonymous)',
     );
+
+    // Guard the invalid state where the user reached the post-onboarding screen
+    // without a cached profile (e.g. the app was relaunched mid-onboarding and
+    // the in-memory cache was lost). Previously this threw inside
+    // AsyncValue.guard, surfacing as an AsyncError that the Sentry
+    // ProviderObserver reported (MEALVANA-ENDURANCE-DEV-4M). There is nothing to
+    // save and retrying can't help, so fail cleanly and let the caller route the
+    // user back to finish onboarding.
+    if (_cachedUserProfileData == null) {
+      DebugLogger.info(
+        '⚠️ saveAllOnboardingData: no cached user profile — cannot create '
+        'user; returning failure without throwing.',
+      );
+      state = const AsyncData(null);
+      return false;
+    }
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       // 1. Create user profile
-      if (_cachedUserProfileData != null) {
+      {
         final data = _cachedUserProfileData!;
         // Auto-populate email from Supabase auth if not manually provided
         final cachedEmail = (data['email'] as String?)?.trim();
@@ -618,8 +635,6 @@ class OnboardingController extends _$OnboardingController {
           unitSystem: data['unitSystem'] as UnitSystem? ?? UnitSystem.imperial,
         );
         DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
-      } else {
-        throw Exception('No user profile data cached');
       }
 
       final userId = _currentUser!.id;

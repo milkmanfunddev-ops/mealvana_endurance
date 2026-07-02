@@ -17,7 +17,6 @@ import 'package:mealvana_endurance/features/carb_loading/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_food_selection_controller.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart';
-import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_loading_screen.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
 import 'package:mealvana_endurance/features/events/domain/event.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_controller.dart';
@@ -235,19 +234,11 @@ void main() {
     // File deleted; nothing to test.
 
     // -----------------------------------------------------------------------
-    // 8. CarbLoadingScreen
+    // 8. CarbLoadingScreen — DELETED (2026-07-01)
     // -----------------------------------------------------------------------
-    // CarbLoadingScreen is a stateless ConsumerWidget that reads
-    // appExternalDepsProvider (already mocked by smokeScreen) and renders
-    // mock/hardcoded data. No AsyncNotifier needed.
-    //
-    // FINDING: CarbLoadingScreen uses withOpacity() which is deprecated in
-    // Flutter >=3.27 (replaced by withValues(alpha:)). This produces a Flutter
-    // analysis warning but does NOT cause a runtime error — the smoke test
-    // still passes. Flagged for incremental cleanup.
-    testWidgets('CarbLoadingScreen renders without overflow', (tester) async {
-      await smokeScreen(tester, const CarbLoadingScreen());
-    });
+    // lib/features/carb_loading/presentation/screens/carb_loading_screen.dart
+    // was a pure mock-data screen with 0 nav references. File deleted.
+    // The live carb-loading entry point is carb_loading_day_detail_page.dart.
 
     // -----------------------------------------------------------------------
     // 9. CarbLoadingFoodSelectionScreen

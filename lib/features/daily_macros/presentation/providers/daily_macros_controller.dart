@@ -55,6 +55,13 @@ class DailyMacrosController extends _$DailyMacrosController {
       );
     }
 
+    // The awaits above are async gaps; if this auto-dispose provider was
+    // disposed meanwhile, reading `ref` throws UnmountedRefException
+    // (Sentry MEALVANA-ENDURANCE-A9). Bail out with a harmless state instead.
+    if (!ref.mounted) {
+      return DailyMacrosState(selectedDate: selectedDate);
+    }
+
     final service = ref.read(dailyMacroServiceProvider);
     final repository = ref.read(dailyMacroTargetsRepositoryProvider);
 
