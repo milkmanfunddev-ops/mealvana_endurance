@@ -134,6 +134,53 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Wrong-platform key guard (crash regression)
+  //
+  // A key whose prefix does not match the platform (e.g. a Test Store `test_`
+  // key or an Apple `appl_` key on Android) must NOT be handed to the native
+  // SDK — doing so triggers a native fatal "invalid API key" alert that crashes
+  // the app on dismiss. The Dart guard must short-circuit instead.
+  //
+  // Test env reports TargetPlatform.android, so the required prefix is `goog_`.
+  // ---------------------------------------------------------------------------
+
+  group('RevenueCatService — wrong-platform key guard', () {
+    test('configureIfPossible does not reach native for a Test Store (test_) '
+        'key on Android — completes without crashing', () async {
+      final svc = _service(
+        enabled: true,
+        appleKey: 'test_tQzQdGyaWsLgqlXuxRYJkoRHNDo',
+        googleKey: 'test_tQzQdGyaWsLgqlXuxRYJkoRHNDo',
+      );
+      await expectLater(svc.configureIfPossible(), completes);
+      // Guard skipped configure → service stays unconfigured.
+      expect(await svc.getOfferings(), isNull);
+    });
+
+    test('configureIfPossible rejects an Apple (appl_) key on Android '
+        '(mismatched prefix) without reaching native', () async {
+      final svc = _service(
+        enabled: true,
+        appleKey: 'appl_AGrlvOFexMAOrDPYHOxPgYdnCTs',
+        googleKey: 'appl_AGrlvOFexMAOrDPYHOxPgYdnCTs',
+      );
+      await expectLater(svc.configureIfPossible(), completes);
+      expect(await svc.getOfferings(), isNull);
+    });
+
+    test('configureIfPossible rejects a malformed/prefixless key '
+        'without reaching native', () async {
+      final svc = _service(
+        enabled: true,
+        appleKey: 'apple-key-test',
+        googleKey: 'google-key-test',
+      );
+      await expectLater(svc.configureIfPossible(), completes);
+      expect(await svc.getOfferings(), isNull);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // AppConfig.revenueCatApiKey platform selector
   // ---------------------------------------------------------------------------
 

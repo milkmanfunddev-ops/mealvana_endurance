@@ -117,33 +117,44 @@ void main() {
       expect(find.text('7:30 AM'), findsNothing);
     });
 
-    testWidgets('expanded meal shows Swap/Remove and fires callbacks',
+    testWidgets('swipe left→right fires onRemove (swipe to delete)',
         (tester) async {
-      var swapped = false, removed = false;
+      var removed = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: MealNode(meal()),
         timelineOpen: true,
         trackingOn: true,
-        expanded: true,
-        onSwap: () => swapped = true,
         onRemove: () => removed = true,
+        onSwap: () {},
       )));
-      expect(find.text('Swap food'), findsOneWidget);
-      expect(find.text('Remove'), findsOneWidget);
-
-      await tester.tap(find.text('Swap food'));
-      await tester.tap(find.text('Remove'));
-      expect(swapped, isTrue);
+      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
+      await tester.pumpAndSettle();
       expect(removed, isTrue);
     });
 
-    testWidgets('collapsed meal has no Swap/Remove', (tester) async {
+    testWidgets('swipe right→left fires onSwap (swipe to swap)',
+        (tester) async {
+      var swapped = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: MealNode(meal()),
         timelineOpen: true,
         trackingOn: true,
+        onRemove: () {},
+        onSwap: () => swapped = true,
       )));
-      expect(find.text('Swap food'), findsNothing);
+      await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
+      await tester.pumpAndSettle();
+      expect(swapped, isTrue);
+    });
+
+    testWidgets('meal tile has no overflow "…" icon', (tester) async {
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: MealNode(meal()),
+        timelineOpen: true,
+        trackingOn: true,
+        onTap: () {},
+      )));
+      expect(find.byIcon(Icons.more_horiz), findsNothing);
     });
 
     testWidgets('workout card shows title + fuel hint, fires onTap',
@@ -157,6 +168,7 @@ void main() {
       )));
       expect(find.text('25 MI RIDE'), findsOneWidget);
       expect(find.textContaining('Recovery fuel'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
       await tester.tap(find.text('25 MI RIDE'));
       expect(tapped, isTrue);
     });

@@ -301,8 +301,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     final analytics = ref.read(analyticsTrackerProvider);
     final macroRepo = ref.read(macroRepositoryProvider);
-    final supabaseClient =
-        ref.read(appExternalDepsProvider).supabaseClient;
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
 
     try {
       MacroTargets? freshTargets;
@@ -315,10 +314,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           analytics: analytics,
         );
         final segments = currentState.macroTargets?.brickSegments;
-        final segmentOrder = segments
-                ?.map((s) => s.sport)
-                .toList() ??
-            const [];
+        final segmentOrder = segments?.map((s) => s.sport).toList() ?? const [];
         if (segments != null && segments.isNotEmpty) {
           freshTargets = await brickService.generateBrickMacros(
             activityId: activityId,
@@ -381,7 +377,10 @@ class ActivityDetailController extends _$ActivityDetailController {
         _logger.info(
           'regeneratePlan: fresh MacroTargets saved for activity',
           context: 'ACTIVITY_DETAIL_CONTROLLER',
-          data: {'activityId': activityId, 'activityType': activity.activityType.name},
+          data: {
+            'activityId': activityId,
+            'activityType': activity.activityType.name,
+          },
         );
       }
     } catch (e) {
@@ -2249,7 +2248,14 @@ class ActivityDetailController extends _$ActivityDetailController {
   // FUEL LOG METHODS
   // ============================================================================
 
-  /// Enter fuel log mode: build FuelLogData from the current nutrition plan.
+  /// Enter fuel log mode.
+  ///
+  /// Prefers a previously-saved fuel log (`activity.fuelLogData`) so revisiting
+  /// an already-logged workout restores the user's actual quantities. Only when
+  /// there is no saved log do we seed a fresh one from the plan (every item's
+  /// `actualQuantity = plannedQuantity`). Seeding fresh on every entry was the
+  /// root cause of the "reopening resets my edits / shows an inconsistent
+  /// carbs/hr" report — the saved actual quantities were discarded on re-entry.
   void enterFuelLogMode() {
     final currentState = state.value;
     if (currentState == null) return;
@@ -2257,7 +2263,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     final plan = currentState.nutritionPlan;
     if (plan == null) return;
 
-    final fuelLogData = FuelLogData.fromNutritionPlan(plan);
+    final fuelLogData =
+        _parseSavedFuelLog(currentState.activity) ??
+        FuelLogData.fromNutritionPlan(plan);
 
     state = AsyncData(
       currentState.copyWith(isFuelLogMode: true, fuelLogData: fuelLogData),
@@ -2423,7 +2431,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         // Reload activity to get updated data
         ref.invalidateSelf();
 
+        // Carry the just-saved activity forward so any display that resolves
+        // fuel data from `activity.fuelLogData` (e.g. the carbs/hr card after
+        // the in-memory fuelLogData is cleared) shows the edited values
+        // immediately, instead of briefly reverting to planned quantities
+        // until invalidateSelf's reload resolves.
         return currentState.copyWith(
+          activity: completedActivity,
           isCompleting: false,
           isFuelLogMode: false,
           clearFuelLogData: true,
@@ -2439,7 +2453,18 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Save edits to an already-completed activity's fuel log.
-  Future<void> updateExistingFuelLog() async {
+  ///
+  /// Unlike [saveFuelLogAndComplete] this does **not** re-stamp `completedAt` /
+  /// `status` or re-push feedback to TrainingPeaks — it's an edit of an
+  /// activity that was already completed, so the original completion time and
+  /// state are preserved. Any edited feedback ([overallSatisfaction],
+  /// [nutritionRating], [textNotes]) is folded into both the fuel-log snapshot
+  /// and the activity's completion fields.
+  Future<void> updateExistingFuelLog({
+    int? overallSatisfaction,
+    int? nutritionRating,
+    String? textNotes,
+  }) async {
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
     if (currentState.fuelLogData == null) return;
@@ -2453,8 +2478,20 @@ class ActivityDetailController extends _$ActivityDetailController {
           throw Exception('Cannot update fuel log: user not authenticated');
         }
 
-        final updatedActivity = currentState.activity!.copyWith(
-          fuelLogData: currentState.fuelLogData!.toJson(),
+        // Fold any edited feedback into the fuel-log snapshot.
+        final base = currentState.fuelLogData!;
+        final updatedFuelLog = base.copyWith(
+          overallSatisfaction: overallSatisfaction ?? base.overallSatisfaction,
+          nutritionRating: nutritionRating ?? base.nutritionRating,
+          notes: textNotes ?? base.notes,
+        );
+
+        final activity = currentState.activity!;
+        final updatedActivity = activity.copyWith(
+          fuelLogData: updatedFuelLog.toJson(),
+          completionRating: overallSatisfaction ?? activity.completionRating,
+          nutritionRating: nutritionRating ?? activity.nutritionRating,
+          completionNotes: textNotes ?? activity.completionNotes,
         );
 
         await _activitiesService.updateActivity(
@@ -2463,7 +2500,12 @@ class ActivityDetailController extends _$ActivityDetailController {
         );
 
         ref.invalidateSelf();
-        return currentState.copyWith(isSaving: false);
+        return currentState.copyWith(
+          activity: updatedActivity,
+          isSaving: false,
+          isFuelLogMode: false,
+          clearFuelLogData: true,
+        );
       } catch (error) {
         _logger.error('Error updating fuel log', error: error);
         rethrow;
@@ -2496,18 +2538,26 @@ class ActivityDetailController extends _$ActivityDetailController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    final rawData = currentState.activity?.fuelLogData;
-    if (rawData == null) return;
+    final fuelLog = _parseSavedFuelLog(currentState.activity);
+    if (fuelLog == null) return;
+    state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
+  }
 
+  /// Deserialize an activity's saved `fuelLogData` JSON into a [FuelLogData],
+  /// or return null when there is none / it can't be parsed. Shared by
+  /// [enterFuelLogMode] and [loadExistingFuelLog] so both honour saved edits.
+  FuelLogData? _parseSavedFuelLog(Activity? activity) {
+    final rawData = activity?.fuelLogData;
+    if (rawData == null) return null;
     try {
-      final fuelLog = FuelLogData.fromJson(rawData);
-      state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
+      return FuelLogData.fromJson(rawData);
     } catch (e) {
       _logger.warning(
-        'Failed to parse fuel log data',
+        'Failed to parse saved fuel log; falling back to plan defaults',
         context: 'ACTIVITY_DETAIL_CONTROLLER',
         error: e,
       );
+      return null;
     }
   }
 

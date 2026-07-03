@@ -25,6 +25,7 @@ import '../../../formula_kit/presentation/widgets/pin_status_banner.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
 import '../widgets/fuel_log/fuel_log_section_widget.dart';
+import '../widgets/fuel_log/carbs_per_hour_card.dart';
 import '../widgets/fuel_log/fuel_log_feedback_section.dart';
 import '../widgets/fuel_log/fuel_log_success_overlay.dart';
 import '../utils/activity_detail_helpers.dart';
@@ -78,6 +79,12 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
   int _fuelLogRating = 0;
   int? _fuelLogNutritionRating;
   String? _fuelLogNotes;
+
+  /// True when the current fuel-log edit session was opened on an activity that
+  /// was already completed with a saved fuel log. Routes the save through
+  /// [ActivityDetailController.updateExistingFuelLog] (preserve completedAt)
+  /// instead of re-completing.
+  bool _editingExistingFuelLog = false;
 
   /// Activity IDs for which we've already emitted `pin_status_banner_shown`.
   /// Prevents re-firing the analytics event on rebuilds. Cleared with State.
@@ -305,195 +312,237 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           physics: const AlwaysScrollableScrollPhysics(),
           padding: AppSpacing.screenPaddingHorizontal,
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: AppSpacing.xxl),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppSpacing.xxl),
 
-            // Hero section — fades out when entering fuel log
-            FadeTransition(
-              opacity: _heroFadeOut,
-              child: _heroFadeOut.value > 0.01
-                  ? _buildHeroSection(context, state)
-                  : const SizedBox.shrink(),
-            ),
-
-            // Top spacing when hero is hidden
-            if (_heroFadeOut.value <= 0.01)
-              const SizedBox(height: AppSpacing.sm),
-
-            // Pin status banner (Formula Kit PR 2 substep 9). Visible only
-            // when the plan was generated with pins supplied — the algorithm
-            // attaches PinDecision to each affected phase / sub-phase.
-            if (_extrasFadeOut.value > 0.01)
+              // Hero section — fades out when entering fuel log
               FadeTransition(
-                opacity: _extrasFadeOut,
-                child: _buildPinStatusBanner(context, state),
+                opacity: _heroFadeOut,
+                child: _heroFadeOut.value > 0.01
+                    ? _buildHeroSection(context, state)
+                    : const SizedBox.shrink(),
               ),
 
-            // Stale plan warning (hidden during fuel log)
-            if (activity.needsNutritionRefresh == true &&
-                _extrasFadeOut.value > 0.01)
-              FadeTransition(
-                opacity: _extrasFadeOut,
-                child: Column(
-                  children: [
-                    StalePlanWarning(
-                      onRegeneratePlan: () =>
-                          _handleRegeneratePlan(context, state),
-                      isRegenerating: state.isSaving,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
+              // Top spacing when hero is hidden
+              if (_heroFadeOut.value <= 0.01)
+                const SizedBox(height: AppSpacing.sm),
+
+              // Pin status banner (Formula Kit PR 2 substep 9). Visible only
+              // when the plan was generated with pins supplied — the algorithm
+              // attaches PinDecision to each affected phase / sub-phase.
+              if (_extrasFadeOut.value > 0.01)
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: _buildPinStatusBanner(context, state),
                 ),
-              ),
 
-            if (state.hasStaleDuringTarget && _extrasFadeOut.value > 0.01)
-              FadeTransition(
-                opacity: _extrasFadeOut,
-                child: Column(
-                  children: [
-                    StalePlanWarning(
-                      title: 'Nutrition Settings Changed',
-                      message:
-                          state.staleDuringTargetMessage ??
-                          'Nutrition settings changed. Regenerate plan to apply new targets.',
-                      icon: Icons.tune,
-                      onRegeneratePlan: () =>
-                          _handleRegeneratePlan(context, state),
-                      isRegenerating: state.isSaving,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                ),
-              ),
-
-            // Low fuel risk badge (hidden during fuel log)
-            if (state.nutritionPlan != null && _extrasFadeOut.value > 0.01)
-              FadeTransition(
-                opacity: _extrasFadeOut,
-                child: LowFuelRiskBadge(nutritionPlan: state.nutritionPlan!),
-              ),
-
-            // Planned/Actual toggle for completed activities with fuel log
-            if (state.isCompleted && state.hasFuelLog && !state.isFuelLogMode)
-              _buildFuelLogViewToggle(context, state),
-
-            // Nutrition sections — crossfade between normal and fuel log
-            if (state.nutritionPlan != null)
-              _buildNutritionOrFuelLogSections(context, state),
-
-            if (state.nutritionPlan == null)
-              NoNutritionPlanState(
-                activity: state.activity,
-                onGeneratePlan: () =>
-                    _navigateToGeneratePlan(context, state.activity),
-              ),
-
-            // Fuel log feedback (fades in during fuel log mode)
-            if (_feedbackFadeIn.value > 0.01)
-              FadeTransition(
-                opacity: _feedbackFadeIn,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.md),
-                  child: FuelLogFeedbackSection(
-                    initialRating: _fuelLogRating,
-                    initialNutritionRating: _fuelLogNutritionRating,
-                    initialNotes: _fuelLogNotes,
-                    duringCarbRateGPerH:
-                        ActivityDetailHelpers.computeDuringCarbRateGPerH(
-                          activity: state.activity,
-                          nutritionPlan: state.nutritionPlan,
-                        ),
-                    onRatingChanged: (rating) {
-                      _fuelLogRating = rating;
-                      final controller =
-                          _getControllerNotifier() as ActivityDetailController;
-                      controller.updateFuelLogFeedback(
-                        overallSatisfaction: rating,
-                      );
-                    },
-                    onNutritionRatingChanged: (rating) {
-                      _fuelLogNutritionRating = rating;
-                      final controller =
-                          _getControllerNotifier() as ActivityDetailController;
-                      controller.updateFuelLogFeedback(nutritionRating: rating);
-                    },
-                    onNotesChanged: (notes) {
-                      _fuelLogNotes = notes;
-                      final controller =
-                          _getControllerNotifier() as ActivityDetailController;
-                      controller.updateFuelLogFeedback(notes: notes);
-                    },
+              // Stale plan warning (hidden during fuel log)
+              if (activity.needsNutritionRefresh == true &&
+                  _extrasFadeOut.value > 0.01)
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: Column(
+                    children: [
+                      StalePlanWarning(
+                        onRegeneratePlan: () =>
+                            _handleRegeneratePlan(context, state),
+                        isRegenerating: state.isSaving,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
                   ),
                 ),
-              ),
 
-            const SizedBox(height: AppSpacing.md),
-            // Collapsible coach feedback section (hidden during fuel log)
-            if (_extrasFadeOut.value > 0.01) ...[
-              FadeTransition(
-                opacity: _extrasFadeOut,
-                child: ActivityCoachFeedbackWidget(
-                  activityId: widget.activityId,
-                  isCoachView: widget.isCoachView,
-                  activityUserId: activity.userId,
+              if (state.hasStaleDuringTarget && _extrasFadeOut.value > 0.01)
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: Column(
+                    children: [
+                      StalePlanWarning(
+                        title: 'Nutrition Settings Changed',
+                        message:
+                            state.staleDuringTargetMessage ??
+                            'Nutrition settings changed. Regenerate plan to apply new targets.',
+                        icon: Icons.tune,
+                        onRegeneratePlan: () =>
+                            _handleRegeneratePlan(context, state),
+                        isRegenerating: state.isSaving,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              FadeTransition(
-                opacity: _extrasFadeOut,
-                child: ActivityDetailActionButtons(
-                  state: state,
-                  isNewActivity: widget.isNewActivity,
-                  isCoachView: widget.isCoachView,
-                  onSave: () => _saveWorkout(context, state),
-                  onSaveAsTemplate:
-                      (widget.isNewActivity &&
-                          !widget.isCoachView &&
-                          !widget.fromTemplate &&
-                          state.nutritionPlan != null)
-                      ? () => _showSaveTemplateDialog(context)
-                      : null,
-                  onComplete:
-                      (rating, notes, {isBrick = false, carbAdjustment}) =>
-                          _handleCompletion(
-                            context,
-                            state,
-                            rating,
-                            notes,
-                            isBrick: isBrick,
-                            carbAdjustment: carbAdjustment,
+
+              // Low fuel risk badge (hidden during fuel log)
+              if (state.nutritionPlan != null && _extrasFadeOut.value > 0.01)
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: LowFuelRiskBadge(nutritionPlan: state.nutritionPlan!),
+                ),
+
+              // Planned/Actual toggle for completed activities with fuel log
+              if (state.isCompleted && state.hasFuelLog && !state.isFuelLogMode)
+                _buildFuelLogViewToggle(context, state),
+
+              // Carbs/hr dashboard pinned to the top while re-editing an already
+              // completed + logged workout. Without this, revisiting hides the
+              // summary dashboard behind the entry UI (the carbs/hr card is
+              // otherwise only in the feedback section far below).
+              if (state.isFuelLogMode &&
+                  state.isCompleted &&
+                  state.hasFuelLog &&
+                  state.activity != null &&
+                  state.fuelLogData != null &&
+                  _feedbackFadeIn.value > 0.01)
+                FadeTransition(
+                  opacity: _feedbackFadeIn,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: CarbsPerHourCard(
+                      activity: state.activity!,
+                      fuelLog: state.fuelLogData!,
+                      targetGPerH:
+                          ActivityDetailHelpers.computeDuringCarbRateGPerH(
+                            activity: state.activity,
+                            nutritionPlan: state.nutritionPlan,
                           ),
-                  onRatingChanged: (rating) {
-                    final controller = _getControllerNotifier();
-                    controller.updateCompletionRating(rating);
-                  },
-                  onNotesChanged: (notes) {
-                    final controller = _getControllerNotifier();
-                    controller.updateWorkoutNotes(notes);
-                  },
-                  onEnterFuelLog: () => _openFuelLogScreen(context),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-            // Derived-data attribution required by Garmin Developer API
-            // Brand Guidelines: when Garmin-reported activity data is used
-            // as an input to our nutrition/insight calculations, we credit
-            // the specific device (or fall back to "Garmin Connect").
-            if (activity.hasGarminData &&
-                _extrasFadeOut.value > 0.01) ...[
+
+              // Nutrition sections — crossfade between normal and fuel log
+              if (state.nutritionPlan != null)
+                _buildNutritionOrFuelLogSections(context, state),
+
+              if (state.nutritionPlan == null)
+                NoNutritionPlanState(
+                  activity: state.activity,
+                  onGeneratePlan: () =>
+                      _navigateToGeneratePlan(context, state.activity),
+                ),
+
+              // Fuel log feedback (fades in during fuel log mode)
+              if (_feedbackFadeIn.value > 0.01)
+                FadeTransition(
+                  opacity: _feedbackFadeIn,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    child: FuelLogFeedbackSection(
+                      initialRating: _fuelLogRating,
+                      initialNutritionRating: _fuelLogNutritionRating,
+                      initialNotes: _fuelLogNotes,
+                      // Pass the activity + in-memory fuel log so the carbs/hr
+                      // card computes the ACTUAL session rate (matching the
+                      // dedicated FuelLogScreen). Without these it fell back to
+                      // the planned rate, so the number here disagreed with what
+                      // the user saw while logging — the reported "inconsistent
+                      // number" on revisit.
+                      activity: state.activity,
+                      fuelLog: state.fuelLogData,
+                      // On revisit the carbs/hr card is shown as a top dashboard,
+                      // so suppress the duplicate here.
+                      showCarbsPerHourCard:
+                          !(state.isCompleted && state.hasFuelLog),
+                      duringCarbRateGPerH:
+                          ActivityDetailHelpers.computeDuringCarbRateGPerH(
+                            activity: state.activity,
+                            nutritionPlan: state.nutritionPlan,
+                          ),
+                      onRatingChanged: (rating) {
+                        _fuelLogRating = rating;
+                        final controller =
+                            _getControllerNotifier()
+                                as ActivityDetailController;
+                        controller.updateFuelLogFeedback(
+                          overallSatisfaction: rating,
+                        );
+                      },
+                      onNutritionRatingChanged: (rating) {
+                        _fuelLogNutritionRating = rating;
+                        final controller =
+                            _getControllerNotifier()
+                                as ActivityDetailController;
+                        controller.updateFuelLogFeedback(
+                          nutritionRating: rating,
+                        );
+                      },
+                      onNotesChanged: (notes) {
+                        _fuelLogNotes = notes;
+                        final controller =
+                            _getControllerNotifier()
+                                as ActivityDetailController;
+                        controller.updateFuelLogFeedback(notes: notes);
+                      },
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: AppSpacing.md),
-              FadeTransition(
-                opacity: _extrasFadeOut,
-                child: _GarminDerivedDataFooter(
-                  deviceName: activity.garminDeviceName,
+              // Collapsible coach feedback section (hidden during fuel log)
+              if (_extrasFadeOut.value > 0.01) ...[
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: ActivityCoachFeedbackWidget(
+                    activityId: widget.activityId,
+                    isCoachView: widget.isCoachView,
+                    activityUserId: activity.userId,
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.lg),
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: ActivityDetailActionButtons(
+                    state: state,
+                    isNewActivity: widget.isNewActivity,
+                    isCoachView: widget.isCoachView,
+                    onSave: () => _saveWorkout(context, state),
+                    onSaveAsTemplate:
+                        (widget.isNewActivity &&
+                            !widget.isCoachView &&
+                            !widget.fromTemplate &&
+                            state.nutritionPlan != null)
+                        ? () => _showSaveTemplateDialog(context)
+                        : null,
+                    onComplete:
+                        (rating, notes, {isBrick = false, carbAdjustment}) =>
+                            _handleCompletion(
+                              context,
+                              state,
+                              rating,
+                              notes,
+                              isBrick: isBrick,
+                              carbAdjustment: carbAdjustment,
+                            ),
+                    onRatingChanged: (rating) {
+                      final controller = _getControllerNotifier();
+                      controller.updateCompletionRating(rating);
+                    },
+                    onNotesChanged: (notes) {
+                      final controller = _getControllerNotifier();
+                      controller.updateWorkoutNotes(notes);
+                    },
+                    onEnterFuelLog: () => _openFuelLogScreen(context),
+                  ),
+                ),
+              ],
+              // Derived-data attribution required by Garmin Developer API
+              // Brand Guidelines: when Garmin-reported activity data is used
+              // as an input to our nutrition/insight calculations, we credit
+              // the specific device (or fall back to "Garmin Connect").
+              if (activity.hasGarminData && _extrasFadeOut.value > 0.01) ...[
+                const SizedBox(height: AppSpacing.md),
+                FadeTransition(
+                  opacity: _extrasFadeOut,
+                  child: _GarminDerivedDataFooter(
+                    deviceName: activity.garminDeviceName,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xxxl),
             ],
-            const SizedBox(height: AppSpacing.xxxl),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -751,11 +800,41 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
   void _enterFuelLogMode() {
     final controller = _getControllerNotifier() as ActivityDetailController;
+    final currentState = _readActivityDetailState();
+
+    // Revisiting an already-logged workout? (Drives edit-vs-complete save
+    // routing and whether we seed the feedback UI from saved values.)
+    _editingExistingFuelLog = currentState?.hasFuelLog ?? false;
+
     controller.enterFuelLogMode();
-    _fuelLogRating = 0;
-    _fuelLogNutritionRating = null;
-    _fuelLogNotes = null;
+
+    if (_editingExistingFuelLog) {
+      // Seed the feedback controls from what was previously saved so the prior
+      // rating/notes survive the round-trip (and aren't overwritten with 0).
+      _fuelLogRating = currentState?.activity?.completionRating ?? 0;
+      _fuelLogNutritionRating = currentState?.activity?.nutritionRating;
+      _fuelLogNotes = currentState?.activity?.completionNotes;
+    } else {
+      _fuelLogRating = 0;
+      _fuelLogNutritionRating = null;
+      _fuelLogNotes = null;
+    }
     _fuelLogAnimation.forward();
+  }
+
+  /// Read the current [ActivityDetailState] synchronously (returns null while
+  /// loading or in coach view where the state type differs).
+  ActivityDetailState? _readActivityDetailState() {
+    final async = widget.isCoachView
+        ? ref.read(coachActivityDetailControllerProvider(widget.activityId))
+        : ref.read(
+            activityDetailControllerProvider(
+              activityId: widget.activityId,
+              isNewActivity: widget.isNewActivity,
+            ),
+          );
+    final data = async.asData?.value;
+    return data is ActivityDetailState ? data : null;
   }
 
   Future<void> _openFuelLogScreen(BuildContext context) {
@@ -795,15 +874,25 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (carbAdjustment != null) {
       await controller.applyCarbFeedbackAdjustment(
         carbAdjustment,
-        isEdit: false,
+        isEdit: _editingExistingFuelLog,
       );
     }
 
-    await controller.saveFuelLogAndComplete(
-      overallSatisfaction: _fuelLogRating,
-      textNotes: _fuelLogNotes,
-      nutritionRating: _fuelLogNutritionRating,
-    );
+    if (_editingExistingFuelLog) {
+      // Editing an already-completed log: persist the changes without
+      // re-stamping completedAt/status or re-pushing feedback to TrainingPeaks.
+      await controller.updateExistingFuelLog(
+        overallSatisfaction: _fuelLogRating,
+        nutritionRating: _fuelLogNutritionRating,
+        textNotes: _fuelLogNotes,
+      );
+    } else {
+      await controller.saveFuelLogAndComplete(
+        overallSatisfaction: _fuelLogRating,
+        textNotes: _fuelLogNotes,
+        nutritionRating: _fuelLogNutritionRating,
+      );
+    }
 
     if (!mounted) return;
 
@@ -1370,8 +1459,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           'activity_id': activityId,
           'mode': bannerData.isOnboarding ? 'onboarding' : 'status',
           'rows': rows.length,
-          'honored_count':
-              rows.where((r) => r.decision.usedPin).length,
+          'honored_count': rows.where((r) => r.decision.usedPin).length,
         });
       });
     }
@@ -1461,8 +1549,9 @@ class _GarminDerivedDataFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trimmed = deviceName?.trim();
-    final attributionTarget =
-        (trimmed == null || trimmed.isEmpty) ? 'Garmin Connect' : 'Garmin $trimmed';
+    final attributionTarget = (trimmed == null || trimmed.isEmpty)
+        ? 'Garmin Connect'
+        : 'Garmin $trimmed';
 
     return Container(
       width: double.infinity,

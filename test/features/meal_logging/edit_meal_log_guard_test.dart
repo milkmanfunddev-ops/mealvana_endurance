@@ -22,6 +22,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../../helpers/widget_test_harness.dart';
 
@@ -116,7 +117,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Now press the app-bar back button. The guard must intercept it.
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byType(CustomAppBarBackButton));
       await tester.pumpAndSettle();
 
       expect(find.text('Discard changes?'), findsOneWidget);
@@ -135,7 +136,7 @@ void main() {
     (tester) async {
       await _pumpEditScreen(tester, _componentLog());
 
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byType(CustomAppBarBackButton));
       await tester.pumpAndSettle();
 
       // No nag dialog, and we're back on the home route.

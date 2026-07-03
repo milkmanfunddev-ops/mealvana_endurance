@@ -23,10 +23,15 @@ class WeatherDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: CustomAppBarBackButton(),
+        // The bar background is a fixed light cream in every theme, so force a
+        // dark foreground. Without this the back-button icon (defaults to
+        // colorScheme.onSurface, which is near-white in dark mode) and the
+        // white title are invisible on cream — making it look like there is no
+        // back button at all.
+        leading: const CustomAppBarBackButton(iconColor: AppTheme.primary900),
         title: const Text('Weather Forecast'),
         backgroundColor: AppTheme.baseCream,
-        foregroundColor: Colors.white,
+        foregroundColor: AppTheme.primary900,
       ),
       body: SingleChildScrollView(
         child: Column(

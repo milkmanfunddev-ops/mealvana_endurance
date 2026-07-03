@@ -13,6 +13,8 @@ import '../services/app_external_deps.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
+import '../../features/auth/application/auth_service.dart';
+import '../services/support/support_identity.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -131,27 +133,31 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                   Label(id: 'label-ovo60gyfw6', title: 'UI/UX Feedback'),
                   Label(id: 'label-1anu74e8gf', title: 'High Priority'),
                 ],
-                collectMetaData: (metaData) => metaData
-                  ..userEmail = ref
+                collectMetaData: (metaData) async {
+                  final supabaseUser = ref
                       .read(appExternalDepsProvider)
                       .supabaseClient
                       .auth
-                      .currentUser
-                      ?.email
-                  ..userId = ref
-                      .read(appExternalDepsProvider)
-                      .supabaseClient
-                      .auth
-                      .currentUser
-                      ?.id
-                  ..custom['auth_provider'] =
-                      ref
-                          .read(appExternalDepsProvider)
-                          .supabaseClient
-                          .auth
-                          .currentUser
-                          ?.appMetadata['provider'] ??
-                      'unknown',
+                      .currentUser;
+                  // Prefer the real profile email over an Apple private-relay
+                  // address; only fall back to relay when it's all we have.
+                  final profile = await ref.read(currentUserProvider.future);
+                  metaData
+                    ..userEmail = resolveSupportEmail([
+                      profile?.email,
+                      supabaseUser?.email,
+                    ])
+                    ..userId = supabaseUser?.id
+                    ..custom['auth_provider'] =
+                        supabaseUser?.appMetadata['provider'] ?? 'unknown';
+                  final name = resolveSupportName(
+                    firstName: profile?.firstName,
+                    lastName: profile?.lastName,
+                    senderName: profile?.senderName,
+                  );
+                  if (name != null) metaData.custom['name'] = name;
+                  return metaData;
+                },
               ),
               child: MaterialApp.router(
                 title: 'Mealvana Endurance',

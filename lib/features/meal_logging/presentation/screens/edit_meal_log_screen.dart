@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
@@ -17,6 +18,7 @@ import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
+import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_component_editor.dart';
 import '../widgets/slot_chip_selector.dart';
@@ -406,6 +408,45 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   static String _encodeComponents(List<MealComponent> components) =>
       jsonEncode(components.map((c) => c.toJson()).toList());
 
+  /// Opens the shared food-swap picker (returnSelection mode) and maps the
+  /// chosen food + quantity into a replacement [MealComponent]. Returns null if
+  /// the user cancels. Wired to [MealComponentEditor.onRequestSwap] so swiping
+  /// an item swaps it (mirrors the Activity Detail food rows).
+  Future<MealComponent?> _swapComponentFood(MealComponent current) async {
+    final selection = await context.push<SwapFoodSelection>(
+      '/swap-food',
+      extra: {
+        'returnSelection': true,
+        // Neutral category — the picker still searches the full catalog.
+        'category': 'before_run',
+        'foodToSwapName': current.name,
+      },
+    );
+    if (selection == null) return null;
+
+    final food = selection.food;
+    final qty = selection.quantity;
+    final qtyLabel = qty == qty.truncateToDouble()
+        ? qty.toInt().toString()
+        : qty.toStringAsFixed(1);
+    final unit = qty == 1
+        ? (food.servingUnit ?? 'serving')
+        : (food.servingUnitPlural ?? food.servingUnit ?? 'servings');
+    double? scale(num? v) => v == null ? null : v.toDouble() * qty;
+
+    return MealComponent(
+      name: food.displayName ?? food.name,
+      portion: '$qtyLabel $unit',
+      calories: food.caloriesPerServing != null
+          ? (food.caloriesPerServing! * qty).round()
+          : null,
+      carbG: scale(food.carbsPerServing),
+      proteinG: scale(food.proteinPerServing),
+      fatG: scale(food.fatPerServing),
+      sodiumMg: scale(food.sodiumMg),
+    );
+  }
+
   /// Prompts the user before discarding unsaved edits. Returns the chosen
   /// action; `keepEditing` (or a dismissed dialog) leaves the screen in place.
   Future<_LeaveAction> _promptUnsavedChanges() async {
@@ -471,6 +512,12 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
         appBar: AppBar(
+          // Route through maybePop so the PopScope unsaved-changes guard above
+          // still fires (a bare CustomAppBarBackButton pops directly and would
+          // bypass the discard/save prompt).
+          leading: CustomAppBarBackButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
           backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
           title: const Text('Edit Meal'),
           elevation: 0,
@@ -583,6 +630,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                         initialComponents: _components,
                         onComponentsChanged: (updated) =>
                             setState(() => _components = updated),
+                        onRequestSwap: _swapComponentFood,
                       ),
                       const SizedBox(height: AppSpacing.md),
                     ] else ...[

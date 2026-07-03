@@ -166,9 +166,11 @@ class FuelTimelineScreen extends ConsumerWidget {
         child: addButtons,
       );
     }
+    // stretch so the rail line fills the full row height and meets the first
+    // tile's rail below it (one continuous timeline rail).
     return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(width: 54),
           const SizedBox(width: 10),
@@ -207,7 +209,10 @@ class FuelTimelineScreen extends ConsumerWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: addButtons,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: addButtons,
+              ),
             ),
           ),
         ],
@@ -221,33 +226,25 @@ class FuelTimelineScreen extends ConsumerWidget {
     TimelineNode node,
     FuelTimelineViewState view,
   ) {
-    final notifier = ref.read(fuelTimelineViewProvider.notifier);
     switch (node) {
       case MealNode(:final meal):
         return TimelineNodeTile(
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
-          expanded: view.expandedNodeId == node.id,
-          onTap: () => notifier.toggleExpanded(node.id),
-          onSwap: () {
-            notifier.collapseExpanded();
-            // Keep our existing food entry screen — the prototype's mock is
-            // not rebuilt (Lee, 2026-06-25).
-            context.push('/meal-log/edit', extra: {'log': meal});
-          },
-          onRemove: () {
-            notifier.collapseExpanded();
-            _deleteMealWithUndo(context, ref, meal);
-          },
+          // Tap the meal → edit-meal page (where components can be edited and
+          // swapped). Swipe right→left also opens it to swap; swipe left→right
+          // removes with Undo.
+          onTap: () => context.push('/meal-log/edit', extra: {'log': meal}),
+          onSwap: () => context.push('/meal-log/edit', extra: {'log': meal}),
+          onRemove: () => _deleteMealWithUndo(context, ref, meal),
         );
       case WorkoutNode(:final activity):
         return TimelineNodeTile(
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
-          // Open our existing fuel surface (Lee, 2026-06-25) — Activity Detail
-          // when a plan exists, else the New Activity screen to generate one.
+          // Tap the workout → Activity Detail page (its fuel plan).
           onTap: () => openActivityFuel(context, activity),
         );
     }

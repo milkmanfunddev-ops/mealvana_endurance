@@ -15,8 +15,8 @@ abstract final class FtType {
   // ── Header ──────────────────────────────────────────────────────────────
   static const byWeek = TextStyle(
     fontFamily: _compadreWide,
-    fontSize: 18,
-    letterSpacing: 2.2,
+    fontSize: 14,
+    letterSpacing: 1.8,
     height: 1.0,
   );
   static const monthTitle = TextStyle(
@@ -28,7 +28,7 @@ abstract final class FtType {
   static const dayLetter = TextStyle(fontFamily: _apercu, fontSize: 12);
   static const dayNumber = TextStyle(
     fontFamily: _compadre,
-    fontSize: 24,
+    fontSize: 18,
     height: 1.0,
   );
 

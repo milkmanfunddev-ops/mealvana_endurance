@@ -18,7 +18,6 @@ class TimelineNodeTile extends StatelessWidget {
     required this.node,
     required this.timelineOpen,
     required this.trackingOn,
-    this.expanded = false,
     this.onTap,
     this.onSwap,
     this.onRemove,
@@ -28,13 +27,11 @@ class TimelineNodeTile extends StatelessWidget {
   final bool timelineOpen;
   final bool trackingOn;
 
-  /// Whether this meal's inline Swap/Remove actions are showing.
-  final bool expanded;
-
-  /// Tap on the card: toggles meal expand, or opens the Ride Fuel sheet.
+  /// Tap on the card: opens the edit-meal page, or the activity detail page.
   final VoidCallback? onTap;
 
-  /// Meal-only inline actions.
+  /// Meal-only swipe actions: swipe left→right removes, right→left swaps
+  /// (mirrors the Activity Detail food rows).
   final VoidCallback? onSwap;
   final VoidCallback? onRemove;
 
@@ -61,20 +58,27 @@ class TimelineNodeTile extends StatelessWidget {
     const onSurface = AppColors.cream;
     final dotColor = _dotColor(node);
 
+    // stretch so the rail's full-height line fills each row and consecutive
+    // rows' lines abut into one continuous rail. The cards are pinned to the
+    // top via Align so they keep their natural height while the rail runs the
+    // full row height (including the 16px inter-row gap below each card).
     return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (timelineOpen) ...[
             SizedBox(
               width: 54,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: Text(
-                  _timeFmt.format(node.time),
-                  textAlign: TextAlign.right,
-                  style: FtType.macroLine.copyWith(
-                    color: onSurface.withValues(alpha: 0.5),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Text(
+                    _timeFmt.format(node.time),
+                    textAlign: TextAlign.right,
+                    style: FtType.macroLine.copyWith(
+                      color: onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                 ),
               ),
@@ -86,14 +90,17 @@ class TimelineNodeTile extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: switch (node) {
-                MealNode(:final meal) => _mealCard(context, meal, onSurface),
-                WorkoutNode(:final activity) => _workoutCard(
-                  context,
-                  activity,
-                  onSurface,
-                ),
-              },
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: switch (node) {
+                  MealNode(:final meal) => _mealCard(context, meal, onSurface),
+                  WorkoutNode(:final activity) => _workoutCard(
+                    context,
+                    activity,
+                    onSurface,
+                  ),
+                },
+              ),
             ),
           ),
         ],
@@ -137,97 +144,109 @@ class TimelineNodeTile extends StatelessWidget {
   Widget _mealCard(BuildContext context, dynamic meal, Color onSurface) {
     // meal is MealLog (typed via the switch pattern in build()).
     final macroLine = _macroLine(meal, onSurface);
-    return _cardShell(
+    final card = _cardShell(
       onSurface: onSurface,
       borderColor: onSurface.withValues(alpha: 0.08),
       fill: onSurface.withValues(alpha: 0.045),
       padded: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              child: Row(
-                children: [
-                  _iconCircle(
-                    AppColors.orange,
-                    Icons.restaurant,
-                    AppColors.blackberry,
-                  ),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          (meal.name as String).toUpperCase(),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: FtType.itemName.copyWith(color: onSurface),
-                        ),
-                        if (trackingOn && macroLine != null) ...[
-                          const SizedBox(height: 2),
-                          macroLine,
-                        ],
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.more_horiz,
-                    size: 18,
-                    color: onSurface.withValues(alpha: 0.4),
-                  ),
-                ],
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          child: Row(
+            children: [
+              _iconCircle(
+                AppColors.orange,
+                Icons.restaurant,
+                AppColors.blackberry,
               ),
-            ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (meal.name as String).toUpperCase(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: FtType.itemName.copyWith(color: onSurface),
+                    ),
+                    if (trackingOn && macroLine != null) ...[
+                      const SizedBox(height: 2),
+                      macroLine,
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-          if (expanded) _mealActions(onSurface),
-        ],
+        ),
       ),
+    );
+
+    // No swipe actions wired up → return the bare card.
+    if (onSwap == null && onRemove == null) return card;
+
+    // Swipe left→right = Remove, swipe right→left = Swap. Matches the Activity
+    // Detail food rows (DismissibleFoodItem). confirmDismiss always returns
+    // false: the actions run via callbacks (Remove soft-deletes with Undo; Swap
+    // navigates) and never structurally dismiss the row.
+    return Dismissible(
+      key: ValueKey('timeline-meal-${node.id}'),
+      background: _swipeBackground(
+        color: AppColors.dragonfruit,
+        icon: Icons.delete_outline,
+        label: 'Remove',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _swipeBackground(
+        color: AppColors.electrolyteDark,
+        icon: Icons.swap_horiz,
+        label: 'Swap',
+        alignment: Alignment.centerRight,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onRemove?.call();
+        } else if (direction == DismissDirection.endToStart) {
+          onSwap?.call();
+        }
+        return false;
+      },
+      child: card,
     );
   }
 
-  Widget _mealActions(Color onSurface) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(55, 0, 12, 12),
+  Widget _swipeBackground({
+    required Color color,
+    required IconData icon,
+    required String label,
+    required Alignment alignment,
+  }) {
+    final isLeft = alignment == Alignment.centerLeft;
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: alignment,
       child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: onSwap,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: onSurface,
-                side: BorderSide(color: onSurface.withValues(alpha: 0.12)),
-                backgroundColor: onSurface.withValues(alpha: 0.05),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                visualDensity: VisualDensity.compact,
-              ),
-              child: const Text('Swap food'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: onRemove,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.dragonfruit,
-                side: const BorderSide(color: AppColors.dragonfruit),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                visualDensity: VisualDensity.compact,
-              ),
-              child: const Text('Remove'),
-            ),
-          ),
-        ],
+        mainAxisSize: MainAxisSize.min,
+        children: isLeft
+            ? [
+                Icon(icon, color: AppColors.cream, size: 20),
+                const SizedBox(width: 8),
+                Text(label,
+                    style: FtType.itemName.copyWith(color: AppColors.cream)),
+              ]
+            : [
+                Text(label,
+                    style: FtType.itemName.copyWith(color: AppColors.cream)),
+                const SizedBox(width: 8),
+                Icon(icon, color: AppColors.cream, size: 20),
+              ],
       ),
     );
   }
@@ -317,16 +336,11 @@ class TimelineNodeTile extends StatelessWidget {
                   ],
                   const SizedBox(height: 5),
                   Text(
-                    'Pre · During · Recovery fuel ›',
+                    'Pre · During · Recovery fuel',
                     style: FtType.macroLine.copyWith(color: AppColors.orange),
                   ),
                 ],
               ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 16,
-              color: onSurface.withValues(alpha: 0.5),
             ),
           ],
         ),

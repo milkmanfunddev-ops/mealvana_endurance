@@ -736,6 +736,40 @@ export function pickElectrolyte(
     }
   }
 
+  // Floor enforcement (before-run sodium fix): the loop above rejects any
+  // serving whose sodium overshoots sodium_high. When every eligible
+  // electrolyte serving overshoots the high bound (e.g. only a 300mg tablet is
+  // available against a 100–200mg target), that leaves `bestPick` null and
+  // strands sodium below the low floor — the bug where before-run showed 77mg
+  // against a 100mg floor. Rather than emit an under-target plan, add the
+  // serving that clears the floor with the *smallest* overshoot (least
+  // over-delivery), still respecting the carb/protein/fluid caps so we don't
+  // blow other macros. This mirrors the pin/formula path, which always tops
+  // sodium up toward target via backfillPinnedFluidsAndSodium.
+  if (!bestPick) {
+    let leastOvershootSodium = Infinity;
+    for (const template of electrolyteTemplates) {
+      for (let srv = template.min_servings; srv <= template.max_servings; srv += 1) {
+        const carbsAdded = template.carbs_per_serving * srv;
+        const proteinAdded = template.protein_per_serving * srv;
+        const fluidAdded = template.fluid_ml * srv;
+        const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+        const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+        const fluidHeadroom = Math.max(0, fluidHigh - totalFluidDelivered);
+        if (carbsAdded > carbsHeadroom + 1e-6) continue;
+        if (proteinAdded > proteinHeadroom + 1e-6) continue;
+        if (fluidAdded > fluidHeadroom + 1e-6) continue;
+        const resultSodium = totalSodiumDelivered + template.sodium_mg * srv;
+        // Must at least reach the floor to be worth adding.
+        if (resultSodium < sodiumLow - 1e-6) continue;
+        if (resultSodium < leastOvershootSodium) {
+          leastOvershootSodium = resultSodium;
+          bestPick = { template, servings: srv };
+        }
+      }
+    }
+  }
+
   if (!bestPick) return null;
   return makeSelection(bestPick.template, bestPick.servings);
 }

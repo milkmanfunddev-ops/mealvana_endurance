@@ -115,6 +115,100 @@ Deno.test(
   },
 );
 
+// A tablet whose single serving overshoots a low before-run sodium_high.
+const BIG_TABLET = makeTemplate({
+  id: 'big-tablet',
+  name: 'Big Salt Tablet',
+  sodium_mg: 300,
+  carbs_per_serving: 0,
+  fluid_ml: 0,
+  min_servings: 1,
+  max_servings: 2,
+});
+
+// Tier-2 before-run hydration overlay targets (100 low / 200 high / 150 target)
+// — the production range where the 77mg bug occurred.
+const BEFORE_TIER2 = {
+  carbsTarget: 30,
+  carbsHigh: 60,
+  proteinHigh: 20,
+  sodiumLow: 100,
+  sodiumHigh: 200,
+  sodiumTarget: 150,
+  fluidHigh: 500,
+  fluidTarget: 250,
+};
+
+Deno.test(
+  'pickElectrolyte: floor enforcement — adds an overshooting serving rather than stranding sodium below the floor',
+  () => {
+    // 77mg delivered, only a 300mg tablet available. 1 serving → 377mg, which
+    // overshoots sodium_high (200) so the headroom gate rejects it. Before the
+    // fix this stranded sodium at 77mg (< 100 floor); now floor enforcement
+    // adds the tablet so sodium clears the floor.
+    const pick = pickElectrolyte(
+      [BIG_TABLET],
+      /* carbsDelivered */ 20,
+      /* proteinDelivered */ 0,
+      /* totalSodiumDelivered */ 77,
+      /* totalFluidDelivered */ 0,
+      BEFORE_TIER2.carbsTarget,
+      BEFORE_TIER2.carbsHigh,
+      BEFORE_TIER2.proteinHigh,
+      BEFORE_TIER2.sodiumLow,
+      BEFORE_TIER2.sodiumHigh,
+      BEFORE_TIER2.sodiumTarget,
+      BEFORE_TIER2.fluidHigh,
+      BEFORE_TIER2.fluidTarget,
+    );
+
+    assert(pick !== null, 'floor enforcement should add an electrolyte, not return null');
+    assertEquals(pick!.name, 'Big Salt Tablet');
+    // Least-overshoot serving = 1 (not 2), and the delivered floor is cleared.
+    assertEquals(pick!.servings, 1);
+    assert(
+      77 + pick!.sodium_mg >= BEFORE_TIER2.sodiumLow,
+      `expected total sodium >= ${BEFORE_TIER2.sodiumLow}, got ${77 + pick!.sodium_mg}`,
+    );
+  },
+);
+
+Deno.test(
+  'pickElectrolyte: floor enforcement picks the least-overshoot serving among options',
+  () => {
+    // Two tablets both overshoot high (200): 120mg and 300mg on top of 77mg
+    // gives 197 (< low? no, 197 >= 100 and <= 200 — that would pass the normal
+    // path). Use 150mg and 300mg so 77+150=227 and 77+300=377 both overshoot;
+    // the 150mg (227, least overshoot) must win.
+    const MID = makeTemplate({
+      id: 'mid-tablet',
+      name: 'Mid Salt Tablet',
+      sodium_mg: 150,
+      carbs_per_serving: 0,
+      fluid_ml: 0,
+      min_servings: 1,
+      max_servings: 1,
+    });
+    const pick = pickElectrolyte(
+      [BIG_TABLET, MID],
+      20,
+      0,
+      /* totalSodiumDelivered */ 77,
+      0,
+      BEFORE_TIER2.carbsTarget,
+      BEFORE_TIER2.carbsHigh,
+      BEFORE_TIER2.proteinHigh,
+      BEFORE_TIER2.sodiumLow,
+      BEFORE_TIER2.sodiumHigh,
+      BEFORE_TIER2.sodiumTarget,
+      BEFORE_TIER2.fluidHigh,
+      BEFORE_TIER2.fluidTarget,
+    );
+    assert(pick !== null);
+    assertEquals(pick!.name, 'Mid Salt Tablet');
+  },
+);
+
 Deno.test(
   'pickElectrolyte: no-regression — normal sodium-low scenario still picks capsule',
   () => {

@@ -28,14 +28,49 @@ class RevenueCatService {
 
   bool get _canUse => _config.aiCreditsEnabled && _config.revenueCatApiKey.isNotEmpty;
 
+  /// The API-key prefix the native RevenueCat SDK requires for the current
+  /// platform. Passing a key with any other prefix (e.g. a Google `goog_` or a
+  /// Test Store `test_` key on iOS) makes the native SDK raise a *fatal*
+  /// "invalid API key" error that bypasses Dart error handling and crashes the
+  /// app. We validate the prefix here so such a key is never handed to
+  /// [Purchases.configure].
+  String? get _requiredKeyPrefix {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return 'appl_';
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'goog_';
+    }
+    return null; // Unsupported platform (web/etc.) — caller already no-ops.
+  }
+
+  /// Whether [key] is a well-formed public SDK key for the current platform.
+  bool _isKeyValidForPlatform(String key) {
+    final prefix = _requiredKeyPrefix;
+    return prefix != null && key.startsWith(prefix);
+  }
+
   /// Configure the RevenueCat SDK.
   ///
-  /// No-op when [AppConfig.aiCreditsEnabled] is false or the platform API key
-  /// is absent. Safe to call multiple times; subsequent calls after the first
-  /// successful configuration are skipped.
+  /// No-op when [AppConfig.aiCreditsEnabled] is false, the platform API key is
+  /// absent, or the key does not match the platform's required prefix. Safe to
+  /// call multiple times; subsequent calls after the first successful
+  /// configuration are skipped.
   Future<void> configureIfPossible() async {
     if (!_canUse) return;
     if (_configured) return;
+
+    // Guard against a wrong-platform / malformed key reaching the native SDK,
+    // which would crash the app rather than throw a catchable Dart error.
+    if (!_isKeyValidForPlatform(_config.revenueCatApiKey)) {
+      if (kDebugMode) {
+        debugPrint('[RevenueCatService] skipping configure: API key does not '
+            'match required prefix "$_requiredKeyPrefix" for this platform. '
+            'RevenueCat is disabled for this session.');
+      }
+      return;
+    }
 
     try {
       await Purchases.configure(

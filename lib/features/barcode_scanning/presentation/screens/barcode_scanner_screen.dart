@@ -239,7 +239,22 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     _showVerificationDialog(food, apiProduct);
   }
 
+  /// Whether this scan originated from the meal-log ("Discover") flow rather
+  /// than from adding/swapping a food in the nutrition plan.
+  ///
+  /// In that flow the user is logging what they ate, so the nutrition-plan
+  /// before/during/after-run [FoodDetailScreen] is the wrong destination — we
+  /// hand the raw scanned [Food] straight back to the caller, which routes to
+  /// the logging-specific confirmation page.
+  bool get _isMealLogContext => widget.context == 'meal_log_discover';
+
   Future<void> _showVerificationDialog(Food food, dynamic apiProduct) async {
+    // Meal logging: bypass the plan's category page and return the scanned food.
+    if (_isMealLogContext) {
+      context.pop(food);
+      return;
+    }
+
     // Determine the context and pre-selected categories based on widget.category
     FoodDetailContext foodContext;
     List<int>? preSelectedCategories;

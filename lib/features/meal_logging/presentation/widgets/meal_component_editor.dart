@@ -13,10 +13,16 @@ class MealComponentEditor extends StatefulWidget {
     super.key,
     required this.initialComponents,
     required this.onComponentsChanged,
+    this.onRequestSwap,
   });
 
   final List<MealComponent> initialComponents;
   final ValueChanged<List<MealComponent>> onComponentsChanged;
+
+  /// Invoked when the user swipes an item to swap it. Given the current
+  /// component, returns a replacement (e.g. via the food-swap picker) or null
+  /// if the user cancels. When null, swipe-to-swap is disabled.
+  final Future<MealComponent?> Function(MealComponent current)? onRequestSwap;
 
   @override
   State<MealComponentEditor> createState() => _MealComponentEditorState();
@@ -46,6 +52,50 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
     );
   }
 
+  void _deleteItem(int index) {
+    setState(() => _items.removeAt(index));
+    widget.onComponentsChanged(List.unmodifiable(_items));
+  }
+
+  Future<void> _swapItem(int index) async {
+    final onRequestSwap = widget.onRequestSwap;
+    if (onRequestSwap == null) return;
+    final replacement = await onRequestSwap(_items[index]);
+    if (replacement == null || !mounted) return;
+    setState(() => _items[index] = replacement);
+    widget.onComponentsChanged(List.unmodifiable(_items));
+  }
+
+  Widget _swipeBg(
+    Color color,
+    IconData icon,
+    String label,
+    Alignment alignment,
+  ) {
+    final isLeft = alignment == Alignment.centerLeft;
+    final children = <Widget>[
+      Icon(icon, color: Colors.white, size: 20),
+      const SizedBox(width: 8),
+      Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      ),
+    ];
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: alignment,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: isLeft ? children : children.reversed.toList(),
+      ),
+    );
+  }
+
   int get _totalCalories =>
       _items.fold(0, (sum, item) => sum + (item.calories ?? 0));
   double get _totalCarbG =>
@@ -66,7 +116,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
         ..._items.asMap().entries.map((entry) {
           final i = entry.key;
           final item = entry.value;
-          return Card(
+          final card = Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
               title: Text(
@@ -92,6 +142,39 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                 tooltip: 'Edit item',
               ),
             ),
+          );
+          // Swipe left→right = delete, swipe right→left = swap (matches the
+          // timeline + Activity Detail food rows). confirmDismiss returns false
+          // so the actions run via callbacks without a structural dismiss.
+          return Dismissible(
+            key: ObjectKey(item),
+            direction: widget.onRequestSwap == null
+                ? DismissDirection.startToEnd
+                : DismissDirection.horizontal,
+            background: _swipeBg(
+              theme.colorScheme.error,
+              Icons.delete_outline,
+              'Remove',
+              Alignment.centerLeft,
+            ),
+            secondaryBackground: widget.onRequestSwap == null
+                ? null
+                : _swipeBg(
+                    theme.colorScheme.primary,
+                    Icons.swap_horiz,
+                    'Swap',
+                    Alignment.centerRight,
+                  ),
+            confirmDismiss: (direction) async {
+              if (direction == DismissDirection.startToEnd) {
+                _deleteItem(i);
+              } else if (direction == DismissDirection.endToStart &&
+                  widget.onRequestSwap != null) {
+                _swapItem(i);
+              }
+              return false;
+            },
+            child: card,
           );
         }),
         const SizedBox(height: 8),
