@@ -25,6 +25,7 @@ import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
 import '../../application/meal_logging_service.dart';
+import '../screens/log_scanned_food_screen.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/quick_assembly.dart';
 import '../../domain/saved_meal.dart';
@@ -868,9 +869,20 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
       'barcode-scanner',
       extra: {'category': 'add_food', 'context': 'meal_log_discover'},
     );
-    if (result != null && mounted) {
-      _showFoodLogSheet(result as Food);
-    }
+    if (result == null || !mounted) return;
+
+    // The scanner returns the raw scanned food for the meal-log flow. Route it
+    // to the logging-specific confirmation page (servings + meal slot), not the
+    // nutrition-plan before/during/after-run detail screen.
+    final food = result as Food;
+    final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
+      MaterialPageRoute(
+        builder: (_) => LogScannedFoodScreen(food: food),
+      ),
+    );
+
+    if (logRequest == null || !mounted) return;
+    await _logFoodComponent(food, logRequest.servings, logRequest.slot);
   }
 
   Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
@@ -1342,12 +1354,12 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
       children: [
         // Category filter chips
         SizedBox(
-          height: 44,
+          height: 34,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
-              vertical: 4,
+              vertical: 2,
             ),
             children: [
               _TypeChip(
@@ -1770,7 +1782,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
                   Expanded(
                     child: _OutlineButton(
                       label: 'Camera',
-                      emoji: '📷',
+                      icon: Icons.photo_camera_outlined,
                       onTap: _isAnalyzing
                           ? null
                           : () => _pickPhoto(ImageSource.camera),
@@ -1781,7 +1793,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
                   Expanded(
                     child: _OutlineButton(
                       label: 'Gallery',
-                      emoji: '🖼',
+                      icon: Icons.photo_library_outlined,
                       onTap: _isAnalyzing
                           ? null
                           : () => _pickPhoto(ImageSource.gallery),
@@ -1793,7 +1805,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
             else
               _OutlineButton(
                 label: 'Choose Photo',
-                emoji: '🖼',
+                icon: Icons.photo_library_outlined,
                 onTap: _isAnalyzing
                     ? null
                     : () => _pickPhoto(ImageSource.gallery),
@@ -1830,13 +1842,13 @@ class _AiTabState extends ConsumerState<_AiTab> {
 class _OutlineButton extends StatelessWidget {
   const _OutlineButton({
     required this.label,
-    required this.emoji,
+    required this.icon,
     required this.onTap,
     required this.isDark,
   });
 
   final String label;
-  final String emoji;
+  final IconData icon;
   final VoidCallback? onTap;
   final bool isDark;
 
@@ -1858,7 +1870,11 @@ class _OutlineButton extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 22)),
+              Icon(
+                icon,
+                size: 24,
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,

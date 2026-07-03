@@ -97,9 +97,11 @@ class SharedFoodSearchService {
       // Map API product to Food
       final food = await _foodMappingService.mapToFood(apiProduct);
 
-      // Assign all categories to user-imported foods so they're available in all contexts
-      // Categories: 1=before_run, 2=during_run, 3=after_run
-      final categoryIds = [1, 2, 3];
+      // Leave categories empty so saveUserFood infers workout phases from the
+      // product type (gel -> during, bar -> before+during, etc.) instead of
+      // blanket-tagging every import to all phases. Unknown types fall back to
+      // all phases inside the inference.
+      const categoryIds = <int>[];
 
       // Save to user foods
       await _userFoodService.saveUserFood(food, categoryIds);      return food;
@@ -182,8 +184,11 @@ class SharedFoodSearchService {
             : const ['before_run', 'during_run', 'after_run'],
       );
 
-      // Save to user foods with all categories
-      final categoryIds = [1, 2, 3];
+      // Infer workout phases from the product type rather than blanket all-phases.
+      // (A catalog row's own `categories` are product categories, not
+      // before/during/after phase tags, so they aren't used for phase tagging;
+      // productTypeId set above drives the inference in saveUserFood.)
+      const categoryIds = <int>[];
       await _userFoodService.saveUserFood(food, categoryIds);
 
       _logger.info(

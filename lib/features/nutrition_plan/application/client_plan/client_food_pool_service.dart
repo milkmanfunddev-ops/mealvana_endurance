@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/database/app_database.dart';
@@ -121,6 +122,15 @@ class ClientFoodPoolService {
     // Process user foods
     for (final uf in userFoods) {
       if (uf.toExcludeFromSolver) continue;
+
+      // Endurance-relevance gate — mirrors the server solver
+      // (generate-nutrition-plan-v3 before-phase-substitution, which filters
+      // `product_type IS NOT NULL AND product_type != 'import'`). Only foods
+      // with a classified product type feed generated plans, so arbitrary
+      // scanned groceries (product_type null/'import') don't get pulled into a
+      // plan despite user foods carrying the top preference score.
+      final productType = uf.productTypeId;
+      if (productType == null || productType == 'import') continue;
 
       // Category filter
       final categories = _parseJsonList(uf.categories);
@@ -248,14 +258,35 @@ class ClientFoodPoolService {
     );
   }
 
-  List<String> _parseJsonList(String? jsonStr) {
-    if (jsonStr == null || jsonStr.isEmpty) return [];
+  /// Parse a categories/activityTypes value that may be stored EITHER as a JSON
+  /// array (`["before_run","during_run"]`, from Supabase-synced rows) OR as a
+  /// PostgreSQL array literal (`{before_run,during_run}`, from locally-created
+  /// rows). Handling both is required because user_foods is offline-first and
+  /// syncs across clients, so the same field legitimately appears in both forms.
+  @visibleForTesting
+  List<String> parseCategoryList(String? raw) {
+    if (raw == null) return [];
+    final s = raw.trim();
+    if (s.isEmpty) return [];
+    // PostgreSQL array literal: {before_run,during_run}
+    if (s.startsWith('{') && s.endsWith('}')) {
+      final content = s.substring(1, s.length - 1).trim();
+      if (content.isEmpty) return [];
+      return content
+          .split(',')
+          .map((e) => e.trim().replaceAll('"', ''))
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    // JSON array: ["before_run","during_run"]
     try {
-      final decoded = jsonDecode(jsonStr);
-      if (decoded is List) return decoded.cast<String>();
+      final decoded = jsonDecode(s);
+      if (decoded is List) return decoded.map((e) => e.toString()).toList();
     } catch (_) {}
     return [];
   }
+
+  List<String> _parseJsonList(String? jsonStr) => parseCategoryList(jsonStr);
 
   String _arrayToJsonString(dynamic value) {
     if (value == null) return '[]';
