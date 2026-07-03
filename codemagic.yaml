@@ -1034,10 +1034,7 @@ workflows:
       events:
         - pull_request
       branch_patterns:
-        - pattern: 'develop'
-          include: true
-        - pattern: 'feature/*'
-          include: true
+        # Test gates run on release/* PRs only (moved off develop + feature/*).
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
@@ -1119,6 +1116,11 @@ workflows:
     triggering:
       events:
         - pull_request
+      branch_patterns:
+        # Full quality gate (analyze + format + unit + algorithm) runs on
+        # release/* PRs only — not on develop.
+        - pattern: 'release/*'
+          include: true
       cancel_previous_builds: true
 
     scripts:
