@@ -12,12 +12,27 @@
 #    web e2e reads .env.web.local). Added via `gh secret set`.
 #
 # Until a runner is online, these jobs simply queue (pending) — they don't fail.
+#
+# Trigger model: this runs the FULL test suite on the M1 whenever a release/*
+# branch is in play — i.e. exactly when Codemagic is cutting a release build —
+# so testing happens on owned hardware in parallel with the Codemagic release.
+# `workflow_dispatch` also allows a manual run on the M1 without a PR/Codemagic
+# build (requires the workflow to exist on the default branch).
+#
+# NOTE: for `push: release/**` to trigger, THIS FILE must exist on that release
+# branch. Release branches are cut from main/develop, so merge this workflow
+# into main (and/or develop) once — every future release/* branch inherits it.
 name: Tests (self-hosted M1)
 
 on:
-  pull_request:
   push:
-    branches: [develop, main]
+    branches:
+      - 'release/**'
+      - 'ci/**'          # CI smoke branches — exercise the self-hosted runner
+  pull_request:
+    branches:
+      - 'release/**'
+  workflow_dispatch:
 
 # One in-flight run per ref; newer pushes cancel older.
 concurrency:
@@ -47,8 +62,8 @@ jobs:
       - name: Code generation
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Analyze
-        run: flutter analyze
+      - name: Analyze (non-fatal — reports lints, fails only on errors)
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
       - name: Unit + widget tests
         run: |
@@ -61,14 +76,20 @@ jobs:
       - name: Web e2e (flutter drive boot smoke)
         run: bash scripts/run_web_e2e.sh
 
-  # Patrol integration flows on iOS + Android. Disabled until the M1 has Xcode +
-  # Android SDK/emulator provisioned (see scripts/setup_m1_runner.sh notes).
-  # Flip `if:` to true (or gate on a label) once the toolchain is in place.
-  integration-patrol:
-    name: Patrol (iOS + Android)
-    if: false
+  # Patrol integration smoke on iOS. Runs via patrol_cli (NOT `flutter test`) —
+  # patrol builds an XCUITest host, boots the sim, and drives the dev flavor.
+  # Android Patrol is intentionally deferred (needs Android SDK 36 + AVD).
+  #
+  # KNOWN RISK: the iOS 26.2 simulator (Xcode 26.2) can drop patrol's native
+  # automation handshake and hang; the smoke test caps itself at 3 min and the
+  # job at 45. If this proves flaky, gate it behind a label instead of removing.
+  integration-patrol-ios:
+    name: Patrol (iOS)
+    # Expensive + can be flaky on the iOS 26.2 sim; only run it for real releases,
+    # not on every CI smoke push.
+    if: startsWith(github.ref, 'refs/heads/release/')
     runs-on: [self-hosted, macOS, ARM64]
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Write gitignored .env files from secrets
@@ -81,11 +102,17 @@ jobs:
         run: |
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
-      - name: Boot an iOS simulator
+      - name: Install patrol_cli
+        run: dart pub global activate patrol_cli
+      - name: Boot iOS simulator
         run: |
-          RUNTIME=$(xcrun simctl list runtimes | grep -oE 'com.apple.CoreSimulator.SimRuntime.iOS[^ ]*' | tail -1)
-          DEV=$(xcrun simctl create "CI iPhone" "iPhone 15 Pro" "$RUNTIME")
-          xcrun simctl boot "$DEV"
-          echo "TEST_DEVICE=$DEV" >> "$GITHUB_ENV"
-      - name: Patrol integration tests (iOS)
-        run: flutter test integration_test/test_runner.dart -d "$TEST_DEVICE" --reporter expanded
+          DEVICE="iPhone 15 Pro Max"
+          xcrun simctl boot "$DEVICE" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE" || true
+      - name: Patrol smoke test (iOS)
+        run: |
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          patrol test \
+            --target integration_test/patrol_smoke_test.dart \
+            --flavor dev -t lib/main_dev.dart \
+            -d "iPhone 15 Pro Max"

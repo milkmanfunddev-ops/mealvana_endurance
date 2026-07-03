@@ -786,7 +786,11 @@ void main() {
       );
       await tester.pump();
 
-      // Tap Save changes
+      // Scroll the button into view before tapping — on the default 800x600
+      // test surface it sits below the fold, so a direct tap misses the
+      // hit-test (only warns), _submit() never runs, and validation never fires.
+      await tester.ensureVisible(find.text('Save changes'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save changes'));
       await tester.pump();
       await tester.pumpAndSettle();
