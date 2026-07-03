@@ -88,7 +88,10 @@ export function mapGarminActivityToActivity(
     activity_type: sportType,
     title: garminActivity.activityName || `Garmin ${sportType}`,
     scheduled_date_time: scheduledDateTime,
-    duration_minutes: durationMinutes > 0 ? durationMinutes : null,
+    // Zero is a valid duration (e.g. an abandoned/0.0-mi run pushed from
+    // Garmin) and must overwrite the planned value. Guard against NaN
+    // (missing durationInSeconds) via >= 0, which excludes NaN.
+    duration_minutes: durationMinutes >= 0 ? durationMinutes : null,
     distance_meters: garminActivity.distanceInMeters ?? null,
     synced_from_provider: 'garmin',
     provider_workout_id: garminActivity.summaryId,
@@ -106,7 +109,9 @@ export function mapGarminActivityToActivity(
 
   // Add sport-specific fields (using actual column names)
   if (sportType === 'running') {
-    if (garminActivity.averagePaceInMinutesPerKilometer) {
+    // Use != null (not truthiness) so a real 0 actual value overwrites the
+    // planned distance/pace instead of being dropped.
+    if (garminActivity.averagePaceInMinutesPerKilometer != null) {
       // Convert min/km to min/mile
       activity.average_pace_minutes_per_mile =
         garminActivity.averagePaceInMinutesPerKilometer * 1.60934;

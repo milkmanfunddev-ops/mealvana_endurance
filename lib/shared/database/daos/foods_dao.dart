@@ -216,12 +216,28 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
       ..orderBy([(f) => OrderingTerm.desc(f.createdAt)]);
 
     try {
-      return await query.get();
+      return _dedupeByClientFoodId(await query.get());
     } on FormatException {
       // Legacy rows may store timestamps as TEXT; normalize and retry
       await normalizeUserFoodTimestamps();
-      return await query.get();
+      return _dedupeByClientFoodId(await query.get());
     }
+  }
+
+  /// Collapse duplicate rows that share the same [UserFood.clientFoodId].
+  ///
+  /// The same catalog food can be persisted through two different save paths
+  /// (`AddFoodScreen` vs `UserFoodCrudService`) that historically assigned
+  /// different `device_id` values (profile.id vs profile.deviceId), so the
+  /// `UNIQUE(device_id, client_food_id)` constraint never fired and this query
+  /// returned the food twice. Rows with a null `clientFoodId` (manual entries)
+  /// are always kept. Input order is preserved, so the newest row (the query is
+  /// ordered by createdAt desc) wins.
+  List<UserFood> _dedupeByClientFoodId(List<UserFood> foods) {
+    final seen = <String>{};
+    return foods
+        .where((f) => f.clientFoodId == null || seen.add(f.clientFoodId!))
+        .toList();
   }
 
   /// Check for duplicate barcode in user foods
@@ -231,6 +247,29 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
         (f) =>
             f.userId.equals(userId) &
             f.barcode.equals(barcode) &
+            f.isDeleted.equals(false),
+      )
+      ..limit(1);
+
+    final results = await query.get();
+    return results.isNotEmpty;
+  }
+
+  /// Check for a duplicate by `client_food_id` (catalog food identity).
+  ///
+  /// Unlike [hasUserFoodWithBarcode], this catches text-search foods that have
+  /// no barcode. It matches on either `user_id` or `device_id` — mirroring the
+  /// lookup in [getUserFoods] — so it detects an existing row regardless of
+  /// which save path persisted it.
+  Future<bool> hasUserFoodWithClientFoodId(
+    String userId,
+    String clientFoodId,
+  ) async {
+    final query = select(userFoodsTable)
+      ..where(
+        (f) =>
+            (f.userId.equals(userId) | f.deviceId.equals(userId)) &
+            f.clientFoodId.equals(clientFoodId) &
             f.isDeleted.equals(false),
       )
       ..limit(1);

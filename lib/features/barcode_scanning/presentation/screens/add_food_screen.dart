@@ -232,14 +232,23 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
       DebugLogger.info('🔄 _saveSearchedFood - Getting user profile...');
       final userProfile = await database.userDao.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
-      DebugLogger.info('✅ _saveSearchedFood - Device ID: $deviceId');
+      // user_id is the Supabase auth UUID; device_id is the legacy device
+      // identifier. Keep them separate and match UserFoodCrudService so the
+      // same food saved via either path lands on the same (device_id) and is
+      // caught by the UNIQUE(device_id, client_food_id) constraint.
+      final userId = userProfile?.id ?? 'unknown';
+      final deviceId = userProfile?.deviceId ?? userId;
+      DebugLogger.info('✅ _saveSearchedFood - User ID: $userId, Device ID: $deviceId');
 
-      // Check for duplicates
-      DebugLogger.info('🔄 _saveSearchedFood - Checking for duplicates...');
       final barcode = foodItem.description?.replaceAll('Scanned from barcode ', '') ?? '';
-      DebugLogger.info('📊 _saveSearchedFood - Extracted barcode: "$barcode"');
-      final hasDuplicate = await database.foodsDao.hasUserFoodWithBarcode(deviceId, barcode);
+
+      // Check for duplicates by client_food_id (catalog identity). This catches
+      // text-search foods that have no barcode, and matches regardless of which
+      // save path persisted the existing row, since the two paths historically
+      // assigned different device_id values.
+      DebugLogger.info('🔄 _saveSearchedFood - Checking for duplicates...');
+      final hasDuplicate = await database.foodsDao
+          .hasUserFoodWithClientFoodId(userId, foodItem.id);
       DebugLogger.info('📊 _saveSearchedFood - Has duplicate: $hasDuplicate');
 
       if (hasDuplicate) {
@@ -278,7 +287,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
 
       await database.foodsDao.saveUserFood(
         deviceId: deviceId,
-        userId: deviceId,
+        userId: userId,
         id: foodItem.id,
         clientFoodId: foodItem.id,
         barcode: barcode,

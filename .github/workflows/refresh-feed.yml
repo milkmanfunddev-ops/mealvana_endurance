@@ -27,8 +27,8 @@ on:
         type: choice
         default: dev
         options: [dev, dev+prod]
-  # schedule:
-  #   - cron: "23 9 * * 1"   # Mondays ~09:23 UTC (off-minute on purpose)
+  schedule:
+    - cron: "23 9 * * 1"   # Mondays ~09:23 UTC (off-minute on purpose)
 
 permissions:
   contents: read
@@ -48,6 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: develop
 
       - uses: actions/setup-node@v4
         with:
