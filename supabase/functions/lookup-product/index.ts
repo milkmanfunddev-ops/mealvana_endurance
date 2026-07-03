@@ -445,6 +445,137 @@ function offImage(offProduct: any | null): string | null {
   return offProduct.image_url || offProduct.image_front_url || null;
 }
 
+// ============================================================================
+// nutrition_products write-through cache
+// ============================================================================
+
+/** Canonical GTIN-14 form (digits only, left-padded to 14) for consistent keys. */
+function toGtin14(s: string): string {
+  return s.replace(/\D/g, '').padStart(14, '0').slice(-14);
+}
+
+/**
+ * Run a task after the response is sent (no added latency); never throws.
+ * Accepts a Promise OR a thenable query builder — `Promise.resolve` coerces it
+ * to a real promise so `.catch` always exists (Supabase builders lack `.catch`).
+ */
+function bg(task: Promise<unknown> | PromiseLike<unknown>): void {
+  const p = Promise.resolve(task).catch((e) => console.error('bg task failed:', e));
+  try {
+    // @ts-ignore EdgeRuntime is a Supabase edge-runtime global
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(p);
+    }
+  } catch (_) { /* p already swallows its own errors */ }
+}
+
+function serviceClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  );
+}
+
+/**
+ * Priority 0.5 lookup: a product we've already fetched from USDA/OFF before.
+ * Returns the cleanedProduct shape (api_source preserved) or null. Bumps
+ * hit_count / last_seen_at in the background so reads add no latency.
+ */
+async function lookupNutritionCache(
+  barcode: string,
+): Promise<{ product: Record<string, unknown>; source: string } | null> {
+  try {
+    const supabase = serviceClient();
+    const gtin = toGtin14(barcode);
+    const { data, error } = await supabase
+      .from('nutrition_products')
+      .select('*')
+      .eq('barcode', gtin)
+      .maybeSingle();
+    if (error || !data) return null;
+
+    bg(
+      supabase
+        .from('nutrition_products')
+        .update({ hit_count: (data.hit_count ?? 0) + 1, last_seen_at: new Date().toISOString() })
+        .eq('id', data.id),
+    );
+
+    const product = {
+      barcode: data.barcode,
+      product_name: data.product_name,
+      brand_name: data.brand_name,
+      image_url: data.image_url,
+      serving_size: data.serving_size,
+      serving_grams: data.serving_grams,
+      calories_per_100g: data.calories_per_100g,
+      carbohydrates_per_100g: data.carbohydrates_per_100g,
+      protein_per_100g: data.protein_per_100g,
+      fat_per_100g: data.fat_per_100g,
+      sodium_mg_per_100g: data.sodium_mg_per_100g,
+      calories_per_serving: data.calories_per_serving,
+      carbohydrates_per_serving: data.carbohydrates_per_serving,
+      protein_per_serving: data.protein_per_serving,
+      fat_per_serving: data.fat_per_serving,
+      sodium_mg_per_serving: data.sodium_mg_per_serving,
+      categories: data.categories,
+      suggested_product_type: data.suggested_product_type,
+      nutrition_data_per: data.nutrition_data_per,
+      api_source: data.source,
+      confidence_score: data.confidence_score,
+    };
+    return { product, source: 'cache' };
+  } catch (e) {
+    console.error('⚠️ nutrition_products cache lookup error:', e);
+    return null;
+  }
+}
+
+/**
+ * Write-through: persist an external (USDA/OFF) hit into nutrition_products so
+ * the next scan of this barcode is served from cache with zero external calls.
+ * Fire-and-forget (background). Only caches external sources; catalog/cache hits
+ * are already stored. On conflict, refreshes data but preserves hit_count and
+ * first_cached_at (omitted from the payload).
+ */
+function cacheNutritionProduct(product: any, source: string, barcode: string): void {
+  if (source !== 'usda_fdc' && source !== 'open_food_facts') return;
+  bg((async () => {
+    const supabase = serviceClient();
+    const now = new Date().toISOString();
+    await supabase.from('nutrition_products').upsert(
+      {
+        barcode: toGtin14(barcode),
+        product_name: product.product_name ?? null,
+        brand_name: product.brand_name ?? null,
+        image_url: product.image_url ?? null,
+        serving_size: product.serving_size ?? null,
+        serving_grams: product.serving_grams ?? null,
+        calories_per_100g: product.calories_per_100g ?? null,
+        carbohydrates_per_100g: product.carbohydrates_per_100g ?? null,
+        protein_per_100g: product.protein_per_100g ?? null,
+        fat_per_100g: product.fat_per_100g ?? null,
+        sodium_mg_per_100g: product.sodium_mg_per_100g ?? null,
+        calories_per_serving: product.calories_per_serving ?? null,
+        carbohydrates_per_serving: product.carbohydrates_per_serving ?? null,
+        protein_per_serving: product.protein_per_serving ?? null,
+        fat_per_serving: product.fat_per_serving ?? null,
+        sodium_mg_per_serving: product.sodium_mg_per_serving ?? null,
+        categories: product.categories ?? null,
+        suggested_product_type: product.suggested_product_type ?? null,
+        nutrition_data_per: product.nutrition_data_per ?? null,
+        source,
+        confidence_score: product.confidence_score ?? null,
+        raw_payload: product,
+        last_seen_at: now,
+        updated_at: now,
+      },
+      { onConflict: 'barcode' },
+    );
+  })());
+}
+
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
@@ -495,7 +626,29 @@ Deno.serve(withSentry(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      console.log('ℹ️ Lookup Product - Not in catalog, falling through to USDA');
+      console.log('ℹ️ Lookup Product - Not in catalog, checking nutrition cache');
+    }
+
+    // ── Priority 0.5: nutrition_products cache (prior USDA/OFF hits) ──
+    // Served from our own DB → zero external calls for anything scanned before.
+    if (requestData.barcode) {
+      const cacheResult = await lookupNutritionCache(requestData.barcode);
+      if (cacheResult) {
+        console.log('✅ Lookup Product - Cache hit (nutrition_products):', {
+          product_name: (cacheResult.product as any).product_name,
+          origin: (cacheResult.product as any).api_source,
+        });
+        return new Response(JSON.stringify({
+          success: true,
+          product: cacheResult.product,
+          source: cacheResult.source,
+          message: 'Product found via nutrition cache',
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('ℹ️ Lookup Product - Cache miss, falling through to USDA/OFF');
     }
 
     let productData = null;
@@ -521,6 +674,7 @@ Deno.serve(withSentry(async (req) => {
           has_nutrition: !!(usdaResult.product as any).calories_per_serving,
           has_image: !!(usdaResult.product as any).image_url,
         });
+        cacheNutritionProduct(usdaResult.product, 'usda_fdc', requestData.barcode);
         return new Response(JSON.stringify({
           success: true,
           product: usdaResult.product,
@@ -619,6 +773,9 @@ Deno.serve(withSentry(async (req) => {
       source: source,
       has_nutrition: !!(cleanedProduct.calories_per_100g || cleanedProduct.calories_per_serving)
     });
+    if (cleanedProduct.barcode) {
+      cacheNutritionProduct(cleanedProduct, 'open_food_facts', String(cleanedProduct.barcode));
+    }
     return new Response(JSON.stringify({
       success: true,
       product: cleanedProduct,
