@@ -145,6 +145,8 @@ class DuringWorkoutTemplatesRepository with SyncableRepository {
         allergens: Value(_arrayToJsonString(json['allergens'])),
         excludedDiets: Value(_arrayToJsonString(json['excluded_diets'])),
         notes: Value(json['notes'] as String?),
+        selectionPriority:
+            Value((json['selection_priority'] as num?)?.toInt() ?? 0),
         isActive: Value(json['is_active'] as bool? ?? true),
         createdAt: Value(
           DateTime.tryParse(json['created_at'] as String? ?? '') ??

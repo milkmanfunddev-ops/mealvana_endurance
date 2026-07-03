@@ -634,6 +634,13 @@ export interface MacroInputV4 {
    * substep 5b-followup (2026-05-22).
    */
   device_id?: string;
+  /**
+   * Client opt-in for the ephemeral default-formula safety net on the before
+   * phase. When true, an unpinned before phase tags its selected system
+   * formula as an ephemeral pin (formula-first flip). Old clients omit it →
+   * byte-identical pre-safety-net behavior. 2026-07-03 (plan Phase 2 #5).
+   */
+  emit_ephemeral_default_formula?: boolean;
 }
 
 /**
@@ -678,6 +685,9 @@ export async function calculateMacrosV4(
    * pre-pin behavior.
    */
   beforePinIds?: Set<string>,
+  /** When true, tag an unpinned before phase's selected system formula as an
+   * ephemeral default-formula pin (formula-first flip, plan Phase 2 #5). */
+  emitEphemeralDefault = false,
 ) {
   const weightKg = toKg(input.weight, input.weight_unit);
   const activityType = input.activity_type || "running";
@@ -772,6 +782,7 @@ export async function calculateMacrosV4(
     input.disliked_foods ?? [],
     input.allergies ?? [],
     beforePinIds,
+    emitEphemeralDefault,
   );
 
   // === DURING-WORKOUT (V3 unchanged) ===

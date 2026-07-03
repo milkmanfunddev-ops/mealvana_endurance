@@ -2165,6 +2165,12 @@ class MacroTargetsController extends _$MacroTargetsController {
     required String phase,
     required String? subPhase,
   }) async {
+    // Ephemeral decisions come from the server-side default-formula safety
+    // net, not a real user pin — they must NOT emit `plan_used_pin` (which
+    // implies a pin fired) or `plan_pin_fallthrough`. Skip silently so pin
+    // analytics stay byte-identical to pre-safety-net behavior. Formula-first
+    // flip, 2026-07-03.
+    if (decision.ephemeral) return;
     if (decision.usedPin) {
       final id = decision.pinnedTemplateId;
       final name = decision.pinnedTemplateName;

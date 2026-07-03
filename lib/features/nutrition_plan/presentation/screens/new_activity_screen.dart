@@ -626,7 +626,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
             Expanded(
               child: KyleSecondaryButton(
                 key: const ValueKey('activity_create.use_template_button'),
-                text: 'Use Template',
+                text: 'Use Routine',
                 onPressed: coordinatorState.isGenerating
                     ? null
                     : () => _handleUseTemplate(

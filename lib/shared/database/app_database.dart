@@ -226,7 +226,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -334,6 +334,17 @@ class AppDatabase extends _$AppDatabase {
         if (from < 12) {
           await addColumn('personal_formulas', 'coach_insight_text', 'TEXT');
           await addColumn('personal_formulas', 'coach_insight_marker', 'TEXT');
+        }
+
+        // v13: Mirror `selection_priority` onto the local during-workout
+        // template table so the client-side default-formula selector (used to
+        // seed onboarding pins) can rank by it, matching the post table.
+        if (from < 13) {
+          await addColumn(
+            'during_workout_templates',
+            'selection_priority',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
         }
       },
 

@@ -24,7 +24,7 @@ class PersonalTemplatesScreen extends ConsumerWidget {
         scrolledUnderElevation: 0,
         leading: const CustomAppBarBackButton(),
         title: Text(
-          'My Templates',
+          'My Routines',
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -34,7 +34,7 @@ class PersonalTemplatesScreen extends ConsumerWidget {
         data: (templates) => _buildContent(context, ref, templates),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) =>
-            Center(child: Text('Error loading templates: $error')),
+            Center(child: Text('Error loading routines: $error')),
       ),
     );
   }
@@ -70,7 +70,7 @@ class PersonalTemplatesScreen extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Text(
-            '${templates.length} of $kMaxTemplateCount templates used',
+            '${templates.length} of $kMaxTemplateCount routines used',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(
                 context,
@@ -98,14 +98,14 @@ class PersonalTemplatesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'No Templates Yet',
+              'No Routines Yet',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Save your first template from any activity with a nutrition plan',
+              'Save your first routine from any activity with a nutrition plan',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(
@@ -165,13 +165,13 @@ class PersonalTemplatesScreen extends ConsumerWidget {
     final newName = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Rename Template'),
+        title: const Text('Rename Routine'),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 50,
           decoration: InputDecoration(
-            labelText: 'Template Name',
+            labelText: 'Routine Name',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             counterText: '',
           ),
@@ -214,7 +214,7 @@ class PersonalTemplatesScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Template'),
+        title: const Text('Delete Routine'),
         content: Text(
           'Are you sure you want to delete "${template.name}"? This cannot be undone.',
         ),
@@ -237,7 +237,7 @@ class PersonalTemplatesScreen extends ConsumerWidget {
           .read(personalTemplatesControllerProvider.notifier)
           .deleteTemplate(template.id);
       if (context.mounted) {
-        MealvanaSnackbar.showSuccess(context, 'Template deleted');
+        MealvanaSnackbar.showSuccess(context, 'Routine deleted');
       }
     }
   }

@@ -17,6 +17,7 @@
 import {
   assert,
   assertEquals,
+  assertExists,
 } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { selectPreWorkoutFoods } from './pre-workout.ts';
 import type { PreWorkoutTemplate, PreWorkoutTargets } from './types.ts';
@@ -298,6 +299,69 @@ Deno.test('no-pin parity: calling without pinnedTemplateIds yields no pin_decisi
       undefined,
       'no-pin call must omit pin_decision entirely (byte-identical to pre-pin behavior)',
     );
+  }
+});
+
+Deno.test('ephemeral default: no pins + emitEphemeralDefault tags selected formula', () => {
+  // Formula-first flip (plan Phase 2 #5): with no real pins but the client
+  // opting in, each phase's algorithmically-selected system formula is tagged
+  // as an ephemeral pin (used_pin true + ephemeral true) — food output
+  // unchanged, only the telemetry differs.
+  const gel = makeTopUpTemplate({
+    id: 'gel-1',
+    name: 'Energy Gel',
+    component_food_names: ['energy_gel'],
+  });
+
+  const results = selectPreWorkoutFoods(
+    TOP_UP_TARGETS,
+    /* hoursBefore */ 0.5,
+    /* diet */ 'none',
+    /* foodTemplates */ [gel],
+    /* drinkTemplates */ [],
+    /* electrolyteTemplates */ [],
+    /* likedFoods */ [],
+    /* dislikedFoods */ [],
+    /* allergies */ [],
+    /* pinnedTemplateIds */ undefined,
+    /* emitEphemeralDefault */ true,
+  );
+
+  const withPrimary = results.filter((p) => p.primary !== null);
+  assert(withPrimary.length > 0, 'expected at least one phase with a formula');
+  for (const phase of withPrimary) {
+    assertExists(phase.pin_decision);
+    assertEquals(phase.pin_decision!.used_pin, true);
+    assertEquals(phase.pin_decision!.ephemeral, true);
+    assertEquals(phase.pin_decision!.fallthrough_reason, null);
+    assertExists(phase.pin_decision!.pinned_template_id);
+  }
+});
+
+Deno.test('ephemeral default OFF by default: byte-identical to pre-safety-net', () => {
+  // Sanity: without the flag, no pin_decision even though a formula was
+  // selected — protects the no-pin-parity contract.
+  const gel = makeTopUpTemplate({
+    id: 'gel-1',
+    name: 'Energy Gel',
+    component_food_names: ['energy_gel'],
+  });
+
+  const results = selectPreWorkoutFoods(
+    TOP_UP_TARGETS,
+    0.5,
+    'none',
+    [gel],
+    [],
+    [],
+    [],
+    [],
+    [],
+    // pinnedTemplateIds + emitEphemeralDefault both omitted
+  );
+
+  for (const phase of results) {
+    assertEquals(phase.pin_decision, undefined);
   }
 });
 

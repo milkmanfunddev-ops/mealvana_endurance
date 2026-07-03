@@ -789,12 +789,16 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
           .toList();
 
       if (!mounted) return;
-      ref
-          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
-          .updateFoodPool(
-            allFoods: [...primary, ...additional, ...userFoods],
-            userFoods: userFoods,
-          );
+      final searchNotifier = ref
+          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier);
+      // Discover (meal logging) shows all foods but surfaces general food
+      // ahead of pure fuel — someone logging breakfast shouldn't wade through
+      // gels first (audit §3).
+      searchNotifier.setFilter(FoodSearchFilter.generalFirst);
+      searchNotifier.updateFoodPool(
+        allFoods: [...primary, ...additional, ...userFoods],
+        userFoods: userFoods,
+      );
     } catch (_) {
       // Non-fatal — search bar still works via catalog + OpenFoodFacts.
     }

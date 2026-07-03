@@ -200,7 +200,7 @@ class ActivityDetailAppBar extends ConsumerWidget
             color: AppColors.electrolyte,
           ),
           onPressed: onSaveTemplate,
-          tooltip: 'Save as Template',
+          tooltip: 'Save as Routine',
         ),
       // Edit button for existing activities (not new ones, not coach view)
       if (!isNewActivity && !isCoachView && !isCompleted)

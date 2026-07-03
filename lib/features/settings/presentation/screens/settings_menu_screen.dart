@@ -76,8 +76,8 @@ class SettingsMenuScreen extends ConsumerWidget {
             _buildCategoryTile(
               context: context,
               icon: Icons.bookmark_outline,
-              title: 'My Templates',
-              description: 'Saved nutrition plan templates',
+              title: 'My Routines',
+              description: 'Saved nutrition plan routines',
               onTap: () => context.push('/settings/templates'),
             ),
             SizedBox(height: 16.h),

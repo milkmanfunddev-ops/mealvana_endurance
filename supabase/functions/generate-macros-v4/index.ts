@@ -55,6 +55,20 @@ serve(withSentry(async (req: Request) => {
   try {
     const input: MacroInputV4 = await req.json();
 
+    // Food preferences (liked / disliked) are no longer consumed by
+    // before-phase selection — the preferences UI was removed and the signal
+    // proved unreliable. Diet + allergy filtering (separate inputs) are
+    // unaffected. Neutralize the preference channel so every downstream
+    // selector receives empty sets. Ripped out 2026-07-03 (plan Phase 2 #6).
+    input.liked_foods = [];
+    input.disliked_foods = [];
+
+    // Client opt-in for the ephemeral default-formula safety net on the
+    // before phase (formula-first flip, plan Phase 2 #5). Threaded to
+    // `selectPreWorkoutFoods` so an unpinned before phase can tag its selected
+    // system formula as ephemeral. Old clients omit it → byte-identical.
+    const emitEphemeralDefault = input.emit_ephemeral_default_formula === true;
+
     // Validate required fields
     if (!input.weight) return validationError("Missing required field: weight");
     if (!input.hours_before && input.hours_before !== 0) {
@@ -181,6 +195,7 @@ serve(withSentry(async (req: Request) => {
         input.disliked_foods ?? [],
         input.allergies ?? [],
         userPins.beforePinIds,
+        emitEphemeralDefault,
       );
 
       const brickMacros = calculateBrickMacrosV4(input, preTargets);
@@ -203,7 +218,12 @@ serve(withSentry(async (req: Request) => {
       return jsonResponse({ success: true, macros: brickMacrosWithSelections });
     }
 
-    const macros = await calculateMacrosV4(input, templates, userPins.beforePinIds);
+    const macros = await calculateMacrosV4(
+      input,
+      templates,
+      userPins.beforePinIds,
+      emitEphemeralDefault,
+    );
 
     console.log("✅ V4 macros calculated successfully:", {
       activity_type: macros.activity_type,

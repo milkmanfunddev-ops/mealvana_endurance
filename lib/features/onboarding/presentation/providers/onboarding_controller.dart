@@ -12,6 +12,7 @@ import '../../../auth/application/auth_service.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../formula_kit/application/formula_library_controller.dart';
+import '../../application/onboarding_formula_pin_service.dart';
 import '../../application/onboarding_service.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
@@ -683,6 +684,29 @@ class OnboardingController extends _$OnboardingController {
       if (_cachedAllergies != null) {
         await _onboardingService.saveAllergies(userId, _cachedAllergies!);
         DebugLogger.info('✅ Allergies saved');
+      }
+
+      // 4.5. Auto-pin default system formulas for the user's primary sport so
+      // a new user starts out formula-first with owned, editable formulas
+      // (plan Phase 1 #3). Best-effort — the service swallows failures so it
+      // can never block onboarding; the generation-time ephemeral safety net
+      // covers anyone this skips.
+      {
+        final diet = (_cachedDietaryPreference != null &&
+                _cachedDietaryPreference != DietaryPreference.none)
+            ? _cachedDietaryPreference!.dbValue
+            : null;
+        final allergies = _cachedAllergies
+                ?.map((a) => a.dbValue)
+                .toList(growable: false) ??
+            const <String>[];
+        await ref.read(onboardingFormulaPinServiceProvider).autoPinDefaults(
+              userId: userId,
+              selectedSports: cachedSelectedSports,
+              diet: diet,
+              allergies: allergies,
+            );
+        DebugLogger.info('✅ Default formulas auto-pin attempted');
       }
 
       // 5. Save food preferences

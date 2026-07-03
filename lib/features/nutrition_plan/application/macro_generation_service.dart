@@ -531,6 +531,12 @@ class MacroGenerationService {
       );
     }
 
+    // Opt in to the ephemeral default-formula safety net for the before phase
+    // (formula-first flip). This client keeps ephemeral pin decisions
+    // invisible in the pin banner + pin analytics, so it's safe to receive
+    // them; old clients omit this flag and get byte-identical telemetry.
+    requestData['emit_ephemeral_default_formula'] = true;
+
     DebugLogger.info(
       '🌐 EDGE FUNCTION: Calling generate-macros-v4 for ${expectedActivityType.name}...',
     );

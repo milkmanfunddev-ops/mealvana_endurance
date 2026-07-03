@@ -1309,7 +1309,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (activity == null || nutritionPlan == null) {
       MealvanaSnackbar.showError(
         context,
-        'No nutrition plan to save as template',
+        'No nutrition plan to save as routine',
       );
       return;
     }
@@ -1320,7 +1320,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
     final defaultName = activity.title.isNotEmpty
         ? activity.title
-        : 'My Template';
+        : 'My Routine';
 
     final templateName = await SaveTemplateDialog.show(
       context,
@@ -1355,19 +1355,19 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           'is_new_activity': widget.isNewActivity,
         });
 
-        MealvanaSnackbar.showSuccess(context, 'Workout and template saved!');
+        MealvanaSnackbar.showSuccess(context, 'Workout and routine saved!');
         if (widget.isNewActivity) {
           context.go('/main');
         }
       case SaveTemplateResult.limitReached:
         MealvanaSnackbar.showWarning(
           context,
-          'Template limit reached ($kMaxTemplateCount). Delete one to save a new template.',
+          'Routine limit reached ($kMaxTemplateCount). Delete one to save a new routine.',
         );
       case SaveTemplateResult.error:
         MealvanaSnackbar.showError(
           context,
-          'Failed to save template. Please try again.',
+          'Failed to save routine. Please try again.',
         );
     }
   }

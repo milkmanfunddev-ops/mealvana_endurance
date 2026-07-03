@@ -70,6 +70,13 @@ class DuringWorkoutTemplatesTable extends Table {
 
   TextColumn get notes => text().nullable()();
 
+  /// Tie breaker for default-formula / template selection. Higher = preferred
+  /// when scores tie. Mirrors Supabase `selection_priority`; consumed by the
+  /// client-side default-formula selector used to seed onboarding pins.
+  IntColumn get selectionPriority => integer()
+      .withDefault(const Constant(0))
+      .named('selection_priority')();
+
   BoolColumn get isActive =>
       boolean().withDefault(const Constant(true)).named('is_active')();
 

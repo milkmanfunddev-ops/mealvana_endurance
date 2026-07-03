@@ -130,6 +130,10 @@ export interface SubPhaseResult {
    * substep 5b. */
   pin_decision?: {
     used_pin: boolean;
+    /** True when satisfied by the EPHEMERAL default-formula safety net rather
+     * than a real `formula_pins` row. Absent/false for real pins. Formula-first
+     * flip, 2026-07-03 (plan Phase 1 #2). */
+    ephemeral?: boolean;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin

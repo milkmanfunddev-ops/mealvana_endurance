@@ -76,6 +76,12 @@ export interface PlanInputV2 {
       water_high_ml?: number;
     }>;
   };
+  /** Client opt-in for the ephemeral default-formula safety net. When true,
+   * the plan tags the selected system formula as an ephemeral pin on
+   * `pin_decision` (formula-first flip). Only set by clients that keep
+   * ephemeral decisions invisible in the pin banner/analytics; old clients
+   * omit it and receive byte-identical pre-safety-net telemetry. 2026-07-03. */
+  emit_ephemeral_default_formula?: boolean;
 }
 
 // ============================================================================
@@ -148,6 +154,13 @@ export interface LPPhaseResult {
    */
   pin_decision?: {
     used_pin: boolean;
+    /** True when `used_pin` was satisfied by the EPHEMERAL default-formula
+     * safety net (a best-fit system formula selected at generation time)
+     * rather than a real `formula_pins` row. Lets the client distinguish
+     * "we picked a formula for you" from "you pinned this" and, if desired,
+     * nudge the user to pin it. Absent/false for real pins. Formula-first
+     * flip, 2026-07-03 (plan Phase 1 #2). */
+    ephemeral?: boolean;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin

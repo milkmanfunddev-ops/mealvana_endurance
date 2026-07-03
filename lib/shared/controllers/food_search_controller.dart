@@ -2,11 +2,28 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/nutrition_plan/domain/food.dart';
 import '../../features/barcode_scanning/application/catalog_search_service.dart';
+import '../services/food_management/fuel_predicate.dart';
 import '../services/food_management/shared_food_search_service.dart';
 import '../services/logging_service.dart';
 import '../services/app_external_deps.dart';
 
 part 'food_search_controller.g.dart';
+
+/// How a search surface filters results by endurance-fuel vs general food.
+///
+/// The separation is display/search-layer only (one scanner, one pool) —
+/// audit §3. Plan add/swap uses [fuelOnly] (no potato salad in a fuel plan);
+/// meal-logging Discover uses [generalFirst] (everything, fuel deprioritized).
+enum FoodSearchFilter {
+  /// No fuel/general filtering — legacy behavior (default).
+  all,
+
+  /// Only endurance-fuel products. General foods are hidden.
+  fuelOnly,
+
+  /// All foods, but general food is surfaced ahead of pure fuel.
+  generalFirst,
+}
 
 /// Unified search state shared by Swap Food and Food Preferences screens.
 class FoodSearchState {
@@ -73,6 +90,11 @@ class FoodSearchController extends _$FoodSearchController {
   /// All template/system foods for search
   List<Food> _allTemplateFoods = [];
 
+  /// Fuel/general filter for this surface. Set once per screen via
+  /// [setFilter]; defaults to [FoodSearchFilter.all] so untouched surfaces
+  /// keep their legacy behavior.
+  FoodSearchFilter _filter = FoodSearchFilter.all;
+
   bool get _isMounted {
     try {
       state;
@@ -89,6 +111,60 @@ class FoodSearchController extends _$FoodSearchController {
       _catalogDebounceTimer?.cancel();
     });
     return const FoodSearchState();
+  }
+
+  /// Set the fuel/general filter for this surface. Call once after obtaining
+  /// the notifier (e.g. in the screen's seed step). Re-filters the current
+  /// results if a query is already active.
+  void setFilter(FoodSearchFilter filter) {
+    if (_filter == filter) return;
+    _filter = filter;
+    if (state.searchQuery.isNotEmpty) {
+      updateSearch(state.searchQuery);
+    }
+  }
+
+  /// Apply the active fuel/general filter to a local food list.
+  List<Food> _applyLocalFilter(List<Food> foods) {
+    switch (_filter) {
+      case FoodSearchFilter.all:
+        return foods;
+      case FoodSearchFilter.fuelOnly:
+        return foods
+            .where((f) => isFuelProductType(f.productTypeId))
+            .toList();
+      case FoodSearchFilter.generalFirst:
+        final general = <Food>[];
+        final fuel = <Food>[];
+        for (final f in foods) {
+          (isFuelProductType(f.productTypeId) ? fuel : general).add(f);
+        }
+        return [...general, ...fuel];
+    }
+  }
+
+  /// Apply the active fuel/general filter to catalog (The Feed) results.
+  /// The Feed is a curated endurance catalog, so unclassified results
+  /// (`productTypeId == null`) are kept under [FoodSearchFilter.fuelOnly].
+  List<CatalogSearchResult> _applyCatalogFilter(
+    List<CatalogSearchResult> results,
+  ) {
+    switch (_filter) {
+      case FoodSearchFilter.all:
+        return results;
+      case FoodSearchFilter.fuelOnly:
+        return results
+            .where((c) =>
+                c.productTypeId == null || isFuelProductType(c.productTypeId))
+            .toList();
+      case FoodSearchFilter.generalFirst:
+        final general = <CatalogSearchResult>[];
+        final fuel = <CatalogSearchResult>[];
+        for (final c in results) {
+          (isFuelProductType(c.productTypeId) ? fuel : general).add(c);
+        }
+        return [...general, ...fuel];
+    }
   }
 
   /// Seed or update the searchable food pools.
@@ -132,8 +208,8 @@ class FoodSearchController extends _$FoodSearchController {
 
     state = state.copyWith(
       searchQuery: query,
-      userFoodResults: filteredUserFoods,
-      templateFoodResults: filteredTemplateFoods,
+      userFoodResults: _applyLocalFilter(filteredUserFoods),
+      templateFoodResults: _applyLocalFilter(filteredTemplateFoods),
       // Reset catalog expansion when query changes
       isCatalogExpanded: false,
     );
@@ -211,10 +287,11 @@ class FoodSearchController extends _$FoodSearchController {
 
       // Only update if query is still current
       if (state.searchQuery.trim() == query.trim()) {
+        final filtered = _applyCatalogFilter(results);
         state = state.copyWith(
-          catalogResults: results,
+          catalogResults: filtered,
           isSearchingCatalog: false,
-          totalCatalogCount: results.length,
+          totalCatalogCount: filtered.length,
         );
       }
     } catch (e) {

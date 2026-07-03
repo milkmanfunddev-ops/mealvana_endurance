@@ -28029,6 +28029,18 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _selectionPriorityMeta = const VerificationMeta(
+    'selectionPriority',
+  );
+  @override
+  late final GeneratedColumn<int> selectionPriority = GeneratedColumn<int>(
+    'selection_priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -28084,6 +28096,7 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
     allergens,
     excludedDiets,
     notes,
+    selectionPriority,
     isActive,
     createdAt,
     updatedAt,
@@ -28215,6 +28228,15 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('selection_priority')) {
+      context.handle(
+        _selectionPriorityMeta,
+        selectionPriority.isAcceptableOrUnknown(
+          data['selection_priority']!,
+          _selectionPriorityMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -28301,6 +28323,10 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      selectionPriority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}selection_priority'],
+      )!,
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -28368,6 +28394,11 @@ class DuringWorkoutTemplateEntry extends DataClass
   /// e.g. `["vegan"]`.
   final String excludedDiets;
   final String? notes;
+
+  /// Tie breaker for default-formula / template selection. Higher = preferred
+  /// when scores tie. Mirrors Supabase `selection_priority`; consumed by the
+  /// client-side default-formula selector used to seed onboarding pins.
+  final int selectionPriority;
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -28386,6 +28417,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     required this.allergens,
     required this.excludedDiets,
     this.notes,
+    required this.selectionPriority,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
@@ -28415,6 +28447,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['selection_priority'] = Variable<int>(selectionPriority);
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -28443,6 +28476,7 @@ class DuringWorkoutTemplateEntry extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      selectionPriority: Value(selectionPriority),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -28475,6 +28509,7 @@ class DuringWorkoutTemplateEntry extends DataClass
       allergens: serializer.fromJson<String>(json['allergens']),
       excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
       notes: serializer.fromJson<String?>(json['notes']),
+      selectionPriority: serializer.fromJson<int>(json['selectionPriority']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -28500,6 +28535,7 @@ class DuringWorkoutTemplateEntry extends DataClass
       'allergens': serializer.toJson<String>(allergens),
       'excludedDiets': serializer.toJson<String>(excludedDiets),
       'notes': serializer.toJson<String?>(notes),
+      'selectionPriority': serializer.toJson<int>(selectionPriority),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -28521,6 +28557,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     String? allergens,
     String? excludedDiets,
     Value<String?> notes = const Value.absent(),
+    int? selectionPriority,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -28543,6 +28580,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     allergens: allergens ?? this.allergens,
     excludedDiets: excludedDiets ?? this.excludedDiets,
     notes: notes.present ? notes.value : this.notes,
+    selectionPriority: selectionPriority ?? this.selectionPriority,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -28581,6 +28619,9 @@ class DuringWorkoutTemplateEntry extends DataClass
           ? data.excludedDiets.value
           : this.excludedDiets,
       notes: data.notes.present ? data.notes.value : this.notes,
+      selectionPriority: data.selectionPriority.present
+          ? data.selectionPriority.value
+          : this.selectionPriority,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -28604,6 +28645,7 @@ class DuringWorkoutTemplateEntry extends DataClass
           ..write('allergens: $allergens, ')
           ..write('excludedDiets: $excludedDiets, ')
           ..write('notes: $notes, ')
+          ..write('selectionPriority: $selectionPriority, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -28627,6 +28669,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     allergens,
     excludedDiets,
     notes,
+    selectionPriority,
     isActive,
     createdAt,
     updatedAt,
@@ -28649,6 +28692,7 @@ class DuringWorkoutTemplateEntry extends DataClass
           other.allergens == this.allergens &&
           other.excludedDiets == this.excludedDiets &&
           other.notes == this.notes &&
+          other.selectionPriority == this.selectionPriority &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -28670,6 +28714,7 @@ class DuringWorkoutTemplatesTableCompanion
   final Value<String> allergens;
   final Value<String> excludedDiets;
   final Value<String?> notes;
+  final Value<int> selectionPriority;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -28689,6 +28734,7 @@ class DuringWorkoutTemplatesTableCompanion
     this.allergens = const Value.absent(),
     this.excludedDiets = const Value.absent(),
     this.notes = const Value.absent(),
+    this.selectionPriority = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -28709,6 +28755,7 @@ class DuringWorkoutTemplatesTableCompanion
     this.allergens = const Value.absent(),
     this.excludedDiets = const Value.absent(),
     this.notes = const Value.absent(),
+    this.selectionPriority = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -28733,6 +28780,7 @@ class DuringWorkoutTemplatesTableCompanion
     Expression<String>? allergens,
     Expression<String>? excludedDiets,
     Expression<String>? notes,
+    Expression<int>? selectionPriority,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -28756,6 +28804,7 @@ class DuringWorkoutTemplatesTableCompanion
       if (allergens != null) 'allergens': allergens,
       if (excludedDiets != null) 'excluded_diets': excludedDiets,
       if (notes != null) 'notes': notes,
+      if (selectionPriority != null) 'selection_priority': selectionPriority,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -28778,6 +28827,7 @@ class DuringWorkoutTemplatesTableCompanion
     Value<String>? allergens,
     Value<String>? excludedDiets,
     Value<String?>? notes,
+    Value<int>? selectionPriority,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -28799,6 +28849,7 @@ class DuringWorkoutTemplatesTableCompanion
       allergens: allergens ?? this.allergens,
       excludedDiets: excludedDiets ?? this.excludedDiets,
       notes: notes ?? this.notes,
+      selectionPriority: selectionPriority ?? this.selectionPriority,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -28855,6 +28906,9 @@ class DuringWorkoutTemplatesTableCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (selectionPriority.present) {
+      map['selection_priority'] = Variable<int>(selectionPriority.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -28887,6 +28941,7 @@ class DuringWorkoutTemplatesTableCompanion
           ..write('allergens: $allergens, ')
           ..write('excludedDiets: $excludedDiets, ')
           ..write('notes: $notes, ')
+          ..write('selectionPriority: $selectionPriority, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -52874,6 +52929,7 @@ typedef $$DuringWorkoutTemplatesTableTableCreateCompanionBuilder =
       Value<String> allergens,
       Value<String> excludedDiets,
       Value<String?> notes,
+      Value<int> selectionPriority,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -52895,6 +52951,7 @@ typedef $$DuringWorkoutTemplatesTableTableUpdateCompanionBuilder =
       Value<String> allergens,
       Value<String> excludedDiets,
       Value<String?> notes,
+      Value<int> selectionPriority,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -52977,6 +53034,11 @@ class $$DuringWorkoutTemplatesTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -53075,6 +53137,11 @@ class $$DuringWorkoutTemplatesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -53158,6 +53225,11 @@ class $$DuringWorkoutTemplatesTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -53228,6 +53300,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 Value<String> allergens = const Value.absent(),
                 Value<String> excludedDiets = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<int> selectionPriority = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -53247,6 +53320,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 allergens: allergens,
                 excludedDiets: excludedDiets,
                 notes: notes,
+                selectionPriority: selectionPriority,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -53268,6 +53342,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 Value<String> allergens = const Value.absent(),
                 Value<String> excludedDiets = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<int> selectionPriority = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -53287,6 +53362,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 allergens: allergens,
                 excludedDiets: excludedDiets,
                 notes: notes,
+                selectionPriority: selectionPriority,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

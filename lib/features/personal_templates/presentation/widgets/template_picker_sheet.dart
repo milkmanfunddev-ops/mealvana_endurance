@@ -80,7 +80,7 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'My Templates',
+                  'My Routines',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -151,7 +151,7 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
                 context.push('/settings/templates');
               },
               child: Text(
-                'Manage templates \u{2192}',
+                'Manage routines \u{2192}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.electrolyte,
                   fontWeight: FontWeight.w500,

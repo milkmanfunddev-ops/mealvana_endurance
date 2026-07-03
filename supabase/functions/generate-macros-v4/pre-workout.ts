@@ -802,6 +802,17 @@ export function selectPreWorkoutFoods(
    * identical to pre-pin v3. Formula Kit PR 2 substep 5a.
    */
   pinnedTemplateIds?: Set<string>,
+  /**
+   * When true, tag an unpinned phase's selected system formula as an
+   * EPHEMERAL default-formula pin on `pin_decision` (formula-first flip,
+   * plan Phase 2 #5). Pre templates have no `selection_priority` /
+   * `activity_types`, so the "best-fit" default IS whatever `pickBestFormula`
+   * already selects from the time_window-scoped eligible set — this only tags
+   * that outcome, it does not change food output. Opt-in so old clients stay
+   * byte-identical (the no-pin-parity tests rely on `pin_decision` being
+   * omitted when neither pins nor this flag are supplied). 2026-07-03.
+   */
+  emitEphemeralDefault = false,
 ): PreWorkoutPhaseResult[] {
   if (targets.meal_type === 'fasted') return [];
   const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
@@ -1050,10 +1061,25 @@ export function selectPreWorkoutFoods(
       total_fat_g: Math.round(totalFat * 10) / 10,
       total_sodium_mg: Math.round(totalSodium * 10) / 10,
       total_fluid_ml: Math.round(totalFluid * 10) / 10,
-      ...(pinsActive && {
+      // Emit `pin_decision` when a real pin was supplied OR the client opted
+      // into the ephemeral default-formula net. When neither, it's omitted so
+      // the no-pin-parity contract stays byte-identical.
+      ...((pinsActive || emitEphemeralDefault) && {
         pin_decision: pinOverrideActive
           ? {
               used_pin: true,
+              pinned_template_id: pick.template.id,
+              pinned_template_name: pick.template.name,
+              fallthrough_reason: null,
+              pin_set_size: pinnedForPhase.length,
+            }
+          : emitEphemeralDefault
+          // Ephemeral default-formula: this phase's algorithmically-selected
+          // system formula is honored like a pin (formula-first) without a
+          // real pin row. Food output is unchanged; only the tag differs.
+          ? {
+              used_pin: true,
+              ephemeral: true,
               pinned_template_id: pick.template.id,
               pinned_template_name: pick.template.name,
               fallthrough_reason: null,

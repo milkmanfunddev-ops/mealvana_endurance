@@ -34,7 +34,7 @@ final class JadeChatControllerProvider
 }
 
 String _$jadeChatControllerHash() =>
-    r'177800912f97cc2b92bc689281d0cb970cf668df';
+    r'a916e50cdcb7f987cfea1469563d3e3db935d1b8';
 
 abstract class _$JadeChatController extends $AsyncNotifier<JadeChatState> {
   FutureOr<JadeChatState> build();

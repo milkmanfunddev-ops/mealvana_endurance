@@ -356,6 +356,12 @@ export async function generateDuringPhase(
   /** User's pinned personal formulas (any phase); during-phase ones in scope
    * are honored before the template solver. Formula Kit personalization. */
   personalFormulaPins?: PersonalFormulaPin[],
+  /** When true, tag the selected system formula as an EPHEMERAL default-
+   * formula pin on `pin_decision` (formula-first flip). Opt-in so only
+   * clients that know to keep ephemeral decisions invisible receive them —
+   * old clients omit it and stay byte-identical to pre-safety-net v3.
+   * 2026-07-03. */
+  emitEphemeralDefault = false,
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
@@ -583,6 +589,28 @@ export async function generateDuringPhase(
                 elapsed(phaseStart)
               }ms (path=template)`,
             );
+            // Ephemeral default-formula safety net (formula-first flip):
+            // the template path IS the default-formula tier — its candidates
+            // are ranked by `selection_priority`, so the template that
+            // rendered is the best-fit system formula for this workout. When
+            // no REAL pin fired AND the client opted in, tag the outcome as
+            // an ephemeral pin so the plan reads formula-first without writing
+            // any `formula_pins` rows. For opted-out (old) clients this falls
+            // back to the pre-safety-net conditional emission, byte-identical
+            // to legacy v3. Behavior of the food output is unchanged either
+            // way; this only enriches telemetry.
+            const emittedPinDecision = duringPinDecision?.used_pin === true
+              ? duringPinDecision
+              : emitEphemeralDefault
+              ? {
+                used_pin: true,
+                ephemeral: true,
+                pinned_template_id: templateResult.template_id,
+                pinned_template_name: templateResult.template_name,
+                fallthrough_reason: null,
+                pin_set_size: duringPinDecision?.pin_set_size ?? 0,
+              }
+              : duringPinDecision;
             return {
               foods: templateResult.foods,
               by_hour_data: null,
@@ -596,7 +624,7 @@ export async function generateDuringPhase(
                 templateResult.shortfalls.length > 0 && {
                 shortfalls: templateResult.shortfalls,
               }),
-              ...(duringPinDecision && { pin_decision: duringPinDecision }),
+              ...(emittedPinDecision && { pin_decision: emittedPinDecision }),
             };
           }
 

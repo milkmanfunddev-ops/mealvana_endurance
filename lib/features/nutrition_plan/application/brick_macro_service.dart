@@ -425,6 +425,10 @@ class BrickMacroService {
 
     final requestData = {
       'activity_type': 'brick',
+      // Opt in to the ephemeral default-formula safety net for the before
+      // phase (formula-first flip); this client keeps ephemeral pin decisions
+      // invisible in the banner + analytics.
+      'emit_ephemeral_default_formula': true,
       'age': userMetrics['age'],
       'gender': userMetrics['gender'],
       'weight': userMetrics['weightKg'],

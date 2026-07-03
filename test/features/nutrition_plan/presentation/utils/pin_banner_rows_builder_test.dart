@@ -169,6 +169,52 @@ void main() {
     });
   });
 
+  group('collectPinBannerRows — ephemeral decisions are invisible', () {
+    // The server-side default-formula safety net emits pin_decisions with
+    // `ephemeral: true` on plans for users who have NOT pinned anything.
+    // These must NOT flip the banner into Status mode ("Using your pinned
+    // formulas") — an unpinned user should still see the Onboarding
+    // discovery prompt. Formula-first flip, 2026-07-03.
+    PinDecision ephemeral({String name = 'System Sports Drink'}) => PinDecision(
+          usedPin: true,
+          ephemeral: true,
+          pinnedTemplateId: 'tpl-system',
+          pinnedTemplateName: name,
+          fallthroughReason: null,
+          pinSetSize: 0,
+        );
+
+    test('ephemeral-only during decision → Onboarding (not Status)', () {
+      final sections = [
+        _beforeSection(subs: [_sub('meal')]),
+        _duringSection(pin: ephemeral()),
+      ];
+
+      final data = collectPinBannerRows(sections);
+
+      expect(data.isOnboarding, isTrue);
+      expect(data.rows, isEmpty);
+    });
+
+    test('ephemeral after decision alongside a real during pin → real pin '
+        'shows, ephemeral row is synthesized as no-pin', () {
+      final duringPin = _honored(name: 'Bagel + Jam');
+      final sections = [
+        _duringSection(pin: duringPin),
+        _afterSection(pin: ephemeral(name: 'System Recovery')),
+      ];
+
+      final data = collectPinBannerRows(sections);
+
+      expect(data.isOnboarding, isFalse);
+      expect(data.rows.map((r) => r.label).toList(), ['During', 'After']);
+      // During = the real pin; After = synthesized no-pin (ephemeral hidden).
+      expect(data.rows[0].decision, same(duringPin));
+      expect(data.rows[1].decision.usedPin, isFalse);
+      expect(data.rows[1].decision.ephemeral, isFalse);
+    });
+  });
+
   group('collectPinBannerRows — synthesis of missing pinnable rows', () {
     test(
         'scenario 4 case: Before snack honored, no During pin → '

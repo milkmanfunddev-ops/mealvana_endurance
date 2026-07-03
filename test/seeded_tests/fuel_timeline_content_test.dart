@@ -564,75 +564,44 @@ void main() {
   // -------------------------------------------------------------------------
   // 8. Meal card expand / collapse (inline Swap + Remove actions)
   // -------------------------------------------------------------------------
-  group('meal card expand / collapse', () {
+  group('meal card actions (swipe)', () {
     testWidgets(
-      'tapping a meal card shows Swap food + Remove; second tap hides them',
+      'meal tiles expose no inline expand actions or overflow icon',
       (tester) async {
         final result = _assemble(meals: [_meal()]);
         await _pump(tester, result: result);
 
-        // Initially collapsed.
+        // The inline Swap/Remove expand row and the "…" overflow icon were
+        // replaced by swipe-to-delete / swipe-to-swap. At rest none render.
         expect(find.text('Swap food'), findsNothing);
         expect(find.text('Remove'), findsNothing);
-
-        // Tap the card to expand.
-        await tester.tap(find.text('EVERYTHING BAGEL'));
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text('Swap food'),
-          findsOneWidget,
-          reason: 'First tap must expand inline actions',
-        );
-        expect(find.text('Remove'), findsOneWidget);
-
-        // Tap again to collapse.
-        await tester.tap(find.text('EVERYTHING BAGEL'));
-        await tester.pumpAndSettle();
-
-        // BUG CANDIDATE: if the toggleExpanded logic doesn't clear when tapping
-        // the same node, the actions would stay open.
-        expect(
-          find.text('Swap food'),
-          findsNothing,
-          reason: 'Second tap on the same card must collapse inline actions',
-        );
+        expect(find.byIcon(Icons.more_horiz), findsNothing);
       },
     );
 
-    testWidgets('expanding one meal collapses any previously expanded meal', (
-      tester,
-    ) async {
-      final result = _assemble(
-        meals: [
-          _meal(id: 'm1', name: 'Breakfast Bowl', eatenAt: DateTime(2026, 6, 17, 7)),
-          _meal(
-            id: 'm2',
-            name: 'Lunch Wrap',
-            slot: MealSlot.lunch,
-            eatenAt: DateTime(2026, 6, 17, 12),
-          ),
-        ],
-      );
-      await _pump(tester, result: result);
+    testWidgets(
+      'each meal tile is wrapped in a Dismissible for swipe actions',
+      (tester) async {
+        final result = _assemble(
+          meals: [
+            _meal(
+                id: 'm1',
+                name: 'Breakfast Bowl',
+                eatenAt: DateTime(2026, 6, 17, 7)),
+            _meal(
+              id: 'm2',
+              name: 'Lunch Wrap',
+              slot: MealSlot.lunch,
+              eatenAt: DateTime(2026, 6, 17, 12),
+            ),
+          ],
+        );
+        await _pump(tester, result: result);
 
-      // Expand the first card.
-      await tester.tap(find.text('BREAKFAST BOWL'));
-      await tester.pumpAndSettle();
-      expect(find.text('Swap food'), findsOneWidget);
-
-      // Tap the second card.
-      await tester.tap(find.text('LUNCH WRAP'));
-      await tester.pumpAndSettle();
-
-      // BUG CANDIDATE: if the view state keeps two expandedNodeIds, both cards
-      // would show Swap/Remove at once.
-      expect(
-        find.text('Swap food'),
-        findsOneWidget,
-        reason: 'Only one meal can be expanded at a time — Swap must appear once',
-      );
-    });
+        // One Dismissible per meal (workouts are tap-only, not swipeable).
+        expect(find.byType(Dismissible), findsNWidgets(2));
+      },
+    );
   });
 
   // -------------------------------------------------------------------------

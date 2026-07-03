@@ -138,6 +138,13 @@ class NutritionPlanService {
         'activity_type': macroTargets.activityType.name,
         'hours_before': hoursBefore,
         'weight_kg': weightKg,
+        // Opt in to the ephemeral default-formula safety net (formula-first
+        // flip). This client keeps ephemeral pin decisions invisible in the
+        // pin banner + pin analytics (see pin_banner_rows_builder /
+        // macro_targets_controller._emitPinEvent), so it's safe to receive
+        // them. Old clients omit this flag and get byte-identical
+        // pre-safety-net telemetry. 2026-07-03.
+        'emit_ephemeral_default_formula': true,
         'macro_targets': <String, dynamic>{
           'pre_run': _buildPhaseTargets(
             carbsG: macroTargets.preRun.carbsG,

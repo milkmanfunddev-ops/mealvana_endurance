@@ -58,7 +58,7 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
         borderRadius: BorderRadius.circular(16),
       ),
       title: Text(
-        'Save as Template',
+        'Save as Routine',
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -68,7 +68,7 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Save your food selections as a reusable ${widget.activityTypeDisplay.toLowerCase()} template.',
+            'Save your food selections as a reusable ${widget.activityTypeDisplay.toLowerCase()} routine.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -82,7 +82,7 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
             autofocus: true,
             maxLength: 50,
             decoration: InputDecoration(
-              labelText: 'Template Name',
+              labelText: 'Routine Name',
               hintText: 'e.g., Saturday Long Run',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -101,7 +101,7 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
         ),
         const SizedBox(width: AppSpacing.sm),
         KylePrimaryButton(
-          text: 'Save Template',
+          text: 'Save Routine',
           isFullWidth: false,
           onPressed: _onSave,
         ),

@@ -46,12 +46,21 @@ class PinDecision {
     required this.pinnedTemplateName,
     required this.fallthroughReason,
     this.pinSetSize = 0,
+    this.ephemeral = false,
   });
 
   /// True iff the algorithm selected a pinned template for this phase. When
   /// true, all preference / allergen / diet / gut-training / scale-clamp
   /// filters were bypassed (honor-pin policy).
   final bool usedPin;
+
+  /// True when [usedPin] was satisfied by the EPHEMERAL default-formula
+  /// safety net (a best-fit system formula chosen at generation time)
+  /// rather than a real `formula_pins` row. Lets the UI distinguish "we
+  /// picked a formula for you" from "you pinned this" and, if desired, nudge
+  /// the user to pin it. False for real pins and for legacy plans. Formula-
+  /// first flip, 2026-07-03.
+  final bool ephemeral;
 
   /// ID of the template that was honored, when [usedPin] is true.
   /// Null when [usedPin] is false.
@@ -85,6 +94,7 @@ class PinDecision {
       pinSetSize: (json['pin_set_size'] as num?)?.toInt() ??
           (json['pinSetSize'] as num?)?.toInt() ??
           0,
+      ephemeral: json['ephemeral'] as bool? ?? false,
     );
   }
 
@@ -95,12 +105,13 @@ class PinDecision {
       'pinned_template_name': pinnedTemplateName,
       'fallthrough_reason': fallthroughReason?.wireValue,
       'pin_set_size': pinSetSize,
+      'ephemeral': ephemeral,
     };
   }
 
   @override
   String toString() =>
-      'PinDecision(usedPin: $usedPin, id: $pinnedTemplateId, '
-      'name: $pinnedTemplateName, fallthrough: $fallthroughReason, '
-      'setSize: $pinSetSize)';
+      'PinDecision(usedPin: $usedPin, ephemeral: $ephemeral, '
+      'id: $pinnedTemplateId, name: $pinnedTemplateName, '
+      'fallthrough: $fallthroughReason, setSize: $pinSetSize)';
 }

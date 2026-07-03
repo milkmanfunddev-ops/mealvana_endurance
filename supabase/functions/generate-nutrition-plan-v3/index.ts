@@ -154,6 +154,18 @@ serve(withSentry(async (req) => {
       );
     }
 
+    // Food preferences (liked / disliked / willing-to-try) are no longer
+    // consumed by plan generation. The preferences UI was removed and the
+    // signal proved unreliable — a stale/incorrect disliked list would
+    // collapse the candidate pool (see the diagnostic logging above). Diet +
+    // allergy filtering are SEPARATE inputs (`dietary_preference`,
+    // `allergies`) and are unaffected. Neutralize the preference channel here
+    // so every downstream selector/scorer receives empty sets, keeping the
+    // (now-unused) scoring code harmless. Ripped out 2026-07-03 (plan Phase 2 #6).
+    input.liked_foods = [];
+    input.willing_to_try_foods = [];
+    input.disliked_foods = [];
+
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
       input.macro_targets.pre_run = adjustTargetsForOverrides(
@@ -242,6 +254,7 @@ serve(withSentry(async (req) => {
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
                       userPins.afterPinIds.size > 0,
                 userPins.personalFormulas,
+                input.emit_ephemeral_default_formula === true,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -268,6 +281,7 @@ serve(withSentry(async (req) => {
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
                       userPins.afterPinIds.size > 0,
                 userPins.personalFormulas,
+                input.emit_ephemeral_default_formula === true,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),

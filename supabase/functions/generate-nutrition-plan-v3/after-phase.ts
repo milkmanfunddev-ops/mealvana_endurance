@@ -174,6 +174,11 @@ export async function generateAfterPhase(
   /** User's pinned personal formulas (any phase); after-phase ones in scope
    * are honored before the template solver. Formula Kit personalization. */
   personalFormulaPins?: PersonalFormulaPin[],
+  /** When true, tag the selected system formula as an EPHEMERAL default-
+   * formula pin on `pin_decision` (formula-first flip). Opt-in so only
+   * clients that keep ephemeral decisions invisible receive them — old
+   * clients omit it and stay byte-identical to pre-safety-net v3. 2026-07-03. */
+  emitEphemeralDefault = false,
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
@@ -361,6 +366,16 @@ export async function generateAfterPhase(
         }
       }
 
+      // Ephemeral default-formula safety net (formula-first flip): the non-pin
+      // post path already selects and renders a single SYSTEM template (a
+      // formula) via its tuned travel/prep ranking — that IS a formula-first
+      // outcome. When no REAL pin fired we tag it as an ephemeral pin so the
+      // plan reads formula-first, without writing `formula_pins` rows and
+      // without disturbing the deliberate travel/prep selection order.
+      const afterEphemeral = emitEphemeralDefault &&
+        !(afterPinDecision?.used_pin === true) &&
+        candidates.length > 0;
+
       if (candidates.length > 0) {
         const renderStart = performance.now();
         const rendered = renderPostTemplatePortion(
@@ -374,9 +389,28 @@ export async function generateAfterPhase(
         );
 
         if (rendered) {
+          // When a real pin didn't fire but the safety net promoted a default
+          // formula, tag the outcome as an ephemeral pin so the plan reads
+          // formula-first (no `formula_pins` rows written).
+          const emittedPinDecision = afterPinDecision?.used_pin === true
+            ? afterPinDecision
+            : afterEphemeral
+            ? {
+              used_pin: true,
+              ephemeral: true,
+              pinned_template_id: rendered.template_id,
+              pinned_template_name: rendered.template_name,
+              fallthrough_reason: null,
+              pin_set_size: afterPinDecision?.pin_set_size ?? 0,
+            }
+            : afterPinDecision;
           console.log(
             `[PLAN-V3] Post-workout template selected: ${rendered.template_number} (${rendered.template_name})${
-              afterPinDecision?.used_pin ? " [pin override]" : ""
+              afterPinDecision?.used_pin
+                ? " [pin override]"
+                : afterEphemeral
+                ? " [ephemeral default formula]"
+                : ""
             }`,
           );
           console.log(
@@ -398,7 +432,7 @@ export async function generateAfterPhase(
               prep_effort: rendered.prep_effort,
               travel_friendliness: rendered.travel_friendliness,
             },
-            ...(afterPinDecision && { pin_decision: afterPinDecision }),
+            ...(emittedPinDecision && { pin_decision: emittedPinDecision }),
           };
         }
 

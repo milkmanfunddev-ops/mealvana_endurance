@@ -107,6 +107,16 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     final searchNotifier = ref.read(
       foodSearchControllerProvider(_searchControllerKey).notifier,
     );
+    // Endurance/general separation (audit §3): during-run swaps are pure
+    // fueling — restrict search to fuel products so a potato salad can't be
+    // planned mid-run. Before/after meals legitimately include real food, so
+    // they keep the full pool.
+    final baseCategory = widget.category.split(':').first;
+    searchNotifier.setFilter(
+      baseCategory == 'during_run'
+          ? FoodSearchFilter.fuelOnly
+          : FoodSearchFilter.all,
+    );
     searchNotifier.updateFoodPool(
       allFoods: state.allFoodsForSearch ?? [],
       userFoods: state.allUserFoods,
