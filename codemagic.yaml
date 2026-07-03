@@ -485,6 +485,20 @@ workflows:
 
       - *upload_sentry_symbols
 
+      - name: Fire App Store marketing-copy Claude routine
+        ignore_failure: true
+        script: |
+          if [ -n "${APPSTORE_ROUTINE_TOKEN:-}" ]; then
+            curl -sS -X POST "https://api.anthropic.com/v1/claude_code/routines/trig_01VbhoecWAp79XXcrt9MSrBL/fire" \
+              -H "Authorization: Bearer $APPSTORE_ROUTINE_TOKEN" \
+              -H "anthropic-version: 2023-06-01" \
+              -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\": \"Release branch $CM_BRANCH was just built in Codemagic — a new app release is being cut. Check out $CM_BRANCH, then generate App Store marketing copy for this release and file it in the Notion Release Marketing Copy DB.\"}" || echo "routine trigger failed (non-fatal)"
+          else
+            echo "APPSTORE_ROUTINE_TOKEN not set — skipping App Store routine trigger"
+          fi
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -691,6 +705,20 @@ workflows:
             --build-number=$BUILD_NUMBER
 
       - *upload_sentry_symbols
+
+      - name: Fire changelog Claude routine
+        ignore_failure: true
+        script: |
+          if [ -n "${CHANGELOG_ROUTINE_TOKEN:-}" ]; then
+            curl -sS -X POST "https://api.anthropic.com/v1/claude_code/routines/trig_015ZZLg2NfiMoBDV8ypkLm6Z/fire" \
+              -H "Authorization: Bearer $CHANGELOG_ROUTINE_TOKEN" \
+              -H "anthropic-version: 2023-06-01" \
+              -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\": \"A new version just shipped to main (branch $CM_BRANCH) in Codemagic. Generate the changelog for the current version in pubspec.yaml and publish it to Sanity.\"}" || echo "routine trigger failed (non-fatal)"
+          else
+            echo "CHANGELOG_ROUTINE_TOKEN not set — skipping changelog routine trigger"
+          fi
 
     artifacts:
       - build/ios/ipa/*.ipa
