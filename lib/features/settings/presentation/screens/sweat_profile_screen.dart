@@ -46,8 +46,14 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
   /// Populates the editable fields once, converting the canonical
   /// mL/hr sweat rate into the user's preferred display unit (driven by
   /// the global [unitSystemProvider] — not a screen-local toggle).
-  void _initFromState(SweatProfileState s, bool useMetric) {
-    if (_initialized) return;
+  ///
+  /// [unitResolved] must be false while the unit-system preference is
+  /// still loading — populating early would silently lock in an
+  /// imperial-fallback conversion even if the real preference turns out
+  /// to be metric a frame later (the async unit provider and the sweat
+  /// profile provider don't necessarily resolve on the same frame).
+  void _initFromState(SweatProfileState s, bool useMetric, bool unitResolved) {
+    if (_initialized || !unitResolved) return;
     _initialized = true;
 
     if (s.knownSweatRateMlPerHour != null) {
@@ -128,9 +134,12 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncState = ref.watch(sweatProfileControllerProvider);
+    final unitAsync = ref.watch(unitSystemProvider);
     final useMetric =
-        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
-            UnitSystem.metric;
+        (unitAsync.value ?? UnitSystem.imperial) == UnitSystem.metric;
+    // Only "resolved" once the async unit pref has data or has errored —
+    // not while it's still loading (see _initFromState doc).
+    final unitResolved = unitAsync.hasValue || unitAsync.hasError;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -149,7 +158,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
       body: ContentArea(
         child: asyncState.when(
           data: (s) {
-            _initFromState(s, useMetric);
+            _initFromState(s, useMetric, unitResolved);
             return _buildContent(context, s, useMetric);
           },
           loading: () => const Center(
