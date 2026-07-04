@@ -141,42 +141,38 @@ class _CarbLoadingFoodSelectionScreenState
     });
   }
 
+  /// Minimum number of carb-loading-curated matches (template + user foods)
+  /// for the current query below which the generic nutrition-plan pool is
+  /// mixed into the search pool as a fallback. Keeps curated carb foods from
+  /// being crowded out when they already answer the query well.
+  static const int _fallbackPoolThreshold = 4;
+
   void _seedSearchController(CarbLoadingFoodSelectionState state) {
     final userFoods = <Food>[];
-    final templateFoods = <Food>[];
-    final nutritionPlanFoods = <Food>[];
-    final nutritionPlanUserFoods = <Food>[];
+    // Carb-loading's own curated pool (its dedicated catalog + the user's
+    // custom carb foods). Always ranked first.
+    final ownFoods = <Food>[];
+    // Generic nutrition-plan pool (imported foods). Lower priority than
+    // carb-loading's own pool, and only surfaced as a fallback when the
+    // carb-specific pool is thin for the current query (ITEM 18).
+    final fallbackFoods = <Food>[];
     _searchSourceById.clear();
 
     for (final food in state.carbLoadingUserFoods) {
       if (food.isDeleted) continue;
       final mapped = _mapCarbLoadingUserFoodToSearchFood(food);
       userFoods.add(mapped);
+      ownFoods.add(mapped);
       _searchSourceById[mapped.id] = food;
     }
 
     for (final food in state.carbLoadingFoods) {
       final mapped = _mapCarbLoadingTemplateFoodToSearchFood(food);
-      templateFoods.add(mapped);
+      ownFoods.add(mapped);
       _searchSourceById[mapped.id] = food;
     }
 
-    // Add nutrition plan foods to search pool
-    for (final food in state.nutritionPlanFoods) {
-      final mapped = Food(
-        id: 'nutrition_plan_${food.id}',
-        name: food.name,
-        displayName: food.displayName,
-        displayNamePlural: food.displayNamePlural,
-        imageAddress: food.imageUrl,
-        carbsPerServing: food.carbsPerServing,
-        categories: const [],
-      );
-      nutritionPlanFoods.add(mapped);
-      _searchSourceById[mapped.id] = food;
-    }
-
-    // Add nutrition plan user foods to search pool
+    // Nutrition plan user foods (fallback pool)
     for (final food in state.nutritionPlanUserFoods) {
       final mapped = Food(
         id: 'nutrition_plan_user_${food.id}',
@@ -187,21 +183,60 @@ class _CarbLoadingFoodSelectionScreenState
         carbsPerServing: food.carbsPerServing,
         categories: const [],
       );
-      nutritionPlanUserFoods.add(mapped);
+      fallbackFoods.add(mapped);
       _searchSourceById[mapped.id] = food;
     }
+
+    // Nutrition plan foods (fallback pool)
+    for (final food in state.nutritionPlanFoods) {
+      final mapped = Food(
+        id: 'nutrition_plan_${food.id}',
+        name: food.name,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        imageAddress: food.imageUrl,
+        carbsPerServing: food.carbsPerServing,
+        categories: const [],
+      );
+      fallbackFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
+    // Only mix the fallback (nutrition-plan) pool in when carb-loading's own
+    // pool is thin for the current query. The shared FoodSearchController
+    // already renders `templateFoodResults` above its remote catalog/OFF/USDA
+    // cascade, so keeping `ownFoods` first here + gating the fallback pool
+    // ensures carb-loading-curated foods surface first end-to-end.
+    final query = _searchController.text.trim();
+    final includeFallbackPool =
+        query.isEmpty || _ownFoodMatchCount(state, query) < _fallbackPoolThreshold;
 
     ref
         .read(foodSearchControllerProvider(_searchControllerKey).notifier)
         .updateFoodPool(
           allFoods: [
-            ...templateFoods,
-            ...userFoods,
-            ...nutritionPlanUserFoods,
-            ...nutritionPlanFoods,
+            ...ownFoods,
+            if (includeFallbackPool) ...fallbackFoods,
           ],
           userFoods: userFoods,
         );
+  }
+
+  /// Count carb-loading's own curated foods (template + user, undeleted)
+  /// that match [query] by name/display name. Used to decide whether the
+  /// generic nutrition-plan pool should be mixed in as a fallback.
+  int _ownFoodMatchCount(CarbLoadingFoodSelectionState state, String query) {
+    final lowerQuery = query.toLowerCase();
+    bool matches(String name, String displayName) =>
+        name.toLowerCase().contains(lowerQuery) ||
+        displayName.toLowerCase().contains(lowerQuery);
+
+    final templateMatches =
+        state.carbLoadingFoods.where((f) => matches(f.name, f.displayName)).length;
+    final userMatches = state.carbLoadingUserFoods
+        .where((f) => !f.isDeleted && matches(f.name, f.displayName))
+        .length;
+    return templateMatches + userMatches;
   }
 
   Food _mapCarbLoadingTemplateFoodToSearchFood(CarbLoadingFood food) {
@@ -433,7 +468,20 @@ class _CarbLoadingFoodSelectionScreenState
         .addFoodToMeal();
 
     if (mounted) {
+      _safePop();
+    }
+  }
+
+  /// Guarded pop for this GoRoute-registered screen (ITEM 19 audit). This
+  /// screen is only ever reached via `context.push('/carb-loading-select-food')`
+  /// so it IS on the GoRouter stack, but every reachable pop is still guarded
+  /// against an empty stack (e.g. deep link / hot restart edge cases) rather
+  /// than assuming there is always something to pop.
+  void _safePop() {
+    if (context.canPop()) {
       context.pop();
+    } else {
+      Navigator.of(context).maybePop();
     }
   }
 
@@ -470,7 +518,7 @@ class _CarbLoadingFoodSelectionScreenState
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(onPressed: () => context.pop()),
+        leading: CustomAppBarBackButton(onPressed: _safePop),
         title: Text(
           'Add Food to $_mealTypeName',
           style: AppTextStyles.sectionTitle.copyWith(
