@@ -136,6 +136,10 @@ class MacroExplanationService {
       case ActivityType.multisport:
       case ActivityType.brick:
         return 70; // brick/multi-sport segments use per-segment sport
+      case ActivityType.other:
+        // Import-only activity type — never reaches nutrition plan
+        // generation, but return a safe, conservative default.
+        return 0;
     }
   }
 
@@ -155,6 +159,8 @@ class MacroExplanationService {
         return 'multisport';
       case ActivityType.brick:
         return 'brick';
+      case ActivityType.other:
+        return 'workout';
     }
   }
 

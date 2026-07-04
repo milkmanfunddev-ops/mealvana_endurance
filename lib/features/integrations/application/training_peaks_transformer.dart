@@ -497,6 +497,11 @@ class TrainingPeaksTransformer {
       case ActivityType.brick:
         // Multi-sport and brick default to running for now
         return TrainingPeaksDefaults.runningDurationMinutes;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — never generates a
+        // nutrition plan, so this value is display-only. Fall back to the
+        // running default since the field is non-nullable.
+        return TrainingPeaksDefaults.runningDurationMinutes;
     }
   }
 
@@ -538,6 +543,11 @@ class TrainingPeaksTransformer {
       case ActivityType.multisport:
       case ActivityType.brick:
         // Multi-sport and brick default to running for now
+        return TrainingPeaksDefaults.runningDistanceMeters;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — never generates a
+        // nutrition plan, so this value is display-only. Fall back to the
+        // running default since the field is non-nullable.
         return TrainingPeaksDefaults.runningDistanceMeters;
     }
   }

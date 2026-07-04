@@ -30,7 +30,24 @@ class GearTemplateService {
       case ActivityType.multisport:
       case ActivityType.brick:
         return _getTriathlonGear(userGender, eventSubtype);
+
+      case ActivityType.other:
+        // Import-only, unsupported activity type — races/events are never
+        // created with this type, but handle it with a minimal generic list.
+        return _getGenericGear(userGender);
     }
+  }
+
+  /// Generic gear for unsupported/"other" activity types
+  List<String> _getGenericGear(String? userGender) {
+    return [
+      'Comfortable athletic clothing',
+      'Athletic shoes',
+      if (userGender == 'female') 'Sports bra',
+      'Water bottle',
+      'GPS watch/fitness tracker',
+      'Sunscreen',
+    ];
   }
 
   /// Running-specific gear

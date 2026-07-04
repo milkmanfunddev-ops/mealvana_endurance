@@ -27,6 +27,8 @@ extension ActivityTypeToKyle on ActivityType {
         return KyleActivityType.other;
       case ActivityType.brick:
         return KyleActivityType.triathlon; // Map brick to triathlon for now
+      case ActivityType.other:
+        return KyleActivityType.other;
     }
   }
 }

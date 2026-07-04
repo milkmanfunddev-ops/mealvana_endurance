@@ -177,6 +177,7 @@ class BrickConfirmationDialog extends StatelessWidget {
       ActivityType.duathlon => FontAwesomeIcons.personRunning.data,
       ActivityType.multisport => FontAwesomeIcons.personSwimming.data,
       ActivityType.brick => FontAwesomeIcons.link.data,
+      ActivityType.other => FontAwesomeIcons.circle.data,
     };
   }
 }

@@ -124,6 +124,8 @@ class EventSubtypeDropdown extends StatelessWidget {
         return FontAwesomeIcons.trophy.data;
       case ActivityType.brick:
         return FontAwesomeIcons.link.data; // Chain link icon for brick workouts
+      case ActivityType.other:
+        return FontAwesomeIcons.circle.data;
     }
   }
 }

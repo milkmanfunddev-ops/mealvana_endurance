@@ -374,6 +374,9 @@ class ActivityCard extends ConsumerWidget {
           parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
         }
         break;
+
+      case ActivityType.other:
+        break;
     }
 
     return parts.join(' • ');
@@ -393,6 +396,8 @@ class ActivityCard extends ConsumerWidget {
         return FontAwesomeIcons.trophy.data;
       case ActivityType.brick:
         return FontAwesomeIcons.link.data; // Chain link icon for brick workouts
+      case ActivityType.other:
+        return FontAwesomeIcons.circle.data;
     }
   }
 }

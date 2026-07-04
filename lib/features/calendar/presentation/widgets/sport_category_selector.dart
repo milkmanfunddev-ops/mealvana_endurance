@@ -137,6 +137,8 @@ class _SportCategoryButton extends StatelessWidget {
         return FontAwesomeIcons.trophy;
       case ActivityType.brick:
         return FontAwesomeIcons.link; // Chain link icon for brick workouts
+      case ActivityType.other:
+        return FontAwesomeIcons.circle;
     }
   }
 }

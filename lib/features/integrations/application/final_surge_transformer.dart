@@ -394,6 +394,10 @@ class FinalSurgeTransformer {
       case ActivityType.brick:
         // Multi-sport and brick default to running for now
         return FinalSurgeDefaults.runningDurationMinutes;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — no nutrition-plan
+        // default is applicable; leave duration unset.
+        return null;
     }
   }
 
@@ -423,6 +427,10 @@ class FinalSurgeTransformer {
       case ActivityType.multisport:
       case ActivityType.brick:
         return FinalSurgeDefaults.runningDurationMinutes;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — no nutrition-plan
+        // default is applicable; leave duration unset.
+        return null;
     }
   }
 
@@ -519,6 +527,10 @@ class FinalSurgeTransformer {
       case ActivityType.brick:
         // Multi-sport and brick default to running for now
         return FinalSurgeDefaults.runningDistanceMiles;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — no nutrition-plan
+        // default is applicable; leave distance unset.
+        return null;
     }
   }
 

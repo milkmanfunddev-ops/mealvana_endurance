@@ -192,6 +192,10 @@ class EventActionButtonsCard extends ConsumerWidget {
       case ActivityType.multisport:
       case ActivityType.brick:
         return 'brick';
+      case ActivityType.other:
+        // NewActivityScreen has no "other" tab (import-only activities are
+        // never manually created here); fall back to the running tab.
+        return 'running';
     }
   }
 
