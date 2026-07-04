@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../events/application/nutrition_plan_navigation.dart';
+import '../../../events/presentation/providers/events_controller.dart';
 import '../providers/checklist_controller.dart';
 
 /// Race Day Checklist Screen
@@ -138,7 +140,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                   category: 'nutrition',
                 )
               else if (gearItems.isNotEmpty)
-                _buildNutritionEmptyState(context),
+                _buildNutritionEmptyState(context, ref),
 
               const SizedBox(height: AppSpacing.lg),
 
@@ -561,7 +563,7 @@ class RaceChecklistScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNutritionEmptyState(BuildContext context) {
+  Widget _buildNutritionEmptyState(BuildContext context, WidgetRef ref) {
     return BaseCard(
       margin: AppSpacing.screenPaddingHorizontal,
       child: Column(
@@ -606,15 +608,39 @@ class RaceChecklistScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           KyleSecondaryButton(
-            onPressed: () {
-              // Navigate back to event details where the main nutrition plan button is
-              context.pop();
-            },
+            onPressed: () => _createNutritionPlan(context, ref),
             text: 'Create Nutrition Plan',
             icon: FontAwesomeIcons.plus.data,
           ),
         ],
       ),
     );
+  }
+
+  /// Navigate directly to the create-nutrition-plan flow for this event.
+  ///
+  /// Mirrors the "Create Nutrition Plan" button on the event detail screen
+  /// (see [EventActionButtonsCard]) via the shared [buildNutritionPlanExtras]
+  /// helper so both entry points stay in sync.
+  Future<void> _createNutritionPlan(BuildContext context, WidgetRef ref) async {
+    try {
+      final detail = await ref.read(eventDetailProvider(eventId).future);
+
+      final extras = buildNutritionPlanExtras(
+        event: detail.event,
+        activity: detail.activity,
+      );
+
+      if (context.mounted) {
+        context.push('/distance-pace-gut-entry', extra: extras);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Could not load event details: $e',
+        );
+      }
+    }
   }
 }

@@ -249,6 +249,12 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     _isSelectingEvent = true;
     _eventSearchDebounce?.cancel();
 
+    // Guard the location field too, since we may programmatically set its
+    // text below. Without this, the location text listener fires, kicks off
+    // a LocationIQ search, and pops the autocomplete overlay open.
+    _isSelectingLocation = true;
+    _locationSearchDebounce?.cancel();
+
     setState(() {
       _eventNameController.text = event.eventName;
 
@@ -258,6 +264,10 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       } else if (event.city != null || event.state != null) {
         _locationController.text = event.formattedLocation;
       }
+
+      // Clear any stale location search results/state from before selection
+      _locationSearchResults = [];
+      _isSearchingLocation = false;
 
       // Auto-fill date and time if available
       if (event.eventDate != null) {
@@ -324,6 +334,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         _isSelectingEvent = false;
+        _isSelectingLocation = false;
       }
     });
   }
