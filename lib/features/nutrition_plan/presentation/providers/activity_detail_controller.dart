@@ -2211,6 +2211,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         activityId: activityId,
       );
 
+      // Invalidate the activities list so dashboards/timelines that watch it
+      // (fuel timeline, daily macros, calendar) drop this activity's card
+      // immediately instead of showing it until their next unrelated rebuild.
+      ref.invalidate(activitiesControllerProvider);
+
       _trackAnalytics('activity_deleted', {
         'activity_id': activityId,
         'deleted_from': 'activity_detail_screen',

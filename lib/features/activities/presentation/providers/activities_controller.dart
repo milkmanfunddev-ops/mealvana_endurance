@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../application/activities_service.dart';
@@ -42,17 +43,20 @@ class ActivitiesController extends _$ActivitiesController {
     // 1. Load local data IMMEDIATELY (no blocking sync)
     final localData = await service.getAllActivities(userId);
 
-    // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes UI
+    // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes
+    //    state IN PLACE (no invalidateSelf) so dependents don't see a second
+    //    build/spinner and don't re-trigger these background syncs again.
     unawaited(_backgroundSync(userId));
 
-    // 3. Background integration sync (non-blocking, fire-and-forget)
+    // 3. Background integration sync (non-blocking, fire-and-forget) - also
+    //    refreshes state in place, sharing the same dedupe path as #2 so a
+    //    sync that changes nothing never ripples into a rebuild.
     unawaited(
       integrationSyncCoordinator
           .ensureIntegrationsSynced(userId)
-          .then((anySynced) {
+          .then((anySynced) async {
             if (anySynced) {
-              if (!ref.mounted) return;
-              ref.invalidateSelf();
+              await _refreshInPlace(userId);
             }
           })
           .catchError((_) {}),
@@ -61,7 +65,34 @@ class ActivitiesController extends _$ActivitiesController {
     return localData;
   }
 
-  /// Background sync: ensures data is fresh, then refreshes UI only when data was stale
+  /// Re-fetch local activities and update [state] in place, but only if the
+  /// data actually changed.
+  ///
+  /// This is the single dedupe path shared by both background sync
+  /// mechanisms (`_backgroundSync` and integration sync). Using a direct
+  /// `state = AsyncData(...)` assignment instead of `invalidateSelf()` means:
+  /// - No second build()/spinner (AsyncNotifier doesn't re-run build() for a
+  ///   direct state assignment).
+  /// - No chained re-invocation of the background syncs kicked off in
+  ///   build() (which is what caused the double/triple dashboard load, since
+  ///   invalidateSelf() re-ran build() which re-fired both syncs).
+  /// - Watchers (fuel_timeline, daily_macros) only see a new emission when
+  ///   the activity list genuinely differs, since `Activity` has value
+  ///   equality and `listEquals` does an element-wise compare.
+  Future<void> _refreshInPlace(String userId) async {
+    if (!ref.mounted) return;
+    final fresh = await _service.getAllActivities(userId);
+    if (!ref.mounted) return;
+
+    final current = state.value;
+    if (current != null && listEquals(current, fresh)) {
+      return; // No real change - don't emit, don't ripple to watchers.
+    }
+    state = AsyncData(fresh);
+  }
+
+  /// Background sync: ensures data is fresh, then refreshes state in place
+  /// only when data was stale AND the sync actually produced different data.
   Future<void> _backgroundSync(String userId) async {
     final repo = ref.read(activitiesRepositoryProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
@@ -80,8 +111,7 @@ class ActivitiesController extends _$ActivitiesController {
       // wasStale=true forever, causing an infinite build→sync→invalidate loop.
       final stillStale = await repo.isStale();
       if (wasStale && !stillStale) {
-        if (!ref.mounted) return;
-        ref.invalidateSelf();
+        await _refreshInPlace(userId);
       }
     } catch (e, stackTrace) {
       logger.error(
