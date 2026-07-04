@@ -429,6 +429,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             hint: 'Email address',
             icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            autofillHints: const [AutofillHints.email],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -842,6 +844,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool autocorrect = true,
+    Iterable<String>? autofillHints,
     String? suffix,
     String? Function(String?)? validator,
   }) {
@@ -854,6 +858,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
+          autocorrect: autocorrect,
+          autofillHints: autofillHints,
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,

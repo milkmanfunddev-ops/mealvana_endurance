@@ -11,6 +11,7 @@ import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/settings_controller.dart';
 import 'debug_screen.dart';
 
@@ -146,20 +147,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
+      // ITEM 22: use the shared Mealvana back button instead of a raw chevron
+      // IconButton. It has built-in double-tap debounce; the canPop guard
+      // avoids GoError "There is nothing to pop" (Sentry MEALVANA-ENDURANCE-8Y).
+      leading: CustomAppBarBackButton(
         key: const ValueKey('settings.back_button'),
-        tooltip: 'Back',
-        // Guard against popping when there's nothing to pop (e.g. a rapid
-        // double-tap where the first tap already popped this route) — that
-        // throws GoError "There is nothing to pop" (Sentry MEALVANA-ENDURANCE-8Y).
         onPressed: () {
           if (context.canPop()) context.pop();
         },
-        icon: Icon(
-          Icons.arrow_back_ios_new,
-          color: Theme.of(context).colorScheme.onSurface,
-          size: 20,
-        ),
       ),
       title: Text(
         key: const ValueKey('settings.title'),

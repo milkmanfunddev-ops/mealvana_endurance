@@ -351,6 +351,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             hint: 'Email address',
             icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            autofillHints: const [AutofillHints.email],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -653,6 +655,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool autocorrect = true,
+    Iterable<String>? autofillHints,
     String? suffix,
     String? Function(String?)? validator,
     void Function(String)? onChanged,
@@ -676,6 +680,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
+          autocorrect: autocorrect,
+          autofillHints: autofillHints,
           validator: validator,
           onChanged: onChanged ?? (_) => _markChanged(),
           decoration: InputDecoration(

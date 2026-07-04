@@ -150,7 +150,7 @@ class _DietaryPreferenceScreenState
           ref.invalidate(settingsControllerProvider);
 
           MealvanaSnackbar.showSuccess(context, 'Dietary preference updated');
-          context.pop();
+          if (context.canPop()) context.pop();
         } else {
           MealvanaSnackbar.showError(
             context,
@@ -230,7 +230,11 @@ class _DietaryPreferenceScreenState
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: widget.onBack ?? () => context.pop(),
+                          onTap:
+                              widget.onBack ??
+                              () {
+                                if (context.canPop()) context.pop();
+                              },
                           child: Container(
                             width: 48,
                             height: 48,
@@ -295,7 +299,10 @@ class _DietaryPreferenceScreenState
           FigmaOnboardingFooter(
             onContinue: _continue,
             onBack: _isOnboarding
-                ? (widget.onBack ?? () => context.pop())
+                ? (widget.onBack ??
+                      () {
+                        if (context.canPop()) context.pop();
+                      })
                 : null,
             canContinue: true, // Always allow continue/skip
             isLoading: _isSaving,

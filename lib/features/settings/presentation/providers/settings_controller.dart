@@ -311,6 +311,9 @@ class SettingsController extends _$SettingsController {
 
     await _saveProfile();
 
+    // Guard against the notifier being disposed during the async gap above.
+    if (!ref.mounted) return;
+
     // Invalidate providers that rely on unit settings
     ref.invalidate(macroTargetsControllerProvider);
   }
@@ -380,6 +383,9 @@ class SettingsController extends _$SettingsController {
 
     // Single save and invalidation
     await _saveProfile();
+
+    // Guard against the notifier being disposed during the async gap above.
+    if (!ref.mounted) return;
 
     // Invalidate providers if unit system changed
     if (unitSystem != null) {
@@ -543,7 +549,10 @@ class SettingsController extends _$SettingsController {
 
       await userRepository.updateUserProfile(updatedProfile);
 
-      ref.invalidate(currentUserProvider);
+      // Guard against the notifier being disposed during the async gap above.
+      if (ref.mounted) {
+        ref.invalidate(currentUserProvider);
+      }
 
       return currentState.copyWith(
         nutritionTargetOverrides: overrides,
@@ -616,8 +625,11 @@ class SettingsController extends _$SettingsController {
 
       await userRepository.updateUserProfile(updatedProfile);
 
-      // Ensure other providers see the updated profile immediately
-      ref.invalidate(currentUserProvider);
+      // Ensure other providers see the updated profile immediately.
+      // Guard against the notifier being disposed during the async gap above.
+      if (ref.mounted) {
+        ref.invalidate(currentUserProvider);
+      }
 
       return currentState.copyWith(
         isSaving: false,
@@ -633,6 +645,10 @@ class SettingsController extends _$SettingsController {
   /// Refresh content from backend
   Future<void> refreshContent() async {
     await _contentService.refreshFromBackend();
+
+    // Guard against the notifier being disposed during the async gap above.
+    if (!ref.mounted) return;
+
     ref.invalidateSelf();
   }
 
