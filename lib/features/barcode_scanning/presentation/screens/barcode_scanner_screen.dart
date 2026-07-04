@@ -36,6 +36,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? _controller;
   bool _isScanning = true;
+  bool _isStartingScanner = false;
   String? _lastScannedBarcode;
   BarcodeScanResult? _lastScanResult;
   bool _flashOn = false;
@@ -45,9 +46,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
+    // autoStart is disabled on the controller (see _initializeController) so
+    // that every start() call in this screen goes through the same guarded
+    // entry point (_safeStartScanner). Kick off the initial start here.
+    _safeStartScanner();
 
     // Track scanner opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final analytics = ref.read(appExternalDepsProvider);
       analytics.analytics.track(
         'barcode_scanner_opened',
@@ -65,6 +71,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   void _initializeController() {
     _controller = MobileScannerController(
+      // Disabled so every start() call is funneled through
+      // _safeStartScanner, which guards against the
+      // `controllerInitializing` race (Sentry MEALVANA-ENDURANCE-79).
+      autoStart: false,
       detectionSpeed: DetectionSpeed.noDuplicates,
       formats: [
         BarcodeFormat.ean13,
@@ -101,15 +111,25 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   }
 
   /// Start the scanner, tolerating the race where the controller is still
-  /// initializing (autoStart in flight). In that window `start()` throws
-  /// `MobileScannerException(controllerInitializing)` — safe to ignore since
-  /// the controller will be running once init completes. Fixes an app-resume
-  /// crash: Sentry MEALVANA-ENDURANCE-79.
+  /// initializing (a previous start() is still in flight — e.g. app-resume
+  /// firing while the initial start hasn't finished, or the reset button
+  /// being tapped again before the last start completed). In that window
+  /// `start()` throws `MobileScannerException(controllerInitializing)` —
+  /// safe to ignore since the controller will be running once init
+  /// completes. Fixes an app-resume crash: Sentry MEALVANA-ENDURANCE-79.
+  ///
+  /// All start() calls in this screen must go through this method (the
+  /// controller itself is created with `autoStart: false`) so the
+  /// `_isStartingScanner` guard and mounted checks apply uniformly.
   Future<void> _safeStartScanner() async {
+    if (_isStartingScanner || _controller == null) return;
+    _isStartingScanner = true;
     try {
       await _controller?.start();
     } on MobileScannerException catch (_) {
-      // Already starting / still initializing — ignore.
+      // Already starting / still initializing — ignore, benign race.
+    } finally {
+      _isStartingScanner = false;
     }
   }
 
@@ -618,12 +638,16 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   }
 
   void _resetScanning() {
+    if (!mounted) return;
     setState(() {
       _isScanning = true;
       _lastScannedBarcode = null;
       _lastScanResult = null;
     });
-    _controller?.start();
+    // Route through the guarded starter — a rapid double-tap of the reset
+    // button (or a resume racing with it) can otherwise throw
+    // `MobileScannerException(controllerInitializing)` unhandled.
+    _safeStartScanner();
   }
 
   void _toggleFlashlight() {
