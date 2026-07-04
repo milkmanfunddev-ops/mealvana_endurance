@@ -3,11 +3,18 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/nutrition_plan/domain/food.dart';
 import '../../features/barcode_scanning/application/catalog_search_service.dart';
 import '../services/food_management/fuel_predicate.dart';
+import '../services/food_management/nutrition_product_search_service.dart';
 import '../services/food_management/shared_food_search_service.dart';
 import '../services/logging_service.dart';
 import '../services/app_external_deps.dart';
 
 part 'food_search_controller.g.dart';
+
+/// When the combined user + template + catalog hit count for a query is
+/// below this, we automatically supplement with a `search-nutrition-products`
+/// call (USDA + cached Open Food Facts) so a thin catalog result set doesn't
+/// leave the user without options. See ITEM 7 (auto OFF+USDA, no button).
+const int _kFewLocalResultsThreshold = 5;
 
 /// How a search surface filters results by endurance-fuel vs general food.
 ///
@@ -37,6 +44,8 @@ class FoodSearchState {
     this.isSearchingOpenFoodFacts = false,
     this.totalCatalogCount = 0,
     this.isCatalogExpanded = false,
+    this.nutritionProductResults = const [],
+    this.isSearchingNutritionProducts = false,
   });
 
   final String searchQuery;
@@ -49,6 +58,12 @@ class FoodSearchState {
   final int totalCatalogCount;
   final bool isCatalogExpanded;
 
+  /// Auto-fetched USDA + cached-OpenFoodFacts results from
+  /// `search-nutrition-products`, triggered automatically when local +
+  /// catalog hits are thin (ITEM 7) — not gated behind a manual button.
+  final List<NutritionProductSearchResult> nutritionProductResults;
+  final bool isSearchingNutritionProducts;
+
   FoodSearchState copyWith({
     String? searchQuery,
     List<Food>? userFoodResults,
@@ -59,6 +74,8 @@ class FoodSearchState {
     bool? isSearchingOpenFoodFacts,
     int? totalCatalogCount,
     bool? isCatalogExpanded,
+    List<NutritionProductSearchResult>? nutritionProductResults,
+    bool? isSearchingNutritionProducts,
   }) {
     return FoodSearchState(
       searchQuery: searchQuery ?? this.searchQuery,
@@ -71,6 +88,10 @@ class FoodSearchState {
           isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
       totalCatalogCount: totalCatalogCount ?? this.totalCatalogCount,
       isCatalogExpanded: isCatalogExpanded ?? this.isCatalogExpanded,
+      nutritionProductResults:
+          nutritionProductResults ?? this.nutritionProductResults,
+      isSearchingNutritionProducts:
+          isSearchingNutritionProducts ?? this.isSearchingNutritionProducts,
     );
   }
 }
@@ -162,6 +183,32 @@ class FoodSearchController extends _$FoodSearchController {
         final fuel = <CatalogSearchResult>[];
         for (final c in results) {
           (isFuelProductType(c.productTypeId) ? fuel : general).add(c);
+        }
+        return [...general, ...fuel];
+    }
+  }
+
+  /// Apply the active fuel/general filter to `search-nutrition-products`
+  /// results. Unlike The Feed catalog (curated, so unclassified defaults to
+  /// fuel-visible), `nutrition_products` is a general USDA/OFF cache, so an
+  /// unclassified result is treated as **general** — same rule as local
+  /// foods — so a fuel-only surface never shows an unclassified grocery item
+  /// by accident.
+  List<NutritionProductSearchResult> _applyNutritionProductFilter(
+    List<NutritionProductSearchResult> results,
+  ) {
+    switch (_filter) {
+      case FoodSearchFilter.all:
+        return results;
+      case FoodSearchFilter.fuelOnly:
+        return results
+            .where((r) => isFuelProductType(r.suggestedProductType))
+            .toList();
+      case FoodSearchFilter.generalFirst:
+        final general = <NutritionProductSearchResult>[];
+        final fuel = <NutritionProductSearchResult>[];
+        for (final r in results) {
+          (isFuelProductType(r.suggestedProductType) ? fuel : general).add(r);
         }
         return [...general, ...fuel];
     }
@@ -272,7 +319,10 @@ class FoodSearchController extends _$FoodSearchController {
     state = const FoodSearchState();
   }
 
-  /// Internal: search the product catalog.
+  /// Internal: search the product catalog. When the combined local +
+  /// catalog hit count comes back thin, automatically supplements with
+  /// `search-nutrition-products` (USDA + cached Open Food Facts) — see
+  /// [_maybeAutoSearchNutritionProducts]. No manual button (ITEM 7).
   Future<void> _searchCatalog(String query) async {
     final searchService = ref.read(sharedFoodSearchServiceProvider);
 
@@ -280,20 +330,22 @@ class FoodSearchController extends _$FoodSearchController {
       state = state.copyWith(isSearchingCatalog: true);
     }
 
+    var catalogHitCount = 0;
     try {
       final results = await searchService.searchCatalog(query);
 
       if (!_isMounted) return;
 
       // Only update if query is still current
-      if (state.searchQuery.trim() == query.trim()) {
-        final filtered = _applyCatalogFilter(results);
-        state = state.copyWith(
-          catalogResults: filtered,
-          isSearchingCatalog: false,
-          totalCatalogCount: filtered.length,
-        );
-      }
+      if (state.searchQuery.trim() != query.trim()) return;
+
+      final filtered = _applyCatalogFilter(results);
+      catalogHitCount = filtered.length;
+      state = state.copyWith(
+        catalogResults: filtered,
+        isSearchingCatalog: false,
+        totalCatalogCount: filtered.length,
+      );
     } catch (e) {
       if (!_isMounted) return;
 
@@ -304,6 +356,57 @@ class FoodSearchController extends _$FoodSearchController {
       );
 
       state = state.copyWith(isSearchingCatalog: false);
+    }
+
+    _maybeAutoSearchNutritionProducts(query, catalogHitCount);
+  }
+
+  /// Fires the `search-nutrition-products` (USDA + cached OpenFoodFacts)
+  /// lookup automatically when local + catalog results are thin, instead of
+  /// requiring a manual "Search Open Food Facts" button tap (ITEM 7).
+  void _maybeAutoSearchNutritionProducts(String query, int catalogHitCount) {
+    if (!_isMounted) return;
+    if (state.searchQuery.trim() != query.trim()) return;
+
+    final localHitCount =
+        state.userFoodResults.length + state.templateFoodResults.length;
+    if (localHitCount + catalogHitCount >= _kFewLocalResultsThreshold) return;
+
+    unawaited(_searchNutritionProducts(query));
+  }
+
+  /// Internal: search `nutrition_products` (USDA FoodData Central + cached
+  /// Open Food Facts) via the `search-nutrition-products` edge function.
+  /// Server-side, so it works reliably on Flutter web (the direct-to-OFF CGI
+  /// call `searchOpenFoodFacts` uses is CORS-blocked there).
+  Future<void> _searchNutritionProducts(String query) async {
+    final searchService = ref.read(nutritionProductSearchServiceProvider);
+
+    if (_isMounted) {
+      state = state.copyWith(isSearchingNutritionProducts: true);
+    }
+
+    try {
+      final results = await searchService.search(query);
+
+      if (!_isMounted) return;
+
+      if (state.searchQuery.trim() == query.trim()) {
+        state = state.copyWith(
+          nutritionProductResults: _applyNutritionProductFilter(results),
+          isSearchingNutritionProducts: false,
+        );
+      }
+    } catch (e) {
+      if (!_isMounted) return;
+
+      _logger.warning(
+        'Nutrition product search failed',
+        context: 'FoodSearchController',
+        data: {'query': query, 'error': e.toString()},
+      );
+
+      state = state.copyWith(isSearchingNutritionProducts: false);
     }
   }
 

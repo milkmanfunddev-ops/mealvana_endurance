@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../../../../shared/controllers/food_search_controller.dart';
+import '../../../../shared/services/food_management/nutrition_product_search_service.dart';
 import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../providers/swap_food_controller.dart';
 import '../../domain/food.dart';
@@ -474,6 +475,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     }
   }
 
+  /// Handles a tap on either a manual OpenFoodFacts result or an
+  /// auto-fetched `search-nutrition-products` result (USDA + cached OFF,
+  /// ITEM 7). Both expose `.id`/`.hasValidId` (duck-typed), and for both the
+  /// id IS a barcode, so resolving via `barcode:` routes through the full
+  /// lookup-product cascade (catalog → nutrition_products cache → USDA/OFF)
+  /// instead of a raw OFF-only lookup — a strict improvement for the
+  /// existing manual OFF flow too.
   Future<void> _handleOpenFoodFactsSelection(dynamic result) async {
     try {
       // Show loading indicator
@@ -489,7 +497,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       // Fetch product details
       final productDetailService = ref.read(productDetailServiceProvider);
       final apiProduct = await productDetailService.getProductDetails(
-        openFoodFactsId: result.id,
+        barcode: result.id as String,
       );
 
       if (mounted) Navigator.of(context).pop(); // Close loading dialog
@@ -875,6 +883,14 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                               _onSearchButtonPressed(searchState.searchQuery),
                           onOpenFoodFactsResultTap:
                               _handleOpenFoodFactsSelection,
+                          // ITEM 7: typed search auto-includes OpenFoodFacts +
+                          // USDA (search-nutrition-products) — no manual
+                          // button. Before/during/after-scan prompts are
+                          // unrelated and untouched.
+                          showOpenFoodFactsButton: false,
+                          onNutritionProductResultTap:
+                              (NutritionProductSearchResult result) =>
+                                  _handleOpenFoodFactsSelection(result),
                           isMyFoodsExpanded: state.isMyFoodsExpanded,
                           onMyFoodsSectionToggle: () {
                             ref
