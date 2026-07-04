@@ -796,7 +796,10 @@ void main() {
       );
       await tester.pump();
 
-      // Tap Save changes
+      // Tap Save changes (scroll it into view first — the redesigned edit
+      // screen is taller, so the button can sit below the test viewport fold).
+      await tester.ensureVisible(find.text('Save changes'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save changes'));
       await tester.pump();
       await tester.pumpAndSettle();

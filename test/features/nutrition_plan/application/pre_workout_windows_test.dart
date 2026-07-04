@@ -154,7 +154,7 @@ void main() {
 
       expect(data.tldrBody,
           contains('Not enough time for the full protocol'));
-      expect(data.tldrBody, contains('250 ml'));
+      expect(data.tldrBody, contains('250 mL'));
     });
 
     test('fluid formula shows "10–120 min window" not "Tier 2"', () {
@@ -223,7 +223,7 @@ void main() {
           )![Scenario.singleSport]!;
 
       expect(data.tldrBody, contains('euhydrated'));
-      expect(data.tldrBody, contains('390 ml'));
+      expect(data.tldrBody, contains('390 mL'));
       // hoursBefore is clamped at 4.0; for 195g/65kg = 3.0 hours.
       expect(data.tldrBody, contains('3 hours available'));
       expect(data.tldrBody, contains('full protocol'));
@@ -240,12 +240,12 @@ void main() {
       final flat = _flattenLines(data.tldrLines);
       expect(flat, contains('65 kg'));
       expect(flat, contains('6 ml/kg'));
-      expect(flat, contains('390 ml'));
+      expect(flat, contains('390 mL'));
       expect(flat, contains('floor'));
-      expect(flat, contains('325 ml'));
+      expect(flat, contains('325 mL'));
       expect(flat, contains('ceiling'));
-      expect(flat, contains('455 ml'));
-      expect(flat, contains('325–455 ml'));
+      expect(flat, contains('455 mL'));
+      expect(flat, contains('325–455 mL'));
     });
 
     test('urine tip is present', () {
