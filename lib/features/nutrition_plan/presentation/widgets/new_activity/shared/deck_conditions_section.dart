@@ -20,6 +20,7 @@ class DeckConditionsSection extends StatelessWidget {
     required this.onTemperatureChanged,
     required this.deckHumidity,
     required this.onHumidityChanged,
+    this.useImperial = false,
     // Optional weather params (null = no weather UI)
     this.isLoadingWeather = false,
     this.onFetchWeather,
@@ -37,6 +38,7 @@ class DeckConditionsSection extends StatelessWidget {
   final ValueChanged<double> onTemperatureChanged;
   final double deckHumidity;
   final ValueChanged<double> onHumidityChanged;
+  final bool useImperial;
 
   // Optional weather integration
   final bool isLoadingWeather;
@@ -149,13 +151,15 @@ class DeckConditionsSection extends StatelessWidget {
             children: [
               KylePlusMinusDecimalControl(
                 label: 'Deck Temperature',
-                value: deckTemperature,
-                onChanged: onTemperatureChanged,
-                min: -5.0,
-                max: 40.0,
-                step: 1.0,
+                value: useImperial ? (deckTemperature * 9 / 5) + 32 : deckTemperature,
+                onChanged: useImperial
+                    ? (f) => onTemperatureChanged((f - 32) * 5 / 9)
+                    : onTemperatureChanged,
+                min: useImperial ? 23.0 : -5.0,
+                max: useImperial ? 104.0 : 40.0,
+                step: useImperial ? 2.0 : 1.0,
                 decimalPlaces: 0,
-                unit: '°C',
+                unit: useImperial ? '°F' : '°C',
                 enabled: !isLoadingWeather,
               ),
               if (_hasWeatherIntegration) ...[

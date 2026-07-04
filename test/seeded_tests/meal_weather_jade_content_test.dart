@@ -40,6 +40,9 @@ import 'package:mealvana_endurance/features/recipes/domain/recipe.dart';
 import 'package:mealvana_endurance/features/weather/domain/location.dart' as domain;
 import 'package:mealvana_endurance/features/weather/domain/weather_forecast.dart';
 import 'package:mealvana_endurance/features/weather/presentation/screens/weather_detail_screen.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart'
+    show UnitSystem;
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 import '../helpers/widget_test_harness.dart';
@@ -294,6 +297,13 @@ WeatherForecast _seedForecast({
     precipitationMm: precipitationMm,
   );
 }
+
+/// Deterministically pins [unitSystemProvider] for [WeatherDetailScreen]
+/// content tests, since the screen now derives imperial/metric from the
+/// provider directly (see `weather_detail_screen.dart`) rather than a
+/// caller-supplied `useImperial` flag.
+Override _unitSystemOverride(UnitSystem unitSystem) =>
+    unitSystemProvider.overrideWith((ref) async => unitSystem);
 
 // =============================================================================
 // 1. RecentSavedPickerScreen — Saved tab
@@ -893,13 +903,14 @@ void main() {
   // ===========================================================================
 
   group('WeatherDetailScreen — seeded forecast', () {
-    testWidgets('renders temperature in Celsius from seeded forecast',
+    testWidgets('renders temperature in Celsius when unit pref is metric',
         (tester) async {
       final forecast = _seedForecast(tempC: 18.0);
 
       await pumpSeeded(
         tester,
         WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.metric)],
         settle: true,
       );
 
@@ -911,21 +922,22 @@ void main() {
       );
     });
 
-    testWidgets('renders temperature in Fahrenheit when useImperial=true',
+    testWidgets('renders temperature in Fahrenheit when unit pref is imperial',
         (tester) async {
       // 18°C → (18 * 9/5) + 32 = 64.4 → rounds to 64°F
       final forecast = _seedForecast(tempC: 18.0);
 
       await pumpSeeded(
         tester,
-        WeatherDetailScreen(forecast: forecast, useImperial: true),
+        WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.imperial)],
         settle: true,
       );
 
       expect(
         find.text('64°F'),
         findsWidgets,
-        reason: 'Temperature must be shown in Fahrenheit when useImperial=true',
+        reason: 'Temperature must be shown in Fahrenheit when unit pref is imperial',
       );
     });
 
@@ -970,6 +982,7 @@ void main() {
       await pumpSeeded(
         tester,
         WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.metric)],
         settle: true,
       );
 
@@ -988,6 +1001,7 @@ void main() {
       await pumpSeeded(
         tester,
         WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.metric)],
         settle: true,
       );
 
@@ -1066,7 +1080,8 @@ void main() {
 
       await pumpSeeded(
         tester,
-        WeatherDetailScreen(forecast: forecast, useImperial: true),
+        WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.imperial)],
         settle: true,
       );
 
@@ -1083,7 +1098,8 @@ void main() {
 
       await pumpSeeded(
         tester,
-        WeatherDetailScreen(forecast: forecast, useImperial: true),
+        WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.imperial)],
         settle: true,
       );
 

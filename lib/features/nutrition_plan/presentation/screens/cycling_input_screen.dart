@@ -17,6 +17,9 @@ import '../../../weather/presentation/screens/weather_detail_screen.dart';
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../domain/run_parameters.dart' show UnitSystem;
 
 /// Cycling Input Screen - Cycling-specific nutrition plan input
 /// Users enter cycling details and generate their nutrition plan
@@ -123,9 +126,10 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
   Widget build(BuildContext context) {
     final controllerState = ref.watch(macroTargetsControllerProvider);
     final cyclingForm = ref.watch(cyclingInputControllerProvider);
+    final useMetric = (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) == UnitSystem.metric;
 
     return controllerState.when(
-      data: (state) => _buildScreen(context, state, cyclingForm),
+      data: (state) => _buildScreen(context, state, cyclingForm, useMetric),
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
@@ -137,7 +141,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
     );
   }
 
-  Widget _buildScreen(BuildContext context, MacroTargetsState state, CyclingFormState cyclingForm) {
+  Widget _buildScreen(BuildContext context, MacroTargetsState state, CyclingFormState cyclingForm, bool useMetric) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       extendBodyBehindAppBar: true,
@@ -191,7 +195,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
                   IncrementDecrementWidget(
                     label: 'Average Speed',
                     value: cyclingForm.speedMph.toString(),
-                    formatValue: (value) => _formatSpeed(double.parse(value)),
+                    formatValue: (value) => _formatSpeed(double.parse(value), useMetric),
                     onIncrement: () => ref.read(cyclingInputControllerProvider.notifier).updateSpeed(cyclingForm.speedMph + 1.0),
                     onDecrement: () {
                       if (cyclingForm.speedMph > 1.0) {
@@ -286,7 +290,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
                   SizedBox(height: 20.h),
 
                   // Environment Section (Collapsible)
-                  _buildEnvironmentSection(cyclingForm),
+                  _buildEnvironmentSection(cyclingForm, useMetric),
 
                   SizedBox(height: 40.h),
 
@@ -475,7 +479,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
     );
   }
 
-  Widget _buildEnvironmentSection(CyclingFormState cyclingForm) {
+  Widget _buildEnvironmentSection(CyclingFormState cyclingForm, bool useMetric) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -537,7 +541,8 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
               ),
               SizedBox(height: 8.h),
               Text(
-                '${cyclingForm.temperatureC.round()}°C (${(cyclingForm.temperatureC * 9/5 + 32).round()}°F)',
+                '${UnitFormatter.formatTemperature(cyclingForm.temperatureC, useMetric: useMetric)} '
+                '(${UnitFormatter.formatTemperature(cyclingForm.temperatureC, useMetric: !useMetric)})',
                 style: AppTheme.textStyle.copyWith(
                   fontSize: 14.sp,
                   color: AppTheme.primary600,
@@ -555,18 +560,28 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
                   thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
                 ),
                 child: Slider(
-                  value: cyclingForm.temperatureC,
-                  min: -5,
-                  max: 40,
-                  divisions: 45,
-                  onChanged: (value) => ref.read(cyclingInputControllerProvider.notifier).updateTemperature(value),
+                  value: useMetric
+                      ? cyclingForm.temperatureC
+                      : UnitFormatter.celsiusToFahrenheit(cyclingForm.temperatureC),
+                  min: useMetric ? -5.0 : 23.0,
+                  max: useMetric ? 40.0 : 104.0,
+                  divisions: useMetric ? 45 : 81,
+                  onChanged: (value) => ref.read(cyclingInputControllerProvider.notifier).updateTemperature(
+                        useMetric ? value : UnitFormatter.fahrenheitToCelsius(value),
+                      ),
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Cold (-5°C)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
-                  Text('Hot (40°C)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
+                  Text(
+                    'Cold (${UnitFormatter.formatTemperature(-5, useMetric: useMetric)})',
+                    style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                  ),
+                  Text(
+                    'Hot (${UnitFormatter.formatTemperature(40, useMetric: useMetric)})',
+                    style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                  ),
                 ],
               ),
             ],
@@ -662,10 +677,7 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
     return '${distance.toStringAsFixed(1)} miles';
   }
 
-  String _formatSpeed(double speed) {
-    if (speed == speed.round()) {
-      return '${speed.round()} mph';
-    }
-    return '${speed.toStringAsFixed(1)} mph';
+  String _formatSpeed(double speedMph, bool useMetric) {
+    return UnitFormatter.formatSpeed(speedMph, useMetric: useMetric);
   }
 }

@@ -228,7 +228,6 @@ class RunningTabContent extends ConsumerWidget {
                                       builder: (_) => WeatherDetailScreen(
                                         forecast: forecast,
                                         location: formState.location,
-                                        useImperial: useImperial,
                                       ),
                                     ),
                                   );

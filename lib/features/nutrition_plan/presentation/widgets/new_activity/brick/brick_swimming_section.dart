@@ -22,6 +22,7 @@ class BrickSwimmingSection extends StatelessWidget {
     super.key,
     required this.segment,
     required this.onChanged,
+    this.useImperial = false,
   });
 
   /// Current segment data (null if new)
@@ -29,6 +30,9 @@ class BrickSwimmingSection extends StatelessWidget {
 
   /// Callback when any field changes
   final ValueChanged<BrickSegment> onChanged;
+
+  /// Whether to display/edit temperature in Fahrenheit instead of Celsius.
+  final bool useImperial;
 
   void _updateSegment({
     double? distanceMeters,
@@ -146,16 +150,18 @@ class BrickSwimmingSection extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // Water Temperature (°C)
+        // Water Temperature (°C, shown in °F when useImperial)
         KylePlusMinusDecimalControl(
           label: 'Water Temperature',
-          value: waterTempC,
-          onChanged: (value) => _updateSegment(waterTempC: value),
-          min: 10.0,
-          max: 35.0,
-          step: 0.5,
-          decimalPlaces: 1,
-          unit: '°C',
+          value: useImperial ? (waterTempC * 9 / 5) + 32 : waterTempC,
+          onChanged: (value) => _updateSegment(
+            waterTempC: useImperial ? (value - 32) * 5 / 9 : value,
+          ),
+          min: useImperial ? 50.0 : 10.0,
+          max: useImperial ? 95.0 : 35.0,
+          step: useImperial ? 1.0 : 0.5,
+          decimalPlaces: useImperial ? 0 : 1,
+          unit: useImperial ? '°F' : '°C',
         ),
 
         const SizedBox(height: AppSpacing.xl),

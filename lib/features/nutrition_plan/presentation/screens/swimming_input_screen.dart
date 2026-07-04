@@ -17,6 +17,9 @@ import '../../../weather/presentation/screens/weather_detail_screen.dart';
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../domain/run_parameters.dart' show UnitSystem;
 
 /// Swimming Input Screen - Swimming-specific nutrition plan input
 /// Users enter swimming details and generate their nutrition plan
@@ -130,9 +133,10 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
   Widget build(BuildContext context) {
     final controllerState = ref.watch(macroTargetsControllerProvider);
     final swimmingForm = ref.watch(swimmingInputControllerProvider);
+    final useMetric = (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) == UnitSystem.metric;
 
     return controllerState.when(
-      data: (state) => _buildScreen(context, state, swimmingForm),
+      data: (state) => _buildScreen(context, state, swimmingForm, useMetric),
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
@@ -144,7 +148,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     );
   }
 
-  Widget _buildScreen(BuildContext context, MacroTargetsState state, SwimmingFormState swimmingForm) {
+  Widget _buildScreen(BuildContext context, MacroTargetsState state, SwimmingFormState swimmingForm, bool useMetric) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       extendBodyBehindAppBar: true,
@@ -299,7 +303,8 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        '${swimmingForm.waterTempC.round()}°C (${(swimmingForm.waterTempC * 9/5 + 32).round()}°F)',
+                        '${UnitFormatter.formatTemperature(swimmingForm.waterTempC, useMetric: useMetric)} '
+                        '(${UnitFormatter.formatTemperature(swimmingForm.waterTempC, useMetric: !useMetric)})',
                         style: AppTheme.textStyle.copyWith(
                           fontSize: 14.sp,
                           color: AppTheme.primary600,
@@ -317,18 +322,28 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                           thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
                         ),
                         child: Slider(
-                          value: swimmingForm.waterTempC,
-                          min: 10,
-                          max: 32,
-                          divisions: 44,
-                          onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateWaterTemp(value),
+                          value: useMetric
+                              ? swimmingForm.waterTempC
+                              : UnitFormatter.celsiusToFahrenheit(swimmingForm.waterTempC),
+                          min: useMetric ? 10.0 : UnitFormatter.celsiusToFahrenheit(10),
+                          max: useMetric ? 32.0 : UnitFormatter.celsiusToFahrenheit(32),
+                          divisions: useMetric ? 44 : 40,
+                          onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateWaterTemp(
+                                useMetric ? value : UnitFormatter.fahrenheitToCelsius(value),
+                              ),
                         ),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Cold (10°C)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
-                          Text('Warm (32°C)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
+                          Text(
+                            'Cold (${UnitFormatter.formatTemperature(10, useMetric: useMetric)})',
+                            style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                          ),
+                          Text(
+                            'Warm (${UnitFormatter.formatTemperature(32, useMetric: useMetric)})',
+                            style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                          ),
                         ],
                       ),
                     ],
@@ -348,7 +363,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   SizedBox(height: 20.h),
 
                   // Environment Section (Collapsible - for pool conditions)
-                  _buildEnvironmentSection(swimmingForm),
+                  _buildEnvironmentSection(swimmingForm, useMetric),
 
                   SizedBox(height: 40.h),
 
@@ -568,7 +583,7 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     );
   }
 
-  Widget _buildEnvironmentSection(SwimmingFormState swimmingForm) {
+  Widget _buildEnvironmentSection(SwimmingFormState swimmingForm, bool useMetric) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -630,7 +645,8 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
               ),
               SizedBox(height: 8.h),
               Text(
-                '${swimmingForm.deckTemperature.round()}°C (${(swimmingForm.deckTemperature * 9/5 + 32).round()}°F)',
+                '${UnitFormatter.formatTemperature(swimmingForm.deckTemperature, useMetric: useMetric)} '
+                '(${UnitFormatter.formatTemperature(swimmingForm.deckTemperature, useMetric: !useMetric)})',
                 style: AppTheme.textStyle.copyWith(
                   fontSize: 14.sp,
                   color: AppTheme.primary600,
@@ -648,18 +664,28 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
                 ),
                 child: Slider(
-                  value: swimmingForm.deckTemperature,
-                  min: 15,
-                  max: 35,
-                  divisions: 40,
-                  onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateDeckTemperature(value),
+                  value: useMetric
+                      ? swimmingForm.deckTemperature
+                      : UnitFormatter.celsiusToFahrenheit(swimmingForm.deckTemperature),
+                  min: useMetric ? 15.0 : UnitFormatter.celsiusToFahrenheit(15),
+                  max: useMetric ? 35.0 : UnitFormatter.celsiusToFahrenheit(35),
+                  divisions: useMetric ? 40 : 36,
+                  onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateDeckTemperature(
+                        useMetric ? value : UnitFormatter.fahrenheitToCelsius(value),
+                      ),
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Cool (15°C)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
-                  Text('Hot (35°C)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
+                  Text(
+                    'Cool (${UnitFormatter.formatTemperature(15, useMetric: useMetric)})',
+                    style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                  ),
+                  Text(
+                    'Hot (${UnitFormatter.formatTemperature(35, useMetric: useMetric)})',
+                    style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                  ),
                 ],
               ),
             ],
