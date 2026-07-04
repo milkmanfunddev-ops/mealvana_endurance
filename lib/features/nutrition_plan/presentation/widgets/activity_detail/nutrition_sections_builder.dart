@@ -188,8 +188,12 @@ class _NutritionSectionsBuilderState
           sectionColor = AppColors.orange;
         }
 
-        // Generate sport-specific title using ActivityType
-        final sectionTitle = activityType.getSectionTitle(category);
+        // Short phase label for this page only (avoids "During Run" wrapping
+        // to two lines on narrow phones). The sport-specific title returned
+        // by ActivityType.getSectionTitle() is still used by other
+        // consumers (e.g. templates, coach view) — intentionally not
+        // changed here.
+        final sectionTitle = _shortPhaseLabel(category);
 
         // Use BeforePhaseWidget for before sections with sub-phases (V2 template plans)
         if (category == 'before_run' && section.hasSubPhases) {
@@ -666,6 +670,17 @@ class _NutritionSectionsBuilderState
   double _getBodyWeightKg(double? weightPounds) {
     if (weightPounds == null || weightPounds <= 0) return 70.0;
     return weightPounds * 0.453592;
+  }
+
+  /// Short "Before"/"During"/"After" heading used only on this screen so the
+  /// section title never wraps to two lines on narrow phones (e.g. "During
+  /// Run"). Brick section titles are unaffected — they render via
+  /// `section.title` in `BrickNutritionSections`, not this path.
+  String _shortPhaseLabel(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('during')) return 'During';
+    if (lower.contains('after')) return 'After';
+    return 'Before';
   }
 
   ExplanationPhase _categoryToPhase(String category) {

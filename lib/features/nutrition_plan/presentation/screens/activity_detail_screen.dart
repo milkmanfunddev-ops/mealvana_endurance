@@ -562,7 +562,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         state.hasFuelLog &&
         state.fuelLogViewMode == FuelLogViewMode.actual &&
         !state.isFuelLogMode) {
-      return _buildFuelLogSections(context, state);
+      return _buildFuelLogSections(
+        context,
+        state,
+        showCarbsPerHourCard: true,
+      );
     }
 
     // During animation: crossfade and zoom between normal and fuel log
@@ -662,8 +666,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
   Widget _buildFuelLogSections(
     BuildContext context,
-    ActivityDetailState state,
-  ) {
+    ActivityDetailState state, {
+    bool showCarbsPerHourCard = false,
+  }) {
     final fuelLog = state.fuelLogData;
     if (fuelLog == null) return const SizedBox.shrink();
 
@@ -674,15 +679,39 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
     final sectionWidgets = <Widget>[];
 
+    // Carbs/hr summary at the top of the Actual view. Was previously only
+    // shown while re-editing an already-logged workout (isFuelLogMode block
+    // above) — missing here meant the read-only "Actual" tab had no carbs/hr
+    // readout at all. Uses the same construction as the fuel-log feedback
+    // section so the rate matches what was shown during logging.
+    if (showCarbsPerHourCard && state.activity != null) {
+      sectionWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+          child: CarbsPerHourCard(
+            activity: state.activity!,
+            fuelLog: fuelLog,
+            targetGPerH: ActivityDetailHelpers.computeDuringCarbRateGPerH(
+              activity: state.activity,
+              nutritionPlan: plan,
+            ),
+          ),
+        ),
+      );
+    }
+
     for (final section in plan.sections) {
       final sectionId = section.id;
       final sectionItems = fuelLog.itemsForSection(sectionId);
       if (sectionItems.isEmpty && !state.isFuelLogMode) continue;
 
       final sectionColor = _sectionColor(context, sectionId);
+      // Short "Before"/"During"/"After" heading on this screen only (avoids
+      // "During Run" wrapping to two lines on narrow phones). Brick section
+      // titles are left untouched (section.title, e.g. "During Bike Leg").
       final sectionTitle = activityType.isBrick
           ? section.title
-          : activityType.getSectionTitle(sectionId);
+          : _shortPhaseLabel(sectionId);
 
       // Group by sub-phase if applicable
       Map<String, List>? subPhaseGroups;
@@ -768,6 +797,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
       return AppColors.dragonfruit;
     }
     return AppColors.orange;
+  }
+
+  /// Short "Before"/"During"/"After" heading for this screen only. See the
+  /// matching helper in `NutritionSectionsBuilder` — kept in sync but
+  /// duplicated locally since this widget doesn't otherwise depend on that
+  /// file. `ActivityType.getSectionTitle()` (the sport-specific "During Run"
+  /// / "During Ride" form) is unchanged for other consumers.
+  String _shortPhaseLabel(String sectionId) {
+    final lower = sectionId.toLowerCase();
+    if (lower.contains('during')) return 'During';
+    if (lower.contains('after')) return 'After';
+    return 'Before';
   }
 
   /// Evaluates whether to push the fuel-log screen automatically and does

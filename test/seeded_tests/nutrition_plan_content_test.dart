@@ -195,7 +195,7 @@ void main() {
     );
 
     testWidgets(
-      'shows "BEFORE RUN" section heading (uppercased) for the before section',
+      'shows "BEFORE" section heading (uppercased, shortened) for the before section',
       (tester) async {
         final state = _makeDetailState();
 
@@ -209,9 +209,15 @@ void main() {
           settle: true,
         );
 
-        // NutritionSectionsBuilder renders sectionTitle.toUpperCase().
-        // For ActivityType.running + 'before_run' category → 'Before Run'.toUpperCase() = 'BEFORE RUN'.
-        expect(find.textContaining('BEFORE RUN'), findsWidgets);
+        // NutritionSectionsBuilder renders sectionTitle.toUpperCase(). On the
+        // activity-detail screen, section headings are intentionally
+        // shortened to "Before"/"During"/"After" (was "Before Run" etc.) to
+        // avoid two-line wrapping on narrow phones — see
+        // NutritionSectionsBuilder._shortPhaseLabel(). The full sport-specific
+        // form ("Before Run") still comes from
+        // ActivityType.getSectionTitle() for other consumers.
+        expect(find.textContaining('BEFORE'), findsWidgets);
+        expect(find.textContaining('BEFORE RUN'), findsNothing);
       },
     );
 
