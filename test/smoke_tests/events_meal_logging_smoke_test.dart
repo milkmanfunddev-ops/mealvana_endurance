@@ -28,6 +28,7 @@ import 'package:mealvana_endurance/features/events/presentation/screens/event_fo
 import 'package:mealvana_endurance/features/events/presentation/screens/event_detail_screen.dart';
 import 'package:mealvana_endurance/features/race_checklist/presentation/screens/race_checklist_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/manual_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/photo_capture_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/describe_meal_screen.dart';
@@ -232,6 +233,22 @@ void main() {
     // settle:false — async recipe load never completes without a real DB.
     testWidgets('RecipePickerScreen builds (loading state)', (tester) async {
       await _smokeWithRouter(tester, () => const RecipePickerScreen());
+    });
+
+    // LogMealScreen (full-screen "Log a Meal" redesign) — logDate is a plain
+    // constructor param (no GoRouterState dependency), so it renders under a
+    // bare MaterialApp like smokeScreen() does elsewhere. It watches several
+    // async providers (recentMeals/savedMeals/recipes) that never resolve
+    // without a real Drift DB + auth session, and its initState schedules
+    // non-fatal best-effort seeding (wrapped in try/catch) via a post-frame
+    // callback — settle:false keeps the test deterministic and avoids waiting
+    // on work that never completes in this harness.
+    testWidgets('LogMealScreen builds (loading state)', (tester) async {
+      await smokeScreen(
+        tester,
+        const LogMealScreen(logDate: '2026-07-04'),
+        settle: false,
+      );
     });
   });
 }

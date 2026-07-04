@@ -85,9 +85,10 @@ class UnifiedMealSearchResults extends ConsumerWidget {
       children: [
         if (hasQuickMatches)
           SizedBox(
-            height: 96,
+            height: 120,
             child: ListView(
               scrollDirection: Axis.horizontal,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.xs,
@@ -132,6 +133,12 @@ class UnifiedMealSearchResults extends ConsumerWidget {
           child: UnifiedFoodSearchResults(
             controllerKey: controllerKey,
             scrollController: scrollController,
+            // Declutter the meal-log search surface — the quick-match strip
+            // above and this list's grouping already make the source of each
+            // result obvious without a "Catalog & Suggestions" label + count
+            // badge (item 4). Swap Food / Food Preferences / Carb Loading are
+            // unaffected (they don't pass this).
+            showSectionHeaders: false,
             userFoodItemBuilder: (food) => _FoodResultTile(
               food: food,
               onTap: () => onFoodTap(food),
@@ -173,14 +180,19 @@ class _QuickMatchCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       width: 120,
+      height: 104,
       child: Card(
         margin: const EdgeInsets.only(right: 8),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadius.md),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -202,6 +214,8 @@ class _QuickMatchCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   sublabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

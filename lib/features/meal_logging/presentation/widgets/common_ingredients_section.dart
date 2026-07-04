@@ -44,6 +44,7 @@ class CommonIngredientsSection extends ConsumerWidget {
 
     return ListView(
       controller: scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
@@ -75,6 +76,8 @@ class CommonIngredientsSection extends ConsumerWidget {
               ),
               title: Text(
                 assembly.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -85,6 +88,8 @@ class CommonIngredientsSection extends ConsumerWidget {
                 'C ${assembly.totalCarbsG.toStringAsFixed(0)}g  '
                 'P ${assembly.totalProteinG.toStringAsFixed(0)}g  '
                 'F ${assembly.totalFatG.toStringAsFixed(0)}g',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               trailing: const Icon(Icons.add_circle_outline, size: 20),
@@ -109,6 +114,8 @@ class CommonIngredientsSection extends ConsumerWidget {
               dense: true,
               title: Text(
                 ingredient.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,

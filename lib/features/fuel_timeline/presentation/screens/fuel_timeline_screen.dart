@@ -15,7 +15,7 @@ import '../../../content/application/content_service.dart';
 import '../../../integrations/presentation/widgets/garmin_connect_banner.dart';
 import '../../../meal_logging/domain/meal_log.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
-import '../../../meal_logging/presentation/widgets/tabbed_log_sheet.dart';
+import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
 import '../../application/day_timeline_assembler.dart';
 import '../../domain/fuel_timeline_filter.dart';
 import '../../domain/timeline_node.dart';
@@ -364,7 +364,7 @@ class FuelTimelineScreen extends ConsumerWidget {
               label: '+ Add Food',
               color: onSurface.withValues(alpha: 0.8),
               onTap: () =>
-                  showTabbedLogSheet(context, logDate: _ymd(selectedDate)),
+                  openLogMealScreen(context, logDate: _ymd(selectedDate)),
             ),
           ),
         if (filter.showsAddFood && filter.showsAddActivity)

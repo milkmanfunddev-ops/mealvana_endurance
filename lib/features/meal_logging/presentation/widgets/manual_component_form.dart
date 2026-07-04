@@ -54,6 +54,7 @@ class _ManualComponentFormState extends ConsumerState<ManualComponentForm> {
 
   void _addToMeal() {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     final component = MealComponent(
       name: _nameCtrl.text.trim(),
@@ -131,6 +132,7 @@ class _ManualComponentFormState extends ConsumerState<ManualComponentForm> {
 
     return SingleChildScrollView(
       controller: widget.scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: AppSpacing.screenPaddingHorizontal,
       child: form,
     );

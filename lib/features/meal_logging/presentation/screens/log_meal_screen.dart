@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
@@ -21,39 +22,36 @@ import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
-import '../screens/log_scanned_food_screen.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/draft_meal_controller.dart';
 import '../providers/meal_log_providers.dart';
-import 'common_ingredients_section.dart';
-import 'draft_meal_bar.dart';
-import 'log_sheet_helpers.dart';
-import 'manual_component_form.dart';
-import 'unified_meal_search_results.dart';
+import '../widgets/common_ingredients_section.dart';
+import '../widgets/draft_meal_bar.dart';
+import '../widgets/log_sheet_helpers.dart';
+import '../widgets/manual_component_form.dart';
+import '../widgets/unified_meal_search_results.dart';
+import 'log_scanned_food_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
 
-/// Opens the tabbed DraggableScrollableSheet for logging a meal.
+/// Opens the full-screen "Log a Meal" experience.
 ///
 /// Build-a-meal redesign: every tab's item tap adds to an in-progress draft
 /// ([draftMealControllerProvider], scoped to [logDate]) rather than writing a
-/// terminal `meal_logs` row per tap. A persistent [DraftMealBar] at the
-/// bottom shows running totals and commits the whole draft as a single log
-/// entry via "Save meal". A unified search bar at the top (item 25) searches
+/// terminal `meal_logs` row per tap. A persistent [DraftMealBar] pinned to the
+/// bottom of the screen shows running totals and commits the whole draft as a
+/// single log entry via "Save meal". A unified search bar at the top searches
 /// foods, recipes, common ingredients, and favorites/recents together.
-void showTabbedLogSheet(BuildContext context, {required String logDate}) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => TabbedLogSheet(logDate: logDate),
+void openLogMealScreen(BuildContext context, {required String logDate}) {
+  Navigator.of(context).push<void>(
+    MaterialPageRoute(builder: (_) => LogMealScreen(logDate: logDate)),
   );
 }
 
 // ---------------------------------------------------------------------------
-// Sheet tab enum
+// Tab enum
 // ---------------------------------------------------------------------------
 
 enum _LogTab { recent, favorites, common, recipes, describe, manual }
@@ -78,22 +76,23 @@ extension _LogTabLabel on _LogTab {
 }
 
 // ---------------------------------------------------------------------------
-// TabbedLogSheet
+// LogMealScreen — full-screen "Log a Meal" experience
 // ---------------------------------------------------------------------------
 
-/// The DraggableScrollableSheet for meal logging
+/// Full-screen page for logging a meal
 /// (Recent · Favorites · Common · Recipes · Describe · Manual), plus a
-/// unified search bar and a persistent build-a-meal draft bar.
-class TabbedLogSheet extends ConsumerStatefulWidget {
-  const TabbedLogSheet({super.key, required this.logDate});
+/// unified search bar and a persistent build-a-meal draft bar pinned to the
+/// bottom of the screen.
+class LogMealScreen extends ConsumerStatefulWidget {
+  const LogMealScreen({super.key, required this.logDate});
 
   final String logDate;
 
   @override
-  ConsumerState<TabbedLogSheet> createState() => _TabbedLogSheetState();
+  ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
 }
 
-class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
+class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   _LogTab _activeTab = _LogTab.recent;
 
   /// Controller key for the shared [FoodSearchController] instance backing
@@ -102,14 +101,18 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
 
   final TextEditingController _searchCtrl = TextEditingController();
 
+  /// Single scroll controller shared by whichever tab body / search-results
+  /// list is currently mounted (only one is ever in the tree at a time).
+  final ScrollController _scrollController = ScrollController();
+
   List<Recipe> _recipes = [];
   bool _recipesLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // The unified search bar is always visible (item 25), so seed its data
-    // eagerly rather than gating behind a tab selection.
+    // The unified search bar is always visible, so seed its data eagerly
+    // rather than gating behind a tab selection.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
       _seedFoodPool();
@@ -119,7 +122,17 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  // -- keyboard dismissal ------------------------------------------------
+
+  /// Dismisses the on-screen keyboard. Called whenever a search result or
+  /// tab item is tapped/added so the keyboard doesn't linger after the user
+  /// has moved on from typing (item 3).
+  void _unfocus() {
+    if (mounted) FocusScope.of(context).unfocus();
   }
 
   // -- draft accumulator helpers ---------------------------------------------
@@ -128,6 +141,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
       ref.read(draftMealControllerProvider(widget.logDate).notifier);
 
   void _addComponent(MealComponent component, {String? toastLabel}) {
+    _unfocus();
     _draft.addComponent(component);
     if (mounted) {
       MealvanaSnackbar.showSuccess(
@@ -138,6 +152,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
   }
 
   void _addComponents(Iterable<MealComponent> components, String toastLabel) {
+    _unfocus();
     _draft.addComponents(components);
     if (mounted) MealvanaSnackbar.showSuccess(context, 'Added $toastLabel');
   }
@@ -275,6 +290,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
   }
 
   Future<void> _onBarcodeScan() async {
+    _unfocus();
     final result = await context.pushNamed<dynamic>(
       'barcode-scanner',
       extra: {'category': 'add_food', 'context': 'meal_log_discover'},
@@ -304,6 +320,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
       return;
     }
 
+    _unfocus();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -344,7 +361,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     }
   }
 
-  // -- servings-only "add to meal" sheet (no per-item slot — item 25) -------
+  // -- servings-only "add to meal" sheet (no per-item slot) -----------------
 
   /// Shows a servings stepper sheet for [title], previewing macros via
   /// [component] at the current servings value, and calling [onConfirm] with
@@ -479,6 +496,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
   }
 
   void _onFoodTap(Food food) {
+    _unfocus();
     _showServingsSheet(
       title: food.displayName ?? food.name,
       component: (servings) => _foodComponent(food, servings),
@@ -505,6 +523,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
   }
 
   void _onRecipeTap(Recipe recipe) {
+    _unfocus();
     _showServingsSheet(
       title: recipe.name,
       component: (servings) => _recipeComponent(recipe, servings),
@@ -515,7 +534,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
 
   // --------------------------------------------------------------------------
 
-  String _sheetTitle() {
+  String _screenTitle() {
     try {
       final date = DateTime.parse(widget.logDate);
       final today = DateTime.now();
@@ -541,126 +560,113 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     );
     final isSearching = searchState.searchQuery.isNotEmpty;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    return Scaffold(
+      backgroundColor: bg,
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        backgroundColor: bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('log_meal.back_button'),
+        ),
+        title: Text(
+          _screenTitle(),
+          style: AppTextStyles.sectionTitle.copyWith(color: textColor),
+        ),
       ),
-      padding: EdgeInsets.only(
-        bottom:
-            MediaQuery.of(context).viewInsets.bottom +
-            MediaQuery.of(context).padding.bottom,
-      ),
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (ctx, scrollController) {
-          return Column(
-            children: [
-              // ── Static header (drag handle + title + search + tabs) ──────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  children: [
-                    const SizedBox(height: AppSpacing.md),
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.black12,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      _sheetTitle(),
-                      style: AppTextStyles.pageTitle.copyWith(color: textColor),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    // Unified search bar — searches foods, recipes, common
-                    // ingredients, and favorites/recents together (item 25).
-                    FoodSearchBar(
-                      controller: _searchCtrl,
-                      hintText: 'Search anything to add...',
-                      onChanged: _onSearchChanged,
-                      onSearch: _onSearchButtonPressed,
-                      onBarcodeScan: _onBarcodeScan,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _TabBar(
-                      activeTab: _activeTab,
-                      onTabSelected: (tab) => setState(() => _activeTab = tab),
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
+      body: Column(
+        children: [
+          // ── Static header (search + tabs) ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              0,
+            ),
+            child: Column(
+              children: [
+                // Unified search bar — searches foods, recipes, common
+                // ingredients, and favorites/recents together.
+                FoodSearchBar(
+                  controller: _searchCtrl,
+                  hintText: 'Search anything to add...',
+                  onChanged: _onSearchChanged,
+                  onSearch: _onSearchButtonPressed,
+                  onBarcodeScan: _onBarcodeScan,
+                  onTapOutside: (_) => _unfocus(),
                 ),
-              ),
-              // ── Scrollable content: search results or the active tab ────
-              Expanded(
-                child: isSearching
-                    ? UnifiedMealSearchResults(
-                        query: searchState.searchQuery,
-                        recipes: _recipes,
-                        controllerKey: _foodSearchControllerKey,
-                        scrollController: scrollController,
-                        onAddRecipe: _onRecipeTap,
-                        onAddFavorite: (meal) => _addComponents(
-                          meal.components,
-                          meal.name,
-                        ),
-                        onAddRecent: (log) =>
-                            _addComponent(syntheticFromLog(log), toastLabel: log.name),
-                        onAddIngredient: (ingredient) => _addComponent(ingredient),
-                        onFoodTap: _onFoodTap,
-                        onCatalogTap: _onCatalogTap,
-                        onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
-                        onSearchOpenFoodFacts: () =>
-                            _onSearchButtonPressed(searchState.searchQuery),
-                      )
-                    : _buildTabBody(ctx, scrollController, isDark),
-              ),
-              // ── Persistent build-a-meal draft bar ────────────────────────
-              DraftMealBar(
-                logDate: widget.logDate,
-                onSaved: () => Navigator.of(ctx).pop(),
-              ),
-            ],
-          );
-        },
+                const SizedBox(height: AppSpacing.sm),
+                _TabBar(
+                  activeTab: _activeTab,
+                  onTabSelected: (tab) {
+                    _unfocus();
+                    setState(() => _activeTab = tab);
+                  },
+                  isDark: isDark,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            ),
+          ),
+          // ── Scrollable content: search results or the active tab ────────
+          Expanded(
+            child: isSearching
+                ? UnifiedMealSearchResults(
+                    query: searchState.searchQuery,
+                    recipes: _recipes,
+                    controllerKey: _foodSearchControllerKey,
+                    scrollController: _scrollController,
+                    onAddRecipe: _onRecipeTap,
+                    onAddFavorite: (meal) => _addComponents(
+                      meal.components,
+                      meal.name,
+                    ),
+                    onAddRecent: (log) =>
+                        _addComponent(syntheticFromLog(log), toastLabel: log.name),
+                    onAddIngredient: (ingredient) => _addComponent(ingredient),
+                    onFoodTap: _onFoodTap,
+                    onCatalogTap: _onCatalogTap,
+                    onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
+                    onSearchOpenFoodFacts: () =>
+                        _onSearchButtonPressed(searchState.searchQuery),
+                  )
+                : _buildTabBody(context, isDark),
+          ),
+        ],
+      ),
+      // ── Persistent build-a-meal draft bar, pinned to the bottom ─────────
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: DraftMealBar(
+          logDate: widget.logDate,
+          onSaved: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }
 
-  Widget _buildTabBody(
-    BuildContext ctx,
-    ScrollController scrollController,
-    bool isDark,
-  ) {
+  Widget _buildTabBody(BuildContext context, bool isDark) {
     switch (_activeTab) {
       case _LogTab.recent:
         return _RecentTab(
-          scrollController: scrollController,
+          scrollController: _scrollController,
           onTap: (log) => _addComponent(syntheticFromLog(log), toastLabel: log.name),
         );
       case _LogTab.favorites:
         return _FavoritesTab(
-          scrollController: scrollController,
+          scrollController: _scrollController,
           onTap: (meal) => _addComponents(meal.components, meal.name),
         );
       case _LogTab.common:
         return CommonIngredientsSection(
           logDate: widget.logDate,
-          scrollController: scrollController,
+          scrollController: _scrollController,
         );
       case _LogTab.recipes:
         return _RecipesTab(
-          scrollController: scrollController,
+          scrollController: _scrollController,
           recipes: _recipes,
           isLoading: _recipesLoading,
           onRecipeTap: _onRecipeTap,
@@ -668,13 +674,13 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
       case _LogTab.describe:
         return _AiTab(
           logDate: widget.logDate,
-          scrollController: scrollController,
-          onNavigateAway: () => Navigator.of(ctx).pop(),
+          scrollController: _scrollController,
+          onNavigateAway: () => Navigator.of(context).pop(),
         );
       case _LogTab.manual:
         return ManualComponentForm(
           logDate: widget.logDate,
-          scrollController: scrollController,
+          scrollController: _scrollController,
         );
     }
   }
@@ -781,6 +787,7 @@ class _RecentTab extends ConsumerWidget {
         }
         return ListView(
           controller: scrollController,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
@@ -830,6 +837,7 @@ class _FavoritesTab extends ConsumerWidget {
         }
         return ListView(
           controller: scrollController,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
@@ -916,6 +924,7 @@ class _SavedMealRow extends StatelessWidget {
         title: Text(
           meal.name,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: _macroLine(
@@ -970,6 +979,7 @@ class _RecentMealRow extends StatelessWidget {
         title: Text(
           log.name,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: _macroLine(
@@ -1003,6 +1013,7 @@ Widget? _macroLine(
   if (parts.isEmpty) return null;
   return Text(
     parts.join('  ·  '),
+    maxLines: 1,
     style: Theme.of(context).textTheme.bodySmall,
     overflow: TextOverflow.ellipsis,
   );
@@ -1097,6 +1108,7 @@ class _RecipesTabState extends State<_RecipesTab> {
                 )
               : ListView(
                   controller: widget.scrollController,
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
                     vertical: AppSpacing.xs,
@@ -1124,10 +1136,12 @@ class _RecipesTabState extends State<_RecipesTab> {
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
                           '$cal kcal  ·  C ${carb}g  P ${prot}g  F ${fat}g',
+                          maxLines: 1,
                           style: Theme.of(context).textTheme.bodySmall,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1249,6 +1263,8 @@ class _TypeChip extends StatelessWidget {
         ),
         child: Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: selected
                 ? AppColors.blackberry
@@ -1264,7 +1280,7 @@ class _TypeChip extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // AI tab — unchanged terminal flow (photo/describe review screen owns its
-// own name/slot/items confirmation; see item 13 for the editor unification).
+// own name/slot/items confirmation).
 // ---------------------------------------------------------------------------
 
 class _AiTab extends ConsumerStatefulWidget {
@@ -1295,12 +1311,13 @@ class _AiTabState extends ConsumerState<_AiTab> {
 
   Future<void> _analyze() async {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
     setState(() => _isAnalyzing = true);
     try {
       final service = ref.read(mealAiServiceProvider);
       final result = await service.describeMeal(_ctrl.text.trim());
       if (!mounted) return;
-      // Capture router before closing the sheet.
+      // Capture router before closing the screen.
       final router = GoRouter.of(context);
       widget.onNavigateAway();
       router.push(
@@ -1359,7 +1376,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
         analysis = await service.analyzePhoto(File(file.path));
       }
       if (!mounted) return;
-      // Capture router before closing the sheet.
+      // Capture router before closing the screen.
       final router = GoRouter.of(context);
       widget.onNavigateAway();
       router.push(
@@ -1394,6 +1411,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       children: [
         ListView(
           controller: widget.scrollController,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
@@ -1414,6 +1432,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
                 minLines: 3,
                 textCapitalization: TextCapitalization.sentences,
                 enabled: !_isAnalyzing,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 decoration: const InputDecoration(
                   labelText: 'What did you eat?',
                   hintText:

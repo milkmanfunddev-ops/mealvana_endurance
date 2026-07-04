@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_log.dart';
 import '../providers/meal_log_providers.dart';
+import '../screens/log_meal_screen.dart';
 import 'meal_log_row.dart';
-import 'tabbed_log_sheet.dart';
 
 /// Displays the list of meal log entries for [selectedDate] and a button
 /// to open the log-method picker sheet.
@@ -171,15 +171,15 @@ void _deleteWithUndo(BuildContext context, WidgetRef ref, MealLog log) {
   );
 }
 
-/// Opens the tabbed meal log sheet.
+/// Opens the full-screen "Log a Meal" experience.
 void _openLogSheet(BuildContext context, WidgetRef ref, String dateStr) {
-  showTabbedLogSheet(context, logDate: dateStr);
+  openLogMealScreen(context, logDate: dateStr);
 }
 
 // ---------------------------------------------------------------------------
 // Legacy MealLogMethodSheet — kept for the re-export in meal_log_method_sheet.dart
 // and for callers that navigate to it directly.  The default entry point from
-// TodayLogSection now opens [TabbedLogSheet] via [showTabbedLogSheet].
+// TodayLogSection now opens [LogMealScreen] via [openLogMealScreen].
 // ---------------------------------------------------------------------------
 
 /// Bottom sheet presenting the five meal-logging entry methods (legacy).

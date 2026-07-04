@@ -18,6 +18,7 @@ class FoodSearchBar extends StatelessWidget {
     this.hintText = 'Search foods...',
     this.showClearButton = false,
     this.onClear,
+    this.onTapOutside,
   });
 
   final TextEditingController controller;
@@ -31,6 +32,11 @@ class FoodSearchBar extends StatelessWidget {
   final bool showClearButton;
   final VoidCallback? onClear;
 
+  /// Optional callback fired when the user taps outside the search field
+  /// while it's focused (e.g. to dismiss the keyboard after tapping a result
+  /// elsewhere on screen). Defaults to null (unchanged legacy behavior).
+  final void Function(PointerDownEvent)? onTapOutside;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -40,6 +46,7 @@ class FoodSearchBar extends StatelessWidget {
           height: AppSizes.inputHeight,
           child: TextField(
             controller: controller,
+            onTapOutside: onTapOutside,
             onChanged: (value) {
               // For real-time search filtering (not API search)
               if (onChanged != null) {

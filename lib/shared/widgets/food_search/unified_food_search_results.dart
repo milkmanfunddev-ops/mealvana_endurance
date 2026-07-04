@@ -28,6 +28,7 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
     this.scrollController,
     this.showOpenFoodFactsButton = true,
     this.onNutritionProductResultTap,
+    this.showSectionHeaders = true,
   });
 
   /// Controller key to read the right FoodSearchController instance.
@@ -76,6 +77,14 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
   /// underlying data (ITEM 18 — shared cascade stays solid for every
   /// composing surface; only opted-in surfaces render it).
   final void Function(NutritionProductSearchResult)? onNutritionProductResultTap;
+
+  /// Whether to render section headers ("My Foods", "Catalog & Suggestions",
+  /// "More Results") above their respective item groups. Defaults to `true`
+  /// (unchanged behavior for Swap Food / Food Preferences / Carb Loading).
+  /// The meal-log search surface sets this to `false` to declutter — the
+  /// items themselves still render, grouped and spaced, just without the
+  /// label + count-badge row above them.
+  final bool showSectionHeaders;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -136,15 +145,17 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
 
     return ListView(
       controller: scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       children: [
         // My Foods section
         if (searchState.userFoodResults.isNotEmpty) ...[
-          _MyFoodsSectionHeader(
-            userFoodCount: searchState.userFoodResults.length,
-            isExpanded: isMyFoodsExpanded,
-            onToggle: onMyFoodsSectionToggle ?? () {},
-          ),
+          if (showSectionHeaders)
+            _MyFoodsSectionHeader(
+              userFoodCount: searchState.userFoodResults.length,
+              isExpanded: isMyFoodsExpanded,
+              onToggle: onMyFoodsSectionToggle ?? () {},
+            ),
           if (isMyFoodsExpanded)
             ...searchState.userFoodResults.map(
               (food) => Padding(
@@ -159,37 +170,38 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
         if (searchState.templateFoodResults.isNotEmpty ||
             catalogToShow.isNotEmpty ||
             searchState.isSearchingCatalog) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Row(
-              children: [
-                Text(
-                  'Catalog & Suggestions',
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.orange.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${searchState.templateFoodResults.length + searchState.catalogResults.length}',
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: AppColors.orange,
-                      fontWeight: FontWeight.w600,
+          if (showSectionHeaders)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Text(
+                    'Catalog & Suggestions',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.orange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${searchState.templateFoodResults.length + searchState.catalogResults.length}',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
           // Template food items
           ...searchState.templateFoodResults.map(
@@ -258,18 +270,19 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
         if (onNutritionProductResultTap != null &&
             (searchState.nutritionProductResults.isNotEmpty ||
                 searchState.isSearchingNutritionProducts)) ...[
-          Padding(
-            padding: const EdgeInsets.only(
-              top: AppSpacing.sm,
-              bottom: AppSpacing.sm,
-            ),
-            child: Text(
-              'More Results',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+          if (showSectionHeaders)
+            Padding(
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.sm,
+              ),
+              child: Text(
+                'More Results',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
-          ),
           ...searchState.nutritionProductResults.map(
             (result) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
