@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../daily_macros/presentation/widgets/macro_palette.dart';
 import '../../../meal_logging/domain/meal_slot.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../domain/timeline_node.dart';
 import '../fuel_timeline_type.dart';
 
@@ -12,7 +16,7 @@ import '../fuel_timeline_type.dart';
 /// Phase 2 renders cards display-only (meal macro line + workout summary).
 /// Tap interactions — expand/Swap/Remove on meals, open the Ride Fuel sheet on
 /// workouts — arrive in Phase 3 via [onTap].
-class TimelineNodeTile extends StatelessWidget {
+class TimelineNodeTile extends ConsumerWidget {
   const TimelineNodeTile({
     super.key,
     required this.node,
@@ -57,8 +61,11 @@ class TimelineNodeTile extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
     // Foreground reads cream-on-blackberry in dark mode, blackberry-on-cream
     // in light mode (matches the app's Kyle light/dark token pair).
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
@@ -108,6 +115,7 @@ class TimelineNodeTile extends StatelessWidget {
                     context,
                     activity,
                     onSurface,
+                    useMetric,
                   ),
                 },
               ),
@@ -305,8 +313,13 @@ class TimelineNodeTile extends StatelessWidget {
     );
   }
 
-  Widget _workoutCard(BuildContext context, dynamic activity, Color onSurface) {
-    final subtitle = _workoutSubtitle(activity);
+  Widget _workoutCard(
+    BuildContext context,
+    dynamic activity,
+    Color onSurface,
+    bool useMetric,
+  ) {
+    final subtitle = _workoutSubtitle(activity, useMetric);
     final card = Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
@@ -394,14 +407,21 @@ class TimelineNodeTile extends StatelessWidget {
     );
   }
 
-  String? _workoutSubtitle(dynamic activity) {
+  String? _workoutSubtitle(dynamic activity, bool useMetric) {
     final parts = <String>[];
     final dist = activity.distanceMiles as double?;
     final speed = activity.cyclingSpeedMph as double?;
     final dur = activity.durationMinutes as int?;
-    if (dist != null) parts.add('${dist.toStringAsFixed(1)} mi');
+    if (dist != null) {
+      parts.add(
+        UnitFormatter.formatDistance(
+          dist,
+          unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+        ),
+      );
+    }
     if (speed != null) {
-      parts.add('${speed.toStringAsFixed(1)} mph');
+      parts.add(UnitFormatter.formatSpeed(speed, useMetric: useMetric));
     } else if (dur != null) {
       parts.add('$dur min');
     }

@@ -7,6 +7,9 @@ import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
@@ -52,6 +55,9 @@ class ActivityCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     // Wrap in Dismissible for swipe-to-delete (only when NOT in selection mode)
     if (!isSelectionMode) {
@@ -62,15 +68,20 @@ class ActivityCard extends ConsumerWidget {
         confirmDismiss: (direction) async {
           return await _handleDelete(context, ref);
         },
-        child: _buildCard(context, ref, isDark),
+        child: _buildCard(context, ref, isDark, useMetric),
       );
     }
 
     // Selection mode - no dismissible
-    return _buildCard(context, ref, isDark);
+    return _buildCard(context, ref, isDark, useMetric);
   }
 
-  Widget _buildCard(BuildContext context, WidgetRef ref, bool isDark) {
+  Widget _buildCard(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    bool useMetric,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -100,7 +111,9 @@ class ActivityCard extends ConsumerWidget {
               ],
               _buildActivityIcon(),
               const SizedBox(width: 12),
-              Expanded(child: _buildActivityDetails(context, isDark)),
+              Expanded(
+                child: _buildActivityDetails(context, isDark, useMetric),
+              ),
               // Show chevron when NOT in selection mode
               if (!isSelectionMode)
                 Icon(
@@ -187,7 +200,11 @@ class ActivityCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildActivityDetails(BuildContext context, bool isDark) {
+  Widget _buildActivityDetails(
+    BuildContext context,
+    bool isDark,
+    bool useMetric,
+  ) {
     // Attribution is required whenever the card shows Garmin-sourced data,
     // including TP/FS-planned activities completed by a Garmin push.
     final hasGarminData = activity.hasGarminData;
@@ -209,7 +226,7 @@ class ActivityCard extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          _formatActivityDetails(),
+          _formatActivityDetails(useMetric),
           style: TextStyle(
             fontFamily: 'Apercu',
             fontSize: 12,
@@ -507,8 +524,12 @@ class ActivityCard extends ConsumerWidget {
     }
   }
 
-  String _formatActivityDetails() {
+  String _formatActivityDetails(bool useMetric) {
     final parts = <String>[];
+    final distanceUnit = useMetric
+        ? DistanceUnit.kilometers
+        : DistanceUnit.miles;
+    final paceUnit = useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
 
     // Add scheduled time first
     final timeFormat = DateFormat('h:mm a');
@@ -517,23 +538,45 @@ class ActivityCard extends ConsumerWidget {
     switch (activity.activityType) {
       case ActivityType.running:
         if (activity.distanceMiles != null) {
-          parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
+          parts.add(
+            UnitFormatter.formatDistance(
+              activity.distanceMiles!,
+              unit: distanceUnit,
+            ),
+          );
         }
-        if (activity.formattedPace != null) {
-          parts.add(activity.formattedPace!);
+        if (activity.paceTargetMinutesPerMile != null) {
+          parts.add(
+            UnitFormatter.formatPace(
+              activity.paceTargetMinutesPerMile!,
+              unit: paceUnit,
+            ),
+          );
         }
         break;
 
       case ActivityType.cycling:
         if (activity.distanceMiles != null) {
-          parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
+          parts.add(
+            UnitFormatter.formatDistance(
+              activity.distanceMiles!,
+              unit: distanceUnit,
+            ),
+          );
         }
         if (activity.cyclingSpeedMph != null) {
-          parts.add('${activity.cyclingSpeedMph!.toStringAsFixed(1)} mph');
+          parts.add(
+            UnitFormatter.formatSpeed(
+              activity.cyclingSpeedMph!,
+              useMetric: useMetric,
+            ),
+          );
         }
         break;
 
       case ActivityType.swimming:
+        // Swimming distance is pool-length convention (meters), not an
+        // imperial/metric split - leave as-is.
         if (activity.distanceMiles != null) {
           final meters = (activity.distanceMiles! * 1609.34).round();
           parts.add('${meters}m');
@@ -551,7 +594,12 @@ class ActivityCard extends ConsumerWidget {
       case ActivityType.multisport:
       case ActivityType.brick:
         if (activity.distanceMiles != null) {
-          parts.add('${activity.distanceMiles!.toStringAsFixed(1)} mi');
+          parts.add(
+            UnitFormatter.formatDistance(
+              activity.distanceMiles!,
+              unit: distanceUnit,
+            ),
+          );
         }
         break;
 

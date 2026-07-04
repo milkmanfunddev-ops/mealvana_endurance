@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +7,10 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_targ
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/settings_controller.dart';
 import '../widgets/during_sport_override_section.dart';
 import '../widgets/nutrition_targets_help_bottom_sheet.dart';
@@ -39,6 +44,16 @@ class _NutritionTargetsScreenState
   final _formKey = GlobalKey<FormState>();
   bool _hasChanges = false;
   bool _isSaving = false;
+
+  // Mirrors the user's unitSystemProvider preference for the fluid fields
+  // (all other fields - carbs/protein/fat/sodium - are physiological units
+  // and unit-invariant). Fluid overrides are stored canonically in mL; when
+  // this is false (imperial - the app default), fields display/accept fl oz
+  // and are converted back to mL on save. Kept as local state (rather than
+  // watched directly in build) so already-entered values can be converted in
+  // place via `ref.listen` if the preference changes elsewhere while this
+  // screen is open.
+  bool _useMetric = true;
 
   // Pre-activity controllers
   final _preCarbsController = TextEditingController();
@@ -89,7 +104,7 @@ class _NutritionTargetsScreenState
           _setController(_preProteinController, overrides.pre!.proteinG);
           _setController(_preFatController, overrides.pre!.fatG);
           _setController(_preSodiumController, overrides.pre!.sodiumMg);
-          _setController(_preFluidController, overrides.pre!.fluidMl);
+          _setFluidController(_preFluidController, overrides.pre!.fluidMl);
         }
 
         // During Run (sport-specific, with legacy fallback)
@@ -100,7 +115,7 @@ class _NutritionTargetsScreenState
             _duringRunSodiumRateController,
             duringRun.sodiumRateMgPerH,
           );
-          _setController(
+          _setFluidController(
             _duringRunFluidRateController,
             duringRun.fluidRateMlPerH,
           );
@@ -117,7 +132,7 @@ class _NutritionTargetsScreenState
             _duringBikeSodiumRateController,
             duringBike.sodiumRateMgPerH,
           );
-          _setController(
+          _setFluidController(
             _duringBikeFluidRateController,
             duringBike.fluidRateMlPerH,
           );
@@ -131,7 +146,7 @@ class _NutritionTargetsScreenState
             _duringSwimSodiumRateController,
             duringSwim.sodiumRateMgPerH,
           );
-          _setController(
+          _setFluidController(
             _duringSwimFluidRateController,
             duringSwim.fluidRateMlPerH,
           );
@@ -142,9 +157,52 @@ class _NutritionTargetsScreenState
           _setController(_postCarbsController, overrides.post!.carbsG);
           _setController(_postProteinController, overrides.post!.proteinG);
           _setController(_postSodiumController, overrides.post!.sodiumMg);
-          _setController(_postFluidController, overrides.post!.fluidMl);
+          _setFluidController(_postFluidController, overrides.post!.fluidMl);
         }
       });
+    }
+
+    // Apply the user's unit preference to the fluid fields (all set above in
+    // canonical mL). Best-effort - falls back to the mL display already set
+    // if the preference can't be resolved.
+    unawaited(_applyFluidUnitPreference());
+  }
+
+  Future<void> _applyFluidUnitPreference() async {
+    try {
+      final unitSystem = await ref.read(unitSystemProvider.future);
+      final useMetric = unitSystem == UnitSystem.metric;
+      if (useMetric != _useMetric && mounted) {
+        setState(() {
+          _convertFluidFieldsForUnitChange(toMetric: useMetric);
+          _useMetric = useMetric;
+        });
+      }
+    } catch (_) {
+      // Non-fatal - default to the mL display already set.
+    }
+  }
+
+  /// Converts whatever is currently entered in the fluid fields to match
+  /// [toMetric], so a mid-session unit-preference change doesn't silently
+  /// mismatch the displayed value against its label. Best-effort -
+  /// unparsable/empty fields are left untouched.
+  void _convertFluidFieldsForUnitChange({required bool toMetric}) {
+    for (final controller in [
+      _preFluidController,
+      _duringRunFluidRateController,
+      _duringBikeFluidRateController,
+      _duringSwimFluidRateController,
+      _postFluidController,
+    ]) {
+      final entered = double.tryParse(controller.text.trim());
+      if (entered == null) continue;
+      final converted = toMetric
+          ? entered * UnitFormatter.kMlPerFlOz
+          : entered * UnitFormatter.kFlOzPerMl;
+      controller.text = converted == converted.roundToDouble()
+          ? converted.toInt().toString()
+          : converted.toStringAsFixed(1);
     }
   }
 
@@ -155,6 +213,27 @@ class _NutritionTargetsScreenState
           ? value.toInt().toString()
           : value.toStringAsFixed(1);
     }
+  }
+
+  /// Same as [_setController], but for fluid fields whose canonical unit
+  /// (mL) differs from the displayed unit when [_useMetric] is false
+  /// (imperial - the app default) - converts to fl oz for display.
+  void _setFluidController(TextEditingController controller, double? mlValue) {
+    if (mlValue == null) return;
+    final displayValue = _useMetric
+        ? mlValue
+        : mlValue * UnitFormatter.kFlOzPerMl;
+    controller.text = displayValue == displayValue.roundToDouble()
+        ? displayValue.toInt().toString()
+        : displayValue.toStringAsFixed(1);
+  }
+
+  /// Parses a fluid field's displayed value back to the canonical mL unit
+  /// used for storage.
+  double? _parseFluidField(TextEditingController controller) {
+    final value = _parseField(controller);
+    if (value == null) return null;
+    return _useMetric ? value : value * UnitFormatter.kMlPerFlOz;
   }
 
   @override
@@ -315,7 +394,7 @@ class _NutritionTargetsScreenState
     final during = DuringActivityOverrides(
       carbRateGPerH: _parseField(carbController),
       sodiumRateMgPerH: _parseField(sodiumController),
-      fluidRateMlPerH: _parseField(fluidController),
+      fluidRateMlPerH: _parseFluidField(fluidController),
     );
     return during.hasAnyOverride ? during : null;
   }
@@ -330,14 +409,14 @@ class _NutritionTargetsScreenState
       proteinG: _parseField(_preProteinController),
       fatG: _parseField(_preFatController),
       sodiumMg: _parseField(_preSodiumController),
-      fluidMl: _parseField(_preFluidController),
+      fluidMl: _parseFluidField(_preFluidController),
     );
 
     final post = PostActivityOverrides(
       carbsG: _parseField(_postCarbsController),
       proteinG: _parseField(_postProteinController),
       sodiumMg: _parseField(_postSodiumController),
-      fluidMl: _parseField(_postFluidController),
+      fluidMl: _parseFluidField(_postFluidController),
     );
 
     var overrides = NutritionTargetOverrides(
@@ -421,11 +500,27 @@ class _NutritionTargetsScreenState
 
   @override
   Widget build(BuildContext context) {
+    // React to unit-preference changes made elsewhere (e.g. another settings
+    // screen) while this screen is mounted - convert the displayed fluid
+    // values in place so they never mismatch their unit label.
+    ref.listen<AsyncValue<UnitSystem>>(unitSystemProvider, (previous, next) {
+      final newUseMetric = next.value == UnitSystem.metric;
+      if (newUseMetric != _useMetric) {
+        setState(() {
+          _convertFluidFieldsForUnitChange(toMetric: newUseMetric);
+          _useMetric = newUseMetric;
+        });
+      }
+    });
+
     final showRunHighCarbWarning = _isHighCarbRate(
       _duringRunCarbRateController,
     );
     final showBikeHighCarbWarning = _isHighCarbRate(
       _duringBikeCarbRateController,
+    );
+    final fluidUnitLabel = UnitFormatter.fluidUnitLabel(
+      useMetric: _useMetric,
     );
 
     return Scaffold(
@@ -528,7 +623,7 @@ class _NutritionTargetsScreenState
                     ),
                   ),
                   _buildField(
-                    'Fluids (ml)',
+                    'Fluids ($fluidUnitLabel)',
                     _preFluidController,
                     fieldKey: const ValueKey(
                       'nutrition_targets.pre_fluids_field',
@@ -563,6 +658,7 @@ class _NutritionTargetsScreenState
                 carbController: _duringRunCarbRateController,
                 sodiumController: _duringRunSodiumRateController,
                 fluidController: _duringRunFluidRateController,
+                useMetric: _useMetric,
                 showHighCarbRateWarning: showRunHighCarbWarning,
                 highCarbRateWarningThreshold: _highCarbWarningThresholdGPerH,
                 onHighCarbRateWarningInfoTap: _showHighCarbRateWarningInfoSheet,
@@ -579,6 +675,7 @@ class _NutritionTargetsScreenState
                 carbController: _duringBikeCarbRateController,
                 sodiumController: _duringBikeSodiumRateController,
                 fluidController: _duringBikeFluidRateController,
+                useMetric: _useMetric,
                 showHighCarbRateWarning: showBikeHighCarbWarning,
                 highCarbRateWarningThreshold: _highCarbWarningThresholdGPerH,
                 onHighCarbRateWarningInfoTap: _showHighCarbRateWarningInfoSheet,
@@ -595,6 +692,7 @@ class _NutritionTargetsScreenState
                 carbController: _duringSwimCarbRateController,
                 sodiumController: _duringSwimSodiumRateController,
                 fluidController: _duringSwimFluidRateController,
+                useMetric: _useMetric,
                 carbsDisabled: true,
                 onChanged: _markChanged,
               ),
@@ -608,7 +706,7 @@ class _NutritionTargetsScreenState
                   _buildField('Carbs (g)', _postCarbsController),
                   _buildField('Protein (g)', _postProteinController),
                   _buildField('Sodium (mg)', _postSodiumController),
-                  _buildField('Fluids (ml)', _postFluidController),
+                  _buildField('Fluids ($fluidUnitLabel)', _postFluidController),
                 ],
               ),
 

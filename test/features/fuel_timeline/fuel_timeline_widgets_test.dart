@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
@@ -13,14 +14,25 @@ import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 
 void main() {
   final date = DateTime(2026, 6, 17);
 
-  Widget wrap(Widget child, {double width = 360}) => MaterialApp(
-        home: Scaffold(
-          body: Center(child: SizedBox(width: width, child: child)),
+  // EnergyDashboardCard and TimelineNodeTile read unitSystemProvider (both
+  // are ConsumerWidgets) - pin it to imperial so distance/speed assertions
+  // below (written against mi/mph) stay deterministic regardless of the
+  // provider's real DB-backed default.
+  Widget wrap(Widget child, {double width = 360}) => ProviderScope(
+        overrides: [
+          unitSystemProvider.overrideWith((ref) async => UnitSystem.imperial),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(child: SizedBox(width: width, child: child)),
+          ),
         ),
       );
 

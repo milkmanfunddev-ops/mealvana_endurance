@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../daily_macros/presentation/widgets/macro_palette.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../domain/day_energy_summary.dart';
 import '../../domain/fuel_timeline_filter.dart';
 import '../../domain/timeline_node.dart';
@@ -13,7 +17,7 @@ import '../fuel_timeline_type.dart';
 /// - **All** → Intake + Burned (collapsed) / Energy Balance (expanded).
 /// - **Meals** → Daily budget (collapsed) / Intake + macro bars (expanded).
 /// - **Workout** → planned + count (collapsed) / Active Energy rows (expanded).
-class EnergyDashboardCard extends StatelessWidget {
+class EnergyDashboardCard extends ConsumerWidget {
   const EnergyDashboardCard({
     super.key,
     required this.filter,
@@ -34,10 +38,13 @@ class EnergyDashboardCard extends StatelessWidget {
   static final _fmt = NumberFormat.decimalPattern();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final muted = onSurface.withValues(alpha: 0.5);
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     return Container(
       width: double.infinity,
@@ -52,7 +59,7 @@ class EnergyDashboardCard extends StatelessWidget {
         children: [
           Expanded(
             child: expanded
-                ? _expanded(context, onSurface, muted)
+                ? _expanded(context, onSurface, muted, useMetric)
                 : _collapsed(context, onSurface, muted),
           ),
           IconButton(
@@ -180,14 +187,19 @@ class EnergyDashboardCard extends StatelessWidget {
 
   // ── expanded ─────────────────────────────────────────────────────────────
 
-  Widget _expanded(BuildContext context, Color onSurface, Color muted) {
+  Widget _expanded(
+    BuildContext context,
+    Color onSurface,
+    Color muted,
+    bool useMetric,
+  ) {
     switch (filter) {
       case FuelTimelineFilter.all:
         return _expandedAll(context, onSurface, muted);
       case FuelTimelineFilter.meals:
         return _expandedMeals(context, onSurface, muted);
       case FuelTimelineFilter.workout:
-        return _expandedWorkout(context, onSurface, muted);
+        return _expandedWorkout(context, onSurface, muted, useMetric);
     }
   }
 
@@ -281,7 +293,12 @@ class EnergyDashboardCard extends StatelessWidget {
     );
   }
 
-  Widget _expandedWorkout(BuildContext context, Color onSurface, Color muted) {
+  Widget _expandedWorkout(
+    BuildContext context,
+    Color onSurface,
+    Color muted,
+    bool useMetric,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -307,16 +324,21 @@ class EnergyDashboardCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 11),
-        ...workouts.map((w) => _workoutRow(w, onSurface, muted)),
+        ...workouts.map((w) => _workoutRow(w, onSurface, muted, useMetric)),
         const SizedBox(height: 13),
         _breakdownButton(),
       ],
     );
   }
 
-  Widget _workoutRow(WorkoutNode node, Color onSurface, Color muted) {
+  Widget _workoutRow(
+    WorkoutNode node,
+    Color onSurface,
+    Color muted,
+    bool useMetric,
+  ) {
     final a = node.activity;
-    final sub = _workoutSubtitle(a);
+    final sub = _workoutSubtitle(a, useMetric);
     final showKcal = workouts.length == 1 && summary.plannedWorkoutKcal > 0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -490,13 +512,22 @@ class EnergyDashboardCard extends StatelessWidget {
   String _workoutCount() =>
       workouts.length == 1 ? '1 workout' : '${workouts.length} workouts';
 
-  String? _workoutSubtitle(dynamic activity) {
+  String? _workoutSubtitle(dynamic activity, bool useMetric) {
     final parts = <String>[];
     final dist = activity.distanceMiles as double?;
     final speed = activity.cyclingSpeedMph as double?;
     final dur = activity.durationMinutes as int?;
-    if (dist != null) parts.add('${dist.toStringAsFixed(1)} mi');
-    if (speed != null) parts.add('${speed.toStringAsFixed(1)} mph');
+    if (dist != null) {
+      parts.add(
+        UnitFormatter.formatDistance(
+          dist,
+          unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+        ),
+      );
+    }
+    if (speed != null) {
+      parts.add(UnitFormatter.formatSpeed(speed, useMetric: useMetric));
+    }
     if (dur != null) parts.add('${(dur / 60).toStringAsFixed(1)} h');
     return parts.isEmpty ? null : parts.join(' · ');
   }

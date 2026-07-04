@@ -6,7 +6,10 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../application/formula_library_controller.dart';
 import '../../application/personal_formulas_controller.dart';
 import '../../domain/formula_macros.dart';
@@ -867,7 +870,7 @@ class _LabeledList extends StatelessWidget {
   }
 }
 
-class _MacrosCard extends StatelessWidget {
+class _MacrosCard extends ConsumerWidget {
   const _MacrosCard({
     required this.calories,
     required this.carbs,
@@ -885,7 +888,10 @@ class _MacrosCard extends StatelessWidget {
   final double fluid;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
     return BaseCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -909,8 +915,12 @@ class _MacrosCard extends StatelessWidget {
                     child: _Macro(
                         label: 'Sodium', value: '${sodium.round()}mg')),
                 Expanded(
-                    child:
-                        _Macro(label: 'Fluid', value: '${fluid.round()}mL')),
+                    child: _Macro(
+                        label: 'Fluid',
+                        value: UnitFormatter.formatFluids(
+                          fluid,
+                          useImperial: !useMetric,
+                        ))),
                 const Spacer(),
                 const Spacer(),
               ],
