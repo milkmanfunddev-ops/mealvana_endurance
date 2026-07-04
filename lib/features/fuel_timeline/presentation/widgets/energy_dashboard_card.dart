@@ -35,7 +35,8 @@ class EnergyDashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const onSurface = AppColors.cream;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final muted = onSurface.withValues(alpha: 0.5);
 
     return Container(
@@ -328,8 +329,10 @@ class EnergyDashboardCard extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppColors.electrolyteDark,
             ),
-            child: const Icon(
-              Icons.directions_bike,
+            child: Icon(
+              // Real activity-type icon (was hardcoded to cycling for every
+              // workout — same bug as the timeline tile's workout card).
+              a.activityType.icon,
               size: 15,
               color: AppColors.blackberry,
             ),

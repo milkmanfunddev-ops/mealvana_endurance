@@ -54,6 +54,18 @@ void main() {
         updatedAt: date,
       );
 
+  Activity run() => Activity(
+        id: 'a2',
+        userId: 'u',
+        activityType: ActivityType.running,
+        title: '5 mi Run',
+        scheduledDateTime: DateTime(2026, 6, 17, 6, 30),
+        distanceMiles: 5,
+        durationMinutes: 40,
+        createdAt: date,
+        updatedAt: date,
+      );
+
   DayEnergySummary summary({
     DateTime? at,
     DateTime? selected,
@@ -171,6 +183,56 @@ void main() {
       expect(find.byIcon(Icons.chevron_right), findsNothing);
       await tester.tap(find.text('25 MI RIDE'));
       expect(tapped, isTrue);
+    });
+
+    testWidgets('workout card icon matches the activity type (not always '
+        'cycling)', (tester) async {
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: WorkoutNode(run()),
+        timelineOpen: true,
+        trackingOn: true,
+      )));
+      expect(find.byIcon(Icons.directions_run), findsOneWidget);
+      expect(find.byIcon(Icons.directions_bike), findsNothing);
+    });
+
+    testWidgets('workout swipe left→right fires onRemove', (tester) async {
+      var removed = false;
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: WorkoutNode(ride()),
+        timelineOpen: true,
+        trackingOn: true,
+        onRemove: () => removed = true,
+        onSwap: () {},
+      )));
+      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(removed, isTrue);
+    });
+
+    testWidgets('workout swipe right→left fires onSwap', (tester) async {
+      var swapped = false;
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: WorkoutNode(ride()),
+        timelineOpen: true,
+        trackingOn: true,
+        onRemove: () {},
+        onSwap: () => swapped = true,
+      )));
+      await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
+      await tester.pumpAndSettle();
+      expect(swapped, isTrue);
+    });
+
+    testWidgets('workout card with no swipe callbacks has no Dismissible',
+        (tester) async {
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: WorkoutNode(ride()),
+        timelineOpen: true,
+        trackingOn: true,
+        onTap: () {},
+      )));
+      expect(find.byType(Dismissible), findsNothing);
     });
   });
 

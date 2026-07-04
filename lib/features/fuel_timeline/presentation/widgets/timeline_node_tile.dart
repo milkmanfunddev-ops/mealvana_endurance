@@ -55,7 +55,14 @@ class TimelineNodeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const onSurface = AppColors.cream;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Foreground reads cream-on-blackberry in dark mode, blackberry-on-cream
+    // in light mode (matches the app's Kyle light/dark token pair).
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    // The rail dot's border is meant to visually match the screen behind it
+    // (a "cutout" ring), so it must track the real background, not a fixed
+    // dark value.
+    final surfaceBg = isDark ? AppColors.blackberry : AppColors.cream;
     final dotColor = _dotColor(node);
 
     // stretch so the rail's full-height line fills each row and consecutive
@@ -84,7 +91,7 @@ class TimelineNodeTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            _rail(onSurface, dotColor),
+            _rail(onSurface, dotColor, surfaceBg),
             const SizedBox(width: 10),
           ],
           Expanded(
@@ -108,7 +115,7 @@ class TimelineNodeTile extends StatelessWidget {
     );
   }
 
-  Widget _rail(Color onSurface, Color dotColor) {
+  Widget _rail(Color onSurface, Color dotColor, Color surfaceBg) {
     return SizedBox(
       width: 16,
       child: Stack(
@@ -132,7 +139,7 @@ class TimelineNodeTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: dotColor,
-                border: Border.all(color: AppColors.blackberry, width: 2),
+                border: Border.all(color: surfaceBg, width: 2),
               ),
             ),
           ),
@@ -297,20 +304,23 @@ class TimelineNodeTile extends StatelessWidget {
 
   Widget _workoutCard(BuildContext context, dynamic activity, Color onSurface) {
     final subtitle = _workoutSubtitle(activity);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: AppColors.orange.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.orange.withValues(alpha: 0.45)),
-        ),
+    final card = Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: AppColors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.45)),
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
         child: Row(
           children: [
             _iconCircle(
               AppColors.electrolyteDark,
-              Icons.directions_bike,
+              // Real activity-type icon (was hardcoded to the cycling icon
+              // for every workout).
+              activity.activityType.icon as IconData,
               AppColors.blackberry,
               size: 40,
             ),
@@ -345,6 +355,39 @@ class TimelineNodeTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    // No swipe actions wired up (e.g. import-only activities have no edit
+    // affordance) → return the bare card.
+    if (onSwap == null && onRemove == null) return card;
+
+    // Swipe left→right = Remove, swipe right→left = Edit. Mirrors the meal
+    // row's Dismissible above: confirmDismiss always returns false, the
+    // actions run via callbacks (Remove deletes with Undo; Edit navigates)
+    // and never structurally dismiss the row.
+    return Dismissible(
+      key: ValueKey('timeline-workout-${node.id}'),
+      background: _swipeBackground(
+        color: AppColors.dragonfruit,
+        icon: Icons.delete_outline,
+        label: 'Remove',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _swipeBackground(
+        color: AppColors.electrolyteDark,
+        icon: Icons.edit_outlined,
+        label: 'Edit',
+        alignment: Alignment.centerRight,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onRemove?.call();
+        } else if (direction == DismissDirection.endToStart) {
+          onSwap?.call();
+        }
+        return false;
+      },
+      child: card,
     );
   }
 

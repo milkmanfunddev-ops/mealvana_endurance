@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/navigation/open_activity_fuel.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../calendar/presentation/providers/calendar_view_provider.dart';
 import '../../../calendar/presentation/widgets/calendar_view_toggle.dart'
@@ -41,9 +43,11 @@ class FuelTimelineScreen extends ConsumerWidget {
     final selectedDate = ref.watch(calendarSelectedDateProvider);
     final calendarMode = ref.watch(calendarViewProvider);
 
-    // Fixed blackberry surface to match the mockup (brand dark surface).
+    // Brand surface — resolves to blackberry in dark mode, cream in light
+    // mode (matches the app's ThemeData, so the screen renders correctly in
+    // both themes instead of a fixed dark surface).
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           SizedBox(height: MediaQuery.of(context).padding.top + 12),
@@ -63,6 +67,10 @@ class FuelTimelineScreen extends ConsumerWidget {
             child: ref
                 .watch(fuelTimelineDayProvider)
                 .when(
+                  // Keep showing the current day's content through a reload
+                  // (e.g. date change, invalidateSelf after a mutation)
+                  // instead of flashing back to a bare spinner.
+                  skipLoadingOnReload: true,
                   data: (result) => _body(context, ref, result, selectedDate),
                   loading: () => const Center(
                     child: CircularProgressIndicator(
@@ -166,6 +174,11 @@ class FuelTimelineScreen extends ConsumerWidget {
         child: addButtons,
       );
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    // The hollow "now" marker's fill is meant to match the real page
+    // background (a cutout), so it must track the theme, not a fixed value.
+    final surfaceBg = isDark ? AppColors.blackberry : AppColors.cream;
     // stretch so the rail line fills the full row height and meets the first
     // tile's rail below it (one continuous timeline rail).
     return IntrinsicHeight(
@@ -184,7 +197,7 @@ class FuelTimelineScreen extends ConsumerWidget {
                   bottom: 0,
                   child: Container(
                     width: 2,
-                    color: AppColors.cream.withValues(alpha: 0.22),
+                    color: onSurface.withValues(alpha: 0.22),
                   ),
                 ),
                 Padding(
@@ -194,9 +207,9 @@ class FuelTimelineScreen extends ConsumerWidget {
                     height: 9,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.blackberry,
+                      color: surfaceBg,
                       border: Border.all(
-                        color: AppColors.cream.withValues(alpha: 0.35),
+                        color: onSurface.withValues(alpha: 0.35),
                         width: 1.5,
                       ),
                     ),
@@ -240,12 +253,22 @@ class FuelTimelineScreen extends ConsumerWidget {
           onRemove: () => _deleteMealWithUndo(context, ref, meal),
         );
       case WorkoutNode(:final activity):
+        // Import-only activities (Garmin/TP/FS imports we don't natively
+        // support) can be deleted but never edited — no Swap affordance for
+        // those (see ActivityType.isImportOnly).
+        final canEdit = activity.activityType.isCreatable;
         return TimelineNodeTile(
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
           // Tap the workout → Activity Detail page (its fuel plan).
           onTap: () => openActivityFuel(context, activity),
+          // Swipe right→left → the activity editor, prefilled. Swipe
+          // left→right removes with Undo (mirrors the meal row above).
+          onSwap: canEdit
+              ? () => _openActivityEditor(context, activity)
+              : null,
+          onRemove: () => _deleteActivityWithUndo(context, ref, activity),
         );
     }
   }
@@ -253,13 +276,74 @@ class FuelTimelineScreen extends ConsumerWidget {
   /// Soft-delete a logged meal with an undo affordance (offline-first), mirroring
   /// the existing meal-log delete flow.
   void _deleteMealWithUndo(BuildContext context, WidgetRef ref, MealLog meal) {
+    // Capture the messenger before kicking off the delete so we're never
+    // relying on `context` staying valid past this point, and clear any
+    // snackbar already in flight so a rapid double-swipe can't queue two
+    // "Meal deleted" toasts back to back.
+    final messenger = ScaffoldMessenger.of(context);
     ref.read(mealLogControllerProvider.notifier).deleteLog(meal.id);
+    messenger.clearSnackBars();
     MealvanaSnackbar.showInfo(
       context,
       'Meal deleted',
+      duration: const Duration(seconds: 3),
       actionLabel: 'Undo',
       onAction: () =>
           ref.read(mealLogControllerProvider.notifier).restoreLog(meal.id),
+    );
+  }
+
+  /// Soft-delete a scheduled activity with an undo affordance, mirroring
+  /// [_deleteMealWithUndo]. There's no dedicated "restore" call for
+  /// activities (unlike meal logs), so Undo re-submits the pre-delete
+  /// [Activity] via `updateActivity` — the repository writes the object as
+  /// given, including its (null) `deletedAt`, which clears the soft-delete.
+  void _deleteActivityWithUndo(
+    BuildContext context,
+    WidgetRef ref,
+    Activity activity,
+  ) {
+    final messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(activitiesControllerProvider.notifier);
+    notifier.deleteActivity(activity.id);
+    messenger.clearSnackBars();
+    MealvanaSnackbar.showInfo(
+      context,
+      'Activity deleted',
+      duration: const Duration(seconds: 3),
+      actionLabel: 'Undo',
+      onAction: () => notifier.updateActivity(activity),
+    );
+  }
+
+  /// Opens the New Activity screen prefilled with [activity]'s data, matching
+  /// the existing "edit" entry point used by the Activities list
+  /// (see `activity_card.dart`'s no-nutrition-plan tap handling).
+  void _openActivityEditor(BuildContext context, Activity activity) {
+    context.push(
+      '/distancepacegut',
+      extra: {
+        'activityId': activity.id,
+        'initialDate': activity.scheduledDateTime,
+        'distance': activity.distanceMiles,
+        'initialDurationMinutes': activity.durationMinutes,
+        'goalPace': activity.paceTargetMinutesPerMile,
+        'initialTitle': activity.title,
+        'activityType': activity.activityType.name,
+        // Cycling-specific parameters
+        'cyclingSpeedMph': activity.cyclingSpeedMph,
+        'cyclingTerrain': activity.cyclingTerrain,
+        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
+        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
+        'cyclingSessionGoal': activity.cyclingSessionGoal,
+        // Swimming-specific parameters
+        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
+        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
+        'swimmingWaterTempC': activity.swimmingWaterTempC,
+        // Shared parameters
+        'intensityTarget': activity.intensityTarget,
+        'timeBeforeMinutes': activity.timeBeforeMinutes,
+      },
     );
   }
 
@@ -269,6 +353,8 @@ class FuelTimelineScreen extends ConsumerWidget {
     FuelTimelineFilter filter,
     DateTime selectedDate,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     return Row(
       children: [
         if (filter.showsAddFood)
@@ -276,7 +362,7 @@ class FuelTimelineScreen extends ConsumerWidget {
             child: _dashedButton(
               key: const ValueKey('fuel_timeline.add_food'),
               label: '+ Add Food',
-              color: AppColors.cream.withValues(alpha: 0.8),
+              color: onSurface.withValues(alpha: 0.8),
               onTap: () =>
                   showTabbedLogSheet(context, logDate: _ymd(selectedDate)),
             ),
@@ -322,15 +408,15 @@ class FuelTimelineScreen extends ConsumerWidget {
 
   Widget _emptyTimeline(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     return Center(
       child: Text(
         content.getValue(
           'fuel_timeline.empty_day',
           defaultValue: 'Nothing logged yet for this day.',
         ),
-        style: FtType.body.copyWith(
-          color: AppColors.cream.withValues(alpha: 0.5),
-        ),
+        style: FtType.body.copyWith(color: onSurface.withValues(alpha: 0.5)),
       ),
     );
   }

@@ -21,8 +21,6 @@ import '../fuel_timeline_type.dart';
 class FuelTimelineDayHeader extends ConsumerWidget {
   const FuelTimelineDayHeader({super.key});
 
-  static const _cream = AppColors.cream;
-  static const _dim = Color(0x80F5F3ED); // cream @ 0.5
   static const _dot = AppColors.electrolyteDark;
 
   @override
@@ -30,19 +28,26 @@ class FuelTimelineDayHeader extends ConsumerWidget {
     final selected = ref.watch(calendarSelectedDateProvider);
     final mode = ref.watch(calendarViewProvider);
     final isWeek = mode == CalendarViewMode.week;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Foreground flips cream-on-dark / blackberry-on-light; the selected-day
+    // pill fill is the foreground colour with its text as the inverse (the
+    // background it's meant to contrast against).
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    final surfaceBg = isDark ? AppColors.blackberry : AppColors.cream;
+    final dim = onSurface.withValues(alpha: 0.5);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _toggleRow(context, ref, isWeek),
+          child: _toggleRow(context, ref, isWeek, onSurface, dim),
         ),
         // More breathing room before the month nav (it was crowding BY WEEK).
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _monthNav(ref, selected, isWeek),
+          child: _monthNav(ref, selected, isWeek, onSurface),
         ),
         const SizedBox(height: 14),
         // Week strip spreads nearly edge-to-edge so the day numbers aren't
@@ -50,15 +55,21 @@ class FuelTimelineDayHeader extends ConsumerWidget {
         if (isWeek)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _weekStrip(ref, selected),
+            child: _weekStrip(ref, selected, onSurface, surfaceBg),
           ),
         const SizedBox(height: 10),
-        Container(height: 1, color: _cream.withValues(alpha: 0.1)),
+        Container(height: 1, color: onSurface.withValues(alpha: 0.1)),
       ],
     );
   }
 
-  Widget _toggleRow(BuildContext context, WidgetRef ref, bool isWeek) {
+  Widget _toggleRow(
+    BuildContext context,
+    WidgetRef ref,
+    bool isWeek,
+    Color onSurface,
+    Color dim,
+  ) {
     void setMode(CalendarViewMode m) =>
         ref.read(calendarViewProvider.notifier).setView(m);
 
@@ -70,13 +81,15 @@ class FuelTimelineDayHeader extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.only(bottom: 5),
           decoration: active
-              ? const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: _cream, width: 2)),
+              ? BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: onSurface, width: 2),
+                  ),
                 )
               : null,
           child: Text(
             text,
-            style: FtType.byWeek.copyWith(color: active ? _cream : _dim),
+            style: FtType.byWeek.copyWith(color: active ? onSurface : dim),
           ),
         ),
       );
@@ -98,14 +111,19 @@ class FuelTimelineDayHeader extends ConsumerWidget {
           child: GestureDetector(
             key: const ValueKey('fuel_timeline.settings'),
             onTap: () => context.push('/settings'),
-            child: const Icon(Icons.settings_outlined, size: 20, color: _cream),
+            child: Icon(Icons.settings_outlined, size: 20, color: onSurface),
           ),
         ),
       ],
     );
   }
 
-  Widget _monthNav(WidgetRef ref, DateTime selected, bool isWeek) {
+  Widget _monthNav(
+    WidgetRef ref,
+    DateTime selected,
+    bool isWeek,
+    Color onSurface,
+  ) {
     void shift(int dir) {
       final next = isWeek
           ? selected.add(Duration(days: 7 * dir))
@@ -118,23 +136,28 @@ class FuelTimelineDayHeader extends ConsumerWidget {
       children: [
         GestureDetector(
           onTap: () => shift(-1),
-          child: const Icon(Icons.chevron_left, size: 18, color: _cream),
+          child: Icon(Icons.chevron_left, size: 18, color: onSurface),
         ),
         const SizedBox(width: 18),
         Text(
           DateFormat('MMMM yyyy').format(selected),
-          style: FtType.monthTitle.copyWith(color: _cream),
+          style: FtType.monthTitle.copyWith(color: onSurface),
         ),
         const SizedBox(width: 18),
         GestureDetector(
           onTap: () => shift(1),
-          child: const Icon(Icons.chevron_right, size: 18, color: _cream),
+          child: Icon(Icons.chevron_right, size: 18, color: onSurface),
         ),
       ],
     );
   }
 
-  Widget _weekStrip(WidgetRef ref, DateTime selected) {
+  Widget _weekStrip(
+    WidgetRef ref,
+    DateTime selected,
+    Color onSurface,
+    Color surfaceBg,
+  ) {
     final startOfWeek = selected.subtract(Duration(days: selected.weekday % 7));
     final week = ref.watch(dailyMacrosControllerProvider).asData?.value;
     final weekly = week?.weeklyMacros ?? const [];
@@ -148,6 +171,8 @@ class FuelTimelineDayHeader extends ConsumerWidget {
               day: startOfWeek.add(Duration(days: i)),
               selected: selected,
               hasData: i < weekly.length && (weekly[i]?.isTrainingDay ?? false),
+              onSurface: onSurface,
+              surfaceBg: surfaceBg,
             ),
           ),
       ],
@@ -159,6 +184,8 @@ class FuelTimelineDayHeader extends ConsumerWidget {
     required DateTime day,
     required DateTime selected,
     required bool hasData,
+    required Color onSurface,
+    required Color surfaceBg,
   }) {
     const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     final isSelected =
@@ -174,7 +201,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
           Text(
             letters[day.weekday % 7],
             style: FtType.dayLetter.copyWith(
-              color: _cream.withValues(alpha: 0.55),
+              color: onSurface.withValues(alpha: 0.55),
             ),
           ),
           const SizedBox(height: 7),
@@ -187,7 +214,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
                       height: 34,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: _cream,
+                        color: onSurface,
                         borderRadius: BorderRadius.circular(11),
                       ),
                       child: FittedBox(
@@ -195,9 +222,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
                         child: Text(
                           '${day.day}',
                           softWrap: false,
-                          style: FtType.dayNumber.copyWith(
-                            color: AppColors.blackberry,
-                          ),
+                          style: FtType.dayNumber.copyWith(color: surfaceBg),
                         ),
                       ),
                     )
@@ -206,7 +231,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
                       child: Text(
                         '${day.day}',
                         softWrap: false,
-                        style: FtType.dayNumber.copyWith(color: _cream),
+                        style: FtType.dayNumber.copyWith(color: onSurface),
                       ),
                     ),
             ),
