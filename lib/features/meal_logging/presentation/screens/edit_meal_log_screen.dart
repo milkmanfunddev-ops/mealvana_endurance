@@ -21,7 +21,7 @@ import '../../domain/meal_slot.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_component_editor.dart';
-import '../widgets/slot_chip_selector.dart';
+import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 
 /// Edit an existing [MealLog] entry.
 ///
@@ -58,7 +58,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   static final _timeFmt = DateFormat('h:mm a');
 
   MealLog? _originalLog;
-  MealSlot _slot = MealSlot.breakfast;
+  MealSlot? _slot;
   List<MealComponent> _components = const [];
   bool _showExtra = false;
   bool _initialized = false;
@@ -324,6 +324,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       return original.copyWith(
         name: _nameCtrl.text.trim(),
         slot: _slot,
+        clearSlot: _slot == null,
         components: _components,
         photoPath: _photoPath,
         eatenAt: _eatenAt,
@@ -334,6 +335,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     return original.copyWith(
       name: _nameCtrl.text.trim(),
       slot: _slot,
+      clearSlot: _slot == null,
       calories: int.tryParse(_calCtrl.text),
       carbsG: double.tryParse(_carbCtrl.text),
       proteinG: double.tryParse(_protCtrl.text),
@@ -579,7 +581,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
-                    SlotChipSelector(
+                    OptionalSlotChipSelector(
                       selectedSlot: _slot,
                       onSlotSelected: (s) => setState(() => _slot = s),
                     ),

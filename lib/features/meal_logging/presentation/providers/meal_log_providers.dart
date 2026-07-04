@@ -181,7 +181,7 @@ class MealLogController extends _$MealLogController {
   /// Log a manual meal entry and invalidate the date's stream provider.
   Future<void> logManualMeal({
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     int? calories,
     double? carbsG,
@@ -210,7 +210,7 @@ class MealLogController extends _$MealLogController {
       );
 
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': 'manual',
         'log_date': logDate,
       });
@@ -220,7 +220,7 @@ class MealLogController extends _$MealLogController {
   /// Log a meal from the user's saved favorites.
   Future<void> logSavedMeal({
     required SavedMeal savedMeal,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
   }) async {
@@ -238,7 +238,7 @@ class MealLogController extends _$MealLogController {
       if (ref.mounted) ref.invalidate(recentMealsProvider);
 
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': 'saved',
         'log_date': logDate,
       });
@@ -248,7 +248,7 @@ class MealLogController extends _$MealLogController {
   /// Log a recipe, scaling macros by [servings].
   Future<void> logRecipe({
     required RecipeLogParams params,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
     String? notes,
@@ -267,7 +267,7 @@ class MealLogController extends _$MealLogController {
       );
 
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': 'recipe',
         'log_date': logDate,
         'recipe_id': params.recipeId,
@@ -276,10 +276,10 @@ class MealLogController extends _$MealLogController {
   }
 
   /// Log a meal built from individual food components (used by photo, describe,
-  /// and AI-review flows).
+  /// manual-add, and build-a-meal draft flows).
   Future<void> logFromComponents({
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     required MealLogSource source,
     required List<MealComponent> components,
@@ -303,7 +303,7 @@ class MealLogController extends _$MealLogController {
       );
       if (ref.mounted) ref.invalidate(recentMealsProvider);
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': source.wireValue,
         'log_date': logDate,
       });
@@ -326,7 +326,7 @@ class MealLogController extends _$MealLogController {
 
       await _trackEvent('meal_log_updated', {
         'log_id': log.id,
-        'slot': log.slot.wireValue,
+        if (log.slot != null) 'slot': log.slot!.wireValue,
       });
     });
   }

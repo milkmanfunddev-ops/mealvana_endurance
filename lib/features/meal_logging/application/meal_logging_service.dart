@@ -76,7 +76,7 @@ class MealLoggingService {
   Future<MealLog> logManualMeal({
     required String userId,
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     int? calories,
     double? carbsG,
@@ -116,7 +116,7 @@ class MealLoggingService {
   Future<MealLog> logFromComponents({
     required String userId,
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     required MealLogSource source,
     required List<MealComponent> components,
@@ -160,7 +160,7 @@ class MealLoggingService {
   Future<MealLog> logSavedMeal({
     required SavedMeal savedMeal,
     required String userId,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
   }) async {
@@ -190,7 +190,7 @@ class MealLoggingService {
   Future<MealLog> logRecipe({
     required RecipeLogParams params,
     required String userId,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
     String? notes,

@@ -27,7 +27,7 @@ class MealLog {
     required this.id,
     required this.userId,
     required this.logDate,
-    required this.slot,
+    this.slot,
     required this.name,
     required this.source,
     required this.components,
@@ -55,7 +55,11 @@ class MealLog {
   /// Supabase DATE column stored as TEXT in Drift to avoid timezone drift).
   final String logDate;
 
-  final MealSlot slot;
+  /// Which meal period this entry belongs to. Optional (2026-07 redesign) —
+  /// the user may leave a logged meal untagged and rely on [eatenAt] /
+  /// [createdAt] for ordering instead. Downstream readers (Fuel Timeline,
+  /// grouped daily views) must tolerate `null` here.
+  final MealSlot? slot;
 
   /// Display title, e.g. "Oatmeal + banana".
   final String name;
@@ -131,12 +135,16 @@ class MealLog {
 
   /// Decode a Drift row into a [MealLog].
   ///
-  /// Returns `null` when [slot] or [source] holds an unrecognised wire value
-  /// (forward-compat — an older binary skips the row rather than crashing).
+  /// [slot] is optional: a `null` column value means "untagged" (valid data,
+  /// not an error). Returns `null` (skip the row) only when [source] is
+  /// unrecognised, or when [slot] holds a non-null but unparseable wire value
+  /// (forward-compat — an older binary skips rather than crashing).
   static MealLog? fromDriftEntry(MealLogEntry entry) {
-    final slot = MealSlot.fromWireValue(entry.slot);
+    final rawSlot = entry.slot;
+    final slot = rawSlot == null ? null : MealSlot.fromWireValue(rawSlot);
+    if (rawSlot != null && slot == null) return null;
     final source = MealLogSource.fromWireValue(entry.source);
-    if (slot == null || source == null) return null;
+    if (source == null) return null;
 
     return MealLog(
       id: entry.id,
@@ -170,7 +178,7 @@ class MealLog {
       id: Value(id),
       userId: userId,
       logDate: logDate,
-      slot: slot.wireValue,
+      slot: Value(slot?.wireValue),
       name: name,
       source: source.wireValue,
       items: Value(jsonEncode(components.map((c) => c.toJson()).toList())),
@@ -204,7 +212,7 @@ class MealLog {
       'id': id,
       'user_id': userId,
       'log_date': logDate, // DATE column: Supabase accepts 'yyyy-MM-dd' strings
-      'slot': slot.wireValue,
+      'slot': slot?.wireValue,
       'name': name,
       'source': source.wireValue,
       'items': components.map((c) => c.toJson()).toList(),
@@ -226,12 +234,15 @@ class MealLog {
 
   /// Parse a Supabase row into a [MealLog].
   ///
-  /// Returns `null` for unrecognised [slot] / [source] wire values
-  /// (forward-compat, matching [fromDriftEntry]).
+  /// [slot] is optional (see [fromDriftEntry]). Returns `null` (skip the row)
+  /// only when [source] is unrecognised, or [slot] holds a non-null but
+  /// unparseable wire value.
   static MealLog? fromSupabaseJson(Map<String, dynamic> json) {
-    final slot = MealSlot.fromWireValue(json['slot'] as String?);
+    final rawSlot = json['slot'] as String?;
+    final slot = rawSlot == null ? null : MealSlot.fromWireValue(rawSlot);
+    if (rawSlot != null && slot == null) return null;
     final source = MealLogSource.fromWireValue(json['source'] as String?);
-    if (slot == null || source == null) return null;
+    if (source == null) return null;
 
     return MealLog(
       id: json['id'] as String,
@@ -266,6 +277,9 @@ class MealLog {
     String? userId,
     String? logDate,
     MealSlot? slot,
+    /// When true, sets [slot] to `null` regardless of the [slot] argument
+    /// (the plain `slot ?? this.slot` pattern can't express "clear it").
+    bool clearSlot = false,
     String? name,
     MealLogSource? source,
     List<MealComponent>? components,
@@ -289,7 +303,7 @@ class MealLog {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       logDate: logDate ?? this.logDate,
-      slot: slot ?? this.slot,
+      slot: clearSlot ? null : (slot ?? this.slot),
       name: name ?? this.name,
       source: source ?? this.source,
       components: components ?? this.components,

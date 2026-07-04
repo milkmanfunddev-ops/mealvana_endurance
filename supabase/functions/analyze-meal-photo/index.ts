@@ -188,9 +188,20 @@ serve(withSentry(async (req: Request) => {
 Analyze this food photo and return a structured meal breakdown.
 
 INSTRUCTIONS:
-- Identify every food item visible in the image.
+- Group what you see into items the way a person logging their own plate
+  would think about it — one item per DISH, not one item per raw
+  ingredient. For example: a plate of "spaghetti and meatballs" is ONE
+  item (its sauce, pasta, and meatballs summed into one entry), while a
+  side of "broccoli" on the same plate is a SEPARATE item because it's a
+  distinct component of the meal. Only split into multiple items when the
+  foods are genuinely separate parts of the plate (a side dish, a drink, a
+  dessert) — never split a single dish's own ingredients apart.
+- Each item's macros must be the SUM across everything that makes up that
+  dish (e.g. the meatballs' and sauce's calories/carbs/protein/fat/sodium
+  are combined into the "spaghetti and meatballs" item, not reported
+  separately).
 - Estimate realistic portions for an adult endurance athlete — do NOT underestimate. If there is a full plate of pasta, estimate the full plate, not a small serving.
-- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg).
+- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg). These must be non-null for every item.
 - Compute accurate totals across all items.
 - Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods visible.
 - Set confidence to "low" if the image is blurry, partially visible, or ambiguous; "medium" if items are visible but portions are uncertain; "high" if clear and well-portioned.

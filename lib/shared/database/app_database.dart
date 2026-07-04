@@ -174,6 +174,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 14: build-a-meal redesign — `meal_logs.slot` becomes
+  /// optional (nullable). SQLite has no `ALTER COLUMN ... DROP NOT NULL`, so
+  /// the `from < 14` step rebuilds the table (rename → recreate via the
+  /// current `mealLogsTable` definition, which is now nullable → copy rows →
+  /// drop the renamed original). Guarded on the live column's `notnull` flag
+  /// (via PRAGMA table_info) so it's safe to re-run if a web `user_version`
+  /// hiccup replays this step. Matching Supabase SQL (dev + prod):
+  /// `ALTER TABLE meal_logs ALTER COLUMN slot DROP NOT NULL;` (see the
+  /// meal-logging redesign notes — NOT bundled with this migration, applied
+  /// out-of-band by the orchestrator).
+  ///
   /// Schema version 11: meal logging + Jade groundwork. Adds three tables:
   ///   • meal_logs   — logged meals on the Daily Macros tab (offline-first,
   ///     soft-deleted via is_deleted, needs_upload dirty tracking)
@@ -226,7 +237,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -283,6 +294,20 @@ class AppDatabase extends _$AppDatabase {
           if (!await tableExists(table.actualTableName)) {
             await m.createTable(table);
           }
+        }
+
+        /// Returns true when [column] on [table] is currently declared
+        /// `NOT NULL` (PRAGMA table_info's `notnull` flag). Used to guard the
+        /// "make a column nullable" rebuild below so it's idempotent even if a
+        /// web `user_version` hiccup replays the `from < N` step.
+        Future<bool> columnIsNotNull(String table, String column) async {
+          final rows = await customSelect('PRAGMA table_info($table)').get();
+          for (final r in rows) {
+            if (r.read<String>('name') == column) {
+              return r.read<int>('notnull') == 1;
+            }
+          }
+          return false;
         }
 
         // v7: Add sweat profile + body-comp precedence columns to users.
@@ -345,6 +370,47 @@ class AppDatabase extends _$AppDatabase {
             'selection_priority',
             'INTEGER NOT NULL DEFAULT 0',
           );
+        }
+
+        // v14: build-a-meal redesign — meal_logs.slot becomes optional.
+        // SQLite can't ALTER COLUMN to drop NOT NULL, so rebuild the table:
+        // rename the old one aside, recreate via the (now-nullable) current
+        // `mealLogsTable` definition, copy rows across, drop the renamed
+        // original. Guarded on the live NOT NULL flag + a resumable temp-table
+        // check so a web user_version replay can't crash on a half-done
+        // rebuild or double-copy rows.
+        if (from < 14) {
+          const tempName = 'meal_logs_pre_v14';
+          if (await tableExists('meal_logs') &&
+              await columnIsNotNull('meal_logs', 'slot')) {
+            if (!await tableExists(tempName)) {
+              await customStatement(
+                'ALTER TABLE meal_logs RENAME TO $tempName',
+              );
+            }
+            if (!await tableExists('meal_logs')) {
+              await m.createTable(mealLogsTable);
+            }
+            if (await tableExists(tempName)) {
+              await customStatement('''
+                INSERT OR IGNORE INTO meal_logs (
+                  id, user_id, log_date, slot, name, source, items,
+                  calories, carbs_g, protein_g, fat_g, sodium_mg,
+                  photo_path, recipe_id, saved_meal_id, notes, eaten_at,
+                  created_at, updated_at, is_deleted, needs_upload,
+                  local_updated_at
+                )
+                SELECT
+                  id, user_id, log_date, slot, name, source, items,
+                  calories, carbs_g, protein_g, fat_g, sodium_mg,
+                  photo_path, recipe_id, saved_meal_id, notes, eaten_at,
+                  created_at, updated_at, is_deleted, needs_upload,
+                  local_updated_at
+                FROM $tempName
+              ''');
+              await customStatement('DROP TABLE $tempName');
+            }
+          }
         }
       },
 

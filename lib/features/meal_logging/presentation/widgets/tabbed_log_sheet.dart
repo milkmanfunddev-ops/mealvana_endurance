@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
@@ -19,20 +18,18 @@ import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
-import '../../../nutrition_plan/presentation/widgets/swap_food/catalog_section_widget.dart';
-import '../../../nutrition_plan/presentation/widgets/swap_food/food_card_widget.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
-import '../../application/meal_logging_service.dart';
 import '../screens/log_scanned_food_screen.dart';
-import '../../domain/meal_log_source.dart';
-import '../../domain/quick_assembly.dart';
 import '../../domain/saved_meal.dart';
+import '../providers/draft_meal_controller.dart';
 import '../providers/meal_log_providers.dart';
+import 'common_ingredients_section.dart';
+import 'draft_meal_bar.dart';
 import 'log_sheet_helpers.dart';
-import 'manual_log_form.dart';
-import 'slot_chip_selector.dart';
+import 'manual_component_form.dart';
+import 'unified_meal_search_results.dart';
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -40,8 +37,12 @@ import 'slot_chip_selector.dart';
 
 /// Opens the tabbed DraggableScrollableSheet for logging a meal.
 ///
-/// Replaces the old [MealLogMethodSheet] five-button list. Titled by date,
-/// defaulting to the **Yours** tab.
+/// Build-a-meal redesign: every tab's item tap adds to an in-progress draft
+/// ([draftMealControllerProvider], scoped to [logDate]) rather than writing a
+/// terminal `meal_logs` row per tap. A persistent [DraftMealBar] at the
+/// bottom shows running totals and commits the whole draft as a single log
+/// entry via "Save meal". A unified search bar at the top (item 25) searches
+/// foods, recipes, common ingredients, and favorites/recents together.
 void showTabbedLogSheet(BuildContext context, {required String logDate}) {
   showModalBottomSheet<void>(
     context: context,
@@ -55,7 +56,7 @@ void showTabbedLogSheet(BuildContext context, {required String logDate}) {
 // Sheet tab enum
 // ---------------------------------------------------------------------------
 
-enum _LogTab { recent, favorites, search, describe, manual }
+enum _LogTab { recent, favorites, common, recipes, describe, manual }
 
 extension _LogTabLabel on _LogTab {
   String get label {
@@ -64,8 +65,10 @@ extension _LogTabLabel on _LogTab {
         return 'Recent';
       case _LogTab.favorites:
         return 'Favorites';
-      case _LogTab.search:
-        return 'Discover';
+      case _LogTab.common:
+        return 'Common';
+      case _LogTab.recipes:
+        return 'Recipes';
       case _LogTab.describe:
         return 'Describe';
       case _LogTab.manual:
@@ -79,7 +82,8 @@ extension _LogTabLabel on _LogTab {
 // ---------------------------------------------------------------------------
 
 /// The DraggableScrollableSheet for meal logging
-/// (Recent · Favorites · Search · Describe · Manual).
+/// (Recent · Favorites · Common · Recipes · Describe · Manual), plus a
+/// unified search bar and a persistent build-a-meal draft bar.
 class TabbedLogSheet extends ConsumerStatefulWidget {
   const TabbedLogSheet({super.key, required this.logDate});
 
@@ -91,24 +95,422 @@ class TabbedLogSheet extends ConsumerStatefulWidget {
 
 class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
   _LogTab _activeTab = _LogTab.recent;
-  bool _recipesLoaded = false;
 
-  void _selectTab(_LogTab tab) {
-    setState(() => _activeTab = tab);
-    if (tab == _LogTab.search && !_recipesLoaded) {
-      setState(() => _recipesLoaded = true);
+  /// Controller key for the shared [FoodSearchController] instance backing
+  /// the unified search bar.
+  static const _foodSearchControllerKey = 'meal_log_unified';
+
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  List<Recipe> _recipes = [];
+  bool _recipesLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // The unified search bar is always visible (item 25), so seed its data
+    // eagerly rather than gating behind a tab selection.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadRecipes();
+      _seedFoodPool();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  // -- draft accumulator helpers ---------------------------------------------
+
+  DraftMealController get _draft =>
+      ref.read(draftMealControllerProvider(widget.logDate).notifier);
+
+  void _addComponent(MealComponent component, {String? toastLabel}) {
+    _draft.addComponent(component);
+    if (mounted) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Added ${toastLabel ?? component.name}',
+      );
     }
   }
 
-  // -- shared success handler used by all four tabs -------------------------
-
-  void _onLogged(BuildContext ctx) {
-    Navigator.of(ctx).pop(); // close sheet
-    MealvanaSnackbar.showSuccess(ctx, 'Meal logged!');
+  void _addComponents(Iterable<MealComponent> components, String toastLabel) {
+    _draft.addComponents(components);
+    if (mounted) MealvanaSnackbar.showSuccess(context, 'Added $toastLabel');
   }
 
-  void _onLogError(BuildContext ctx) {
-    MealvanaSnackbar.showError(ctx, 'Failed to log meal. Please try again.');
+  // -- recipes loading (shared by Recipes tab + unified search) --------------
+
+  Future<void> _loadRecipes() async {
+    if (!mounted || _recipesLoading) return;
+    setState(() => _recipesLoading = true);
+    try {
+      final service = ref.read(recipeServiceProvider);
+      final userId = ref
+          .read(appExternalDepsProvider)
+          .supabaseClient
+          .auth
+          .currentUser
+          ?.id;
+      if (userId != null) {
+        await service.ensureSynced(userId);
+      }
+      final all = await service.getAllRecipes();
+      if (!mounted) return;
+      setState(() {
+        _recipes = all;
+        _recipesLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _recipesLoading = false);
+    }
+  }
+
+  // -- Food search (unified search bar) --------------------------------------
+
+  /// Seed the shared [FoodSearchController]'s local pool with curated + user
+  /// foods so typed queries surface instant local matches alongside the
+  /// debounced catalog/OpenFoodFacts results. Best-effort.
+  Future<void> _seedFoodPool() async {
+    try {
+      final foodRepository = ref.read(foodRepositoryProvider);
+      final database = ref.read(appDatabaseProvider);
+      final userProfile = await database.userDao.getCurrentUserProfile();
+      final deviceId = userProfile?.id ?? 'unknown';
+
+      final results = await Future.wait([
+        foodRepository.getPrimaryFoodsForPreferences(),
+        foodRepository.getAdditionalFoodsForPreferences(),
+        database.foodsDao.getUserFoods(deviceId),
+      ]);
+
+      final primary = (results[0] as List<FoodItem>).map(_foodItemToFood);
+      final additional = (results[1] as List<FoodItem>).map(_foodItemToFood);
+      final userFoods = (results[2] as List<dynamic>)
+          .map((uf) => database.foodsDao.convertUserFoodToFoodItem(uf))
+          .map(_foodItemToFood)
+          .toList();
+
+      if (!mounted) return;
+      final searchNotifier = ref.read(
+        foodSearchControllerProvider(_foodSearchControllerKey).notifier,
+      );
+      // Meal logging shows all foods but surfaces general food ahead of pure
+      // fuel — someone logging breakfast shouldn't wade through gels first.
+      searchNotifier.setFilter(FoodSearchFilter.generalFirst);
+      searchNotifier.updateFoodPool(
+        allFoods: [...primary, ...additional, ...userFoods],
+        userFoods: userFoods,
+      );
+    } catch (_) {
+      // Non-fatal — search bar still works via catalog + OpenFoodFacts.
+    }
+  }
+
+  Food _foodItemToFood(FoodItem item) {
+    return Food(
+      id: item.id,
+      name: item.name,
+      imageAddress: item.imageAddress,
+      description: item.description,
+      displayName: item.displayName,
+      displayNamePlural: item.displayNamePlural,
+      servingSize: item.servingSize,
+      servingAmount: item.servingAmount,
+      servingUnit: item.servingUnit,
+      servingQualifier: item.servingQualifier,
+      carbsPerServing: item.carbsPerServing,
+      proteinPerServing: item.proteinPerServing,
+      fatPerServing: item.fatPerServing,
+      sodiumMg: item.sodiumMg,
+      caloriesPerServing: item.caloriesPerServing,
+      fluidMlPerServing: item.fluidMlPerServing,
+      productTypeId: item.productTypeId,
+      caffeineMg: item.caffeineMg,
+      potassiumMg: item.potassiumMg,
+      categories: item.categories.map((c) {
+        switch (c) {
+          case FoodCategory.beforeRun:
+            return 'before_run';
+          case FoodCategory.duringRun:
+            return 'during_run';
+          case FoodCategory.afterRun:
+            return 'after_run';
+        }
+      }).toList(),
+    );
+  }
+
+  Food _catalogResultToFood(CatalogSearchResult result) {
+    return Food(
+      id: result.id,
+      name: result.title,
+      displayName: result.variantTitle ?? result.title,
+      imageAddress: result.imageUrl,
+      servingSize: result.servingSize,
+      caloriesPerServing: result.caloriesPerServing,
+      carbsPerServing: result.carbsG,
+      proteinPerServing: result.proteinG,
+      fatPerServing: result.fatG,
+      sodiumMg: result.sodiumMg,
+      productTypeId: result.productTypeId,
+    );
+  }
+
+  void _onSearchChanged(String query) {
+    ref
+        .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
+        .updateSearch(query);
+  }
+
+  Future<void> _onSearchButtonPressed(String query) async {
+    if (query.trim().isNotEmpty) {
+      await ref
+          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
+          .searchOpenFoodFacts(query.trim());
+    }
+  }
+
+  Future<void> _onBarcodeScan() async {
+    final result = await context.pushNamed<dynamic>(
+      'barcode-scanner',
+      extra: {'category': 'add_food', 'context': 'meal_log_discover'},
+    );
+    if (result == null || !mounted) return;
+
+    final food = result as Food;
+    final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
+      MaterialPageRoute(builder: (_) => LogScannedFoodScreen(food: food)),
+    );
+    if (logRequest == null || !mounted) return;
+
+    // The scanned-food screen still asks for a meal slot (unchanged legacy
+    // UI) — honor it as the draft's slot only if the draft hasn't already
+    // been given one, since slot now applies to the whole draft, not a
+    // single component.
+    final currentSlot = ref.read(
+      draftMealControllerProvider(widget.logDate),
+    ).slot;
+    if (currentSlot == null) _draft.setSlot(logRequest.slot);
+    _addFoodComponent(food, logRequest.servings);
+  }
+
+  Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
+    if (!(result.hasValidId as bool)) {
+      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final productDetailService = ref.read(productDetailServiceProvider);
+      final apiProduct = await productDetailService.getProductDetails(
+        openFoodFactsId: result.id as String,
+      );
+
+      if (mounted) Navigator.of(context).pop(); // close loading dialog
+
+      if (apiProduct == null) {
+        if (mounted) {
+          MealvanaSnackbar.showError(context, 'Unable to load product details');
+        }
+        return;
+      }
+
+      final mappingService = ref.read(foodMappingServiceProvider);
+      final food = await mappingService.mapToFood(apiProduct);
+
+      if (!mounted) return;
+      _showServingsSheet(
+        title: food.displayName ?? food.name,
+        component: (servings) => _foodComponent(food, servings),
+        onConfirm: (servings) => _addFoodComponent(food, servings),
+      );
+    } catch (_) {
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to load product details');
+      }
+    }
+  }
+
+  // -- servings-only "add to meal" sheet (no per-item slot — item 25) -------
+
+  /// Shows a servings stepper sheet for [title], previewing macros via
+  /// [component] at the current servings value, and calling [onConfirm] with
+  /// the chosen servings when the user taps "Add to meal".
+  void _showServingsSheet({
+    required String title,
+    required MealComponent Function(double servings) component,
+    required void Function(double servings) onConfirm,
+  }) {
+    double servings = 1.0;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final preview = component(servings);
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.blackberry : AppColors.cream,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: EdgeInsets.only(
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.md,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(title, style: AppTextStyles.subtitle, textAlign: TextAlign.center),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${preview.calories ?? 0} kcal  ·  '
+                    'C ${preview.carbG?.toStringAsFixed(0) ?? 0}g  '
+                    'P ${preview.proteinG?.toStringAsFixed(0) ?? 0}g  '
+                    'F ${preview.fatG?.toStringAsFixed(0) ?? 0}g',
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        onPressed: servings > 0.5
+                            ? () => setModalState(
+                                () => servings = (servings - 0.5).clamp(0.5, 10.0),
+                              )
+                            : null,
+                      ),
+                      SizedBox(
+                        width: 60,
+                        child: Text(
+                          servings == servings.truncateToDouble()
+                              ? servings.toInt().toString()
+                              : servings.toStringAsFixed(1),
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: servings < 10
+                            ? () => setModalState(
+                                () => servings = (servings + 0.5).clamp(0.5, 10.0),
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  KylePrimaryButton(
+                    text: 'Add to meal',
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      onConfirm(servings);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  MealComponent _foodComponent(Food food, double servings) {
+    final name = food.displayName ?? food.name;
+    return MealComponent(
+      name: name,
+      portion: servings == servings.truncateToDouble()
+          ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
+          : '${servings.toStringAsFixed(1)} servings',
+      calories: food.caloriesPerServing != null
+          ? (food.caloriesPerServing! * servings).round()
+          : null,
+      carbG: food.carbsPerServing != null ? food.carbsPerServing! * servings : null,
+      proteinG:
+          food.proteinPerServing != null ? food.proteinPerServing! * servings : null,
+      fatG: food.fatPerServing != null ? food.fatPerServing! * servings : null,
+      sodiumMg: food.sodiumMg != null ? food.sodiumMg! * servings : null,
+    );
+  }
+
+  void _addFoodComponent(Food food, double servings) {
+    _addComponent(_foodComponent(food, servings));
+  }
+
+  void _onFoodTap(Food food) {
+    _showServingsSheet(
+      title: food.displayName ?? food.name,
+      component: (servings) => _foodComponent(food, servings),
+      onConfirm: (servings) => _addFoodComponent(food, servings),
+    );
+  }
+
+  void _onCatalogTap(CatalogSearchResult result) {
+    _onFoodTap(_catalogResultToFood(result));
+  }
+
+  MealComponent _recipeComponent(Recipe recipe, double servings) {
+    return MealComponent(
+      name: recipe.name,
+      portion: servings == servings.truncateToDouble()
+          ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
+          : '${servings.toStringAsFixed(1)} servings',
+      calories: (recipe.nutrition.calories * servings).round(),
+      carbG: recipe.nutrition.carbohydratesGrams * servings,
+      proteinG: recipe.nutrition.proteinGrams * servings,
+      fatG: recipe.nutrition.fatGrams * servings,
+      sodiumMg: recipe.nutrition.sodiumMilligrams * servings,
+    );
+  }
+
+  void _onRecipeTap(Recipe recipe) {
+    _showServingsSheet(
+      title: recipe.name,
+      component: (servings) => _recipeComponent(recipe, servings),
+      onConfirm: (servings) =>
+          _addComponent(_recipeComponent(recipe, servings), toastLabel: recipe.name),
+    );
   }
 
   // --------------------------------------------------------------------------
@@ -134,6 +536,10 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final searchState = ref.watch(
+      foodSearchControllerProvider(_foodSearchControllerKey),
+    );
+    final isSearching = searchState.searchQuery.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -147,13 +553,13 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
       ),
       child: DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.75,
+        initialChildSize: 0.8,
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (ctx, scrollController) {
           return Column(
             children: [
-              // ── Static header (drag handle + title + tabs) ───────────────
+              // ── Static header (drag handle + title + search + tabs) ──────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
@@ -175,18 +581,55 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
                       style: AppTextStyles.pageTitle.copyWith(color: textColor),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.sm),
+                    // Unified search bar — searches foods, recipes, common
+                    // ingredients, and favorites/recents together (item 25).
+                    FoodSearchBar(
+                      controller: _searchCtrl,
+                      hintText: 'Search anything to add...',
+                      onChanged: _onSearchChanged,
+                      onSearch: _onSearchButtonPressed,
+                      onBarcodeScan: _onBarcodeScan,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     _TabBar(
                       activeTab: _activeTab,
-                      onTabSelected: _selectTab,
+                      onTabSelected: (tab) => setState(() => _activeTab = tab),
                       isDark: isDark,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
                 ),
               ),
-              // ── Scrollable tab body ──────────────────────────────────────
-              Expanded(child: _buildTabBody(ctx, scrollController, isDark)),
+              // ── Scrollable content: search results or the active tab ────
+              Expanded(
+                child: isSearching
+                    ? UnifiedMealSearchResults(
+                        query: searchState.searchQuery,
+                        recipes: _recipes,
+                        controllerKey: _foodSearchControllerKey,
+                        scrollController: scrollController,
+                        onAddRecipe: _onRecipeTap,
+                        onAddFavorite: (meal) => _addComponents(
+                          meal.components,
+                          meal.name,
+                        ),
+                        onAddRecent: (log) =>
+                            _addComponent(syntheticFromLog(log), toastLabel: log.name),
+                        onAddIngredient: (ingredient) => _addComponent(ingredient),
+                        onFoodTap: _onFoodTap,
+                        onCatalogTap: _onCatalogTap,
+                        onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
+                        onSearchOpenFoodFacts: () =>
+                            _onSearchButtonPressed(searchState.searchQuery),
+                      )
+                    : _buildTabBody(ctx, scrollController, isDark),
+              ),
+              // ── Persistent build-a-meal draft bar ────────────────────────
+              DraftMealBar(
+                logDate: widget.logDate,
+                onSaved: () => Navigator.of(ctx).pop(),
+              ),
             ],
           );
         },
@@ -202,25 +645,25 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     switch (_activeTab) {
       case _LogTab.recent:
         return _RecentTab(
-          logDate: widget.logDate,
           scrollController: scrollController,
-          onLogged: () => _onLogged(ctx),
-          onLogError: () => _onLogError(ctx),
+          onTap: (log) => _addComponent(syntheticFromLog(log), toastLabel: log.name),
         );
       case _LogTab.favorites:
         return _FavoritesTab(
-          logDate: widget.logDate,
           scrollController: scrollController,
-          onLogged: () => _onLogged(ctx),
-          onLogError: () => _onLogError(ctx),
+          onTap: (meal) => _addComponents(meal.components, meal.name),
         );
-      case _LogTab.search:
-        return _SearchTab(
+      case _LogTab.common:
+        return CommonIngredientsSection(
           logDate: widget.logDate,
           scrollController: scrollController,
-          shouldLoad: _recipesLoaded,
-          onLogged: () => _onLogged(ctx),
-          onLogError: () => _onLogError(ctx),
+        );
+      case _LogTab.recipes:
+        return _RecipesTab(
+          scrollController: scrollController,
+          recipes: _recipes,
+          isLoading: _recipesLoading,
+          onRecipeTap: _onRecipeTap,
         );
       case _LogTab.describe:
         return _AiTab(
@@ -229,11 +672,9 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
           onNavigateAway: () => Navigator.of(ctx).pop(),
         );
       case _LogTab.manual:
-        return _ManualTab(
+        return ManualComponentForm(
           logDate: widget.logDate,
           scrollController: scrollController,
-          onLogged: () => _onLogged(ctx),
-          onLogError: () => _onLogError(ctx),
         );
     }
   }
@@ -314,42 +755,14 @@ class _TabBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Recent tab — re-log a recently eaten meal
+// Recent tab — add a recently logged meal to the draft
 // ---------------------------------------------------------------------------
 
 class _RecentTab extends ConsumerWidget {
-  const _RecentTab({
-    required this.logDate,
-    required this.scrollController,
-    required this.onLogged,
-    required this.onLogError,
-  });
+  const _RecentTab({required this.scrollController, required this.onTap});
 
-  final String logDate;
   final ScrollController scrollController;
-  final VoidCallback onLogged;
-  final VoidCallback onLogError;
-
-  void _logRecent(BuildContext context, WidgetRef ref, MealLog log) {
-    showSlotPickerSheet(
-      context,
-      onSelected: (slot) async {
-        final component = syntheticFromLog(log);
-        await ref
-            .read(mealLogControllerProvider.notifier)
-            .logFromComponents(
-              name: log.name,
-              slot: slot,
-              logDate: logDate,
-              source: MealLogSource.saved,
-              components: [component],
-            );
-        if (!context.mounted) return;
-        final s = ref.read(mealLogControllerProvider);
-        s is AsyncData ? onLogged() : onLogError();
-      },
-    );
-  }
+  final ValueChanged<MealLog> onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -376,7 +789,7 @@ class _RecentTab extends ConsumerWidget {
               .map(
                 (log) => _RecentMealRow(
                   log: log,
-                  onTap: () => _logRecent(context, ref, log),
+                  onTap: () => onTap(log),
                   isDark: isDark,
                 ),
               )
@@ -390,35 +803,14 @@ class _RecentTab extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Favorites tab — re-log a meal saved as a favorite
+// Favorites tab — add a saved meal's components to the draft
 // ---------------------------------------------------------------------------
 
 class _FavoritesTab extends ConsumerWidget {
-  const _FavoritesTab({
-    required this.logDate,
-    required this.scrollController,
-    required this.onLogged,
-    required this.onLogError,
-  });
+  const _FavoritesTab({required this.scrollController, required this.onTap});
 
-  final String logDate;
   final ScrollController scrollController;
-  final VoidCallback onLogged;
-  final VoidCallback onLogError;
-
-  void _logFavorite(BuildContext context, WidgetRef ref, SavedMeal meal) {
-    showSlotPickerSheet(
-      context,
-      onSelected: (slot) async {
-        await ref
-            .read(mealLogControllerProvider.notifier)
-            .logSavedMeal(savedMeal: meal, slot: slot, logDate: logDate);
-        if (!context.mounted) return;
-        final s = ref.read(mealLogControllerProvider);
-        s is AsyncData ? onLogged() : onLogError();
-      },
-    );
-  }
+  final ValueChanged<SavedMeal> onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -446,7 +838,7 @@ class _FavoritesTab extends ConsumerWidget {
               .map(
                 (meal) => _SavedMealRow(
                   meal: meal,
-                  onTap: () => _logFavorite(context, ref, meal),
+                  onTap: () => onTap(meal),
                   onDelete: () => ref
                       .read(mealLogControllerProvider.notifier)
                       .deleteSavedMeal(meal.id),
@@ -493,53 +885,6 @@ class _EmptyTabMessage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Manual tab — inline manual macro entry form
-// ---------------------------------------------------------------------------
-
-class _ManualTab extends StatelessWidget {
-  const _ManualTab({
-    required this.logDate,
-    required this.scrollController,
-    required this.onLogged,
-    required this.onLogError,
-  });
-
-  final String logDate;
-  final ScrollController scrollController;
-  final VoidCallback onLogged;
-  final VoidCallback onLogError;
-
-  @override
-  Widget build(BuildContext context) {
-    return ManualLogForm(
-      logDate: logDate,
-      scrollController: scrollController,
-      onLogged: onLogged,
-      onLogError: onLogError,
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label, required this.textColor});
-
-  final String label;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: AppTextStyles.sectionTitle.copyWith(
-        color: textColor.withValues(alpha: 0.75),
-        fontWeight: FontWeight.w600,
-        fontSize: 13,
       ),
     );
   }
@@ -592,7 +937,7 @@ class _SavedMealRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, size: 18),
+            const Icon(Icons.add_circle_outline, size: 18),
           ],
         ),
         onTap: onTap,
@@ -634,7 +979,7 @@ class _RecentMealRow extends StatelessWidget {
           log.proteinG,
           log.fatG,
         ),
-        trailing: const Icon(Icons.chevron_right, size: 18),
+        trailing: const Icon(Icons.add_circle_outline, size: 18),
         onTap: onTap,
       ),
     );
@@ -664,40 +1009,28 @@ Widget? _macroLine(
 }
 
 // ---------------------------------------------------------------------------
-// Recipes tab
+// Recipes tab — pure recipe browser (quick-add assemblies moved to Common)
 // ---------------------------------------------------------------------------
 
-class _SearchTab extends ConsumerStatefulWidget {
-  const _SearchTab({
-    required this.logDate,
+class _RecipesTab extends StatefulWidget {
+  const _RecipesTab({
     required this.scrollController,
-    required this.shouldLoad,
-    required this.onLogged,
-    required this.onLogError,
+    required this.recipes,
+    required this.isLoading,
+    required this.onRecipeTap,
   });
 
-  final String logDate;
   final ScrollController scrollController;
-  final bool shouldLoad;
-  final VoidCallback onLogged;
-  final VoidCallback onLogError;
+  final List<Recipe> recipes;
+  final bool isLoading;
+  final ValueChanged<Recipe> onRecipeTap;
 
   @override
-  ConsumerState<_SearchTab> createState() => _SearchTabState();
+  State<_RecipesTab> createState() => _RecipesTabState();
 }
 
-class _SearchTabState extends ConsumerState<_SearchTab> {
-  /// Controller key for the shared [FoodSearchController] instance backing
-  /// this tab's product/food search bar.
-  static const _foodSearchControllerKey = 'discover_log';
-
-  List<Recipe> _recipes = [];
-  List<Recipe> _filtered = [];
+class _RecipesTabState extends State<_RecipesTab> {
   RecipeType? _selectedType;
-  bool _isLoading = false;
-  bool _loadStarted = false;
-
-  final TextEditingController _foodSearchController = TextEditingController();
 
   static const List<RecipeType> _chipOrder = [
     RecipeType.breakfast,
@@ -707,656 +1040,23 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
     RecipeType.recovery,
   ];
 
-  @override
-  void didUpdateWidget(_SearchTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.shouldLoad && !_loadStarted) {
-      _loadStarted = true;
-      _loadRecipes();
-      _seedFoodPool();
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.shouldLoad) {
-      _loadStarted = true;
-      // defer to avoid calling setState during build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadRecipes();
-        _seedFoodPool();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _foodSearchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadRecipes() async {
-    if (!mounted) return;
-    setState(() => _isLoading = true);
-    try {
-      final service = ref.read(recipeServiceProvider);
-      final userId = ref
-          .read(appExternalDepsProvider)
-          .supabaseClient
-          .auth
-          .currentUser
-          ?.id;
-      if (userId != null) {
-        await service.ensureSynced(userId);
-      }
-      final all = await service.getAllRecipes();
-      if (!mounted) return;
-      setState(() {
-        _recipes = all;
-        _filtered = all;
-        _isLoading = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // -- Food search (product/food search bar) --------------------------------
-
-  /// Seed the shared [FoodSearchController]'s local pool with curated +
-  /// user foods so typed queries surface instant local matches alongside the
-  /// debounced catalog/OpenFoodFacts results. Best-effort — catalog and
-  /// OpenFoodFacts search still work even if this fails.
-  Future<void> _seedFoodPool() async {
-    try {
-      final foodRepository = ref.read(foodRepositoryProvider);
-      final database = ref.read(appDatabaseProvider);
-      final userProfile = await database.userDao.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
-
-      final results = await Future.wait([
-        foodRepository.getPrimaryFoodsForPreferences(),
-        foodRepository.getAdditionalFoodsForPreferences(),
-        database.foodsDao.getUserFoods(deviceId),
-      ]);
-
-      final primary = (results[0] as List<FoodItem>).map(_foodItemToFood);
-      final additional = (results[1] as List<FoodItem>).map(_foodItemToFood);
-      final userFoods = (results[2] as List<dynamic>)
-          .map((uf) => database.foodsDao.convertUserFoodToFoodItem(uf))
-          .map(_foodItemToFood)
-          .toList();
-
-      if (!mounted) return;
-      final searchNotifier = ref
-          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier);
-      // Discover (meal logging) shows all foods but surfaces general food
-      // ahead of pure fuel — someone logging breakfast shouldn't wade through
-      // gels first (audit §3).
-      searchNotifier.setFilter(FoodSearchFilter.generalFirst);
-      searchNotifier.updateFoodPool(
-        allFoods: [...primary, ...additional, ...userFoods],
-        userFoods: userFoods,
-      );
-    } catch (_) {
-      // Non-fatal — search bar still works via catalog + OpenFoodFacts.
-    }
-  }
-
-  Food _foodItemToFood(FoodItem item) {
-    return Food(
-      id: item.id,
-      name: item.name,
-      imageAddress: item.imageAddress,
-      description: item.description,
-      displayName: item.displayName,
-      displayNamePlural: item.displayNamePlural,
-      servingSize: item.servingSize,
-      servingAmount: item.servingAmount,
-      servingUnit: item.servingUnit,
-      servingQualifier: item.servingQualifier,
-      carbsPerServing: item.carbsPerServing,
-      proteinPerServing: item.proteinPerServing,
-      fatPerServing: item.fatPerServing,
-      sodiumMg: item.sodiumMg,
-      caloriesPerServing: item.caloriesPerServing,
-      fluidMlPerServing: item.fluidMlPerServing,
-      productTypeId: item.productTypeId,
-      caffeineMg: item.caffeineMg,
-      potassiumMg: item.potassiumMg,
-      categories: item.categories.map((c) {
-        switch (c) {
-          case FoodCategory.beforeRun:
-            return 'before_run';
-          case FoodCategory.duringRun:
-            return 'during_run';
-          case FoodCategory.afterRun:
-            return 'after_run';
-        }
-      }).toList(),
-    );
-  }
-
-  Food _catalogResultToFood(CatalogSearchResult result) {
-    return Food(
-      id: result.id,
-      name: result.title,
-      displayName: result.variantTitle ?? result.title,
-      imageAddress: result.imageUrl,
-      servingSize: result.servingSize,
-      caloriesPerServing: result.caloriesPerServing,
-      carbsPerServing: result.carbsG,
-      proteinPerServing: result.proteinG,
-      fatPerServing: result.fatG,
-      sodiumMg: result.sodiumMg,
-      productTypeId: result.productTypeId,
-    );
-  }
-
-  void _onFoodSearchChanged(String query) {
-    ref
-        .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
-        .updateSearch(query);
-  }
-
-  Future<void> _onFoodSearchButtonPressed(String query) async {
-    if (query.trim().isNotEmpty) {
-      await ref
-          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
-          .searchOpenFoodFacts(query.trim());
-    }
-  }
-
-  Future<void> _onFoodBarcodeScan() async {
-    final result = await context.pushNamed<dynamic>(
-      'barcode-scanner',
-      extra: {'category': 'add_food', 'context': 'meal_log_discover'},
-    );
-    if (result == null || !mounted) return;
-
-    // The scanner returns the raw scanned food for the meal-log flow. Route it
-    // to the logging-specific confirmation page (servings + meal slot), not the
-    // nutrition-plan before/during/after-run detail screen.
-    final food = result as Food;
-    final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
-      MaterialPageRoute(
-        builder: (_) => LogScannedFoodScreen(food: food),
-      ),
-    );
-
-    if (logRequest == null || !mounted) return;
-    await _logFoodComponent(food, logRequest.servings, logRequest.slot);
-  }
-
-  Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
-    if (!(result.hasValidId as bool)) {
-      MealvanaSnackbar.showError(
-        context,
-        'Cannot load details for this product',
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final productDetailService = ref.read(productDetailServiceProvider);
-      final apiProduct = await productDetailService.getProductDetails(
-        openFoodFactsId: result.id as String,
-      );
-
-      if (mounted) Navigator.of(context).pop(); // close loading dialog
-
-      if (apiProduct == null) {
-        if (mounted) {
-          MealvanaSnackbar.showError(context, 'Unable to load product details');
-        }
-        return;
-      }
-
-      final mappingService = ref.read(foodMappingServiceProvider);
-      final food = await mappingService.mapToFood(apiProduct);
-
-      if (!mounted) return;
-      _showFoodLogSheet(food);
-    } catch (_) {
-      if (mounted && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-      if (mounted) {
-        MealvanaSnackbar.showError(context, 'Failed to load product details');
-      }
-    }
-  }
-
-  /// Shows the servings + slot picker for a searched [food], then logs it via
-  /// [mealLogControllerProvider.logFromComponents].
-  void _showFoodLogSheet(Food food) {
-    double servings = 1.0;
-    MealSlot slot = MealSlot.breakfast;
-    final title = food.displayName ?? food.name;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final scaledCal = ((food.caloriesPerServing ?? 0) * servings).round();
-          final scaledCarb = ((food.carbsPerServing ?? 0) * servings)
-              .toStringAsFixed(0);
-          final scaledProt = ((food.proteinPerServing ?? 0) * servings)
-              .toStringAsFixed(0);
-          final scaledFat = ((food.fatPerServing ?? 0) * servings)
-              .toStringAsFixed(0);
-
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.blackberry : AppColors.cream,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
-            padding: EdgeInsets.only(
-              left: AppSpacing.lg,
-              right: AppSpacing.lg,
-              top: AppSpacing.md,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white24 : Colors.black12,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    title,
-                    style: AppTextStyles.subtitle,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '$scaledCal kcal  ·  C ${scaledCarb}g  P ${scaledProt}g  F ${scaledFat}g',
-                    style: AppTextStyles.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: servings > 0.5
-                            ? () => setModalState(
-                                () => servings = (servings - 0.5).clamp(
-                                  0.5,
-                                  10.0,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(
-                        width: 60,
-                        child: Text(
-                          servings == servings.truncateToDouble()
-                              ? servings.toInt().toString()
-                              : servings.toStringAsFixed(1),
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 22,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: servings < 10
-                            ? () => setModalState(
-                                () => servings = (servings + 0.5).clamp(
-                                  0.5,
-                                  10.0,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text('Meal type', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 6),
-                  SlotChipSelector(
-                    selectedSlot: slot,
-                    onSlotSelected: (s) => setModalState(() => slot = s),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  KylePrimaryButton(
-                    text: 'Log Food',
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      _logFoodComponent(food, servings, slot);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _logFoodComponent(
-    Food food,
-    double servings,
-    MealSlot slot,
-  ) async {
-    final name = food.displayName ?? food.name;
-    final component = MealComponent(
-      name: name,
-      portion: servings == servings.truncateToDouble()
-          ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
-          : '${servings.toStringAsFixed(1)} servings',
-      calories: food.caloriesPerServing != null
-          ? (food.caloriesPerServing! * servings).round()
-          : null,
-      carbG: food.carbsPerServing != null
-          ? food.carbsPerServing! * servings
-          : null,
-      proteinG: food.proteinPerServing != null
-          ? food.proteinPerServing! * servings
-          : null,
-      fatG: food.fatPerServing != null ? food.fatPerServing! * servings : null,
-      sodiumMg: food.sodiumMg != null ? food.sodiumMg! * servings : null,
-    );
-
-    await ref
-        .read(mealLogControllerProvider.notifier)
-        .logFromComponents(
-          name: name,
-          slot: slot,
-          logDate: widget.logDate,
-          source: MealLogSource.manual,
-          components: [component],
-        );
-
-    if (!mounted) return;
-    final s = ref.read(mealLogControllerProvider);
-    if (s is AsyncData) {
-      widget.onLogged();
-    } else {
-      widget.onLogError();
-    }
-  }
-
-  void _applyFilter(RecipeType? type) {
-    setState(() {
-      _selectedType = type;
-      _filtered = type == null
-          ? _recipes
-          : _recipes.where((r) => r.type == type).toList();
-    });
-  }
-
-  void _showLogSheet(Recipe recipe) {
-    double servings = 1.0;
-    MealSlot slot = MealSlot.breakfast;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final scaledCal = (recipe.nutrition.calories * servings).round();
-          final scaledCarb = (recipe.nutrition.carbohydratesGrams * servings)
-              .toStringAsFixed(0);
-          final scaledProt = (recipe.nutrition.proteinGrams * servings)
-              .toStringAsFixed(0);
-          final scaledFat = (recipe.nutrition.fatGrams * servings)
-              .toStringAsFixed(0);
-
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.blackberry : AppColors.cream,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
-            padding: EdgeInsets.only(
-              left: AppSpacing.lg,
-              right: AppSpacing.lg,
-              top: AppSpacing.md,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white24 : Colors.black12,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    recipe.name,
-                    style: AppTextStyles.subtitle,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '$scaledCal kcal  ·  C ${scaledCarb}g  P ${scaledProt}g  F ${scaledFat}g',
-                    style: AppTextStyles.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: servings > 0.5
-                            ? () => setModalState(
-                                () => servings = (servings - 0.5).clamp(
-                                  0.5,
-                                  10.0,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(
-                        width: 60,
-                        child: Text(
-                          servings == servings.truncateToDouble()
-                              ? servings.toInt().toString()
-                              : servings.toStringAsFixed(1),
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 22,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: servings < 10
-                            ? () => setModalState(
-                                () => servings = (servings + 0.5).clamp(
-                                  0.5,
-                                  10.0,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text('Meal type', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 6),
-                  SlotChipSelector(
-                    selectedSlot: slot,
-                    onSlotSelected: (s) => setModalState(() => slot = s),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  KylePrimaryButton(
-                    text: 'Log Recipe',
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      _logRecipe(recipe, servings, slot);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _logRecipe(Recipe recipe, double servings, MealSlot slot) async {
-    final params = RecipeLogParams(
-      recipeId: recipe.id,
-      recipeName: recipe.name,
-      servings: servings,
-      caloriesPerServing: recipe.nutrition.calories,
-      carbsGPerServing: recipe.nutrition.carbohydratesGrams,
-      proteinGPerServing: recipe.nutrition.proteinGrams,
-      fatGPerServing: recipe.nutrition.fatGrams,
-      sodiumMgPerServing: recipe.nutrition.sodiumMilligrams,
-    );
-    await ref
-        .read(mealLogControllerProvider.notifier)
-        .logRecipe(params: params, slot: slot, logDate: widget.logDate);
-
-    if (!mounted) return;
-    final s = ref.read(mealLogControllerProvider);
-    if (s is AsyncData) {
-      widget.onLogged();
-    } else {
-      widget.onLogError();
-    }
-  }
-
-  void _logAssembly(QuickAssembly assembly) {
-    showSlotPickerSheet(
-      context,
-      onSelected: (slot) async {
-        await ref
-            .read(mealLogControllerProvider.notifier)
-            .logFromComponents(
-              name: assembly.name,
-              slot: slot,
-              logDate: widget.logDate,
-              source: MealLogSource.manual,
-              components: assembly.components,
-            );
-        if (!mounted) return;
-        final s = ref.read(mealLogControllerProvider);
-        if (s is AsyncData) {
-          widget.onLogged();
-        } else {
-          widget.onLogError();
-        }
-      },
-    );
+  List<Recipe> get _filtered {
+    final type = _selectedType;
+    return type == null
+        ? widget.recipes
+        : widget.recipes.where((r) => r.type == type).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final foodSearchState = ref.watch(
-      foodSearchControllerProvider(_foodSearchControllerKey),
-    );
-    final isSearchingFood = foodSearchState.searchQuery.isNotEmpty;
 
-    if (!widget.shouldLoad || (_isLoading && _recipes.isEmpty)) {
+    if (widget.isLoading && widget.recipes.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
     return Column(
       children: [
-        // Product/food search bar — pinned above the recipe browser/results.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            AppSpacing.xs,
-          ),
-          child: FoodSearchBar(
-            controller: _foodSearchController,
-            hintText: 'Search foods to log...',
-            onChanged: _onFoodSearchChanged,
-            onSearch: _onFoodSearchButtonPressed,
-            onBarcodeScan: _onFoodBarcodeScan,
-          ),
-        ),
-        Expanded(
-          child: isSearchingFood
-              ? UnifiedFoodSearchResults(
-                  controllerKey: _foodSearchControllerKey,
-                  scrollController: widget.scrollController,
-                  userFoodItemBuilder: (food) => FoodCardWidget(
-                    food: food,
-                    isUserFood: true,
-                    onTap: () => _showFoodLogSheet(food),
-                  ),
-                  templateFoodItemBuilder: (food) => FoodCardWidget(
-                    food: food,
-                    isUserFood: false,
-                    onTap: () => _showFoodLogSheet(food),
-                  ),
-                  catalogItemBuilder: (result) => CatalogCard(
-                    result: result,
-                    onTap: () =>
-                        _showFoodLogSheet(_catalogResultToFood(result)),
-                  ),
-                  onSearchOpenFoodFacts: () =>
-                      _onFoodSearchButtonPressed(foodSearchState.searchQuery),
-                  onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
-                  emptyQueryContent: const SizedBox.shrink(),
-                )
-              : _buildRecipeBrowser(isDark, textColor),
-        ),
-      ],
-    );
-  }
-
-  /// Recipe browsing UI (quick-add assemblies + category chips + recipes) —
-  /// shown when the food search bar is empty.
-  Widget _buildRecipeBrowser(bool isDark, Color textColor) {
-    return Column(
-      children: [
-        // Category filter chips
         SizedBox(
           height: 34,
           child: ListView(
@@ -1369,7 +1069,7 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
               _TypeChip(
                 label: 'All',
                 selected: _selectedType == null,
-                onTap: () => _applyFilter(null),
+                onTap: () => setState(() => _selectedType = null),
                 isDark: isDark,
               ),
               const SizedBox(width: 6),
@@ -1379,7 +1079,7 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                   child: _TypeChip(
                     label: t.displayLabel,
                     selected: _selectedType == t,
-                    onTap: () => _applyFilter(t),
+                    onTap: () => setState(() => _selectedType = t),
                     isDark: isDark,
                   ),
                 ),
@@ -1388,103 +1088,55 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
           ),
         ),
         Expanded(
-          child: ListView(
-            controller: widget.scrollController,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            children: [
-              // Quick add — preset assemblies, only on the unfiltered view.
-              if (_selectedType == null) ...[
-                _SectionHeader(label: 'Quick add', textColor: textColor),
-                const SizedBox(height: AppSpacing.xs),
-                ...kQuickAssemblies.map(
-                  (assembly) => Card(
-                    margin: const EdgeInsets.symmetric(vertical: 3),
-                    child: ListTile(
-                      dense: true,
-                      leading: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Center(
-                          child: Text(
-                            assembly.emoji,
-                            style: const TextStyle(fontSize: 22),
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        assembly.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      subtitle: _macroLine(
-                        context,
-                        assembly.totalCalories,
-                        assembly.totalCarbsG,
-                        assembly.totalProteinG,
-                        assembly.totalFatG,
-                      ),
-                      trailing: const Icon(Icons.chevron_right, size: 18),
-                      onTap: () => _logAssembly(assembly),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _SectionHeader(label: 'Recipes', textColor: textColor),
-                const SizedBox(height: AppSpacing.xs),
-              ],
-              if (_filtered.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                  child: Center(
-                    child: Text(
-                      'No recipes found.',
-                      style: AppTextStyles.bodyMedium,
-                    ),
+          child: _filtered.isEmpty
+              ? Center(
+                  child: Text(
+                    'No recipes found.',
+                    style: AppTextStyles.bodyMedium,
                   ),
                 )
-              else
-                ..._filtered.map((recipe) {
-                  final cal = recipe.nutrition.calories.round();
-                  final carb = recipe.nutrition.carbohydratesGrams
-                      .toStringAsFixed(0);
-                  final prot = recipe.nutrition.proteinGrams.toStringAsFixed(0);
-                  final fat = recipe.nutrition.fatGrams.toStringAsFixed(0);
+              : ListView(
+                  controller: widget.scrollController,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
+                  children: _filtered.map((recipe) {
+                    final cal = recipe.nutrition.calories.round();
+                    final carb =
+                        recipe.nutrition.carbohydratesGrams.toStringAsFixed(0);
+                    final prot =
+                        recipe.nutrition.proteinGrams.toStringAsFixed(0);
+                    final fat = recipe.nutrition.fatGrams.toStringAsFixed(0);
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 3),
-                    child: ListTile(
-                      dense: true,
-                      leading: _RecipeThumbnail(
-                        imageUrl: recipe.imageUrl,
-                        type: recipe.type,
-                        size: 40,
-                      ),
-                      title: Text(
-                        recipe.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 3),
+                      child: ListTile(
+                        dense: true,
+                        leading: _RecipeThumbnail(
+                          imageUrl: recipe.imageUrl,
+                          type: recipe.type,
+                          size: 40,
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        title: Text(
+                          recipe.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '$cal kcal  ·  C ${carb}g  P ${prot}g  F ${fat}g',
+                          style: Theme.of(context).textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: const Icon(Icons.add_circle_outline, size: 18),
+                        onTap: () => widget.onRecipeTap(recipe),
                       ),
-                      subtitle: Text(
-                        '$cal kcal  ·  C ${carb}g  P ${prot}g  F ${fat}g',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: const Icon(Icons.chevron_right, size: 18),
-                      onTap: () => _showLogSheet(recipe),
-                    ),
-                  );
-                }),
-              const SizedBox(height: AppSpacing.xl),
-            ],
-          ),
+                    );
+                  }).toList(),
+                ),
         ),
       ],
     );
@@ -1611,7 +1263,8 @@ class _TypeChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// AI tab
+// AI tab — unchanged terminal flow (photo/describe review screen owns its
+// own name/slot/items confirmation; see item 13 for the editor unification).
 // ---------------------------------------------------------------------------
 
 class _AiTab extends ConsumerStatefulWidget {

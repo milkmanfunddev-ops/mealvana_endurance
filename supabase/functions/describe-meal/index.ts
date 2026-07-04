@@ -145,10 +145,22 @@ serve(withSentry(async (req: Request) => {
 The athlete described this meal: "${description.trim()}"
 
 INSTRUCTIONS:
-- Parse the description into individual food items.
+- Group food into items the way a person logging their own meal would think
+  about it — one item per DISH or line, not one item per raw ingredient.
+  For example: "spaghetti and meatballs" is ONE item (its sauce, pasta, and
+  meatballs are summed into one entry), while a side of "broccoli" is a
+  SEPARATE item because it's a distinct component of the plate. Similarly,
+  "a turkey sandwich with lettuce and mayo" is ONE item, not three. Only
+  split into multiple items when the foods are genuinely separate parts of
+  the meal (a side dish, a drink, a dessert) — never split a single dish's
+  own ingredients apart.
+- Each item's macros must be the SUM across everything that makes up that
+  dish (e.g. the meatballs' and sauce's calories/carbs/protein/fat/sodium
+  are combined into the "spaghetti and meatballs" item, not reported
+  separately).
 - If a quantity is mentioned (e.g. "two eggs", "large OJ"), use it; otherwise assume a single, realistic serving for an adult endurance athlete.
 - Do NOT underestimate portions — athletes eat meaningfully sized meals.
-- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg).
+- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg). These must be non-null for every item.
 - Compute accurate totals across all items.
 - Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods described.
 - Set confidence to "high" if the description is precise (weights, brand names, counts); "medium" if typical portions can be inferred; "low" if too vague to estimate reliably.

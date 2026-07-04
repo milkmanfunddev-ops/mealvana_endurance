@@ -37546,9 +37546,9 @@ class $MealLogsTableTable extends MealLogsTable
   late final GeneratedColumn<String> slot = GeneratedColumn<String>(
     'slot',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
@@ -37806,8 +37806,6 @@ class $MealLogsTableTable extends MealLogsTable
         _slotMeta,
         slot.isAcceptableOrUnknown(data['slot']!, _slotMeta),
       );
-    } else if (isInserting) {
-      context.missing(_slotMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -37958,7 +37956,7 @@ class $MealLogsTableTable extends MealLogsTable
       slot: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}slot'],
-      )!,
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -38048,8 +38046,10 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
   /// match the Supabase DATE column without timezone drift.
   final String logDate;
 
-  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'.
-  final String slot;
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack', or NULL when the user leaves
+  /// the meal untagged (optional since schema v14 — see the build-a-meal
+  /// redesign notes on [AppDatabase.migration]).
+  final String? slot;
 
   /// Display title, e.g. "Oatmeal + banana".
   final String name;
@@ -38086,7 +38086,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     required this.id,
     required this.userId,
     required this.logDate,
-    required this.slot,
+    this.slot,
     required this.name,
     required this.source,
     required this.items,
@@ -38112,7 +38112,9 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     map['id'] = Variable<String>(id);
     map['user_id'] = Variable<String>(userId);
     map['log_date'] = Variable<String>(logDate);
-    map['slot'] = Variable<String>(slot);
+    if (!nullToAbsent || slot != null) {
+      map['slot'] = Variable<String>(slot);
+    }
     map['name'] = Variable<String>(name);
     map['source'] = Variable<String>(source);
     map['items'] = Variable<String>(items);
@@ -38163,7 +38165,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       id: Value(id),
       userId: Value(userId),
       logDate: Value(logDate),
-      slot: Value(slot),
+      slot: slot == null && nullToAbsent ? const Value.absent() : Value(slot),
       name: Value(name),
       source: Value(source),
       items: Value(items),
@@ -38216,7 +38218,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String>(json['userId']),
       logDate: serializer.fromJson<String>(json['logDate']),
-      slot: serializer.fromJson<String>(json['slot']),
+      slot: serializer.fromJson<String?>(json['slot']),
       name: serializer.fromJson<String>(json['name']),
       source: serializer.fromJson<String>(json['source']),
       items: serializer.fromJson<String>(json['items']),
@@ -38244,7 +38246,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       'id': serializer.toJson<String>(id),
       'userId': serializer.toJson<String>(userId),
       'logDate': serializer.toJson<String>(logDate),
-      'slot': serializer.toJson<String>(slot),
+      'slot': serializer.toJson<String?>(slot),
       'name': serializer.toJson<String>(name),
       'source': serializer.toJson<String>(source),
       'items': serializer.toJson<String>(items),
@@ -38270,7 +38272,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     String? id,
     String? userId,
     String? logDate,
-    String? slot,
+    Value<String?> slot = const Value.absent(),
     String? name,
     String? source,
     String? items,
@@ -38293,7 +38295,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     id: id ?? this.id,
     userId: userId ?? this.userId,
     logDate: logDate ?? this.logDate,
-    slot: slot ?? this.slot,
+    slot: slot.present ? slot.value : this.slot,
     name: name ?? this.name,
     source: source ?? this.source,
     items: items ?? this.items,
@@ -38434,7 +38436,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
   final Value<String> id;
   final Value<String> userId;
   final Value<String> logDate;
-  final Value<String> slot;
+  final Value<String?> slot;
   final Value<String> name;
   final Value<String> source;
   final Value<String> items;
@@ -38483,7 +38485,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.id = const Value.absent(),
     required String userId,
     required String logDate,
-    required String slot,
+    this.slot = const Value.absent(),
     required String name,
     required String source,
     this.items = const Value.absent(),
@@ -38505,7 +38507,6 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.rowid = const Value.absent(),
   }) : userId = Value(userId),
        logDate = Value(logDate),
-       slot = Value(slot),
        name = Value(name),
        source = Value(source),
        createdAt = Value(createdAt),
@@ -38566,7 +38567,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Value<String>? id,
     Value<String>? userId,
     Value<String>? logDate,
-    Value<String>? slot,
+    Value<String?>? slot,
     Value<String>? name,
     Value<String>? source,
     Value<String>? items,
@@ -57351,7 +57352,7 @@ typedef $$MealLogsTableTableCreateCompanionBuilder =
       Value<String> id,
       required String userId,
       required String logDate,
-      required String slot,
+      Value<String?> slot,
       required String name,
       required String source,
       Value<String> items,
@@ -57377,7 +57378,7 @@ typedef $$MealLogsTableTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> userId,
       Value<String> logDate,
-      Value<String> slot,
+      Value<String?> slot,
       Value<String> name,
       Value<String> source,
       Value<String> items,
@@ -57755,7 +57756,7 @@ class $$MealLogsTableTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String> logDate = const Value.absent(),
-                Value<String> slot = const Value.absent(),
+                Value<String?> slot = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String> items = const Value.absent(),
@@ -57805,7 +57806,7 @@ class $$MealLogsTableTableTableManager
                 Value<String> id = const Value.absent(),
                 required String userId,
                 required String logDate,
-                required String slot,
+                Value<String?> slot = const Value.absent(),
                 required String name,
                 required String source,
                 Value<String> items = const Value.absent(),

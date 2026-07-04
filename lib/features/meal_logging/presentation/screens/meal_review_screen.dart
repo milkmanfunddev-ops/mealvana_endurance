@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
-import '../widgets/meal_items_editor.dart';
-import '../widgets/slot_chip_selector.dart';
+import '../widgets/meal_component_editor.dart';
+import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 
 /// Review & confirm screen shown after AI analysis (photo or describe flows).
 ///
@@ -29,8 +30,8 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   String? _source;
   String? _logDate;
   String? _photoPath;
-  MealSlot _slot = MealSlot.breakfast;
-  List<MealAnalysisItem> _items = [];
+  MealSlot? _slot;
+  List<MealComponent> _components = [];
 
   bool _initialized = false;
 
@@ -47,8 +48,10 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
       if (_result != null) {
         _nameCtrl.text = _result!.name;
+        // AI's best-guess slot pre-fills the (optional) selector — the user
+        // can clear it back to "Any time" if it's wrong or not relevant.
         _slot = _result!.suggestedSlot;
-        _items = List.from(_result!.items);
+        _components = _result!.items.map(_itemToComponent).toList();
       }
       _initialized = true;
     }
@@ -72,19 +75,56 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     );
   }
 
+  /// Opens the shared food-swap picker (returnSelection mode) and maps the
+  /// chosen food + quantity into a replacement [MealComponent]. Mirrors
+  /// [EditMealLogScreen._swapComponentFood] so both flows share the same
+  /// swap UX (unifies with the build-a-meal draft editor — item 13).
+  Future<MealComponent?> _swapComponentFood(MealComponent current) async {
+    final selection = await context.push<SwapFoodSelection>(
+      '/swap-food',
+      extra: {
+        'returnSelection': true,
+        'category': 'before_run',
+        'foodToSwapName': current.name,
+      },
+    );
+    if (selection == null) return null;
+
+    final food = selection.food;
+    final qty = selection.quantity;
+    final qtyLabel = qty == qty.truncateToDouble()
+        ? qty.toInt().toString()
+        : qty.toStringAsFixed(1);
+    final unit = qty == 1
+        ? (food.servingUnit ?? 'serving')
+        : (food.servingUnitPlural ?? food.servingUnit ?? 'servings');
+    double? scale(num? v) => v == null ? null : v.toDouble() * qty;
+
+    return MealComponent(
+      name: food.displayName ?? food.name,
+      portion: '$qtyLabel $unit',
+      calories: food.caloriesPerServing != null
+          ? (food.caloriesPerServing! * qty).round()
+          : null,
+      carbG: scale(food.carbsPerServing),
+      proteinG: scale(food.proteinPerServing),
+      fatG: scale(food.fatPerServing),
+      sodiumMg: scale(food.sodiumMg),
+    );
+  }
+
   Future<void> _logMeal() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty || _logDate == null) return;
 
     final source = MealLogSource.fromWireValue(_source) ?? MealLogSource.photo;
-    final components = _items.map(_itemToComponent).toList();
 
     await ref.read(mealLogControllerProvider.notifier).logFromComponents(
           name: name,
           slot: _slot,
           logDate: _logDate!,
           source: source,
-          components: components,
+          components: _components,
           photoPath: _photoPath,
         );
 
@@ -139,22 +179,26 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Slot selector
+            // Slot selector (optional — build-a-meal redesign)
             Text(
               'Meal type',
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 6),
-            SlotChipSelector(
+            OptionalSlotChipSelector(
               selectedSlot: _slot,
               onSlotSelected: (s) => setState(() => _slot = s),
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Items editor
-            MealItemsEditor(
-              initialItems: _items,
-              onItemsChanged: (items) => setState(() => _items = items),
+            // Items editor — shared with the build-a-meal draft editor and
+            // Edit Meal (item 13): independently editable quantity per item,
+            // swipe-to-swap via the shared food-swap picker.
+            MealComponentEditor(
+              initialComponents: _components,
+              onComponentsChanged: (updated) =>
+                  setState(() => _components = updated),
+              onRequestSwap: _swapComponentFood,
             ),
 
             // AI notes

@@ -49,6 +49,9 @@ class TimelineNodeTile extends StatelessWidget {
         MealSlot.lunch => kMacroColorCarbs,
         MealSlot.snack => AppColors.dragonfruit,
         MealSlot.dinner => kMacroColorProtein,
+        // Untagged meals (slot is optional — build-a-meal redesign) get a
+        // neutral dot rather than crashing the exhaustive switch.
+        null => AppColors.electrolyte,
       },
     };
   }

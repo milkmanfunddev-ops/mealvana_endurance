@@ -302,7 +302,7 @@ class MealLogRepository with SyncableRepository {
       context: 'MEAL_LOG_REPOSITORY',
       data: {
         'logId': toSave.id,
-        'slot': toSave.slot.wireValue,
+        'slot': toSave.slot?.wireValue,
         'source': toSave.source.wireValue,
       },
     );

@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/daily_macros/presentation/widgets/macro_palette.dart'
     show kMacroColorCarbs, kMacroColorFat, kMacroColorProtein;
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/meal_favorite_match.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
+import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
 import 'slot_palette.dart';
 
@@ -53,6 +55,12 @@ class MealLogRow extends ConsumerWidget {
     final carbsG = log.carbsG;
     final proteinG = log.proteinG;
     final fatG = log.fatG;
+
+    // Favorite lookup — matched by name + component signature since
+    // `saved_meals` has no back-link column to the originating log (item 23).
+    final favoritesAsync = ref.watch(savedMealsProvider);
+    final favorites = favoritesAsync.asData?.value ?? const <SavedMeal>[];
+    final matchedFavorite = findFavoriteMatch(log, favorites);
 
     return Dismissible(
       key: ValueKey(log.id),
@@ -117,6 +125,20 @@ class MealLogRow extends ConsumerWidget {
                     ],
                   ),
                 ),
+                IconButton(
+                  icon: Icon(
+                    matchedFavorite != null ? Icons.star : Icons.star_border,
+                    size: 20,
+                    color: matchedFavorite != null
+                        ? AppColors.orange
+                        : subtitleColor,
+                  ),
+                  tooltip: matchedFavorite != null
+                      ? 'Remove from favorites'
+                      : 'Save as favorite',
+                  onPressed: () =>
+                      _toggleFavorite(context, ref, matchedFavorite),
+                ),
                 PopupMenuButton<_MenuAction>(
                   onSelected: (action) {
                     switch (action) {
@@ -144,6 +166,24 @@ class MealLogRow extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Toggles the favorite star: saves [log] as a new favorite when it isn't
+  /// currently matched to one, or removes the matched favorite otherwise
+  /// (item 23 — one-tap star, reusing the existing `saved_meals` mechanism).
+  void _toggleFavorite(
+    BuildContext context,
+    WidgetRef ref,
+    SavedMeal? matchedFavorite,
+  ) {
+    final notifier = ref.read(mealLogControllerProvider.notifier);
+    if (matchedFavorite != null) {
+      notifier.deleteSavedMeal(matchedFavorite.id);
+      MealvanaSnackbar.showInfo(context, 'Removed from favorites');
+    } else {
+      notifier.saveLogAsFavorite(log);
+      MealvanaSnackbar.showSuccess(context, 'Saved as favorite');
+    }
   }
 
   void _showSaveFavoriteDialog(BuildContext context) {
@@ -232,10 +272,15 @@ class _LeadingPhoto extends ConsumerWidget {
 class _SlotChip extends StatelessWidget {
   const _SlotChip({required this.slot});
 
-  final MealSlot slot;
+  /// Null when the meal is untagged (slot is optional — build-a-meal
+  /// redesign). Renders nothing rather than a placeholder chip so untagged
+  /// rows don't look "broken".
+  final MealSlot? slot;
 
   @override
   Widget build(BuildContext context) {
+    final slot = this.slot;
+    if (slot == null) return const SizedBox.shrink();
     final color = slotColor(slot);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
