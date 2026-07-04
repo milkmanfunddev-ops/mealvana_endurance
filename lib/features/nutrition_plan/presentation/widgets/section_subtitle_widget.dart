@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/macro_targets.dart' as targets_model;
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 /// Separate widget for section subtitles that can be updated independently
 /// Takes the plan as a parameter to calculate totals without watching controller

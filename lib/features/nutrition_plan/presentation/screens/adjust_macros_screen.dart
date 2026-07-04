@@ -15,7 +15,7 @@ import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/content_area.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets

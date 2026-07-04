@@ -4,7 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../domain/nutrition_plan.dart';
 import '../utils/activity_detail_helpers.dart';
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Macro targets display widget with progress bars matching original design

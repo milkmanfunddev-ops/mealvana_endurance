@@ -7,6 +7,10 @@ class UnitFormatter {
   static const double kKgPerLb = 0.453592;
   static const double kLbPerKg = 2.20462;
   static const double kCmPerInch = 2.54;
+  static const double kKmPerMile = 1.60934;
+  static const double kMilePerKm = 0.621371;
+  static const double kMeterPerFoot = 0.3048;
+  static const double kFootPerMeter = 3.28084;
 
   static String formatFluids(double ml, {bool useImperial = false, bool useMetric = false}) {
     // Support both parameter names for backward compatibility
@@ -74,10 +78,55 @@ class UnitFormatter {
     return (totalInches ~/ 12, totalInches % 12);
   }
 
+  // Temperature conversion methods (base unit: Celsius, matching stored
+  // weather/environment data throughout the app - see WeatherForecast.temperatureC)
+  static String formatTemperature(double celsius, {required bool useMetric}) {
+    if (useMetric) {
+      return '${celsius.round()}°C';
+    }
+    return '${celsiusToFahrenheit(celsius).round()}°F';
+  }
+
+  static double celsiusToFahrenheit(double celsius) => (celsius * 9 / 5) + 32;
+
+  static double fahrenheitToCelsius(double fahrenheit) => (fahrenheit - 32) * 5 / 9;
+
+  // Speed conversion methods (base unit: mph, matching
+  // UserProfile.defaultCyclingSpeedMph and other imperial-base fields)
+  static String formatSpeed(double mph, {required bool useMetric}) {
+    if (useMetric) {
+      return '${mphToKph(mph).toStringAsFixed(1)} km/h';
+    }
+    return '${mph.toStringAsFixed(1)} mph';
+  }
+
+  static double mphToKph(double mph) => mph * kKmPerMile;
+
+  static double kphToMph(double kph) => kph * kMilePerKm;
+
+  // Elevation conversion methods (base unit: feet, matching
+  // CyclingParameters.elevationGainFt and other imperial-base fields)
+  static String formatElevation(num feet, {required bool useMetric}) {
+    if (useMetric) {
+      return '${feetToMeters(feet.toDouble()).round()} m';
+    }
+    return '${feet.round()} ft';
+  }
+
+  static double feetToMeters(double feet) => feet * kMeterPerFoot;
+
+  static double metersToFeet(double meters) => meters * kFootPerMeter;
+
   // Unit label helpers
   static String fluidUnitLabel({required bool useMetric}) => useMetric ? 'mL' : 'oz';
 
   static String weightUnitLabel({required bool useMetric}) => useMetric ? 'kg' : 'lbs';
 
   static String heightUnitLabel({required bool useMetric}) => useMetric ? 'cm' : 'ft/in';
+
+  static String temperatureUnitLabel({required bool useMetric}) => useMetric ? '°C' : '°F';
+
+  static String speedUnitLabel({required bool useMetric}) => useMetric ? 'km/h' : 'mph';
+
+  static String elevationUnitLabel({required bool useMetric}) => useMetric ? 'm' : 'ft';
 }

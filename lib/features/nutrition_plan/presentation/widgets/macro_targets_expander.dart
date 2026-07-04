@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/presentation/utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Expandable macro targets section with + button

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/macro_targets.dart';
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 /// A collapsible card displaying macro adjustment fields for a specific section
 /// (Pre-Run, During-Run, or Post-Run) with editable input fields
