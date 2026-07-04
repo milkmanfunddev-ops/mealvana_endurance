@@ -675,11 +675,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // delay in case the first push was slow.
       Future<void>(() async {
         await Future.delayed(const Duration(seconds: 5));
-        if (_currentUserId != null) {
+        // Guard against invalidating after this controller has been disposed
+        // (Sentry MEALVANA-ENDURANCE-A0 UnmountedRefException family) — the
+        // 5s/15s delays easily outlive a screen the user navigated away from.
+        if (ref.mounted && _currentUserId != null) {
           ref.invalidate(garminLastBodyCompProvider(_currentUserId!));
         }
         await Future.delayed(const Duration(seconds: 15));
-        if (_currentUserId != null) {
+        if (ref.mounted && _currentUserId != null) {
           ref.invalidate(garminLastBodyCompProvider(_currentUserId!));
         }
       });
