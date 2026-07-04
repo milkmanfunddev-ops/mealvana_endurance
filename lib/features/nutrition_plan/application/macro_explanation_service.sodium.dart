@@ -6,6 +6,7 @@ part of 'macro_explanation_service.dart';
 extension _$SodiumExt on MacroExplanationService {
   Map<Scenario, NutrientTransparencyData> _singleSportSodiumMap({
     required MacroTargets macroTargets,
+    bool useImperial = false,
   }) {
     final during = macroTargets.duringRun;
     final durationMin = macroTargets.metrics.durationMin.round();
@@ -15,8 +16,10 @@ extension _$SodiumExt on MacroExplanationService {
 
     final map = <Scenario, NutrientTransparencyData>{};
 
-    map[Scenario.singleSport] =
-        _duringSingleSportSodiumTransparency(macroTargets: macroTargets);
+    map[Scenario.singleSport] = _duringSingleSportSodiumTransparency(
+      macroTargets: macroTargets,
+      useImperial: useImperial,
+    );
 
     if (shortWorkoutGate) {
       map[Scenario.shortWorkout] =
@@ -24,8 +27,10 @@ extension _$SodiumExt on MacroExplanationService {
     }
 
     if (isTested) {
-      map[Scenario.knownRate] =
-          _knownRateSodiumTransparency(macroTargets: macroTargets);
+      map[Scenario.knownRate] = _knownRateSodiumTransparency(
+        macroTargets: macroTargets,
+        useImperial: useImperial,
+      );
     }
 
     return map;
@@ -34,6 +39,7 @@ extension _$SodiumExt on MacroExplanationService {
   Map<Scenario, NutrientTransparencyData> _brickSegmentSodiumMap({
     required MacroTargets macroTargets,
     required BrickSegmentMacroTarget segment,
+    bool useImperial = false,
   }) {
     final isTested = segment.isTested;
     final hasRedistribution = [
@@ -46,12 +52,14 @@ extension _$SodiumExt on MacroExplanationService {
     map[Scenario.multiSegment] = _brickSegmentSodiumTransparency(
       macroTargets: macroTargets,
       segment: segment,
+      useImperial: useImperial,
     );
 
     if (hasRedistribution) {
       map[Scenario.redistribution] = _redistributionSodiumTransparency(
         macroTargets: macroTargets,
         segment: segment,
+        useImperial: useImperial,
       );
     }
 
@@ -59,6 +67,7 @@ extension _$SodiumExt on MacroExplanationService {
       map[Scenario.knownRate] = _knownRateSodiumTransparency(
         macroTargets: macroTargets,
         forBrickSegment: segment,
+        useImperial: useImperial,
       );
     }
 
@@ -72,6 +81,7 @@ extension _$SodiumExt on MacroExplanationService {
   NutrientTransparencyData _knownRateSodiumTransparency({
     required MacroTargets macroTargets,
     BrickSegmentMacroTarget? forBrickSegment,
+    bool useImperial = false,
   }) {
     final during = macroTargets.duringRun;
     final durationH = forBrickSegment != null
@@ -96,7 +106,7 @@ extension _$SodiumExt on MacroExplanationService {
       tldrLines = [
         FormulaLine([
           fAccent('fluid rate '),
-          fDim('$fluidRateMlH mL/hr '),
+          fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('TESTED conc '),
           fDim('$sodiumConc mg/L '),
@@ -233,6 +243,7 @@ extension _$SodiumExt on MacroExplanationService {
   NutrientTransparencyData _redistributionSodiumTransparency({
     required MacroTargets macroTargets,
     required BrickSegmentMacroTarget segment,
+    bool useImperial = false,
   }) {
     final durationH = segment.durationMinutes / 60.0;
     final sodiumMg = segment.sodiumMg.round();
@@ -247,7 +258,7 @@ extension _$SodiumExt on MacroExplanationService {
         FormulaLine([
           fOp('# '),
           fAccent('redistributed fluid '),
-          fDim('$fluidRateMlH mL/hr '),
+          fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('conc '),
           fDim('$sodiumConc mg/L '),
@@ -308,6 +319,7 @@ extension _$SodiumExt on MacroExplanationService {
 
   NutrientTransparencyData _preWorkoutSodiumTransparency({
     required MacroTargets macroTargets,
+    bool useImperial = false,
   }) {
     final pre = macroTargets.preRun;
     final sodiumMg = pre.sodiumMg.round();
@@ -384,6 +396,7 @@ extension _$SodiumExt on MacroExplanationService {
         sodiumLowMg: rangeLowMg,
         sodiumHighMg: rangeHighMg,
         isGateFired: isGateFired,
+        useImperial: useImperial,
       ),
       storySections: const [
         StorySection(
@@ -453,6 +466,7 @@ extension _$SodiumExt on MacroExplanationService {
 
   NutrientTransparencyData _duringSingleSportSodiumTransparency({
     required MacroTargets macroTargets,
+    bool useImperial = false,
   }) {
     final during = macroTargets.duringRun;
     final durationH = macroTargets.metrics.durationH;
@@ -468,7 +482,7 @@ extension _$SodiumExt on MacroExplanationService {
       tldrLines = [
         FormulaLine([
           fAccent('fluid rate '),
-          fDim('$fluidRateMlH mL/hr '),
+          fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('conc '),
           fDim('$sodiumConc mg/L '),
@@ -503,6 +517,7 @@ extension _$SodiumExt on MacroExplanationService {
     final sodiumCalcSections = _buildDuringSodiumCalculationSections(
       during: during,
       durationH: durationH,
+      useImperial: useImperial,
     );
 
     return NutrientTransparencyData(
@@ -637,6 +652,7 @@ extension _$SodiumExt on MacroExplanationService {
   NutrientTransparencyData _brickSegmentSodiumTransparency({
     required MacroTargets macroTargets,
     required BrickSegmentMacroTarget segment,
+    bool useImperial = false,
   }) {
     final durationH = segment.durationMinutes / 60.0;
     final sodiumMg = segment.sodiumMg.round();
@@ -651,7 +667,7 @@ extension _$SodiumExt on MacroExplanationService {
       tldrLines = [
         FormulaLine([
           fAccent('fluid rate '),
-          fDim('$fluidRateMlH mL/hr '),
+          fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('conc '),
           fDim('$sodiumConc mg/L '),
@@ -697,6 +713,7 @@ extension _$SodiumExt on MacroExplanationService {
           ? _buildBrickSegmentSodiumCalculationSections(
               segment: segment,
               concMgPerL: sodiumConc,
+              useImperial: useImperial,
             )
           : const [],
       storySections: _duringSodiumStorySections(
@@ -756,6 +773,7 @@ extension _$SodiumExt on MacroExplanationService {
   NutrientTransparencyData _transitionSodiumTransparency({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
+    bool useImperial = false,
   }) {
     final isT1 = phase == ExplanationPhase.transition1;
     final transitionName = isT1 ? 'T1' : 'T2';
@@ -768,12 +786,13 @@ extension _$SodiumExt on MacroExplanationService {
     final sodiumMg = transition?.sodiumMg.round() ?? 90;
     final sodiumConc = transition?.sodiumConcMgPerL;
     final isTested = transition?.isTested ?? false;
+    final transitionWaterMl = transition?.waterMl.round() ?? 300;
 
     final List<FormulaLine> tldrLines;
     if (sodiumConc != null) {
       tldrLines = [
         FormulaLine([
-          fAccent('300 mL '),
+          fAccent('${_fmtMlAmount(transitionWaterMl, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('conc '),
           fDim('$sodiumConc mg/L '),
@@ -800,14 +819,15 @@ extension _$SodiumExt on MacroExplanationService {
       phase: 'transition',
       isTested: isTested,
       tldrBody:
-          'Transition sodium rides on the fixed 300 mL fluid bolus at your '
+          'Transition sodium rides on the fixed ${_fmtMlAmount(transitionWaterMl, useImperial)} fluid bolus at your '
           'sweat sodium concentration. It matches the sweat [Na+] in whatever '
           'you drink during the brief stop \u2014 no extra factor applied.',
       tldrLines: tldrLines,
       calculationSections: sodiumConc != null
           ? _buildTransitionSodiumCalculationSections(
-              waterMl: transition?.waterMl.round() ?? 300,
+              waterMl: transitionWaterMl,
               concMgPerL: sodiumConc,
+              useImperial: useImperial,
             )
           : const [],
       storySections: [

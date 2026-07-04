@@ -116,9 +116,9 @@ class MacroExplanationService {
           actuals,
         );
       case ExplanationPhase.transition1:
-        return _transitionExplanations(1, actuals);
+        return _transitionExplanations(1, actuals, useImperial: useImperial);
       case ExplanationPhase.transition2:
-        return _transitionExplanations(2, actuals);
+        return _transitionExplanations(2, actuals, useImperial: useImperial);
     }
   }
 
@@ -231,12 +231,15 @@ class MacroExplanationService {
     required double bodyWeightKg,
     BrickSegmentMacroTarget? brickSegment,
     bool isBrick = false,
+    bool useImperial = false,
   }) {
     switch (phase) {
       case ExplanationPhase.before:
         return {
-          Scenario.singleSport:
-              _preWorkoutSodiumTransparency(macroTargets: macroTargets),
+          Scenario.singleSport: _preWorkoutSodiumTransparency(
+            macroTargets: macroTargets,
+            useImperial: useImperial,
+          ),
         };
 
       case ExplanationPhase.during:
@@ -248,9 +251,13 @@ class MacroExplanationService {
           return _brickSegmentSodiumMap(
             macroTargets: macroTargets,
             segment: brickSegment,
+            useImperial: useImperial,
           );
         }
-        return _singleSportSodiumMap(macroTargets: macroTargets);
+        return _singleSportSodiumMap(
+          macroTargets: macroTargets,
+          useImperial: useImperial,
+        );
 
       case ExplanationPhase.transition1:
       case ExplanationPhase.transition2:
@@ -258,6 +265,7 @@ class MacroExplanationService {
           Scenario.t1t2: _transitionSodiumTransparency(
             phase: phase,
             macroTargets: macroTargets,
+            useImperial: useImperial,
           ),
         };
 

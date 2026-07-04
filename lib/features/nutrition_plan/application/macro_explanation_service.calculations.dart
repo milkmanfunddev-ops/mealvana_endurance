@@ -33,6 +33,7 @@ extension _$CalculationsExt on MacroExplanationService {
     required int durationMin,
     required double durationH,
     required double bodyWeightKg,
+    bool useImperial = false,
   }) {
     final effective = during.effectiveSweatRateLPerH;
     final replacementPct = during.replacementPercent;
@@ -134,7 +135,7 @@ extension _$CalculationsExt on MacroExplanationService {
         fOp('× '),
         fDim('${(replacementPct).toStringAsFixed(2)} '),
         fOp('= '),
-        fResult('${(effectiveMlHr * replacementPct).round()} ml/hr'),
+        fResult(_fmtMlRate((effectiveMlHr * replacementPct).round(), useImperial)),
       ],
       stepNumber: '⑤',
     );
@@ -147,7 +148,7 @@ extension _$CalculationsExt on MacroExplanationService {
           [
             fOp('↓ '),
             fAccent('floor '),
-            fDim('= $floorMlH ml/hr '),
+            fDim('= ${_fmtMlRate(floorMlH, useImperial)} '),
             fOp('(2% of ${bodyWeightKg.round()} kg)'),
           ],
         ),
@@ -159,7 +160,7 @@ extension _$CalculationsExt on MacroExplanationService {
           [
             fOp('↑ '),
             fAccent('ceiling '),
-            fDim('= $ceilingMlH ml/hr '),
+            fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} '),
             fOp('(GI limit)'),
           ],
         ),
@@ -172,10 +173,10 @@ extension _$CalculationsExt on MacroExplanationService {
       replacementLines.add(
         FormulaLine(
           [
-            fDim('$pctBased '),
+            fDim('${_fmtMlRate(pctBased, useImperial)} '),
             fOp(pctBased > floorMlH ? '> ' : '< '),
-            fDim('$floorMlH '),
-            fOp('→ '),
+            fDim(_fmtMlRate(floorMlH, useImperial)),
+            fOp(' → '),
             fAccent(pctBased > floorMlH ? 'no floor override' : 'floor raises target'),
           ],
         ),
@@ -185,10 +186,10 @@ extension _$CalculationsExt on MacroExplanationService {
       replacementLines.add(
         FormulaLine(
           [
-            fDim('$fluidRateMlH '),
+            fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp(fluidRateMlH < ceilingMlH ? '< ' : '= '),
-            fDim('$ceilingMlH '),
-            fOp('→ '),
+            fDim(_fmtMlRate(ceilingMlH, useImperial)),
+            fOp(' → '),
             fAccent(
               fluidRateMlH < ceilingMlH ? 'no ceiling cap' : 'capped at ceiling',
             ),
@@ -201,11 +202,11 @@ extension _$CalculationsExt on MacroExplanationService {
     replacementLines.add(
       FormulaLine(
         [
-          fAccent('$fluidRateMlH ml/hr '),
+          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('× '),
           fAccent('${_formatDuration(durationH)} hr '),
           fOp('= '),
-          fResult('$fluidTotalMl ml'),
+          fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
         ],
         isResultLine: true,
         showDividerBefore: true,
@@ -249,6 +250,7 @@ extension _$CalculationsExt on MacroExplanationService {
   List<CalculationSection> _buildDuringSodiumCalculationSections({
     required DuringRunMacros during,
     required double durationH,
+    bool useImperial = false,
   }) {
     final conc = during.sodiumConcMgPerL;
     if (conc == null) return const [];
@@ -272,7 +274,7 @@ extension _$CalculationsExt on MacroExplanationService {
         ),
         FormulaLine(
           [
-            fAccent('$fluidRateMlH ml/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('× '),
             fDim('($conc ÷ 1000) '),
             fOp('= '),
@@ -290,7 +292,7 @@ extension _$CalculationsExt on MacroExplanationService {
         FormulaLine([
           fOp('↓ '),
           fAccent('floor '),
-          fDim('= $floorMlH ml/hr × ($conc ÷ 1000) = $floorMg mg/hr'),
+          fDim('= ${_fmtMlRate(floorMlH, useImperial)} × ($conc ÷ 1000) = $floorMg mg/hr'),
         ]),
       );
     }
@@ -300,7 +302,7 @@ extension _$CalculationsExt on MacroExplanationService {
         FormulaLine([
           fOp('↑ '),
           fAccent('ceiling '),
-          fDim('= $ceilingMlH ml/hr × ($conc ÷ 1000) = $ceilMg mg/hr'),
+          fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} × ($conc ÷ 1000) = $ceilMg mg/hr'),
         ]),
       );
     }
@@ -326,7 +328,7 @@ extension _$CalculationsExt on MacroExplanationService {
         lines: floorCeilLines,
         // C21 — inherited-note callout per `transparency_during_sodium.md`.
         footerNote:
-            'The $fluidRateMlH ml/hr fluid rate, floor, and ceiling all come '
+            'The ${_fmtMlRate(fluidRateMlH, useImperial)} fluid rate, floor, and ceiling all come '
             'from the Fluids section. Sodium automatically adjusts when '
             'fluid adjusts.',
       ),
@@ -359,6 +361,7 @@ extension _$CalculationsExt on MacroExplanationService {
     // purple callout).
     bool showTransitionAbsorptionNote = false,
     int? transitionCount,
+    bool useImperial = false,
   }) {
     final effective = segment.effectiveSweatRateLPerH;
     final replacementPct = segment.replacementPercent;
@@ -443,7 +446,7 @@ extension _$CalculationsExt on MacroExplanationService {
       replacementLines.add(FormulaLine([
         fOp('↓ '),
         fAccent('floor '),
-        fDim('= $floorMlH ml/hr '),
+        fDim('= ${_fmtMlRate(floorMlH, useImperial)} '),
         fOp('(2% of ${bodyWeightKg.round()} kg BW)'),
       ]));
     }
@@ -456,7 +459,7 @@ extension _$CalculationsExt on MacroExplanationService {
       replacementLines.add(FormulaLine([
         fOp('↑ '),
         fAccent('ceiling '),
-        fDim('= $ceilingMlH ml/hr '),
+        fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} '),
         fOp('($sportLabel limit)'),
       ]));
     }
@@ -471,11 +474,11 @@ extension _$CalculationsExt on MacroExplanationService {
 
     replacementLines.add(FormulaLine(
       [
-        fAccent('$fluidRateMlH ml/hr '),
+        fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
         fOp('× '),
         fAccent('${_formatDuration(segDurationH)} hr '),
         fOp('= '),
-        fResult('$waterTotalMl ml'),
+        fResult(_fmtMlAmount(waterTotalMl, useImperial)),
       ],
       isResultLine: true,
       showDividerBefore: true,
@@ -492,7 +495,7 @@ extension _$CalculationsExt on MacroExplanationService {
           'The run leg can only absorb 800 ml/hr — the overflow has '
           'been shifted to this bike leg so the total race stays '
           'within 2% body weight loss. Transitions already absorbed '
-          '600 ml; the heavy sweat rate still required redistribution.';
+          '${_fmtMlAmount(600, useImperial)}; the heavy sweat rate still required redistribution.';
       footerVariant = CalcNoteVariant.redistribution;
     } else if (showTransitionAbsorptionNote &&
         transitionCount != null &&
@@ -504,8 +507,9 @@ extension _$CalculationsExt on MacroExplanationService {
       final totalAbsorbedMl = transitionCount * 300;
       final transitionsLabel = transitionCount == 1 ? 'T2' : 'T1 and T2';
       footerNote =
-          '$transitionsLabel ${transitionCount == 1 ? "provides" : "each provide"} 300 ml. '
-          'These transition windows absorb $totalAbsorbedMl ml of the '
+          '$transitionsLabel ${transitionCount == 1 ? "provides" : "each provide"} '
+          '${_fmtMlAmount(300, useImperial)}. '
+          'These transition windows absorb ${_fmtMlAmount(totalAbsorbedMl, useImperial)} of the '
           'race fluid requirement, keeping the per-leg rate within '
           'segment GI ceilings (no redistribution needed).';
       footerVariant = CalcNoteVariant.info;
@@ -529,6 +533,7 @@ extension _$CalculationsExt on MacroExplanationService {
   List<CalculationSection> _buildBrickSegmentSodiumCalculationSections({
     required BrickSegmentMacroTarget segment,
     required int concMgPerL,
+    bool useImperial = false,
   }) {
     final segDurationH = segment.durationMinutes / 60.0;
     final fluidRateMlH = segDurationH > 0
@@ -550,7 +555,7 @@ extension _$CalculationsExt on MacroExplanationService {
             fOp(_saltPercentile(concMgPerL)),
           ], stepNumber: '①'),
           FormulaLine([
-            fAccent('$fluidRateMlH ml/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('× '),
             fDim('($concMgPerL ÷ 1000) '),
             fOp('= '),
@@ -577,6 +582,7 @@ extension _$CalculationsExt on MacroExplanationService {
   List<CalculationSection> _buildTransitionFluidCalculationSections({
     required int waterMl,
     bool isT1 = true,
+    bool useImperial = false,
   }) {
     // Spec `transparency_during_hydration.md` §T1 / T2 — show fixed bolus,
     // range band, and T1 vs T2 differentiation lines. Not body-weight
@@ -592,7 +598,7 @@ extension _$CalculationsExt on MacroExplanationService {
             [
               fAccent('$transitionLabel '),
               fOp('→ '),
-              fResult('$waterMl ml fixed'),
+              fResult('${_fmtMlAmount(waterMl, useImperial)} fixed'),
               fDim(' (sip, then go)'),
             ],
             stepNumber: '①',
@@ -600,7 +606,7 @@ extension _$CalculationsExt on MacroExplanationService {
           FormulaLine([
             fOp('range '),
             fOp('→ '),
-            fDim('$rangeLow–$rangeHigh ml'),
+            fDim(_fmtMlRange(rangeLow, rangeHigh, useImperial)),
           ]),
           FormulaLine([
             fOp(isT1 ? 'T1: ' : 'T2: '),
@@ -625,6 +631,7 @@ extension _$CalculationsExt on MacroExplanationService {
   List<CalculationSection> _buildTransitionSodiumCalculationSections({
     required int waterMl,
     required int concMgPerL,
+    bool useImperial = false,
   }) {
     final sodium = ((waterMl / 1000) * concMgPerL).round();
     return [
@@ -637,7 +644,7 @@ extension _$CalculationsExt on MacroExplanationService {
             fDim('$concMgPerL mg/L'),
           ], stepNumber: '①'),
           FormulaLine([
-            fAccent('$waterMl ml '),
+            fAccent('${_fmtMlAmount(waterMl, useImperial)} '),
             fOp('× '),
             fDim('($concMgPerL ÷ 1000) '),
             fOp('= '),
@@ -663,6 +670,7 @@ extension _$CalculationsExt on MacroExplanationService {
     required int? fluidsHighMl,
     int? tier,
     bool isGateFired = false,
+    bool useImperial = false,
   }) {
     final bool isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
     final bool isTier2 =
@@ -720,8 +728,8 @@ extension _$CalculationsExt on MacroExplanationService {
             FormulaLine([
               fAccent('fixed top-up '),
               fOp('= '),
-              fResult('$fluidsMl ml '),
-              fDim('[${fluidsLowMl ?? 200}–${fluidsHighMl ?? 300} ml]'),
+              fResult('${_fmtMlAmount(fluidsMl, useImperial)} '),
+              fDim('[${_fmtMlRange(fluidsLowMl ?? 200, fluidsHighMl ?? 300, useImperial)}]'),
             ], stepNumber: '②'),
             const FormulaLine([
               FormulaSegment('→ ', style: SegmentStyle.op),
@@ -752,8 +760,8 @@ extension _$CalculationsExt on MacroExplanationService {
             fOp('× '),
             fDim('$mlPerKg ml/kg '),
             fOp('= '),
-            fResult('$fluidsMl ml '),
-            fDim('[${fluidsLowMl ?? (bodyWeightKg * 5).round()}–${fluidsHighMl ?? (bodyWeightKg * 7).round()} ml]'),
+            fResult('${_fmtMlAmount(fluidsMl, useImperial)} '),
+            fDim('[${_fmtMlRange(fluidsLowMl ?? (bodyWeightKg * 5).round(), fluidsHighMl ?? (bodyWeightKg * 7).round(), useImperial)}]'),
           ], stepNumber: '②'),
         ],
       ),
@@ -767,6 +775,7 @@ extension _$CalculationsExt on MacroExplanationService {
     required int? sodiumLowMg,
     required int? sodiumHighMg,
     bool isGateFired = false,
+    bool useImperial = false,
   }) {
     if (sodiumMg == 0) {
       final reasonText = isGateFired
@@ -810,7 +819,7 @@ extension _$CalculationsExt on MacroExplanationService {
             fOp('→ '),
             fDim(isFullProtocol
                 ? 'retains consumed fluid; aligns with ACSM 300–600 mg window'
-                : 'keeps the 250 ml in your body until start'),
+                : 'keeps the ${_fmtMlAmount(250, useImperial)} in your body until start'),
           ]),
         ],
       ),

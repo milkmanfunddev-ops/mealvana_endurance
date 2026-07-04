@@ -9,6 +9,9 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/domain/calendar_day_indicators.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 
 /// Screen showing detailed view of an athlete for coaches
 class AthleteDetailScreen extends ConsumerStatefulWidget {
@@ -240,6 +243,11 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
   Widget _buildProfileTab(BuildContext context, AthleteDetailState state) {
     final theme = Theme.of(context);
     final profile = state.athleteProfile;
+    // Coach views an athlete's profile using the COACH's own unit
+    // preference (unitSystemProvider resolves to the logged-in user).
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+            UnitSystem.metric;
 
     if (profile == null) {
       return _buildEmptyView(
@@ -282,11 +290,18 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                 _buildProfileRow('Birthday', _formatDate(profile.birthday)),
                 _buildProfileRow(
                   'Height',
-                  '${profile.heightFeet}\'${profile.heightInches}"',
+                  UnitFormatter.formatHeight(
+                    profile.heightFeet,
+                    profile.heightInches,
+                    useMetric: useMetric,
+                  ),
                 ),
                 _buildProfileRow(
                   'Weight',
-                  '${profile.weightPounds.toStringAsFixed(1)} lbs',
+                  UnitFormatter.formatWeight(
+                    profile.weightPounds,
+                    useMetric: useMetric,
+                  ),
                 ),
               ],
             ),

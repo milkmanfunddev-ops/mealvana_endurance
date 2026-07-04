@@ -33,6 +33,7 @@ import 'package:mealvana_endurance/features/settings/presentation/screens/nutrit
 import 'package:mealvana_endurance/features/settings/presentation/screens/nutrition_targets_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/preferences_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sweat_profile_screen.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 
 import '../helpers/widget_test_harness.dart';
 
@@ -699,7 +700,8 @@ void main() {
     );
 
     testWidgets(
-      'known sweat rate field is pre-populated from seeded state (1500)',
+      'known sweat rate field is pre-populated from seeded state (1500) '
+      'when the global unit pref is metric',
       (tester) async {
         const seedState = SweatProfileState(
           sweatRate: SweatRateCat.heavy,
@@ -715,6 +717,10 @@ void main() {
             sweatProfileControllerProvider.overrideWith(
               () => _SeededSweatProfileController(seedState),
             ),
+            // Sweat rate is stored canonically in mL/hr — metric display
+            // is the un-converted value, so force metric here to assert
+            // the raw seeded number renders unmodified.
+            unitSystemProvider.overrideWith((ref) async => UnitSystem.metric),
           ],
           settle: true,
         );
@@ -730,6 +736,54 @@ void main() {
           find.text('900'),
           findsOneWidget,
           reason: 'sodium concentration field must show 900 from seeded state',
+        );
+      },
+    );
+
+    testWidgets(
+      'known sweat rate field converts to oz/hr when the global unit '
+      'pref is imperial',
+      (tester) async {
+        const seedState = SweatProfileState(
+          sweatRate: SweatRateCat.heavy,
+          sweatSodium: SweatSodiumCat.high,
+          knownSweatRateMlPerHour: 1500,
+        );
+
+        await pumpSeeded(
+          tester,
+          const SweatProfileScreen(),
+          overrides: [
+            sweatProfileControllerProvider.overrideWith(
+              () => _SeededSweatProfileController(seedState),
+            ),
+            unitSystemProvider
+                .overrideWith((ref) async => UnitSystem.imperial),
+          ],
+          settle: true,
+        );
+
+        // Scroll down so the "Personalize with a sweat test" section
+        // (which contains the known-sweat-rate field) is in the viewport.
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -600),
+        );
+        await tester.pumpAndSettle();
+
+        // 1500 mL/hr × 0.033814 ≈ 50.7 → rounds to 51 oz/hr. The field is
+        // driven by the global unit pref (unitSystemProvider), not a
+        // screen-local toggle.
+        expect(
+          find.text('51'),
+          findsOneWidget,
+          reason: 'known sweat rate must be converted to oz/hr display '
+              'when the global pref is imperial',
+        );
+        expect(
+          find.text('oz/hr'),
+          findsOneWidget,
+          reason: 'field suffix must read oz/hr in imperial mode',
         );
       },
     );
@@ -791,38 +845,14 @@ void main() {
       },
     );
 
-    // ── Bug #17 regression: unit-label toggle ────────────────────────────────
+    // ── Unit label reflects the global unit-system preference ──────────────
     //
-    // Before fix: _showOzHr ? 'mL/hr' : 'mL/hr' — both branches identical.
-    // After fix:  _showOzHr ? 'oz/hr' : 'mL/hr' — left label reflects mode.
-    //
-    // The unit toggle is in the "Personalize with a sweat test" section which
-    // is below the default test viewport (800×600). We must scroll to bring it
-    // into view before asserting or tapping. The toggle shows three Text widgets:
-    //   [left label] [' / '] [right label]
-    // where left label = _showOzHr ? 'oz/hr' : 'mL/hr'
-    //   and right label = always 'oz/hr'.
-    //
-    // The TextFormField in the same section also has a suffix widget showing
-    // _showOzHr ? 'oz/hr' : 'mL/hr'.
-    //
-    // In mL mode (default, _showOzHr = false):
-    //   toggle left  = 'mL/hr'
-    //   toggle right = 'oz/hr'
-    //   field suffix = 'mL/hr'
-    //   → 'mL/hr' × 2, 'oz/hr' × 1
-    //
-    // In oz mode (_showOzHr = true):
-    //   toggle left  = 'oz/hr'
-    //   toggle right = 'mL/hr'
-    //   field suffix = 'oz/hr'
-    //   → 'oz/hr' × 2, 'mL/hr' × 1
-    //
-    // Before fix: toggle left was always 'mL/hr' regardless of mode, so oz mode
-    // still showed 'mL/hr' × 2 (bug). After fix: oz mode shows 'oz/hr' × 2.
+    // The screen-local mL/hr-vs-oz/hr toggle was removed; the "Known Sweat
+    // Rate" field suffix is now driven entirely by the shared
+    // unitSystemProvider (coach/athlete-wide pref), not a per-screen toggle.
     testWidgets(
-      '#17 regression: unit toggle changes left label — oz/hr appears twice '
-      'after scrolling to section and toggling to oz/hr mode',
+      'known sweat rate field suffix reads mL/hr when the global unit '
+      'pref is metric',
       (tester) async {
         const seedState = SweatProfileState(
           sweatRate: SweatRateCat.medium,
@@ -836,64 +866,31 @@ void main() {
             sweatProfileControllerProvider.overrideWith(
               () => _SeededSweatProfileController(seedState),
             ),
+            unitSystemProvider.overrideWith((ref) async => UnitSystem.metric),
           ],
           settle: true,
         );
 
         // Scroll down to bring the "Personalize with a sweat test" section
-        // (which contains the toggle) into the viewport.
+        // (which contains the known-sweat-rate field) into the viewport.
         await tester.drag(
           find.byType(SingleChildScrollView),
           const Offset(0, -600),
         );
         await tester.pumpAndSettle();
 
-        // After scrolling, all three toggle labels and the suffix should be
-        // visible. In mL mode: 'mL/hr' × 2, 'oz/hr' × 1.
         expect(
           find.text('mL/hr'),
-          findsNWidgets(2),
-          reason: 'mL/hr must appear twice after scroll in mL mode: '
-              'toggle left label + field suffix',
-        );
-        expect(
-          find.text('oz/hr'),
           findsOneWidget,
-          reason: 'oz/hr must appear once in mL mode: toggle right label only',
+          reason: 'field suffix must read mL/hr when the global pref is metric',
         );
-
-        // Tap the GestureDetector that wraps the toggle container.
-        // The toggle's 'mL/hr' left label is inside the GestureDetector;
-        // tapping the outer Container triggers _toggleUnit. Both 'mL/hr'
-        // widgets are on screen — we tap the first one (toggle left label)
-        // which is the GestureDetector child.
-        await tester.tap(find.text('mL/hr').first);
-        await tester.pumpAndSettle();
-
-        // After toggle: _showOzHr = true.
-        // The toggle has: left='oz/hr', separator=' / ', right='oz/hr' (hardcoded).
-        // The field suffix also changes to 'oz/hr'.
-        // So 'oz/hr' appears 3× (toggle left + toggle right + field suffix).
-        // 'mL/hr' appears 0× — no mL/hr text is visible.
-        //
-        // Before fix (bug #17): toggle left was still 'mL/hr' in oz mode, so
-        // 'oz/hr' appeared only 2× and 'mL/hr' appeared 1×.
-        // After fix: 'oz/hr' appears 3× and 'mL/hr' appears 0×.
         expect(
           find.text('oz/hr'),
-          findsNWidgets(3),
-          reason:
-              'oz/hr must appear 3× after toggling to oz/hr mode: '
-              'toggle left + toggle right + field suffix. '
-              'Before fix (bug #17) the left label stayed mL/hr so this found only 2.',
-        );
-        expect(
-          find.text('mL/hr'),
           findsNothing,
-          reason: 'mL/hr must not appear after toggling to oz/hr mode — '
-              'all three positions now show oz/hr',
+          reason: 'no local toggle exists — oz/hr must not appear in metric mode',
         );
       },
     );
   });
+}
 }

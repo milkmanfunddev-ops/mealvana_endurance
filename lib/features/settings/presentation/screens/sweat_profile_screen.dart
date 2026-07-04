@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/sweat_profile_controller.dart';
 
 /// Dedicated settings screen for the user's sweat profile.
@@ -29,11 +32,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
   final _sweatRateController = TextEditingController();
   final _sodiumController = TextEditingController();
 
-  // Unit toggle: mL/hr vs oz/hr for known sweat rate display.
-  bool _showOzHr = false;
   bool _initialized = false;
-
-  static const double _mlPerOz = 29.5735;
 
   @override
   void dispose() {
@@ -44,14 +43,19 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
-  void _initFromState(SweatProfileState s) {
+  /// Populates the editable fields once, converting the canonical
+  /// mL/hr sweat rate into the user's preferred display unit (driven by
+  /// the global [unitSystemProvider] — not a screen-local toggle).
+  void _initFromState(SweatProfileState s, bool useMetric) {
     if (_initialized) return;
     _initialized = true;
 
     if (s.knownSweatRateMlPerHour != null) {
-      _sweatRateController.text = _showOzHr
-          ? (s.knownSweatRateMlPerHour! / _mlPerOz).round().toString()
-          : s.knownSweatRateMlPerHour.toString();
+      _sweatRateController.text = useMetric
+          ? s.knownSweatRateMlPerHour.toString()
+          : (s.knownSweatRateMlPerHour! * UnitFormatter.kFlOzPerMl)
+              .round()
+              .toString();
     }
     if (s.knownSodiumConcentrationMgPerLiter != null) {
       _sodiumController.text = s.knownSodiumConcentrationMgPerLiter.toString();
@@ -63,6 +67,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
 
+    final useMetric =
+        (ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
+            UnitSystem.metric;
     final controller = ref.read(sweatProfileControllerProvider.notifier);
 
     // Push text-field values into the controller before saving.
@@ -75,8 +82,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
         MealvanaSnackbar.showError(context, 'Enter a whole number for sweat rate.');
         return;
       }
-      // Convert oz/hr back to mL/hr if the user is in imperial mode.
-      final mlPerHour = _showOzHr ? (raw * _mlPerOz).round() : raw;
+      // Convert back to canonical mL/hr if the user is in imperial mode.
+      final mlPerHour =
+          useMetric ? raw : (raw / UnitFormatter.kFlOzPerMl).round();
       controller.setKnownSweatRate(mlPerHour);
     }
 
@@ -102,27 +110,6 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
     }
   }
 
-  // ── Unit toggle ───────────────────────────────────────────────────────────
-
-  void _toggleUnit() {
-    final text = _sweatRateController.text.trim();
-    setState(() {
-      if (text.isNotEmpty) {
-        final value = int.tryParse(text);
-        if (value != null) {
-          if (_showOzHr) {
-            // switching back to mL/hr
-            _sweatRateController.text = (value * _mlPerOz).round().toString();
-          } else {
-            // switching to oz/hr
-            _sweatRateController.text = (value / _mlPerOz).round().toString();
-          }
-        }
-      }
-      _showOzHr = !_showOzHr;
-    });
-  }
-
   // ── How-to-test bottom sheet ──────────────────────────────────────────────
 
   void _showHowToTestSheet() {
@@ -141,6 +128,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncState = ref.watch(sweatProfileControllerProvider);
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+            UnitSystem.metric;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -159,8 +149,8 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
       body: ContentArea(
         child: asyncState.when(
           data: (s) {
-            _initFromState(s);
-            return _buildContent(context, s);
+            _initFromState(s, useMetric);
+            return _buildContent(context, s, useMetric);
           },
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.orange),
@@ -182,7 +172,11 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, SweatProfileState s) {
+  Widget _buildContent(
+    BuildContext context,
+    SweatProfileState s,
+    bool useMetric,
+  ) {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.opaque,
@@ -199,7 +193,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   _buildSweatSodiumSection(context, s),
                   const SizedBox(height: AppSpacing.lg),
-                  _buildSweatTestSection(context, s),
+                  _buildSweatTestSection(context, s, useMetric),
                   const SizedBox(height: AppSpacing.xxxl),
                 ],
               ),
@@ -320,7 +314,11 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
 
   // ── Sweat test section ────────────────────────────────────────────────────
 
-  Widget _buildSweatTestSection(BuildContext context, SweatProfileState s) {
+  Widget _buildSweatTestSection(
+    BuildContext context,
+    SweatProfileState s,
+    bool useMetric,
+  ) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,7 +368,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
           const SizedBox(height: AppSpacing.lg),
 
           // Known Sweat Rate
-          _buildKnownSweatRateField(context),
+          _buildKnownSweatRateField(context, useMetric),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -410,74 +408,17 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
     );
   }
 
-  Widget _buildKnownSweatRateField(BuildContext context) {
+  Widget _buildKnownSweatRateField(BuildContext context, bool useMetric) {
+    // Unit is driven by the global unit-system preference — no
+    // screen-local toggle. The underlying stored value stays canonical
+    // mL/hr (converted in _initFromState / _save).
+    final unitLabel =
+        '${UnitFormatter.fluidUnitLabel(useMetric: useMetric)}/hr';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildLabel(
-                context,
-                'Known Sweat Rate',
-              ),
-            ),
-            // Unit toggle
-            GestureDetector(
-              onTap: _toggleUnit,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.2),
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _showOzHr ? 'oz/hr' : 'mL/hr',
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: !_showOzHr
-                            ? AppColors.orange
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                        fontWeight:
-                            !_showOzHr ? FontWeight.w700 : FontWeight.w400,
-                      ),
-                    ),
-                    Text(
-                      ' / ',
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      'oz/hr',
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: _showOzHr
-                            ? AppColors.orange
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                        fontWeight:
-                            _showOzHr ? FontWeight.w700 : FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+        _buildLabel(context, 'Known Sweat Rate'),
         const SizedBox(height: AppSpacing.xs),
         TextFormField(
           controller: _sweatRateController,
@@ -485,8 +426,8 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: _inputDecoration(
             context,
-            hint: _showOzHr ? 'e.g. 44' : 'e.g. 1300',
-            suffix: _showOzHr ? 'oz/hr' : 'mL/hr',
+            hint: useMetric ? 'e.g. 1300' : 'e.g. 44',
+            suffix: unitLabel,
             icon: FontAwesomeIcons.personRunning.data,
           ),
           style: AppTextStyles.bodyMedium.copyWith(

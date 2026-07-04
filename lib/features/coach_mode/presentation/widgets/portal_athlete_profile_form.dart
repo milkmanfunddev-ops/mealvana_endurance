@@ -4,7 +4,10 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch
 
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../application/coach_service.dart';
 import '../providers/athlete_detail_controller.dart';
 
@@ -30,9 +33,15 @@ class _PortalAthleteProfileFormState
     extends ConsumerState<PortalAthleteProfileForm> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
-  late TextEditingController _weightController;
+  // Imperial-unit controllers (canonical storage units).
+  late TextEditingController _weightLbsController;
   late TextEditingController _heightFeetController;
   late TextEditingController _heightInchesController;
+  // Metric-unit controllers, shown instead when the coach's own unit
+  // preference (unitSystemProvider) resolves to metric. Values are
+  // converted back to the canonical lbs/ft/in fields on save.
+  late TextEditingController _weightKgController;
+  late TextEditingController _heightCmController;
 
   DateTime? _birthday;
   String _gender = 'male';
@@ -47,14 +56,24 @@ class _PortalAthleteProfileFormState
     final p = widget.profile;
     _firstNameController = TextEditingController(text: p?.firstName ?? '');
     _lastNameController = TextEditingController(text: p?.lastName ?? '');
-    _weightController = TextEditingController(
+    _weightLbsController = TextEditingController(
       text: p != null ? p.weightPounds.toStringAsFixed(1) : '',
+    );
+    _weightKgController = TextEditingController(
+      text: p != null
+          ? UnitFormatter.poundsToKg(p.weightPounds).toStringAsFixed(1)
+          : '',
     );
     _heightFeetController = TextEditingController(
       text: p != null ? '${p.heightFeet}' : '',
     );
     _heightInchesController = TextEditingController(
       text: p != null ? '${p.heightInches}' : '',
+    );
+    _heightCmController = TextEditingController(
+      text: p != null
+          ? '${UnitFormatter.totalInchesToCm(p.heightFeet * 12 + p.heightInches)}'
+          : '',
     );
     _birthday = p?.birthday;
     _gender = p?.gender.name ?? 'male';
@@ -67,9 +86,11 @@ class _PortalAthleteProfileFormState
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _weightController.dispose();
+    _weightLbsController.dispose();
+    _weightKgController.dispose();
     _heightFeetController.dispose();
     _heightInchesController.dispose();
+    _heightCmController.dispose();
     super.dispose();
   }
 
@@ -78,9 +99,29 @@ class _PortalAthleteProfileFormState
     setState(() => _isSaving = true);
 
     try {
-      final weight = double.tryParse(_weightController.text);
-      final heightFeet = int.tryParse(_heightFeetController.text);
-      final heightInches = int.tryParse(_heightInchesController.text);
+      final useMetric =
+          (ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
+              UnitSystem.metric;
+
+      // Always persist canonical lbs/ft/in — convert from the metric
+      // fields (if that's what the coach edited) back to canonical units.
+      double? weight;
+      int? heightFeet;
+      int? heightInches;
+      if (useMetric) {
+        final kg = double.tryParse(_weightKgController.text);
+        weight = kg != null ? UnitFormatter.kgToPounds(kg) : null;
+        final cm = int.tryParse(_heightCmController.text);
+        if (cm != null) {
+          final (feet, inches) = UnitFormatter.cmToFeetInches(cm);
+          heightFeet = feet;
+          heightInches = inches;
+        }
+      } else {
+        weight = double.tryParse(_weightLbsController.text);
+        heightFeet = int.tryParse(_heightFeetController.text);
+        heightInches = int.tryParse(_heightInchesController.text);
+      }
 
       await ref
           .read(coachServiceProvider)
@@ -122,6 +163,13 @@ class _PortalAthleteProfileFormState
 
   @override
   Widget build(BuildContext context) {
+    // Coach edits an athlete's profile using the COACH's own unit
+    // preference (unitSystemProvider resolves to the logged-in user).
+    // Canonical storage stays lbs/ft/in regardless of display unit.
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+            UnitSystem.metric;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -131,19 +179,27 @@ class _PortalAthleteProfileFormState
           _buildTextField('Last Name', _lastNameController),
           _buildGenderDropdown(),
           _buildBirthdayPicker(),
+          if (useMetric)
+            _buildTextField(
+              'Height (cm)',
+              _heightCmController,
+              keyboardType: TextInputType.number,
+            )
+          else ...[
+            _buildTextField(
+              'Height (ft)',
+              _heightFeetController,
+              keyboardType: TextInputType.number,
+            ),
+            _buildTextField(
+              'Height (in)',
+              _heightInchesController,
+              keyboardType: TextInputType.number,
+            ),
+          ],
           _buildTextField(
-            'Height (ft)',
-            _heightFeetController,
-            keyboardType: TextInputType.number,
-          ),
-          _buildTextField(
-            'Height (in)',
-            _heightInchesController,
-            keyboardType: TextInputType.number,
-          ),
-          _buildTextField(
-            'Weight (lbs)',
-            _weightController,
+            useMetric ? 'Weight (kg)' : 'Weight (lbs)',
+            useMetric ? _weightKgController : _weightLbsController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ]),

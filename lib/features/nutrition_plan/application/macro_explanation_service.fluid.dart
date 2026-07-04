@@ -14,6 +14,43 @@ double _mlToDisplay(double ml, bool useImperial) =>
 double? _mlToDisplayOrNull(double? ml, bool useImperial) =>
     ml == null ? null : _mlToDisplay(ml, useImperial);
 
+// ── Narrative/formula-line fluid-unit helpers ───────────────────────────────
+// The structured targetGrams/rangeLow/rangeHigh fields above are already
+// converted via _mlToDisplay, but the prose (tldrBody) and the step-by-step
+// FormulaLine breakdowns embed their own literal "mL"/"ml" strings built
+// from canonical mL ints. These helpers convert both the value AND the unit
+// label so narrative text always matches the structured fields when
+// useImperial is true. Only fluid volumes/rates (the user's personalized
+// computed amounts) are touched here — physiological quantities (sodium mg,
+// carb g/kg) and generic protocol/citation constants (ACSM "5-7 mL/kg", GI
+// ceilings like "800 mL/hr") are intentionally left in metric since they
+// describe the underlying research/protocol, not a personalized amount.
+String _fluidUnit(bool useImperial) => useImperial ? 'oz' : 'mL';
+
+String _fluidRateUnit(bool useImperial) => useImperial ? 'oz/hr' : 'mL/hr';
+
+/// Formats a canonical mL amount (e.g. a fixed bolus or total) as a display
+/// string in the user's preferred unit, e.g. `300 mL` or `10 oz`.
+String _fmtMlAmount(num ml, bool useImperial) {
+  final display = _mlToDisplay(ml.toDouble(), useImperial).round();
+  return '$display ${_fluidUnit(useImperial)}';
+}
+
+/// Formats a canonical mL/hr rate as a display string in the user's
+/// preferred unit, e.g. `645 mL/hr` or `22 oz/hr`.
+String _fmtMlRate(num mlPerHour, bool useImperial) {
+  final display = _mlToDisplay(mlPerHour.toDouble(), useImperial).round();
+  return '$display ${_fluidRateUnit(useImperial)}';
+}
+
+/// Formats a canonical mL range (e.g. `200–300 mL`) as a display string in
+/// the user's preferred unit.
+String _fmtMlRange(num lowMl, num highMl, bool useImperial) {
+  final low = _mlToDisplay(lowMl.toDouble(), useImperial).round();
+  final high = _mlToDisplay(highMl.toDouble(), useImperial).round();
+  return '$low–$high ${_fluidUnit(useImperial)}';
+}
+
 extension _$FluidExt on MacroExplanationService {
   NutrientTransparencyData _preWorkoutFluidTransparency({
     required MacroTargets macroTargets,
@@ -54,7 +91,7 @@ extension _$FluidExt on MacroExplanationService {
     if (isGateFired) {
       blurb = 'No structured pre-hydration needed — this workout is short and '
           'mild. **Drink to thirst** in the hours before. If you want a number, '
-          'keep it under 500 ml total.';
+          'keep it under ${_fmtMlAmount(500, useImperial)} total.';
       tldrLines = const [];
     } else if (isTier3) {
       blurb = 'Too late for structured pre-hydration. A few small sips are fine '
@@ -62,7 +99,8 @@ extension _$FluidExt on MacroExplanationService {
           'Focus on the during-workout plan instead.';
       tldrLines = const [];
     } else if (isTier2) {
-      blurb = 'Not enough time for the full protocol. 250 ml is all that can '
+      blurb = 'Not enough time for the full protocol. '
+          '${_fmtMlAmount(fluidsMl, useImperial)} is all that can '
           'meaningfully absorb before exercise begins. Sip it steadily — '
           'don\'t chug it just before you start.';
       // Spec transparency_pre_hydration.md §Formula — multi-line TL;DR
@@ -72,7 +110,7 @@ extension _$FluidExt on MacroExplanationService {
           [
             fAccent('10–120 min window '),
             fOp('→ '),
-            fResult('${fluidsMl} ml'),
+            fResult(_fmtMlAmount(fluidsMl, useImperial)),
             fOp(' (fixed)'),
           ],
           stepNumber: '①',
@@ -80,7 +118,7 @@ extension _$FluidExt on MacroExplanationService {
         FormulaLine([
           fOp('range '),
           fOp('→ '),
-          fDim('${rangeLowMl}–${rangeHighMl} ml'),
+          fDim(_fmtMlRange(rangeLowMl, rangeHighMl, useImperial)),
         ]),
       ];
     } else {
@@ -101,8 +139,8 @@ extension _$FluidExt on MacroExplanationService {
           : '${derivedHours.toStringAsFixed(1)} hours';
       blurb = 'The goal before a workout is to start **euhydrated** — at your '
           'normal baseline, not loaded or depleted. With $hoursLabel available, '
-          'you have time for the full protocol: sip $fluidsMl ml gradually, let '
-          'it absorb, and aim for pale yellow urine before you head out.';
+          'you have time for the full protocol: sip ${_fmtMlAmount(fluidsMl, useImperial)} '
+          'gradually, let it absorb, and aim for pale yellow urine before you head out.';
       // Bucket the derived ml/kg to the spec-exact integer (5/6/7) when it's
       // close, to avoid displaying e.g. "5.5 mL/kg" — which was the prior
       // output even though the legacy calc used a non-spec tier.
@@ -124,24 +162,24 @@ extension _$FluidExt on MacroExplanationService {
             fOp('× '),
             fAccent('$mlPerKg ml/kg '),
             fOp('= '),
-            fResult('${fluidsMl} ml'),
+            fResult(_fmtMlAmount(fluidsMl, useImperial)),
           ],
           stepNumber: '①',
         ),
         FormulaLine([
           fOp('↓ floor = '),
-          fDim('$floorMl ml'),
+          fDim(_fmtMlAmount(floorMl, useImperial)),
           fOp(' (5 ml/kg)'),
         ]),
         FormulaLine([
           fOp('↑ ceiling = '),
-          fDim('$ceilMl ml'),
+          fDim(_fmtMlAmount(ceilMl, useImperial)),
           fOp(' (7 ml/kg)'),
         ]),
         FormulaLine([
           fOp('range '),
           fOp('→ '),
-          fDim('$floorMl–$ceilMl ml'),
+          fDim(_fmtMlRange(floorMl, ceilMl, useImperial)),
           fOp(' sipped over available window'),
         ]),
       ];
@@ -172,6 +210,7 @@ extension _$FluidExt on MacroExplanationService {
         fluidsHighMl: rangeHighMl,
         tier: tier,
         isGateFired: isGateFired,
+        useImperial: useImperial,
       ),
       videoTitle: 'Watch: Pre-Workout Hydration',
       targetGrams: _mlToDisplay(fluidsMl.toDouble(), useImperial),
@@ -385,8 +424,10 @@ extension _$FluidExt on MacroExplanationService {
     final List<FormulaLine> tldrLines;
     if (effectiveSweatRate != null && replacementPct != null) {
       final replacePctPct = (replacementPct * 100).round();
-      final ceilNote = ceilingMlH != null ? '$ceilingMlH mL/hr' : 'GI ceiling';
-      final floorNote = floorMlH != null ? '$floorMlH mL/hr' : '2% BW floor';
+      final ceilNote =
+          ceilingMlH != null ? _fmtMlRate(ceilingMlH, useImperial) : 'GI ceiling';
+      final floorNote =
+          floorMlH != null ? _fmtMlRate(floorMlH, useImperial) : '2% BW floor';
       tldrLines = [
         FormulaLine([
           fAccent('TESTED rate '),
@@ -395,7 +436,7 @@ extension _$FluidExt on MacroExplanationService {
           fAccent('replacement '),
           fDim('${replacePctPct}% '),
           fOp('= '),
-          fDim('$fluidRateMlH mL/hr'),
+          fDim(_fmtMlRate(fluidRateMlH, useImperial)),
         ], stepNumber: '\u2460'),
         if (floorMlH != null)
           FormulaLine([
@@ -411,11 +452,11 @@ extension _$FluidExt on MacroExplanationService {
           ], stepNumber: '\u2463'),
         FormulaLine(
           [
-            fAccent('$fluidRateMlH mL/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('\u00d7 '),
             fAccent('${_formatDuration(forBrickSegment != null ? forBrickSegment.durationMinutes / 60.0 : durationH)} hr '),
             fOp('= '),
-            fResult('${fluidTotalMl}mL'),
+            fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
           ],
           isResultLine: true,
           showDividerBefore: true,
@@ -424,11 +465,11 @@ extension _$FluidExt on MacroExplanationService {
     } else {
       tldrLines = [
         FormulaLine([
-          fAccent('TESTED $fluidRateMlH mL/hr '),
+          fAccent('TESTED ${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('${_formatDuration(forBrickSegment != null ? forBrickSegment.durationMinutes / 60.0 : durationH)} hr '),
           fOp('= '),
-          fResult('${fluidTotalMl}mL'),
+          fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
         ], isResultLine: true),
       ];
     }
@@ -438,6 +479,7 @@ extension _$FluidExt on MacroExplanationService {
       durationMin: macroTargets.metrics.durationMin.round(),
       durationH: durationH,
       bodyWeightKg: bodyWeightKg,
+      useImperial: useImperial,
     );
 
     return NutrientTransparencyData(
@@ -532,11 +574,11 @@ extension _$FluidExt on MacroExplanationService {
         ]),
         FormulaLine(
           [
-            fAccent('$fluidRateMlH mL/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('\u00d7 '),
             fAccent('${_formatDuration(durationH)} hr '),
             fOp('= '),
-            fResult('${fluidTotalMl}mL'),
+            fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
             fDim(' (conservative max)'),
           ],
           isResultLine: true,
@@ -564,11 +606,11 @@ extension _$FluidExt on MacroExplanationService {
             ], stepNumber: '②'),
             FormulaLine(
               [
-                fAccent('$fluidRateMlH ml/hr '),
+                fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
                 fOp('× '),
                 fAccent('${_formatDuration(durationH)} hr '),
                 fOp('= '),
-                fResult('$fluidTotalMl ml '),
+                fResult('${_fmtMlAmount(fluidTotalMl, useImperial)} '),
                 fDim('(conservative max)'),
               ],
               isResultLine: true,
@@ -651,16 +693,16 @@ extension _$FluidExt on MacroExplanationService {
           FormulaLine([
             fOp('\u2191 '),
             fAccent('ceiling '),
-            fDim('$ceilingMlH mL/hr '),
+            fDim(_fmtMlRate(ceilingMlH, useImperial)),
             fOp('(bike GI limit)'),
           ], stepNumber: '\u2462'),
         FormulaLine(
           [
-            fAccent('$fluidRateMlH mL/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('\u00d7 '),
             fAccent('${_formatDuration(durationH)} hr '),
             fOp('= '),
-            fResult('${waterMl}mL'),
+            fResult(_fmtMlAmount(waterMl, useImperial)),
           ],
           isResultLine: true,
           showDividerBefore: true,
@@ -674,11 +716,11 @@ extension _$FluidExt on MacroExplanationService {
           fDim('run shortfall \u2192 bike'),
         ]),
         FormulaLine([
-          fAccent('$fluidRateMlH mL/hr '),
+          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('${_formatDuration(durationH)} hr '),
           fOp('= '),
-          fResult('${waterMl}mL'),
+          fResult(_fmtMlAmount(waterMl, useImperial)),
         ], isResultLine: true, showDividerBefore: true),
       ];
     }
@@ -701,6 +743,7 @@ extension _$FluidExt on MacroExplanationService {
         totalEventMin: totalEventMin,
         bodyWeightKg: bodyWeightKg,
         showRedistributionNote: true,
+        useImperial: useImperial,
       ),
       calculationWarning: segment.safetyFlags.isNotEmpty
           ? segment.safetyFlags.first
@@ -802,9 +845,10 @@ extension _$FluidExt on MacroExplanationService {
 
       final replacePctPct = (replacementPct * 100).round();
       final ceilNote = ceilingMlH != null
-          ? '${ceilingMlH} mL/hr'
+          ? _fmtMlRate(ceilingMlH, useImperial)
           : 'GI ceiling';
-      final floorNote = floorMlH != null ? '${floorMlH} mL/hr' : '2% BW floor';
+      final floorNote =
+          floorMlH != null ? _fmtMlRate(floorMlH, useImperial) : '2% BW floor';
 
       tldrLines = [
         FormulaLine([
@@ -819,7 +863,7 @@ extension _$FluidExt on MacroExplanationService {
           fOp('\u00d7 '),
           fAccent('${replacePctPct}% '),
           fOp('= '),
-          fDim('${fluidRateMlH} mL/hr'),
+          fDim(_fmtMlRate(fluidRateMlH, useImperial)),
         ], stepNumber: '\u2461'),
         if (floorMlH != null)
           FormulaLine([
@@ -843,11 +887,11 @@ extension _$FluidExt on MacroExplanationService {
           ]),
         FormulaLine(
           [
-            fAccent('$fluidRateMlH mL/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('\u00d7 '),
             fAccent('${_formatDuration(durationH)} hr '),
             fOp('= '),
-            fResult('${fluidTotalMl}mL'),
+            fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
           ],
           isResultLine: true,
           showDividerBefore: true,
@@ -860,11 +904,11 @@ extension _$FluidExt on MacroExplanationService {
           'activity, keeping you within a safe hydration window.';
       tldrLines = [
         FormulaLine([
-          fAccent('${fluidRateMlH} mL/hr '),
+          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('${_formatDuration(durationH)} hr '),
           fOp('= '),
-          fResult('${fluidTotalMl}mL'),
+          fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
         ], isResultLine: true),
       ];
     }
@@ -877,6 +921,7 @@ extension _$FluidExt on MacroExplanationService {
       durationMin: durationMin,
       durationH: durationH,
       bodyWeightKg: bodyWeightKg,
+      useImperial: useImperial,
     );
 
     return NutrientTransparencyData(
@@ -1124,28 +1169,28 @@ extension _$FluidExt on MacroExplanationService {
           fOp('\u00d7 '),
           fAccent('${replacePctPct}% '),
           fOp('= '),
-          fDim('$fluidRateMlH mL/hr'),
+          fDim(_fmtMlRate(fluidRateMlH, useImperial)),
         ], stepNumber: '\u2461'),
         if (floorMlH != null)
           FormulaLine([
             fOp('\u2193 '),
             fAccent('floor '),
-            fDim('$floorMlH mL/hr'),
+            fDim(_fmtMlRate(floorMlH, useImperial)),
           ], stepNumber: '\u2462'),
         if (ceilingMlH != null)
           FormulaLine([
             fOp('\u2191 '),
             fAccent('ceiling '),
-            fDim('$ceilingMlH mL/hr '),
+            fDim('${_fmtMlRate(ceilingMlH, useImperial)} '),
             fOp('(${segmentSport} limit)'),
           ], stepNumber: '\u2463'),
         FormulaLine(
           [
-            fAccent('$fluidRateMlH mL/hr '),
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('\u00d7 '),
             fAccent('${_formatDuration(durationH)} hr '),
             fOp('= '),
-            fResult('${waterMl}mL'),
+            fResult(_fmtMlAmount(waterMl, useImperial)),
           ],
           isResultLine: true,
           showDividerBefore: true,
@@ -1155,11 +1200,11 @@ extension _$FluidExt on MacroExplanationService {
       // Legacy fallback
       tldrLines = [
         FormulaLine([
-          fAccent('$fluidRateMlH mL/hr '),
+          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
           fAccent('${_formatDuration(durationH)} hr '),
           fOp('= '),
-          fResult('${waterMl}mL'),
+          fResult(_fmtMlAmount(waterMl, useImperial)),
         ], isResultLine: true),
       ];
     }
@@ -1185,6 +1230,7 @@ extension _$FluidExt on MacroExplanationService {
         showTransitionAbsorptionNote: true,
         transitionCount:
             macroTargets.brickPhaseTargets?.transitions.length ?? 0,
+        useImperial: useImperial,
       ),
       calculationWarning: segment.safetyFlags.isNotEmpty
           ? segment.safetyFlags.first
@@ -1265,27 +1311,29 @@ extension _$FluidExt on MacroExplanationService {
     return NutrientTransparencyData(
       nutrientLabel: 'Fluids',
       nutrientColor: const Color(0xFF4A9EFF),
-      primaryUnit: 'mL',
+      primaryUnit: useImperial ? 'oz' : 'mL',
       phase: 'transition',
       isTested: isTested,
       tldrBody:
           'Transitions are brief, fixed hydration windows \u2014 not a '
-          'calculated segment. The 300 mL target isn\'t derived from your sweat '
-          'rate; it\'s a conservative bolus sized for what you can comfortably '
-          'take in during a 2\u20135 minute stop. **$transitionName** '
+          'calculated segment. The ${_fmtMlAmount(waterMl, useImperial)} target '
+          "isn't derived from your sweat rate; it's a conservative bolus sized "
+          'for what you can comfortably take in during a 2\u20135 minute stop. '
+          '**$transitionName** '
           '${isT1 ? "bridges the swim gap and offsets wetsuit heat." : "is your last easy opportunity before running GI tolerance drops."}',
       tldrLines: [
         FormulaLine([
           fAccent('$transitionName '),
           fOp('= '),
-          fAccent('fixed 300 mL '),
+          fAccent('fixed ${_fmtMlAmount(waterMl, useImperial)} '),
           fOp('\u2192 '),
-          fResult('${waterMl}mL'),
+          fResult(_fmtMlAmount(waterMl, useImperial)),
         ]),
       ],
       calculationSections: _buildTransitionFluidCalculationSections(
         waterMl: waterMl,
         isT1: isT1,
+        useImperial: useImperial,
       ),
       storySections: [
         StorySection(
