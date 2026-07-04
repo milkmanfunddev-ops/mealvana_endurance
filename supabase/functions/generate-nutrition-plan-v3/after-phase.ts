@@ -183,6 +183,12 @@ export async function generateAfterPhase(
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
 
+  // Set when a matched personal-formula pin renders zero components (see
+  // below) — carried forward into `afterPinDecision`'s initial skeleton so
+  // the wire surfaces a real reason instead of silently looking like "no
+  // pin at all". Item 12 (personal formulas silently dropped), 2026-07-04.
+  let personalFormulaFallthrough: LPPhaseResult["pin_decision"] | null = null;
+
   // ---- Pinned personal formula (highest priority) ----
   // An in-scope pinned personal formula is honored unconditionally, emitting
   // its self-contained components and bypassing the template solver.
@@ -238,17 +244,36 @@ export async function generateAfterPhase(
           },
         };
       }
+      // Matched pin, but the formula rendered zero components (e.g. an
+      // empty/corrupt `components` array on the pinned row) — previously
+      // this silently fell through to the template solver with no trace in
+      // logs or the wire response. Surface it on both channels, then
+      // continue to the template solver below as before.
+      console.warn(
+        `[PLAN-V3] After: pinned personal formula "${match.name}" ` +
+          `(${match.id}) matched scope but rendered 0 components — ` +
+          `falling through to template solver`,
+      );
+      personalFormulaFallthrough = {
+        used_pin: false,
+        pinned_template_id: null,
+        pinned_template_name: null,
+        fallthrough_reason: "personal_formula_empty",
+        pin_set_size: 1,
+      };
     }
   }
 
   // Pin telemetry skeleton. Refined once templates load + candidate selection
   // returns. Omitted entirely when no pins were supplied anywhere (byte-
-  // identical to pre-pin v3).
+  // identical to pre-pin v3) UNLESS a personal-formula pin matched but
+  // rendered empty above — that case always surfaces regardless of whether
+  // after-TEMPLATE pins were also supplied.
   const pinsSupplied = pinsActive ??
     (afterPinnedTemplateIds !== undefined &&
       afterPinnedTemplateIds.size > 0);
   let afterPinDecision: LPPhaseResult["pin_decision"] | undefined =
-    initialAfterPinDecision(pinsSupplied);
+    personalFormulaFallthrough ?? initialAfterPinDecision(pinsSupplied);
 
   console.log(
     `[PLAN-V3] Generating after phase (${activityType}, diet=${

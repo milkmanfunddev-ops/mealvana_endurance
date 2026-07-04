@@ -139,7 +139,12 @@ export interface SubPhaseResult {
      * client render the pinned formula's label in the activity-detail pin
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
-    fallthrough_reason: 'no_pin_for_scope' | null;
+    /** `no_pin_for_scope` — pins supplied but none matched this sub-phase.
+     * `personal_formula_empty` — a pinned personal formula matched this
+     * slot but rendered zero components, so the algorithmic selection for
+     * the slot was kept. Item 12 (personal formulas silently dropped),
+     * 2026-07-04. */
+    fallthrough_reason: 'no_pin_for_scope' | 'personal_formula_empty' | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase
      * after scope-matching (sub_phase / activity_type × duration). Drives
      * the `plan_used_pin` / `plan_pin_fallthrough` analytics payload. 0 when

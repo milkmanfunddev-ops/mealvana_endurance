@@ -173,10 +173,17 @@ export interface LPPhaseResult {
      * claims `used_pin: true` while the section served LP foods. Should
      * be unreachable in practice for After once pinnedComponentNames
      * bypass at food-load is in place (PR 3 #35 fix). Formula Kit PR 3
-     * substep 9 follow-up. */
+     * substep 9 follow-up.
+     * `personal_formula_empty` — a pinned PERSONAL formula matched this
+     * scope but rendered zero components (e.g. an empty/corrupt
+     * `components` array), so the section fell through to the normal
+     * template solver. Previously this case was silently indistinguishable
+     * from "no pin at all" — item 12 (personal formulas silently dropped),
+     * 2026-07-04. */
     fallthrough_reason:
       | "no_pin_for_scope"
       | "pinned_template_unrenderable"
+      | "personal_formula_empty"
       | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase.
      * Drives `plan_used_pin` / `plan_pin_fallthrough` analytics. 0 when pins

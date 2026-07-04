@@ -192,13 +192,22 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: const CustomAppBarBackButton(),
-      title: Text(
-        title,
-        key: const ValueKey('formula_kit.detail_title'),
-        style: AppTextStyles.sectionTitle.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
+      // FittedBox scales the title down instead of ellipsizing long formula
+      // names (item 17, 2026-07-04) — mirrors the pattern used by
+      // fuel_timeline_day_header.dart.
+      title: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          key: const ValueKey('formula_kit.detail_title'),
+          softWrap: false,
+          maxLines: 1,
+          style: AppTextStyles.sectionTitle.copyWith(
+            fontSize: 17,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        overflow: TextOverflow.ellipsis,
       ),
       actions: [
         if (hasFormula)
@@ -311,8 +320,12 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         .createFormula(draft);
     if (saved == null || !context.mounted) return;
     MealvanaSnackbar.showSuccess(context, 'Added to Your Formulas');
-    // Open the editor directly (personal/:id IS the editor).
-    context.push(
+    // Open the editor directly (personal/:id IS the editor). Use
+    // pushReplacement (not push) so the read-only system-formula detail
+    // screen is swapped out of the stack rather than left underneath —
+    // otherwise the editor's Save button pops back onto the detail screen
+    // instead of the formula library list (item 10, 2026-07-04).
+    context.pushReplacement(
       '/settings/food-preferences/formula-library/personal/${saved.id}',
     );
   }

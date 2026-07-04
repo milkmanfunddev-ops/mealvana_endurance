@@ -37,6 +37,13 @@ export interface PreWorkoutTemplate {
   is_active: boolean;
   component_food_names: string[];
   component_quantities: Record<string, number>;
+  /** When `false`, this template may be selected in 0.5-serving increments
+   * instead of whole servings (e.g. a divisible electrolyte packet).
+   * Mirrors `FoodResult.is_indivisible` used elsewhere in the solver.
+   * Defaults to indivisible (whole-unit steps) when omitted/undefined —
+   * pre-existing rows without the DB column behave exactly as before.
+   * Item 5 (before-run sodium over/undershoot), 2026-07-04. */
+  is_indivisible?: boolean;
 }
 
 // ============================================================================

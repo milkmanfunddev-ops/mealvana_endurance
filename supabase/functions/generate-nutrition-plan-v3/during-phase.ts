@@ -453,6 +453,23 @@ export async function generateDuringPhase(
           },
         };
       }
+      // Matched pin, but the formula rendered zero components (e.g. an
+      // empty/corrupt `components` array on the pinned row) — previously
+      // this silently fell through to the template solver with no trace in
+      // logs or the wire response (item 12, 2026-07-04). Surface it on both
+      // channels, then continue to the template solver below as before.
+      console.warn(
+        `[PLAN-V3] During: pinned personal formula "${match.name}" ` +
+          `(${match.id}) matched scope but rendered 0 components — ` +
+          `falling through to template solver`,
+      );
+      duringPinDecision = {
+        used_pin: false,
+        pinned_template_id: null,
+        pinned_template_name: null,
+        fallthrough_reason: "personal_formula_empty",
+        pin_set_size: 1,
+      };
     }
   }
 

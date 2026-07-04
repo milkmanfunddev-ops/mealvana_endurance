@@ -233,3 +233,103 @@ Deno.test(
     assertEquals(pick!.name, 'Sodium Capsule');
   },
 );
+
+// ============================================================================
+// Item 5 (2026-07-04): divisible electrolyte packet — 0.5-serving steps
+// ============================================================================
+//
+// A 150mg "packet" (`is_indivisible: false`) with min_servings 0.5 lets the
+// solver land inside a tight before-run sodium band (e.g. Tier-2's 100-200mg)
+// that a whole-unit-only 300mg tablet cannot hit without badly overshooting.
+
+const DIVISIBLE_PACKET = makeTemplate({
+  id: 'electrolyte-packet',
+  name: 'Electrolyte Packet',
+  sodium_mg: 150,
+  carbs_per_serving: 0,
+  fluid_ml: 0,
+  min_servings: 0.5,
+  max_servings: 3,
+  is_indivisible: false,
+});
+
+Deno.test(
+  'pickElectrolyte: divisible packet steps in 0.5 increments — reaches the exact 1.0-serving match, not just the 0.5 starting point',
+  () => {
+    // Regression for the step-size fix itself (not just "0.5 is reachable",
+    // which is trivially true since min_servings=0.5 is the loop's starting
+    // value regardless of step size). A buggy `+= 1` step from a 0.5
+    // min_servings tests 0.5, 1.5, 2.5, ... and would NEVER land on exactly
+    // 1.0 serving (150mg) — the ideal match for this band's 150mg target.
+    // Only a correct `+= 0.5` step reaches 1.0 and scores it as the winner
+    // over the 0.5 (75mg, under target) candidate.
+    const pick = pickElectrolyte(
+      [DIVISIBLE_PACKET],
+      /* carbsDelivered */ 0,
+      /* proteinDelivered */ 0,
+      /* totalSodiumDelivered */ 0,
+      /* totalFluidDelivered */ 0,
+      /* carbsTarget */ 0,
+      /* carbsHigh */ 60,
+      /* proteinHigh */ 20,
+      /* sodiumLow */ 140,
+      /* sodiumHigh */ 160,
+      /* sodiumTarget */ 150,
+      /* fluidHigh */ 500,
+      /* fluidTarget */ 0,
+    );
+
+    assert(pick !== null, 'expected the divisible packet to be selectable');
+    assertEquals(pick!.name, 'Electrolyte Packet');
+    assertEquals(
+      pick!.servings,
+      1,
+      'expected the 1.0-serving exact-target match, only reachable with a 0.5 step',
+    );
+    assertEquals(pick!.sodium_mg, 150);
+  },
+);
+
+Deno.test(
+  'pickElectrolyte: floor enforcement on a divisible packet overshoots far less than a whole tablet',
+  () => {
+    // A tight band (sodiumHigh=130) makes even the packet's smallest 0.5-
+    // serving step (75mg) exceed the main loop's headroom check (53mg
+    // remaining), so this forces the least-overshoot floor-enforcement
+    // fallback to run — same mechanism as the BIG_TABLET floor-enforcement
+    // test above. The point of comparison: BIG_TABLET (whole-unit-only)
+    // overshoots its 200mg high by 177mg (377 total) because 1 whole
+    // serving is its smallest step; the divisible packet overshoots this
+    // 130mg high by only 22mg (152 total) because 0.5 servings is available.
+    const TIGHT_BAND = {
+      ...BEFORE_TIER2,
+      sodiumLow: 100,
+      sodiumHigh: 130,
+    };
+    const pick = pickElectrolyte(
+      [DIVISIBLE_PACKET],
+      20,
+      0,
+      /* totalSodiumDelivered */ 77,
+      0,
+      TIGHT_BAND.carbsTarget,
+      TIGHT_BAND.carbsHigh,
+      TIGHT_BAND.proteinHigh,
+      TIGHT_BAND.sodiumLow,
+      TIGHT_BAND.sodiumHigh,
+      TIGHT_BAND.sodiumTarget,
+      TIGHT_BAND.fluidHigh,
+      TIGHT_BAND.fluidTarget,
+    );
+
+    assert(pick !== null, 'floor enforcement should add the packet, not return null');
+    assertEquals(pick!.servings, 0.5);
+    const total = 77 + pick!.sodium_mg;
+    assertEquals(total, 152);
+    const overshoot = total - TIGHT_BAND.sodiumHigh;
+    assert(
+      overshoot < 30,
+      `expected a small overshoot from the divisible packet's 0.5 step, got ${overshoot}mg`,
+    );
+  },
+);

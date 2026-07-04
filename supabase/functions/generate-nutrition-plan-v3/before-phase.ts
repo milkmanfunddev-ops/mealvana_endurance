@@ -330,7 +330,34 @@ export async function generateBeforePhaseV3(
         getSubPhaseTimingLabel(slot, input.hours_before),
         slotTargets.carbs_g,
       );
-      if (foods.length === 0) continue; // empty formula → keep algorithmic
+      if (foods.length === 0) {
+        // Matched pin, but the formula rendered zero components (e.g. an
+        // empty/corrupt `components` array on the pinned row) — previously
+        // this silently fell through to the algorithmic selection with no
+        // trace in logs or the wire response (item 12, 2026-07-04). Surface
+        // it on both channels so it's actually debuggable/visible to the
+        // client's pin banner.
+        console.warn(
+          `[PLAN-V3] Before ${slot}: pinned personal formula "${formula.name}" ` +
+            `(${formula.id}) matched scope but rendered 0 components — ` +
+            `keeping algorithmic selection for this slot`,
+        );
+        const existing = slot === "meal"
+          ? beforeResult.meal
+          : slot === "snack"
+          ? beforeResult.snack
+          : beforeResult.top_up;
+        if (existing) {
+          existing.pin_decision = {
+            used_pin: false,
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: "personal_formula_empty",
+            pin_set_size: 1,
+          };
+        }
+        continue; // empty formula → keep algorithmic
+      }
 
       // Failsafe: backfill fluids/sodium up to the slot's targets — the
       // overlay bypasses Algorithm C's fill steps (see pin-backfill.ts).

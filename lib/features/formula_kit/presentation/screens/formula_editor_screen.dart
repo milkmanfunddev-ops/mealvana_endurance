@@ -83,9 +83,21 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: const CustomAppBarBackButton(),
-        title: Text(
-          widget.formulaId == null ? 'New formula' : 'Edit formula',
-          style: AppTextStyles.sectionTitle.copyWith(color: scheme.onSurface),
+        // FittedBox scales the title down instead of ellipsizing (item 17,
+        // 2026-07-04) — mirrors the pattern used by
+        // fuel_timeline_day_header.dart. This title is currently a static
+        // "New/Edit formula" label, but the smaller/narrower style keeps it
+        // consistent with the detail screen's app bar.
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            widget.formulaId == null ? 'New formula' : 'Edit formula',
+            softWrap: false,
+            maxLines: 1,
+            style: AppTextStyles.sectionTitle
+                .copyWith(fontSize: 17, color: scheme.onSurface),
+          ),
         ),
       ),
       body: asyncDraft.when(

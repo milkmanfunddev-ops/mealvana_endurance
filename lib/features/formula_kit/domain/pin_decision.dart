@@ -7,12 +7,17 @@
 ///   missing from the loaded food pool). Option A guard added for After in
 ///   PR 3 #35 follow-up so the wire never claims `usedPin: true` while the
 ///   section actually served LP foods.
+/// - [personalFormulaEmpty] — a pinned PERSONAL formula matched scope but
+///   rendered zero components (e.g. an empty/corrupt `components` array),
+///   so the section fell through to the normal algorithmic selection. Item
+///   12 (personal formulas silently dropped), 2026-07-04.
 ///
 /// Reserved as an enum so future fall-through reasons can be added without
 /// breaking parsers.
 enum PinFallthroughReason {
   noPinForScope('no_pin_for_scope'),
-  pinnedTemplateUnrenderable('pinned_template_unrenderable');
+  pinnedTemplateUnrenderable('pinned_template_unrenderable'),
+  personalFormulaEmpty('personal_formula_empty');
 
   const PinFallthroughReason(this.wireValue);
 

@@ -375,9 +375,12 @@ class _PinStatusBannerState extends State<PinStatusBanner>
         : (row.decision.fallthroughReason ==
                 PinFallthroughReason.pinnedTemplateUnrenderable
             ? 'Pin ingredient unavailable'
-            : row.decision.pinSetSize > 0
-                ? 'Pins fell through'
-                : 'No pin found');
+            : row.decision.fallthroughReason ==
+                    PinFallthroughReason.personalFormulaEmpty
+                ? 'Pinned formula is empty'
+                : row.decision.pinSetSize > 0
+                    ? 'Pins fell through'
+                    : 'No pin found');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),

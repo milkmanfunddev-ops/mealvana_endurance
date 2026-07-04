@@ -700,7 +700,13 @@ export function pickElectrolyte(
   let bestPick: { template: PreWorkoutTemplate; servings: number } | null = null;
 
   for (const template of electrolyteTemplates) {
-    for (let srv = template.min_servings; srv <= template.max_servings; srv += 1) {
+    // Divisible sources (e.g. a half-packet electrolyte mix) step in 0.5
+    // increments so the sodium gap can be closed precisely; indivisible
+    // sources (tablets) keep the original whole-unit steps. Mirrors the
+    // `is_indivisible === false` convention used by pin-backfill.ts.
+    // Item 5 (before-run sodium over/undershoot), 2026-07-04.
+    const step = template.is_indivisible === false ? 0.5 : 1;
+    for (let srv = template.min_servings; srv <= template.max_servings; srv += step) {
       const resultCarbs = carbsDelivered + template.carbs_per_serving * srv;
       const resultProtein = proteinDelivered + template.protein_per_serving * srv;
       const resultSodium = totalSodiumDelivered + template.sodium_mg * srv;
@@ -749,7 +755,8 @@ export function pickElectrolyte(
   if (!bestPick) {
     let leastOvershootSodium = Infinity;
     for (const template of electrolyteTemplates) {
-      for (let srv = template.min_servings; srv <= template.max_servings; srv += 1) {
+      const step = template.is_indivisible === false ? 0.5 : 1;
+      for (let srv = template.min_servings; srv <= template.max_servings; srv += step) {
         const carbsAdded = template.carbs_per_serving * srv;
         const proteinAdded = template.protein_per_serving * srv;
         const fluidAdded = template.fluid_ml * srv;
