@@ -762,7 +762,11 @@ void main() {
         settle: true,
       );
 
-      // Tap Save without entering any data
+      // Tap Save without entering any data (scroll it into view first — the
+      // manual form now includes slot + time fields, so Save can sit below the
+      // test viewport fold).
+      await tester.ensureVisible(find.text('Save'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save'));
       await tester.pump();
       await tester.pumpAndSettle();

@@ -60,15 +60,13 @@ void openLogMealScreen(BuildContext context, {required String logDate}) {
 // Tab enum
 // ---------------------------------------------------------------------------
 
-enum _LogTab { recent, favorites, common, recipes, describe, manual }
+enum _LogTab { recent, common, recipes, describe, manual }
 
 extension _LogTabLabel on _LogTab {
   String get label {
     switch (this) {
       case _LogTab.recent:
         return 'Recent';
-      case _LogTab.favorites:
-        return 'Favorites';
       case _LogTab.common:
         return 'Common';
       case _LogTab.recipes:
@@ -416,6 +414,16 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         .updateSearch(query);
   }
 
+  /// Clear the search field + query so switching to a browse tab (Recent,
+  /// Describe, Manual, …) shows that tab's content instead of leaving stale
+  /// search results (or an empty "no results") covering it.
+  void _clearSearch() {
+    _searchCtrl.clear();
+    ref
+        .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
+        .updateSearch('');
+  }
+
   Future<void> _onBarcodeScan() async {
     _unfocus();
     final result = await context.pushNamed<dynamic>(
@@ -628,6 +636,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                   activeTab: _activeTab,
                   onTabSelected: (tab) {
                     _unfocus();
+                    // Clear any in-progress search so the chosen tab actually
+                    // shows (search results otherwise stay layered over it).
+                    _clearSearch();
                     setState(() => _activeTab = tab);
                   },
                   isDark: isDark,
@@ -669,14 +680,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   Widget _buildTabBody(BuildContext context, bool isDark) {
     switch (_activeTab) {
       case _LogTab.recent:
-        return _RecentTab(
+        return _RecentAndSavedTab(
           scrollController: _scrollController,
-          onTap: _onRecentTap,
-        );
-      case _LogTab.favorites:
-        return _FavoritesTab(
-          scrollController: _scrollController,
-          onTap: _quickLogSavedMeal,
+          onRecentTap: _onRecentTap,
+          onSavedTap: _quickLogSavedMeal,
         );
       case _LogTab.common:
         return CommonIngredientsSection(
@@ -799,100 +806,99 @@ class _TabBar extends StatelessWidget {
 // Recent tab — add a recently logged meal to the draft
 // ---------------------------------------------------------------------------
 
-class _RecentTab extends ConsumerWidget {
-  const _RecentTab({required this.scrollController, required this.onTap});
+// ---------------------------------------------------------------------------
+// Combined Recent + Saved ("My Meals") tab — quick-log a past meal or a saved
+// favorite. Saved meals are listed first (curated), then recent history.
+// ---------------------------------------------------------------------------
+
+class _RecentAndSavedTab extends ConsumerWidget {
+  const _RecentAndSavedTab({
+    required this.scrollController,
+    required this.onRecentTap,
+    required this.onSavedTap,
+  });
 
   final ScrollController scrollController;
-  final ValueChanged<MealLog> onTap;
+  final ValueChanged<MealLog> onRecentTap;
+  final ValueChanged<SavedMeal> onSavedTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recentAsync = ref.watch(recentMealsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-
-    return recentAsync.when(
-      data: (logs) {
-        if (logs.isEmpty) {
-          return _EmptyTabMessage(
-            icon: Icons.history,
-            message: 'No recent meals yet.\nMeals you log will show up here.',
-            textColor: textColor,
-          );
-        }
-        return ListView(
-          controller: scrollController,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          children: logs
-              .map(
-                (log) => _RecentMealRow(
-                  log: log,
-                  onTap: () => onTap(log),
-                  isDark: isDark,
-                ),
-              )
-              .toList(),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Favorites tab — add a saved meal's components to the draft
-// ---------------------------------------------------------------------------
-
-class _FavoritesTab extends ConsumerWidget {
-  const _FavoritesTab({required this.scrollController, required this.onTap});
-
-  final ScrollController scrollController;
-  final ValueChanged<SavedMeal> onTap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
     final favoritesAsync = ref.watch(savedMealsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return favoritesAsync.when(
-      data: (meals) {
-        if (meals.isEmpty) {
-          return _EmptyTabMessage(
-            icon: Icons.star_outline,
-            message:
-                'No favorites yet.\nTap the ☆ on a logged meal to save it here.',
-            textColor: textColor,
-          );
-        }
-        return ListView(
-          controller: scrollController,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+    final saved = favoritesAsync.value ?? const <SavedMeal>[];
+    final recent = recentAsync.value ?? const <MealLog>[];
+
+    if (saved.isEmpty && recent.isEmpty) {
+      if (recentAsync.isLoading || favoritesAsync.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      return _EmptyTabMessage(
+        icon: Icons.history,
+        message:
+            'No saved or recent meals yet.\nMeals you log (and favorite) show up here.',
+        textColor: textColor,
+      );
+    }
+
+    return ListView(
+      controller: scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      children: [
+        if (saved.isNotEmpty) ...[
+          _TabSectionHeader(label: 'Saved meals', textColor: textColor),
+          ...saved.map(
+            (meal) => _SavedMealRow(
+              meal: meal,
+              onTap: () => onSavedTap(meal),
+              onDelete: () => ref
+                  .read(mealLogControllerProvider.notifier)
+                  .deleteSavedMeal(meal.id),
+              isDark: isDark,
+            ),
           ),
-          children: meals
-              .map(
-                (meal) => _SavedMealRow(
-                  meal: meal,
-                  onTap: () => onTap(meal),
-                  onDelete: () => ref
-                      .read(mealLogControllerProvider.notifier)
-                      .deleteSavedMeal(meal.id),
-                  isDark: isDark,
-                ),
-              )
-              .toList(),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const SizedBox.shrink(),
+        ],
+        if (recent.isNotEmpty) ...[
+          if (saved.isNotEmpty) const SizedBox(height: AppSpacing.md),
+          _TabSectionHeader(label: 'Recent', textColor: textColor),
+          ...recent.map(
+            (log) => _RecentMealRow(
+              log: log,
+              onTap: () => onRecentTap(log),
+              isDark: isDark,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Small section label used inside the combined Recent/Saved tab.
+class _TabSectionHeader extends StatelessWidget {
+  const _TabSectionHeader({required this.label, required this.textColor});
+
+  final String label;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: textColor.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }
