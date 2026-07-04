@@ -18,7 +18,7 @@ part of 'unit_system_provider.dart';
 ///
 /// Usage:
 /// ```dart
-/// final unitSystem = ref.watch(unitSystemProvider).valueOrNull ?? UnitSystem.imperial;
+/// final unitSystem = ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
 /// final useMetric = unitSystem == UnitSystem.metric;
 /// ```
 
@@ -35,7 +35,7 @@ const unitSystemProvider = UnitSystemProvider._();
 ///
 /// Usage:
 /// ```dart
-/// final unitSystem = ref.watch(unitSystemProvider).valueOrNull ?? UnitSystem.imperial;
+/// final unitSystem = ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
 /// final useMetric = unitSystem == UnitSystem.metric;
 /// ```
 
@@ -57,7 +57,7 @@ final class UnitSystemProvider
   ///
   /// Usage:
   /// ```dart
-  /// final unitSystem = ref.watch(unitSystemProvider).valueOrNull ?? UnitSystem.imperial;
+  /// final unitSystem = ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
   /// final useMetric = unitSystem == UnitSystem.metric;
   /// ```
   const UnitSystemProvider._()

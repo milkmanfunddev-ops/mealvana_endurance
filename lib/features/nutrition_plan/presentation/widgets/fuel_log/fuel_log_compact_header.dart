@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/providers/unit_system_provider.dart';
+import '../../../../../shared/utils/unit_formatter.dart';
 import '../../../../activities/domain/activity.dart';
+import '../../../domain/run_parameters.dart';
 
 /// Compact header shown during fuel log mode, replacing the hero section.
 /// Displays activity type label, key stats (distance, duration, pace), and date.
-class FuelLogCompactHeader extends StatelessWidget {
+class FuelLogCompactHeader extends ConsumerWidget {
   const FuelLogCompactHeader({
     super.key,
     required this.activity,
@@ -14,12 +18,20 @@ class FuelLogCompactHeader extends StatelessWidget {
   final Activity activity;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
     final statsParts = <String>[];
 
     if (activity.distanceMiles != null) {
-      statsParts.add('${activity.distanceMiles!.toStringAsFixed(0)} mi');
+      statsParts.add(
+        UnitFormatter.formatDistance(
+          activity.distanceMiles!,
+          unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+        ),
+      );
     }
     if (activity.durationMinutes != null) {
       final hours = activity.durationMinutes! ~/ 60;
@@ -31,11 +43,12 @@ class FuelLogCompactHeader extends StatelessWidget {
       }
     }
     if (activity.paceTargetMinutesPerMile != null) {
-      final pace = activity.paceTargetMinutesPerMile!;
-      final minutes = pace.floor();
-      final seconds = ((pace - minutes) * 60).round();
-      statsParts
-          .add("$minutes:${seconds.toString().padLeft(2, '0')}/mi");
+      statsParts.add(
+        UnitFormatter.formatPace(
+          activity.paceTargetMinutesPerMile!,
+          unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+        ),
+      );
     }
 
     final dateStr = DateFormat('EEEE, MMM d').format(

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/macro_targets.dart';
+import '../../domain/run_parameters.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 
 /// Header widget displaying run summary information (distance, duration, pace)
 /// Shows key run metrics at the top of the adjust macros screen
-class RunSummaryHeader extends StatelessWidget {
+class RunSummaryHeader extends ConsumerWidget {
   const RunSummaryHeader({
     super.key,
     required this.macroTargets,
@@ -13,10 +17,13 @@ class RunSummaryHeader extends StatelessWidget {
   final MacroTargets macroTargets;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final metrics = macroTargets.metrics;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -50,7 +57,10 @@ class RunSummaryHeader extends StatelessWidget {
                 child: _buildMetricColumn(
                   context,
                   'Distance',
-                  '${metrics.distanceMi.toStringAsFixed(1)} mi',
+                  UnitFormatter.formatDistance(
+                    metrics.distanceMi,
+                    unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+                  ),
                   Icons.straighten,
                 ),
               ),
@@ -70,7 +80,12 @@ class RunSummaryHeader extends StatelessWidget {
                 child: _buildMetricColumn(
                   context,
                   'Pace',
-                  '${metrics.formattedPace}/mi',
+                  metrics.paceMinPerMile != null
+                      ? UnitFormatter.formatPace(
+                          metrics.paceMinPerMile!,
+                          unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+                        )
+                      : 'N/A',
                   Icons.speed,
                 ),
               ),
@@ -97,7 +112,10 @@ class RunSummaryHeader extends StatelessWidget {
                 child: _buildMetricColumn(
                   context,
                   'Speed',
-                  '${metrics.speedMph.toStringAsFixed(1)} mph',
+                  UnitFormatter.formatSpeed(
+                    metrics.speedMph,
+                    useMetric: useMetric,
+                  ),
                   Icons.flash_on,
                 ),
               ),

@@ -15,7 +15,7 @@ part 'unit_system_provider.g.dart';
 ///
 /// Usage:
 /// ```dart
-/// final unitSystem = ref.watch(unitSystemProvider).valueOrNull ?? UnitSystem.imperial;
+/// final unitSystem = ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
 /// final useMetric = unitSystem == UnitSystem.metric;
 /// ```
 @riverpod

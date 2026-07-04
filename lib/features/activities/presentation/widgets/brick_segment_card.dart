@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../domain/brick_metadata.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 
@@ -15,7 +19,7 @@ import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 /// - Title: Compadre 14px
 /// - Details: Apercu 12px, secondary color
 /// - Remove button: Orange outline circle, 32px
-class BrickSegmentCard extends StatelessWidget {
+class BrickSegmentCard extends ConsumerWidget {
   const BrickSegmentCard({
     super.key,
     required this.segment,
@@ -30,13 +34,16 @@ class BrickSegmentCard extends StatelessWidget {
   final bool showRemoveButton;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     // Build semantic label for the segment
     final sportName = segment.sport;
-    final distanceInfo = _getSegmentDetails();
+    final distanceInfo = _getSegmentDetails(useMetric);
     final semanticLabel = '$sportName segment, $distanceInfo, position $order';
 
     return Semantics(
@@ -62,7 +69,7 @@ class BrickSegmentCard extends StatelessWidget {
               _buildSportIcon(),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildSegmentDetails(context, isDark),
+                child: _buildSegmentDetails(context, isDark, useMetric),
               ),
               if (showRemoveButton && onRemove != null)
                 _buildRemoveButton(),
@@ -84,13 +91,17 @@ class BrickSegmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSegmentDetails(BuildContext context, bool isDark) {
+  Widget _buildSegmentDetails(
+    BuildContext context,
+    bool isDark,
+    bool useMetric,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          _getSegmentTitle(),
+          _getSegmentTitle(useMetric),
           style: TextStyle(
             fontFamily: 'Compadre',
             fontSize: 14,
@@ -102,7 +113,7 @@ class BrickSegmentCard extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          _getSegmentDetails(),
+          _getSegmentDetails(useMetric),
           style: TextStyle(
             fontFamily: 'Apercu',
             fontSize: 12,
@@ -149,8 +160,9 @@ class BrickSegmentCard extends StatelessWidget {
     }
   }
 
-  String _getSegmentTitle() {
+  String _getSegmentTitle(bool useMetric) {
     final sportName = segment.sport.toUpperCase();
+    final distanceUnit = useMetric ? DistanceUnit.kilometers : DistanceUnit.miles;
 
     // Format distance/duration based on sport
     if (segment.sport.toLowerCase() == 'swimming') {
@@ -158,7 +170,11 @@ class BrickSegmentCard extends StatelessWidget {
         return '$sportName ${_formatSwimmingDistance(segment.distanceMeters!)}';
       }
     } else if (segment.distanceMiles != null) {
-      return '$sportName ${segment.distanceMiles!.toStringAsFixed(1)} MI';
+      final distanceText = UnitFormatter.formatDistance(
+        segment.distanceMiles!,
+        unit: distanceUnit,
+      ).toUpperCase();
+      return '$sportName $distanceText';
     }
 
     // Fallback to duration if distance not available
@@ -169,11 +185,14 @@ class BrickSegmentCard extends StatelessWidget {
     return sportName;
   }
 
-  String _getSegmentDetails() {
+  String _getSegmentDetails(bool useMetric) {
     final details = <String>[];
+    final distanceUnit = useMetric ? DistanceUnit.kilometers : DistanceUnit.miles;
+    final paceUnit = useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
 
     if (segment.sport.toLowerCase() == 'swimming') {
-      // Swimming: distance · pace
+      // Swimming: distance · pace (pool-length convention, always meters -
+      // not an imperial/metric split)
       if (segment.distanceMeters != null) {
         details.add('${segment.distanceMeters!.toInt()}m');
       }
@@ -183,13 +202,22 @@ class BrickSegmentCard extends StatelessWidget {
     } else {
       // Cycling/Running: distance · pace/speed
       if (segment.distanceMiles != null) {
-        details.add('${segment.distanceMiles!.toStringAsFixed(1)} mi');
+        details.add(
+          UnitFormatter.formatDistance(
+            segment.distanceMiles!,
+            unit: distanceUnit,
+          ),
+        );
       }
 
       if (segment.sport.toLowerCase() == 'cycling' && segment.speedMph != null) {
-        details.add('${segment.speedMph!.toStringAsFixed(1)} mph');
+        details.add(
+          UnitFormatter.formatSpeed(segment.speedMph!, useMetric: useMetric),
+        );
       } else if (segment.sport.toLowerCase() == 'running' && segment.paceMinutesPerMile != null) {
-        details.add(_formatRunningPace(segment.paceMinutesPerMile!));
+        details.add(
+          UnitFormatter.formatPace(segment.paceMinutesPerMile!, unit: paceUnit),
+        );
       }
     }
 
@@ -207,11 +235,5 @@ class BrickSegmentCard extends StatelessWidget {
     final minutes = secondsPer100m ~/ 60;
     final seconds = secondsPer100m % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}/100m';
-  }
-
-  String _formatRunningPace(double minutesPerMile) {
-    final minutes = minutesPerMile.floor();
-    final seconds = ((minutesPerMile - minutes) * 60).round();
-    return '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
   }
 }

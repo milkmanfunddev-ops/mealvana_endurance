@@ -6,15 +6,22 @@ import 'package:intl/intl.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../nutrition_plan/domain/nutrition_plan.dart';
 import '../../nutrition_plan/domain/food_item_data.dart';
+import '../../../shared/providers/unit_system_provider.dart';
+import '../../../shared/utils/unit_formatter.dart';
+import '../../nutrition_plan/domain/run_parameters.dart' show UnitSystem;
 
 part 'pdf_generator_service.g.dart';
 
 @riverpod
 PdfGeneratorService pdfGeneratorService(Ref ref) {
-  return PdfGeneratorService();
+  return PdfGeneratorService(ref);
 }
 
 class PdfGeneratorService {
+  PdfGeneratorService(this._ref);
+
+  final Ref _ref;
+
   static const _primaryColor = PdfColor.fromInt(0xFF381633);
   static const _darkColor = PdfColor.fromInt(0xFF1C0E1B);
   static const _creamColor = PdfColor.fromInt(0xFFF8F6EB);
@@ -25,6 +32,9 @@ class PdfGeneratorService {
     required DateTime sentDate,
     String? senderName,
   }) async {
+    final useMetric =
+        (_ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
     final pdf = pw.Document();
 
     final logoBytes = await rootBundle.load('assets/images/endurance_welcome_logo.png');
@@ -53,9 +63,9 @@ class PdfGeneratorService {
           _buildInfoSection(nutritionPlan, sentDate, senderName),
           pw.SizedBox(height: 30),
           if (nutritionPlan.macroTargets != null)
-            _buildMacroTargets(nutritionPlan.macroTargets!),
+            _buildMacroTargets(nutritionPlan.macroTargets!, useMetric),
           pw.SizedBox(height: 20),
-          ..._buildPlanSections(nutritionPlan.sections),
+          ..._buildPlanSections(nutritionPlan.sections, useMetric),
         ],
       ),
     );
@@ -151,7 +161,7 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildMacroTargets(PlanMacroSummary targets) {
+  pw.Widget _buildMacroTargets(PlanMacroSummary targets, bool useMetric) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
@@ -187,7 +197,10 @@ class PdfGeneratorService {
                 if (targets.sodium != null)
                   _buildMacroItem('Sodium', '${targets.sodium}mg'),
                 if (targets.fluids != null)
-                  _buildMacroItem('Fluids', '${targets.fluids}oz'),
+                  _buildMacroItem(
+                    'Fluids',
+                    _formatFluidsFromOz(targets.fluids!, useMetric),
+                  ),
               ],
             ),
           ],
@@ -245,26 +258,46 @@ class PdfGeneratorService {
   }
 
   /// Build section subtitle with actual vs target values
-  String _buildSectionSubtitle(PlanSection section) {
+  String _buildSectionSubtitle(PlanSection section, bool useMetric) {
     final totals = _calculateSectionTotals(section);
     final parts = <String>[];
 
-    // Carbs
+    // Carbs (unit-invariant)
     if (section.carbsTarget != null && section.carbsTarget! > 0) {
       parts.add('${totals['carbs']}/${section.carbsTarget!.toInt()}g carbs');
     }
 
-    // Fluids
+    // Fluids (canonical mL - convert to fl oz for imperial display)
     if (section.fluidsTarget != null && section.fluidsTarget! > 0) {
-      parts.add('${totals['fluids']}/${section.fluidsTarget!.toInt()}ml fluids');
+      final actualMl = (totals['fluids'] ?? 0).toDouble();
+      final targetMl = section.fluidsTarget!;
+      final unitLabel = UnitFormatter.fluidUnitLabel(useMetric: useMetric);
+      final actualDisplay = useMetric
+          ? actualMl.round()
+          : (actualMl * UnitFormatter.kFlOzPerMl).round();
+      final targetDisplay = useMetric
+          ? targetMl.round()
+          : (targetMl * UnitFormatter.kFlOzPerMl).round();
+      parts.add('$actualDisplay/$targetDisplay$unitLabel fluids');
     }
 
-    // Sodium
+    // Sodium (unit-invariant)
     if (section.sodiumTarget != null && section.sodiumTarget! > 0) {
       parts.add('${totals['sodium']}/${section.sodiumTarget!.toInt()}mg sodium');
     }
 
     return parts.join(', ');
+  }
+
+  /// Format a fluids value stored in fl oz (PlanMacroSummary.fluids' native
+  /// unit) for display, converting to mL when the metric pref is active.
+  String _formatFluidsFromOz(int fluidOz, bool useMetric) {
+    final unitLabel = UnitFormatter.fluidUnitLabel(useMetric: useMetric);
+    if (useMetric) {
+      final ml = (fluidOz * UnitFormatter.kMlPerFlOz).round();
+      return '$ml$unitLabel';
+    }
+    return '$fluidOz$unitLabel';
   }
 
   /// Format food item display text with quantity
@@ -273,9 +306,12 @@ class PdfGeneratorService {
     return food.quantity;
   }
 
-  List<pw.Widget> _buildPlanSections(List<PlanSection> sections) {
+  List<pw.Widget> _buildPlanSections(
+    List<PlanSection> sections,
+    bool useMetric,
+  ) {
     return sections.map((section) {
-      final subtitle = _buildSectionSubtitle(section);
+      final subtitle = _buildSectionSubtitle(section, useMetric);
 
       return pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,

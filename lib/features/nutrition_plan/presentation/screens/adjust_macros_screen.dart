@@ -16,6 +16,7 @@ import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets
@@ -196,6 +197,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final brickFormState = ref.watch(brickInputControllerProvider);
     final segmentInputs = brickFormState.segmentInputs;
     final sportOrder = brickFormState.sportOrder;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     // Filter to only selected sports in order
     final orderedSelectedSports = sportOrder
@@ -242,14 +246,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
               break;
             case 'cycling':
               final speed = input.speedMph ?? 15.0;
-              pace = '${speed.toStringAsFixed(1)} mph';
+              pace = UnitFormatter.formatSpeed(speed, useMetric: useMetric);
               sportLabel = 'BIKE';
               break;
             case 'running':
               final paceMin = input.paceMinutesPerMile ?? 9.0;
-              final minutes = paceMin.floor();
-              final seconds = ((paceMin - minutes) * 60).round();
-              pace = '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
+              pace = UnitFormatter.formatPace(
+                paceMin,
+                unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+              );
               sportLabel = 'RUN';
               break;
             default:
