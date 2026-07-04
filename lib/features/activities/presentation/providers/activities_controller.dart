@@ -215,7 +215,22 @@ class ActivitiesController extends _$ActivitiesController {
   }
 
   /// Delete an activity (soft delete)
+  ///
+  /// Removes the activity from the current list state IN PLACE rather than
+  /// calling `invalidateSelf()`. invalidateSelf forces a full re-fetch, which
+  /// pushes dependents (the fuel-timeline dashboard) through a loading
+  /// transition — that rebuilds the Scaffold hosting the "Activity deleted"
+  /// snackbar and orphans its auto-dismiss timer (the snackbar sticks), and
+  /// also flashes the card instead of removing it cleanly. Optimistic
+  /// removal disappears the card instantly, keeps the snackbar timer intact,
+  /// and rolls back if the persist fails.
   Future<void> deleteActivity(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    // Optimistically drop the card so the UI updates immediately with no
+    // loading flash.
+    state = AsyncData(
+      previous.where((a) => a.id != activityId).toList(growable: false),
+    );
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
@@ -223,11 +238,10 @@ class ActivitiesController extends _$ActivitiesController {
         deviceId: deviceIdValue,
         activityId: activityId,
       );
-
-      // Refresh activities list
-      ref.invalidateSelf();
     } catch (e) {
       _logger.error('Error deleting activity', error: e);
+      // Roll back the optimistic removal so the card reappears on failure.
+      if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
   }
