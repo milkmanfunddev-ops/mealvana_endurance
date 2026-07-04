@@ -16,6 +16,14 @@ import type { GarminActivitySummary } from "./types.ts";
 /** Postgres unique-violation error code surfaced by PostgREST. */
 const PG_UNIQUE_VIOLATION = "23505";
 
+/**
+ * Postgres "invalid text representation" error code — surfaced when
+ * inserting a value that isn't a member of a target enum type. Used to
+ * detect an `activity_type_enum` that hasn't been migrated to include
+ * 'other' yet, so we can degrade gracefully instead of a hard failure.
+ */
+const PG_INVALID_ENUM_VALUE = "22P02";
+
 type GarminActivityTiming = Pick<
   GarminActivitySummary,
   "startTimeInSeconds" | "startTimeOffsetInSeconds" | "durationInSeconds"
@@ -219,6 +227,7 @@ export type GarminInsertOutcome =
   | { kind: "inserted"; activityId: string }
   | { kind: "duplicate" } // another push already inserted this summaryId
   | { kind: "skipped_non_endurance"; sportType: string }
+  | { kind: "skipped_enum_not_ready"; sportType: string }
   | { kind: "skipped_no_summary_id" }
   | { kind: "error"; error: unknown };
 
@@ -232,9 +241,14 @@ export type GarminInsertOutcome =
  * (migration 20260506200000). On 23505 we report "duplicate" so the caller
  * skips the notification.
  *
- * Sport gating: only endurance sports (run / bike / swim / triathlon /
- * duathlon / multisport) get auto-created. Walks, strength sessions, and
- * Garmin's "other" bucket have no nutrition context to attach to.
+ * Sport gating: endurance sports (run / bike / swim / triathlon / duathlon /
+ * multisport) get auto-created with full nutrition-plan context. Everything
+ * else Garmin reports (strength, hiking, walking, yoga, etc.) maps to the
+ * generic "other" import-only bucket via [mapGarminSportType] and is now
+ * ALSO auto-created — for visibility/deletion in the activity list, never
+ * with a nutrition plan. Garmin's "transition" legs (T1/T2 within a
+ * multisport activity) are still skipped — they aren't a standalone
+ * activity a user would want listed.
  */
 export async function insertGarminActivityIfMissing(
   // deno-lint-ignore no-explicit-any
@@ -244,7 +258,8 @@ export async function insertGarminActivityIfMissing(
   mappedActivity: Record<string, any>,
 ): Promise<GarminInsertOutcome> {
   const sportType = String(mappedActivity.activity_type ?? "");
-  if (!isEnduranceSportType(sportType)) {
+  const isImportOnlyOther = sportType === "other";
+  if (!isEnduranceSportType(sportType) && !isImportOnlyOther) {
     return { kind: "skipped_non_endurance", sportType };
   }
 
@@ -276,6 +291,20 @@ export async function insertGarminActivityIfMissing(
   if (error) {
     if ((error as { code?: string }).code === PG_UNIQUE_VIOLATION) {
       return { kind: "duplicate" };
+    }
+    // The 'other' activity_type_enum value may not have been migrated onto
+    // this database yet (rollout ordering: this code can deploy before the
+    // `ALTER TYPE activity_type_enum ADD VALUE 'other'` migration runs).
+    // Degrade to a skip instead of surfacing a 500 to Garmin's webhook.
+    if (
+      isImportOnlyOther &&
+      (error as { code?: string }).code === PG_INVALID_ENUM_VALUE
+    ) {
+      console.warn(
+        `[garmin] 'other' activity_type not yet supported by this database's activity_type_enum — skipping import until the enum migration lands.`,
+        error,
+      );
+      return { kind: "skipped_enum_not_ready", sportType };
     }
     return { kind: "error", error };
   }

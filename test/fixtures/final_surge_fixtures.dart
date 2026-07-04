@@ -455,10 +455,13 @@ class FinalSurgeFixtures {
   };
 }
 
-/// Supported workout types that we import into Mealvana
+/// Supported workout types that we import into Mealvana with dedicated
+/// nutrition-plan handling.
 const List<String> supportedWorkoutTypes = ['Run', 'Walk', 'Bike', 'Swim'];
 
-/// Workout types that should be filtered out
+/// Workout types that fall back to a generic ActivityType.other import
+/// (import-only, delete-only — not "filtered out" anymore). Only "Rest Day"
+/// is actually filtered out entirely (no physical activity occurred).
 const List<String> unsupportedWorkoutTypes = [
   'Rest Day',
   'Recovery/Rehab',

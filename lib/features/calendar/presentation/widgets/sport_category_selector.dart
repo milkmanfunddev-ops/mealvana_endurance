@@ -42,7 +42,11 @@ class SportCategorySelector extends StatelessWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ActivityType.values.map((category) {
+              // Import-only types (e.g. ActivityType.other) can never be
+              // manually created — only offer types the user can pick here.
+              children: ActivityType.values
+                  .where((type) => type.isCreatable)
+                  .map((category) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: _SportCategoryButton(

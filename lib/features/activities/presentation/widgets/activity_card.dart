@@ -293,6 +293,15 @@ class ActivityCard extends ConsumerWidget {
           providerWorkoutId: activity.providerWorkoutId,
         );
 
+    // Import-only activities (e.g. strength/hiking/etc. imported from a
+    // provider we don't natively support) never get a nutrition plan and
+    // can't be edited — show a minimal read-only detail sheet instead of
+    // routing into an editor. Deletion still works via the swipe gesture.
+    if (activity.activityType.isImportOnly) {
+      _showImportOnlyDetailSheet(context);
+      return;
+    }
+
     // Check if activity has a nutrition plan
     if (activity.nutritionPlanData == null) {
       // No nutrition plan - open New Activity screen with pre-populated data
@@ -324,6 +333,177 @@ class ActivityCard extends ConsumerWidget {
     } else {
       // Has nutrition plan - open Activity Detail screen (current behavior)
       context.push('/plan', extra: {'mode': 'view', 'activityId': activity.id});
+    }
+  }
+
+  /// Minimal read-only detail sheet for import-only activities.
+  ///
+  /// These are catch-all imports (strength, hiking, yoga, etc.) from
+  /// providers we don't natively support. There's no editor for them —
+  /// just enough context to identify what was imported. Deletion happens
+  /// via the swipe gesture on the card itself, not from this sheet.
+  void _showImportOnlyDetailSheet(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final dateFormat = DateFormat('EEEE, MMM d • h:mm a');
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? AppColors.blackberryLight : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: textColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: AppColors.electrolyte,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _getActivityIcon(activity.activityType),
+                        color: AppColors.blackberry,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        activity.title,
+                        style: TextStyle(
+                          fontFamily: 'Sansita',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  textColor,
+                  'When',
+                  dateFormat.format(activity.scheduledDateTime),
+                ),
+                if (activity.durationMinutes != null)
+                  _buildDetailRow(
+                    textColor,
+                    'Duration',
+                    '${activity.durationMinutes} min',
+                  ),
+                if (activity.distanceMiles != null)
+                  _buildDetailRow(
+                    textColor,
+                    'Distance',
+                    '${activity.distanceMiles!.toStringAsFixed(1)} mi',
+                  ),
+                if (activity.syncedFromProvider != null)
+                  _buildDetailRow(
+                    textColor,
+                    'Imported from',
+                    _formatProviderName(activity.syncedFromProvider!),
+                  ),
+                if (activity.notes != null && activity.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    activity.notes!,
+                    style: TextStyle(
+                      fontFamily: 'Apercu',
+                      fontSize: 13,
+                      color: textColor.withValues(alpha: 0.7),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  'This activity type isn\'t editable in Mealvana — swipe to delete if you don\'t want to see it.',
+                  style: TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: textColor.withValues(alpha: 0.5),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(Color textColor, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 13,
+                color: textColor.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Human-readable provider name for the "Imported from" row.
+  String _formatProviderName(String provider) {
+    switch (provider) {
+      case 'final_surge':
+        return 'Final Surge';
+      case 'training_peaks':
+        return 'TrainingPeaks';
+      case 'garmin':
+        return 'Garmin Connect';
+      case 'vdot':
+        return 'VDOT';
+      case 'strava':
+        return 'Strava';
+      default:
+        return provider;
     }
   }
 
@@ -376,6 +556,9 @@ class ActivityCard extends ConsumerWidget {
         break;
 
       case ActivityType.other:
+        if (activity.durationMinutes != null) {
+          parts.add('${activity.durationMinutes} min');
+        }
         break;
     }
 

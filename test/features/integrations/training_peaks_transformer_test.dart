@@ -51,7 +51,7 @@ void main() {
         expect(result.workoutSubtype, equals('Walk'));
       });
 
-      test('filters out unsupported workout types', () {
+      test('imports unsupported workout types as ActivityType.other', () {
         final unsupportedWorkout = {
           'Id': 999999,
           'WorkoutDay': '2026-02-01T00:00:00',
@@ -60,6 +60,19 @@ void main() {
         };
 
         final result = transformer.transform(unsupportedWorkout, testUserId);
+        expect(result, isNotNull);
+        expect(result!.activity.activityType, equals(ActivityType.other));
+        expect(result.activity.title, equals('Gym Session'));
+      });
+
+      test('returns null when WorkoutType is missing', () {
+        final noTypeWorkout = {
+          'Id': 999998,
+          'WorkoutDay': '2026-02-01T00:00:00',
+          'Title': 'Mystery Session',
+        };
+
+        final result = transformer.transform(noTypeWorkout, testUserId);
         expect(result, isNull);
       });
     });

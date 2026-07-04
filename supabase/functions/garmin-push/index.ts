@@ -385,6 +385,12 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
                 );
                 stats.skipped++;
                 break;
+              case "skipped_enum_not_ready":
+                console.warn(
+                  `[garmin-push] "other" activity_type not yet migrated on this database — skipping import for ${scheduledDate}`,
+                );
+                stats.skipped++;
+                break;
               case "skipped_no_summary_id":
                 console.warn(
                   "[garmin-push] No matching planned activity and missing summaryId — skipping",
@@ -859,6 +865,12 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               case "skipped_non_endurance":
                 console.log(
                   `[garmin-push] No matching planned activity for detail non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_enum_not_ready":
+                console.warn(
+                  `[garmin-push] "other" activity_type not yet migrated on this database — skipping detail import for ${scheduledDate}`,
                 );
                 stats.skipped++;
                 break;

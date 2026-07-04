@@ -252,13 +252,32 @@ void main() {
         expect(result, isNull);
       });
 
-      test('filters out Recovery/Rehab workouts', () {
+      test('imports Recovery/Rehab workouts as ActivityType.other', () {
         final result = transformer.transform(
           FinalSurgeFixtures.recoveryWorkout,
           testUserId,
         );
 
-        expect(result, isNull);
+        expect(result, isNotNull);
+        expect(result!.activity.activityType, equals(ActivityType.other));
+        expect(result.activity.title, equals('Foam Rolling'));
+      });
+
+      test('imports Strength workouts as ActivityType.other', () {
+        final strengthWorkout = {
+          'WorkoutKey': 'strength-1',
+          'WorkoutDate': '2026-01-06T00:00:00',
+          'WorkoutTitle': 'Leg Day',
+          'WorkoutTypeName': 'Strength',
+          'PlannedTime': 3600,
+        };
+
+        final result = transformer.transform(strengthWorkout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.activityType, equals(ActivityType.other));
+        expect(result.activity.title, equals('Leg Day'));
+        expect(result.activity.durationMinutes, equals(60));
       });
     });
 

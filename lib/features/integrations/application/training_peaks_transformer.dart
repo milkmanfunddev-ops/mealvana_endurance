@@ -231,13 +231,20 @@ class TrainingPeaksTransformer {
 
   static const _uuid = Uuid();
 
-  /// Supported workout types that we import
+  /// Workout types with dedicated nutrition-plan handling.
   /// TrainingPeaks types: swim, bike, run, x-train, mtb, strength, xc-ski, rowing, walk, other
+  /// Anything outside this list (x-train, strength, xc-ski, TrainingPeaks'
+  /// own "other" type, etc.) is still imported, but as a generic
+  /// [ActivityType.other] rather than silently dropped.
   static const supportedTypes = ['Swim', 'Bike', 'Run', 'Walk', 'Rowing', 'MTB'];
 
   /// Transform a TrainingPeaks workout JSON to a Mealvana Activity
   ///
-  /// Returns null if the workout type is not supported.
+  /// Returns null only when the workout type name is missing entirely.
+  /// TrainingPeaks has no "rest day" workout type — every named workout
+  /// type represents a real activity, so unsupported types (Strength,
+  /// X-Train, XC-Ski, etc.) are imported as [ActivityType.other] instead of
+  /// being dropped.
   /// When [zones] is provided, uses athlete zone data for more precise
   /// intensity classification of structured workouts.
   TrainingPeaksTransformResult? transform(
@@ -257,9 +264,8 @@ class TrainingPeaksTransformer {
 
     final workoutType = workout['WorkoutType'] as String?;
 
-    // Filter out unsupported workout types
-    if (workoutType == null ||
-        !supportedTypes.any((t) => t.toLowerCase() == workoutType.toLowerCase())) {
+    // Only a missing type name means there's nothing to import.
+    if (workoutType == null || workoutType.trim().isEmpty) {
       return null;
     }
 
@@ -398,7 +404,11 @@ class TrainingPeaksTransformer {
     return 'https://www.trainingpeaks.com/workout/$id';
   }
 
-  /// Map TrainingPeaks workout type to Mealvana ActivityType
+  /// Map TrainingPeaks workout type to Mealvana ActivityType.
+  ///
+  /// Unrecognized types (Strength, X-Train, XC-Ski, TrainingPeaks' own
+  /// "Other", etc.) map to [ActivityType.other] — imported for
+  /// visibility/deletion, but never misclassified as a run.
   ActivityType _mapActivityType(String workoutType) {
     switch (workoutType.toLowerCase()) {
       case 'run':
@@ -413,7 +423,7 @@ class TrainingPeaksTransformer {
         // Rowing maps to cycling for nutrition purposes (similar metabolic profile)
         return ActivityType.cycling;
       default:
-        return ActivityType.running;
+        return ActivityType.other;
     }
   }
 
