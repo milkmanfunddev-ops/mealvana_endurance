@@ -1,46 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/common_ingredients.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/quick_assembly.dart';
-import '../providers/draft_meal_controller.dart';
 
 /// "Common" tab body: curated quick-add combos ([kQuickAssemblies]) plus the
 /// single-ingredient library ([kCommonIngredients]).
 ///
-/// Every row adds directly to the build-a-meal draft (item 1) — no per-tap
-/// slot/servings prompt. The user can adjust quantity afterwards via the
-/// draft editor's [MealComponentEditor] (reused there for edit/swap/delete).
-class CommonIngredientsSection extends ConsumerWidget {
+/// Purely presentational — [onTapAssembly]/[onTapIngredient] decide what a tap
+/// means. `LogMealScreen`'s Common tab quick-logs a terminal `meal_logs` row
+/// per tap; `BuildMealScreen`'s "+ Add food" Common tab adds the tapped item
+/// to the in-progress draft instead. Neither behavior lives here.
+class CommonIngredientsSection extends StatelessWidget {
   const CommonIngredientsSection({
     super.key,
-    required this.logDate,
     required this.scrollController,
+    required this.onTapAssembly,
+    required this.onTapIngredient,
   });
 
-  final String logDate;
   final ScrollController scrollController;
+  final ValueChanged<QuickAssembly> onTapAssembly;
+  final ValueChanged<MealComponent> onTapIngredient;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-
-    void addAssembly(QuickAssembly assembly) {
-      ref
-          .read(draftMealControllerProvider(logDate).notifier)
-          .addComponents(assembly.components);
-      MealvanaSnackbar.showSuccess(context, 'Added ${assembly.name}');
-    }
-
-    void addIngredient(MealComponent ingredient) {
-      ref
-          .read(draftMealControllerProvider(logDate).notifier)
-          .addComponent(ingredient);
-      MealvanaSnackbar.showSuccess(context, 'Added ${ingredient.name}');
-    }
 
     return ListView(
       controller: scrollController,
@@ -93,7 +80,7 @@ class CommonIngredientsSection extends ConsumerWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               trailing: const Icon(Icons.add_circle_outline, size: 20),
-              onTap: () => addAssembly(assembly),
+              onTap: () => onTapAssembly(assembly),
             ),
           ),
         ),
@@ -130,7 +117,7 @@ class CommonIngredientsSection extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: const Icon(Icons.add_circle_outline, size: 20),
-              onTap: () => addIngredient(ingredient),
+              onTap: () => onTapIngredient(ingredient),
             ),
           ),
         ),

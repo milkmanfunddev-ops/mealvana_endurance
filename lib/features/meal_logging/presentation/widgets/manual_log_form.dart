@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_slot.dart';
@@ -9,14 +10,17 @@ import 'slot_chip_selector.dart';
 
 /// Reusable manual meal-entry form.
 ///
-/// Hosts the name / slot / macro fields and the Save button, and writes the
-/// entry via [MealLogController.logManualMeal]. It is intentionally chrome-less
-/// (no Scaffold / AppBar) so it can be embedded either in a full screen
-/// ([ManualLogScreen]) or inline as the "Manual" tab of the log sheet.
+/// Hosts the name / optional slot / time eaten / macro fields and the Save
+/// button, and writes the entry via [MealLogController.logManualMeal]. It is
+/// intentionally chrome-less (no Scaffold / AppBar) so it can be embedded
+/// either in a full screen ([ManualLogScreen]) or inline as the quick-log
+/// "Manual" tab of `LogMealScreen`.
 ///
-/// On a successful write it calls [onLogged]; on failure it calls [onLogError].
-/// The host decides what those mean (pop a route, close a sheet, show a
-/// snackbar, …) so messaging stays consistent with the surrounding surface.
+/// On a successful write it calls [onLogged] and clears the form (so the
+/// inline tab can log another item in a row); on failure it calls
+/// [onLogError]. The host decides what "logged" means beyond that (pop a
+/// route, show a snackbar, dismiss the keyboard, …) so messaging stays
+/// consistent with the surrounding surface.
 class ManualLogForm extends ConsumerStatefulWidget {
   const ManualLogForm({
     super.key,
@@ -44,6 +48,8 @@ class ManualLogForm extends ConsumerStatefulWidget {
 }
 
 class _ManualLogFormState extends ConsumerState<ManualLogForm> {
+  static final DateFormat _timeFmt = DateFormat('h:mm a');
+
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _calCtrl = TextEditingController();
@@ -53,7 +59,8 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   final _sodiumCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
-  MealSlot _slot = MealSlot.breakfast;
+  MealSlot? _slot;
+  DateTime _eatenAt = DateTime.now();
   bool _showExtra = false;
 
   @override
@@ -68,8 +75,27 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
     super.dispose();
   }
 
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_eatenAt),
+      helpText: 'Time eaten',
+    );
+    if (picked == null) return;
+    setState(() {
+      _eatenAt = DateTime(
+        _eatenAt.year,
+        _eatenAt.month,
+        _eatenAt.day,
+        picked.hour,
+        picked.minute,
+      );
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     await ref.read(mealLogControllerProvider.notifier).logManualMeal(
           name: _nameCtrl.text.trim(),
@@ -83,12 +109,26 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           notes: _notesCtrl.text.trim().isEmpty
               ? null
               : _notesCtrl.text.trim(),
+          eatenAt: _eatenAt,
         );
 
     if (!mounted) return;
     final state = ref.read(mealLogControllerProvider);
     if (state is AsyncData) {
       widget.onLogged();
+      // Reset for the next entry — the inline "Manual" tab stays open so the
+      // user can log several items in a row without re-navigating.
+      setState(() {
+        _nameCtrl.clear();
+        _calCtrl.clear();
+        _carbCtrl.clear();
+        _protCtrl.clear();
+        _fatCtrl.clear();
+        _sodiumCtrl.clear();
+        _notesCtrl.clear();
+        _slot = null;
+        _eatenAt = DateTime.now();
+      });
     } else {
       widget.onLogError();
     }
@@ -120,15 +160,52 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Slot selector
+          // Slot selector — optional (build-a-meal redesign): the user may
+          // leave a logged meal untagged.
           Text(
             'Meal type',
             style: Theme.of(context).textTheme.labelLarge,
           ),
           const SizedBox(height: 6),
-          SlotChipSelector(
+          OptionalSlotChipSelector(
             selectedSlot: _slot,
             onSlotSelected: (s) => setState(() => _slot = s),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Time eaten
+          Text(
+            'Time eaten',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 6),
+          InkWell(
+            onTap: _pickTime,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    _timeFmt.format(_eatenAt),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Change',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
 

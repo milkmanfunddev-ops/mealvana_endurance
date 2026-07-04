@@ -27,6 +27,7 @@ import 'package:mealvana_endurance/features/events/presentation/screens/events_l
 import 'package:mealvana_endurance/features/events/presentation/screens/event_form_screen.dart';
 import 'package:mealvana_endurance/features/events/presentation/screens/event_detail_screen.dart';
 import 'package:mealvana_endurance/features/race_checklist/presentation/screens/race_checklist_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/build_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/manual_log_screen.dart';
@@ -248,6 +249,18 @@ void main() {
         tester,
         const LogMealScreen(logDate: '2026-07-04'),
         settle: false,
+      );
+    });
+
+    // BuildMealScreen (Surface 2 of the meal-logging split) — same shape as
+    // LogMealScreen: plain constructor params, no GoRouterState dependency.
+    // Renders its empty state synchronously (draftMealControllerProvider's
+    // initial state has zero components) — no async provider gates the
+    // first frame, so settle:true is safe here.
+    testWidgets('BuildMealScreen builds (empty draft state)', (tester) async {
+      await smokeScreen(
+        tester,
+        const BuildMealScreen(logDate: '2026-07-04'),
       );
     });
   });

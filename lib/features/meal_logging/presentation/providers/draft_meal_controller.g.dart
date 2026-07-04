@@ -9,20 +9,20 @@ part of 'draft_meal_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Accumulator controller for the in-progress build-a-meal draft, scoped to
-/// [logDate] (`yyyy-MM-dd`). Auto-disposes when the log sheet closes (no
-/// remaining watchers), so re-opening the sheet always starts a fresh draft.
+/// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no
+/// remaining watchers), so re-opening it always starts a fresh draft.
 
 @ProviderFor(DraftMealController)
 const draftMealControllerProvider = DraftMealControllerFamily._();
 
 /// Accumulator controller for the in-progress build-a-meal draft, scoped to
-/// [logDate] (`yyyy-MM-dd`). Auto-disposes when the log sheet closes (no
-/// remaining watchers), so re-opening the sheet always starts a fresh draft.
+/// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no
+/// remaining watchers), so re-opening it always starts a fresh draft.
 final class DraftMealControllerProvider
     extends $NotifierProvider<DraftMealController, DraftMealState> {
   /// Accumulator controller for the in-progress build-a-meal draft, scoped to
-  /// [logDate] (`yyyy-MM-dd`). Auto-disposes when the log sheet closes (no
-  /// remaining watchers), so re-opening the sheet always starts a fresh draft.
+  /// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no
+  /// remaining watchers), so re-opening it always starts a fresh draft.
   const DraftMealControllerProvider._({
     required DraftMealControllerFamily super.from,
     required String super.argument,
@@ -68,11 +68,11 @@ final class DraftMealControllerProvider
 }
 
 String _$draftMealControllerHash() =>
-    r'1736964733a8f4443dee8643cb362461b301c791';
+    r'bdc13d94ef94245a6252b38f1e452eddf261b93e';
 
 /// Accumulator controller for the in-progress build-a-meal draft, scoped to
-/// [logDate] (`yyyy-MM-dd`). Auto-disposes when the log sheet closes (no
-/// remaining watchers), so re-opening the sheet always starts a fresh draft.
+/// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no
+/// remaining watchers), so re-opening it always starts a fresh draft.
 
 final class DraftMealControllerFamily extends $Family
     with
@@ -93,8 +93,8 @@ final class DraftMealControllerFamily extends $Family
       );
 
   /// Accumulator controller for the in-progress build-a-meal draft, scoped to
-  /// [logDate] (`yyyy-MM-dd`). Auto-disposes when the log sheet closes (no
-  /// remaining watchers), so re-opening the sheet always starts a fresh draft.
+  /// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no
+  /// remaining watchers), so re-opening it always starts a fresh draft.
 
   DraftMealControllerProvider call(String logDate) =>
       DraftMealControllerProvider._(argument: logDate, from: this);
@@ -104,8 +104,8 @@ final class DraftMealControllerFamily extends $Family
 }
 
 /// Accumulator controller for the in-progress build-a-meal draft, scoped to
-/// [logDate] (`yyyy-MM-dd`). Auto-disposes when the log sheet closes (no
-/// remaining watchers), so re-opening the sheet always starts a fresh draft.
+/// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no
+/// remaining watchers), so re-opening it always starts a fresh draft.
 
 abstract class _$DraftMealController extends $Notifier<DraftMealState> {
   late final _$args = ref.$arg as String;

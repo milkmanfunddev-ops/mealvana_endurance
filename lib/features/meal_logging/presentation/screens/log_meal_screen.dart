@@ -22,14 +22,18 @@ import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
+import '../../application/meal_logging_service.dart' show RecipeLogParams;
+import '../../domain/consumed_totals.dart';
+import '../../domain/meal_auto_name.dart';
+import '../../domain/meal_log_source.dart';
 import '../../domain/saved_meal.dart';
-import '../providers/draft_meal_controller.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/common_ingredients_section.dart';
-import '../widgets/draft_meal_bar.dart';
 import '../widgets/log_sheet_helpers.dart';
-import '../widgets/manual_component_form.dart';
+import '../widgets/manual_log_form.dart';
+import '../widgets/quick_log_confirm_sheet.dart';
 import '../widgets/unified_meal_search_results.dart';
+import 'build_meal_screen.dart';
 import 'log_scanned_food_screen.dart';
 
 // ---------------------------------------------------------------------------
@@ -38,12 +42,14 @@ import 'log_scanned_food_screen.dart';
 
 /// Opens the full-screen "Log a Meal" experience.
 ///
-/// Build-a-meal redesign: every tab's item tap adds to an in-progress draft
-/// ([draftMealControllerProvider], scoped to [logDate]) rather than writing a
-/// terminal `meal_logs` row per tap. A persistent [DraftMealBar] pinned to the
-/// bottom of the screen shows running totals and commits the whole draft as a
-/// single log entry via "Save meal". A unified search bar at the top searches
-/// foods, recipes, common ingredients, and favorites/recents together.
+/// Quick-log only (2026-07 two-surface split): every tab's item tap opens
+/// [showQuickLogConfirmSheet] (servings + time + optional category) and, on
+/// confirm, commits ONE terminal `meal_logs` row immediately — there is no
+/// in-progress draft/accumulator on this screen anymore. Building a
+/// multi-item meal from scratch lives on the separate [BuildMealScreen]
+/// (`openBuildMealScreen`), reachable via the "Build a meal" app-bar action.
+/// A unified search bar at the top searches foods, recipes, common
+/// ingredients, and favorites/recents together.
 void openLogMealScreen(BuildContext context, {required String logDate}) {
   Navigator.of(context).push<void>(
     MaterialPageRoute(builder: (_) => LogMealScreen(logDate: logDate)),
@@ -79,10 +85,10 @@ extension _LogTabLabel on _LogTab {
 // LogMealScreen — full-screen "Log a Meal" experience
 // ---------------------------------------------------------------------------
 
-/// Full-screen page for logging a meal
+/// Full-screen page for QUICK-LOGGING a meal
 /// (Recent · Favorites · Common · Recipes · Describe · Manual), plus a
-/// unified search bar and a persistent build-a-meal draft bar pinned to the
-/// bottom of the screen.
+/// unified search bar. Every tap commits a single `meal_logs` row right away
+/// (via [showQuickLogConfirmSheet]) — there is no draft/accumulator here.
 class LogMealScreen extends ConsumerStatefulWidget {
   const LogMealScreen({super.key, required this.logDate});
 
@@ -135,26 +141,155 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     if (mounted) FocusScope.of(context).unfocus();
   }
 
-  // -- draft accumulator helpers ---------------------------------------------
+  // -- quick-log helpers -------------------------------------------------
 
-  DraftMealController get _draft =>
-      ref.read(draftMealControllerProvider(widget.logDate).notifier);
-
-  void _addComponent(MealComponent component, {String? toastLabel}) {
-    _unfocus();
-    _draft.addComponent(component);
-    if (mounted) {
-      MealvanaSnackbar.showSuccess(
-        context,
-        'Added ${toastLabel ?? component.name}',
+  /// Sums a component list into [ConsumedTotals] for a confirm-sheet preview.
+  ConsumedTotals _totalsOf(List<MealComponent> components) {
+    return components.fold(const ConsumedTotals(), (acc, c) {
+      return ConsumedTotals(
+        calories: acc.calories + (c.calories ?? 0),
+        carbsG: acc.carbsG + (c.carbG ?? 0),
+        proteinG: acc.proteinG + (c.proteinG ?? 0),
+        fatG: acc.fatG + (c.fatG ?? 0),
+        sodiumMg: acc.sodiumMg + (c.sodiumMg ?? 0),
       );
-    }
+    });
   }
 
-  void _addComponents(Iterable<MealComponent> components, String toastLabel) {
+  /// Scales a single-food [MealComponent] (e.g. a common ingredient) by
+  /// [servings].
+  MealComponent _scale(MealComponent base, double servings) {
+    return MealComponent(
+      name: base.name,
+      portion: servings == servings.truncateToDouble()
+          ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
+          : '${servings.toStringAsFixed(1)} servings',
+      calories:
+          base.calories != null ? (base.calories! * servings).round() : null,
+      carbG: base.carbG != null ? base.carbG! * servings : null,
+      proteinG: base.proteinG != null ? base.proteinG! * servings : null,
+      fatG: base.fatG != null ? base.fatG! * servings : null,
+      sodiumMg: base.sodiumMg != null ? base.sodiumMg! * servings : null,
+    );
+  }
+
+  /// Generic quick-log flow shared by food/ingredient/recent/common-assembly
+  /// taps: shows [showQuickLogConfirmSheet], then writes ONE terminal
+  /// `meal_logs` row via [MealLogController.logFromComponents]. The row's
+  /// name is [deriveMealName] applied to the final component list (a single
+  /// component collapses to that item's own name).
+  Future<void> _quickLogComponents({
+    required String title,
+    required List<MealComponent> Function(double servings) buildComponents,
+    bool showServingsStepper = true,
+    double initialServings = 1.0,
+    MealLogSource source = MealLogSource.manual,
+  }) async {
     _unfocus();
-    _draft.addComponents(components);
-    if (mounted) MealvanaSnackbar.showSuccess(context, 'Added $toastLabel');
+    final result = await showQuickLogConfirmSheet(
+      context,
+      title: title,
+      showServingsStepper: showServingsStepper,
+      initialServings: initialServings,
+      previewTotals: (servings) => _totalsOf(buildComponents(servings)),
+    );
+    if (result == null || !mounted) return;
+
+    final components = buildComponents(result.servings);
+    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+          name: deriveMealName(components),
+          slot: result.slot,
+          logDate: widget.logDate,
+          source: source,
+          components: components,
+          eatenAt: result.eatenAt,
+        );
+    _afterQuickLog();
+  }
+
+  /// Quick-log a recipe at a chosen serving count via
+  /// [MealLogController.logRecipe] (which builds its own single component
+  /// from [RecipeLogParams] — the recipe stays a single line on this
+  /// quick-log surface; only `BuildMealScreen`'s "+ Add food" explodes a
+  /// recipe into per-ingredient lines).
+  Future<void> _quickLogRecipe(Recipe recipe) async {
+    _unfocus();
+    final nutrition = recipe.nutrition;
+    final result = await showQuickLogConfirmSheet(
+      context,
+      title: recipe.name,
+      previewTotals: (servings) => ConsumedTotals(
+        calories: (nutrition.calories * servings).round(),
+        carbsG: nutrition.carbohydratesGrams * servings,
+        proteinG: nutrition.proteinGrams * servings,
+        fatG: nutrition.fatGrams * servings,
+        sodiumMg: nutrition.sodiumMilligrams * servings,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    await ref.read(mealLogControllerProvider.notifier).logRecipe(
+          params: RecipeLogParams(
+            recipeId: recipe.id,
+            recipeName: recipe.name,
+            servings: result.servings,
+            caloriesPerServing: nutrition.calories,
+            carbsGPerServing: nutrition.carbohydratesGrams,
+            proteinGPerServing: nutrition.proteinGrams,
+            fatGPerServing: nutrition.fatGrams,
+            sodiumMgPerServing: nutrition.sodiumMilligrams,
+          ),
+          slot: result.slot,
+          logDate: widget.logDate,
+          eatenAt: result.eatenAt,
+        );
+    _afterQuickLog();
+  }
+
+  /// Quick-log (re-log) a saved favorite — no servings stepper (a saved meal
+  /// is an arbitrary multi-food combo with no single per-serving scale).
+  Future<void> _quickLogSavedMeal(SavedMeal meal) async {
+    _unfocus();
+    final result = await showQuickLogConfirmSheet(
+      context,
+      title: meal.name,
+      showServingsStepper: false,
+      previewTotals: (_) => ConsumedTotals(
+        calories: meal.calories ?? 0,
+        carbsG: meal.carbsG ?? 0,
+        proteinG: meal.proteinG ?? 0,
+        fatG: meal.fatG ?? 0,
+        sodiumMg: meal.sodiumMg ?? 0,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
+          savedMeal: meal,
+          slot: result.slot,
+          logDate: widget.logDate,
+          eatenAt: result.eatenAt,
+        );
+    _afterQuickLog();
+  }
+
+  /// After a successful quick-log: keyboard stays dismissed, show a success
+  /// snackbar, and DO NOT re-focus the search field or the screen stays put
+  /// so the user can log another item (matches the pre-redesign UX — the
+  /// reported bug was the keyboard/cursor bouncing back, not the screen
+  /// staying open).
+  void _afterQuickLog() {
+    _unfocus();
+    if (!mounted) return;
+    final state = ref.read(mealLogControllerProvider);
+    if (state is AsyncData) {
+      MealvanaSnackbar.showSuccess(context, 'Meal logged!');
+    } else if (state is AsyncError) {
+      MealvanaSnackbar.showError(
+        context,
+        'Failed to log meal. Please try again.',
+      );
+    }
   }
 
   // -- recipes loading (shared by Recipes tab + unified search) --------------
@@ -281,14 +416,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         .updateSearch(query);
   }
 
-  Future<void> _onSearchButtonPressed(String query) async {
-    if (query.trim().isNotEmpty) {
-      await ref
-          .read(foodSearchControllerProvider(_foodSearchControllerKey).notifier)
-          .searchOpenFoodFacts(query.trim());
-    }
-  }
-
   Future<void> _onBarcodeScan() async {
     _unfocus();
     final result = await context.pushNamed<dynamic>(
@@ -298,20 +425,24 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     if (result == null || !mounted) return;
 
     final food = result as Food;
+    // LogScannedFoodScreen already collects its own servings + (required)
+    // slot — reuse that sub-flow, then quick-log directly instead of
+    // routing through the servings/time confirm sheet a second time.
     final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
       MaterialPageRoute(builder: (_) => LogScannedFoodScreen(food: food)),
     );
     if (logRequest == null || !mounted) return;
 
-    // The scanned-food screen still asks for a meal slot (unchanged legacy
-    // UI) — honor it as the draft's slot only if the draft hasn't already
-    // been given one, since slot now applies to the whole draft, not a
-    // single component.
-    final currentSlot = ref.read(
-      draftMealControllerProvider(widget.logDate),
-    ).slot;
-    if (currentSlot == null) _draft.setSlot(logRequest.slot);
-    _addFoodComponent(food, logRequest.servings);
+    final components = [_foodComponent(food, logRequest.servings)];
+    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+          name: deriveMealName(components),
+          slot: logRequest.slot,
+          logDate: widget.logDate,
+          source: MealLogSource.manual,
+          components: components,
+          eatenAt: DateTime.now(),
+        );
+    _afterQuickLog();
   }
 
   Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
@@ -346,11 +477,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       final food = await mappingService.mapToFood(apiProduct);
 
       if (!mounted) return;
-      _showServingsSheet(
-        title: food.displayName ?? food.name,
-        component: (servings) => _foodComponent(food, servings),
-        onConfirm: (servings) => _addFoodComponent(food, servings),
-      );
+      _onFoodTap(food);
     } catch (_) {
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
@@ -359,118 +486,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         MealvanaSnackbar.showError(context, 'Failed to load product details');
       }
     }
-  }
-
-  // -- servings-only "add to meal" sheet (no per-item slot) -----------------
-
-  /// Shows a servings stepper sheet for [title], previewing macros via
-  /// [component] at the current servings value, and calling [onConfirm] with
-  /// the chosen servings when the user taps "Add to meal".
-  void _showServingsSheet({
-    required String title,
-    required MealComponent Function(double servings) component,
-    required void Function(double servings) onConfirm,
-  }) {
-    double servings = 1.0;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final preview = component(servings);
-
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.blackberry : AppColors.cream,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: EdgeInsets.only(
-              left: AppSpacing.lg,
-              right: AppSpacing.lg,
-              top: AppSpacing.md,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white24 : Colors.black12,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Text(title, style: AppTextStyles.subtitle, textAlign: TextAlign.center),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '${preview.calories ?? 0} kcal  ·  '
-                    'C ${preview.carbG?.toStringAsFixed(0) ?? 0}g  '
-                    'P ${preview.proteinG?.toStringAsFixed(0) ?? 0}g  '
-                    'F ${preview.fatG?.toStringAsFixed(0) ?? 0}g',
-                    style: AppTextStyles.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: servings > 0.5
-                            ? () => setModalState(
-                                () => servings = (servings - 0.5).clamp(0.5, 10.0),
-                              )
-                            : null,
-                      ),
-                      SizedBox(
-                        width: 60,
-                        child: Text(
-                          servings == servings.truncateToDouble()
-                              ? servings.toInt().toString()
-                              : servings.toStringAsFixed(1),
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 22,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: servings < 10
-                            ? () => setModalState(
-                                () => servings = (servings + 0.5).clamp(0.5, 10.0),
-                              )
-                            : null,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  KylePrimaryButton(
-                    text: 'Add to meal',
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      onConfirm(servings);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 
   MealComponent _foodComponent(Food food, double servings) {
@@ -491,16 +506,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
   }
 
-  void _addFoodComponent(Food food, double servings) {
-    _addComponent(_foodComponent(food, servings));
-  }
-
   void _onFoodTap(Food food) {
-    _unfocus();
-    _showServingsSheet(
+    _quickLogComponents(
       title: food.displayName ?? food.name,
-      component: (servings) => _foodComponent(food, servings),
-      onConfirm: (servings) => _addFoodComponent(food, servings),
+      buildComponents: (servings) => [_foodComponent(food, servings)],
     );
   }
 
@@ -508,28 +517,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     _onFoodTap(_catalogResultToFood(result));
   }
 
-  MealComponent _recipeComponent(Recipe recipe, double servings) {
-    return MealComponent(
-      name: recipe.name,
-      portion: servings == servings.truncateToDouble()
-          ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
-          : '${servings.toStringAsFixed(1)} servings',
-      calories: (recipe.nutrition.calories * servings).round(),
-      carbG: recipe.nutrition.carbohydratesGrams * servings,
-      proteinG: recipe.nutrition.proteinGrams * servings,
-      fatG: recipe.nutrition.fatGrams * servings,
-      sodiumMg: recipe.nutrition.sodiumMilligrams * servings,
-    );
-  }
-
   void _onRecipeTap(Recipe recipe) {
-    _unfocus();
-    _showServingsSheet(
-      title: recipe.name,
-      component: (servings) => _recipeComponent(recipe, servings),
-      onConfirm: (servings) =>
-          _addComponent(_recipeComponent(recipe, servings), toastLabel: recipe.name),
-    );
+    _quickLogRecipe(recipe);
   }
 
   // --------------------------------------------------------------------------
@@ -548,6 +537,24 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     } catch (_) {
       return 'Log a Meal';
     }
+  }
+
+  /// Re-log a recent meal (single synthetic component reconstructed from the
+  /// past log's totals) — quick-log with a servings stepper, matching the
+  /// food/ingredient tap pattern. Mirrors the `.saved` source convention
+  /// already used by [RecentSavedPickerScreen] for re-logged history items.
+  void _onRecentTap(MealLog log) {
+    final base = syntheticFromLog(log);
+    _quickLogComponents(
+      title: log.name,
+      buildComponents: (servings) => [_scale(base, servings)],
+      source: MealLogSource.saved,
+    );
+  }
+
+  Future<void> _openBuildMealScreen() async {
+    _unfocus();
+    openBuildMealScreen(context, logDate: widget.logDate);
   }
 
   @override
@@ -574,6 +581,20 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           _screenTitle(),
           style: AppTextStyles.sectionTitle.copyWith(color: textColor),
         ),
+        actions: [
+          TextButton.icon(
+            key: const ValueKey('log_meal.build_a_meal_button'),
+            onPressed: _openBuildMealScreen,
+            icon: Icon(Icons.restaurant_menu, size: 18, color: textColor),
+            label: Text(
+              'Build a meal',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -588,12 +609,17 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             child: Column(
               children: [
                 // Unified search bar — searches foods, recipes, common
-                // ingredients, and favorites/recents together.
+                // ingredients, and favorites/recents together. USDA/Open
+                // Food Facts already auto-fire on the catalog debounce
+                // (search-nutrition-products), so the keyboard checkmark
+                // just dismisses the keyboard rather than re-triggering a
+                // search — that re-trigger was the reported keyboard-bounce
+                // bug.
                 FoodSearchBar(
                   controller: _searchCtrl,
                   hintText: 'Search anything to add...',
                   onChanged: _onSearchChanged,
-                  onSearch: _onSearchButtonPressed,
+                  onSearch: (_) => _unfocus(),
                   onBarcodeScan: _onBarcodeScan,
                   onTapOutside: (_) => _unfocus(),
                 ),
@@ -619,30 +645,23 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     controllerKey: _foodSearchControllerKey,
                     scrollController: _scrollController,
                     onAddRecipe: _onRecipeTap,
-                    onAddFavorite: (meal) => _addComponents(
-                      meal.components,
-                      meal.name,
+                    onAddFavorite: _quickLogSavedMeal,
+                    onAddRecent: _onRecentTap,
+                    onAddIngredient: (ingredient) => _quickLogComponents(
+                      title: ingredient.name,
+                      buildComponents: (servings) => [_scale(ingredient, servings)],
                     ),
-                    onAddRecent: (log) =>
-                        _addComponent(syntheticFromLog(log), toastLabel: log.name),
-                    onAddIngredient: (ingredient) => _addComponent(ingredient),
                     onFoodTap: _onFoodTap,
                     onCatalogTap: _onCatalogTap,
                     onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
-                    onSearchOpenFoodFacts: () =>
-                        _onSearchButtonPressed(searchState.searchQuery),
+                    // No manual OFF search trigger — auto USDA/OFF already
+                    // covers this (see the search bar comment above).
+                    onSearchOpenFoodFacts: () {},
+                    showOpenFoodFactsButton: false,
                   )
                 : _buildTabBody(context, isDark),
           ),
         ],
-      ),
-      // ── Persistent build-a-meal draft bar, pinned to the bottom ─────────
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: DraftMealBar(
-          logDate: widget.logDate,
-          onSaved: () => Navigator.of(context).pop(),
-        ),
       ),
     );
   }
@@ -652,17 +671,25 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       case _LogTab.recent:
         return _RecentTab(
           scrollController: _scrollController,
-          onTap: (log) => _addComponent(syntheticFromLog(log), toastLabel: log.name),
+          onTap: _onRecentTap,
         );
       case _LogTab.favorites:
         return _FavoritesTab(
           scrollController: _scrollController,
-          onTap: (meal) => _addComponents(meal.components, meal.name),
+          onTap: _quickLogSavedMeal,
         );
       case _LogTab.common:
         return CommonIngredientsSection(
-          logDate: widget.logDate,
           scrollController: _scrollController,
+          onTapAssembly: (assembly) => _quickLogComponents(
+            title: assembly.name,
+            buildComponents: (_) => assembly.components,
+            showServingsStepper: false,
+          ),
+          onTapIngredient: (ingredient) => _quickLogComponents(
+            title: ingredient.name,
+            buildComponents: (servings) => [_scale(ingredient, servings)],
+          ),
         );
       case _LogTab.recipes:
         return _RecipesTab(
@@ -678,9 +705,17 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           onNavigateAway: () => Navigator.of(context).pop(),
         );
       case _LogTab.manual:
-        return ManualComponentForm(
+        return ManualLogForm(
           logDate: widget.logDate,
           scrollController: _scrollController,
+          onLogged: () {
+            _unfocus();
+            if (mounted) MealvanaSnackbar.showSuccess(context, 'Meal logged!');
+          },
+          onLogError: () => MealvanaSnackbar.showError(
+            context,
+            'Failed to log meal. Please try again.',
+          ),
         );
     }
   }

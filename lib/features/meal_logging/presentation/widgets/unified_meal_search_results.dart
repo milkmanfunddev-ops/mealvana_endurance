@@ -14,12 +14,16 @@ import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
 
 /// Sectioned cross-source search results shown below the unified search bar
-/// (item 25) whenever the query is non-empty.
+/// whenever the query is non-empty.
 ///
 /// Two layers:
 /// - A horizontal "quick match" strip covering favorites, recents, recipes,
 ///   and the curated common-ingredients library (all filtered client-side by
-///   [query]) — tapping a card adds straight to the build-a-meal draft.
+///   [query]) — tapping a card triggers the caller's own add/log action.
+///   Favorites and recents are optional ([onAddFavorite]/[onAddRecent] may be
+///   null): `BuildMealScreen`'s "+ Add food" search omits them (saved meals
+///   are start-from only there, never a nested component — no favorites/
+///   recents quick-match cards in that context).
 /// - The shared [UnifiedFoodSearchResults] (composed, not modified) for
 ///   foods/catalog/Open Food Facts — the same widget Swap Food and Food
 ///   Preferences use, keyed to this sheet's own [FoodSearchController]
@@ -32,13 +36,14 @@ class UnifiedMealSearchResults extends ConsumerWidget {
     required this.controllerKey,
     required this.scrollController,
     required this.onAddRecipe,
-    required this.onAddFavorite,
-    required this.onAddRecent,
+    this.onAddFavorite,
+    this.onAddRecent,
     required this.onAddIngredient,
     required this.onFoodTap,
     required this.onCatalogTap,
     required this.onOpenFoodFactsResultTap,
     required this.onSearchOpenFoodFacts,
+    this.showOpenFoodFactsButton = true,
   });
 
   final String query;
@@ -47,28 +52,42 @@ class UnifiedMealSearchResults extends ConsumerWidget {
   final ScrollController scrollController;
 
   final ValueChanged<Recipe> onAddRecipe;
-  final ValueChanged<SavedMeal> onAddFavorite;
-  final ValueChanged<MealLog> onAddRecent;
+
+  /// Null hides the "Favorites" quick-match cards entirely (no favorites
+  /// fetch either) — used by `BuildMealScreen`'s add-food search, where
+  /// saved meals are never nested as a component.
+  final ValueChanged<SavedMeal>? onAddFavorite;
+
+  /// Null hides the "Recent" quick-match cards entirely — see [onAddFavorite].
+  final ValueChanged<MealLog>? onAddRecent;
   final ValueChanged<MealComponent> onAddIngredient;
   final ValueChanged<Food> onFoodTap;
   final ValueChanged<CatalogSearchResult> onCatalogTap;
   final void Function(dynamic) onOpenFoodFactsResultTap;
   final VoidCallback onSearchOpenFoodFacts;
 
+  /// Forwarded to [UnifiedFoodSearchResults]. `LogMealScreen` sets this to
+  /// false — USDA/Open Food Facts already auto-fire on the catalog debounce,
+  /// so the manual button is redundant there.
+  final bool showOpenFoodFactsButton;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final q = query.trim().toLowerCase();
-    final favoritesAsync = ref.watch(savedMealsProvider);
-    final recentAsync = ref.watch(recentMealsProvider);
-
-    final matchingFavorites = (favoritesAsync.asData?.value ?? const <SavedMeal>[])
-        .where((m) => m.name.toLowerCase().contains(q))
-        .take(8)
-        .toList();
-    final matchingRecents = (recentAsync.asData?.value ?? const <MealLog>[])
-        .where((l) => l.name.toLowerCase().contains(q))
-        .take(8)
-        .toList();
+    final onAddFavorite = this.onAddFavorite;
+    final onAddRecent = this.onAddRecent;
+    final matchingFavorites = onAddFavorite == null
+        ? const <SavedMeal>[]
+        : (ref.watch(savedMealsProvider).asData?.value ?? const <SavedMeal>[])
+            .where((m) => m.name.toLowerCase().contains(q))
+            .take(8)
+            .toList();
+    final matchingRecents = onAddRecent == null
+        ? const <MealLog>[]
+        : (ref.watch(recentMealsProvider).asData?.value ?? const <MealLog>[])
+            .where((l) => l.name.toLowerCase().contains(q))
+            .take(8)
+            .toList();
     final matchingRecipes =
         recipes.where((r) => r.name.toLowerCase().contains(q)).take(8).toList();
     final matchingIngredients = kCommonIngredients
@@ -99,7 +118,7 @@ class UnifiedMealSearchResults extends ConsumerWidget {
                     icon: Icons.star,
                     label: m.name,
                     sublabel: 'Favorite',
-                    onTap: () => onAddFavorite(m),
+                    onTap: () => onAddFavorite!(m),
                   ),
                 ),
                 ...matchingRecents.map(
@@ -107,7 +126,7 @@ class UnifiedMealSearchResults extends ConsumerWidget {
                     icon: Icons.history,
                     label: l.name,
                     sublabel: 'Recent',
-                    onTap: () => onAddRecent(l),
+                    onTap: () => onAddRecent!(l),
                   ),
                 ),
                 ...matchingRecipes.map(
@@ -153,6 +172,7 @@ class UnifiedMealSearchResults extends ConsumerWidget {
             ),
             onSearchOpenFoodFacts: onSearchOpenFoodFacts,
             onOpenFoodFactsResultTap: onOpenFoodFactsResultTap,
+            showOpenFoodFactsButton: showOpenFoodFactsButton,
             emptyQueryContent: const SizedBox.shrink(),
           ),
         ),
