@@ -245,9 +245,28 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     DuringFormulaView? during,
     AfterFormulaView? after,
   }) async {
+    final library = ref.read(formulaLibraryControllerProvider.notifier);
+    final tappedId = before?.id ?? during?.id ?? after?.id ?? '';
+    final tappedPhase = before != null
+        ? FormulaPhase.before
+        : during != null
+            ? FormulaPhase.during
+            : FormulaPhase.after;
+    await library.trackForkStarted(
+      sourceTemplateId: tappedId,
+      phase: tappedPhase,
+    );
+
     final userRepo = await ref.read(userRepositoryProvider.future);
     final userId = (await userRepo.getCurrentUser())?.id;
-    if (userId == null) return;
+    if (userId == null) {
+      await library.trackForkFailed(
+        sourceTemplateId: tappedId,
+        phase: tappedPhase,
+        reason: 'no_user',
+      );
+      return;
+    }
     final now = DateTime.now();
 
     // Resolve phase + source + scope from whichever view was supplied.
@@ -285,6 +304,11 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       activities = after.activityTypes;
       travelFriendliness = after.travelFriendliness;
     } else {
+      await library.trackForkFailed(
+        sourceTemplateId: tappedId,
+        phase: tappedPhase,
+        reason: 'no_source_view',
+      );
       return;
     }
 
@@ -321,7 +345,15 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     final saved = await ref
         .read(personalFormulasControllerProvider.notifier)
         .createFormula(draft);
-    if (saved == null || !context.mounted) return;
+    if (saved == null) {
+      await library.trackForkFailed(
+        sourceTemplateId: tappedId,
+        phase: tappedPhase,
+        reason: 'save_failed',
+      );
+      return;
+    }
+    if (!context.mounted) return;
     MealvanaSnackbar.showSuccess(context, 'Added to Your Formulas');
     // Open the editor directly (personal/:id IS the editor). Use
     // pushReplacement (not push) so the read-only system-formula detail

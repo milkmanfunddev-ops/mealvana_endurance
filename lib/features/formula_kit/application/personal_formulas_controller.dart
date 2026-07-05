@@ -63,7 +63,13 @@ class PersonalFormulasController extends _$PersonalFormulasController {
 
   /// Persist a new formula (create-from-scratch or fork) and refresh the list.
   /// Returns the saved formula (with assigned id) so the caller can navigate.
-  Future<PersonalFormula?> createFormula(PersonalFormula formula) async {
+  ///
+  /// [quantityEditCount]: stepper edits accumulated by the editor session,
+  /// attached to the save event instead of firing per tick.
+  Future<PersonalFormula?> createFormula(
+    PersonalFormula formula, {
+    int? quantityEditCount,
+  }) async {
     final repo = ref.read(personalFormulasRepositoryProvider);
     final saved = await repo.create(formula);
     ref.invalidateSelf();
@@ -77,12 +83,16 @@ class PersonalFormulasController extends _$PersonalFormulasController {
       'phase': saved.phase.analyticsValue,
       'provenance': saved.provenance.wireValue,
       'component_count': saved.components.length,
+      if (quantityEditCount != null) 'quantity_edit_count': quantityEditCount,
     });
     return saved;
   }
 
   /// Overwrite an existing formula and refresh the list.
-  Future<PersonalFormula?> updateFormula(PersonalFormula formula) async {
+  Future<PersonalFormula?> updateFormula(
+    PersonalFormula formula, {
+    int? quantityEditCount,
+  }) async {
     final repo = ref.read(personalFormulasRepositoryProvider);
     final saved = await repo.update(formula);
     ref.invalidateSelf();
@@ -91,6 +101,7 @@ class PersonalFormulasController extends _$PersonalFormulasController {
       'formula_id': saved.id,
       'phase': saved.phase.analyticsValue,
       'component_count': saved.components.length,
+      if (quantityEditCount != null) 'quantity_edit_count': quantityEditCount,
     });
     return saved;
   }
