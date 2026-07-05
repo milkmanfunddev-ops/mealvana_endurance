@@ -275,7 +275,27 @@ class AppStartupService {
     try {
       final deviceId = DeviceInfoService.instance.deviceId;
       await _analytics.initialize();
-      await _analytics.identifyUser(deviceId);
+
+      // Only identify with the anonymous device id when no local profile
+      // exists — checkUserSession() (deferred-init step 4) identifies the
+      // real user id. Unconditionally identifying with the device id first
+      // flip-flopped the Mixpanel distinct_id on every launch, which can
+      // split one user across two profiles whenever user.id != device id
+      // (authed accounts), breaking retention counts.
+      var hasLocalProfile = false;
+      try {
+        hasLocalProfile = await ref
+                .read(appDatabaseProvider)
+                .userDao
+                .getCurrentUserProfile() !=
+            null;
+      } catch (_) {
+        // Lookup failure → treat as anonymous below.
+      }
+      if (!hasLocalProfile) {
+        await _analytics.identifyUser(deviceId);
+      }
+
       final config = ref.read(appConfigProvider);
       NotificationService.configure(
         _analytics,
