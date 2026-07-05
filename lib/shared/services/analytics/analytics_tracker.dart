@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_config.dart';
 import '../device_info_service.dart';
@@ -48,6 +49,25 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
 
   Mixpanel? _mixpanel;
   bool _isInitialized = false;
+
+  /// Pref key gating [anonymous_user_identified] to once per device.
+  static const String _anonIdentifiedKey = 'analytics_anonymous_identified';
+  SharedPreferences? _prefs;
+
+  Future<SharedPreferences?> _preferences() async {
+    if (_prefs != null) return _prefs;
+    try {
+      _prefs = await SharedPreferences.getInstance();
+    } catch (error) {
+      // Prefs unavailable (e.g. platform channel not ready): degrade to
+      // un-gated behavior rather than dropping analytics.
+      _logger.warning(
+        'SharedPreferences unavailable for analytics gating: $error',
+        context: 'ANALYTICS',
+      );
+    }
+    return _prefs;
+  }
 
   @override
   Future<void> initialize() async {
@@ -116,11 +136,20 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
           'gut_training_level': gutTrainingLevel,
         });
       } else {
-        people.setOnce('First Seen', DateTime.now().toIso8601String());
-        people.set('User Type', 'Anonymous');
-        await track('anonymous_user_identified', properties: {
-          'device_id': userId,
-        });
+        // Fire the anonymous-identity event once per device, not on every
+        // cold start — repeated fires inflate event counts and re-stamp the
+        // people profile for no analytical value. The flag is cleared in
+        // resetUser() so a fresh identity after sign-out is re-marked.
+        final prefs = await _preferences();
+        final alreadyIdentified = prefs?.getBool(_anonIdentifiedKey) ?? false;
+        if (!alreadyIdentified) {
+          people.setOnce('First Seen', DateTime.now().toIso8601String());
+          people.set('User Type', 'Anonymous');
+          await track('anonymous_user_identified', properties: {
+            'device_id': userId,
+          });
+          await prefs?.setBool(_anonIdentifiedKey, true);
+        }
       }
     } catch (error, stackTrace) {
       _logger.error(
@@ -140,6 +169,10 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     try {
       await track('user_reset');
       mixpanel.reset();
+      // The next identity on this device is a new anonymous profile — allow
+      // anonymous_user_identified to fire again for it.
+      final prefs = await _preferences();
+      await prefs?.remove(_anonIdentifiedKey);
     } catch (error, stackTrace) {
       _logger.error(
         'Failed to reset analytics user',

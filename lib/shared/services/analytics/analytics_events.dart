@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'analytics_tracker.dart';
 
 /// Extension methods for analytics events defined in docs/features/analytics/README.md
@@ -92,101 +91,10 @@ extension AnalyticsEvents on AnalyticsTracker {
     });
   }
 
-  Future<void> trackPlanSaved({
-    required String deviceId,
-    required int activityId,
-    required int timeSinceGenerationStarted,
-    required bool isFirstPlan,
-    required int totalPlansSaved,
-  }) {
-    return track('plan_saved', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'time_since_generation_started': timeSinceGenerationStarted,
-      'is_first_plan': isFirstPlan,
-      'total_plans_saved': totalPlansSaved,
-    });
-  }
-
-  // 3. Plan Modification Events
-
-  Future<void> trackMacrosEdited({
-    required String deviceId,
-    int? activityId,
-    required String macroType,
-    required double oldValue,
-    required double newValue,
-  }) {
-    return track('macros_edited', properties: {
-      'device_id': deviceId,
-      if (activityId != null) 'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'macro_type': macroType,
-      'old_value': oldValue,
-      'new_value': newValue,
-    });
-  }
-
-  Future<void> trackMacroInfoViewed({
-    required String deviceId,
-    int? activityId,
-    required String macroType,
-  }) {
-    return track('macro_info_viewed', properties: {
-      'device_id': deviceId,
-      if (activityId != null) 'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'macro_type': macroType,
-    });
-  }
-
-  Future<void> trackPlanItemDeleted({
-    required String deviceId,
-    required int activityId,
-    required String itemName,
-    required String phase,
-  }) {
-    return track('plan_item_deleted', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'item_name': itemName,
-      'phase': phase,
-    });
-  }
-
-  Future<void> trackPlanItemSwapped({
-    required String deviceId,
-    required int activityId,
-    required String oldItemName,
-    required String newItemName,
-    required String phase,
-  }) {
-    return track('plan_item_swapped', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'old_item_name': oldItemName,
-      'new_item_name': newItemName,
-      'phase': phase,
-    });
-  }
-
-  Future<void> trackPlanItemAdded({
-    required String deviceId,
-    required int activityId,
-    required String itemName,
-    required String phase,
-  }) {
-    return track('plan_item_added', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'item_name': itemName,
-      'phase': phase,
-    });
-  }
+  // 3. Plan Modification Events — removed 2026-07. The trackPlanSaved,
+  // trackMacrosEdited, trackMacroInfoViewed and trackPlanItem* wrappers were
+  // never called anywhere, so their events never reached Mixpanel. Re-add
+  // deliberately (with call sites) if plan-modification tracking is wanted.
 
   // 4. Reminder Events
 
