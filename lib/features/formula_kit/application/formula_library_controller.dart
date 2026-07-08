@@ -20,6 +20,7 @@ import '../domain/during_filter_options.dart';
 import '../domain/formula_filter_state.dart';
 import '../domain/formula_macros.dart';
 import '../domain/formula_phase.dart';
+import '../domain/formula_pin.dart' show TemplateKind;
 import '../domain/formula_view.dart';
 
 part 'formula_library_controller.g.dart';
@@ -544,6 +545,52 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       'is_personal': isPersonal,
     });
   }
+
+  /// Fire the "Make this mine" tap event. Called at the very start of the
+  /// fork flow so abandoned/failed forks are visible — the success case is
+  /// covered separately by `personal_formula_forked` on save.
+  Future<void> trackForkStarted({
+    required String sourceTemplateId,
+    required FormulaPhase phase,
+  }) async {
+    await _track('formula_fork_started', {
+      'source_template_id': sourceTemplateId,
+      'phase': phase.analyticsValue,
+      'template_kind': _systemKindFor(phase).wireValue,
+    });
+  }
+
+  /// Fire when a started fork does not reach a successful save.
+  /// [reason]: 'no_user' | 'no_source_view' | 'save_failed'.
+  Future<void> trackForkFailed({
+    required String sourceTemplateId,
+    required FormulaPhase phase,
+    required String reason,
+  }) async {
+    await _track('formula_fork_failed', {
+      'source_template_id': sourceTemplateId,
+      'phase': phase.analyticsValue,
+      'template_kind': _systemKindFor(phase).wireValue,
+      'reason': reason,
+    });
+  }
+
+  /// Fire the create-from-scratch intent event (the "New" button tap).
+  Future<void> trackCreateStarted({
+    required FormulaPhase phase,
+    required String source,
+  }) async {
+    await _track('personal_formula_create_started', {
+      'phase': phase.analyticsValue,
+      'source': source,
+    });
+  }
+
+  TemplateKind _systemKindFor(FormulaPhase phase) => switch (phase) {
+        FormulaPhase.before => TemplateKind.preSystem,
+        FormulaPhase.during => TemplateKind.duringSystem,
+        FormulaPhase.after => TemplateKind.postSystem,
+      };
 
   // ── Fork support ───────────────────────────────────────────────────────
 

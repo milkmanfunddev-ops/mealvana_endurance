@@ -50,9 +50,15 @@ import 'log_scanned_food_screen.dart';
 /// (`openBuildMealScreen`), reachable via the "Build a meal" app-bar action.
 /// A unified search bar at the top searches foods, recipes, common
 /// ingredients, and favorites/recents together.
-void openLogMealScreen(BuildContext context, {required String logDate}) {
+void openLogMealScreen(
+  BuildContext context, {
+  required String logDate,
+  String source = 'today_log_section',
+}) {
   Navigator.of(context).push<void>(
-    MaterialPageRoute(builder: (_) => LogMealScreen(logDate: logDate)),
+    MaterialPageRoute(
+      builder: (_) => LogMealScreen(logDate: logDate, source: source),
+    ),
   );
 }
 
@@ -88,9 +94,16 @@ extension _LogTabLabel on _LogTab {
 /// unified search bar. Every tap commits a single `meal_logs` row right away
 /// (via [showQuickLogConfirmSheet]) — there is no draft/accumulator here.
 class LogMealScreen extends ConsumerStatefulWidget {
-  const LogMealScreen({super.key, required this.logDate});
+  const LogMealScreen({
+    super.key,
+    required this.logDate,
+    this.source = 'unknown',
+  });
 
   final String logDate;
+
+  /// Entry-point label for the `log_meal_opened` analytics event.
+  final String source;
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -115,12 +128,41 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   @override
   void initState() {
     super.initState();
+    ref.read(appExternalDepsProvider).analytics.track(
+      'log_meal_opened',
+      properties: {
+        'source': widget.source,
+        'log_date': widget.logDate,
+        'is_today': _isToday(),
+      },
+    );
     // The unified search bar is always visible, so seed its data eagerly
     // rather than gating behind a tab selection.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
       _seedFoodPool();
     });
+  }
+
+  bool _isToday() {
+    try {
+      final date = DateTime.parse(widget.logDate);
+      final now = DateTime.now();
+      return date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Fire the funnel's method-selection step. [method] is the clean method
+  /// discriminator (recent/common/recipe/describe/manual/barcode/build).
+  void _trackMethodSelected(String method) {
+    ref.read(appExternalDepsProvider).analytics.track(
+      'log_method_selected',
+      properties: {'method': method},
+    );
   }
 
   @override
@@ -182,6 +224,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     bool showServingsStepper = true,
     double initialServings = 1.0,
     MealLogSource source = MealLogSource.manual,
+    String? logMethod,
   }) async {
     _unfocus();
     final result = await showQuickLogConfirmSheet(
@@ -201,6 +244,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           source: source,
           components: components,
           eatenAt: result.eatenAt,
+          logMethod: logMethod,
         );
     _afterQuickLog();
   }
@@ -426,6 +470,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
   Future<void> _onBarcodeScan() async {
     _unfocus();
+    _trackMethodSelected('barcode');
     final result = await context.pushNamed<dynamic>(
       'barcode-scanner',
       extra: {'category': 'add_food', 'context': 'meal_log_discover'},
@@ -449,6 +494,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           source: MealLogSource.manual,
           components: components,
           eatenAt: DateTime.now(),
+          logMethod: 'barcode',
         );
     _afterQuickLog();
   }
@@ -518,6 +564,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     _quickLogComponents(
       title: food.displayName ?? food.name,
       buildComponents: (servings) => [_foodComponent(food, servings)],
+      logMethod: 'common',
     );
   }
 
@@ -562,6 +609,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
   Future<void> _openBuildMealScreen() async {
     _unfocus();
+    _trackMethodSelected('build');
     openBuildMealScreen(context, logDate: widget.logDate);
   }
 
@@ -639,6 +687,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     // Clear any in-progress search so the chosen tab actually
                     // shows (search results otherwise stay layered over it).
                     _clearSearch();
+                    if (tab != _activeTab) {
+                      _trackMethodSelected(
+                        tab == _LogTab.recipes ? 'recipe' : tab.name,
+                      );
+                    }
                     setState(() => _activeTab = tab);
                   },
                   isDark: isDark,
@@ -1353,10 +1406,15 @@ class _AiTabState extends ConsumerState<_AiTab> {
   Future<void> _analyze() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
+    // Captured before the async gap so it stays valid if the widget unmounts.
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    // 'text' keeps the typed-describe funnel distinct from the photo funnels.
+    analytics.track('meal_ai_started', properties: {'method': 'text'});
     setState(() => _isAnalyzing = true);
     try {
       final service = ref.read(mealAiServiceProvider);
       final result = await service.describeMeal(_ctrl.text.trim());
+      analytics.track('meal_ai_completed', properties: {'method': 'text'});
       if (!mounted) return;
       // Capture router before closing the screen.
       final router = GoRouter.of(context);
@@ -1371,8 +1429,12 @@ class _AiTabState extends ConsumerState<_AiTab> {
         },
       );
     } on MealAiException catch (e) {
+      analytics.track('meal_ai_failed',
+          properties: {'method': 'text', 'error_type': 'ai_exception'});
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
+      analytics.track('meal_ai_failed',
+          properties: {'method': 'text', 'error_type': 'unknown'});
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -1404,6 +1466,12 @@ class _AiTabState extends ConsumerState<_AiTab> {
     }
     if (file == null || !mounted) return;
 
+    // Distinguish camera vs gallery so the two photo funnels stay separate
+    // from each other and from the typed-describe funnel.
+    final method =
+        source == ImageSource.camera ? 'photo_camera' : 'photo_gallery';
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('meal_ai_started', properties: {'method': method});
     setState(() => _isAnalyzing = true);
     try {
       final service = ref.read(mealAiServiceProvider);
@@ -1416,6 +1484,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       } else {
         analysis = await service.analyzePhoto(File(file.path));
       }
+      analytics.track('meal_ai_completed', properties: {'method': method});
       if (!mounted) return;
       // Capture router before closing the screen.
       final router = GoRouter.of(context);
@@ -1430,8 +1499,12 @@ class _AiTabState extends ConsumerState<_AiTab> {
         },
       );
     } on MealAiException catch (e) {
+      analytics.track('meal_ai_failed',
+          properties: {'method': method, 'error_type': 'ai_exception'});
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
+      analytics.track('meal_ai_failed',
+          properties: {'method': method, 'error_type': 'unknown'});
       if (mounted) {
         MealvanaSnackbar.showError(
           context,

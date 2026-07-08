@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../shared/services/app_external_deps.dart';
 import '../../auth/data/user_repository.dart';
 import '../../nutrition_plan/domain/food.dart';
 import '../data/personal_formulas_repository.dart';
@@ -101,6 +102,11 @@ class FormulaDraft {
 class FormulaEditorController extends _$FormulaEditorController {
   String? _userId;
 
+  /// How many quantity-stepper edits this editing session made. Attached to
+  /// the save event rather than fired per tick — a +/- stepper would spam
+  /// one event per tap.
+  int _quantityEditCount = 0;
+
   @override
   FutureOr<FormulaDraft> build(String? formulaId, FormulaPhase phase) async {
     final userRepo = await ref.read(userRepositoryProvider.future);
@@ -168,6 +174,10 @@ class FormulaEditorController extends _$FormulaEditorController {
       ];
       return d.copyWith(components: next);
     });
+    _trackComponentEvent(
+      'formula_editor_component_added',
+      extra: {'is_user_food': isUserFood},
+    );
   }
 
   /// Replace the component at [index] with a different food (swap).
@@ -177,18 +187,23 @@ class FormulaEditorController extends _$FormulaEditorController {
     double quantity, {
     required bool isUserFood,
   }) {
+    if (!_validIndex(index)) return;
     _patch((d) {
-      if (index < 0 || index >= d.components.length) return d;
       final next = _cloneComponents(d.components);
       next[index] =
           FormulaMacros.componentFromFood(food, quantity, isUserFood: isUserFood);
       return d.copyWith(components: next);
     });
+    _trackComponentEvent(
+      'formula_editor_component_swapped',
+      extra: {'is_user_food': isUserFood},
+    );
   }
 
   void updateComponentQuantity(int index, double quantity) {
+    if (!_validIndex(index)) return;
+    _quantityEditCount++;
     _patch((d) {
-      if (index < 0 || index >= d.components.length) return d;
       final next = _cloneComponents(d.components);
       next[index] = {...next[index], FormulaMacros.kQuantity: quantity};
       return d.copyWith(components: next);
@@ -196,11 +211,30 @@ class FormulaEditorController extends _$FormulaEditorController {
   }
 
   void removeComponent(int index) {
+    if (!_validIndex(index)) return;
     _patch((d) {
-      if (index < 0 || index >= d.components.length) return d;
       final next = _cloneComponents(d.components)..removeAt(index);
       return d.copyWith(components: next);
     });
+    _trackComponentEvent('formula_editor_component_removed');
+  }
+
+  bool _validIndex(int index) {
+    final components = state.value?.components;
+    return components != null && index >= 0 && index < components.length;
+  }
+
+  /// Fire a component-mutation event with the post-mutation draft shape.
+  void _trackComponentEvent(String event, {Map<String, dynamic>? extra}) {
+    final draft = state.value;
+    if (draft == null) return;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    unawaited(analytics.track(event, properties: {
+      'phase': draft.phase.analyticsValue,
+      'is_new_formula': draft.original == null,
+      'component_count': draft.components.length,
+      ...?extra,
+    }));
   }
 
   // ── Save ─────────────────────────────────────────────────────────────────
@@ -250,9 +284,17 @@ class FormulaEditorController extends _$FormulaEditorController {
     );
 
     final listController = ref.read(personalFormulasControllerProvider.notifier);
-    return original != null
-        ? listController.updateFormula(formula)
-        : listController.createFormula(formula);
+    final saved = original != null
+        ? await listController.updateFormula(
+            formula,
+            quantityEditCount: _quantityEditCount,
+          )
+        : await listController.createFormula(
+            formula,
+            quantityEditCount: _quantityEditCount,
+          );
+    if (saved != null) _quantityEditCount = 0;
+    return saved;
   }
 
   void _patch(FormulaDraft Function(FormulaDraft) update) {

@@ -52,6 +52,11 @@ mealvana_endurance/
 - Drift DB initialization belongs in startup flow/provider path, not ad-hoc UI logic.
 - Full reference: `/docs/technical/andrea/andrea_initialization.txt`
 
+## Dev Simulator Login
+`scripts/sim-dev-login.sh` signs the dev app into the booted iOS simulator using a login
+stored in the macOS Keychain (service `mealvana-dev-login`). Prereqs: a booted simulator
+and `idb`. See the script header for details.
+
 ## Docs Map
 - Architecture overview: `/docs/architecture/README.md`
 - Technical patterns and standards: `/docs/technical/README.md`

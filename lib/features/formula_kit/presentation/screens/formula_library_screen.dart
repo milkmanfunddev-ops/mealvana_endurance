@@ -379,10 +379,16 @@ List<Widget> _yourFormulasSection(
           key: ValueKey(
             'formula_kit.your_formulas_new_${phase.analyticsValue}',
           ),
-          onPressed: () => context.push(
-            '/settings/food-preferences/formula-library/personal/create',
-            extra: {'phase': phase},
-          ),
+          onPressed: () {
+            ref.read(formulaLibraryControllerProvider.notifier).trackCreateStarted(
+                  phase: phase,
+                  source: 'library_new_button',
+                );
+            context.push(
+              '/settings/food-preferences/formula-library/personal/create',
+              extra: {'phase': phase},
+            );
+          },
           icon: const Icon(Icons.add, size: 18),
           label: const Text('New'),
         ),

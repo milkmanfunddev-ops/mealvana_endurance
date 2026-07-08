@@ -212,6 +212,7 @@ class MealLogController extends _$MealLogController {
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': 'manual',
+        'method': 'manual',
         'log_date': logDate,
       });
     });
@@ -240,6 +241,7 @@ class MealLogController extends _$MealLogController {
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': 'saved',
+        'method': 'saved',
         'log_date': logDate,
       });
     });
@@ -269,6 +271,7 @@ class MealLogController extends _$MealLogController {
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': 'recipe',
+        'method': 'recipe',
         'log_date': logDate,
         'recipe_id': params.recipeId,
       });
@@ -286,6 +289,11 @@ class MealLogController extends _$MealLogController {
     String? photoPath,
     String? notes,
     DateTime? eatenAt,
+    // Analytics-only method label. The persisted `source` is constrained by
+    // the DB CHECK ('photo'|'manual'|'describe'|'saved'|'recipe'|...), so
+    // barcode/build/common-tap all persist as `manual`; this disambiguates
+    // them for funnels without a schema migration. Defaults to source.
+    String? logMethod,
   }) async {
     await _runGuarded((service) async {
       final userId = await _currentUserId();
@@ -305,6 +313,7 @@ class MealLogController extends _$MealLogController {
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': source.wireValue,
+        'method': logMethod ?? source.wireValue,
         'log_date': logDate,
       });
     });

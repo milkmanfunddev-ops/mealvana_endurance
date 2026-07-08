@@ -33,6 +33,7 @@ class AppConfig {
     required this.revenueCatApiKeyApple,
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
+    this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
   });
@@ -101,6 +102,11 @@ class AppConfig {
   // Environment configuration
   final bool devModeEnabled;
   final String appEnvironment; // 'dev' or 'prod'
+
+  /// Opt-in: send real analytics from dev builds to the dev Mixpanel project
+  /// ("Mealvana Endurance Dev") instead of the no-op tracker. Verification
+  /// sandbox only — prod remains the analysis target.
+  final bool analyticsDevEnabled;
 
   // RevenueCat (AI Credit Packs)
   final String revenueCatApiKeyApple;
@@ -179,6 +185,8 @@ class AppConfig {
             ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
             : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
       ),
+      analyticsDevEnabled:
+          dotenv.get('ANALYTICS_DEV_ENABLED', fallback: 'false') == 'true',
       oneSignalAppId: dotenv.get('ONESIGNAL_APP_ID', fallback: ''),
 
       // Wiredash (User Feedback) configuration
@@ -283,6 +291,7 @@ class AppConfig {
     String revenueCatApiKeyApple = '',
     String revenueCatApiKeyGoogle = '',
     bool aiCreditsEnabled = false,
+    bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
   }) {
@@ -317,6 +326,7 @@ class AppConfig {
       revenueCatApiKeyApple: revenueCatApiKeyApple,
       revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
       aiCreditsEnabled: aiCreditsEnabled,
+      analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
     );
@@ -409,6 +419,12 @@ class AppConfig {
 
       // Analytics configuration
       mixpanelProjectToken: effectiveMixpanelToken,
+      analyticsDevEnabled:
+          const String.fromEnvironment(
+            'ANALYTICS_DEV_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
       oneSignalAppId: oneSignalAppId,
 
       // Wiredash (User Feedback)
