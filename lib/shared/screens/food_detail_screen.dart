@@ -346,9 +346,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     super.dispose();
   }
 
-  bool get _hasValidCategorySelection =>
-      !widget.showCategories ||
-      _selectedCategories.values.any((selected) => selected);
+  bool get _hasValidCategorySelection => true;
 
   bool get _hasValidName => _nameController.text.trim().isNotEmpty;
 
@@ -403,14 +401,6 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
     if (!_hasValidName) {
       MealvanaSnackbar.showError(context, 'Please enter a food name');
-      return;
-    }
-
-    if (widget.showCategories && !_hasValidCategorySelection) {
-      MealvanaSnackbar.showError(
-        context,
-        'Please select at least one category',
-      );
       return;
     }
 
