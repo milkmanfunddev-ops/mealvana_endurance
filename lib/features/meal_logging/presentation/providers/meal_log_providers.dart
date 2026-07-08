@@ -247,6 +247,38 @@ class MealLogController extends _$MealLogController {
     });
   }
 
+  /// Bulk-log multiple saved meals to [logDate] in one batch — the multi-log
+  /// action. No-op for an empty [savedMeals]. Invalidates the recents stream
+  /// once after the batch.
+  Future<void> logSavedMeals({
+    required List<SavedMeal> savedMeals,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+  }) async {
+    if (savedMeals.isEmpty) return;
+    await _runGuarded((service) async {
+      final userId = await _currentUserId();
+      if (userId == null) throw StateError('No authenticated user');
+
+      await service.logSavedMeals(
+        savedMeals: savedMeals,
+        userId: userId,
+        slot: slot,
+        logDate: logDate,
+        eatenAt: eatenAt,
+      );
+      if (ref.mounted) ref.invalidate(recentMealsProvider);
+
+      await _trackEvent('meals_logged_bulk', {
+        'count': savedMeals.length,
+        if (slot != null) 'slot': slot.wireValue,
+        'source': 'saved',
+        'log_date': logDate,
+      });
+    });
+  }
+
   /// Log a recipe, scaling macros by [servings].
   Future<void> logRecipe({
     required RecipeLogParams params,

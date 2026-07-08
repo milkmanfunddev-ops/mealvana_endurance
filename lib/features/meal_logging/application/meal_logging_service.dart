@@ -8,7 +8,6 @@ import '../domain/consumed_totals.dart';
 import '../domain/meal_component.dart';
 import '../domain/meal_log.dart';
 import '../domain/meal_log_source.dart';
-import '../domain/meal_plan_result.dart';
 import '../domain/meal_slot.dart';
 import '../domain/saved_meal.dart';
 
@@ -58,8 +57,8 @@ class MealLoggingService {
   MealLoggingService({
     required MealLogRepository mealLogRepository,
     required SavedMealsRepository savedMealsRepository,
-  })  : _mealLogRepo = mealLogRepository,
-        _savedMealsRepo = savedMealsRepository;
+  }) : _mealLogRepo = mealLogRepository,
+       _savedMealsRepo = savedMealsRepository;
 
   final MealLogRepository _mealLogRepo;
   final SavedMealsRepository _savedMealsRepo;
@@ -199,28 +198,30 @@ class MealLoggingService {
   }) async {
     if (savedMeals.isEmpty) return const <MealLog>[];
     final now = DateTime.now();
-    final logs = savedMeals.map((savedMeal) {
-      final totals = _sumComponents(savedMeal.components);
-      return MealLog(
-        id: _uuid.v4(),
-        userId: userId,
-        logDate: logDate,
-        slot: slot,
-        name: savedMeal.name,
-        source: MealLogSource.saved,
-        components: savedMeal.components,
-        calories: totals.calories,
-        carbsG: totals.carbsG,
-        proteinG: totals.proteinG,
-        fatG: totals.fatG,
-        sodiumMg: totals.sodiumMg,
-        photoPath: savedMeal.photoPath,
-        savedMealId: savedMeal.id,
-        eatenAt: eatenAt,
-        createdAt: now,
-        updatedAt: now,
-      );
-    }).toList(growable: false);
+    final logs = savedMeals
+        .map((savedMeal) {
+          final totals = _sumComponents(savedMeal.components);
+          return MealLog(
+            id: _uuid.v4(),
+            userId: userId,
+            logDate: logDate,
+            slot: slot,
+            name: savedMeal.name,
+            source: MealLogSource.saved,
+            components: savedMeal.components,
+            calories: totals.calories,
+            carbsG: totals.carbsG,
+            proteinG: totals.proteinG,
+            fatG: totals.fatG,
+            sodiumMg: totals.sodiumMg,
+            photoPath: savedMeal.photoPath,
+            savedMealId: savedMeal.id,
+            eatenAt: eatenAt,
+            createdAt: now,
+            updatedAt: now,
+          );
+        })
+        .toList(growable: false);
 
     final saved = await _mealLogRepo.insertLogs(logs);
 
@@ -229,51 +230,6 @@ class MealLoggingService {
       unawaited(_savedMealsRepo.touchLastUsed(meal.id));
     }
     return saved;
-  }
-
-  /// Import reviewed meal-plan meals as reusable saved meals (favorites) in a
-  /// single batch — the commit step of the AI meal-plan import.
-  ///
-  /// Each [ParsedPlanMeal] becomes a [SavedMeal] whose components are its
-  /// parsed items; totals are recomputed from the components for consistency
-  /// with the rest of the logging pipeline. Returns the created saved meals.
-  Future<List<SavedMeal>> importPlanAsSavedMeals({
-    required List<ParsedPlanMeal> meals,
-    required String userId,
-  }) async {
-    if (meals.isEmpty) return const <SavedMeal>[];
-    final now = DateTime.now();
-    final savedMeals = meals.map((meal) {
-      final components = meal.items
-          .map(
-            (it) => MealComponent(
-              name: it.name,
-              portion: it.portion,
-              calories: it.calories,
-              carbG: it.carbG,
-              proteinG: it.proteinG,
-              fatG: it.fatG,
-              sodiumMg: it.sodiumMg,
-            ),
-          )
-          .toList();
-      final totals = _sumComponents(components);
-      return SavedMeal(
-        id: '',
-        userId: userId,
-        name: meal.name,
-        components: components,
-        calories: totals.calories,
-        carbsG: totals.carbsG,
-        proteinG: totals.proteinG,
-        fatG: totals.fatG,
-        sodiumMg: totals.sodiumMg,
-        createdAt: now,
-        updatedAt: now,
-      );
-    }).toList(growable: false);
-
-    return _savedMealsRepo.saveMeals(savedMeals);
   }
 
   /// Log a meal from the recipe catalog, scaling macros by [params.servings].
@@ -340,10 +296,7 @@ class MealLoggingService {
   /// [customName] overrides the log's display name (useful when the user wants
   /// a friendlier label for their saved meal). If omitted, the log's [name] is
   /// used.
-  Future<SavedMeal> saveLogAsFavorite(
-    MealLog log, {
-    String? customName,
-  }) {
+  Future<SavedMeal> saveLogAsFavorite(MealLog log, {String? customName}) {
     final now = DateTime.now();
     final meal = SavedMeal(
       id: _uuid.v4(),
@@ -411,4 +364,3 @@ class MealLoggingService {
     return servings.toStringAsFixed(1);
   }
 }
-

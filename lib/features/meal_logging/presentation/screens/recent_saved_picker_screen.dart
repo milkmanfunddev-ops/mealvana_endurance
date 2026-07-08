@@ -8,7 +8,8 @@ import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
-import '../widgets/log_sheet_helpers.dart' show syntheticFromLog, showSlotPickerSheet;
+import '../widgets/log_sheet_helpers.dart'
+    show syntheticFromLog, showSlotPickerSheet;
 
 /// Picker screen for re-logging a recent or saved meal.
 ///
@@ -60,8 +61,7 @@ class _RecentSavedPickerScreenState
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       _logDate = extra?['logDate'] as String? ?? _todayDateString();
       _initialized = true;
     }
@@ -98,18 +98,18 @@ class _RecentSavedPickerScreenState
   }
 
   Future<void> _logSavedMeal(SavedMeal meal, MealSlot slot) async {
-    await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
-          savedMeal: meal,
-          slot: slot,
-          logDate: _logDate!,
-        );
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logSavedMeal(savedMeal: meal, slot: slot, logDate: _logDate!);
     if (!mounted) return;
     _checkSuccess();
   }
 
   Future<void> _logRecentMeal(MealLog log, MealSlot slot) async {
     final component = syntheticFromLog(log);
-    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
           name: log.name,
           slot: slot,
           logDate: _logDate!,
@@ -123,11 +123,9 @@ class _RecentSavedPickerScreenState
   Future<void> _logSelected(MealSlot slot) async {
     final meals = _selected.values.toList(growable: false);
     if (meals.isEmpty) return;
-    await ref.read(mealLogControllerProvider.notifier).logSavedMeals(
-          savedMeals: meals,
-          slot: slot,
-          logDate: _logDate!,
-        );
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logSavedMeals(savedMeals: meals, slot: slot, logDate: _logDate!);
     if (!mounted) return;
     _checkSuccess(count: meals.length);
   }
@@ -161,16 +159,11 @@ class _RecentSavedPickerScreenState
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: Text(_multiSelect ? '${_selected.length} selected' : 'Recent & Saved'),
+        title: Text(
+          _multiSelect ? '${_selected.length} selected' : 'Recent & Saved',
+        ),
         elevation: 0,
         actions: [
-          // Import a meal plan (PDF/photo) into My Meals via AI.
-          if (!_multiSelect)
-            IconButton(
-              tooltip: 'Import meal plan',
-              icon: const Icon(Icons.upload_file),
-              onPressed: () => context.push('/meal-log/import-plan'),
-            ),
           // Multi-select toggle — only relevant on the Saved tab.
           IconButton(
             tooltip: _multiSelect ? 'Cancel selection' : 'Select multiple',
@@ -259,7 +252,9 @@ class _SavedTab extends ConsumerWidget {
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.md,
+          ),
           itemCount: meals.length,
           itemBuilder: (ctx, i) {
             final meal = meals[i];
@@ -268,33 +263,41 @@ class _SavedTab extends ConsumerWidget {
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(
                 selected: selected,
-                selectedTileColor:
-                    AppColors.electrolyte.withValues(alpha: 0.12),
+                selectedTileColor: AppColors.electrolyte.withValues(
+                  alpha: 0.12,
+                ),
                 leading: multiSelect
                     ? Icon(
                         selected
                             ? Icons.check_circle
                             : Icons.radio_button_unchecked,
-                        color: selected
-                            ? AppColors.electrolyteDark
-                            : null,
+                        color: selected ? AppColors.electrolyteDark : null,
                       )
                     : const CircleAvatar(
                         child: Icon(Icons.bookmark_outlined, size: 18),
                       ),
-                title: Text(meal.name,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  meal.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: _macroSubtitle(
-                    ctx, meal.calories, meal.carbsG, meal.proteinG, meal.fatG),
+                  ctx,
+                  meal.calories,
+                  meal.carbsG,
+                  meal.proteinG,
+                  meal.fatG,
+                ),
                 trailing: multiSelect
                     ? null
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                size: 20, color: AppColors.dragonfruit),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 20,
+                              color: AppColors.dragonfruit,
+                            ),
                             onPressed: () => onDelete(meal.id),
                           ),
                           const Icon(Icons.chevron_right),
@@ -311,7 +314,6 @@ class _SavedTab extends ConsumerWidget {
           const Center(child: Text('Could not load saved meals.')),
     );
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -333,7 +335,9 @@ class _RecentTab extends ConsumerWidget {
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.md,
+          ),
           itemCount: logs.length,
           itemBuilder: (ctx, i) {
             final log = logs[i];
@@ -343,11 +347,17 @@ class _RecentTab extends ConsumerWidget {
                 leading: const CircleAvatar(
                   child: Icon(Icons.history, size: 18),
                 ),
-                title: Text(log.name,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  log.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: _macroSubtitle(
-                    ctx, log.calories, log.carbsG, log.proteinG, log.fatG),
+                  ctx,
+                  log.calories,
+                  log.carbsG,
+                  log.proteinG,
+                  log.fatG,
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => onTap(log),
               ),
@@ -360,13 +370,17 @@ class _RecentTab extends ConsumerWidget {
           const Center(child: Text('Could not load recent meals.')),
     );
   }
-
 }
 
 /// Compact "320 kcal  ·  C 40g  ·  P 20g  ·  F 9g" subtitle shared by both
 /// tabs; null when the entry has no macro data so ListTile omits the line.
 Widget? _macroSubtitle(
-    BuildContext context, int? cal, double? carb, double? prot, double? fat) {
+  BuildContext context,
+  int? cal,
+  double? carb,
+  double? prot,
+  double? fat,
+) {
   final parts = [
     if (cal != null) '$cal kcal',
     if (carb != null) 'C ${carb.toStringAsFixed(0)}g',
@@ -374,6 +388,8 @@ Widget? _macroSubtitle(
     if (fat != null) 'F ${fat.toStringAsFixed(0)}g',
   ];
   if (parts.isEmpty) return null;
-  return Text(parts.join('  ·  '),
-      style: Theme.of(context).textTheme.bodySmall);
+  return Text(
+    parts.join('  ·  '),
+    style: Theme.of(context).textTheme.bodySmall,
+  );
 }

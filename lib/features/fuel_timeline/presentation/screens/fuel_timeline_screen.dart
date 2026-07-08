@@ -222,10 +222,7 @@ class FuelTimelineScreen extends ConsumerWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: addButtons,
-              ),
+              child: Align(alignment: Alignment.topCenter, child: addButtons),
             ),
           ),
         ],
@@ -265,9 +262,7 @@ class FuelTimelineScreen extends ConsumerWidget {
           onTap: () => openActivityFuel(context, activity),
           // Swipe right→left → the activity editor, prefilled. Swipe
           // left→right removes with Undo (mirrors the meal row above).
-          onSwap: canEdit
-              ? () => _openActivityEditor(context, activity)
-              : null,
+          onSwap: canEdit ? () => _openActivityEditor(context, activity) : null,
           onRemove: () => _deleteActivityWithUndo(context, ref, activity),
         );
     }
@@ -313,7 +308,20 @@ class FuelTimelineScreen extends ConsumerWidget {
       'Activity deleted',
       duration: const Duration(seconds: 3),
       actionLabel: 'Undo',
-      onAction: () => notifier.restoreActivity(activity),
+      // Read the notifier fresh at tap time (the autoDispose provider may have
+      // been recreated since delete) and surface any failure — restoreActivity
+      // returns a Future, so without this the error would be dropped silently.
+      onAction: () async {
+        try {
+          await ref
+              .read(activitiesControllerProvider.notifier)
+              .restoreActivity(activity);
+        } catch (_) {
+          if (context.mounted) {
+            MealvanaSnackbar.showError(context, 'Could not restore activity');
+          }
+        }
+      },
     );
   }
 
