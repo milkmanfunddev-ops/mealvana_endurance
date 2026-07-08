@@ -241,12 +241,29 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     if (result.isSuccess) {
       _showSuccessResult(result.food!, result.barcode);
     } else if (result.isNotFound) {
+      _trackLookupFailed('not_found', result.barcode);
       _showNotFoundResult(result.barcode, result.message!);
     } else if (result.isInvalidFormat) {
+      _trackLookupFailed('invalid_format', result.barcode);
       _showInvalidFormatResult(result.barcode, result.message!);
     } else {
+      _trackLookupFailed('error', result.barcode);
       _showError(result.message ?? 'Unknown error occurred');
     }
+  }
+
+  /// Fire the scan-failure event so the barcode funnel can measure no-match /
+  /// invalid / error rate (OpenFoodFacts coverage is barcode's make-or-break).
+  void _trackLookupFailed(String reason, String code) {
+    ref.read(appExternalDepsProvider).analytics.track(
+      'barcode_lookup_failed',
+      properties: {
+        'reason': reason,
+        'code': code,
+        'category': widget.category,
+        'context': widget.context,
+      },
+    );
   }
 
   void _showSuccessResult(Food food, String barcode) {

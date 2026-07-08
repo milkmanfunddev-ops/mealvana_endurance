@@ -204,6 +204,7 @@ class DraftMealController extends _$DraftMealController {
       components: current.components,
       notes: current.notes,
       eatenAt: current.eatenAt,
+      logMethod: 'build',
     );
 
     if (!ref.mounted) return false;
