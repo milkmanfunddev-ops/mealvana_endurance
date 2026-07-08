@@ -796,8 +796,10 @@ void main() {
       );
       await tester.pump();
 
-      // Tap Save changes (scroll it into view first — the redesigned edit
-      // screen is taller, so the button can sit below the test viewport fold).
+      // Scroll Save changes into view before tapping — the redesigned edit
+      // screen is taller and on the default 800x600 test surface the button
+      // sits below the fold, so a direct tap misses the hit-test (only warns),
+      // _submit() never runs, and validation never fires.
       await tester.ensureVisible(find.text('Save changes'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save changes'));
