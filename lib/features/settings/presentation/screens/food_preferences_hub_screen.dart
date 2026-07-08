@@ -118,9 +118,21 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                   analyticsEvent: 'settings_allergies_tapped',
                 ),
 
-                // Food Likes & Dislikes tile removed (2026-06-25): food
-                // preferences are no longer collected. Dietary preference,
-                // allergies, and formulas remain below.
+                const SizedBox(height: AppSpacing.sm),
+
+                // Food Likes & Dislikes — restored 2026-07-08. Preferences are
+                // collected again (scoped to endurance/fuel foods) and now feed
+                // the nutrition-plan default-formula tier + solver.
+                _buildHubTile(
+                  context: context,
+                  ref: ref,
+                  tileKey: const ValueKey('food_prefs.likes_dislikes_row'),
+                  icon: FontAwesomeIcons.heart.data,
+                  title: 'Food Likes & Dislikes',
+                  subtitle: 'Manage your fuel preferences',
+                  route: '/settings/food-preferences',
+                  analyticsEvent: 'settings_food_likes_dislikes_tapped',
+                ),
 
                 const SizedBox(height: AppSpacing.sm),
 

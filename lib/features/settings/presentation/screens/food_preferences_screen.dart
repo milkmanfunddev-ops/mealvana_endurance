@@ -12,6 +12,7 @@ import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
+import '../../../../shared/services/food_management/fuel_predicate.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
@@ -113,12 +114,16 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     ];
     final userFoods = _userFoods.map(_convertFoodItemToFood).toList();
 
-    ref
-        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
-        .updateFoodPool(
-          allFoods: [...allFoods, ...userFoods],
-          userFoods: userFoods,
-        );
+    final notifier = ref.read(
+      foodSearchControllerProvider(_searchControllerKey).notifier,
+    );
+    notifier.updateFoodPool(
+      allFoods: [...allFoods, ...userFoods],
+      userFoods: userFoods,
+    );
+    // Keep in-screen search (incl. OpenFoodFacts/USDA results) scoped to
+    // endurance fuel foods, matching the fuel-only preference list.
+    notifier.setFilter(FoodSearchFilter.fuelOnly);
   }
 
   Food _convertFoodItemToFood(FoodItem item) {
@@ -214,20 +219,30 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             },
           );
 
-      final primaryFoods = results[0] as List<FoodItem>;
-      final additionalFoods = results[1] as List<FoodItem>;
+      // Scope the preferences list to endurance/fuel foods only. Likes/dislikes
+      // only influence fuel plans (during/after), so general real-food items
+      // (gelato, etc.) would be noise here. isFuelProductType treats
+      // null/unknown product types as general, so they're excluded.
+      final primaryFoods = (results[0] as List<FoodItem>)
+          .where((f) => isFuelProductType(f.productTypeId))
+          .toList();
+      final additionalFoods = (results[1] as List<FoodItem>)
+          .where((f) => isFuelProductType(f.productTypeId))
+          .toList();
       final userFoodsData = results[2] as List<dynamic>;
       final existingPreferences = results[3] as Map<String, FoodPreference>?;
       final sliderLevels = Map<String, int>.from(
         results[4] as Map<String, int>? ?? {},
       );
 
-      // Convert user foods to FoodItems
+      // Convert user foods to FoodItems, scoped to fuel foods (same rationale
+      // as the template foods above).
       final userFoods = userFoodsData
           .map(
             (userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood),
           )
           .cast<FoodItem>()
+          .where((f) => isFuelProductType(f.productTypeId))
           .toList();
 
       setState(() {
