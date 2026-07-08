@@ -357,7 +357,10 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 /// Provider exposing the default analytics tracker.
 ///
 /// Returns [NoopAnalyticsTracker] when:
-/// - Running in the development environment (`config.devModeEnabled`), OR
+/// - Running in the development environment (`config.devModeEnabled`) UNLESS
+///   the developer opted into the dev Mixpanel sandbox via
+///   `ANALYTICS_DEV_ENABLED` (`config.analyticsDevEnabled`) — which routes dev
+///   events to the "Mealvana Endurance Dev" project for verification, OR
 /// - The user has explicitly opted this device out of analytics via the hidden
 ///   "Developer / Tester" toggle in Settings (`analyticsExcludedProvider`).
 ///
@@ -367,8 +370,9 @@ final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
   final config = ref.watch(appConfigProvider);
   final analyticsExcluded = ref.watch(analyticsExcludedProvider);
 
-  // Disable analytics in development environment OR on opted-out devices.
-  if (config.devModeEnabled || analyticsExcluded) {
+  // No-op in dev (unless the dev-sandbox flag is set) or on opted-out devices.
+  if ((config.devModeEnabled && !config.analyticsDevEnabled) ||
+      analyticsExcluded) {
     return const NoopAnalyticsTracker();
   }
 
