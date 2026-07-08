@@ -876,7 +876,28 @@ class ActivitiesRepository with SyncableRepository {
   /// Fetch a single activity from Supabase and upsert it locally,
   /// preserving any dirty local changes. Used to pick up coach-made
   /// updates (e.g. nutrition plans) without a full sync.
+  ///
+  /// Skips the remote fetch entirely when the local row is dirty
+  /// (`needsUpload == true`): a dirty row means the local copy is ahead of
+  /// remote (e.g. a nutrition plan was just created offline-first but not yet
+  /// uploaded), so pulling the older remote row would only risk transiently
+  /// shadowing the local changes. `_upsertRemoteActivitiesPreservingDirty`
+  /// also guards this, but returning early closes the timing window between
+  /// the dirty write and the sync upload.
   Future<void> refreshActivityFromRemote(String activityId) async {
+    final localRow =
+        await (_database.select(_database.activitiesTable)
+              ..where((tbl) => tbl.id.equals(activityId)))
+            .getSingleOrNull();
+    if (localRow?.needsUpload == true) {
+      _logger.debug(
+        'Skipping remote refresh for dirty local activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'activityId': activityId},
+      );
+      return;
+    }
+
     final response = await _supabase
         .from('activities')
         .select()

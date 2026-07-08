@@ -86,16 +86,25 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // Sync this specific activity from Supabase before reading local Drift.
     // This ensures coach-created nutrition plans are visible immediately.
-    try {
-      final repo = ref.read(activitiesRepositoryProvider);
-      await repo.refreshActivityFromRemote(activityId);
-    } catch (e) {
-      // Non-fatal: fall back to local data if network unavailable
-      _logger.warning(
-        'Could not sync activity from remote; using local data',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
-      );
+    //
+    // Skip when opening a just-created activity (`isNewActivity`): the plan was
+    // written locally moments ago and has almost certainly not synced to remote
+    // yet, so a remote pull here can only surface a staler (plan-less) copy and
+    // transiently render "No nutrition plan yet". The local row is authoritative
+    // in that case. (`refreshActivityFromRemote` also skips dirty rows, but this
+    // avoids the round-trip entirely on the hot create→view path.)
+    if (!isNewActivity) {
+      try {
+        final repo = ref.read(activitiesRepositoryProvider);
+        await repo.refreshActivityFromRemote(activityId);
+      } catch (e) {
+        // Non-fatal: fall back to local data if network unavailable
+        _logger.warning(
+          'Could not sync activity from remote; using local data',
+          context: 'ACTIVITY_DETAIL_CONTROLLER',
+          error: e,
+        );
+      }
     }
 
     final activity = await _activitiesService.getActivityById(

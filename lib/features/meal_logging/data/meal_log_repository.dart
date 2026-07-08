@@ -311,6 +311,47 @@ class MealLogRepository with SyncableRepository {
     return toSave;
   }
 
+  /// Bulk-insert meal logs in a single Drift batch (offline-first) — the
+  /// multi-log primitive.
+  ///
+  /// Assigns a UUID to any empty [MealLog.id], stamps dirty-tracking columns,
+  /// writes every row in one transaction, then schedules ONE non-blocking bulk
+  /// remote upsert (not N per-row uploads). Per-row semantics match
+  /// [insertLog]. Returns the persisted logs (with generated ids/timestamps).
+  Future<List<MealLog>> insertLogs(List<MealLog> logs) async {
+    if (logs.isEmpty) return const <MealLog>[];
+    final now = DateTime.now();
+    final toSave = logs
+        .map(
+          (log) => log.copyWith(
+            id: log.id.isEmpty ? _uuid.v4() : log.id,
+            createdAt: log.createdAt,
+            updatedAt: now,
+            isDeleted: false,
+            needsUpload: true,
+            localUpdatedAt: now,
+          ),
+        )
+        .toList(growable: false);
+
+    await _database.batch((batch) {
+      batch.insertAll(
+        _database.mealLogsTable,
+        toSave.map((l) => l.toDriftCompanion()).toList(growable: false),
+        mode: InsertMode.insertOrReplace,
+      );
+    });
+
+    _logger.info(
+      'Bulk-inserted meal logs',
+      context: 'MEAL_LOG_REPOSITORY',
+      data: {'count': toSave.length},
+    );
+
+    _scheduleImmediateBulkUpload(toSave);
+    return toSave;
+  }
+
   /// Overwrite an existing log entry (full replace), re-dirtying for sync.
   Future<MealLog> updateLog(MealLog log) async {
     final now = DateTime.now();
@@ -530,9 +571,48 @@ class MealLogRepository with SyncableRepository {
     }());
   }
 
+  /// Fire-and-forget bulk upsert for [insertLogs] — one round-trip for the
+  /// whole batch instead of N per-row uploads. Rows stay dirty on failure so
+  /// the normal sync path retries them.
+  void _scheduleImmediateBulkUpload(List<MealLog> logs) {
+    if (logs.isEmpty) return;
+    unawaited(() async {
+      try {
+        await _supabase.from('meal_logs').upsert(
+              logs.map((l) => l.toSupabaseJson()).toList(growable: false),
+              onConflict: 'id',
+            );
+        await _clearDirtyFlags(logs.map((l) => l.id).toList(growable: false));
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate bulk insert upload failed; logs stay dirty for retry',
+          context: 'MEAL_LOG_REPOSITORY',
+          error: e,
+          stackTrace: stackTrace,
+          data: {'count': logs.length},
+        );
+        unawaited(
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:meal_logs:insert-bulk',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          ),
+        );
+      }
+    }());
+  }
+
   Future<void> _clearDirtyFlag(String logId) async {
     await (_database.update(_database.mealLogsTable)
           ..where((t) => t.id.equals(logId)))
+        .write(const MealLogsTableCompanion(needsUpload: Value(false)));
+  }
+
+  Future<void> _clearDirtyFlags(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await (_database.update(_database.mealLogsTable)
+          ..where((t) => t.id.isIn(ids)))
         .write(const MealLogsTableCompanion(needsUpload: Value(false)));
   }
 

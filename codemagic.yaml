@@ -218,7 +218,7 @@ workflows:
   # ============================================================
 
   dev-ios:
-    name: Develop - iOS TestFlight (dev flavor)
+    name: Develop - iOS TestFlight (Shorebird, dev flavor)
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -234,6 +234,7 @@ workflows:
         bundle_identifier: com.milkman.mealvanaendurance.dev
       groups:
         - mealvana_dev  # Dev environment variables
+        - shorebird_credentials  # SHOREBIRD_TOKEN for CI (shared with prod)
       vars:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
@@ -250,15 +251,22 @@ workflows:
       - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
+      - *install_shorebird
       - *install_cocoapods
-      - *setup_ios_signing
+      - *setup_ios_signing_shorebird
 
       - name: Resolve next iOS build number from TestFlight
-        # Looks up the dev ASC app by bundle id, asks ASC for the latest TestFlight
-        # build number, and exports BUILD_NUMBER = latest + 1. If lookup fails (e.g.
-        # ASC integration permissions issue or empty TestFlight history), falls back
-        # to Codemagic's project-level $PROJECT_BUILD_NUMBER, which auto-increments
-        # per project build.
+        # Shorebird rejects creating a release for a (flavor, version,
+        # platform) tuple it has already seen. TestFlight likewise rejects
+        # duplicate build numbers. Both are derived from CFBundleVersion,
+        # which we set via --build-number below. Without this resolve,
+        # rerunning a develop build collides on either side.
+        #
+        # Looks up the dev ASC app by bundle id, asks ASC for the latest
+        # TestFlight build number, and exports BUILD_NUMBER = latest + 1. If
+        # lookup fails (e.g. ASC integration permissions issue or empty
+        # TestFlight history), falls back to Codemagic's project-level
+        # $PROJECT_BUILD_NUMBER, which auto-increments per project build.
         script: |
           set -e
           APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier com.milkman.mealvanaendurance.dev --json 2>/dev/null | jq -r '.[0].id // empty')
@@ -277,13 +285,27 @@ workflows:
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
           echo "Next iOS build number: $NEXT"
 
-      - name: Build dev iOS
+      - name: Create Shorebird iOS Release (dev flavor)
+        # Mirrors prod-ios. Shorebird keys releases by the `dev` app_id in
+        # shorebird.yaml (d25496f9-...), separate from prod, so dev patches
+        # are never served to prod builds. Don't pass --flutter-version=stable
+        # (Shorebird only accepts pinned versions). `set -e` fails the build
+        # loudly here instead of silently producing no IPA. --build-number is
+        # forwarded to flutter build ipa so CFBundleVersion picks up the
+        # resolved value, keeping the release version unique.
         script: |
-          flutter build ipa --release \
+          set -e
+          shorebird release ios \
             --flavor dev \
             --target lib/main_dev.dart \
-            --build-number=$BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+            --export-options-plist=/Users/builder/export_options.plist \
+            --build-number=$BUILD_NUMBER
+
+          echo ""
+          echo "=========================================="
+          echo "Shorebird iOS dev release created successfully!"
+          echo "You can now create patches using dev-ios-patch workflow"
+          echo "=========================================="
 
       - *upload_sentry_symbols
 
@@ -1009,6 +1031,54 @@ workflows:
           echo ""
           echo "=========================================="
           echo "Android Patch created successfully!"
+          echo "Users will receive update on next app restart"
+          echo "=========================================="
+
+  dev-ios-patch:
+    name: Dev - iOS Shorebird Patch (OTA)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_dev
+        - shorebird_credentials
+      vars:
+        FLUTTER_ENV: dev
+        APP_ENVIRONMENT: dev
+        # Set to patch a specific version (e.g., "1.0.0+1") or "latest"
+        RELEASE_VERSION: "latest"
+
+    # Manual-only trigger. Run this against a `develop` (or any dev-flavor)
+    # commit to ship an over-the-air patch to the dev-flavor release already
+    # on TestFlight, without a fresh TestFlight upload. The patch must be
+    # built from code compatible with the release you're patching.
+    triggering:
+      events: []
+
+    scripts:
+      - *write_dotenv_files
+      - *flutter_pub_get
+      - *run_build_runner
+      - *install_shorebird
+      - *install_cocoapods
+
+      - name: Create Shorebird iOS Patch (dev flavor)
+        script: |
+          if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
+            echo "Creating patch for latest dev iOS release..."
+            shorebird patch ios --flavor dev --target lib/main_dev.dart
+          else
+            echo "Creating patch for dev iOS release version: $RELEASE_VERSION"
+            shorebird patch ios --flavor dev --target lib/main_dev.dart --release-version="$RELEASE_VERSION"
+          fi
+
+          echo ""
+          echo "=========================================="
+          echo "iOS dev Patch created successfully!"
           echo "Users will receive update on next app restart"
           echo "=========================================="
 
