@@ -154,17 +154,28 @@ serve(withSentry(async (req) => {
       );
     }
 
-    // Food preferences (liked / disliked / willing-to-try) are no longer
-    // consumed by plan generation. The preferences UI was removed and the
-    // signal proved unreliable — a stale/incorrect disliked list would
-    // collapse the candidate pool (see the diagnostic logging above). Diet +
-    // allergy filtering are SEPARATE inputs (`dietary_preference`,
-    // `allergies`) and are unaffected. Neutralize the preference channel here
-    // so every downstream selector/scorer receives empty sets, keeping the
-    // (now-unused) scoring code harmless. Ripped out 2026-07-03 (plan Phase 2 #6).
-    input.liked_foods = [];
-    input.willing_to_try_foods = [];
-    input.disliked_foods = [];
+    // Food preferences (liked / disliked / willing-to-try) ARE consumed again
+    // as of 2026-07-08 (re-enabled after the 2026-07-03 rip-out), but only by
+    // the free-form selectors: the default-formula/template tier and the
+    // rule/LP solvers. The pinned personal-formula path stays preference-blind —
+    // an explicit pin always overrides preferences.
+    //
+    // Dislikes are treated SOFTLY, which is what makes re-enabling safe against
+    // the failure mode that caused the rip-out (a stale/bogus disliked list
+    // collapsing the candidate pool to an empty plan):
+    //   - the template + rule solvers deprioritize/skip disliked foods but
+    //     tolerate a *reported* macro shortfall (allowPreferenceShortfall)
+    //     instead of returning null, and
+    //   - the LP last-resort ignores preferences entirely,
+    // so preferences can never produce "no plan" — worst case they nudge food
+    // choice and surface a shortfall. The client also now scopes the
+    // preferences UI to endurance/fuel foods, keeping the signal relevant.
+    // Diet + allergy remain SEPARATE, hard inputs (`dietary_preference`,
+    // `allergies`) and are unaffected. The contradiction guardrail above stays
+    // as a stale-cache canary.
+    input.liked_foods = likedIn;
+    input.willing_to_try_foods = willingIn;
+    input.disliked_foods = dislikedIn;
 
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
@@ -252,7 +263,7 @@ serve(withSentry(async (req) => {
                 // During) returns. Formula Kit PR 2 #18, extended to
                 // include After in PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
-                      userPins.afterPinIds.size > 0,
+                    userPins.afterPinIds.size > 0,
                 userPins.personalFormulas,
                 input.emit_ephemeral_default_formula === true,
               ),
@@ -279,7 +290,7 @@ serve(withSentry(async (req) => {
                 // banner row-consistent when the user has pins only in
                 // other scopes. Formula Kit PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
-                      userPins.afterPinIds.size > 0,
+                    userPins.afterPinIds.size > 0,
                 userPins.personalFormulas,
                 input.emit_ephemeral_default_formula === true,
               ),

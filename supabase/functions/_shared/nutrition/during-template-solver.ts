@@ -87,7 +87,11 @@ export interface MacroShortfall {
   delivered: number;
   target: number;
   unit: "g" | "mg" | "ml";
-  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered" | "template_constraint";
+  reason:
+    | "all_disliked"
+    | "no_diet_match"
+    | "all_templates_filtered"
+    | "template_constraint";
 }
 
 export interface TemplateSolverResult {
@@ -617,6 +621,12 @@ function generateDuringPhaseTemplateBySearch(
   durationMinutes: number,
   gutTrainingLevel: GutTrainingLevel,
   dislikedFoods?: Set<string>,
+  // When true, this template was selected by an explicit pin override. A pin
+  // must win even when the ingredient's max-per-hour cap prevents fully meeting
+  // the macro target — so accept a best-effort result and report the shortfall
+  // instead of returning null. Decoupled from dislikedFoods (bug: pinned
+  // drink-only formula not scheduled for sub-90-min runs).
+  pinOverride?: boolean,
 ): TemplateSolverResult | null {
   const carbRatios = template.component_carb_ratios ?? {};
   const durationHours = durationMinutes / 60;
@@ -769,19 +779,22 @@ function generateDuringPhaseTemplateBySearch(
   };
   recurse(0);
 
-  // When the user has dislikes, accept the best candidate even if validation
-  // fails — the shortfall is a known consequence of preferences, not an
-  // algorithmic failure. The shortfalls field tells the UI to render guidance
-  // instead of silently dropping the phase. Without dislikes, any validation
-  // failure is genuine (template doesn't fit constraints) and should still
-  // return null so the next-best template is tried.
-  const allowPreferenceShortfall =
-    !!dislikedFoods && dislikedFoods.size > 0;
+  // Accept the best candidate even if macro validation fails when EITHER:
+  //  - the user has dislikes (the shortfall is a known consequence of their
+  //    preferences, not an algorithmic failure), OR
+  //  - this template was pin-selected (an explicit pin must win even if an
+  //    ingredient's max-per-hour cap can't fully meet the target).
+  // The shortfalls field tells the UI to render guidance instead of silently
+  // dropping the phase. Absent both, any validation failure is genuine
+  // (template doesn't fit constraints) and should still return null so the
+  // next-best template is tried.
+  const allowShortfall = (!!dislikedFoods && dislikedFoods.size > 0) ||
+    !!pinOverride;
 
   if (!bestFoods) {
     return null;
   }
-  if (bestIssues.length > 0 && !allowPreferenceShortfall) {
+  if (bestIssues.length > 0 && !allowShortfall) {
     console.log(
       `[DURING-TEMPLATE-SEARCH] Best candidate failed validation: ${
         bestIssues.join("; ")
@@ -894,6 +907,9 @@ export function generateDuringPhaseTemplate(
   durationMinutes: number,
   gutTrainingLevel: GutTrainingLevel,
   dislikedFoods?: Set<string>,
+  // See generateDuringPhaseTemplateBySearch: a pin-selected template accepts a
+  // reported macro shortfall rather than returning null.
+  pinOverride?: boolean,
 ): TemplateSolverResult | null {
   const carbTarget = targets.carbs_g;
   const sodiumTarget = targets.sodium_mg;
@@ -928,6 +944,7 @@ export function generateDuringPhaseTemplate(
     durationMinutes,
     gutTrainingLevel,
     dislikedFoods,
+    pinOverride,
   );
   if (optimizedResult) {
     return optimizedResult;
@@ -1292,13 +1309,13 @@ export function generateDuringPhaseTemplate(
       `fluid=${totals.water_ml.toFixed(0)}ml/${fluidTarget}ml`,
   );
 
-  // Same preference-shortfall escape hatch as the search path: with dislikes
-  // present, accept the partial result and report shortfalls to the UI rather
-  // than dropping the phase entirely.
-  const allowPreferenceShortfall =
-    !!dislikedFoods && dislikedFoods.size > 0;
+  // Same shortfall escape hatch as the search path: with dislikes present OR a
+  // pin override, accept the partial result and report shortfalls to the UI
+  // rather than dropping the phase entirely.
+  const allowShortfall = (!!dislikedFoods && dislikedFoods.size > 0) ||
+    !!pinOverride;
 
-  if (validationIssues.length > 0 && !allowPreferenceShortfall) {
+  if (validationIssues.length > 0 && !allowShortfall) {
     console.warn(
       `[DURING-TEMPLATE] VALIDATION FAILED: ${
         validationIssues.join("; ")

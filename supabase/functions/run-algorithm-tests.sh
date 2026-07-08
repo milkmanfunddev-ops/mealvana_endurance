@@ -100,6 +100,11 @@ run_test \
   "$SHARED_DIR/during-template-solver.test.ts" \
   --allow-write
 
+run_test \
+  "1f2. During Template — Pin-Override Shortfall (Bug 395e3fdb)" \
+  "$SHARED_DIR/during-template-pinoverride.test.ts" \
+  --allow-write --node-modules-dir=none
+
 # 1g (During Template Migration Catalog) removed 2026-06-09: it asserted the
 # contents of supabase/migrations/20260406320000_during_workout_templates_complete.sql,
 # which was deleted in the Formula Kit DB cleanup (b2f86b4). Catalog now lives in the DB.

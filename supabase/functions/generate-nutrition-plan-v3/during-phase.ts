@@ -502,7 +502,10 @@ export async function generateDuringPhase(
       if (pinsSupplied) {
         pinInScopeCount = pinnedInScope.length;
         if (duringPinDecision) {
-          duringPinDecision = { ...duringPinDecision, pin_set_size: pinInScopeCount };
+          duringPinDecision = {
+            ...duringPinDecision,
+            pin_set_size: pinInScopeCount,
+          };
         }
       }
       const pinnedComponentNames = derivePinnedComponentNames(pinnedInScope);
@@ -552,7 +555,9 @@ export async function generateDuringPhase(
         // If no pin fired, the `no_pin_for_scope` default stays in place.
         if (pinsSupplied) {
           const first = templateCandidates[0];
-          if (first !== undefined && (pinnedTemplateIds?.has(first.id) ?? false)) {
+          if (
+            first !== undefined && (pinnedTemplateIds?.has(first.id) ?? false)
+          ) {
             duringPinDecision = {
               used_pin: true,
               pinned_template_id: first.id,
@@ -585,6 +590,12 @@ export async function generateDuringPhase(
               durationMinutes,
               gutTrainingLevel,
               dislikedSet,
+              // Pin override: when a pin fired, selectTemplateCandidates returns
+              // ONLY pinned templates, so every candidate here is pin-selected.
+              // Let the solver accept a macro shortfall (reported to the UI)
+              // rather than returning null — fixes the pinned drink-only formula
+              // not being scheduled for sub-90-min runs.
+              duringPinDecision?.used_pin === true,
             );
             if (templateResult) break;
           }

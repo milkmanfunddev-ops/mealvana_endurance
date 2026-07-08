@@ -2,7 +2,11 @@
  * Types for generate-nutrition-plan-v3
  */
 
-import type { ActivityType, FoodResult, MacroTargets } from "../_shared/nutrition/index.ts";
+import type {
+  ActivityType,
+  FoodResult,
+  MacroTargets,
+} from "../_shared/nutrition/index.ts";
 import type { PreWorkoutPhaseResult } from "../generate-macros-v4/types.ts";
 
 // ============================================================================
@@ -132,7 +136,11 @@ export interface PhaseShortfall {
   delivered: number;
   target: number;
   unit: "g" | "mg" | "ml";
-  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered";
+  reason:
+    | "all_disliked"
+    | "no_diet_match"
+    | "all_templates_filtered"
+    | "template_constraint";
 }
 
 export interface LPPhaseResult {

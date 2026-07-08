@@ -74,6 +74,8 @@ class MacroShortfall {
         return ShortfallReason.noDietMatch;
       case 'all_templates_filtered':
         return ShortfallReason.allTemplatesFiltered;
+      case 'template_constraint':
+        return ShortfallReason.templateConstraint;
       case 'all_disliked':
       default:
         return ShortfallReason.allDisliked;
@@ -111,7 +113,12 @@ enum ShortfallMacro {
 enum ShortfallReason {
   allDisliked('all_disliked'),
   noDietMatch('no_diet_match'),
-  allTemplatesFiltered('all_templates_filtered');
+  allTemplatesFiltered('all_templates_filtered'),
+
+  /// The chosen template/formula physically can't meet the target within its
+  /// ingredient constraints (e.g. a pinned drink-only formula capped by
+  /// max-servings-per-hour on a short run). Not a preference problem.
+  templateConstraint('template_constraint');
 
   const ShortfallReason(this.wireValue);
   final String wireValue;
