@@ -294,10 +294,11 @@ class FuelTimelineScreen extends ConsumerWidget {
   }
 
   /// Soft-delete a scheduled activity with an undo affordance, mirroring
-  /// [_deleteMealWithUndo]. There's no dedicated "restore" call for
-  /// activities (unlike meal logs), so Undo re-submits the pre-delete
-  /// [Activity] via `updateActivity` — the repository writes the object as
-  /// given, including its (null) `deletedAt`, which clears the soft-delete.
+  /// [_deleteMealWithUndo]. Undo restores the pre-delete [Activity] via
+  /// `restoreActivity`, which optimistically re-inserts it and persists the
+  /// object as given — including its (null) `deletedAt`, which clears the
+  /// soft-delete — without the `invalidateSelf()` churn that would orphan this
+  /// snackbar's auto-dismiss timer.
   void _deleteActivityWithUndo(
     BuildContext context,
     WidgetRef ref,
@@ -312,7 +313,7 @@ class FuelTimelineScreen extends ConsumerWidget {
       'Activity deleted',
       duration: const Duration(seconds: 3),
       actionLabel: 'Undo',
-      onAction: () => notifier.updateActivity(activity),
+      onAction: () => notifier.restoreActivity(activity),
     );
   }
 

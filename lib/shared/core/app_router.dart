@@ -80,6 +80,7 @@ import '../../features/meal_logging/presentation/screens/manual_log_screen.dart'
 import '../../features/meal_logging/presentation/screens/photo_capture_screen.dart';
 import '../../features/meal_logging/presentation/screens/describe_meal_screen.dart';
 import '../../features/meal_logging/presentation/screens/meal_review_screen.dart';
+import '../../features/meal_logging/presentation/screens/import_meal_plan_screen.dart';
 import '../../features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
 import '../../features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 
@@ -951,6 +952,12 @@ class AppRouter {
           path: '/meal-log/recent-saved',
           name: 'meal-log-recent-saved',
           builder: (context, state) => const RecentSavedPickerScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/import-plan',
+          name: 'meal-log-import-plan',
+          builder: (context, state) => const ImportMealPlanScreen(),
         ),
 
         GoRoute(

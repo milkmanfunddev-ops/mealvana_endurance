@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/meal_analysis_result.dart';
+import '../domain/meal_plan_result.dart';
 
 part 'meal_ai_service.g.dart';
 
@@ -166,9 +167,79 @@ class MealAiService {
     }
   }
 
+  /// Parse the already-extracted [planText] of a meal-plan document via the
+  /// `parse-meal-plan` edge function.
+  ///
+  /// The client extracts the document text on-device (see
+  /// `MealPlanTextExtractor`); nothing is uploaded or stored — only the text is
+  /// sent. Returns the parsed [MealPlanResult]. Throws [MealAiException] on
+  /// failure (or [InsufficientCreditsException] when out of AI credits).
+  Future<MealPlanResult> parseMealPlanText(String planText) async {
+    _requireUserId();
+
+    try {
+      final response = await _supabase.functions.invoke(
+        'parse-meal-plan',
+        body: {'plan_text': planText},
+      );
+      return _parsePlanResponse(response);
+    } on MealAiException {
+      rethrow;
+    } on InsufficientCreditsException {
+      rethrow;
+    } on SocketException catch (e) {
+      throw MealAiException(
+        kind: MealAiFailureKind.offline,
+        userMessage: 'No internet connection. Please check your network and try again.',
+        debugMessage: e.toString(),
+      );
+    } on FunctionException catch (e) {
+      throw _mapFunctionException(e, functionName: 'parse-meal-plan');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MealAiService] parse-meal-plan unexpected error: $e');
+      throw MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: 'Something went wrong. Please try again.',
+        debugMessage: e.toString(),
+      );
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------
+
+  /// Parse a successful [FunctionResponse] into a [MealPlanResult], mapping
+  /// non-200 statuses (402 credits, others) to typed exceptions.
+  MealPlanResult _parsePlanResponse(FunctionResponse response) {
+    const fn = 'parse-meal-plan';
+    if (response.status == 402) {
+      throw _insufficientCreditsFrom(response.data);
+    }
+    if (response.status != 200) {
+      final message = _extractErrorMessage(response.data);
+      if (kDebugMode) {
+        debugPrint('[MealAiService] $fn status ${response.status}: ${response.data}');
+      }
+      throw MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: message ?? 'The AI service returned an error. Please try again.',
+        debugMessage: '$fn returned status ${response.status}',
+      );
+    }
+    try {
+      final data = response.data as Map<String, dynamic>;
+      return MealPlanResult.fromJson(data);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MealAiService] $fn parse error: $e');
+      throw MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: 'Received an unexpected response. Please try again.',
+        debugMessage: 'Parse error from $fn: $e',
+      );
+    }
+  }
+
 
   Future<MealPhotoAnalysis> _analyzeBytes({
     required String userId,

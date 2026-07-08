@@ -246,6 +246,39 @@ class ActivitiesController extends _$ActivitiesController {
     }
   }
 
+  /// Restore a just-deleted activity — the "Undo" affordance on the fuel
+  /// timeline's swipe-delete.
+  ///
+  /// Optimistically re-inserts [activity] into list state (ordered by schedule)
+  /// and persists WITHOUT `invalidateSelf()`, exactly mirroring [deleteActivity].
+  /// Using the general [updateActivity] here would call `invalidateSelf()`,
+  /// pushing dependents (the fuel-timeline dashboard) through a loading
+  /// transition that rebuilds the Scaffold hosting the "Activity deleted"
+  /// snackbar and orphans its auto-dismiss timer. Writing the pre-delete
+  /// [Activity] back clears the soft-delete because its `deletedAt` is null.
+  Future<void> restoreActivity(Activity activity) async {
+    final previous = state.value ?? const <Activity>[];
+    // Optimistically re-add (guard against a duplicate) and keep the list
+    // ordered by scheduled time so the card reappears in its original slot.
+    final next = [
+      ...previous.where((a) => a.id != activity.id),
+      activity,
+    ]..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+    state = AsyncData(List.unmodifiable(next));
+    try {
+      final deviceIdValue = await ref.read(userIdProvider.future);
+      await _service.updateActivity(
+        deviceId: deviceIdValue,
+        activity: activity,
+      );
+    } catch (e) {
+      _logger.error('Error restoring activity', error: e);
+      // Roll back the optimistic restore so the card disappears again.
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
   /// Get activities for a specific date
   Future<List<Activity>> getActivitiesForDate(DateTime date) async {
     try {

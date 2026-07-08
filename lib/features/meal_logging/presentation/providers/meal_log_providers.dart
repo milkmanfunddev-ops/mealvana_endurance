@@ -13,6 +13,7 @@ import '../../domain/consumed_totals.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
+import '../../domain/meal_plan_result.dart';
 import '../../domain/meal_slot.dart';
 import '../../domain/saved_meal.dart';
 
@@ -243,6 +244,60 @@ class MealLogController extends _$MealLogController {
         'log_date': logDate,
       });
     });
+  }
+
+  /// Bulk-log multiple saved meals to [logDate] in one batch — the multi-log
+  /// action. No-op for an empty [savedMeals]. Invalidates the recents stream
+  /// once after the batch.
+  Future<void> logSavedMeals({
+    required List<SavedMeal> savedMeals,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+  }) async {
+    if (savedMeals.isEmpty) return;
+    await _runGuarded((service) async {
+      final userId = await _currentUserId();
+      if (userId == null) throw StateError('No authenticated user');
+
+      await service.logSavedMeals(
+        savedMeals: savedMeals,
+        userId: userId,
+        slot: slot,
+        logDate: logDate,
+        eatenAt: eatenAt,
+      );
+      if (ref.mounted) ref.invalidate(recentMealsProvider);
+
+      await _trackEvent('meals_logged_bulk', {
+        'count': savedMeals.length,
+        if (slot != null) 'slot': slot.wireValue,
+        'source': 'saved',
+        'log_date': logDate,
+      });
+    });
+  }
+
+  /// Import reviewed meal-plan meals as saved meals (favorites) in one batch —
+  /// the commit step of the AI PDF meal-plan import. Invalidates the saved-meals
+  /// list and returns how many were saved. No-op (returns 0) for empty [meals].
+  ///
+  /// Does not route through [_runGuarded] because it returns a value; callers
+  /// await it directly and handle errors at the call site.
+  Future<int> importPlanAsSavedMeals(List<ParsedPlanMeal> meals) async {
+    if (meals.isEmpty) return 0;
+    final service = ref.read(mealLoggingServiceProvider);
+    final userId = await _currentUserId();
+    if (userId == null) throw StateError('No authenticated user');
+
+    final saved = await service.importPlanAsSavedMeals(
+      meals: meals,
+      userId: userId,
+    );
+    if (ref.mounted) ref.invalidate(savedMealsProvider);
+
+    await _trackEvent('meal_plan_imported', {'count': saved.length});
+    return saved.length;
   }
 
   /// Log a recipe, scaling macros by [servings].

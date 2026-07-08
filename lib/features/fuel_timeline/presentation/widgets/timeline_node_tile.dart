@@ -206,28 +206,29 @@ class TimelineNodeTile extends ConsumerWidget {
     // No swipe actions wired up → return the bare card.
     if (onSwap == null && onRemove == null) return card;
 
-    // Swipe left→right = Remove, swipe right→left = Swap. Matches the Activity
+    // Swipe right→left (endToStart) = Remove, swipe left→right (startToEnd) =
+    // Swap — the iOS-conventional "swipe left to delete". Matches the Activity
     // Detail food rows (DismissibleFoodItem). confirmDismiss always returns
     // false: the actions run via callbacks (Remove soft-deletes with Undo; Swap
     // navigates) and never structurally dismiss the row.
     return Dismissible(
       key: ValueKey('timeline-meal-${node.id}'),
       background: _swipeBackground(
-        color: AppColors.dragonfruit,
-        icon: Icons.delete_outline,
-        label: 'Remove',
-        alignment: Alignment.centerLeft,
-      ),
-      secondaryBackground: _swipeBackground(
         color: AppColors.electrolyteDark,
         icon: Icons.swap_horiz,
         label: 'Swap',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _swipeBackground(
+        color: AppColors.dragonfruit,
+        icon: Icons.delete_outline,
+        label: 'Remove',
         alignment: Alignment.centerRight,
       ),
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
+        if (direction == DismissDirection.endToStart) {
           onRemove?.call();
-        } else if (direction == DismissDirection.endToStart) {
+        } else if (direction == DismissDirection.startToEnd) {
           onSwap?.call();
         }
         return false;
@@ -377,28 +378,29 @@ class TimelineNodeTile extends ConsumerWidget {
     // affordance) → return the bare card.
     if (onSwap == null && onRemove == null) return card;
 
-    // Swipe left→right = Remove, swipe right→left = Edit. Mirrors the meal
+    // Swipe right→left (endToStart) = Remove, swipe left→right (startToEnd) =
+    // Edit — the iOS-conventional "swipe left to delete". Mirrors the meal
     // row's Dismissible above: confirmDismiss always returns false, the
     // actions run via callbacks (Remove deletes with Undo; Edit navigates)
     // and never structurally dismiss the row.
     return Dismissible(
       key: ValueKey('timeline-workout-${node.id}'),
       background: _swipeBackground(
-        color: AppColors.dragonfruit,
-        icon: Icons.delete_outline,
-        label: 'Remove',
-        alignment: Alignment.centerLeft,
-      ),
-      secondaryBackground: _swipeBackground(
         color: AppColors.electrolyteDark,
         icon: Icons.edit_outlined,
         label: 'Edit',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _swipeBackground(
+        color: AppColors.dragonfruit,
+        icon: Icons.delete_outline,
+        label: 'Remove',
         alignment: Alignment.centerRight,
       ),
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
+        if (direction == DismissDirection.endToStart) {
           onRemove?.call();
-        } else if (direction == DismissDirection.endToStart) {
+        } else if (direction == DismissDirection.startToEnd) {
           onSwap?.call();
         }
         return false;

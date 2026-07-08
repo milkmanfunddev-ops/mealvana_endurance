@@ -236,6 +236,45 @@ class SavedMealsRepository with SyncableRepository {
     return toSave;
   }
 
+  /// Persist several saved meals in a single Drift batch (offline-first).
+  ///
+  /// Used by the AI meal-plan import to commit every reviewed meal at once.
+  /// Assigns a UUID to any empty [SavedMeal.id], stamps dirty-tracking columns,
+  /// writes all rows in one transaction, then schedules ONE bulk remote upsert.
+  Future<List<SavedMeal>> saveMeals(List<SavedMeal> meals) async {
+    if (meals.isEmpty) return const <SavedMeal>[];
+    final now = DateTime.now();
+    final toSave = meals
+        .map(
+          (meal) => meal.copyWith(
+            id: meal.id.isEmpty ? _uuid.v4() : meal.id,
+            createdAt: meal.createdAt,
+            updatedAt: now,
+            isDeleted: false,
+            needsUpload: true,
+            localUpdatedAt: now,
+          ),
+        )
+        .toList(growable: false);
+
+    await _database.batch((batch) {
+      batch.insertAll(
+        _database.savedMealsTable,
+        toSave.map((m) => m.toDriftCompanion()).toList(growable: false),
+        mode: InsertMode.insertOrReplace,
+      );
+    });
+
+    _logger.info(
+      'Bulk-saved meals',
+      context: 'SAVED_MEALS_REPOSITORY',
+      data: {'count': toSave.length},
+    );
+
+    _scheduleImmediateBulkUpload(toSave);
+    return toSave;
+  }
+
   /// Bump [SavedMeal.lastUsedAt] to now (called when the meal is re-logged).
   Future<void> touchLastUsed(String mealId) async {
     final now = DateTime.now();
@@ -417,9 +456,47 @@ class SavedMealsRepository with SyncableRepository {
     }());
   }
 
+  /// Fire-and-forget bulk upsert for [saveMeals] — one round-trip for the whole
+  /// batch. Rows stay dirty on failure so the normal sync path retries them.
+  void _scheduleImmediateBulkUpload(List<SavedMeal> meals) {
+    if (meals.isEmpty) return;
+    unawaited(() async {
+      try {
+        await _supabase.from('saved_meals').upsert(
+              meals.map((m) => m.toSupabaseJson()).toList(growable: false),
+              onConflict: 'id',
+            );
+        await _clearDirtyFlags(meals.map((m) => m.id).toList(growable: false));
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate bulk save upload failed; saved meals stay dirty for retry',
+          context: 'SAVED_MEALS_REPOSITORY',
+          error: e,
+          stackTrace: stackTrace,
+          data: {'count': meals.length},
+        );
+        unawaited(
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:saved_meals:save-bulk',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          ),
+        );
+      }
+    }());
+  }
+
   Future<void> _clearDirtyFlag(String mealId) async {
     await (_database.update(_database.savedMealsTable)
           ..where((t) => t.id.equals(mealId)))
+        .write(const SavedMealsTableCompanion(needsUpload: Value(false)));
+  }
+
+  Future<void> _clearDirtyFlags(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await (_database.update(_database.savedMealsTable)
+          ..where((t) => t.id.isIn(ids)))
         .write(const SavedMealsTableCompanion(needsUpload: Value(false)));
   }
 }

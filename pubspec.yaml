@@ -91,7 +91,12 @@ dependencies:
 
   # Meal photo capture (meal logging)
   image_picker: ^1.2.2
-  
+
+  # Meal-plan document import (AI): pick a file, extract its text on-device.
+  file_picker: ^8.1.6
+  syncfusion_flutter_pdf: ^28.1.33
+  archive: ^4.0.0 # DOCX = zip; we read word/document.xml ourselves
+
   # Font Awesome Icons
   font_awesome_flutter: ^11.0.0
 

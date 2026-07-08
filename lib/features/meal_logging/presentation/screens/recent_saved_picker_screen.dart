@@ -14,6 +14,10 @@ import '../widgets/log_sheet_helpers.dart' show syntheticFromLog, showSlotPicker
 ///
 /// Route: `/meal-log/recent-saved`
 /// Extras: `{ 'logDate': String }`
+///
+/// The Saved tab supports a multi-select mode (toggled from the app bar) so
+/// several favorites can be logged to the same slot in one batch — the
+/// multi-log flow, and the way an imported meal plan gets logged.
 class RecentSavedPickerScreen extends ConsumerStatefulWidget {
   const RecentSavedPickerScreen({super.key});
 
@@ -29,10 +33,27 @@ class _RecentSavedPickerScreenState
   String? _logDate;
   bool _initialized = false;
 
+  /// Multi-select (batch-log) mode, honored by the Saved tab only.
+  bool _multiSelect = false;
+
+  /// Selected favorites keyed by id (holds the objects so we can bulk-log
+  /// without re-reading the provider).
+  final Map<String, SavedMeal> _selected = {};
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Multi-select only makes sense on the Saved tab — leaving it clears any
+    // in-progress selection so the state can't linger invisibly.
+    _tabController.addListener(() {
+      if (_tabController.index != 0 && _multiSelect) {
+        setState(() {
+          _multiSelect = false;
+          _selected.clear();
+        });
+      }
+    });
   }
 
   @override
@@ -59,6 +80,23 @@ class _RecentSavedPickerScreenState
     super.dispose();
   }
 
+  void _toggleMultiSelect() {
+    setState(() {
+      _multiSelect = !_multiSelect;
+      if (!_multiSelect) _selected.clear();
+    });
+  }
+
+  void _toggleSelected(SavedMeal meal) {
+    setState(() {
+      if (_selected.containsKey(meal.id)) {
+        _selected.remove(meal.id);
+      } else {
+        _selected[meal.id] = meal;
+      }
+    });
+  }
+
   Future<void> _logSavedMeal(SavedMeal meal, MealSlot slot) async {
     await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
           savedMeal: meal,
@@ -82,13 +120,31 @@ class _RecentSavedPickerScreenState
     _checkSuccess();
   }
 
-  void _checkSuccess() {
+  Future<void> _logSelected(MealSlot slot) async {
+    final meals = _selected.values.toList(growable: false);
+    if (meals.isEmpty) return;
+    await ref.read(mealLogControllerProvider.notifier).logSavedMeals(
+          savedMeals: meals,
+          slot: slot,
+          logDate: _logDate!,
+        );
+    if (!mounted) return;
+    _checkSuccess(count: meals.length);
+  }
+
+  void _checkSuccess({int count = 1}) {
     final state = ref.read(mealLogControllerProvider);
     if (state is AsyncData) {
-      MealvanaSnackbar.showSuccess(context, 'Meal logged!');
+      MealvanaSnackbar.showSuccess(
+        context,
+        count == 1 ? 'Meal logged!' : 'Logged $count meals!',
+      );
       context.go('/main');
     } else if (state is AsyncError) {
-      MealvanaSnackbar.showError(context, 'Failed to log meal.');
+      MealvanaSnackbar.showError(
+        context,
+        count == 1 ? 'Failed to log meal.' : 'Failed to log meals.',
+      );
     }
   }
 
@@ -105,8 +161,23 @@ class _RecentSavedPickerScreenState
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Recent & Saved'),
+        title: Text(_multiSelect ? '${_selected.length} selected' : 'Recent & Saved'),
         elevation: 0,
+        actions: [
+          // Import a meal plan (PDF/photo) into My Meals via AI.
+          if (!_multiSelect)
+            IconButton(
+              tooltip: 'Import meal plan',
+              icon: const Icon(Icons.upload_file),
+              onPressed: () => context.push('/meal-log/import-plan'),
+            ),
+          // Multi-select toggle — only relevant on the Saved tab.
+          IconButton(
+            tooltip: _multiSelect ? 'Cancel selection' : 'Select multiple',
+            icon: Icon(_multiSelect ? Icons.close : Icons.checklist_rounded),
+            onPressed: _toggleMultiSelect,
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -119,9 +190,13 @@ class _RecentSavedPickerScreenState
         controller: _tabController,
         children: [
           _SavedTab(
-            onTap: (meal) => _showSlotPicker(
-              onSelected: (slot) => _logSavedMeal(meal, slot),
-            ),
+            multiSelect: _multiSelect,
+            selectedIds: _selected.keys.toSet(),
+            onTap: (meal) => _multiSelect
+                ? _toggleSelected(meal)
+                : _showSlotPicker(
+                    onSelected: (slot) => _logSavedMeal(meal, slot),
+                  ),
             onDelete: (mealId) => ref
                 .read(mealLogControllerProvider.notifier)
                 .deleteSavedMeal(mealId),
@@ -133,6 +208,26 @@ class _RecentSavedPickerScreenState
           ),
         ],
       ),
+      bottomNavigationBar: (_multiSelect && _selected.isNotEmpty)
+          ? SafeArea(
+              minimum: const EdgeInsets.all(AppSpacing.md),
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.electrolyte,
+                  foregroundColor: AppColors.blackberry,
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                icon: const Icon(Icons.add_task),
+                label: Text(
+                  _selected.length == 1
+                      ? 'Log 1 meal'
+                      : 'Log ${_selected.length} meals',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                onPressed: () => _showSlotPicker(onSelected: _logSelected),
+              ),
+            )
+          : null,
     );
   }
 }
@@ -142,10 +237,17 @@ class _RecentSavedPickerScreenState
 // ---------------------------------------------------------------------------
 
 class _SavedTab extends ConsumerWidget {
-  const _SavedTab({required this.onTap, required this.onDelete});
+  const _SavedTab({
+    required this.onTap,
+    required this.onDelete,
+    required this.multiSelect,
+    required this.selectedIds,
+  });
 
   final ValueChanged<SavedMeal> onTap;
   final ValueChanged<String> onDelete;
+  final bool multiSelect;
+  final Set<String> selectedIds;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -161,28 +263,43 @@ class _SavedTab extends ConsumerWidget {
           itemCount: meals.length,
           itemBuilder: (ctx, i) {
             final meal = meals[i];
+            final selected = selectedIds.contains(meal.id);
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.bookmark_outlined, size: 18),
-                ),
+                selected: selected,
+                selectedTileColor:
+                    AppColors.electrolyte.withValues(alpha: 0.12),
+                leading: multiSelect
+                    ? Icon(
+                        selected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: selected
+                            ? AppColors.electrolyteDark
+                            : null,
+                      )
+                    : const CircleAvatar(
+                        child: Icon(Icons.bookmark_outlined, size: 18),
+                      ),
                 title: Text(meal.name,
                     style:
                         const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: _macroSubtitle(
                     ctx, meal.calories, meal.carbsG, meal.proteinG, meal.fatG),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline,
-                          size: 20, color: AppColors.dragonfruit),
-                      onPressed: () => onDelete(meal.id),
-                    ),
-                    const Icon(Icons.chevron_right),
-                  ],
-                ),
+                trailing: multiSelect
+                    ? null
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                size: 20, color: AppColors.dragonfruit),
+                            onPressed: () => onDelete(meal.id),
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                 onTap: () => onTap(meal),
               ),
             );
