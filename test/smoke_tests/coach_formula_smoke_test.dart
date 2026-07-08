@@ -488,7 +488,10 @@ class _EmptyPersonalFormulasController extends PersonalFormulasController {
   FutureOr<List<PersonalFormula>> build() async => const [];
 
   @override
-  Future<PersonalFormula?> createFormula(PersonalFormula draft) async => null;
+  Future<PersonalFormula?> createFormula(
+    PersonalFormula draft, {
+    int? quantityEditCount,
+  }) async => null;
 
   @override
   Future<void> deleteFormula(String id) async {}
