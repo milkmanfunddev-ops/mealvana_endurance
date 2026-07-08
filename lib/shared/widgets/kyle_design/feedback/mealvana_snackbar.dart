@@ -5,13 +5,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 
 /// Snackbar type enum for different visual states
-enum SnackbarType {
-  success,
-  error,
-  warning,
-  info,
-  loading,
-}
+enum SnackbarType { success, error, warning, info, loading }
 
 /// Mealvana branded snackbar with consistent styling.
 ///
@@ -100,7 +94,11 @@ class MealvanaSnackbar {
   }
 
   /// Shows an info snackbar with blackberry background.
-  static void showInfo(
+  /// Returns the [ScaffoldFeatureController] so callers can force-dismiss the
+  /// snackbar themselves (e.g. as a backstop against Flutter's built-in
+  /// auto-dismiss timer not arming when the entrance animation is interrupted
+  /// by a rebuild storm).
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showInfo(
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 3),
@@ -108,7 +106,7 @@ class MealvanaSnackbar {
     VoidCallback? onAction,
     bool showIcon = true,
   }) {
-    _show(
+    return _show(
       context,
       message: message,
       type: SnackbarType.info,

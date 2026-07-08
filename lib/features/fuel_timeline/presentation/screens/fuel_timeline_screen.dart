@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -303,10 +305,11 @@ class FuelTimelineScreen extends ConsumerWidget {
     final notifier = ref.read(activitiesControllerProvider.notifier);
     notifier.deleteActivity(activity.id);
     messenger.clearSnackBars();
-    MealvanaSnackbar.showInfo(
+    const showDuration = Duration(seconds: 3);
+    final controller = MealvanaSnackbar.showInfo(
       context,
       'Activity deleted',
-      duration: const Duration(seconds: 3),
+      duration: showDuration,
       actionLabel: 'Undo',
       // Read the notifier fresh at tap time (the autoDispose provider may have
       // been recreated since delete) and surface any failure — restoreActivity
@@ -323,6 +326,19 @@ class FuelTimelineScreen extends ConsumerWidget {
         }
       },
     );
+    // Backstop dismissal. A SnackBar's built-in auto-dismiss timer only arms
+    // once its entrance animation completes; the provider-rebuild churn that
+    // follows an activity delete can interrupt that animation, so the timer
+    // never starts and the bar sticks forever. Force-close it ourselves after
+    // the duration, independent of the internal timer. `close()` is a no-op if
+    // the bar already went away (natural dismiss or Undo tap).
+    Timer(showDuration + const Duration(milliseconds: 250), () {
+      try {
+        controller.close();
+      } catch (_) {
+        // Controller already completed/closed — nothing to do.
+      }
+    });
   }
 
   /// Opens the New Activity screen prefilled with [activity]'s data, matching
