@@ -638,6 +638,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
             notes: 'Draft activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -857,6 +858,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
             notes: 'Draft cycling activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -1130,6 +1132,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
             notes: 'Draft swimming activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -1368,6 +1371,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             brickMetadata: brickMetadata,
             timeBeforeMinutes: preActivityMinutes,
             notes: 'Draft brick activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {

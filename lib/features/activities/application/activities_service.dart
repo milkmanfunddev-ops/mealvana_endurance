@@ -618,6 +618,7 @@ class ActivitiesService {
     BrickMetadata? brickMetadata,
     String? brickId,
     WriteConsistency? consistency,
+    domain.ActivityStatus status = domain.ActivityStatus.planned,
   }) async {
     try {
       // Determine the owner of the activity
@@ -656,7 +657,7 @@ class ActivitiesService {
         activityType: activityType,
         title: title,
         scheduledDateTime: scheduledDateTime,
-        status: domain.ActivityStatus.planned,
+        status: status,
         distanceMiles: distanceMiles,
         durationMinutes: durationMinutes,
         paceTargetMinutesPerMile: paceTargetMinutesPerMile,
