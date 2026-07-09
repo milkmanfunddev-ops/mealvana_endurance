@@ -6,6 +6,7 @@ import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../auth/application/supabase_auth_service.dart';
@@ -156,6 +157,7 @@ class ActivitiesController extends _$ActivitiesController {
     String? brickId,
   }) async {
     try {
+      final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
 
       final createdActivity = await _service.createActivity(
@@ -185,6 +187,18 @@ class ActivitiesController extends _$ActivitiesController {
         brickMetadata: brickMetadata,
         brickId: brickId,
       );
+
+      if (priorCount == 0) {
+        try {
+          ref.read(appExternalDepsProvider).analytics.track(
+            'first_activity_added',
+            properties: {
+              'activity_type': activityType.name,
+              'activity_id': createdActivity.id,
+            },
+          );
+        } catch (_) {}
+      }
 
       // Refresh activities list
       ref.invalidateSelf();
