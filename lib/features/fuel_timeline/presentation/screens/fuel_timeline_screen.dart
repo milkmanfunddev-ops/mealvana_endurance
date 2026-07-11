@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/navigation/open_activity_fuel.dart';
@@ -400,10 +402,17 @@ class FuelTimelineScreen extends ConsumerWidget {
               key: const ValueKey('fuel_timeline.add_activity'),
               label: '+ Add Activity',
               color: AppColors.orange,
-              onTap: () => context.pushNamed(
-                'distancepacegut',
-                extra: {'initialDate': selectedDate},
-              ),
+              onTap: () {
+                ref
+                    .read(analyticsTrackerProvider)
+                    .trackActivityButtonPressed(
+                      selectedDate: selectedDate,
+                    );
+                context.pushNamed(
+                  'distancepacegut',
+                  extra: {'initialDate': selectedDate},
+                );
+              },
             ),
           ),
       ],
