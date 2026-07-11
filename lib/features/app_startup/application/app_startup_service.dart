@@ -12,6 +12,7 @@ import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/analytics/internal_user_service.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
@@ -274,6 +275,12 @@ class AppStartupService {
   Future<void> _initializeAnalytics() async {
     try {
       final deviceId = DeviceInfoService.instance.deviceId;
+
+      // Must resolve BEFORE Mixpanel starts: the internal flag is registered as
+      // a super property during initialize(), and events begin firing (see
+      // `app_opened` below) immediately after. Purely local — no network call.
+      await InternalUserService.instance.initialize();
+
       await _analytics.initialize();
 
       // Only identify with the anonymous device id when no local profile
@@ -284,7 +291,8 @@ class AppStartupService {
       // (authed accounts), breaking retention counts.
       var hasLocalProfile = false;
       try {
-        hasLocalProfile = await ref
+        hasLocalProfile =
+            await ref
                 .read(appDatabaseProvider)
                 .userDao
                 .getCurrentUserProfile() !=
@@ -380,8 +388,7 @@ class AppStartupService {
 
       // Derive version dynamically so it stays accurate across releases.
       final packageInfo = await PackageInfo.fromPlatform();
-      final appVersion =
-          '${packageInfo.version}+${packageInfo.buildNumber}';
+      final appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
 
       await _sentry.setUserContext(deviceId: userId, appVersion: appVersion);
     } catch (e, stackTrace) {

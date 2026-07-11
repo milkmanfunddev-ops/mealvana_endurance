@@ -928,10 +928,14 @@ workflows:
           echo "Next iOS build number: $NEXT"
 
       - name: Build prod-flavor-code with dev bundle (iOS)
+        # IS_INTERNAL: this build loads .env.prod.local, so it talks to the
+        # PRODUCTION Mixpanel project. It only ever goes to the team, so tag its
+        # events is_internal to keep them out of production reports.
         script: |
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_prod.dart \
+            --dart-define=IS_INTERNAL=true \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 

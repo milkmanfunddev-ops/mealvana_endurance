@@ -8,6 +8,7 @@ import '../app_config.dart';
 import '../device_info_service.dart';
 import '../logging_service.dart';
 import 'analytics_excluded_pref.dart';
+import 'internal_user_service.dart';
 
 /// Abstraction over analytics tracking so we can swap implementations in tests.
 abstract class AnalyticsTracker {
@@ -38,11 +39,9 @@ abstract class AnalyticsTracker {
 
 /// Default tracker that talks to Mixpanel.
 class MixpanelAnalyticsTracker implements AnalyticsTracker {
-  MixpanelAnalyticsTracker({
-    required AppConfig config,
-    AppLogger? logger,
-  })  : _config = config,
-        _logger = logger ?? const NoopAppLogger();
+  MixpanelAnalyticsTracker({required AppConfig config, AppLogger? logger})
+    : _config = config,
+      _logger = logger ?? const NoopAppLogger();
 
   final AppConfig _config;
   final AppLogger _logger;
@@ -82,7 +81,8 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
 
       await _setupSuperProperties();
 
-      _isInitialized = true;    } catch (error, stackTrace) {
+      _isInitialized = true;
+    } catch (error, stackTrace) {
       _logger.error(
         'Failed to initialize Mixpanel',
         context: 'ANALYTICS',
@@ -128,13 +128,16 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
           people.set('Gut Training Level', gutTrainingLevel);
         }
         people.setOnce('First Seen', DateTime.now().toIso8601String());
-        await track('user_identified', properties: {
-          'gender': gender,
-          'age': age,
-          'weight_lbs': weightPounds,
-          'runs_with_water_bottle': runsWithWaterBottle,
-          'gut_training_level': gutTrainingLevel,
-        });
+        await track(
+          'user_identified',
+          properties: {
+            'gender': gender,
+            'age': age,
+            'weight_lbs': weightPounds,
+            'runs_with_water_bottle': runsWithWaterBottle,
+            'gut_training_level': gutTrainingLevel,
+          },
+        );
       } else {
         // Fire the anonymous-identity event once per device, not on every
         // cold start — repeated fires inflate event counts and re-stamp the
@@ -145,9 +148,10 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
         if (!alreadyIdentified) {
           people.setOnce('First Seen', DateTime.now().toIso8601String());
           people.set('User Type', 'Anonymous');
-          await track('anonymous_user_identified', properties: {
-            'device_id': userId,
-          });
+          await track(
+            'anonymous_user_identified',
+            properties: {'device_id': userId},
+          );
           await prefs?.setBool(_anonIdentifiedKey, true);
         }
       }
@@ -184,16 +188,15 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
   }
 
   @override
-  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+  Future<void> track(
+    String eventName, {
+    Map<String, dynamic>? properties,
+  }) async {
     // Dev-only echo: lets engineers verify event names + payloads from the
     // simulator console without needing Mixpanel access. Stripped in prod
     // so we don't add log volume to release builds.
     if (_config.devModeEnabled) {
-      _logger.info(
-        '📊 $eventName',
-        context: 'ANALYTICS',
-        data: properties,
-      );
+      _logger.info('📊 $eventName', context: 'ANALYTICS', data: properties);
     }
 
     final mixpanel = _mixpanel;
@@ -291,14 +294,33 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
         // Fallback handled above; analytics should not crash the app.
       }
 
+      // Registered as a SUPER property (not just a People property) so it is
+      // attached to every event from the very first one — including the
+      // pre-login `app_opened` / `anonymous_user_identified` events, which fire
+      // long before we know who the user is. Filter `is_internal != true` in
+      // Mixpanel to get a clean view.
+      final isInternal = InternalUserService.instance.isInternal;
+
       final superProps = <String, dynamic>{
         'app_version': appVersion,
-        'platform': deviceInfo['device_model']?.contains('iPhone') == true ? 'iOS' : 'Android',
+        'platform': deviceInfo['device_model']?.contains('iPhone') == true
+            ? 'iOS'
+            : 'Android',
         'os_version': deviceInfo['os_version'] ?? 'unknown',
         'device_model': deviceInfo['device_model'] ?? 'unknown',
+        'is_internal': isInternal,
       };
 
       mixpanel.registerSuperProperties(superProps);
+
+      // Mirror onto the People profile so cohort-based exclusion works too.
+      // Mixpanel joins events to profiles at query time against the profile's
+      // *current* state, so this also retroactively pulls this user's earlier
+      // anonymous events out of any `is_internal != true` cohort once their
+      // anonymous distinct_id merges into the identified profile.
+      if (isInternal) {
+        mixpanel.getPeople().set('is_internal', true);
+      }
     } catch (error, stackTrace) {
       _logger.error(
         'Failed to set analytics super properties',
@@ -347,7 +369,10 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
   /// from the simulator console. Guarded by `kDebugMode` so release builds
   /// using the noop (e.g. tests) stay silent.
   @override
-  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+  Future<void> track(
+    String eventName, {
+    Map<String, dynamic>? properties,
+  }) async {
     if (kDebugMode) {
       debugPrint('📊 [ANALYTICS] $eventName ${properties ?? const {}}');
     }
@@ -378,8 +403,5 @@ final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
 
   // Enable analytics in production environment.
   final logger = ref.watch(appLoggerProvider);
-  return MixpanelAnalyticsTracker(
-    config: config,
-    logger: logger,
-  );
+  return MixpanelAnalyticsTracker(config: config, logger: logger);
 });

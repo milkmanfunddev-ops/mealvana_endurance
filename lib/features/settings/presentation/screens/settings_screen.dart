@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/analytics/analytics_excluded_pref.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
@@ -91,6 +92,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         setState(() => _showTesterSection = true);
       }
     }
+  }
+
+  String _internalSwitchSubtitle(bool isInternal, bool isForced) {
+    if (isForced) {
+      return 'Locked on: this is a debug / IS_INTERNAL build, or a registered '
+          'team device. Events are tagged is_internal.';
+    }
+    if (isInternal) {
+      return 'Events from this device are tagged is_internal and filtered out '
+          'of Mixpanel reports.';
+    }
+    return 'This device currently reports as a real user. Toggle on if it '
+        "belongs to the team.";
+  }
+
+  /// Persists the internal flag for this device.
+  ///
+  /// On iOS this is written to the Keychain, which survives app uninstall — so
+  /// this only needs to be done once per phone, not once per reinstall. On
+  /// Android secure storage is wiped on uninstall, so also add the device ID
+  /// below to `kInternalDeviceIds` to make it permanent.
+  Future<void> _onInternalToggled(bool value) async {
+    await ref.read(internalDeviceFlagProvider.notifier).setInternal(value);
+    if (!mounted) return;
+
+    if (value) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Device marked internal. Takes effect on the next app launch.',
+      );
+    } else {
+      MealvanaSnackbar.showInfo(
+        context,
+        'Device no longer marked internal. Takes effect on the next app launch.',
+      );
+    }
+  }
+
+  /// Shows the device ID used by the `kInternalDeviceIds` allowlist, with a tap
+  /// to copy. Needed to permanently register an Android phone, where the
+  /// Keychain trick isn't available.
+  Widget _buildDeviceIdRow(BuildContext context) {
+    final deviceId = ref.read(internalUserServiceProvider).deviceId;
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: Text(
+        'Device ID',
+        style: AppTextStyles.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      subtitle: Text(
+        deviceId,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontFamily: 'monospace',
+        ),
+      ),
+      trailing: const Icon(Icons.copy, size: 18),
+      onTap: () async {
+        await Clipboard.setData(ClipboardData(text: deviceId));
+        if (!context.mounted) return;
+        MealvanaSnackbar.showInfo(context, 'Device ID copied.');
+      },
+    );
   }
 
   /// Handles toggling the "Exclude this device from analytics" switch.
@@ -302,6 +370,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// their device ID.
   Widget _buildTesterSection(BuildContext context) {
     final isExcluded = ref.watch(analyticsExcludedProvider);
+    final isInternal = ref.watch(internalDeviceFlagProvider);
+    final isForced = ref.read(internalDeviceFlagProvider.notifier).isForced;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg),
@@ -323,6 +393,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
+            SwitchListTile(
+              title: Text(
+                'Mark this device as internal',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                _internalSwitchSubtitle(isInternal, isForced),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              value: isInternal,
+              // A dart-define'd or debug build is internal by definition; there
+              // is nothing to toggle.
+              onChanged: isForced ? null : _onInternalToggled,
+              activeThumbColor: AppColors.electrolyte,
+              contentPadding: EdgeInsets.zero,
+            ),
+            _buildDeviceIdRow(context),
+            const Divider(),
             SwitchListTile(
               title: Text(
                 'Exclude this device from analytics (testers)',

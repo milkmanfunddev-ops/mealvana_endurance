@@ -56,6 +56,10 @@ dependencies:
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.2
   shared_preferences: ^2.3.2
+  # Keychain-backed storage. On iOS the Keychain survives app uninstall, which
+  # is what makes the internal-device flag reinstall-proof (see
+  # shared/services/analytics/internal_user_service.dart).
+  flutter_secure_storage: ^9.2.2
   url_launcher: ^6.2.0
   pub_semver: ^2.1.4
   
