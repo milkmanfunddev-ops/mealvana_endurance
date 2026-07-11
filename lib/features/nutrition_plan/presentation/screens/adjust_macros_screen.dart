@@ -75,7 +75,16 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         children: [
           CustomAppBarBackButton(
             key: const ValueKey('adjust_macros.back_button'),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+              // "There is nothing to pop" when this screen is reached
+              // without a poppable route on the stack.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/main');
+              }
+            },
             margin: EdgeInsets.zero,
             iconColor: Theme.of(context).colorScheme.onSurface,
             backgroundColor: Theme.of(
@@ -466,7 +475,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           const SizedBox(height: AppSpacing.lg),
           KyleSecondaryButton(
             text: 'Go Back',
-            onPressed: () => context.pop(),
+            onPressed: () {
+              // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+              // "There is nothing to pop" from the error-state Go Back button.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/main');
+              }
+            },
           ),
         ],
       ),
@@ -505,7 +522,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             const SizedBox(height: AppSpacing.lg),
             KyleSecondaryButton(
               text: 'Go Back',
-              onPressed: () => context.pop(),
+              onPressed: () {
+                // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+                // "There is nothing to pop" from the no-data-state Go Back button.
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/main');
+                }
+              },
             ),
           ],
         ),

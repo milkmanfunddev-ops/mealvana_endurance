@@ -35,18 +35,32 @@ class SettingsController extends _$SettingsController {
   ContentService get _contentService => ref.read(contentServiceProvider);
   Future<UserRepository> get _userRepository async =>
       await ref.read(userRepositoryProvider.future);
-  CoachRepository get _coachRepository => ref.read(coachRepositoryProvider);
 
-  /// Check if user is an approved coach by querying the local coaches table
-  Future<bool> _checkIsApprovedCoach(String? userId) async {
+  /// Check if user is an approved coach by querying the local coaches table.
+  ///
+  /// [coachRepository] must be captured by the caller *before* any `await` in
+  /// build() — this is called at the very end of build(), after several prior
+  /// async gaps (profile lookups). Reading `ref.read(coachRepositoryProvider)`
+  /// at that point throws UnmountedRefException if the provider was disposed
+  /// mid-build (Sentry MEALVANA-ENDURANCE-DEV-5F).
+  Future<bool> _checkIsApprovedCoach(
+    CoachRepository coachRepository,
+    String? userId,
+  ) async {
     if (userId == null) return false;
-    return await _coachRepository.isUserApprovedCoach(userId);
+    return await coachRepository.isUserApprovedCoach(userId);
   }
 
   @override
   FutureOr<SettingsState> build() async {
     // Watch auth state to trigger rebuilds on sign in/out
     final authUserAsync = ref.watch(currentUserProvider);
+
+    // Capture up-front, before any `await` below. build() has several async
+    // gaps (profile lookups) and this auto-dispose provider can be disposed
+    // mid-build. Reading `ref` again after disposal throws
+    // UnmountedRefException — the cause of Sentry MEALVANA-ENDURANCE-DEV-5F.
+    final coachRepository = ref.read(coachRepositoryProvider);
 
     // Load content synchronously from in-memory cache
     final title = _contentService.getValue(
@@ -226,7 +240,7 @@ class SettingsController extends _$SettingsController {
       // when profile email is missing.
       email: effectiveEmail,
       // Coach mode - check coaches table for approved status
-      isCoach: await _checkIsApprovedCoach(displayProfile?.id),
+      isCoach: await _checkIsApprovedCoach(coachRepository, displayProfile?.id),
       // Optional name fields for coach mode athlete identification
       firstName: displayProfile?.firstName,
       lastName: displayProfile?.lastName,

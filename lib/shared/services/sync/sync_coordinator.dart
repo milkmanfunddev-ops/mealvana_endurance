@@ -191,9 +191,15 @@ class SyncCoordinator extends _$SyncCoordinator {
       markedSyncing = true;
 
       // 5. Sync dependencies FIRST (recursive)
+      //
+      // Resolve each dependency's repository. Without it the recursive call has
+      // no repository to work with, so it uploads nothing and downloads nothing
+      // — it just stamps a timestamp. That made this step a no-op, which is how
+      // a dirty event could be uploaded while its activity was still local-only
+      // (FK 23503 on events_activity_id_fkey).
       final deps = _dependencies[repoKey] ?? const <String>[];
       for (final dep in deps) {
-        await ensureSynced(dep, userId);
+        await ensureSynced(dep, userId, repository: await _repositoryFor(dep));
       }
 
       // 6. Upload dirty records (if repository provided)
@@ -253,6 +259,65 @@ class SyncCoordinator extends _$SyncCoordinator {
       }
     }
   }
+
+  /// Resolve the [SyncableRepository] backing a dependency-graph key.
+  ///
+  /// Returns null for keys with no syncable repository (e.g. reference data such
+  /// as `template_foods`), in which case the caller treats the key as a no-op —
+  /// the pre-existing behaviour for those keys.
+  ///
+  /// Resolution is best-effort: if a repository provider cannot be constructed
+  /// we log and return null rather than failing the caller's sync. Falling back
+  /// to the old no-op leaves the caller no worse off than before this resolver
+  /// existed — an FK violation would still surface as an upload error — whereas
+  /// throwing here would take down a sync that could otherwise have succeeded.
+  Future<SyncableRepository?> _repositoryFor(String repoKey) async {
+    try {
+      switch (repoKey) {
+        case 'users':
+          return await ref.read(userRepositoryProvider.future);
+        case 'activities':
+          return ref.read(activitiesRepositoryProvider);
+        case 'events':
+          return ref.read(eventsRepositoryProvider);
+        case 'carb_loading_plans':
+          return ref.read(carbLoadingRepositoryProvider);
+        case 'feedback':
+          return ref.read(feedbackRepositoryProvider);
+        case 'food_preferences':
+          return await ref.read(foodPreferencesRepositoryProvider.future);
+        case 'user_foods':
+          return await ref.read(userFoodsRepositoryProvider.future);
+        case 'meal_logs':
+          return ref.read(mealLogRepositoryProvider);
+        case 'saved_meals':
+          return ref.read(savedMealsRepositoryProvider);
+        default:
+          return null;
+      }
+    } catch (e) {
+      _logger.warning(
+        'Could not resolve repository for dependency sync',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey, 'error': e.toString()},
+      );
+      return null;
+    }
+  }
+
+  /// Repository keys that [_repositoryFor] can resolve, i.e. everything that
+  /// participates in dirty-record upload.
+  static const List<String> _syncableRepositoryKeys = <String>[
+    'users',
+    'activities',
+    'events',
+    'carb_loading_plans',
+    'feedback',
+    'food_preferences',
+    'user_foods',
+    'meal_logs',
+    'saved_meals',
+  ];
 
   /// Check if a repository's data is stale and needs syncing.
   ///
@@ -417,37 +482,64 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Upload dirty records from all repositories before download.
   /// Best-effort: logs failures but doesn't block download.
+  ///
+  /// Uploads in dependency order, one level at a time. Uploading everything at
+  /// once (the previous behaviour) raced a child against its parent: a dirty
+  /// event could reach Supabase before the activity it references, failing
+  /// events_activity_id_fkey with Postgres 23503.
   Future<void> _uploadAllDirtyRecords(String userId) async {
     try {
-      final repos = <String, SyncableRepository>{
-        'activities': ref.read(activitiesRepositoryProvider),
-        'events': ref.read(eventsRepositoryProvider),
-        'carb_loading': ref.read(carbLoadingRepositoryProvider),
-        'feedback': ref.read(feedbackRepositoryProvider),
-        'food_preferences': await ref.read(
-          foodPreferencesRepositoryProvider.future,
-        ),
-        'users': await ref.read(userRepositoryProvider.future),
-        'user_foods': await ref.read(userFoodsRepositoryProvider.future),
-        'meal_logs': ref.read(mealLogRepositoryProvider),
-        'saved_meals': ref.read(savedMealsRepositoryProvider),
-      };
-
-      final entries = repos.entries.toList();
-      final results = await Future.wait(
-        entries.map((e) => e.value.uploadDirtyRecords(userId)),
+      final levels = SyncDependencyGraph.topologicalLevels(
+        _syncableRepositoryKeys,
       );
 
       final failures = <String>[];
-      for (var i = 0; i < entries.length; i++) {
-        final name = entries[i].key;
-        final result = results[i];
-        if (!result.success) {
-          failures.add(name);
-          _logger.error(
-            'Dirty record upload failed for $name',
+      final skipped = <String>[];
+
+      for (final level in levels) {
+        // A repository whose parent failed to upload cannot succeed — its rows
+        // would violate the same FK. Skip it instead of firing a second, noisier
+        // failure for the same root cause.
+        final runnable = <String>[];
+        for (final repoKey in level) {
+          final blockedBy = SyncDependencyGraph.dependenciesFor(repoKey)
+              .where((d) => failures.contains(d) || skipped.contains(d))
+              .toList(growable: false);
+
+          if (blockedBy.isEmpty) {
+            runnable.add(repoKey);
+            continue;
+          }
+
+          skipped.add(repoKey);
+          _logger.warning(
+            'Skipping dirty record upload for $repoKey - dependency failed',
             context: 'SYNC_COORDINATOR',
-            data: {'repository': name, 'error': result.error},
+            data: {'repository': repoKey, 'blockedBy': blockedBy},
+          );
+        }
+
+        if (runnable.isEmpty) continue;
+
+        // Independent within a level, so upload them concurrently.
+        final results = await Future.wait(
+          runnable.map((repoKey) async {
+            final repository = await _repositoryFor(repoKey);
+            if (repository == null) return UploadResult.nothingToUpload();
+            return repository.uploadDirtyRecords(userId);
+          }),
+        );
+
+        for (var i = 0; i < runnable.length; i++) {
+          final repoKey = runnable[i];
+          final result = results[i];
+          if (result.success) continue;
+
+          failures.add(repoKey);
+          _logger.error(
+            'Dirty record upload failed for $repoKey',
+            context: 'SYNC_COORDINATOR',
+            data: {'repository': repoKey, 'error': result.error},
           );
         }
       }
@@ -458,8 +550,9 @@ class SyncCoordinator extends _$SyncCoordinator {
           context: 'SYNC_COORDINATOR',
           data: {
             'failedRepos': failures,
+            'skippedRepos': skipped,
             'failedCount': failures.length,
-            'totalRepos': entries.length,
+            'totalRepos': _syncableRepositoryKeys.length,
           },
         );
         unawaited(
@@ -469,6 +562,7 @@ class SyncCoordinator extends _$SyncCoordinator {
             tags: {
               'failed_repos': failures.join(','),
               'failed_count': '${failures.length}',
+              if (skipped.isNotEmpty) 'skipped_repos': skipped.join(','),
             },
           ),
         );

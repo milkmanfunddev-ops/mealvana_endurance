@@ -671,7 +671,16 @@ class _PostOnboardingAuthScreenState
                     ? 'login_options.back_button'
                     : 'create_account.back_button',
               ),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be reached
+                // via context.go() (post-onboarding flow) as well as push(),
+                // so guard against GoError "There is nothing to pop".
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/main');
+                }
+              },
               enabled: !isLoading,
               margin: EdgeInsets.zero,
               iconColor: Theme.of(context).colorScheme.onSurface,

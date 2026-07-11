@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/database/database_provider.dart';
@@ -248,6 +249,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // a plain reference lets the remaining work finish without touching `ref`.
     final integrationsRepo = ref.read(integrationsRepositoryProvider);
 
+    // Same reasoning for SharedPreferences: it's needed by helpers further
+    // below (_getOrCreateTempUserId, _shouldTriggerGarminBackfill,
+    // _markGarminBackfillTriggered) that only run after several more
+    // `await`s. Those helpers used to call `ref.read(sharedPreferencesProvider)`
+    // themselves, which threw UnmountedRefException once the provider was
+    // disposed mid-build (Sentry MEALVANA-ENDURANCE-DEV-5J). Capture it here
+    // and thread it through as a parameter instead.
+    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
+
     // Get user profile for current auth session
     // Returns null if no auth session or no matching profile
     final user = await database.userDao.getCurrentUserProfile(
@@ -319,7 +329,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId = currentAuthUserId;
       _isUsingTempUserId = false;
     } else {
-      _currentUserId = await _getOrCreateTempUserId();
+      _currentUserId = await _getOrCreateTempUserId(prefs);
       _isUsingTempUserId = true;
     }
 
@@ -368,11 +378,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     if (isGarminActive &&
         !_garminBackfillTriggeredThisSession &&
         !_isUsingTempUserId &&
-        _shouldTriggerGarminBackfill()) {
+        _shouldTriggerGarminBackfill(prefs)) {
       _garminBackfillTriggeredThisSession = true;
       // Stamp the cooldown immediately (before the async work) so concurrent
       // rebuilds and hot restarts within the window don't each fire again.
-      unawaited(_markGarminBackfillTriggered());
+      unawaited(_markGarminBackfillTriggered(prefs));
       Future<void>(() async {
         await triggerGarminBackfill();
       });
@@ -398,10 +408,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// survives controller disposal/rebuild and hot restarts (see
   /// [_garminBackfillTriggeredThisSession] for why an in-memory flag isn't
   /// sufficient).
-  bool _shouldTriggerGarminBackfill() {
+  ///
+  /// [prefs] must be captured by the caller before any `await` in build() —
+  /// this is called after several prior async gaps (the `getIntegration`
+  /// lookups above), so reading `ref.read(sharedPreferencesProvider)` at this
+  /// point throws UnmountedRefException if the provider was disposed
+  /// mid-build (Sentry MEALVANA-ENDURANCE-DEV-5J).
+  bool _shouldTriggerGarminBackfill(SharedPreferences prefs) {
     final userId = _currentUserId;
     if (userId == null) return false;
-    final prefs = ref.read(sharedPreferencesProvider);
     final lastMs = prefs.getInt('$_garminBackfillLastAtKeyPrefix$userId');
     if (lastMs == null) return true;
     final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
@@ -409,10 +424,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   /// Persist the current time as the last automatic Garmin backfill timestamp.
-  Future<void> _markGarminBackfillTriggered() async {
+  ///
+  /// [prefs] must be captured by the caller before any `await` in build() —
+  /// see [_shouldTriggerGarminBackfill] for why (Sentry
+  /// MEALVANA-ENDURANCE-DEV-5J).
+  Future<void> _markGarminBackfillTriggered(SharedPreferences prefs) async {
     final userId = _currentUserId;
     if (userId == null) return;
-    final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setInt(
       '$_garminBackfillLastAtKeyPrefix$userId',
       DateTime.now().millisecondsSinceEpoch,
@@ -421,9 +439,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
   /// Get or create a temporary user ID for use during onboarding
   /// This ID will be migrated to the real user ID when onboarding completes
-  Future<String> _getOrCreateTempUserId() async {
-    final prefs = ref.read(sharedPreferencesProvider);
-
+  ///
+  /// [prefs] must be captured by the caller before any `await` in build() —
+  /// this method runs after several prior async gaps (auth/user-id
+  /// resolution above), so reading `ref.read(sharedPreferencesProvider)` at
+  /// this point risks UnmountedRefException if the provider was disposed
+  /// mid-build (Sentry MEALVANA-ENDURANCE-DEV-5J).
+  Future<String> _getOrCreateTempUserId(SharedPreferences prefs) async {
     // Check if we already have a temp user ID from a previous session
     var tempUserId = prefs.getString(_tempUserIdKey);
 
@@ -626,6 +648,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Returns false (and surfaces an error via snackbar in the caller) on
   /// auth failure / network error / Garmin refusal.
   Future<bool> triggerGarminBackfill() async {
+    // This is invoked from build()'s fire-and-forget kick via
+    // `Future<void>(() async { await triggerGarminBackfill(); })`, which runs
+    // in a later microtask — by the time it executes, the controller may
+    // already have been disposed (e.g. the user navigated away). Bail out
+    // before touching `ref` at all rather than crashing with
+    // UnmountedRefException (Sentry MEALVANA-ENDURANCE-DEV-5J family).
+    if (!ref.mounted) return false;
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final session = supabaseClient.auth.currentSession;
     final supabaseAccessToken = session?.accessToken;
@@ -734,6 +763,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// ([_garminBackfillTriggeredThisSession]) still prevents re-firing within
   /// the current session, so this can't spam Garmin.
   Future<void> _scheduleGarminBackfillRetrySoon() async {
+    // Called from triggerGarminBackfill() after an `await` (the backfill
+    // network call) — by the time we get here the controller may have been
+    // disposed (fire-and-forget path from build()). Guard before touching
+    // `ref` (Sentry MEALVANA-ENDURANCE-DEV-5J family).
+    if (!ref.mounted) return;
     final userId = _currentUserId;
     if (userId == null) return;
     const retryDelay = Duration(minutes: 30);
@@ -903,7 +937,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // ensureIntegrationsSynced re-run the sync and retry the upload promptly
       // (instead of waiting out the full staleness window). The coordinator
       // stamps its own clock once that retry completes, so this can't storm.
-      if (!uploadFailed) {
+      //
+      // Re-check `ref.mounted` here: the `uploadDirtyRecords` await above is
+      // another async gap since the last check, and reading `ref` after
+      // disposal throws UnmountedRefException (same pattern as
+      // MEALVANA-ENDURANCE-DEV-5J).
+      if (!uploadFailed && ref.mounted) {
         await ref
             .read(integrationSyncCoordinatorProvider.notifier)
             .markProviderSynced('vdot');
@@ -1108,6 +1147,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         }
       }
 
+      // Re-check `ref.mounted`: the `uploadDirtyRecords` await above is
+      // another async gap since the last check, and both the event-save
+      // helpers below and `markProviderSynced` read `ref` — doing so after
+      // disposal throws UnmountedRefException (same pattern as
+      // MEALVANA-ENDURANCE-DEV-5J).
+      if (!ref.mounted) return result;
+
       // Handle provider-specific event creation
       int savedEventsCount = 0;
       final raceCandidates = getRaceCandidates?.call(result);
@@ -1118,6 +1164,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       } else if (eventData != null && eventData.isNotEmpty) {
         savedEventsCount = await _saveTrainingPeaksEvents(eventData);
       }
+
+      // Re-check again: the event-save helpers above have their own internal
+      // awaits (one per candidate/event), another gap since the check above.
+      if (!ref.mounted) return result;
 
       // Record this manual sync in the coordinator's staleness clock BEFORE
       // invalidating providers — otherwise the activities controller rebuilds,
@@ -1342,10 +1392,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
     // Clear stale local block state when TP OAuth succeeds.
     // We will re-apply the block later only if TP confirms non-premium.
-    if (connected) {
+    // Guard against disposal during the `_connectProvider` await above
+    // (UnmountedRefException family — same pattern as MEALVANA-ENDURANCE-DEV-5J).
+    if (connected && ref.mounted) {
       final prefs = ref.read(preferencesServiceProvider);
       await prefs.setTpWritebackPremiumBlocked(false);
-      ref.invalidate(preferencesServiceProvider);
+      if (ref.mounted) {
+        ref.invalidate(preferencesServiceProvider);
+      }
     }
 
     return connected;

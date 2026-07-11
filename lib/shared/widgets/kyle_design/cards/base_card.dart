@@ -32,25 +32,36 @@ class BaseCard extends ConsumerWidget {
     final cardRadius = borderRadius ?? AppRadius.cardRadius;
     final cardPadding = padding ?? const EdgeInsets.all(AppSpacing.md);
 
-    Widget card = Container(
-      margin: margin,
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: cardRadius,
-        border: border,
-        boxShadow: elevation > 0
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: elevation * 2,
-                  offset: Offset(0, elevation),
-                ),
-              ]
-            : null,
-      ),
-      child: Padding(
-        padding: cardPadding,
-        child: child,
+    // Sentry MEALVANA-ENDURANCE-DEV-56: ListTile (and other Material ink
+    // descendants such as InkWell) paint their background/splashes on the
+    // nearest Material ancestor. Without this, any BaseCard child that
+    // nests a ListTile hits Flutter's "ListTile background color or ink
+    // splashes may be invisible" assertion because the Container below is a
+    // DecoratedBox with a background color and no Material in between.
+    // MaterialType.transparency paints nothing itself, so this is purely a
+    // Material boundary fix with no visual change.
+    Widget card = Material(
+      type: MaterialType.transparency,
+      child: Container(
+        margin: margin,
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: cardRadius,
+          border: border,
+          boxShadow: elevation > 0
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: elevation * 2,
+                    offset: Offset(0, elevation),
+                  ),
+                ]
+              : null,
+        ),
+        child: Padding(
+          padding: cardPadding,
+          child: child,
+        ),
       ),
     );
 
