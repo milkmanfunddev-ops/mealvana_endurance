@@ -10,7 +10,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// supabase_flutter exports its own AuthUser; hide it so `AuthUser` unambiguously
+// means the app's domain type (what currentUserProvider is typed against).
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
+import 'package:mealvana_endurance/features/auth/domain/auth_user.dart';
 
 import 'package:mealvana_endurance/features/activities/application/activities_service.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
@@ -57,6 +60,13 @@ Activity _makeActivity({
 }
 
 void main() {
+  // mocktail needs a fallback instance before any() can match a parameter of a
+  // non-primitive type. Without it, createActivity's `activityType: any(...)`
+  // stub throws and leaves a dangling matcher that corrupts the next test.
+  setUpAll(() {
+    registerFallbackValue(ActivityType.running);
+  });
+
   group('first_activity_added analytics event', () {
     late RecordingAnalyticsTracker analytics;
     late _MockActivitiesService mockService;
@@ -97,7 +107,7 @@ void main() {
       // Stub service calls used in build()
       when(
         () => mockService.cleanupDraftActivities(any()),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) async => 0);
       when(
         () => mockService.getAllActivities(any()),
       ).thenAnswer((_) async => <Activity>[]);
@@ -120,7 +130,9 @@ void main() {
           activitiesServiceProvider.overrideWithValue(mockService),
           activitiesRepositoryProvider.overrideWithValue(mockRepo),
           userIdProvider.overrideWith((ref) async => _testUserId),
-          currentUserProvider.overrideWith((ref) => null),
+          // currentUserProvider is a StreamProvider<AuthUser?>, so the override
+          // must yield a stream — not a bare null.
+          currentUserProvider.overrideWith((ref) => Stream<AuthUser?>.value(null)),
           syncCoordinatorProvider.overrideWith(
             () => _FakeSyncCoordinator(),
           ),
