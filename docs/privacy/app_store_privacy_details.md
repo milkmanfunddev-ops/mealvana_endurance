@@ -16,6 +16,7 @@
 
 **Last verified: 2026-07-13**
 **Live label verified against App Store Connect: 2026-07-11**
+**Manifest verified against the code and the live App Store label: 2026-07-13 — they agree on all 9 types.**
 **Bundle ID**: `com.milkman.mealvanaendurance`
 **Privacy Policy URL**: https://www.mealvana.io/privacy-policy
 
@@ -42,60 +43,75 @@ usage/analytics collection even when anonymous. See `privacy_manifest_explanatio
 
 ## Data types declared on the live label
 
-Nine types. "Linked" = linked to the user's identity.
+Nine types. "Linked" = linked to the user's identity. The privacy manifest and the live label are
+**fully in sync across all 9 types (verified 2026-07-13)**.
 
 ### Health & Fitness
-| Type | Linked | Purposes |
-| ---- | ------ | -------- |
-| Health | Yes | Analytics, App Functionality |
-| Fitness | Yes | Analytics, App Functionality |
+| Type | Linked | Tracking | Purposes |
+| ---- | ------ | -------- | -------- |
+| Health | Yes | No | App Functionality, Analytics |
+| Fitness | Yes | No | App Functionality, Analytics |
 
 Nutrition intake, biometrics (weight, height, age, body fat), workouts, distance, pace, duration.
 Required to generate fueling plans and to sync training data.
 
+**Health and Fitness reach Mixpanel.** `identifyUser()` in
+`lib/shared/services/analytics/analytics_tracker.dart` sets **Gender**, **Age**, **Weight (lbs)**,
+**Runs With Water Bottle** and **Gut Training Level** as Mixpanel People properties and fires a
+`user_identified` event with the same values. That is why the **Analytics** purpose is declared on
+both types — it is required, not defensive. If those People properties are ever removed from
+`analytics_tracker.dart`, drop Analytics from Health/Fitness in the manifest **and** on this label,
+and tighten the in-app consent copy accordingly.
+
 ### Identifiers
-| Type | Linked | Purposes |
-| ---- | ------ | -------- |
-| User ID | Yes | App Functionality |
+| Type | Linked | Tracking | Purposes |
+| ---- | ------ | -------- | -------- |
+| User ID | Yes | No | App Functionality, Analytics |
 
 Account identifier / anonymous device ID. Used to associate a user with their own data across
-sessions and devices, and by Mixpanel, Sentry, OneSignal and RevenueCat to key their records.
-**No Device ID / advertising identifier is collected.**
+sessions and devices, to key Mixpanel/Sentry/OneSignal/RevenueCat records, and as the analytics
+identity. **No Device ID / advertising identifier is collected.**
 
 ### Contact Info
-| Type | Linked | Purposes |
-| ---- | ------ | -------- |
-| Email Address | Yes | App Functionality |
+| Type | Linked | Tracking | Purposes |
+| ---- | ------ | -------- | -------- |
+| Email Address | Yes | No | App Functionality |
 
 Email authentication and account identity. Not used for marketing.
 
 ### Location
-| Type | Linked | Purposes |
-| ---- | ------ | -------- |
-| Precise Location | **No** (per live label) | App Functionality |
+| Type | Linked | Tracking | Purposes |
+| ---- | ------ | -------- | -------- |
+| Precise Location | **No** | No | App Functionality |
 
 Used to fetch weather forecasts for planned workouts, which drive hydration and sodium
 recommendations.
 
-> **Known discrepancy:** the privacy manifest declares Precise Location as **linked**; the live label
-> declares it **not linked**. The manifest takes the conservative position. Reconcile deliberately —
-> decide which is actually true of the data flow before changing either side.
+**Not linked, deliberately.** Coordinates go to the weather provider and are cached only in the local
+Drift `weather_forecasts` table, which has **no `user_id` column**, is **never synced to Supabase**,
+and is **never sent to Mixpanel**. Nothing ties a coordinate to the user's identity. The manifest
+previously declared this **linked**, which over-declared; that discrepancy was **resolved on
+2026-07-13 in favour of "not linked"**, and the manifest and the live label now agree.
 
 ### Usage Data
-| Type | Linked | Purposes |
-| ---- | ------ | -------- |
-| Product Interaction | Yes | Analytics |
+| Type | Linked | Tracking | Purposes |
+| ---- | ------ | -------- | -------- |
+| Product Interaction | Yes | No | Analytics, App Functionality |
 
 Mixpanel: screen views, feature usage, funnel events. Internal/QA traffic is tagged `is_internal`.
 
 ### Diagnostics
-| Type | Linked | Purposes |
-| ---- | ------ | -------- |
-| Crash Data | No | App Functionality |
-| Performance Data | No | App Functionality |
-| Other Diagnostic Data | No | App Functionality |
+| Type | Linked | Tracking | Purposes |
+| ---- | ------ | -------- | -------- |
+| Crash Data | Yes | No | App Functionality, Analytics |
+| Performance Data | Yes | No | App Functionality, Analytics |
+| Other Diagnostic Data | Yes | No | App Functionality, Analytics |
 
 Sentry: crash reports, performance traces, and error-triggered session replay (content masked).
+
+**Linked**, because `setUserContext()` attaches the device id (and gut-training level) to Sentry
+events, so diagnostics are associated with an identity. The manifest previously declared these three
+as *not* linked, which under-declared; corrected 2026-07-13.
 
 ### Not collected
 Financial Info, Payment Info (handled by Apple / RevenueCat, never touches our servers), Contacts,
@@ -107,8 +123,8 @@ Advertising ID, Other Data.
 | Processor  | Role | Data it receives |
 | ---------- | ---- | ---------------- |
 | Supabase   | Backend (auth, database, edge functions) | Email, User ID, health, fitness, plans, activities |
-| Mixpanel   | Product analytics | User ID, Product Interaction events |
-| Sentry     | Crash / performance / masked session replay | Crash, Performance, Other Diagnostic Data |
+| Mixpanel   | Product analytics | User ID, Product Interaction events, **Health + Fitness People properties** (Gender, Age, Weight (lbs), Runs With Water Bottle, Gut Training Level) via `identifyUser()` |
+| Sentry     | Crash / performance / masked session replay | Crash, Performance, Other Diagnostic Data, User ID (device id via `setUserContext()`) |
 | OneSignal  | Push notifications | User ID, push token |
 | RevenueCat | Subscription / entitlement state | User ID, purchase state |
 
@@ -124,6 +140,8 @@ UserDefaults (`CA92.1`). Both originate in the Flutter engine / plugin layer. De
 
 - [ ] Re-read `ios/Runner/PrivacyInfo.xcprivacy` — did any data type change?
 - [ ] Did any new SDK land in `pubspec.yaml` that touches user data?
+- [ ] Did `identifyUser()` in `analytics_tracker.dart` gain or lose People properties? If the
+      health/fitness ones went away, drop Analytics from Health/Fitness here and in the manifest.
 - [ ] Does the live App Store Connect label still match the table above?
 - [ ] Does https://www.mealvana.io/privacy-policy still describe the real data flows?
 - [ ] Bump the "Last verified" dates in this doc and `privacy_manifest_explanation.md`.

@@ -6,6 +6,7 @@
 > (see `app_store_privacy_details.md`).
 
 **Last verified: 2026-07-13**
+**Manifest verified against the code and the live App Store label: 2026-07-13 — they agree on all 9 types.**
 
 ## What the manifest is
 
@@ -44,27 +45,51 @@ Sentry, OneSignal and RevenueCat.
 
 Nine declared types. "Linked" = associated with the user's identity.
 
-| Data type (manifest key)                        | Linked | Tracking | Purpose          | Why we collect it |
-| ----------------------------------------------- | ------ | -------- | ---------------- | ----------------- |
-| `NSPrivacyCollectedDataTypeHealth`              | Yes    | No       | App Functionality | Nutrition data and biometrics (weight, height, age) used to compute fueling plans |
-| `NSPrivacyCollectedDataTypeFitness`             | Yes    | No       | App Functionality | Activity data (distance, pace, duration) driving plan generation and the training calendar |
-| `NSPrivacyCollectedDataTypeCrashData`           | No     | No       | App Functionality | Sentry crash reporting |
-| `NSPrivacyCollectedDataTypePerformanceData`     | No     | No       | App Functionality | Sentry performance monitoring |
-| `NSPrivacyCollectedDataTypeOtherDiagnosticData` | No     | No       | App Functionality | Sentry diagnostics, incl. error-triggered session replay (content masked) |
-| `NSPrivacyCollectedDataTypeProductInteraction`  | Yes    | No       | Analytics        | Mixpanel product analytics (screen views, feature usage) |
-| `NSPrivacyCollectedDataTypeUserID`              | Yes    | No       | App Functionality | Anonymous device ID / account identifier used to associate a user's own data across sessions and devices |
-| `NSPrivacyCollectedDataTypePreciseLocation`     | Yes    | No       | App Functionality | Weather forecasts for planned workouts (drives hydration/sodium recommendations) |
-| `NSPrivacyCollectedDataTypeEmailAddress`        | Yes    | No       | App Functionality | Email authentication / account identity |
+| Data type (manifest key)                        | Linked | Tracking | Purposes                       | Why we collect it |
+| ----------------------------------------------- | ------ | -------- | ------------------------------ | ----------------- |
+| `NSPrivacyCollectedDataTypeHealth`              | Yes    | No       | App Functionality + Analytics  | Nutrition data and biometrics (weight, height, age) used to compute fueling plans. Also reaches Mixpanel — see below |
+| `NSPrivacyCollectedDataTypeFitness`             | Yes    | No       | App Functionality + Analytics  | Activity data (distance, pace, duration) driving plan generation and the training calendar. Also reaches Mixpanel — see below |
+| `NSPrivacyCollectedDataTypeCrashData`           | Yes    | No       | App Functionality + Analytics  | Sentry crash reporting |
+| `NSPrivacyCollectedDataTypePerformanceData`     | Yes    | No       | App Functionality + Analytics  | Sentry performance monitoring |
+| `NSPrivacyCollectedDataTypeOtherDiagnosticData` | Yes    | No       | App Functionality + Analytics  | Sentry diagnostics, incl. error-triggered session replay (content masked) |
+| `NSPrivacyCollectedDataTypeProductInteraction`  | Yes    | No       | Analytics + App Functionality  | Mixpanel product analytics (screen views, feature usage) |
+| `NSPrivacyCollectedDataTypeUserID`              | Yes    | No       | App Functionality + Analytics  | Anonymous device ID / account identifier used to associate a user's own data across sessions and devices, and as the analytics identity |
+| `NSPrivacyCollectedDataTypePreciseLocation`     | **No** | No       | App Functionality              | Weather forecasts for planned workouts (drives hydration/sodium recommendations). Cached locally only — see below |
+| `NSPrivacyCollectedDataTypeEmailAddress`        | Yes    | No       | App Functionality              | Email authentication / account identity |
 
 Every type is declared with `NSPrivacyCollectedDataTypeTracking = false` — none of this data is used
 for advertising or shared with data brokers.
 
-### Note on the Precise Location "Linked" flag
+### Why the diagnostics types are "linked"
 
-The manifest declares Precise Location as **linked**; the current live App Store Connect label
-declares it as **not linked**. This is a known discrepancy. The conservative declaration (linked) is
-the safe one, and the manifest is intentionally *not* being loosened here. Reconcile deliberately —
-do not "fix" one side to match the other without deciding which is actually true of the data flow.
+Crash Data, Performance Data and Other Diagnostic Data are all declared **linked**. `setUserContext()`
+attaches the device id (and gut-training level) to Sentry events, so every diagnostic payload is
+associated with an identity. An earlier version of the manifest declared these as *not* linked, which
+**under-declared** what we actually send.
+
+### Health and Fitness reach Mixpanel (Analytics purpose is load-bearing)
+
+Health and Fitness both carry the **Analytics** purpose, and that is not defensive over-declaration —
+it is required. `identifyUser()` in `lib/shared/services/analytics/analytics_tracker.dart` sets
+**Gender**, **Age**, **Weight (lbs)**, **Runs With Water Bottle** and **Gut Training Level** as
+Mixpanel People properties, and fires a `user_identified` event carrying the same values. Health and
+fitness data therefore genuinely *is* used for analytics. An earlier version of the manifest declared
+these as "App Functionality" only, which **under-declared**.
+
+> **If those People properties are ever removed from `analytics_tracker.dart`**, drop the Analytics
+> purpose from Health and Fitness in `PrivacyInfo.xcprivacy` (and on the live label), and tighten the
+> in-app consent copy to match — it currently has to cover health/fitness data flowing to Mixpanel.
+
+### Note on the Precise Location "Linked" flag — RESOLVED 2026-07-13
+
+There used to be a discrepancy here: the manifest declared Precise Location as **linked** while the
+live App Store Connect label declared it **not linked**. This was **resolved on 2026-07-13 in favour
+of "not linked"**, and the manifest was corrected to match the label.
+
+Reason: coordinates are sent to the weather provider and cached only in the **local Drift
+`weather_forecasts` table**, which has **no `user_id` column**, is **never synced to Supabase**, and
+is **never sent to Mixpanel**. Nothing associates a coordinate with the user's identity, so "linked"
+was an **over-declaration**. The manifest and the live label now agree.
 
 ## NSPrivacyAccessedAPITypes
 
@@ -84,8 +109,8 @@ first-party product code.
 | Processor    | What it receives                                                     | Manifest types it drives |
 | ------------ | -------------------------------------------------------------------- | ------------------------ |
 | Supabase     | Backend: account, profile, health/fitness, plans, activities         | Health, Fitness, User ID, Email |
-| Mixpanel     | Product analytics events                                             | Product Interaction, User ID |
-| Sentry       | Crashes, performance traces, error-only session replay (masked)      | Crash, Performance, Other Diagnostic |
+| Mixpanel     | Product analytics events, **plus health/fitness People properties** (Gender, Age, Weight, Runs With Water Bottle, Gut Training Level) via `identifyUser()` | Product Interaction, User ID, **Health, Fitness** |
+| Sentry       | Crashes, performance traces, error-only session replay (masked), with device id attached via `setUserContext()` | Crash, Performance, Other Diagnostic, User ID |
 | OneSignal    | Push notification delivery (device/push token)                       | User ID |
 | RevenueCat   | Subscription / purchase state                                        | User ID |
 
@@ -96,6 +121,10 @@ Re-verify this document whenever any of the following changes:
 - A dependency that touches user data is added, removed, or upgraded (see `pubspec.yaml`).
 - A new data type starts being collected, or an existing one stops.
 - An analytics event begins carrying a new class of personal data.
+- `identifyUser()` in `lib/shared/services/analytics/analytics_tracker.dart` gains or loses People
+  properties — in particular, if the health/fitness properties (Gender, Age, Weight (lbs), Runs With
+  Water Bottle, Gut Training Level) are removed, drop the Analytics purpose from Health and Fitness
+  and tighten the in-app consent copy.
 - The App Store Connect privacy label is edited.
 
 Update `ios/Runner/PrivacyInfo.xcprivacy` **first**, then this doc, then the App Store Connect label.
