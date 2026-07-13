@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -296,8 +294,7 @@ class FuelTimelineScreen extends ConsumerWidget {
   /// [_deleteMealWithUndo]. Undo restores the pre-delete [Activity] via
   /// `restoreActivity`, which optimistically re-inserts it and persists the
   /// object as given — including its (null) `deletedAt`, which clears the
-  /// soft-delete — without the `invalidateSelf()` churn that would orphan this
-  /// snackbar's auto-dismiss timer.
+  /// soft-delete.
   void _deleteActivityWithUndo(
     BuildContext context,
     WidgetRef ref,
@@ -307,11 +304,10 @@ class FuelTimelineScreen extends ConsumerWidget {
     final notifier = ref.read(activitiesControllerProvider.notifier);
     notifier.deleteActivity(activity.id);
     messenger.clearSnackBars();
-    const showDuration = Duration(seconds: 3);
-    final controller = MealvanaSnackbar.showInfo(
+    MealvanaSnackbar.showInfo(
       context,
       'Activity deleted',
-      duration: showDuration,
+      duration: const Duration(seconds: 3),
       actionLabel: 'Undo',
       // Read the notifier fresh at tap time (the autoDispose provider may have
       // been recreated since delete) and surface any failure — restoreActivity
@@ -328,19 +324,6 @@ class FuelTimelineScreen extends ConsumerWidget {
         }
       },
     );
-    // Backstop dismissal. A SnackBar's built-in auto-dismiss timer only arms
-    // once its entrance animation completes; the provider-rebuild churn that
-    // follows an activity delete can interrupt that animation, so the timer
-    // never starts and the bar sticks forever. Force-close it ourselves after
-    // the duration, independent of the internal timer. `close()` is a no-op if
-    // the bar already went away (natural dismiss or Undo tap).
-    Timer(showDuration + const Duration(milliseconds: 250), () {
-      try {
-        controller.close();
-      } catch (_) {
-        // Controller already completed/closed — nothing to do.
-      }
-    });
   }
 
   /// Opens the New Activity screen prefilled with [activity]'s data, matching
