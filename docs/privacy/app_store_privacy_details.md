@@ -1,135 +1,129 @@
-# Mealvana Run - App Store Privacy Details
+# Mealvana Endurance - App Store Privacy Details
 
-**For App Store Connect Configuration**  
+> **⚠️ KEEP THIS IN SYNC.** This document is an answer sheet for the App Store Connect "App Privacy"
+> questionnaire. It has **two** sources of truth it must agree with at all times:
+> 1. `ios/Runner/PrivacyInfo.xcprivacy` (the shipped privacy manifest), and
+> 2. the **live** App Store Connect privacy label.
+>
+> If you change what the app collects, update the manifest first, then this doc, then the live label.
+>
+> **⚠️ The previous version of this file was dangerously wrong.** It declared that the app
+> "does NOT collect, transmit, or share any user data", claimed "No Analytics", "Local Storage Only
+> (Hive)" and "No Network Requests", and instructed the reader to answer **NO** to
+> "Does this app collect data from users?". Every one of those statements was false — it described a
+> different, older, offline-only app. Copying it into App Store Connect would have produced a
+> materially false privacy label. It has been replaced in full. Do not resurrect it from git history.
+
+**Last verified: 2026-07-13**
+**Live label verified against App Store Connect: 2026-07-11**
+**Bundle ID**: `com.milkman.mealvanaendurance`
 **Privacy Policy URL**: https://www.mealvana.io/privacy-policy
 
-## Data Collection Summary
-**Mealvana Run does NOT collect, transmit, or share any user data.**
+## Summary
 
-### Data Types: NONE COLLECTED
-- ❌ Contact Info (email, name, phone)
-- ❌ Health & Fitness Data  
-- ❌ Financial Info
-- ❌ Location Data
-- ❌ User Content
-- ❌ Browsing History
-- ❌ Search History
-- ❌ Identifiers
-- ❌ Usage Data
-- ❌ Diagnostics
-- ❌ Other Data
+**Mealvana Endurance collects user data.** It is an online, account-based, cloud-synced app. It
+stores personal health and fitness data on a backend, runs product analytics, and reports crashes.
 
-### Data Storage
-- ✅ **Local Storage Only**: All user data stored locally using Hive database
-- ✅ **No Network Requests**: App functions completely offline
-- ✅ **No Analytics**: No tracking, analytics, or crash reporting
-- ✅ **No Third-Party SDKs**: No data collection SDKs included
+## App Store Connect answers
 
-### Specific App Store Connect Answers
+| Question | Answer |
+| -------- | ------ |
+| Does this app collect data from users? | **YES** |
+| Do you or your third-party partners collect data from this app? | **YES** |
+| Is data collected from this app used for tracking purposes? | **NO** |
+| Do you or your third-party partners use data from this app for advertising or marketing purposes? | **NO** |
 
-#### **Data Collection Questions:**
-1. **"Does this app collect data from users?"** → **NO**
-2. **"Do you or your third-party partners collect data from this app?"** → **NO**
-3. **"Is data collected from this app used for tracking purposes?"** → **NO**
-4. **"Do you or your third-party partners use data from this app for advertising or marketing purposes?"** → **NO**
+"Tracking" = No is correct in Apple's narrow sense: no IDFA, no ad SDKs, no data-broker sharing, no
+linking with third-party data for ad targeting or measurement. This is consistent with
+`NSPrivacyTracking = false` in the privacy manifest. **No ATT prompt is required.**
 
-#### **Age Rating:**
-- **4+** (Appropriate for all ages)
-- **No Objectionable Content**
-- **Educational/Reference content about nutrition**
+Note that "Tracking = No" does **not** exempt us from Guideline 5.1.1(ii), which requires consent for
+usage/analytics collection even when anonymous. See `privacy_manifest_explanation.md`.
 
-#### **App Privacy Labels (All should be "NO"):**
-- Contact Info: NO
-- Health & Fitness: NO (even though it's nutrition-related, we don't collect personal health data)
-- Financial Info: NO
-- Location: NO
-- User Content: NO
-- Browsing History: NO
-- Search History: NO
-- Identifiers: NO
-- Usage Data: NO
-- Diagnostics: NO
-- Other Data: NO
+## Data types declared on the live label
 
-#### **Third-Party Code:**
-- **Flutter Framework**: No data collection
-- **Hive Database**: Local storage only
-- **Riverpod**: State management only
-- **Google Fonts**: Fonts bundled with app
-- **Shorebird**: Code push (no user data transmitted)
+Nine types. "Linked" = linked to the user's identity.
 
-## Key Privacy Features
+### Health & Fitness
+| Type | Linked | Purposes |
+| ---- | ------ | -------- |
+| Health | Yes | Analytics, App Functionality |
+| Fitness | Yes | Analytics, App Functionality |
 
-### ✅ What We Do:
-- Store user preferences locally (food likes/dislikes)
-- Store user profile locally (height, weight, running habits)
-- Generate nutrition plans using local algorithms
-- All data remains on user's device
+Nutrition intake, biometrics (weight, height, age, body fat), workouts, distance, pace, duration.
+Required to generate fueling plans and to sync training data.
 
-### ❌ What We DON'T Do:
-- Send any data to servers
-- Track user behavior
-- Collect personal information
-- Share data with third parties
-- Use analytics or crash reporting
-- Access device identifiers
-- Access location services
-- Access health data from HealthKit
-- Store data in cloud
+### Identifiers
+| Type | Linked | Purposes |
+| ---- | ------ | -------- |
+| User ID | Yes | App Functionality |
 
-## Technical Implementation
+Account identifier / anonymous device ID. Used to associate a user with their own data across
+sessions and devices, and by Mixpanel, Sentry, OneSignal and RevenueCat to key their records.
+**No Device ID / advertising identifier is collected.**
 
-### Local Storage Details:
-- **Technology**: Hive (offline NoSQL database)
-- **Data Types Stored Locally**:
-  - User profile (age, gender, height, weight, running habits)
-  - Food preferences (like/dislike for 12 food items)
-  - Generated nutrition plans
-- **Storage Location**: App sandbox only
-- **Data Persistence**: Remains on device, deleted when app is deleted
+### Contact Info
+| Type | Linked | Purposes |
+| ---- | ------ | -------- |
+| Email Address | Yes | App Functionality |
 
-### Network Usage:
-- **Shorebird Code Push**: Only checks for app updates (no user data sent)
-- **No other network activity**
+Email authentication and account identity. Not used for marketing.
 
-## App Store Connect Configuration
+### Location
+| Type | Linked | Purposes |
+| ---- | ------ | -------- |
+| Precise Location | **No** (per live label) | App Functionality |
 
-### Required URLs:
-- **Privacy Policy**: https://www.mealvana.io/privacy-policy
-- **Support URL**: https://www.mealvana.io/privacy-policy (can use same URL)
+Used to fetch weather forecasts for planned workouts, which drive hydration and sodium
+recommendations.
 
-### Marketing Text Suggestions:
-```
-Personalized nutrition planning for endurance athletes. Generate evidence-based 
-fueling plans for your long runs based on your preferences and run details. 
-All data stored locally on your device for complete privacy.
-```
+> **Known discrepancy:** the privacy manifest declares Precise Location as **linked**; the live label
+> declares it **not linked**. The manifest takes the conservative position. Reconcile deliberately —
+> decide which is actually true of the data flow before changing either side.
 
-### Keywords:
-```
-nutrition, running, endurance, marathon, fueling, sports nutrition, 
-carbohydrates, electrolytes, hydration, training, fitness
-```
+### Usage Data
+| Type | Linked | Purposes |
+| ---- | ------ | -------- |
+| Product Interaction | Yes | Analytics |
 
-### App Description:
-```
-Mealvana Run helps endurance athletes create personalized nutrition fueling 
-plans for long run days. Input your run distance and pace to get evidence-based 
-recommendations for pre-run meals and during-run fueling.
+Mixpanel: screen views, feature usage, funnel events. Internal/QA traffic is tagged `is_internal`.
 
-Features:
-• Personalized nutrition calculations based on your body composition
-• Food preference customization
-• Evidence-based formulas for optimal performance
-• Completely offline - your data never leaves your device
-• Clean, intuitive interface designed for athletes
+### Diagnostics
+| Type | Linked | Purposes |
+| ---- | ------ | -------- |
+| Crash Data | No | App Functionality |
+| Performance Data | No | App Functionality |
+| Other Diagnostic Data | No | App Functionality |
 
-Perfect for marathon training, ultra running, and any endurance activity 
-requiring proper fueling strategy.
-```
+Sentry: crash reports, performance traces, and error-triggered session replay (content masked).
 
----
+### Not collected
+Financial Info, Payment Info (handled by Apple / RevenueCat, never touches our servers), Contacts,
+User Content (photos/audio), Browsing History, Search History, Sensitive Info, Device ID /
+Advertising ID, Other Data.
 
-**Last Updated**: 2024-08-15  
-**App Version**: 1.0.0+1  
-**Bundle ID**: com.milkman.mealvanaendurance
+## Third-party processors
+
+| Processor  | Role | Data it receives |
+| ---------- | ---- | ---------------- |
+| Supabase   | Backend (auth, database, edge functions) | Email, User ID, health, fitness, plans, activities |
+| Mixpanel   | Product analytics | User ID, Product Interaction events |
+| Sentry     | Crash / performance / masked session replay | Crash, Performance, Other Diagnostic Data |
+| OneSignal  | Push notifications | User ID, push token |
+| RevenueCat | Subscription / entitlement state | User ID, purchase state |
+
+None of these are ad networks or data brokers. None receive data for advertising purposes.
+
+## Also declared in the manifest
+
+Required-reason API declarations (`NSPrivacyAccessedAPITypes`): File Timestamp (`C617.1`) and
+UserDefaults (`CA92.1`). Both originate in the Flutter engine / plugin layer. Details in
+`privacy_manifest_explanation.md`.
+
+## Before every submission
+
+- [ ] Re-read `ios/Runner/PrivacyInfo.xcprivacy` — did any data type change?
+- [ ] Did any new SDK land in `pubspec.yaml` that touches user data?
+- [ ] Does the live App Store Connect label still match the table above?
+- [ ] Does https://www.mealvana.io/privacy-policy still describe the real data flows?
+- [ ] Bump the "Last verified" dates in this doc and `privacy_manifest_explanation.md`.

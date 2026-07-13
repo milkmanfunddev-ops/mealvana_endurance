@@ -924,6 +924,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
+          // Privacy - analytics consent withdrawal + privacy policy / terms.
+          // Apple 5.1.1(ii) requires withdrawal to be "easily accessible", so
+          // this is a normal Settings row, not the hidden 7-tap tester toggle.
+          _buildQuickLink(
+            context: context,
+            rowKey: const ValueKey('settings.privacy_row'),
+            icon: FontAwesomeIcons.shieldHalved.data,
+            title: 'Privacy',
+            subtitle: 'Usage data, privacy policy and terms',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_privacy_tapped');
+              context.push('/settings/privacy');
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
           // Help & Feedback
           _buildQuickLink(
             context: context,

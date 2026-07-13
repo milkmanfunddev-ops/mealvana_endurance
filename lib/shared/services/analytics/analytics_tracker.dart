@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_config.dart';
 import '../device_info_service.dart';
 import '../logging_service.dart';
+import '../privacy/analytics_consent.dart';
 import 'analytics_excluded_pref.dart';
 import 'internal_user_service.dart';
 
@@ -381,19 +382,33 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 
 /// Provider exposing the default analytics tracker.
 ///
-/// Returns [NoopAnalyticsTracker] when:
+/// Returns [NoopAnalyticsTracker] — meaning `Mixpanel.init` is never called and
+/// nothing leaves the device — when ANY of:
+/// - The user has not granted analytics consent ([analyticsConsentProvider]).
+///   This is the compliance gate: it holds for signed-in and anonymous users
+///   alike, and `unknown` (not yet asked) is treated as "no". Apple Guideline
+///   5.1.1(ii) requires consent for usage data "even if such data is considered
+///   to be anonymous", so there is no state in which we may fire first and ask
+///   later.
 /// - Running in the development environment (`config.devModeEnabled`) UNLESS
 ///   the developer opted into the dev Mixpanel sandbox via
 ///   `ANALYTICS_DEV_ENABLED` (`config.analyticsDevEnabled`) — which routes dev
 ///   events to the "Mealvana Endurance Dev" project for verification, OR
-/// - The user has explicitly opted this device out of analytics via the hidden
-///   "Developer / Tester" toggle in Settings (`analyticsExcludedProvider`).
+/// - The device is excluded via the hidden "Developer / Tester" toggle in
+///   Settings (`analyticsExcludedProvider`).
 ///
-/// In all other cases (prod build, not excluded) returns
-/// [MixpanelAnalyticsTracker].
+/// In all other cases returns [MixpanelAnalyticsTracker].
 final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
   final config = ref.watch(appConfigProvider);
   final analyticsExcluded = ref.watch(analyticsExcludedProvider);
+  final consent = ref.watch(analyticsConsentProvider);
+
+  // Consent gate. Withdrawal flows through here too: flipping the Settings
+  // toggle off rebuilds this provider, and every consumer reads the tracker
+  // through `appExternalDepsProvider`, so subsequent events are dropped.
+  if (!consent.allowsAnalytics) {
+    return const NoopAnalyticsTracker();
+  }
 
   // No-op in dev (unless the dev-sandbox flag is set) or on opted-out devices.
   if ((config.devModeEnabled && !config.analyticsDevEnabled) ||
