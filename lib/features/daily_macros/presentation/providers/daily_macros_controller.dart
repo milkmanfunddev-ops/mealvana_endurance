@@ -11,6 +11,7 @@ import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../application/daily_macro_service.dart';
 import '../../data/daily_macro_targets_repository.dart';
 import '../../domain/daily_macro_targets.dart';
+import '../../domain/macro_cache_invalidation.dart';
 
 part 'daily_macros_controller.g.dart';
 
@@ -77,16 +78,22 @@ class DailyMacrosController extends _$DailyMacrosController {
     final repository = ref.read(dailyMacroTargetsRepositoryProvider);
 
     // Detect if activities actually changed (not just a rebuild carrying the
-    // same activities). Only a genuine change justifies wiping the cache.
+    // same activities), and invalidate ONLY the cached days whose inputs moved.
+    // `macroDatesToInvalidate` derives that window from the activity diff; see
+    // domain/macro_cache_invalidation.dart for why it's the activity's Mon–Sun
+    // week plus the day either side, and nothing more.
     final currentActivities = activitiesAsync.value;
     if (_lastActivities != null &&
         currentActivities != null &&
         !listEquals(currentActivities, _lastActivities)) {
-      // Activities changed — clear ALL cached macros for this user.
-      await repository.invalidateAllForUser(profile.id);
+      final stale = macroDatesToInvalidate(_lastActivities!, currentActivities);
+      if (stale.isNotEmpty) {
+        await repository.invalidateDates(profile.id, stale);
+      }
     }
     // Don't clobber the baseline with null while activities are loading/errored,
-    // or the next real change would compare against nothing and skip the wipe.
+    // or the next real change would compare against nothing and skip the
+    // invalidation it owes.
     if (currentActivities != null) {
       _lastActivities = currentActivities;
     }

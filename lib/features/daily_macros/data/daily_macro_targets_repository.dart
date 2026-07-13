@@ -187,10 +187,35 @@ class DailyMacroTargetsRepository {
     );
   }
 
-  /// Invalidate all cached records for a user.
-  /// Called when activities change (create/update/delete/import) since
-  /// adjacent-day context (yesterday TSS, tomorrow load) means any activity
-  /// change can affect multiple days' macro calculations.
+  /// Invalidate the cached records for a specific set of days, in one statement.
+  ///
+  /// This is the scoped alternative to [invalidateAllForUser]: an activity edit
+  /// only staleness-affects a bounded window of days (see
+  /// `macroDatesToInvalidate` in `domain/macro_cache_invalidation.dart`), so
+  /// there's no reason to discard the user's whole cache. No-op on an empty set.
+  Future<void> invalidateDates(String userId, Iterable<DateTime> dates) async {
+    final epochDays = <int>{
+      for (final d in dates)
+        DateTime(d.year, d.month, d.day).millisecondsSinceEpoch,
+    };
+    if (epochDays.isEmpty) return;
+
+    final placeholders = List.filled(epochDays.length, '?').join(', ');
+    await _database.customStatement(
+      'DELETE FROM daily_macro_targets '
+      'WHERE user_id = ? AND target_date IN ($placeholders)',
+      [userId, ...epochDays],
+    );
+  }
+
+  /// Invalidate ALL cached records for a user — every date, for all time.
+  ///
+  /// Blunt instrument, kept as an escape hatch (e.g. an algorithm-version bump
+  /// or a corrupted cache). Do NOT use it for ordinary activity edits: prefer
+  /// [invalidateDates] with `macroDatesToInvalidate`, which drops only the days
+  /// whose inputs actually moved. Wiping everything means every date the user
+  /// later opens is a cache miss — an edge-function round trip each, and no
+  /// macros at all while offline.
   Future<void> invalidateAllForUser(String userId) async {
     await _database.customStatement(
       'DELETE FROM daily_macro_targets WHERE user_id = ?',

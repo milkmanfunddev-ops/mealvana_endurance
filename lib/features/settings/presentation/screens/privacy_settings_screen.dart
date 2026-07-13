@@ -61,10 +61,13 @@ class PrivacySettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          // Keep in sync with what identifyUser() sends to Mixpanel People and
+          // with the first-run disclosure in privacy_consent_screen.dart.
           Text(
             'Shares which screens and features you use — via Mixpanel — so we '
-            "can see what's working. It never includes your meals, weights or "
-            'health data, and we run no advertising SDKs.',
+            "can see what's working, along with basic profile details (age, "
+            'gender, weight and gut-training level). It does not include your '
+            'meal logs, and we run no advertising SDKs.',
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.sm),

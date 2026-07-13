@@ -18,6 +18,13 @@ void main() {
       // The disclosure has to actually disclose: name the processor and offer
       // the choice, or it isn't informed consent.
       expect(find.textContaining('Mixpanel'), findsOneWidget);
+
+      // identifyUser() sends Gender / Age / Weight (lbs) / Runs With Water
+      // Bottle / Gut Training Level to Mixpanel People. The disclosure must say
+      // so. An earlier draft claimed analytics "never includes your weights or
+      // health data" — which was false. If health properties are ever stripped
+      // from analytics_tracker.dart, update the copy and this test together.
+      expect(find.textContaining('weight'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('privacy_consent.usage_toggle')),
         findsOneWidget,
@@ -32,19 +39,31 @@ void main() {
         (tester) async {
       await smokeScreen(tester, const PrivacySettingsScreen());
 
-      // Withdrawal must be reachable here, alongside the policy links.
+      // The withdrawal toggle is above the fold — Apple requires it be easily
+      // accessible, so it had better not need scrolling to find.
       expect(
         find.byKey(const ValueKey('privacy_settings.usage_toggle')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey('privacy_settings.policy_link')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('privacy_settings.terms_link')),
-        findsOneWidget,
-      );
+    });
+
+    testWidgets('PrivacySettingsScreen exposes the policy + terms links',
+        (tester) async {
+      await smokeScreen(tester, const PrivacySettingsScreen());
+
+      // These sit below the fold on a small phone, and the ListView builds
+      // lazily — scroll to them rather than assuming they are already built.
+      for (final key in const [
+        'privacy_settings.policy_link',
+        'privacy_settings.terms_link',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.byKey(ValueKey(key)),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.byKey(ValueKey(key)), findsOneWidget);
+      }
     });
   });
 }

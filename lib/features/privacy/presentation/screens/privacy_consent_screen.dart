@@ -149,10 +149,16 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          // Must match what identifyUser() actually sends to Mixpanel People
+          // (Gender, Age, Weight (lbs), Runs With Water Bottle, Gut Training
+          // Level) — a disclosure that understates what we collect is worse
+          // than no disclosure. If those properties are ever removed from
+          // analytics_tracker.dart, tighten this copy and bump kConsentVersion.
           Text(
             'Optional. Shares which screens and features you use — via Mixpanel '
-            "— so we can see what's working and what isn't. It never includes "
-            'your meals, weights or health data.',
+            "— so we can see what's working and what isn't. It also includes "
+            'basic profile details (age, gender, weight and gut-training '
+            "level). It does not include your meal logs or what you've eaten.",
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
