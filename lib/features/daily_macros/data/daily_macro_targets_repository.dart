@@ -194,18 +194,35 @@ class DailyMacroTargetsRepository {
   /// `macroDatesToInvalidate` in `domain/macro_cache_invalidation.dart`), so
   /// there's no reason to discard the user's whole cache. No-op on an empty set.
   Future<void> invalidateDates(String userId, Iterable<DateTime> dates) async {
+    // Normalize to midnight — rows are keyed by midnight, and a caller may hand
+    // us a timestamped date (or one nudged off midnight by a DST shift).
     final epochDays = <int>{
       for (final d in dates)
         DateTime(d.year, d.month, d.day).millisecondsSinceEpoch,
     };
     if (epochDays.isEmpty) return;
 
-    final placeholders = List.filled(epochDays.length, '?').join(', ');
-    await _database.customStatement(
-      'DELETE FROM daily_macro_targets '
-      'WHERE user_id = ? AND target_date IN ($placeholders)',
-      [userId, ...epochDays],
-    );
+    // Chunk the IN list rather than binding one variable per day. Defensive, not
+    // a fix for an observed crash: the sqlite3 we bundle allows 32766 variables,
+    // and even a multi-year provider import lands well under that. But the
+    // SQLite-guaranteed floor is 999, so a build change (system sqlite, another
+    // platform) could start throwing here — and a throw means invalidation is
+    // skipped and the user silently reads STALE macros, which is the worst way
+    // for this to fail. Cheap insurance against that.
+    const chunkSize = 400;
+    final days = epochDays.toList(growable: false);
+    for (var start = 0; start < days.length; start += chunkSize) {
+      final chunk = days.sublist(
+        start,
+        (start + chunkSize).clamp(0, days.length),
+      );
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+      await _database.customStatement(
+        'DELETE FROM daily_macro_targets '
+        'WHERE user_id = ? AND target_date IN ($placeholders)',
+        [userId, ...chunk],
+      );
+    }
   }
 
   /// Invalidate ALL cached records for a user — every date, for all time.

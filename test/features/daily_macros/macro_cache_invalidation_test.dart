@@ -77,6 +77,26 @@ void main() {
       );
     });
 
+    test('every returned day is midnight, even across a DST boundary', () {
+      // US DST springs forward on Sun 2026-03-08. `Duration(days: 1)` is exactly
+      // 24h, so naive arithmetic over this week lands on 01:00 rather than
+      // midnight — and cached rows, keyed at midnight, would never match.
+      for (final date in [
+        DateTime(2026, 3, 7), // Sat, day before the shift
+        DateTime(2026, 3, 8), // Sun, the shift itself
+        DateTime(2026, 3, 9), // Mon, day after
+        DateTime(2026, 11, 1), // fall back
+      ]) {
+        for (final day in daysAffectedByActivityOn(date)) {
+          expect(
+            [day.hour, day.minute, day.second],
+            [0, 0, 0],
+            reason: '$day (from $date) is not normalized to midnight',
+          );
+        }
+      }
+    });
+
     test('an unrelated week is never touched', () {
       final affected = daysAffectedByActivityOn(wednesday);
       expect(affected, isNot(contains(DateTime(2026, 3, 4))));

@@ -41,17 +41,23 @@ DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 /// staleness is the window the calculation actually reads.)
 DateTime _startOfWeek(DateTime d) {
   final day = _day(d);
-  return day.subtract(Duration(days: day.weekday - 1));
+  return _day(day.subtract(Duration(days: day.weekday - 1)));
 }
 
 /// Every day whose cached macros an activity scheduled on [date] can affect.
+///
+/// Every element is normalized to midnight. That matters: `Duration(days: 1)` is
+/// exactly 24 hours, so adding it across a DST boundary lands on 01:00 (or
+/// 23:00) of the neighbouring day rather than midnight. Cached rows are keyed by
+/// midnight, so an un-normalized day would silently fail to match and the row
+/// would survive as stale. Re-normalize after every shift.
 Set<DateTime> daysAffectedByActivityOn(DateTime date) {
   final day = _day(date);
   final monday = _startOfWeek(day);
   return {
-    for (var i = 0; i < 7; i++) monday.add(Duration(days: i)),
-    day.subtract(const Duration(days: 1)),
-    day.add(const Duration(days: 1)),
+    for (var i = 0; i < 7; i++) _day(monday.add(Duration(days: i))),
+    _day(day.subtract(const Duration(days: 1))),
+    _day(day.add(const Duration(days: 1))),
   };
 }
 

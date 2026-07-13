@@ -113,6 +113,33 @@ void main() {
   });
 
   test(
+    'a large day-set (multi-year import) deletes correctly across chunks',
+    () async {
+      // NB: this does NOT demonstrate a parameter-limit overflow — the sqlite3 we
+      // bundle allows 32766 variables, so 1500 would pass unchunked too. What it
+      // pins is that the CHUNKING ITSELF is correct: every requested day is
+      // deleted across chunk boundaries, and nothing outside the set is.
+      final manyDays = [
+        for (var i = 0; i < 1500; i++) DateTime(2024, 1, 1).add(Duration(days: i)),
+      ];
+      for (final d in manyDays) {
+        await seedCachedDay(userId, d);
+      }
+      // One day deliberately outside the set, to prove it isn't a blanket wipe.
+      final survivor = DateTime(2029, 5, 5);
+      await seedCachedDay(userId, survivor);
+
+      await repository.invalidateDates(userId, manyDays);
+
+      expect(
+        await cachedDaysFor(userId),
+        equals({survivor}),
+        reason: 'all 1500 requested days gone; the untouched day remains',
+      );
+    },
+  );
+
+  test(
     'editing one workout drops only its week — months of cache survive '
     '(previously ALL of this was deleted)',
     () async {
