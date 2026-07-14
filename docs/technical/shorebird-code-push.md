@@ -83,11 +83,31 @@ Separate IDs, so a dev patch can never be served to a prod build.
    (e.g. `1.20.0+9`). Do **not** leave it as `latest` — "latest" is whatever
    Shorebird thinks is newest, which is not necessarily what users have.
 
+> **A patch is bound to ONE release version.** Patching `1.21.1+100` does
+> nothing for anyone still on `1.21.1+99`. If testers are spread across builds,
+> either patch each release separately or have them take the newest TestFlight
+> build. Check who is where before assuming one patch covers everyone.
+
+Note that pushing to `develop` also auto-triggers the `dev-ios` **release**
+workflow, which cuts a *new* build (e.g. `+101`) with your change compiled in.
+So a dev change usually reaches testers two ways: natively in the next
+TestFlight build, and OTA via the patch for whoever hasn't updated. The patch is
+what saves them a reinstall — it isn't redundant.
+
 Dev is the same, using `dev-ios-patch` off `develop`.
 
 ## The hard way: local CLI
 
-Only if Codemagic isn't an option. Every one of these has cost someone an hour.
+Only if Codemagic isn't an option.
+
+> **Heads up: `shorebird patch ios` currently fails on a local Mac.** The Xcode
+> *archive* succeeds, then the IPA *export* dies with:
+> `Uncategorized (Xcode): The file "OneSignalLocation.framework.dSYM" couldn't
+> be opened because there is no such file.`
+> Codemagic builds the same commit fine, which is the main reason to prefer it.
+> If you must go local, expect to fix this first.
+
+Every one of these has cost someone an hour.
 
 ```bash
 shorebird upgrade          # DO THIS FIRST — see below

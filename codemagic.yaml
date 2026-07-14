@@ -990,9 +990,18 @@ workflows:
       - *run_build_runner
       - *install_shorebird
       - *install_cocoapods
+      # Required. `shorebird patch ios` runs a full `flutter build ipa`, which
+      # archives and therefore SIGNS. Without this the build dies with
+      # "No profiles for 'com.milkman.mealvanaendurance' were found".
+      - *setup_ios_signing_shorebird
 
       - name: Create Shorebird iOS Patch
         script: |
+          # `set -e` is not optional here. Without it, a failed `shorebird patch`
+          # still falls through to the success banner below and the build goes
+          # GREEN — so a patch that never shipped looks like one that did.
+          set -e
+
           if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
             echo "Creating patch for latest iOS release..."
             shorebird patch ios --flavor prod --target lib/main_prod.dart
@@ -1038,6 +1047,11 @@ workflows:
 
       - name: Create Shorebird Android Patch
         script: |
+          # `set -e` is not optional here. Without it, a failed `shorebird patch`
+          # still falls through to the success banner below and the build goes
+          # GREEN — so a patch that never shipped looks like one that did.
+          set -e
+
           if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
             echo "Creating patch for latest Android release..."
             shorebird patch android --flavor prod --target lib/main_prod.dart
@@ -1083,9 +1097,18 @@ workflows:
       - *run_build_runner
       - *install_shorebird
       - *install_cocoapods
+      # Required. `shorebird patch ios` runs a full `flutter build ipa`, which
+      # archives and therefore SIGNS. Without this the build dies with
+      # "No profiles for 'com.milkman.mealvanaendurance.dev' were found".
+      - *setup_ios_signing_shorebird
 
       - name: Create Shorebird iOS Patch (dev flavor)
         script: |
+          # `set -e` is not optional here. Without it, a failed `shorebird patch`
+          # still falls through to the success banner below and the build goes
+          # GREEN — so a patch that never shipped looks like one that did.
+          set -e
+
           if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
             echo "Creating patch for latest dev iOS release..."
             shorebird patch ios --flavor dev --target lib/main_dev.dart
