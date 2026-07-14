@@ -249,6 +249,13 @@ Future<void> syncGarmin(
   }
 
   syncable_repo.SyncResult result = syncable_repo.SyncResult.successful(0);
+  // Whether the Garmin backfill call itself succeeded. Garmin's backfill API
+  // frequently returns a transient 502/503/429 (Sentry MEALVANA-ENDURANCE-DEV-47/-5P)
+  // — triggerGarminBackfill() already handles that gracefully (schedules a
+  // retry, doesn't throw) and returns false rather than crashing. Track the
+  // result so we don't tell the user "Refreshed" when the body-comp portion
+  // actually failed.
+  var backfillSucceeded = true;
   try {
     final repo = ref.read(activitiesRepositoryProvider);
     result = await repo.syncFromRemote(userId);
@@ -264,7 +271,7 @@ Future<void> syncGarmin(
     // seconds, which then mirrors weight/body fat into users.* so it
     // shows up in Preferences and the macro calc.
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.triggerGarminBackfill();
+    backfillSucceeded = await controller.triggerGarminBackfill();
   } finally {
     if (showLoadingSnackbar) {
       messenger?.hideCurrentSnackBar();
@@ -277,6 +284,19 @@ Future<void> syncGarmin(
     MealvanaSnackbar.showError(
       context,
       'Refresh failed: ${result.error ?? 'Unknown error'}',
+      duration: const Duration(seconds: 4),
+    );
+    return;
+  }
+
+  if (!backfillSucceeded) {
+    // Activities refreshed fine, but Garmin's backfill call itself failed
+    // (transient upstream error) — it's already scheduled to retry
+    // automatically, so this is informational, not an error.
+    MealvanaSnackbar.showInfo(
+      context,
+      'Activities refreshed. Weight/body data sync is temporarily delayed '
+      '— we\'ll retry automatically.',
       duration: const Duration(seconds: 4),
     );
     return;

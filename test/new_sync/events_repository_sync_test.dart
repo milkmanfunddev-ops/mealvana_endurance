@@ -78,7 +78,7 @@ void main() {
       expect(repository.repositoryKey, 'events');
     });
 
-    test('dependencies should return ["users"]', () {
+    test('dependencies should return ["users", "activities"]', () {
       final mockSupabase = MockSupabaseClient();
       final repository = EventsRepository(
         supabase: mockSupabase,
@@ -88,7 +88,10 @@ void main() {
         sentry: mockSentry,
       );
 
-      expect(repository.dependencies, ['users']);
+      // activities is required because events.activity_id has an FK to
+      // activities.id — uploading an event before its activity violates
+      // events_activity_id_fkey (Sentry MEALVANA-ENDURANCE-DEV-5K).
+      expect(repository.dependencies, ['users', 'activities']);
     });
 
     test('isStale should return true when never synced', () async {
