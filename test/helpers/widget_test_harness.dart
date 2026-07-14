@@ -69,7 +69,7 @@ Override mockAppExternalDeps() {
 /// A Riverpod override that provides a no-op [SharedPreferences] mock.
 ///
 /// Added to [smokeScreen] defaults so that build-time reads of
-/// [sharedPreferencesProvider] (e.g. from [AnalyticsExcludedNotifier] or
+/// [sharedPreferencesProvider] (e.g. from [AnalyticsConsentNotifier] or
 /// [AppThemeModeNotifier]) don't throw [UnimplementedError] in widget tests.
 Override mockSharedPreferences() {
   final prefs = MockSharedPreferences();
@@ -173,7 +173,7 @@ Future<void> smokeScreen(
   final allOverrides = <Override>[
     if (withAppDeps) mockAppExternalDeps(),
     // Provide a default SharedPreferences mock so build-time reads of
-    // sharedPreferencesProvider (e.g. analyticsExcludedProvider,
+    // sharedPreferencesProvider (e.g. analyticsConsentProvider,
     // kyleThemeModeProvider) don't throw UnimplementedError. Individual
     // tests that need custom prefs behaviour can pass their own override
     // in [overrides]; it will appear later in the list and take precedence.

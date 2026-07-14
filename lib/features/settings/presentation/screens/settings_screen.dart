@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/services/analytics/analytics_excluded_pref.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -38,13 +37,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // If this device is already marked as excluded, auto-reveal the tester
+    // If this device is already flagged internal, auto-reveal the tester
     // section so the tester can see the current state and toggle it off if
     // needed — without requiring 7 taps every time they open Settings.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final excluded = ref.read(analyticsExcludedProvider);
-      if (excluded && !_showTesterSection) {
+      if (ref.read(internalDeviceFlagProvider) && !_showTesterSection) {
         setState(() => _showTesterSection = true);
       }
     });
@@ -114,13 +112,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Android secure storage is wiped on uninstall, so also add the device ID
   /// below to `kInternalDeviceIds` to make it permanent.
   Future<void> _onInternalToggled(bool value) async {
+    // Flag the Mixpanel People profile straight away. The `is_internal` super
+    // property is only re-registered at the next Mixpanel init, so without this
+    // the events fired between now and the next launch would go out untagged —
+    // and the profile itself would stay unflagged, so historical events could
+    // not be filtered out either. (This is the one useful thing the old
+    // "Exclude this device from analytics" toggle did; it is preserved here.)
+    if (value) {
+      await ref.read(analyticsTrackerProvider).markInternal();
+    }
+
     await ref.read(internalDeviceFlagProvider.notifier).setInternal(value);
     if (!mounted) return;
 
     if (value) {
       MealvanaSnackbar.showSuccess(
         context,
-        'Device marked internal. Takes effect on the next app launch.',
+        'Device marked internal. Events are tagged is_internal from the next '
+        'app launch.',
       );
     } else {
       MealvanaSnackbar.showInfo(
@@ -161,38 +170,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  /// Handles toggling the "Exclude this device from analytics" switch.
-  ///
-  /// Order of operations when ENABLING exclusion:
-  ///   1. Call markInternal() on the live tracker (while analytics is still
-  ///      active) to flag the Mixpanel profile for dashboard filtering.
-  ///   2. Persist the exclusion pref — this causes analyticsTrackerProvider
-  ///      to rebuild and return NoopAnalyticsTracker.
-  ///
-  /// When DISABLING exclusion:
-  ///   1. Clear the pref so analyticsTrackerProvider returns
-  ///      MixpanelAnalyticsTracker on the next app launch.
-  Future<void> _onAnalyticsExcludedToggled(bool excluded) async {
-    if (excluded) {
-      // Mark the profile BEFORE suppressing — order matters.
-      await ref.read(analyticsTrackerProvider).markInternal();
-      await ref.read(analyticsExcludedProvider.notifier).setExcluded(true);
-      if (mounted) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'This device is excluded from analytics. Mixpanel profile flagged.',
-        );
-      }
-    } else {
-      await ref.read(analyticsExcludedProvider.notifier).setExcluded(false);
-      if (mounted) {
-        MealvanaSnackbar.showInfo(
-          context,
-          'Analytics re-enabled. Changes take full effect on next app launch.',
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -365,11 +342,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Hidden "Developer / Tester" section.
   ///
   /// Revealed after the user taps the version text 7 times (or automatically
-  /// when the exclusion pref is already active). Lets internal testers exclude
-  /// their device from production Mixpanel analytics without needing to know
-  /// their device ID.
+  /// when this device is already flagged internal). Lets internal testers tag
+  /// their device so team traffic can be filtered out of Mixpanel reports
+  /// (`is_internal != true`) without needing to know their device ID.
   Widget _buildTesterSection(BuildContext context) {
-    final isExcluded = ref.watch(analyticsExcludedProvider);
     final isInternal = ref.watch(internalDeviceFlagProvider);
     final isForced = ref.read(internalDeviceFlagProvider.notifier).isForced;
 
@@ -414,27 +390,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               contentPadding: EdgeInsets.zero,
             ),
             _buildDeviceIdRow(context),
-            const Divider(),
-            SwitchListTile(
-              title: Text(
-                'Exclude this device from analytics (testers)',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              subtitle: Text(
-                isExcluded
-                    ? 'No events are sent to Mixpanel from this device.'
-                    : 'Analytics are active. Toggle to stop tracking on this device.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              value: isExcluded,
-              onChanged: _onAnalyticsExcludedToggled,
-              activeThumbColor: AppColors.electrolyte,
-              contentPadding: EdgeInsets.zero,
-            ),
             // Hidden paywall entry for purchase testing. Only present when the
             // AI-credits feature flag is on; keeps it out of the normal user UI.
             if (ref.watch(appConfigProvider).aiCreditsEnabled) ...[

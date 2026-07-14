@@ -324,7 +324,13 @@ class AppStartupService {
       // Must resolve BEFORE Mixpanel starts: the internal flag is registered as
       // a super property during initialize(), and events begin firing (see
       // `app_opened` below) immediately after. Purely local — no network call.
-      await InternalUserService.instance.initialize();
+      //
+      // Prefs are passed so it can carry testers off the removed
+      // "Exclude this device from analytics" toggle onto `is_internal`, rather
+      // than silently starting to track them.
+      await InternalUserService.instance.initialize(
+        prefs: ref.read(sharedPreferencesProvider),
+      );
 
       await _analytics.initialize();
 

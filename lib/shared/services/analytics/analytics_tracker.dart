@@ -8,7 +8,6 @@ import '../app_config.dart';
 import '../device_info_service.dart';
 import '../logging_service.dart';
 import '../privacy/analytics_consent.dart';
-import 'analytics_excluded_pref.dart';
 import 'internal_user_service.dart';
 
 /// Abstraction over analytics tracking so we can swap implementations in tests.
@@ -31,9 +30,10 @@ abstract class AnalyticsTracker {
   /// Flag the current Mixpanel profile as an internal/test device so that
   /// historical events can be filtered out in the dashboard.
   ///
-  /// Sets People property `is_internal = true` and flushes immediately.
-  /// Call this **before** suppressing analytics (i.e. before persisting the
-  /// excluded pref), so the event still reaches Mixpanel.
+  /// Sets People property `is_internal = true` and flushes immediately. Called
+  /// when the "Mark this device as internal" toggle is switched on: the
+  /// `is_internal` *super property* is only registered at Mixpanel init, so
+  /// without this the profile would stay unflagged until the next launch.
   /// No-op on [NoopAnalyticsTracker].
   Future<void> markInternal();
 }
@@ -393,14 +393,19 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 /// - Running in the development environment (`config.devModeEnabled`) UNLESS
 ///   the developer opted into the dev Mixpanel sandbox via
 ///   `ANALYTICS_DEV_ENABLED` (`config.analyticsDevEnabled`) — which routes dev
-///   events to the "Mealvana Endurance Dev" project for verification, OR
-/// - The device is excluded via the hidden "Developer / Tester" toggle in
-///   Settings (`analyticsExcludedProvider`).
+///   events to the "Mealvana Endurance Dev" project for verification.
 ///
 /// In all other cases returns [MixpanelAnalyticsTracker].
+///
+/// There used to be a third condition here: a hidden "Exclude this device from
+/// analytics (testers)" toggle that dropped the device's events outright. It was
+/// superseded by `is_internal` (see [InternalUserService]), which tags team
+/// events instead of suppressing them — so the traffic can be filtered out of
+/// reports with `is_internal != true` while still being *visible* as team usage.
+/// A tester who wants nothing sent at all now uses Settings → Privacy, which
+/// lands on the consent gate above.
 final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
   final config = ref.watch(appConfigProvider);
-  final analyticsExcluded = ref.watch(analyticsExcludedProvider);
   final consent = ref.watch(analyticsConsentProvider);
 
   // Consent gate. Withdrawal flows through here too: flipping the Settings
@@ -410,9 +415,8 @@ final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
     return const NoopAnalyticsTracker();
   }
 
-  // No-op in dev (unless the dev-sandbox flag is set) or on opted-out devices.
-  if ((config.devModeEnabled && !config.analyticsDevEnabled) ||
-      analyticsExcluded) {
+  // No-op in dev unless the dev-sandbox flag is set.
+  if (config.devModeEnabled && !config.analyticsDevEnabled) {
     return const NoopAnalyticsTracker();
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../device_info_service.dart';
 import '../../utils/platform_io.dart'
@@ -80,12 +81,18 @@ class InternalUserService {
       !kReleaseMode ||
       kInternalDeviceIds.contains(deviceId);
 
+  /// Legacy key of the removed "Exclude this device from analytics (testers)"
+  /// toggle. See [_migrateLegacyExclusion].
+  static const String _legacyExcludedKey = 'analytics_excluded';
+
   /// Resolve the flag. Call once during startup, BEFORE `AnalyticsTracker
   /// .initialize()`, so the super property is in place for the first event.
   ///
   /// Requires [DeviceInfoService] to already be initialized.
-  Future<void> initialize() async {
+  Future<void> initialize({SharedPreferences? prefs}) async {
     if (_isInitialized) return;
+
+    if (prefs != null) await _migrateLegacyExclusion(prefs);
 
     // Compile-time signals (1 + 2) and the device allowlist (4) are all
     // authoritative — short-circuit before touching storage.
@@ -100,6 +107,34 @@ class InternalUserService {
     _isInternal = await _readPersistedFlag();
 
     _isInitialized = true;
+  }
+
+  /// One-time migration off the old "Exclude this device from analytics"
+  /// toggle, which this flag supersedes.
+  ///
+  /// That toggle predated `is_internal` and did the same job more bluntly: it
+  /// dropped the device's events entirely, so team usage was invisible rather
+  /// than merely filterable. `is_internal` tags instead of suppressing, which
+  /// keeps the data and lets reports exclude it with `is_internal != true`.
+  ///
+  /// The migration matters because simply deleting the old toggle would
+  /// silently start tracking every tester who had switched it on — they asked
+  /// to be kept out of the numbers, and dropping the pref on the floor would
+  /// quietly overrule them. Carrying them over to `is_internal` honours that.
+  ///
+  /// (A tester who wants NOTHING sent, rather than merely tagged, now uses
+  /// Settings → Privacy, which returns a NoopAnalyticsTracker.)
+  Future<void> _migrateLegacyExclusion(SharedPreferences prefs) async {
+    if (prefs.getBool(_legacyExcludedKey) != true) return;
+
+    try {
+      await _storage.write(key: _internalFlagKey, value: 'true');
+    } catch (_) {
+      // Secure storage unavailable — analytics must never crash the app. The
+      // pref is deliberately left in place so we can retry on the next launch.
+      return;
+    }
+    await prefs.remove(_legacyExcludedKey);
   }
 
   /// Persist (or clear) the internal flag for this device and update the cached

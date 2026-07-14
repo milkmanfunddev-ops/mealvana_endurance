@@ -131,9 +131,15 @@ void main() {
       );
     });
 
-    test('the hidden tester exclusion still suppresses, even with consent',
-        () async {
+    // The old "Exclude this device from analytics (testers)" toggle used to
+    // force a Noop here. It was removed in favour of `is_internal`, which tags
+    // team events rather than dropping them — so a stale `analytics_excluded`
+    // pref left on an old install must NOT still be suppressing analytics.
+    // (Testers who had it set are migrated onto `is_internal` at startup; see
+    // InternalUserService._migrateLegacyExclusion.)
+    test('the removed tester-exclusion pref no longer suppresses', () async {
       final container = await containerWith({
+        ...geo('US', 'CA'),
         'analytics_consent_status': 'granted',
         'analytics_consent_version': kConsentVersion,
         'analytics_excluded': true,
@@ -142,7 +148,7 @@ void main() {
 
       expect(
         container.read(analyticsTrackerProvider),
-        isA<NoopAnalyticsTracker>(),
+        isA<MixpanelAnalyticsTracker>(),
       );
     });
   });
