@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../app_config.dart';
 import '../device_info_service.dart';
@@ -212,8 +213,22 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
           ? deviceInfoService.deviceInfo
           : {'os_version': 'unknown', 'device_model': 'unknown'};
 
+      // Was hardcoded to '1.3.0', so EVERY event this app has ever sent
+      // reported that version as a Mixpanel super property — blinding every
+      // version-segmented query, including "did the fix ship?". Read the real
+      // version instead so it stays correct across releases without a code
+      // change. Historical events keep their bogus '1.3.0'; they are not
+      // backfilled.
+      String appVersion = 'unknown';
+      try {
+        final packageInfo = await PackageInfo.fromPlatform();
+        appVersion = packageInfo.version;
+      } catch (_) {
+        // Analytics must never crash the app; 'unknown' is a usable bucket.
+      }
+
       final superProps = <String, dynamic>{
-        'app_version': '1.3.0',
+        'app_version': appVersion,
         'platform': deviceInfo['device_model']?.contains('iPhone') == true ? 'iOS' : 'Android',
         'os_version': deviceInfo['os_version'] ?? 'unknown',
         'device_model': deviceInfo['device_model'] ?? 'unknown',
