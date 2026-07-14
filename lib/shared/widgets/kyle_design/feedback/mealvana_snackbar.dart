@@ -94,10 +94,9 @@ class MealvanaSnackbar {
   }
 
   /// Shows an info snackbar with blackberry background.
-  /// Returns the [ScaffoldFeatureController] so callers can force-dismiss the
-  /// snackbar themselves (e.g. as a backstop against Flutter's built-in
-  /// auto-dismiss timer not arming when the entrance animation is interrupted
-  /// by a rebuild storm).
+  ///
+  /// Returns the [ScaffoldFeatureController] so callers can dismiss the bar
+  /// early if they need to.
   static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showInfo(
     BuildContext context,
     String message, {
@@ -105,6 +104,7 @@ class MealvanaSnackbar {
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    bool persist = false,
   }) {
     return _show(
       context,
@@ -114,6 +114,7 @@ class MealvanaSnackbar {
       actionLabel: actionLabel,
       onAction: onAction,
       showIcon: showIcon,
+      persist: persist,
     );
   }
 
@@ -152,6 +153,7 @@ class MealvanaSnackbar {
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    bool persist = false,
   }) {
     // Clear any existing snackbars first
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -197,6 +199,13 @@ class MealvanaSnackbar {
           vertical: AppSpacing.md,
         ),
         duration: duration,
+        // SnackBar.persist defaults to `action != null` (snack_bar.dart:303),
+        // so ANY snackbar with an action — e.g. "Undo" — stays on screen
+        // forever, ignoring `duration`. We want the timeout to apply whether or
+        // not there's an action, so state it explicitly rather than inheriting
+        // that default. Pass persist: true only for a bar that must wait on the
+        // user.
+        persist: persist,
         action: actionLabel != null && onAction != null
             ? SnackBarAction(
                 label: actionLabel,

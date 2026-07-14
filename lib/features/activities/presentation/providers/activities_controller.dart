@@ -6,6 +6,7 @@ import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../auth/application/supabase_auth_service.dart';
@@ -156,6 +157,7 @@ class ActivitiesController extends _$ActivitiesController {
     String? brickId,
   }) async {
     try {
+      final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
 
       final createdActivity = await _service.createActivity(
@@ -185,6 +187,35 @@ class ActivitiesController extends _$ActivitiesController {
         brickMetadata: brickMetadata,
         brickId: brickId,
       );
+
+      // The "used the core function" signal. Everything reaching this
+      // controller is a user planning a workout by hand; provider-synced
+      // workouts never come through here (they go straight to
+      // `activitiesRepository.insertActivity`), so `source` is always manual.
+      try {
+        ref.read(appExternalDepsProvider).analytics.track(
+          'workout_planned',
+          properties: {
+            'sport': activityType.name,
+            'duration_min': durationMinutes,
+            'source': 'manual',
+            'activity_id': createdActivity.id,
+            'is_coach_created': forUserId != null,
+          },
+        );
+      } catch (_) {}
+
+      if (priorCount == 0) {
+        try {
+          ref.read(appExternalDepsProvider).analytics.track(
+            'first_activity_added',
+            properties: {
+              'activity_type': activityType.name,
+              'activity_id': createdActivity.id,
+            },
+          );
+        } catch (_) {}
+      }
 
       // Refresh activities list
       ref.invalidateSelf();
@@ -219,11 +250,14 @@ class ActivitiesController extends _$ActivitiesController {
   /// Removes the activity from the current list state IN PLACE rather than
   /// calling `invalidateSelf()`. invalidateSelf forces a full re-fetch, which
   /// pushes dependents (the fuel-timeline dashboard) through a loading
-  /// transition — that rebuilds the Scaffold hosting the "Activity deleted"
-  /// snackbar and orphans its auto-dismiss timer (the snackbar sticks), and
-  /// also flashes the card instead of removing it cleanly. Optimistic
-  /// removal disappears the card instantly, keeps the snackbar timer intact,
-  /// and rolls back if the persist fails.
+  /// transition and flashes the card instead of removing it cleanly. Optimistic
+  /// removal disappears the card instantly and rolls back if the persist fails.
+  ///
+  /// NB: this has nothing to do with the long-running "Activity deleted
+  /// snackbar never dismisses" bug, despite what earlier comments here claimed.
+  /// That was `SnackBar.persist`, which Flutter defaults to `action != null` —
+  /// so any bar with an Undo action ignored its timeout. Fixed in
+  /// `MealvanaSnackbar._show`. Provider churn was never involved.
   Future<void> deleteActivity(String activityId) async {
     final previous = state.value ?? const <Activity>[];
     // Optimistically drop the card so the UI updates immediately with no
@@ -250,12 +284,11 @@ class ActivitiesController extends _$ActivitiesController {
   /// timeline's swipe-delete.
   ///
   /// Optimistically re-inserts [activity] into list state (ordered by schedule)
-  /// and persists WITHOUT `invalidateSelf()`, exactly mirroring [deleteActivity].
-  /// Using the general [updateActivity] here would call `invalidateSelf()`,
-  /// pushing dependents (the fuel-timeline dashboard) through a loading
-  /// transition that rebuilds the Scaffold hosting the "Activity deleted"
-  /// snackbar and orphans its auto-dismiss timer. Writing the pre-delete
-  /// [Activity] back clears the soft-delete because its `deletedAt` is null.
+  /// and persists WITHOUT `invalidateSelf()`, exactly mirroring [deleteActivity]
+  /// — the general [updateActivity] would call `invalidateSelf()` and push
+  /// dependents (the fuel-timeline dashboard) through a loading transition,
+  /// flashing the card back in. Writing the pre-delete [Activity] back clears
+  /// the soft-delete because its `deletedAt` is null.
   Future<void> restoreActivity(Activity activity) async {
     final previous = state.value ?? const <Activity>[];
     // Optimistically re-add (guard against a duplicate) and keep the list

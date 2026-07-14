@@ -1,9 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/navigation/open_activity_fuel.dart';
@@ -294,8 +294,7 @@ class FuelTimelineScreen extends ConsumerWidget {
   /// [_deleteMealWithUndo]. Undo restores the pre-delete [Activity] via
   /// `restoreActivity`, which optimistically re-inserts it and persists the
   /// object as given — including its (null) `deletedAt`, which clears the
-  /// soft-delete — without the `invalidateSelf()` churn that would orphan this
-  /// snackbar's auto-dismiss timer.
+  /// soft-delete.
   void _deleteActivityWithUndo(
     BuildContext context,
     WidgetRef ref,
@@ -305,11 +304,10 @@ class FuelTimelineScreen extends ConsumerWidget {
     final notifier = ref.read(activitiesControllerProvider.notifier);
     notifier.deleteActivity(activity.id);
     messenger.clearSnackBars();
-    const showDuration = Duration(seconds: 3);
-    final controller = MealvanaSnackbar.showInfo(
+    MealvanaSnackbar.showInfo(
       context,
       'Activity deleted',
-      duration: showDuration,
+      duration: const Duration(seconds: 3),
       actionLabel: 'Undo',
       // Read the notifier fresh at tap time (the autoDispose provider may have
       // been recreated since delete) and surface any failure — restoreActivity
@@ -326,19 +324,6 @@ class FuelTimelineScreen extends ConsumerWidget {
         }
       },
     );
-    // Backstop dismissal. A SnackBar's built-in auto-dismiss timer only arms
-    // once its entrance animation completes; the provider-rebuild churn that
-    // follows an activity delete can interrupt that animation, so the timer
-    // never starts and the bar sticks forever. Force-close it ourselves after
-    // the duration, independent of the internal timer. `close()` is a no-op if
-    // the bar already went away (natural dismiss or Undo tap).
-    Timer(showDuration + const Duration(milliseconds: 250), () {
-      try {
-        controller.close();
-      } catch (_) {
-        // Controller already completed/closed — nothing to do.
-      }
-    });
   }
 
   /// Opens the New Activity screen prefilled with [activity]'s data, matching
@@ -389,7 +374,11 @@ class FuelTimelineScreen extends ConsumerWidget {
               label: '+ Add Food',
               color: onSurface.withValues(alpha: 0.8),
               onTap: () =>
-                  openLogMealScreen(context, logDate: _ymd(selectedDate)),
+                  openLogMealScreen(
+                    context,
+                    logDate: _ymd(selectedDate),
+                    source: 'fuel_timeline',
+                  ),
             ),
           ),
         if (filter.showsAddFood && filter.showsAddActivity)
@@ -400,10 +389,17 @@ class FuelTimelineScreen extends ConsumerWidget {
               key: const ValueKey('fuel_timeline.add_activity'),
               label: '+ Add Activity',
               color: AppColors.orange,
-              onTap: () => context.pushNamed(
-                'distancepacegut',
-                extra: {'initialDate': selectedDate},
-              ),
+              onTap: () {
+                ref
+                    .read(analyticsTrackerProvider)
+                    .trackActivityButtonPressed(
+                      selectedDate: selectedDate,
+                    );
+                context.pushNamed(
+                  'distancepacegut',
+                  extra: {'initialDate': selectedDate},
+                );
+              },
             ),
           ),
       ],

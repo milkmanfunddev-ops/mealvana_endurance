@@ -141,7 +141,10 @@ void main() {
       expect(find.text('7:30 AM'), findsNothing);
     });
 
-    testWidgets('swipe left→right fires onRemove (swipe to delete)',
+    // Swipe direction was flipped to the iOS convention in 24470df8: right→left
+    // (endToStart) removes, left→right (startToEnd) swaps/edits. These two tests
+    // still asserted the old mapping and had been red on develop ever since.
+    testWidgets('swipe right→left fires onRemove (swipe to delete)',
         (tester) async {
       var removed = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
@@ -151,12 +154,12 @@ void main() {
         onRemove: () => removed = true,
         onSwap: () {},
       )));
-      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
+      await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
       await tester.pumpAndSettle();
       expect(removed, isTrue);
     });
 
-    testWidgets('swipe right→left fires onSwap (swipe to swap)',
+    testWidgets('swipe left→right fires onSwap (swipe to swap)',
         (tester) async {
       var swapped = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
@@ -166,7 +169,7 @@ void main() {
         onRemove: () {},
         onSwap: () => swapped = true,
       )));
-      await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
+      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
       await tester.pumpAndSettle();
       expect(swapped, isTrue);
     });
@@ -208,7 +211,7 @@ void main() {
       expect(find.byIcon(Icons.directions_bike), findsNothing);
     });
 
-    testWidgets('workout swipe left→right fires onRemove', (tester) async {
+    testWidgets('workout swipe right→left fires onRemove', (tester) async {
       var removed = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: WorkoutNode(ride()),
@@ -217,12 +220,12 @@ void main() {
         onRemove: () => removed = true,
         onSwap: () {},
       )));
-      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
+      await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
       await tester.pumpAndSettle();
       expect(removed, isTrue);
     });
 
-    testWidgets('workout swipe right→left fires onSwap', (tester) async {
+    testWidgets('workout swipe left→right fires onSwap', (tester) async {
       var swapped = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: WorkoutNode(ride()),
@@ -231,7 +234,7 @@ void main() {
         onRemove: () {},
         onSwap: () => swapped = true,
       )));
-      await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
+      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
       await tester.pumpAndSettle();
       expect(swapped, isTrue);
     });

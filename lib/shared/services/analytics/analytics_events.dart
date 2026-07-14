@@ -91,6 +91,17 @@ extension AnalyticsEvents on AnalyticsTracker {
     });
   }
 
+  // 2b. Activity Navigation Events
+
+  Future<void> trackActivityButtonPressed({
+    required DateTime selectedDate,
+  }) {
+    return track('activity_button_pressed', properties: {
+      'timestamp': DateTime.now().toIso8601String(),
+      'selected_date': selectedDate.toIso8601String(),
+    });
+  }
+
   // 3. Plan Modification Events — removed 2026-07. The trackPlanSaved,
   // trackMacrosEdited, trackMacroInfoViewed and trackPlanItem* wrappers were
   // never called anywhere, so their events never reached Mixpanel. Re-add

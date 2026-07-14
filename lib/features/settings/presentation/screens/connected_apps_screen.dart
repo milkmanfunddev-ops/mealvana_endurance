@@ -9,6 +9,7 @@ import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -26,7 +27,12 @@ import '../../../../shared/widgets/content_area.dart';
 /// - Auto-imports workouts after connecting
 /// - Shows "Connect" for Garmin, "Notify Me" for other coming soon providers
 class ConnectedAppsScreen extends ConsumerStatefulWidget {
-  const ConnectedAppsScreen({super.key, this.onContinue, this.onBack});
+  const ConnectedAppsScreen({
+    super.key,
+    this.onContinue,
+    this.onBack,
+    this.stepIndex,
+  });
 
   /// Callback to advance to next page in onboarding PageView
   /// If null, screen is in settings mode
@@ -34,6 +40,10 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back in onboarding PageView
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null in settings mode.
+  final int? stepIndex;
 
   @override
   ConsumerState<ConnectedAppsScreen> createState() =>
@@ -70,6 +80,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   @override
   void initState() {
     super.initState();
+
+    // This is onboarding step 0, and until now it fired no `screen_viewed` at
+    // all — so the funnel had no denominator: we could see users completing
+    // step 0 but never how many reached it. Every other step already tracks
+    // this in initState; match them.
+    ref.read(appExternalDepsProvider).analytics.track(
+      'screen_viewed',
+      properties: {
+        'screen_name': isOnboarding
+            ? 'Connect Training Onboarding'
+            : 'Connected Apps Settings',
+        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+      },
+    );
+
     // Refresh integration status when screen loads (especially important
     // for settings mode after connecting in onboarding)
     if (!isOnboarding) {

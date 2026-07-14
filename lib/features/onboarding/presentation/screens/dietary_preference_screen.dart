@@ -27,6 +27,7 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
     this.mode = ScreenMode.onboarding,
     this.onContinue,
     this.onBack,
+    this.stepIndex,
   });
 
   /// The screen mode determines visual style and navigation behavior
@@ -37,6 +38,11 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null in settings mode, where the
+  /// screen is not part of a funnel.
+  final int? stepIndex;
 
   @override
   ConsumerState<DietaryPreferenceScreen> createState() =>
@@ -59,10 +65,13 @@ class _DietaryPreferenceScreenState
     final screenName = _isOnboarding
         ? 'Dietary Preference Onboarding'
         : 'Dietary Preference Settings';
-    ref
-        .read(appExternalDepsProvider)
-        .analytics
-        .track('screen_viewed', properties: {'screen_name': screenName});
+    ref.read(appExternalDepsProvider).analytics.track(
+      'screen_viewed',
+      properties: {
+        'screen_name': screenName,
+        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+      },
+    );
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {

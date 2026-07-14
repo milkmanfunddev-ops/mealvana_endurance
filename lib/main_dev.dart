@@ -13,6 +13,7 @@ import 'shared/services/app_external_deps.dart';
 import 'shared/services/sentry/sentry_event_filter.dart';
 import 'shared/services/sentry/sentry_provider_observer.dart';
 import 'shared/widgets/root_app_widget.dart';
+import 'shared/services/privacy/analytics_consent.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
 /// This key is used by SentryFeedbackWidget to navigate and capture screenshots
@@ -36,6 +37,12 @@ Future<void> main() async {
     final sentryRelease =
         'mealvana_endurance@${packageInfo.version}+${packageInfo.buildNumber}';
     final sentryDist = packageInfo.buildNumber;
+
+    // Consent must be resolved BEFORE Sentry is configured: session replay is
+    // armed at init and cannot be disarmed for the rest of the session.
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final analyticsConsented =
+        analyticsConsentGrantedFromPrefs(sharedPreferences);
 
     // Initialize Sentry with configuration from .env
     await SentryFlutter.init(
@@ -72,8 +79,20 @@ Future<void> main() async {
         // Captures video-like replay of user sessions for debugging
         // Disabled in debug mode to avoid verbose codec initialization logs
         // Only capture replays when errors occur in production (not regular sessions)
-        if (kDebugMode) {
-          // Completely disable replay in debug to avoid 200+ lines of codec logs
+        // Session replay rides on the SAME consent flag as Mixpanel: a rolling
+        // recording of the user's session is non-essential "usage data" under
+        // Apple 5.1.1(ii) and under ePrivacy, so it needs consent.
+        //
+        // Crash + performance reporting are deliberately NOT gated. They are
+        // necessary to keep the app working (legitimate interest), run with
+        // sendDefaultPii = false, and the SDK masks all text and images by
+        // default. Going blind on crashes for users who decline analytics would
+        // cost real stability for no privacy gain.
+        //
+        // Read once, at init: a user who withdraws mid-session stops Mixpanel
+        // immediately, but replay stays armed until the next launch.
+        if (kDebugMode || !analyticsConsented) {
+          // Also disabled in debug to avoid 200+ lines of codec logs.
           options.replay.sessionSampleRate = 0.0;
           options.replay.onErrorSampleRate = 0.0;
         } else {
@@ -138,7 +157,7 @@ Future<void> main() async {
       return true;
     };
 
-    await _runMealvanaApp(config);
+    await _runMealvanaApp(config, sharedPreferences);
   }, (exception, stackTrace) async {
     // Capture any uncaught exceptions
     await Sentry.captureException(exception, stackTrace: stackTrace);
@@ -146,7 +165,10 @@ Future<void> main() async {
 }
 
 /// App runner function called after Sentry initialization
-Future<void> _runMealvanaApp(AppConfig config) async {
+Future<void> _runMealvanaApp(
+  AppConfig config,
+  SharedPreferences sharedPreferences,
+) async {
   // Initialize Supabase with SentryHttpClient to instrument network calls.
   await Supabase.initialize(
     url: config.supabaseUrl,
@@ -154,8 +176,6 @@ Future<void> _runMealvanaApp(AppConfig config) async {
     httpClient: SentryHttpClient(),
   );
 
-  // Initialize SharedPreferences (non-recoverable, required for app startup)
-  final sharedPreferences = await SharedPreferences.getInstance();
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
   // Widget hierarchy:

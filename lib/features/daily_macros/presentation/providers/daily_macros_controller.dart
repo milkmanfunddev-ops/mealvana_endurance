@@ -6,10 +6,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../application/daily_macro_service.dart';
 import '../../data/daily_macro_targets_repository.dart';
 import '../../domain/daily_macro_targets.dart';
+import '../../domain/macro_cache_invalidation.dart';
 
 part 'daily_macros_controller.g.dart';
 
@@ -33,9 +35,19 @@ class DailyMacrosState {
 
 @riverpod
 class DailyMacrosController extends _$DailyMacrosController {
-  /// Track the last activities data identity to detect real activity changes
-  /// vs. date-only rebuilds.
-  Object? _lastActivitiesData;
+  /// Last activity list we costed macros against, used to detect *real*
+  /// activity changes vs. rebuilds that carry the same activities (a date
+  /// switch, an autoDispose recreation, an `invalidateSelf()` refresh that
+  /// re-fetches identical rows).
+  ///
+  /// Compared with [listEquals], NOT `identical`: every re-fetch hands us a new
+  /// `List` instance, so an identity check reports "changed" whenever the list
+  /// object is merely rebuilt — wiping the user's entire macro cache and firing
+  /// two edge-function round trips for no reason. `Activity` has value equality,
+  /// so an element-wise compare is what actually answers "did the activities
+  /// change?". Mirrors the `listEquals` guard in
+  /// `ActivitiesController._refreshInPlace`.
+  List<Activity>? _lastActivities;
 
   @override
   FutureOr<DailyMacrosState> build() async {
@@ -65,14 +77,26 @@ class DailyMacrosController extends _$DailyMacrosController {
     final service = ref.read(dailyMacroServiceProvider);
     final repository = ref.read(dailyMacroTargetsRepositoryProvider);
 
-    // Detect if activities actually changed (not just a date switch rebuild).
-    final currentActivitiesData = activitiesAsync.whenData((d) => d);
-    if (_lastActivitiesData != null &&
-        !identical(currentActivitiesData.value, _lastActivitiesData)) {
-      // Activities changed — clear ALL cached macros for this user.
-      await repository.invalidateAllForUser(profile.id);
+    // Detect if activities actually changed (not just a rebuild carrying the
+    // same activities), and invalidate ONLY the cached days whose inputs moved.
+    // `macroDatesToInvalidate` derives that window from the activity diff; see
+    // domain/macro_cache_invalidation.dart for why it's the activity's Mon–Sun
+    // week plus the day either side, and nothing more.
+    final currentActivities = activitiesAsync.value;
+    if (_lastActivities != null &&
+        currentActivities != null &&
+        !listEquals(currentActivities, _lastActivities)) {
+      final stale = macroDatesToInvalidate(_lastActivities!, currentActivities);
+      if (stale.isNotEmpty) {
+        await repository.invalidateDates(profile.id, stale);
+      }
     }
-    _lastActivitiesData = currentActivitiesData.value;
+    // Don't clobber the baseline with null while activities are loading/errored,
+    // or the next real change would compare against nothing and skip the
+    // invalidation it owes.
+    if (currentActivities != null) {
+      _lastActivities = currentActivities;
+    }
 
     // Calculate today's macros first (uses cache if available, else calls edge fn).
     // Catch the precise failure reason so the UI can show it.

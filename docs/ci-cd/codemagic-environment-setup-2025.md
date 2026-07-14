@@ -183,6 +183,24 @@ Add these variables one by one:
 
 **Total variables in `mealvana_dev`**: 24 variables
 
+#### `ANALYTICS_DEV_ENABLED` — read this before changing analytics config
+
+This flag is **not** a CodeMagic variable. It has to live *inside* the
+`DOTENV_DEV_LOCAL` secret, because `app_config.dart` reads it from the bundled
+`.env.dev.local` asset via dotenv — not from the process environment.
+
+It defaults to `false`, and `analytics_tracker.dart` hands back a
+`NoopAnalyticsTracker` for any dev build without it, silently discarding every
+event (nothing reaches Mixpanel, and nothing errors in Sentry). That is what made
+dev analytics work on developers' emulators — their local `.env.dev.local` has the
+flag — while the CodeMagic-built dev app sent nothing (Notion 399e3fdb).
+
+The `Write .env files from Codemagic secrets` step in `codemagic.yaml` now appends
+`ANALYTICS_DEV_ENABLED=true` to `.env.dev.local` when the secret does not already
+contain it, so dev builds always report to the dev Mixpanel board. The append is
+idempotent and only touches the dev file, so adding the line to the
+`DOTENV_DEV_LOCAL` secret as well is harmless.
+
 ---
 
 ## Step 3: Configure Prod Flavor Variables

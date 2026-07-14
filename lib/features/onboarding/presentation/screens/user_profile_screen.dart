@@ -20,13 +20,22 @@ import '../../../../shared/widgets/adaptive/adaptive.dart';
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
 class UserProfileScreen extends ConsumerStatefulWidget {
-  const UserProfileScreen({super.key, this.onContinue, this.onBack});
+  const UserProfileScreen({
+    super.key,
+    this.onContinue,
+    this.onBack,
+    this.stepIndex,
+  });
 
   /// Callback to advance to next page (optional for PageView mode)
   final VoidCallback? onContinue;
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null outside onboarding.
+  final int? stepIndex;
 
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -112,13 +121,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       });
     }
 
-    ref
-        .read(appExternalDepsProvider)
-        .analytics
-        .track(
-          'screen_viewed',
-          properties: {'screen_name': 'User Profile Onboarding'},
-        );
+    ref.read(appExternalDepsProvider).analytics.track(
+      'screen_viewed',
+      properties: {
+        'screen_name': 'User Profile Onboarding',
+        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+      },
+    );
   }
 
   /// Load profile data from connected integrations (Training Peaks takes precedence)

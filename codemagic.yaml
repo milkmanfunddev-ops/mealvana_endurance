@@ -212,6 +212,20 @@ definitions:
         printf '%s' "${DOTENV_PROD_LOCAL:-}" > .env.prod.local
         echo "wrote .env ($(wc -c < .env) bytes), .env.dev.local ($(wc -c < .env.dev.local) bytes), .env.prod.local ($(wc -c < .env.prod.local) bytes)"
 
+        # Dev analytics opt-in. app_config.dart defaults ANALYTICS_DEV_ENABLED to
+        # 'false', and analytics_tracker.dart swaps in a NoopAnalyticsTracker for any
+        # dev build without it — silently discarding every event, with nothing in
+        # Sentry to show for it. Developers set the flag in their own .env.dev.local,
+        # but it was never added to the DOTENV_DEV_LOCAL secret, so CodeMagic-built dev
+        # apps sent nothing to the dev Mixpanel board while emulator builds worked.
+        # Guarantee it here instead of depending on the secret's contents.
+        # Only applies to dev: prod reads .env.prod.local, and on prod workflows
+        # DOTENV_DEV_LOCAL is unset so this file is an empty stub and is left alone.
+        if [ -s .env.dev.local ] && ! grep -q '^ANALYTICS_DEV_ENABLED=' .env.dev.local; then
+          printf '\nANALYTICS_DEV_ENABLED=true\n' >> .env.dev.local
+          echo "appended ANALYTICS_DEV_ENABLED=true to .env.dev.local"
+        fi
+
 workflows:
   # ============================================================
   # DEV WORKFLOWS — auto-triggered on push to `develop`
@@ -914,10 +928,14 @@ workflows:
           echo "Next iOS build number: $NEXT"
 
       - name: Build prod-flavor-code with dev bundle (iOS)
+        # IS_INTERNAL: this build loads .env.prod.local, so it talks to the
+        # PRODUCTION Mixpanel project. It only ever goes to the team, so tag its
+        # events is_internal to keep them out of production reports.
         script: |
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_prod.dart \
+            --dart-define=IS_INTERNAL=true \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 

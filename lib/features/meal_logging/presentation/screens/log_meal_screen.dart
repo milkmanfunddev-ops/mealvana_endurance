@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
@@ -50,10 +51,14 @@ import 'log_scanned_food_screen.dart';
 /// (`openBuildMealScreen`), reachable via the "Build a meal" app-bar action.
 /// A unified search bar at the top searches foods, recipes, common
 /// ingredients, and favorites/recents together.
+/// [source] is required rather than defaulted: it used to default to
+/// `today_log_section`, so the fuel-timeline entry point silently reported
+/// itself as coming from the today-log section and the `diary_opened` source
+/// breakdown was wrong. Making callers name themselves keeps that honest.
 void openLogMealScreen(
   BuildContext context, {
   required String logDate,
-  String source = 'today_log_section',
+  required String source,
 }) {
   Navigator.of(context).push<void>(
     MaterialPageRoute(
@@ -125,10 +130,24 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   List<Recipe> _recipes = [];
   bool _recipesLoading = false;
 
+  /// Resolved in [initState] — `ref` is not safe to touch from [dispose],
+  /// where `diary_closed` fires.
+  AnalyticsTracker? _analytics;
+
+  /// Start of the dwell window for `diary_closed`.
+  DateTime? _openedAt;
+
+  /// Counts only *successful* quick-logs (see [_afterQuickLog]), so a failed
+  /// log doesn't inflate the diary's productivity.
+  int _itemsLogged = 0;
+
   @override
   void initState() {
     super.initState();
-    ref.read(appExternalDepsProvider).analytics.track(
+    _analytics = ref.read(appExternalDepsProvider).analytics;
+    _openedAt = DateTime.now();
+
+    _analytics?.track(
       'log_meal_opened',
       properties: {
         'source': widget.source,
@@ -136,6 +155,20 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         'is_today': _isToday(),
       },
     );
+
+    // `diary_opened` is the funnel-spec name for the same moment. Fired
+    // alongside `log_meal_opened` rather than replacing it, so the existing
+    // Mixpanel reports built on `log_meal_opened` keep working; it pairs with
+    // `diary_closed` to give dwell time.
+    _analytics?.track(
+      'diary_opened',
+      properties: {
+        'source': widget.source,
+        'log_date': widget.logDate,
+        'is_today': _isToday(),
+      },
+    );
+
     // The unified search bar is always visible, so seed its data eagerly
     // rather than gating behind a tab selection.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -167,6 +200,23 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
   @override
   void dispose() {
+    // Dwell time — how long the athlete actually spent in the diary, and
+    // whether they logged anything while there. A high `duration_sec` with
+    // `items_logged: 0` is the signal that the diary looked but didn't land.
+    final openedAt = _openedAt;
+    if (_analytics != null && openedAt != null) {
+      try {
+        _analytics!.track(
+          'diary_closed',
+          properties: {
+            'duration_sec': DateTime.now().difference(openedAt).inSeconds,
+            'items_logged': _itemsLogged,
+            'log_date': widget.logDate,
+          },
+        );
+      } catch (_) {}
+    }
+
     _searchCtrl.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -325,6 +375,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     if (!mounted) return;
     final state = ref.read(mealLogControllerProvider);
     if (state is AsyncData) {
+      // Counted here, in the success branch only — `items_logged` on
+      // `diary_closed` should reflect what actually landed, not what was
+      // attempted.
+      _itemsLogged++;
       MealvanaSnackbar.showSuccess(context, 'Meal logged!');
     } else if (state is AsyncError) {
       MealvanaSnackbar.showError(

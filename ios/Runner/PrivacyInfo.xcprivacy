@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Verified against the code 2026-07-13. Keep in sync with BOTH:
+	  - the live App Store Connect privacy label, and
+	  - docs/privacy/app_store_privacy_details.md
+
+	NSPrivacyTracking is false and stays false: no IDFA, no ad SDKs, no data
+	broker sharing. That means the ATT prompt is genuinely not required — but it
+	is NOT an exemption from App Review Guideline 5.1.1(ii), which requires
+	consent for usage/analytics data even when anonymous. That consent is the
+	in-app gate (lib/shared/services/privacy/analytics_consent.dart).
+
+	Processors: Supabase (backend), Mixpanel (product analytics), Sentry
+	(crash/performance/session replay), OneSignal (notifications),
+	RevenueCat (payments).
+-->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTracking</key>
@@ -8,7 +23,10 @@
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
-		<!-- Health Data (nutrition, biometrics - weight, height, age) -->
+		<!-- Health Data (weight, age, gender, gut-training level).
+		     Analytics purpose is REQUIRED, not optional: identifyUser() sets
+		     Gender / Age / Weight (lbs) / Gut Training Level as Mixpanel People
+		     properties and fires user_identified with the same values. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeHealth</string>
@@ -19,9 +37,11 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Fitness Data (activity data - running distance, pace) -->
+		<!-- Fitness Data (workouts, distance, pace; "runs with water bottle").
+		     Also reaches Mixpanel via identifyUser() / activity events. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeFitness</string>
@@ -32,48 +52,55 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Crash Data (Sentry error tracking) -->
+		<!-- Crash Data (Sentry). LINKED: setUserContext() attaches the device id
+		     (and gut-training level) to Sentry events. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeCrashData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Performance Data (app performance metrics) -->
+		<!-- Performance Data (Sentry traces + profiling). Linked, same reason. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypePerformanceData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Other Diagnostic Data -->
+		<!-- Other Diagnostic Data (Sentry breadcrumbs, session replay).
+		     Session replay is masked (maskAllText/maskAllImages default true)
+		     and is gated on analytics consent. Linked, same reason. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Product Interaction (usage analytics - Mixpanel) -->
+		<!-- Product Interaction (Mixpanel screen/feature events). Gated on consent. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
@@ -84,9 +111,12 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
-		<!-- User ID (anonymous device ID) -->
+		<!-- User ID (Supabase user id; anonymous device id IDFV/SSAID as the
+		     Mixpanel distinct_id for guests). Used for both app functionality
+		     and as the analytics identity. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeUserID</string>
@@ -97,14 +127,21 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Precise Location (for weather forecasts) -->
+		<!-- Precise Location (weather forecasts only).
+		     NOT linked, and this is deliberate: coordinates go to the weather
+		     provider and are cached in the LOCAL Drift `weather_forecasts` table,
+		     which has no user_id column, is never synced to Supabase, and is
+		     never sent to Mixpanel. Nothing associates it with the user's
+		     identity. (Previously declared Linked=true here, which over-declared
+		     and disagreed with the live App Store label.) -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypePreciseLocation</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<true/>
+			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -112,7 +149,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
-		<!-- Email Address (for email authentication) -->
+		<!-- Email Address (authentication). Linked to the account by definition. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeEmailAddress</string>

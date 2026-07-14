@@ -8,7 +8,8 @@
       "program": "lib/main_dev.dart",
       "args": [
         "--flavor",
-        "dev"
+        "dev",
+        "--dart-define=IS_INTERNAL=true"
       ]
     },
     {
@@ -18,7 +19,8 @@
       "program": "lib/main_prod.dart",
       "args": [
         "--flavor",
-        "prod"
+        "prod",
+        "--dart-define=IS_INTERNAL=true"
       ]
     },
     {
@@ -29,7 +31,8 @@
       "args": [
         "--flavor",
         "dev",
-        "--profile"
+        "--profile",
+        "--dart-define=IS_INTERNAL=true"
       ],
       "flutterMode": "profile"
     },
@@ -41,7 +44,8 @@
       "args": [
         "--flavor",
         "prod",
-        "--profile"
+        "--profile",
+        "--dart-define=IS_INTERNAL=true"
       ],
       "flutterMode": "profile"
     },
@@ -53,7 +57,8 @@
       "args": [
         "--flavor",
         "dev",
-        "--release"
+        "--release",
+        "--dart-define=IS_INTERNAL=true"
       ],
       "flutterMode": "release"
     },
@@ -65,7 +70,8 @@
       "args": [
         "--flavor",
         "prod",
-        "--release"
+        "--release",
+        "--dart-define=IS_INTERNAL=true"
       ],
       "flutterMode": "release"
     },
@@ -78,6 +84,7 @@
         "-d",
         "chrome",
         "--dart-define-from-file=.env.web.local",
+        "--dart-define=IS_INTERNAL=true",
         "--web-header=Cross-Origin-Opener-Policy=same-origin",
         "--web-header=Cross-Origin-Embedder-Policy=require-corp"
       ]
@@ -91,6 +98,7 @@
         "-d",
         "chrome",
         "--dart-define-from-file=.env.web.prod.local",
+        "--dart-define=IS_INTERNAL=true",
         "--web-header=Cross-Origin-Opener-Policy=same-origin",
         "--web-header=Cross-Origin-Embedder-Policy=require-corp"
       ]
@@ -106,6 +114,7 @@
         "--web-port",
         "8080",
         "--dart-define-from-file=.env.web.local",
+        "--dart-define=IS_INTERNAL=true",
         "--web-header=Cross-Origin-Opener-Policy=same-origin",
         "--web-header=Cross-Origin-Embedder-Policy=require-corp"
       ]

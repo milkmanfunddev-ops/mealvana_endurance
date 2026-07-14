@@ -12,6 +12,8 @@ import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/analytics/internal_user_service.dart';
+import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
@@ -32,6 +34,11 @@ import '../../ai_credits/data/revenuecat_service.dart';
 class AppStartupService {
   AppStartupService(this.ref);
   final Ref ref;
+
+  /// Guards against double-initializing Mixpanel. Analytics can be initialized
+  /// from two places now: deferred startup (consent already on file) and
+  /// [initializeAnalyticsAfterConsent] (consent granted just now, mid-session).
+  bool _analyticsInitialized = false;
 
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
@@ -269,11 +276,56 @@ class AppStartupService {
     });
   }
 
+  /// Initialize analytics once the user has granted consent mid-session.
+  ///
+  /// The consent screen calls this after recording a grant. Without it, a user
+  /// who opts in on first run would send nothing until the next cold start:
+  /// deferred startup has already run and skipped analytics by then.
+  Future<void> initializeAnalyticsAfterConsent() async {
+    if (!ref.read(analyticsConsentProvider).allowsAnalytics) return;
+    // Device info is normally initialized by deferred startup ahead of us, but
+    // it is idempotent and analytics needs the device id below.
+    await DeviceInfoService.instance.initialize();
+    await _initializeAnalytics();
+
+    // Re-identify. Deferred startup already ran checkUserSession() — but it ran
+    // against the NoopAnalyticsTracker, so the identify call went nowhere. And
+    // _initializeAnalytics() only falls back to the device id when there is NO
+    // local profile, so a returning user who opts in mid-session would other-
+    // wise sit unidentified until the next cold start, splitting their events
+    // off from their profile.
+    await checkUserSession();
+  }
+
   /// Initialize analytics service with proper user identification
   /// Called after first frame to avoid Android DeviceInfoPlugin deadlock
   Future<void> _initializeAnalytics() async {
+    // CONSENT GATE. Nothing may reach Mixpanel until the user has said yes —
+    // this method both initializes the SDK and fires `app_opened`, so an
+    // ungated call is exactly the "SDK fires at launch before consent" pattern
+    // Apple rejects for. `unknown` (not yet asked) fails closed.
+    //
+    // `analyticsTrackerProvider` independently returns a NoopAnalyticsTracker
+    // without consent, so this is belt-and-braces — but it is the check that
+    // stops `Mixpanel.init` from ever being called.
+    if (!ref.read(analyticsConsentProvider).allowsAnalytics) {
+      _logger.info(
+        'Analytics initialization skipped — no consent on file',
+        context: 'ANALYTICS',
+      );
+      return;
+    }
+    if (_analyticsInitialized) return;
+    _analyticsInitialized = true;
+
     try {
       final deviceId = DeviceInfoService.instance.deviceId;
+
+      // Must resolve BEFORE Mixpanel starts: the internal flag is registered as
+      // a super property during initialize(), and events begin firing (see
+      // `app_opened` below) immediately after. Purely local — no network call.
+      await InternalUserService.instance.initialize();
+
       await _analytics.initialize();
 
       // Only identify with the anonymous device id when no local profile
@@ -284,7 +336,8 @@ class AppStartupService {
       // (authed accounts), breaking retention counts.
       var hasLocalProfile = false;
       try {
-        hasLocalProfile = await ref
+        hasLocalProfile =
+            await ref
                 .read(appDatabaseProvider)
                 .userDao
                 .getCurrentUserProfile() !=
@@ -313,6 +366,8 @@ class AppStartupService {
         },
       );
     } catch (e, stackTrace) {
+      // Allow a later attempt (e.g. the post-consent call) to retry.
+      _analyticsInitialized = false;
       _logger.error(
         'Analytics initialization failed',
         context: 'ANALYTICS',
@@ -380,8 +435,7 @@ class AppStartupService {
 
       // Derive version dynamically so it stays accurate across releases.
       final packageInfo = await PackageInfo.fromPlatform();
-      final appVersion =
-          '${packageInfo.version}+${packageInfo.buildNumber}';
+      final appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
 
       await _sentry.setUserContext(deviceId: userId, appVersion: appVersion);
     } catch (e, stackTrace) {

@@ -1592,6 +1592,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         _createFoodItemData(food, customAmount: customAmount),
       ],
     );
+
+    _trackAnalytics('food_added', {
+      'food_name': food?.name,
+      'food_id': food?.id,
+      'section': category,
+      'quantity': customAmount,
+    });
   }
 
   /// Delete a food item from the nutrition plan
@@ -2276,6 +2283,11 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     final plan = currentState.nutritionPlan;
     if (plan == null) return;
+
+    _trackAnalytics('fuel_log_started', {
+      'activity_id': activityId,
+      'has_existing_fuel_log': _parseSavedFuelLog(currentState.activity) != null,
+    });
 
     final fuelLogData =
         _parseSavedFuelLog(currentState.activity) ??

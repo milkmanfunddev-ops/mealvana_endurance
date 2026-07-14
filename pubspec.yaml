@@ -56,6 +56,10 @@ dependencies:
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.2
   shared_preferences: ^2.3.2
+  # Keychain-backed storage. On iOS the Keychain survives app uninstall, which
+  # is what makes the internal-device flag reinstall-proof (see
+  # shared/services/analytics/internal_user_service.dart).
+  flutter_secure_storage: ^9.2.2
   url_launcher: ^6.2.0
   pub_semver: ^2.1.4
   
@@ -131,6 +135,9 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  # Parses ios/Runner/PrivacyInfo.xcprivacy in test/privacy/privacy_manifest_test.dart,
+  # which pins the manifest to the live App Store Connect privacy label.
+  xml: ^6.5.0
 
   flutter_lints: ^5.0.0
 

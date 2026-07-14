@@ -46,6 +46,9 @@ import '../../features/settings/presentation/screens/sport_preferences_hub_scree
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
+import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
+import '../../features/privacy/presentation/screens/privacy_consent_screen.dart';
+import '../services/privacy/analytics_consent.dart';
 import '../../features/settings/presentation/screens/sweat_profile_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_profile_screen.dart';
@@ -117,6 +120,26 @@ class AppRouter {
           return null;
         }
 
+        // ANALYTICS CONSENT GATE.
+        //
+        // Sits ahead of every other redirect (bar force-upgrade), including the
+        // auth check, because it has to precede `signInAnonymously()` on
+        // /welcome — guest mode is the default here, and guests are ~88% of the
+        // base, so consent that only covered signed-in users would cover almost
+        // nobody.
+        //
+        // It also catches EXISTING users: they were never asked, so their
+        // status is `unknown` and they see this once on the first launch after
+        // updating.
+        final consent = ref.read(analyticsConsentProvider);
+        if (consent.needsPrompt) {
+          return currentPath == '/privacy-consent' ? null : '/privacy-consent';
+        }
+        if (currentPath == '/privacy-consent') {
+          // Decision recorded — resolve to wherever startup says they belong.
+          return '/';
+        }
+
         // Public routes that don't require auth (welcome, onboarding, auth screens)
         final isPublicRoute =
             currentPath == '/welcome' ||
@@ -175,6 +198,12 @@ class AppRouter {
         );
       },
       routes: [
+        // Analytics consent disclosure - shown once, ahead of everything else
+        GoRoute(
+          path: '/privacy-consent',
+          name: 'privacy-consent',
+          builder: (context, state) => const PrivacyConsentScreen(),
+        ),
         // Force Upgrade Screen - Mandatory update required
         GoRoute(
           path: '/force-upgrade',
@@ -551,6 +580,13 @@ class AppRouter {
           path: '/settings/connected-apps',
           name: 'settings-connected-apps',
           builder: (context, state) => const ConnectedAppsScreen(),
+        ),
+
+        // Privacy Screen - analytics consent withdrawal + policy/terms links
+        GoRoute(
+          path: '/settings/privacy',
+          name: 'settings-privacy',
+          builder: (context, state) => const PrivacySettingsScreen(),
         ),
 
         // Preferences Screen - Edit profile and preferences with save button
