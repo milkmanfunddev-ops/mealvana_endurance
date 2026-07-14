@@ -10,6 +10,7 @@ import '../../features/daily_macros/presentation/screens/daily_macros_screen.dar
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
+import '../services/analytics/analytics_tracker.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
@@ -44,12 +45,39 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       ref.read(calendarViewProvider.notifier).toggleView();
       return;
     }
+
+    // The Nutrition tab is where the weekly overview chart lives. It has to be
+    // counted here rather than from DailyMacrosScreen's lifecycle: the tabs are
+    // an IndexedStack, so every screen stays mounted and an initState-based
+    // event would fire exactly once per app launch, no matter how often the
+    // athlete actually opened the tab.
+    if (index == 1 && _currentIndex != 1) {
+      _track('weekly_overview_viewed');
+    }
+
     setState(() => _currentIndex = index);
   }
 
   void _onPlusTap() {
     final selectedDate = ref.read(calendarSelectedDateProvider);
+
+    // Top of the activity-creation funnel. Pressing "+" only opens the
+    // new-activity screen — it is NOT a created plan, and counting it as one is
+    // what made plan_created out-run plan_generated in the prod funnel.
+    _track(
+      'activity_button_pressed',
+      {'selected_date': selectedDate.toIso8601String(), 'source_tab': _currentIndex},
+    );
+
     context.pushNamed('distancepacegut', extra: {'initialDate': selectedDate});
+  }
+
+  void _track(String event, [Map<String, dynamic>? properties]) {
+    try {
+      ref.read(analyticsTrackerProvider).track(event, properties: properties);
+    } catch (_) {
+      // Analytics must never break navigation.
+    }
   }
 
   @override

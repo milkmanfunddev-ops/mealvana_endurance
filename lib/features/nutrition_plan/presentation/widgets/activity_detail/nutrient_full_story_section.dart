@@ -85,12 +85,35 @@ class _NutrientFullStorySectionState
     super.dispose();
   }
 
+  /// Fires when the athlete opens "The Full Story" — a consumption surface we
+  /// were completely blind to (zero events in prod).
+  ///
+  /// No `plan_id`: it is genuinely not reachable here. Neither
+  /// `NutrientTransparencyData` nor the enclosing `PhaseExplanationSheet`
+  /// carries an activity or plan id, and threading one down would touch all
+  /// four sheet call sites — too much surface area for an OTA patch to a
+  /// shipped build. `nutrient` + `phase` answer the question that matters:
+  /// which nutrients drive transparency interest.
+  void _trackTransparencyViewed() {
+    try {
+      ref.read(analyticsTrackerProvider).track(
+        'nutrition_transparency_viewed',
+        properties: {
+          'nutrient': widget.data.nutrientLabel,
+          'phase': widget.data.phase,
+          'is_tested': widget.data.isTested,
+        },
+      );
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.data.nutrientColor;
 
     return TransparencyAccordion(
       title: 'The Full Story',
+      onExpanded: _trackTransparencyViewed,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

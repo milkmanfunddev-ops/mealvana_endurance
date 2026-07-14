@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/content_area.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../widgets/carb_loading_food_pills.dart';
 import '../widgets/edit_carb_target_dialog.dart';
 import '../providers/carb_loading_day_detail_controller.dart';
@@ -26,6 +27,24 @@ class CarbLoadingDayDetailPage extends ConsumerStatefulWidget {
 
 class _CarbLoadingDayDetailPageState
     extends ConsumerState<CarbLoadingDayDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    // In initState, not build(): build() re-runs on every controller state
+    // change (each food added, each target edit), which would report one "day
+    // viewed" per interaction instead of one per visit.
+    try {
+      ref.read(analyticsTrackerProvider).track(
+        'carb_loading_day_viewed',
+        properties: {
+          'day_id': widget.carbLoadingDay.id,
+          'day_number': widget.carbLoadingDay.dayNumber,
+          'carb_target_grams': widget.carbLoadingDay.carbTargetGrams,
+        },
+      );
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(

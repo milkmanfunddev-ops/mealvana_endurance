@@ -4,6 +4,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -126,6 +127,9 @@ class ActivitiesController extends _$ActivitiesController {
     String? brickId,
   }) async {
     try {
+      // Read BEFORE the create — afterwards the list already contains the new
+      // activity and the "was this their first?" test would never be true.
+      final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
 
       final createdActivity = await _service.createActivity(
@@ -156,6 +160,27 @@ class ActivitiesController extends _$ActivitiesController {
         brickId: brickId,
       );
 
+      // The "used the core function" activation signal. Everything reaching
+      // this controller is a user planning a workout by hand — provider-synced
+      // workouts bypass it entirely (they go straight to the repository), so
+      // `source` is always manual here.
+      _track('workout_planned', {
+        'sport': activityType.name,
+        'duration_min': durationMinutes,
+        'source': 'manual',
+        'activity_id': createdActivity.id,
+        'is_coach_created': forUserId != null,
+      });
+
+      // Fires only for the very first activity a user ever creates — the
+      // post-onboarding activation milestone.
+      if (priorCount == 0) {
+        _track('first_activity_added', {
+          'activity_type': activityType.name,
+          'activity_id': createdActivity.id,
+        });
+      }
+
       // Refresh activities list
       ref.invalidateSelf();
 
@@ -163,6 +188,14 @@ class ActivitiesController extends _$ActivitiesController {
     } catch (e) {
       _logger.error('Error creating activity', error: e);
       rethrow;
+    }
+  }
+
+  void _track(String event, Map<String, dynamic> properties) {
+    try {
+      ref.read(analyticsTrackerProvider).track(event, properties: properties);
+    } catch (_) {
+      // Analytics must never fail an activity create.
     }
   }
 

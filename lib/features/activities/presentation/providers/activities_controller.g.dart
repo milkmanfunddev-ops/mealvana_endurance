@@ -55,7 +55,7 @@ final class ActivitiesControllerProvider
 }
 
 String _$activitiesControllerHash() =>
-    r'd7ef5c85d8fc96d560ae524368ba943d9a8a4cf1';
+    r'ad5f67c6c190741fdab469b0bbd5b5265fb54769';
 
 /// Controller for managing activities
 /// Handles activity CRUD operations (create, read, update, delete)

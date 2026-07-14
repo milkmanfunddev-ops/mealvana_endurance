@@ -27,6 +27,7 @@ class AllergiesScreen extends ConsumerStatefulWidget {
     this.mode = ScreenMode.onboarding,
     this.onContinue,
     this.onBack,
+    this.stepIndex,
   });
 
   /// The screen mode determines visual style and navigation behavior
@@ -37,6 +38,10 @@ class AllergiesScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null outside onboarding.
+  final int? stepIndex;
 
   @override
   ConsumerState<AllergiesScreen> createState() => _AllergiesScreenState();
@@ -61,7 +66,13 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('screen_viewed', properties: {'screen_name': screenName});
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': screenName,
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {

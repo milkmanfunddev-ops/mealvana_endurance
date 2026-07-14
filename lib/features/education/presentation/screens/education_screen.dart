@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/education_content.dart';
 import '../providers/education_controller.dart';
@@ -202,7 +203,12 @@ class _EmptySection extends StatelessWidget {
 }
 
 /// Horizontal scrolling list of video cards
-class _HorizontalVideoList extends StatelessWidget {
+///
+/// A `ConsumerWidget` purely so the card tap can reach the analytics tracker —
+/// this is the only LIVE entry point into [VideoPlayerScreen] (the standalone
+/// `VideoCardWidget` and the `/learn/video` route are both dead code in this
+/// build), so `education_video_opened` fires from here or not at all.
+class _HorizontalVideoList extends ConsumerWidget {
   const _HorizontalVideoList({required this.videos});
 
   final List<EducationContent> videos;
@@ -211,7 +217,7 @@ class _HorizontalVideoList extends StatelessWidget {
   static const double _cardHeight = 210.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Use a negative margin approach to let the list bleed to screen edges
     return SizedBox(
       height: _cardHeight,
@@ -228,14 +234,27 @@ class _HorizontalVideoList extends StatelessWidget {
               key: ValueKey('learn.lesson_card_$index'),
               content: video,
               lessonNumber: index + 1,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => VideoPlayerScreen(
-                    title: video.displayTitle,
-                    videoUrl: video.videoUrl ?? '',
+              onTap: () {
+                try {
+                  ref.read(analyticsTrackerProvider).track(
+                    'education_video_opened',
+                    properties: {
+                      'video_id': video.id,
+                      'title': video.displayTitle,
+                      'lesson_number': index + 1,
+                    },
+                  );
+                } catch (_) {}
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => VideoPlayerScreen(
+                      contentId: video.id,
+                      title: video.displayTitle,
+                      videoUrl: video.videoUrl ?? '',
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           );
         },

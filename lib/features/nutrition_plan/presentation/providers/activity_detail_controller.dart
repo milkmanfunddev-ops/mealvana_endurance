@@ -1584,6 +1584,17 @@ class ActivityDetailController extends _$ActivityDetailController {
         _createFoodItemData(food, customAmount: customAmount),
       ],
     );
+
+    // Swap and delete were already instrumented, but ADD — the one that
+    // actually grows a plan — sent nothing. Fired after the write so a failed
+    // add doesn't report as a successful one. `add_food_tapped` at the UI layer
+    // is the intent; this is the confirmation, and it carries the food itself.
+    _trackAnalytics('food_added', {
+      'food_name': food?.name,
+      'food_id': food?.id,
+      'section': category,
+      'quantity': customAmount,
+    });
   }
 
   /// Delete a food item from the nutrition plan
@@ -2258,6 +2269,12 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (plan == null) return;
 
     final fuelLogData = FuelLogData.fromNutritionPlan(plan);
+
+    // Top of the fuel-logging funnel — previously untracked, so we could see
+    // completed fuel logs but never how many were abandoned partway.
+    _trackAnalytics('fuel_log_started', {
+      'activity_id': currentState.activity?.id,
+    });
 
     state = AsyncData(
       currentState.copyWith(isFuelLogMode: true, fuelLogData: fuelLogData),

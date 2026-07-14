@@ -31,6 +31,7 @@ class FoodPreferencesV2Screen extends ConsumerStatefulWidget {
     this.allergies = const [],
     this.onContinue,
     this.onBack,
+    this.stepIndex,
   });
 
   /// Selected dietary preference from previous screen
@@ -44,6 +45,10 @@ class FoodPreferencesV2Screen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null outside onboarding.
+  final int? stepIndex;
 
   @override
   ConsumerState<FoodPreferencesV2Screen> createState() =>
@@ -71,6 +76,7 @@ class _FoodPreferencesV2ScreenState
             'screen_name': 'Food Preferences V2 Onboarding',
             'dietary_preference': widget.dietaryPreference?.name,
             'allergies_count': widget.allergies.length,
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
           },
         );
     _loadFoods();
