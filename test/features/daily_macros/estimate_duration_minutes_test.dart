@@ -39,10 +39,24 @@ int estimateDurationMinutes({
             .round();
       }
     }
-    if (result == 0) result = 60;
+    if (result == 0) result = activityType == 'other' ? 30 : 60;
   }
 
   return result;
+}
+
+/// Mirrors the sport-mapping switch in `_loadSessionsForDate`.
+String mapSportForActivity(String activityType) {
+  switch (activityType) {
+    case 'cycling':
+      return 'cycling';
+    case 'swimming':
+      return 'swimming';
+    case 'other':
+      return 'strength';
+    default:
+      return 'running';
+  }
 }
 
 void main() {
@@ -134,6 +148,44 @@ void main() {
         paceTargetMinutesPerMile: 9.0,
       );
       expect(duration, 90);
+    });
+
+    test('other activity with no duration defaults to 30 min, not 60', () {
+      final duration = estimateDurationMinutes(
+        durationMinutes: null,
+        activityType: 'other',
+      );
+      expect(duration, 30);
+    });
+
+    test('other activity with explicit duration uses that duration', () {
+      final duration = estimateDurationMinutes(
+        durationMinutes: 20,
+        activityType: 'other',
+      );
+      expect(duration, 20);
+    });
+  });
+
+  group('mapSportForActivity – regression for 766-cal overcount bug', () {
+    test('other activity maps to strength, not running', () {
+      expect(mapSportForActivity('other'), 'strength');
+    });
+
+    test('running activity maps to running', () {
+      expect(mapSportForActivity('running'), 'running');
+    });
+
+    test('cycling activity maps to cycling', () {
+      expect(mapSportForActivity('cycling'), 'cycling');
+    });
+
+    test('swimming activity maps to swimming', () {
+      expect(mapSportForActivity('swimming'), 'swimming');
+    });
+
+    test('unknown activity type still defaults to running', () {
+      expect(mapSportForActivity('some_unknown_type'), 'running');
     });
   });
 }
