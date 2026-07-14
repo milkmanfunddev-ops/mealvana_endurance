@@ -15,6 +15,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  /// A resolved geo answer, as `PrivacyRegionService` would have cached it.
+  ///
+  /// Tests that omit this get `RegionSource.none` and therefore fail closed —
+  /// which is also what keeps this suite deterministic. Without the geo guard
+  /// the regime would fall back to device signals, i.e. to the timezone of
+  /// whichever machine happens to be running the tests, and these assertions
+  /// would pass in Denver and fail in Seattle.
+  Map<String, Object> geo(String country, String? region) => {
+        'privacy_region_source': 'geo',
+        'privacy_geo_country': country,
+        if (region != null) 'privacy_geo_region': region,
+      };
+
   Future<ProviderContainer> containerWith(
     Map<String, Object> prefsValues,
   ) async {
@@ -158,6 +171,140 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       expect(analyticsConsentGrantedFromPrefs(prefs), isTrue);
+    });
+
+    test('an implied grant arms Sentry replay (geo, non-strict, no decision)',
+        () async {
+      SharedPreferences.setMockInitialValues(geo('US', 'CA'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(analyticsConsentGrantedFromPrefs(prefs), isTrue);
+    });
+
+    test('no implied grant in a strict region', () async {
+      SharedPreferences.setMockInitialValues(geo('DE', null));
+      final prefs = await SharedPreferences.getInstance();
+      expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
+    });
+
+    test('a denial outranks the implied grant', () async {
+      SharedPreferences.setMockInitialValues({
+        ...geo('US', 'CA'),
+        'analytics_consent_status': 'denied',
+        'analytics_consent_version': kConsentVersion,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
+    });
+  });
+
+  /// Outside the EEA/UK and Washington we no longer show a consent screen at
+  /// all: disclosure (the privacy policy) plus an accessible opt-out (Settings
+  /// → Privacy) is the standard those jurisdictions actually set. Analytics
+  /// therefore defaults ON — but only under conditions that are load-bearing,
+  /// and each of them is pinned below.
+  group('implied grant outside strict regimes', () {
+    test('known non-strict location, no decision → analytics runs, no prompt',
+        () async {
+      final container = await containerWith(geo('US', 'CA'));
+      addTearDown(container.dispose);
+
+      final consent = container.read(analyticsConsentProvider);
+      expect(consent.status, ConsentStatus.unknown);
+      expect(consent.allowsAnalytics, isTrue);
+      expect(consent.needsPrompt, isFalse, reason: 'no screen outside strict');
+      expect(
+        container.read(analyticsTrackerProvider),
+        isA<MixpanelAnalyticsTracker>(),
+      );
+    });
+
+    // THE ONE THAT MATTERS. An implied grant must never resurrect analytics for
+    // somebody who explicitly turned it off in Settings. If this ever goes red,
+    // the app is re-enabling tracking for users who opted out.
+    test('an explicit denial is sticky and is NEVER auto-granted', () async {
+      final container = await containerWith({
+        ...geo('US', 'CA'),
+        'analytics_consent_status': 'denied',
+        'analytics_consent_version': kConsentVersion,
+      });
+      addTearDown(container.dispose);
+
+      final consent = container.read(analyticsConsentProvider);
+      expect(consent.status, ConsentStatus.denied);
+      expect(consent.allowsAnalytics, isFalse);
+      expect(consent.needsPrompt, isFalse);
+      expect(
+        container.read(analyticsTrackerProvider),
+        isA<NoopAnalyticsTracker>(),
+      );
+    });
+
+    // A version bump discards a stale GRANT (they agreed to older wording), but
+    // must not discard a DENIAL — that would reset them to `unknown`, and
+    // `unknown` + non-strict is an implied grant. A one-line bump would then
+    // silently re-enable analytics for everyone who had opted out.
+    test('a denial survives a consent-version bump', () async {
+      final container = await containerWith({
+        ...geo('US', 'CA'),
+        'analytics_consent_status': 'denied',
+        'analytics_consent_version': kConsentVersion - 1,
+      });
+      addTearDown(container.dispose);
+
+      final consent = container.read(analyticsConsentProvider);
+      expect(consent.status, ConsentStatus.denied);
+      expect(consent.allowsAnalytics, isFalse);
+    });
+
+    test('Washington is strict → prompt, and nothing runs until answered',
+        () async {
+      final container = await containerWith(geo('US', 'WA'));
+      addTearDown(container.dispose);
+
+      final consent = container.read(analyticsConsentProvider);
+      expect(consent.needsPrompt, isTrue);
+      expect(consent.allowsAnalytics, isFalse);
+      expect(
+        container.read(analyticsTrackerProvider),
+        isA<NoopAnalyticsTracker>(),
+      );
+    });
+
+    test('EEA is strict → prompt', () async {
+      final container = await containerWith(geo('DE', null));
+      addTearDown(container.dispose);
+
+      expect(container.read(analyticsConsentProvider).needsPrompt, isTrue);
+      expect(
+        container.read(analyticsTrackerProvider),
+        isA<NoopAnalyticsTracker>(),
+      );
+    });
+
+    // The guard that makes the implied grant safe. A device-signal regime is a
+    // guess — a German in Berlin with an `en_US` phone resolves to `US` — so it
+    // may decide how to PRESENT a question, never whether to ASK one. Until we
+    // have a real geo answer we run nothing and prompt nobody, and try again on
+    // the next launch.
+    test('device-signal fallback never backs an implied grant', () async {
+      final container = await containerWith({
+        'privacy_region_source': 'device',
+      });
+      addTearDown(container.dispose);
+
+      final consent = container.read(analyticsConsentProvider);
+      expect(consent.allowsAnalytics, isFalse);
+      expect(
+        container.read(analyticsTrackerProvider),
+        isA<NoopAnalyticsTracker>(),
+      );
+    });
+
+    test('cold cache (region never resolved) fails closed', () async {
+      final container = await containerWith({});
+      addTearDown(container.dispose);
+
+      expect(container.read(analyticsConsentProvider).allowsAnalytics, isFalse);
     });
   });
 }

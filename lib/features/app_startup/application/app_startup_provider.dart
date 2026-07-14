@@ -5,6 +5,8 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/version_check_service.dart';
+import '../../../shared/services/privacy/analytics_consent.dart';
+import '../../../shared/services/privacy/privacy_region_service.dart';
 import '../../../shared/models/version_check_result.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
@@ -52,6 +54,16 @@ class AppStartup extends _$AppStartup {
   Future<AppStartupData> build() async {
     try {
       final AppStartupService startupService = ref.read(appStartupServiceProvider);
+
+      // 0a. REGION: start the consent-region lookup immediately, but don't wait
+      // on it yet — it overlaps the version-check round-trip below, so it
+      // usually costs nothing. It must complete before anything reads consent,
+      // because until it does we cannot tell a Washington user from a
+      // Californian, and the two get different treatment. `ensureResolved()`
+      // never throws and returns instantly on a warm cache.
+      final regionFuture = ref
+          .read(privacyRegionServiceProvider)
+          .ensureResolved();
 
       // 0. VERSION CHECK: Check app version and schema version BEFORE database initialization
       // This prevents incompatible app versions from accessing the database
@@ -126,7 +138,16 @@ class AppStartup extends _$AppStartup {
       await Future.wait([
         startupService.initializeDatabase(),
         startupService.setSentryUserContext(),
+        // Joined here so that by the time this provider hands back data — which
+        // is what the router waits on before it can send anyone to the consent
+        // screen — the region is settled. Without this the router could gate a
+        // Californian on a device-signal guess.
+        regionFuture,
       ]);
+
+      // Region resolution wrote to SharedPreferences behind the synchronous
+      // consent reader, so rebuild it before deferred startup consults it.
+      ref.invalidate(analyticsConsentProvider);
 
       // 2. NON-BLOCKING: Analytics, device info, and push notifications
       // These are deferred to after first frame to avoid Android DeviceInfoPlugin deadlock

@@ -5,29 +5,33 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../../../shared/services/privacy/analytics_consent.dart';
 import '../../../../shared/services/privacy/privacy_links.dart';
-import '../../../../shared/services/privacy/privacy_region.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../app_startup/application/app_startup_service.dart';
 
-/// First-run analytics disclosure.
+/// The analytics consent step.
 ///
-/// Shown once, before anything is collected, to every user — signed-in or
-/// anonymous — whenever [analyticsConsentProvider] reports `unknown`. It is the
-/// only screen that can appear ahead of `/welcome`, because it has to precede
-/// both `signInAnonymously()` and the deferred analytics init.
+/// Shown ONLY to strict-regime users — EEA/UK (GDPR/ePrivacy) and Washington
+/// (My Health My Data Act). Both require consent to be an affirmative act, so
+/// the toggle starts OFF and the user has to turn it on; a pre-checked box is
+/// not consent there, and MHMDA additionally forbids inferring consent from
+/// acceptance of the ToS. Everywhere else, disclosure plus an accessible
+/// opt-out is the standard — those users are never sent here and instead get
+/// the always-available Settings → Privacy toggle.
 ///
-/// The regime ([ConsentRegime]) changes only how the choice is *presented*:
-/// - [ConsentRegime.standard] — toggle starts ON. Disclosure plus an easy
-///   opt-out, which is what US (ex-Washington) and most-of-world law asks for.
-/// - [ConsentRegime.strict] — toggle starts OFF, and the user must turn it on.
-///   GDPR/ePrivacy and Washington's MHMDA require an affirmative act; a
-///   pre-checked box is not consent there.
+/// Reached two ways, both of which route here explicitly rather than
+/// intercepting: Welcome's "Get Started" (so it reads as the first step of
+/// onboarding), and the startup redirect for existing users who were onboarded
+/// before the prompt existed. [next] is where to go once a decision is on file.
 ///
-/// Either way the user leaves with an explicit decision on file and nothing is
-/// sent before they make it — which is what Apple Guideline 5.1.1(ii) requires
-/// everywhere, regardless of regime.
+/// Styled to match the onboarding steps (blackberry / Sansita title / Apercu
+/// body / [FigmaOnboardingFooter]) rather than the Kyle card language, because
+/// it now sits inside that flow.
 class PrivacyConsentScreen extends ConsumerStatefulWidget {
-  const PrivacyConsentScreen({super.key});
+  const PrivacyConsentScreen({super.key, this.next = '/'});
+
+  /// Where to go once the decision is recorded.
+  final String next;
 
   @override
   ConsumerState<PrivacyConsentScreen> createState() =>
@@ -35,144 +39,114 @@ class PrivacyConsentScreen extends ConsumerStatefulWidget {
 }
 
 class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
-  bool? _shareUsageData;
+  // Starts OFF. Only strict-regime users reach this screen, and in a strict
+  // regime a pre-set toggle is not a lawful default — consent has to be given,
+  // not withheld.
+  bool _shareUsageData = false;
   bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
-    final regime = ref.watch(analyticsConsentProvider).regime;
-
-    // Default the toggle from the regime: pre-set ON is a lawful disclosure +
-    // opt-out under `standard`, and is specifically NOT valid consent under
-    // `strict`.
-    final shareUsageData = _shareUsageData ?? !regime.isStrict;
-
     return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
       contentWidth: AdaptiveContentWidth.narrow,
       body: AdaptiveScrollableBody(
         safeAreaTop: true,
         safeAreaBottom: true,
-        padding: AppSpacing.screenPadding,
-        footer: _buildFooter(context, regime, shareUsageData),
-        child: _buildContent(context, regime, shareUsageData),
+        padding: const EdgeInsets.all(20),
+        footer: FigmaOnboardingFooter(
+          continueButtonKey: const ValueKey('privacy_consent.continue_button'),
+          onContinue: _saving ? null : _submit,
+          isLoading: _saving,
+          showBackButton: false,
+        ),
+        child: _buildContent(context),
       ),
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    ConsentRegime regime,
-    bool shareUsageData,
-  ) {
+  Widget _buildContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: AppSpacing.xxxl),
-        Text(
+        const SizedBox(height: 48),
+        const Text(
           'Your privacy',
-          style: AppTextStyles.pageTitle.copyWith(color: AppColors.cream),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Mealvana is a nutrition app, so the data you put in it is personal. '
-          "Here's exactly what we do with it — before you start, not buried in "
-          'a policy.',
-          style: AppTextStyles.bodyLarge.copyWith(
-            color: AppColors.cream.withValues(alpha: 0.85),
+          style: TextStyle(
+            fontFamily: 'Sansita',
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: AppColors.orange,
+            height: 1.0,
           ),
         ),
-        const SizedBox(height: AppSpacing.xl),
-        _buildAlwaysOnCard(),
-        const SizedBox(height: AppSpacing.md),
-        _buildUsageDataCard(regime, shareUsageData),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 20),
+        const Text(
+          'You choose what we can learn from how you use the app.',
+          style: TextStyle(
+            fontFamily: 'Apercu',
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textDark,
+            letterSpacing: 0.192,
+          ),
+        ),
+        const SizedBox(height: 32),
+        _buildUsageToggle(),
+        const SizedBox(height: 24),
         _buildPolicyLinks(context),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 20),
       ],
     );
   }
 
-  /// What runs regardless of the toggle — stated plainly, so the consent we do
-  /// ask for is honest about its scope.
-  Widget _buildAlwaysOnCard() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.lock_outline, size: 20),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'To run the app',
-                  style: AppTextStyles.sectionTitle,
+  Widget _buildUsageToggle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Share usage data',
+                style: TextStyle(
+                  fontFamily: 'Sansita',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textDark,
                 ),
               ),
-            ],
+            ),
+            KyleSwitch(
+              key: const ValueKey('privacy_consent.usage_toggle'),
+              value: _shareUsageData,
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() => _shareUsageData = value),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // This one line is the entire disclosure, so it has to be true and
+        // complete. It must NAME the processor and NAME the health-adjacent
+        // properties: identifyUser() sends Gender / Age / Weight (lbs) / Runs
+        // With Water Bottle / Gut Training Level to Mixpanel People. Those
+        // properties are precisely why Washington's MHMDA applies at all. An
+        // earlier draft omitted them and was false. If they are ever removed
+        // from analytics_tracker.dart, tighten this copy and the smoke test
+        // together. Do not shorten this line further.
+        const Text(
+          'Optional. Sends which screens you use, plus basic profile details '
+          '(age, gender, weight), to Mixpanel. Never your meal logs.',
+          style: TextStyle(
+            fontFamily: 'Apercu',
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textDarkSecondary,
+            height: 1.4,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Your profile, workouts and meal logs are stored in your account so '
-            'the app can plan your fueling. We also collect crash reports to '
-            'keep the app working. This is what the app needs to do its job, '
-            "and it isn't used for advertising — we run no ad SDKs and don't "
-            'sell or share your data.',
-            style: AppTextStyles.bodyMedium,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUsageDataCard(ConsentRegime regime, bool shareUsageData) {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Share anonymous usage data',
-                  style: AppTextStyles.sectionTitle,
-                ),
-              ),
-              KyleSwitch(
-                key: const ValueKey('privacy_consent.usage_toggle'),
-                value: shareUsageData,
-                onChanged: _saving
-                    ? null
-                    : (value) => setState(() => _shareUsageData = value),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // Must match what identifyUser() actually sends to Mixpanel People
-          // (Gender, Age, Weight (lbs), Runs With Water Bottle, Gut Training
-          // Level) — a disclosure that understates what we collect is worse
-          // than no disclosure. If those properties are ever removed from
-          // analytics_tracker.dart, tighten this copy and bump kConsentVersion.
-          Text(
-            'Optional. Shares which screens and features you use — via Mixpanel '
-            "— so we can see what's working and what isn't. It also includes "
-            'basic profile details (age, gender, weight and gut-training '
-            "level). It does not include your meal logs or what you've eaten.",
-            style: AppTextStyles.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            regime.isStrict
-                ? 'Off by default where you are. The app works exactly the same '
-                    'either way, and you can change this any time in '
-                    'Settings → Privacy.'
-                : 'You can turn this off now, or any time in '
-                    'Settings → Privacy.',
-            style: AppTextStyles.smallLabel,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -192,45 +166,24 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
     );
   }
 
-  Widget _buildFooter(
-    BuildContext context,
-    ConsentRegime regime,
-    bool shareUsageData,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: AppSpacing.md,
-        right: AppSpacing.md,
-        bottom: AppSpacing.lg,
-      ),
-      child: KylePrimaryButton(
-        key: const ValueKey('privacy_consent.continue_button'),
-        text: 'Continue',
-        onPressed: _saving ? null : () => _submit(shareUsageData),
-        isFullWidth: false,
-      ),
-    );
-  }
-
-  Future<void> _submit(bool shareUsageData) async {
+  Future<void> _submit() async {
     setState(() => _saving = true);
 
     await ref
         .read(analyticsConsentProvider.notifier)
-        .record(granted: shareUsageData);
+        .record(granted: _shareUsageData);
 
     // Deferred startup already ran and skipped analytics (consent was unknown),
     // so start it now rather than leaving the user untracked until next launch.
-    if (shareUsageData) {
+    if (_shareUsageData) {
       await ref
           .read(appStartupServiceProvider)
           .initializeAnalyticsAfterConsent();
     }
 
-    // The redirect is not reactive to consent, so navigate explicitly to make
-    // it re-evaluate. With a decision now on file the gate falls through and
-    // startup state decides where they actually land (/welcome, /main, ...).
     if (!mounted) return;
-    context.go('/');
+    // pushReplacement, not go: keeps Welcome beneath us on the onboarding entry
+    // path so the back gesture behaves, while still removing this screen.
+    context.pushReplacement(widget.next);
   }
 }

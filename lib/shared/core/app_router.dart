@@ -120,24 +120,25 @@ class AppRouter {
           return null;
         }
 
-        // ANALYTICS CONSENT GATE.
+        // ANALYTICS CONSENT.
         //
-        // Sits ahead of every other redirect (bar force-upgrade), including the
-        // auth check, because it has to precede `signInAnonymously()` on
-        // /welcome — guest mode is the default here, and guests are ~88% of the
-        // base, so consent that only covered signed-in users would cover almost
-        // nobody.
+        // The screen is no longer a gate that fires ahead of everything. It is
+        // reached two ways, both of which route TO it explicitly:
+        //   - new users, from Welcome's "Get Started" (see welcome_screen.dart),
+        //     so it reads as the first step of onboarding rather than a popup;
+        //   - existing users who were onboarded before the prompt existed, from
+        //     the startup `data:` branch below.
         //
-        // It also catches EXISTING users: they were never asked, so their
-        // status is `unknown` and they see this once on the first launch after
-        // updating.
-        final consent = ref.read(analyticsConsentProvider);
-        if (consent.needsPrompt) {
-          return currentPath == '/privacy-consent' ? null : '/privacy-consent';
-        }
+        // Only strict-regime users (EEA/UK, Washington) are ever sent here —
+        // `needsPrompt` encodes that. Everyone else gets disclosure + an
+        // always-available Settings → Privacy opt-out instead of a screen.
+        //
+        // Let it render once we're on it. Without this the session check below
+        // bounces /privacy-consent to /welcome whenever `signInAnonymously()`
+        // failed (welcome_screen swallows that error), producing an infinite
+        // redirect loop between the two.
         if (currentPath == '/privacy-consent') {
-          // Decision recorded — resolve to wherever startup says they belong.
-          return '/';
+          return null;
         }
 
         // Public routes that don't require auth (welcome, onboarding, auth screens)
@@ -190,6 +191,22 @@ class AppRouter {
             if (appStartupData.isLoggedOut) {
               return '/welcome';
             }
+
+            // Existing user, onboarded before the consent prompt existed, in a
+            // strict region. New users can't reach this — !hasCompletedOnboarding
+            // short-circuits to /welcome above — so this is only the backfill.
+            //
+            // Placed HERE, not at the top of the redirect, on purpose: reaching
+            // this branch means appStartupProvider has returned data, which
+            // means the region lookup has completed (it is awaited in that
+            // provider's Future.wait). A top-of-redirect check would run on the
+            // very first parse of '/', while startup is still loading and the
+            // region is still an unresolved device-signal guess — and would
+            // prompt Californians.
+            if (ref.read(analyticsConsentProvider).needsPrompt) {
+              return '/privacy-consent';
+            }
+
             // User is fully onboarded - go to main app
             return '/main';
           },
@@ -198,11 +215,16 @@ class AppRouter {
         );
       },
       routes: [
-        // Analytics consent disclosure - shown once, ahead of everything else
+        // Analytics consent - strict regions only (EEA/UK, Washington).
+        // `next` is where to go once a decision is recorded: '/onboarding' when
+        // entered from Get Started, '/' for the existing-user backfill (which
+        // then resolves through the startup redirect to /main).
         GoRoute(
           path: '/privacy-consent',
           name: 'privacy-consent',
-          builder: (context, state) => const PrivacyConsentScreen(),
+          builder: (context, state) => PrivacyConsentScreen(
+            next: state.uri.queryParameters['next'] ?? '/',
+          ),
         ),
         // Force Upgrade Screen - Mandatory update required
         GoRoute(
