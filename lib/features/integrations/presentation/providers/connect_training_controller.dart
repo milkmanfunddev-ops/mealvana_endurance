@@ -236,6 +236,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Whether we're using a temporary user ID (during onboarding before profile creation)
   bool _isUsingTempUserId = false;
 
+  /// Whether we have a real auth session but onboarding hasn't completed yet,
+  /// meaning the public.users profile row doesn't exist in Supabase and
+  /// activity uploads would fail with FK 23503.
+  bool _isOnboardingInProgress = false;
+
   @override
   FutureOr<ConnectTrainingState> build() async {
     final database = ref.read(appDatabaseProvider);
@@ -332,6 +337,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId = await _getOrCreateTempUserId(prefs);
       _isUsingTempUserId = true;
     }
+
+    _isOnboardingInProgress =
+        !_isUsingTempUserId && (user?.onboardingCompleted != true);
 
     if (kDebugMode) {
       print(
@@ -1119,10 +1127,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       final newWorkouts = getNewWorkouts(result);
       final updated = getUpdated(result);
       if (newWorkouts > 0 || updated > 0) {
-        if (_isUsingTempUserId) {
+        if (_isUsingTempUserId || _isOnboardingInProgress) {
           if (kDebugMode) {
             print(
-              '⏸️ Skipping Supabase activity upload during onboarding (temp user ID)',
+              '⏸️ Skipping Supabase activity upload during onboarding (${_isUsingTempUserId ? "temp user ID" : "profile not yet uploaded"})',
             );
           }
         } else {
