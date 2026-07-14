@@ -1002,12 +1002,21 @@ workflows:
           # GREEN — so a patch that never shipped looks like one that did.
           set -e
 
+          # --export-options-plist is what makes signing actually take. The
+          # signing step above writes it via `xcode-project use-profiles`;
+          # without passing it, flutter falls back to AUTOMATIC signing, goes
+          # looking for an "iOS App Development" profile that does not exist,
+          # and fails — even though the certificate and profile are installed.
+          # The prod-ios release workflow passes this; the patch workflow never did.
           if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
             echo "Creating patch for latest iOS release..."
-            shorebird patch ios --flavor prod --target lib/main_prod.dart
+            shorebird patch ios --flavor prod --target lib/main_prod.dart \
+              --export-options-plist=/Users/builder/export_options.plist
           else
             echo "Creating patch for iOS release version: $RELEASE_VERSION"
-            shorebird patch ios --flavor prod --target lib/main_prod.dart --release-version="$RELEASE_VERSION"
+            shorebird patch ios --flavor prod --target lib/main_prod.dart \
+              --release-version="$RELEASE_VERSION" \
+              --export-options-plist=/Users/builder/export_options.plist
           fi
 
           echo ""
@@ -1071,10 +1080,21 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
 
+    # Required, same as the dev-ios release workflow. `shorebird patch ios` runs
+    # a full `flutter build ipa`, which archives and signs — so the patch needs
+    # exactly the same signing setup a release does. Without the `ios_signing`
+    # block Codemagic never injects the certificate or provisioning profile, and
+    # the build dies with "No profiles for 'com.milkman.mealvanaendurance.dev'".
+    integrations:
+      app_store_connect: API Key for CI builds
+
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.milkman.mealvanaendurance.dev
       groups:
         - mealvana_dev
         - shorebird_credentials
@@ -1109,12 +1129,21 @@ workflows:
           # GREEN — so a patch that never shipped looks like one that did.
           set -e
 
+          # --export-options-plist is what makes signing actually take. The
+          # signing step above writes it via `xcode-project use-profiles`;
+          # without passing it, flutter falls back to AUTOMATIC signing, goes
+          # looking for an "iOS App Development" profile that does not exist,
+          # and fails — even though the certificate and profile are installed.
+          # The dev-ios release workflow passes this; the patch workflow never did.
           if [ -z "$RELEASE_VERSION" ] || [ "$RELEASE_VERSION" = "latest" ]; then
             echo "Creating patch for latest dev iOS release..."
-            shorebird patch ios --flavor dev --target lib/main_dev.dart
+            shorebird patch ios --flavor dev --target lib/main_dev.dart \
+              --export-options-plist=/Users/builder/export_options.plist
           else
             echo "Creating patch for dev iOS release version: $RELEASE_VERSION"
-            shorebird patch ios --flavor dev --target lib/main_dev.dart --release-version="$RELEASE_VERSION"
+            shorebird patch ios --flavor dev --target lib/main_dev.dart \
+              --release-version="$RELEASE_VERSION" \
+              --export-options-plist=/Users/builder/export_options.plist
           fi
 
           echo ""
