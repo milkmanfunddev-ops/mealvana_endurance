@@ -173,7 +173,7 @@ void _deleteWithUndo(BuildContext context, WidgetRef ref, MealLog log) {
 
 /// Opens the full-screen "Log a Meal" experience.
 void _openLogSheet(BuildContext context, WidgetRef ref, String dateStr) {
-  openLogMealScreen(context, logDate: dateStr);
+  openLogMealScreen(context, logDate: dateStr, source: 'today_log_section');
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../data/carb_loading_day_meal_repository.dart';
 import '../domain/carb_loading_day_meal.dart';
 import '../domain/carb_loading_food.dart';
@@ -14,11 +15,44 @@ class FoodSelectionService {
   const FoodSelectionService({
     required CarbLoadingDayMealRepository dayMealRepository,
     required CarbLoadingFoodService foodService,
+    required AnalyticsTracker analytics,
   })  : _dayMealRepository = dayMealRepository,
-        _foodService = foodService;
+        _foodService = foodService,
+        _analytics = analytics;
 
   final CarbLoadingDayMealRepository _dayMealRepository;
   final CarbLoadingFoodService _foodService;
+  final AnalyticsTracker _analytics;
+
+  /// `carb_loading_food_added` fires here, in the service, rather than in a
+  /// controller. There are two independent add paths — the day-detail
+  /// controller and the food-selection controller — and both bottom out here,
+  /// so this is the only point that sees every add. Instrumenting a single
+  /// controller would silently undercount.
+  void _trackFoodAdded({
+    required String carbLoadingDayId,
+    required MealType mealType,
+    required String foodName,
+    required String foodId,
+    required int quantity,
+    required double carbsPerServing,
+    required bool isUserFood,
+  }) {
+    try {
+      _analytics.track(
+        'carb_loading_food_added',
+        properties: {
+          'day_id': carbLoadingDayId,
+          'meal_type': mealType.name,
+          'food_name': foodName,
+          'food_id': foodId,
+          'quantity': quantity,
+          'carbs_per_serving': carbsPerServing,
+          'is_user_food': isUserFood,
+        },
+      );
+    } catch (_) {}
+  }
 
   /// Add a default food to a meal
   Future<CarbLoadingDayMeal> addDefaultFoodToMeal({
@@ -34,7 +68,7 @@ class FoodSelectionService {
       );
     }
 
-    return _dayMealRepository.addDefaultFoodToMeal(
+    final meal = await _dayMealRepository.addDefaultFoodToMeal(
       carbLoadingDayId: carbLoadingDayId,
       mealTypeId: mealType.id,
       carbLoadingFoodId: food.id,
@@ -42,6 +76,19 @@ class FoodSelectionService {
       quantity: quantity,
       carbsPerServing: food.carbsPerServing,
     );
+
+    // After the write, so a failed add doesn't report as a successful one.
+    _trackFoodAdded(
+      carbLoadingDayId: carbLoadingDayId,
+      mealType: mealType,
+      foodName: food.displayName,
+      foodId: food.id,
+      quantity: quantity,
+      carbsPerServing: food.carbsPerServing,
+      isUserFood: false,
+    );
+
+    return meal;
   }
 
   /// Add a user food to a meal
@@ -58,7 +105,7 @@ class FoodSelectionService {
       );
     }
 
-    return _dayMealRepository.addUserFoodToMeal(
+    final meal = await _dayMealRepository.addUserFoodToMeal(
       carbLoadingDayId: carbLoadingDayId,
       mealTypeId: mealType.id,
       carbLoadingUserFoodId: food.id,
@@ -66,6 +113,18 @@ class FoodSelectionService {
       quantity: quantity,
       carbsPerServing: food.carbsPerServing,
     );
+
+    _trackFoodAdded(
+      carbLoadingDayId: carbLoadingDayId,
+      mealType: mealType,
+      foodName: food.displayName,
+      foodId: food.id,
+      quantity: quantity,
+      carbsPerServing: food.carbsPerServing,
+      isUserFood: true,
+    );
+
+    return meal;
   }
 
   /// Add any food (default or user) to a meal
@@ -310,5 +369,9 @@ FoodSelectionService foodSelectionService(Ref ref) {
   return FoodSelectionService(
     dayMealRepository: ref.watch(carbLoadingDayMealRepositoryProvider),
     foodService: ref.watch(carbLoadingFoodServiceProvider),
+    // `watch`, not `read`: the tracker provider swaps to a no-op when consent
+    // is withdrawn, and this service must be rebuilt with the new instance
+    // rather than holding the old Mixpanel-backed one.
+    analytics: ref.watch(analyticsTrackerProvider),
   );
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
@@ -195,6 +196,19 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
     );
   }
 
+  /// The weekly overview is one of the consumption surfaces we had no
+  /// visibility into. Note this is the *fuel-timeline* breakdown sheet — the
+  /// `daily_macros` WeeklyOverviewChart is dead code in this build and firing
+  /// from there would produce an event that never arrives.
+  void _trackWeeklyOverviewViewed() {
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track('weekly_overview_viewed');
+    } catch (_) {}
+  }
+
   Widget _toggle(Color onSurface, Color surfaceBg) {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -218,7 +232,12 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
                 .read(contentServiceProvider)
                 .getValue('energy_breakdown.weekly', defaultValue: 'Weekly'),
             _weekly,
-            () => setState(() => _weekly = true),
+            () {
+              // Only on the daily -> weekly transition; re-tapping the already
+              // active Weekly tab shouldn't count as another view.
+              if (!_weekly) _trackWeeklyOverviewViewed();
+              setState(() => _weekly = true);
+            },
             onSurface,
             surfaceBg,
           ),

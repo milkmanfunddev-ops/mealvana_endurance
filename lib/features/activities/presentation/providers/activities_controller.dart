@@ -188,6 +188,23 @@ class ActivitiesController extends _$ActivitiesController {
         brickId: brickId,
       );
 
+      // The "used the core function" signal. Everything reaching this
+      // controller is a user planning a workout by hand; provider-synced
+      // workouts never come through here (they go straight to
+      // `activitiesRepository.insertActivity`), so `source` is always manual.
+      try {
+        ref.read(appExternalDepsProvider).analytics.track(
+          'workout_planned',
+          properties: {
+            'sport': activityType.name,
+            'duration_min': durationMinutes,
+            'source': 'manual',
+            'activity_id': createdActivity.id,
+            'is_coach_created': forUserId != null,
+          },
+        );
+      } catch (_) {}
+
       if (priorCount == 0) {
         try {
           ref.read(appExternalDepsProvider).analytics.track(

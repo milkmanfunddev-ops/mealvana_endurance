@@ -374,7 +374,11 @@ class FuelTimelineScreen extends ConsumerWidget {
               label: '+ Add Food',
               color: onSurface.withValues(alpha: 0.8),
               onTap: () =>
-                  openLogMealScreen(context, logDate: _ymd(selectedDate)),
+                  openLogMealScreen(
+                    context,
+                    logDate: _ymd(selectedDate),
+                    source: 'fuel_timeline',
+                  ),
             ),
           ),
         if (filter.showsAddFood && filter.showsAddActivity)

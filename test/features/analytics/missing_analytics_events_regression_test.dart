@@ -243,7 +243,93 @@ void main() {
 
       expect(analytics.hasEvent('first_activity_added'), isFalse);
     });
+
+    // `workout_planned` is the "used the core function" activation signal —
+    // unlike `first_activity_added` it must fire on EVERY manual create, not
+    // just the first, or the activation funnel only ever counts one per user.
+    test('fires workout_planned on every create, not just the first', () async {
+      when(
+        () => mockService.getAllActivities(any()),
+      ).thenAnswer((_) async => [_makeActivity(id: 'existing-1')]);
+
+      _stubCreateActivity(mockService, _makeActivity(id: 'activity-2'));
+
+      await container.read(activitiesControllerProvider.future);
+      final controller = container.read(
+        activitiesControllerProvider.notifier,
+      );
+
+      await controller.createActivity(
+        title: 'Second Run',
+        scheduledDateTime: DateTime(2026, 7, 11),
+        activityType: ActivityType.cycling,
+        durationMinutes: 90,
+      );
+
+      // Fires even though this is NOT the user's first activity.
+      expect(analytics.hasEvent('first_activity_added'), isFalse);
+
+      final events = analytics.findEvents('workout_planned');
+      expect(events, hasLength(1));
+      expect(events.first.properties?['sport'], 'cycling');
+      expect(events.first.properties?['duration_min'], 90);
+      expect(events.first.properties?['source'], 'manual');
+      expect(events.first.properties?['activity_id'], 'activity-2');
+    });
+
+    test('workout_planned marks coach-created activities', () async {
+      _stubCreateActivity(mockService, _makeActivity());
+
+      await container.read(activitiesControllerProvider.future);
+      final controller = container.read(
+        activitiesControllerProvider.notifier,
+      );
+
+      await controller.createActivity(
+        title: 'Athlete Run',
+        scheduledDateTime: DateTime(2026, 7, 12),
+        activityType: ActivityType.running,
+        forUserId: 'athlete-9',
+      );
+
+      final events = analytics.findEvents('workout_planned');
+      expect(events, hasLength(1));
+      expect(events.first.properties?['is_coach_created'], isTrue);
+    });
   });
+}
+
+/// `createActivity` has ~22 named parameters; stubbing them inline three times
+/// over drowns the assertions.
+void _stubCreateActivity(_MockActivitiesService mockService, Activity result) {
+  when(
+    () => mockService.createActivity(
+      deviceId: any(named: 'deviceId'),
+      userId: any(named: 'userId'),
+      forUserId: any(named: 'forUserId'),
+      activityType: any(named: 'activityType'),
+      title: any(named: 'title'),
+      scheduledDateTime: any(named: 'scheduledDateTime'),
+      distanceMiles: any(named: 'distanceMiles'),
+      durationMinutes: any(named: 'durationMinutes'),
+      paceTargetMinutesPerMile: any(named: 'paceTargetMinutesPerMile'),
+      intensityLevel: any(named: 'intensityLevel'),
+      notes: any(named: 'notes'),
+      cyclingSpeedMph: any(named: 'cyclingSpeedMph'),
+      cyclingTerrain: any(named: 'cyclingTerrain'),
+      cyclingIndoorOutdoor: any(named: 'cyclingIndoorOutdoor'),
+      cyclingElevationGainFt: any(named: 'cyclingElevationGainFt'),
+      cyclingSessionGoal: any(named: 'cyclingSessionGoal'),
+      swimmingPacePer100mSeconds: any(named: 'swimmingPacePer100mSeconds'),
+      swimmingPoolOrOpenWater: any(named: 'swimmingPoolOrOpenWater'),
+      swimmingWaterTempC: any(named: 'swimmingWaterTempC'),
+      intensityTarget: any(named: 'intensityTarget'),
+      timeBeforeMinutes: any(named: 'timeBeforeMinutes'),
+      nutritionPlanData: any(named: 'nutritionPlanData'),
+      brickMetadata: any(named: 'brickMetadata'),
+      brickId: any(named: 'brickId'),
+    ),
+  ).thenAnswer((_) async => result);
 }
 
 class _FakeSyncCoordinator extends SyncCoordinator {

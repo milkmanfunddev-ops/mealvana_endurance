@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../providers/onboarding_analytics.dart';
 
 /// Welcome Screen - Design System
 /// First screen in onboarding flow
@@ -159,6 +160,10 @@ class WelcomeScreen extends ConsumerWidget {
     // Track get started
     final externalDeps = ref.read(appExternalDepsProvider);
     externalDeps.analytics.track('welcome_get_started_tapped');
+
+    // Start of the onboarding funnel — read back at the final step to derive
+    // `duration_sec` on `onboarding_completed`.
+    OnboardingAnalytics.markStarted();
 
     // Capture navigation info before async operations
     final shouldUseCallback = onContinue != null;
