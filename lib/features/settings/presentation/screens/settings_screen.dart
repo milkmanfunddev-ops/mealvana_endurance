@@ -9,7 +9,6 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/settings_controller.dart';
@@ -390,29 +389,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               contentPadding: EdgeInsets.zero,
             ),
             _buildDeviceIdRow(context),
-            // Hidden paywall entry for purchase testing. Only present when the
-            // AI-credits feature flag is on; keeps it out of the normal user UI.
-            if (ref.watch(appConfigProvider).aiCreditsEnabled) ...[
-              const Divider(),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.bolt, color: AppColors.electrolyte),
-                title: Text(
-                  'Buy AI Credits (tester)',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  'Opens the credits paywall for purchase testing.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/buy-credits'),
-              ),
-            ],
           ],
         ),
       ),
@@ -877,23 +853,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
 
-          const SizedBox(height: AppSpacing.sm),
-
-          // Privacy - analytics consent withdrawal + privacy policy / terms.
-          // Apple 5.1.1(ii) requires withdrawal to be "easily accessible", so
-          // this is a normal Settings row, not the hidden 7-tap tester toggle.
-          _buildQuickLink(
-            context: context,
-            rowKey: const ValueKey('settings.privacy_row'),
-            icon: FontAwesomeIcons.shieldHalved.data,
-            title: 'Privacy',
-            subtitle: 'Usage data, privacy policy and terms',
-            onTap: () {
-              final analytics = ref.read(appExternalDepsProvider);
-              analytics.analytics.track('settings_privacy_tapped');
-              context.push('/settings/privacy');
-            },
-          ),
+          // PRIVACY ROW — HIDDEN 2026-07-14, pending a rethink of the privacy UX.
+          //
+          // ⚠️ DO NOT SHIP THIS STATE TO PROD without restoring the row (or an
+          // equivalent surface). It is the app's only consent-withdrawal path,
+          // and hiding it breaks two things that the current analytics design
+          // explicitly leans on:
+          //
+          //  1. Apple 5.1.1(ii) requires an "easily accessible and
+          //     understandable way to withdraw consent". With this row gone
+          //     there is none, for anyone.
+          //  2. Outside the EEA/UK and Washington we do not show a consent
+          //     screen at all — analytics defaults ON via an implied grant
+          //     (see AnalyticsConsent.allowsAnalytics). The ENTIRE legal basis
+          //     for that is "disclosure + an accessible opt-out". Remove the
+          //     opt-out and it is just silent collection with no way out.
+          //
+          // The route (`/settings/privacy`) and PrivacySettingsScreen are left
+          // intact, so restoring this is a one-block revert.
+          //
+          // const SizedBox(height: AppSpacing.sm),
+          // _buildQuickLink(
+          //   context: context,
+          //   rowKey: const ValueKey('settings.privacy_row'),
+          //   icon: FontAwesomeIcons.shieldHalved.data,
+          //   title: 'Privacy',
+          //   subtitle: 'Usage data, privacy policy and terms',
+          //   onTap: () {
+          //     final analytics = ref.read(appExternalDepsProvider);
+          //     analytics.analytics.track('settings_privacy_tapped');
+          //     context.push('/settings/privacy');
+          //   },
+          // ),
 
           const SizedBox(height: AppSpacing.sm),
 
