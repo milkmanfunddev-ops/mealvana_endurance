@@ -40,6 +40,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
     this.foods,
     this.brickSegment,
     this.isBrick = false,
+    this.planId,
     this.onRegenerate,
   });
 
@@ -51,6 +52,10 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
   final List<FoodItemData>? foods;
   final BrickSegmentMacroTarget? brickSegment;
   final bool isBrick;
+
+  /// Id of the activity whose plan is being explained. Reported as `plan_id`
+  /// on `nutrition_transparency_viewed`.
+  final String? planId;
 
   /// Called after a profile save (sweat rate / sodium concentration) so the
   /// caller can trigger macro regeneration.
@@ -67,6 +72,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
     List<FoodItemData>? foods,
     BrickSegmentMacroTarget? brickSegment,
     bool isBrick = false,
+    String? planId,
     VoidCallback? onRegenerate,
   }) {
     showModalBottomSheet<void>(
@@ -82,6 +88,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
         foods: foods,
         brickSegment: brickSegment,
         isBrick: isBrick,
+        planId: planId,
         onRegenerate: onRegenerate,
       ),
     );
@@ -465,6 +472,7 @@ class _PhaseExplanationSheetState
                             ? '${actuals['carbs'] ?? 0}'
                             : null,
                         unit: 'g',
+                        planId: widget.planId,
                         onSettingsChanged: () => setState(() {}),
                         onRegenerate: widget.onRegenerate,
                       ),
@@ -480,6 +488,7 @@ class _PhaseExplanationSheetState
                                 : '${actuals['fluids'] ?? 0}'
                             : null,
                         unit: widget.useImperial ? 'oz' : 'mL',
+                        planId: widget.planId,
                         onSettingsChanged: () => setState(() {}),
                         onRegenerate: widget.onRegenerate,
                       ),
@@ -493,6 +502,7 @@ class _PhaseExplanationSheetState
                             ? '${actuals['sodium'] ?? 0}'
                             : null,
                         unit: 'mg',
+                        planId: widget.planId,
                         onSettingsChanged: () => setState(() {}),
                         onRegenerate: widget.onRegenerate,
                       ),
@@ -766,6 +776,7 @@ class _NutrientTransparencyCard extends StatefulWidget {
     required this.transparency,
     required this.unit,
     this.actualValue,
+    this.planId,
     this.onSettingsChanged,
     this.onRegenerate,
   });
@@ -774,6 +785,7 @@ class _NutrientTransparencyCard extends StatefulWidget {
   final NutrientTransparencyData transparency;
   final String unit;
   final String? actualValue;
+  final String? planId;
   final VoidCallback? onSettingsChanged;
   final VoidCallback? onRegenerate;
 
@@ -862,6 +874,7 @@ class _NutrientTransparencyCardState
             if (widget.transparency.storySections.isNotEmpty)
               NutrientFullStorySection(
                 data: widget.transparency,
+                planId: widget.planId,
                 onSettingsChanged: widget.onSettingsChanged,
                 onEditKnownSweatRate: widget.onRegenerate,
                 onEditKnownSodiumConcentration: widget.onRegenerate,

@@ -26,12 +26,18 @@ class NutrientFullStorySection extends ConsumerStatefulWidget {
   const NutrientFullStorySection({
     super.key,
     required this.data,
+    this.planId,
     this.onSettingsChanged,
     this.onEditKnownSweatRate,
     this.onEditKnownSodiumConcentration,
   });
 
   final NutrientTransparencyData data;
+
+  /// Id of the activity whose plan this sheet is explaining, reported as
+  /// `plan_id` on `nutrition_transparency_viewed`.
+  final String? planId;
+
   final VoidCallback? onSettingsChanged;
 
   /// TODO(phase5): wire up to sweat-rate edit flow.
@@ -87,20 +93,16 @@ class _NutrientFullStorySectionState
 
   /// Fires when the athlete opens "The Full Story" — one of the consumption
   /// surfaces we were previously blind to.
-  ///
-  /// No `plan_id`: it is genuinely not reachable here. Neither
-  /// `NutrientTransparencyData` nor the enclosing `PhaseExplanationSheet`
-  /// carries an activity or plan id, and threading one down would touch all
-  /// four sheet call sites. `nutrient` + `phase` are enough to answer which
-  /// nutrients drive transparency interest.
   void _trackTransparencyViewed() {
     try {
+      final planId = widget.planId;
       ref.read(analyticsTrackerProvider).track(
         'nutrition_transparency_viewed',
         properties: {
           'nutrient': widget.data.nutrientLabel,
           'phase': widget.data.phase,
           'is_tested': widget.data.isTested,
+          if (planId != null) 'plan_id': planId,
         },
       );
     } catch (_) {}

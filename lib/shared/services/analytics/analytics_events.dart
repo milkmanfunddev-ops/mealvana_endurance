@@ -93,6 +93,32 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   // 2b. Activity Navigation Events
 
+  /// The "used the core function" signal, fired wherever a planned workout is
+  /// saved: by hand in the app (`source: 'manual'`) or pulled in from a
+  /// training platform (`source: 'synced'`, with [provider] naming it).
+  ///
+  /// Both paths go through here so the manual/synced split cannot drift —
+  /// provider-synced workouts never pass through ActivitiesController, so a
+  /// fire at that one call site can only ever report 'manual'.
+  Future<void> trackWorkoutPlanned({
+    required String sport,
+    required String source,
+    int? durationMinutes,
+    String? activityId,
+    String? provider,
+    bool? isCoachCreated,
+  }) {
+    return track('workout_planned', properties: {
+      'sport': sport,
+      'duration_min': durationMinutes,
+      'source': source,
+      'timestamp': DateTime.now().toIso8601String(),
+      if (activityId != null) 'activity_id': activityId,
+      if (provider != null) 'provider': provider,
+      if (isCoachCreated != null) 'is_coach_created': isCoachCreated,
+    });
+  }
+
   Future<void> trackActivityButtonPressed({
     required DateTime selectedDate,
   }) {

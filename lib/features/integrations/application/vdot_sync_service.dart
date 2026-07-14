@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../data/integrations_repository.dart';
@@ -31,17 +33,26 @@ class VdotSyncService {
     required ActivitiesRepository activitiesRepository,
     required VdotTransformer transformer,
     required ChangeDetectionService changeDetectionService,
+    AnalyticsTracker? analytics,
   })  : _apiClient = apiClient,
         _integrationsRepository = integrationsRepository,
         _activitiesRepository = activitiesRepository,
         _transformer = transformer,
-        _changeDetectionService = changeDetectionService;
+        _changeDetectionService = changeDetectionService,
+        _analytics = analytics;
 
   final VdotApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
   final ActivitiesRepository _activitiesRepository;
   final VdotTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
+  final AnalyticsTracker? _analytics;
+
+  void _trackSyncedWorkoutPlanned(Activity activity) => trackSyncedWorkoutPlanned(
+        _analytics,
+        activity,
+        provider: 'vdot',
+      );
 
   static const _provider = 'vdot';
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -124,6 +135,7 @@ class VdotSyncService {
 
       for (final activity in changes.newActivities) {
         await _activitiesRepository.insertActivity(activity);
+        _trackSyncedWorkoutPlanned(activity);
       }
       for (final change in changes.updatedActivities) {
         final updated = change.updatedActivity.copyWith(

@@ -6,6 +6,7 @@ import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -190,18 +191,15 @@ class ActivitiesController extends _$ActivitiesController {
 
       // The "used the core function" signal. Everything reaching this
       // controller is a user planning a workout by hand; provider-synced
-      // workouts never come through here (they go straight to
-      // `activitiesRepository.insertActivity`), so `source` is always manual.
+      // workouts fire the same event from their sync service with
+      // `source: 'synced'`.
       try {
-        ref.read(appExternalDepsProvider).analytics.track(
-          'workout_planned',
-          properties: {
-            'sport': activityType.name,
-            'duration_min': durationMinutes,
-            'source': 'manual',
-            'activity_id': createdActivity.id,
-            'is_coach_created': forUserId != null,
-          },
+        ref.read(appExternalDepsProvider).analytics.trackWorkoutPlanned(
+          sport: activityType.name,
+          source: 'manual',
+          durationMinutes: durationMinutes,
+          activityId: createdActivity.id,
+          isCoachCreated: forUserId != null,
         );
       } catch (_) {}
 

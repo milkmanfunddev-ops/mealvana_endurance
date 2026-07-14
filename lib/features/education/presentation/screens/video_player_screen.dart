@@ -64,6 +64,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       return;
     }
 
+    // Only the education surface emits a matching `education_video_opened`
+    // (keyed on the same contentId). Other surfaces — e.g. the activity-detail
+    // transparency video — build this screen without a contentId, and firing
+    // here would put a completion with `video_id: null` and no opener on the
+    // board. Stay silent for them rather than pollute the funnel.
+    final videoId = widget.contentId;
+    if (videoId == null || videoId.isEmpty) return;
+
     final percent =
         (_maxPosition.inMilliseconds / duration.inMilliseconds * 100).clamp(
           0.0,
@@ -74,7 +82,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _analytics!.track(
         'education_video_completed',
         properties: {
-          'video_id': widget.contentId,
+          'video_id': videoId,
           'title': widget.title,
           'percent_watched': percent.round(),
           'watched_sec': _maxPosition.inSeconds,

@@ -57,6 +57,7 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     this.carbsOverrideLabel,
     this.sodiumOverrideLabel,
     this.fluidsOverrideLabel,
+    this.planId,
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
@@ -123,6 +124,10 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final String? fluidsOverrideLabel;
 
   /// Optional macro targets for explanation sheet
+  /// Activity id, forwarded to the explanation sheet so transparency views
+  /// can be attributed to a plan.
+  final String? planId;
+
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
@@ -253,6 +258,7 @@ class _DuringPhaseSectionWidgetState
                   foods: widget.section.foodItems,
                   brickSegment: widget.brickSegment,
                   isBrick: widget.isBrick,
+                  planId: widget.planId,
                   onRegenerate: widget.onRegenerate,
                 );
               },

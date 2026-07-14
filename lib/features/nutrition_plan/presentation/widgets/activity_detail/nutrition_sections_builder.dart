@@ -206,6 +206,7 @@ class _NutritionSectionsBuilderState
                 sectionColor: sectionColor,
                 sectionTitle: sectionTitle.toUpperCase(),
                 useImperial: useImperial,
+                planId: widget.state.activity?.id,
                 onSwapFood: widget.onSwapFood,
                 onDeleteFood: widget.onDeleteFood,
                 onUpdateQuantity: widget.onUpdateQuantity,
@@ -256,6 +257,7 @@ class _NutritionSectionsBuilderState
                 sectionColor: sectionColor,
                 sectionTitle: sectionTitle.toUpperCase(),
                 category: category,
+                planId: widget.state.activity?.id,
                 durationMinutes: durationMinutes,
                 useImperial: useImperial,
                 activityType: activityType,
@@ -636,6 +638,7 @@ class _NutritionSectionsBuilderState
                   sportLabel: activityType.displayName,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  planId: widget.state.activity?.id,
                   onRegenerate: _buildRegenCallback(),
                 );
               },

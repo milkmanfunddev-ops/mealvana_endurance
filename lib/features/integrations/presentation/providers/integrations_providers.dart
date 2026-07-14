@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/change_detection_service.dart';
@@ -202,6 +203,7 @@ FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
     activitiesRepository: activitiesRepository,
     transformer: transformer,
     changeDetectionService: changeDetectionService,
+    analytics: ref.watch(analyticsTrackerProvider),
   );
 }
 
@@ -286,6 +288,7 @@ Future<TrainingPeaksSyncService> trainingPeaksSyncService(Ref ref) async {
     activitiesRepository: activitiesRepository,
     transformer: transformer,
     changeDetectionService: changeDetectionService,
+    analytics: ref.watch(analyticsTrackerProvider),
   );
 }
 
@@ -496,5 +499,6 @@ VdotSyncService vdotSyncService(Ref ref) {
     activitiesRepository: activitiesRepository,
     transformer: transformer,
     changeDetectionService: changeDetectionService,
+    analytics: ref.watch(analyticsTrackerProvider),
   );
 }

@@ -27,6 +27,7 @@ class BeforePhaseWidget extends StatefulWidget {
     required this.onAddFood,
     this.categoryPrefix = 'before_run',
     this.showSwipeHint = false,
+    this.planId,
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
@@ -65,6 +66,11 @@ class BeforePhaseWidget extends StatefulWidget {
   final void Function(String category) onAddFood;
   final String categoryPrefix;
   final bool showSwipeHint;
+
+  /// Activity id, forwarded to the explanation sheet so transparency views
+  /// can be attributed to a plan.
+  final String? planId;
+
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
@@ -152,6 +158,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         bodyWeightKg: widget.bodyWeightKg,
                         sportLabel: widget.sportLabel,
                         useImperial: widget.useImperial,
+                        planId: widget.planId,
                         foods: widget.section.subPhases
                                 ?.expand((sp) => sp.foodItems)
                                 .toList() ??

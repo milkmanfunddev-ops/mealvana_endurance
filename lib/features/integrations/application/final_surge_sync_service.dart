@@ -4,6 +4,8 @@ import 'package:mealvana_endurance/features/integrations/domain/integration_exce
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import 'synced_workout_analytics.dart';
 import '../data/final_surge_api_client.dart';
 import '../data/integrations_repository.dart';
 import '../domain/integration.dart';
@@ -36,7 +38,9 @@ class FinalSurgeSyncService {
     required ActivitiesRepository activitiesRepository,
     required FinalSurgeTransformer transformer,
     required ChangeDetectionService changeDetectionService,
-  }) : _apiClient = apiClient,
+    AnalyticsTracker? analytics,
+  }) : _analytics = analytics,
+       _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
@@ -47,6 +51,13 @@ class FinalSurgeSyncService {
   final ActivitiesRepository _activitiesRepository;
   final FinalSurgeTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
+  final AnalyticsTracker? _analytics;
+
+  void _trackSyncedWorkoutPlanned(Activity activity) => trackSyncedWorkoutPlanned(
+        _analytics,
+        activity,
+        provider: 'final_surge',
+      );
 
   /// Buffer time before token expiration to trigger proactive refresh (5 min)
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -301,6 +312,7 @@ class FinalSurgeSyncService {
       // NEW: Insert new activities
       for (final activity in changes.newActivities) {
         await _activitiesRepository.insertActivity(activity);
+        _trackSyncedWorkoutPlanned(activity);
         if (kDebugMode) {
           print('   ✓ Inserted: ${activity.title}');
         }
@@ -579,6 +591,7 @@ class FinalSurgeSyncService {
       // NEW: Insert new activities
       for (final activity in changes.newActivities) {
         await _activitiesRepository.insertActivity(activity);
+        _trackSyncedWorkoutPlanned(activity);
       }
 
       // UPDATED: Update existing activities (using copyWith to preserve all fields)
