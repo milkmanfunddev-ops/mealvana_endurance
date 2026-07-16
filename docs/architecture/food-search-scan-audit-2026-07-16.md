@@ -8,9 +8,21 @@
 > 2. Read **§10 MERGED ROADMAP** — the plan of record. (§9 is superseded; the 7-03 doc's §7 is superseded.)
 > 3. Work the phases **in order**. Each shrinks the next.
 >
-> **Current state as of 2026-07-16: NOTHING IMPLEMENTED. No code changed, no migration, no deploy.** Only this doc + `docs/architecture/README.md` + the 7-03 doc's status header were written. Everything below is a plan.
+> ## IMPLEMENTATION STATUS — updated 2026-07-16, on `develop` @ `67782d26` (pushed)
 >
-> **Next action = Phase 0**: review + merge `origin/claude/fix-39fe3fdb-food-search-variant-title` (first — only silently-wrong-data bug), then rebase + merge `origin/claude/fix-39fe3fdb-multi-word-search-filter` (they conflict; same file).
+> | Phase | Status |
+> |---|---|
+> | **0 — land the two branches** | ✅ **DONE** (Lee merged them locally; merge verified — both fixes intact, no conflict markers) |
+> | **1 — scored catalog search** | ✅ **DONE + DEPLOYED dev AND prod.** `search_catalog_ranked` RPC + `search-catalog` rewritten. Verified on prod: all 7 recoverable misses + `nuun electrolyte tablets` + `clif shot bloks` return the right top hit; `banana bread` → 0. Verified in-app: `rx bar` → 26 results, RXBAR #1 (was 0). |
+> | **2 — dead code + render fix** | ✅ **DONE.** `functions_old` deleted (7,633 lines). `onNutritionProductResultTap` forwarded → verified in-app: `pringles` on food logging now returns results with carbs (was "No foods found"). `build_meal_add_food` barcode no longer shows the run-phase picker. |
+> | **3 — one search fn + live FDA** | ⏳ **PARTIAL.** OFF silent-failure + retry/backoff DONE. **NOT done:** `_shared/food_sources/` extraction, `search-foods` merge, live USDA text tier, Search-a-licious migration, catalog `product_type` filter passthrough. |
+> | **4 — carb loading** | ⏳ **PARTIAL.** Barcode crash fixed; hardcoded 30g fixed. **NOT done:** delete `carb_loading_user_foods` (needs a Drift migration + backfill — see the data-loss warning), delete `CarbFoodsList`, `setFilter`, de-dupe `_parseMealTypesArray` (3 copies). |
+> | **5 — sport-aware categories** | ❌ **NOT STARTED** (386 occurrences / 71 files; mapper-first). |
+> | **6 — structural debt** | ❌ **NOT STARTED.** |
+>
+> Commits: `2b209dc3` (Phase 1), `badd4920` (Phase 2), `0706b072` (carb loading), `67782d26` (OFF retry).
+>
+> **Next action = Phase 3**: extract `_shared/food_sources/` with zero behaviour change, verify barcode still works, commit — *then* build `search-foods` on top.
 >
 > **✅ AUTHORIZED (Lee, 2026-07-16) — do these unattended, no approval needed:**
 > deploy edge functions to **dev AND prod**, run **DB migrations**, **merge to `develop`**, and do the `carb_loading_user_foods` fold. Verified: `supabase` CLI 2.90.0 authed (dev `vlmtsdzpnjnavdgytcmi` linked, prod `wvmvsodrvbkxfydabqed` visible), Deno 2.7.11, push access to `origin`.
