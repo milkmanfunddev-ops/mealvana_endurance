@@ -47,6 +47,7 @@ class FoodSearchState {
     this.isCatalogExpanded = false,
     this.nutritionProductResults = const [],
     this.isSearchingNutritionProducts = false,
+    this.openFoodFactsError,
   });
 
   final String searchQuery;
@@ -65,6 +66,11 @@ class FoodSearchState {
   final List<NutritionProductSearchResult> nutritionProductResults;
   final bool isSearchingNutritionProducts;
 
+  /// Set when an Open Food Facts search failed after retries. Distinguishes
+  /// "we couldn't reach OFF" from "OFF has no such food" — without it, a rate-
+  /// limit 503 renders identically to a genuine miss.
+  final String? openFoodFactsError;
+
   FoodSearchState copyWith({
     String? searchQuery,
     List<Food>? userFoodResults,
@@ -77,6 +83,8 @@ class FoodSearchState {
     bool? isCatalogExpanded,
     List<NutritionProductSearchResult>? nutritionProductResults,
     bool? isSearchingNutritionProducts,
+    String? openFoodFactsError,
+    bool clearOpenFoodFactsError = false,
   }) {
     return FoodSearchState(
       searchQuery: searchQuery ?? this.searchQuery,
@@ -93,6 +101,9 @@ class FoodSearchState {
           nutritionProductResults ?? this.nutritionProductResults,
       isSearchingNutritionProducts:
           isSearchingNutritionProducts ?? this.isSearchingNutritionProducts,
+      openFoodFactsError: clearOpenFoodFactsError
+          ? null
+          : (openFoodFactsError ?? this.openFoodFactsError),
     );
   }
 }
@@ -268,32 +279,64 @@ class FoodSearchController extends _$FoodSearchController {
   }
 
   /// Manually trigger Open Food Facts search (always user-initiated).
+  ///
+  /// Open Food Facts sheds load as HTTP 503 rather than 429 once you go over
+  /// its ~10 req/min limit — measured at roughly a 50% failure rate at 20/min,
+  /// and reproduced in-app as "first tap returns nothing, second tap works".
+  /// So: retry a couple of times with backoff, and on final failure record the
+  /// error rather than silently leaving an empty result set, which the UI
+  /// renders as "No foods found" — indistinguishable from the food genuinely
+  /// not existing.
   Future<void> searchOpenFoodFacts(String query) async {
     if (query.isEmpty) return;
 
     final searchService = ref.read(sharedFoodSearchServiceProvider);
 
-    state = state.copyWith(isSearchingOpenFoodFacts: true);
+    state = state.copyWith(
+      isSearchingOpenFoodFacts: true,
+      clearOpenFoodFactsError: true,
+    );
 
-    try {
-      final results = await searchService.searchProducts(query);
+    const attempts = 3;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        final results = await searchService.searchProducts(query);
 
-      if (!_isMounted) return;
+        if (!_isMounted) return;
+        // A newer query superseded this one while we were retrying.
+        if (state.searchQuery.trim() != query.trim()) return;
 
-      state = state.copyWith(
-        openFoodFactsResults: results,
-        isSearchingOpenFoodFacts: false,
-      );
-    } catch (e) {
-      if (!_isMounted) return;
+        state = state.copyWith(
+          openFoodFactsResults: results,
+          isSearchingOpenFoodFacts: false,
+          clearOpenFoodFactsError: true,
+        );
+        return;
+      } catch (e) {
+        if (!_isMounted) return;
 
-      _logger.warning(
-        'Open Food Facts search failed',
-        context: 'FoodSearchController',
-        data: {'query': query, 'error': e.toString()},
-      );
+        final isLast = attempt == attempts;
+        _logger.warning(
+          'Open Food Facts search failed (attempt $attempt/$attempts)',
+          context: 'FoodSearchController',
+          data: {'query': query, 'error': e.toString()},
+        );
 
-      state = state.copyWith(isSearchingOpenFoodFacts: false);
+        if (!isLast) {
+          // 400ms, 800ms — enough to ride out a rate-limit blip without
+          // making the user wait long for a genuine outage.
+          await Future<void>.delayed(Duration(milliseconds: 400 * attempt));
+          if (!_isMounted) return;
+          if (state.searchQuery.trim() != query.trim()) return;
+          continue;
+        }
+
+        state = state.copyWith(
+          isSearchingOpenFoodFacts: false,
+          openFoodFactsError:
+              "Couldn't reach Open Food Facts. Tap to try again.",
+        );
+      }
     }
   }
 
