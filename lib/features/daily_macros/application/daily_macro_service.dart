@@ -369,7 +369,9 @@ class DailyMacroService {
                 ((distanceMeters / 100) * swimPace / 60).round();
           }
         }
-        if (durationMinutes == 0) durationMinutes = 60;
+        if (durationMinutes == 0) {
+          durationMinutes = activityType == 'other' ? 30 : 60;
+        }
       }
 
       final durationHr = durationMinutes / 60.0;
@@ -387,7 +389,7 @@ class DailyMacroService {
         case 'swimming':
           sport = 'swimming';
           break;
-        case 'strength':
+        case 'other':
           sport = 'strength';
           break;
         default:
