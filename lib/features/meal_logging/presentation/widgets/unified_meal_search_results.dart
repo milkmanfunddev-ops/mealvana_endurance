@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/controllers/food_search_controller.dart';
+import '../../../../shared/utils/search_token_matcher.dart';
 import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
@@ -73,25 +74,27 @@ class UnifiedMealSearchResults extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final q = query.trim().toLowerCase();
+    final queryTokens = tokenizeSearchQuery(query);
     final onAddFavorite = this.onAddFavorite;
     final onAddRecent = this.onAddRecent;
     final matchingFavorites = onAddFavorite == null
         ? const <SavedMeal>[]
         : (ref.watch(savedMealsProvider).asData?.value ?? const <SavedMeal>[])
-            .where((m) => m.name.toLowerCase().contains(q))
+            .where((m) => matchesSearchTokens(m.name, queryTokens))
             .take(8)
             .toList();
     final matchingRecents = onAddRecent == null
         ? const <MealLog>[]
         : (ref.watch(recentMealsProvider).asData?.value ?? const <MealLog>[])
-            .where((l) => l.name.toLowerCase().contains(q))
+            .where((l) => matchesSearchTokens(l.name, queryTokens))
             .take(8)
             .toList();
-    final matchingRecipes =
-        recipes.where((r) => r.name.toLowerCase().contains(q)).take(8).toList();
+    final matchingRecipes = recipes
+        .where((r) => matchesSearchTokens(r.name, queryTokens))
+        .take(8)
+        .toList();
     final matchingIngredients = kCommonIngredients
-        .where((i) => i.name.toLowerCase().contains(q))
+        .where((i) => matchesSearchTokens(i.name, queryTokens))
         .take(8)
         .toList();
 
