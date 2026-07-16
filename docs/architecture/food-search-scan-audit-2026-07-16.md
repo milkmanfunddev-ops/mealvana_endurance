@@ -15,7 +15,7 @@
 > | **0 — land the two branches** | ✅ **DONE** (Lee merged them locally; merge verified — both fixes intact, no conflict markers) |
 > | **1 — scored catalog search** | ✅ **DONE + DEPLOYED dev AND prod.** `search_catalog_ranked` RPC + `search-catalog` rewritten. Verified on prod: all 7 recoverable misses + `nuun electrolyte tablets` + `clif shot bloks` return the right top hit; `banana bread` → 0. Verified in-app: `rx bar` → 26 results, RXBAR #1 (was 0). |
 > | **2 — dead code + render fix** | ✅ **DONE.** `functions_old` deleted (7,633 lines). `onNutritionProductResultTap` forwarded → verified in-app: `pringles` on food logging now returns results with carbs (was "No foods found"). `build_meal_add_food` barcode no longer shows the run-phase picker. |
-> | **3 — one search fn + live FDA** | ⏳ **PARTIAL.** ✅ OFF silent-failure + retry/backoff. ✅ **`_shared/food_sources/` extraction DONE + deployed dev+prod** (`lookup-product` 806→337 lines; usda/off/cache/gtin/product_type/runtime modules; barcode cascade re-verified on prod). **NOT done:** `search-foods` merge, **live USDA text tier**, Search-a-licious migration, catalog `product_type` passthrough. |
+> | **3 — live FDA + OFF text search** | ✅ **DONE + DEPLOYED dev+prod.** `_shared/food_sources/` extraction (`lookup-product` 806→337). `search-nutrition-products` rewritten as the external tier: tokenized cache → **live USDA ∥ OFF in parallel** → merge/dedupe → write-through. Verified prod + in-app: **`walnuts` now returns HOODY'S/AHOLD/KIRKLAND** (never findable before); `coca cola`, `pringles original`, `cheerios`, `doritos` all hit. Dev cache 28→48 rows, `resale_ok`=30=USDA count (ODbL firewall correct). ⚠️ **The Search-a-licious mapping is UNVERIFIED live** — see below. **NOT done:** catalog `product_type` passthrough. |
 > | **— zombie edge fns** | ✅ **DONE.** 20 sourceless, uncalled functions deleted from dev + prod (47→27 on prod). `EDGE_FUNCTION_AUDIT.md` rewritten (the Dec-2025 one was 7 months stale and wrong). ⚠️ `min_app_version` is still `1.14.1` — see that doc's residual-risk section. |
 > | **4 — carb loading** | ⏳ **PARTIAL.** Barcode crash fixed; hardcoded 30g fixed. **NOT done:** delete `carb_loading_user_foods` (needs a Drift migration + backfill — see the data-loss warning), delete `CarbFoodsList`, `setFilter`, de-dupe `_parseMealTypesArray` (3 copies). |
 > | **5 — sport-aware categories** | ❌ **NOT STARTED** (386 occurrences / 71 files; mapper-first). |
@@ -23,13 +23,33 @@
 >
 > Commits: `2b209dc3` (Phase 1) · `badd4920` (Phase 2) · `0706b072` (carb loading) · `67782d26` (OFF retry) · `acd8ea6a` (zombie edge fns) · `c3cfc869` (food_sources extraction).
 >
-> **▶ NEXT ACTION — the extraction is done, so `search-foods` is now unblocked:**
-> 1. Merge `search-catalog` + `search-nutrition-products` → **`search-foods`**, returning ONE ranked, deduped list. Reuse `search_catalog_ranked` for the catalog leg.
-> 2. Add the **live USDA text tier** on `_shared/food_sources/usda.ts`: `/foods/search` is ONE call (`foodNutrients` is in the search response — only call `/food/{fdcId}` on tap). Gate behind the existing thin-results rule (`local + catalog < 5`), add a timeout, write through via `cache.ts`. **Re-rank with our own scorer** — USDA relevance is poor (`vitamin water` → chocolate milk). ⚠️ 1,000 req/hr PER IP.
-> 3. Query **USDA ∥ OFF in parallel and merge** — complementary corpora, neither wins (§9c). Dedupe by barcode.
-> 4. Migrate OFF search → **Search-a-licious** (§9c) and pass the catalog `product_type` filter.
+> ### ⚠️ ▶ NEXT ACTION — VERIFY THE SEARCH-A-LICIOUS MAPPING (it is unproven)
 >
-> This is what fixes grocery coverage (9.5%). Phase 1 only fixed the Feed (40% → ~63%); `walnuts` still misses.
+> `_shared/food_sources/off_search.ts` was written and shipped **while both OFF endpoints were
+> returning HTTP 502** (Search-a-licious 0/10, legacy 0/5 — a real outage, not rate limiting). The
+> mapping therefore **has never run against a live response.** It fails safe (returns `[]`, USDA
+> carries every query), so nothing is broken — but the field mapping may be wrong.
+>
+> **Confirmed from an earlier healthy probe:** `hits[].code`, `product_name`, `brands` (an **array**,
+> unlike the legacy CGI's comma-string), `nutriments['energy-kcal_100g' | 'carbohydrates_100g' |
+> 'proteins_100g' | 'fat_100g']`.
+> **NOT confirmed — check these first:** `nutriments['sodium_100g']` (assumed **grams**, ×1000 → mg),
+> `serving_quantity`, `image_url`, `categories_tags`, `brands_tags`.
+>
+> ```bash
+> curl -s "https://search.openfoodfacts.org/search?q=nutella&page_size=1&fields=code,product_name,brands,nutriments,serving_quantity,image_url,categories_tags" | python3 -m json.tool
+> # then, once healthy:
+> curl -s -X POST "$DEV_URL/functions/v1/search-nutrition-products" -H "Authorization: Bearer $ANON" \
+>   -H 'Content-Type: application/json' -d '{"query":"nutella","limit":5}'   # expect some source=open_food_facts rows
+> ```
+>
+> **Also note:** the "Search-a-licious is ~3x more reliable" claim in §9c came from a healthy morning
+> window (10/10 @ 1 req/s). Hours later it was 0/10 while legacy was 0/5. It is **beta (v0.1.0) and
+> it does go fully down.** It is still the right choice (one-call nutrition, real relevance, Lucene),
+> but treat it as best-effort, never load-bearing.
+>
+> **Then:** pass the catalog `product_type` filter (`catalog_search_service.dart:143-146` accepts it;
+> `SharedFoodSearchService.searchCatalog(query)` drops it — 7-03 P1-6, still open).
 >
 > **✅ AUTHORIZED (Lee, 2026-07-16) — do these unattended, no approval needed:**
 > deploy edge functions to **dev AND prod**, run **DB migrations**, **merge to `develop`**, and do the `carb_loading_user_foods` fold. Verified: `supabase` CLI 2.90.0 authed (dev `vlmtsdzpnjnavdgytcmi` linked, prod `wvmvsodrvbkxfydabqed` visible), Deno 2.7.11, push access to `origin`.
