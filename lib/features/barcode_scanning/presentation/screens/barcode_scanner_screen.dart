@@ -283,7 +283,13 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   /// before/during/after-run [FoodDetailScreen] is the wrong destination — we
   /// hand the raw scanned [Food] straight back to the caller, which routes to
   /// the logging-specific confirmation page.
-  bool get _isMealLogContext => widget.context == 'meal_log_discover';
+  /// `build_meal_add_food` is the Build-a-Meal component search — also meal
+  /// logging, also general food. It was previously omitted, so scanning there
+  /// fell through to [FoodDetailScreen]'s "When would you eat this?
+  /// Before/During/After Run" picker inside a plain meal builder.
+  static const _mealLogContexts = {'meal_log_discover', 'build_meal_add_food'};
+
+  bool get _isMealLogContext => _mealLogContexts.contains(widget.context);
 
   Future<void> _showVerificationDialog(Food food, dynamic apiProduct) async {
     // Meal logging: bypass the plan's category page and return the scanned food.

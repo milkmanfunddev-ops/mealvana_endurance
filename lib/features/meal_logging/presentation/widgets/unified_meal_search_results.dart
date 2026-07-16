@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/controllers/food_search_controller.dart';
+import '../../../../shared/services/food_management/nutrition_product_search_service.dart';
 import '../../../../shared/utils/search_token_matcher.dart';
 import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -44,6 +45,7 @@ class UnifiedMealSearchResults extends ConsumerWidget {
     required this.onCatalogTap,
     required this.onOpenFoodFactsResultTap,
     required this.onSearchOpenFoodFacts,
+    this.onNutritionProductResultTap,
     this.showOpenFoodFactsButton = true,
   });
 
@@ -66,6 +68,14 @@ class UnifiedMealSearchResults extends ConsumerWidget {
   final ValueChanged<CatalogSearchResult> onCatalogTap;
   final void Function(dynamic) onOpenFoodFactsResultTap;
   final VoidCallback onSearchOpenFoodFacts;
+
+  /// Taps on a `nutrition_products` (USDA + cached Open Food Facts) result.
+  ///
+  /// MUST be forwarded to [UnifiedFoodSearchResults]: that widget hides the
+  /// whole "More Results" block when this is null, so omitting it silently
+  /// discards results the controller has already fetched and paid for — the
+  /// user sees "No foods found" for a food we hold. This was the bug.
+  final void Function(NutritionProductSearchResult)? onNutritionProductResultTap;
 
   /// Forwarded to [UnifiedFoodSearchResults]. `LogMealScreen` sets this to
   /// false — USDA/Open Food Facts already auto-fire on the catalog debounce,
@@ -175,6 +185,7 @@ class UnifiedMealSearchResults extends ConsumerWidget {
             ),
             onSearchOpenFoodFacts: onSearchOpenFoodFacts,
             onOpenFoodFactsResultTap: onOpenFoodFactsResultTap,
+            onNutritionProductResultTap: onNutritionProductResultTap,
             showOpenFoodFactsButton: showOpenFoodFactsButton,
             emptyQueryContent: const SizedBox.shrink(),
           ),

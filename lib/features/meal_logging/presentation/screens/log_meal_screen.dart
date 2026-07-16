@@ -11,6 +11,7 @@ import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/food_management/nutrition_product_search_service.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -553,6 +554,56 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     _afterQuickLog();
   }
 
+  /// A `nutrition_products` (USDA / cached Open Food Facts) result.
+  ///
+  /// Same flow as [_handleOpenFoodFactsResultTap], but these rows are keyed by
+  /// barcode rather than an Open Food Facts id, so the detail lookup differs.
+  Future<void> _handleNutritionProductTap(
+    NutritionProductSearchResult result,
+  ) async {
+    if (!result.hasValidId) {
+      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+      return;
+    }
+
+    _unfocus();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final productDetailService = ref.read(productDetailServiceProvider);
+      final apiProduct = await productDetailService.getProductDetails(
+        barcode: result.id,
+      );
+
+      if (mounted) Navigator.of(context).pop(); // close loading dialog
+
+      if (apiProduct == null) {
+        if (mounted) {
+          MealvanaSnackbar.showError(context, 'Unable to load product details');
+        }
+        return;
+      }
+
+      final mappingService = ref.read(foodMappingServiceProvider);
+      final food = await mappingService.mapToFood(apiProduct);
+      if (!mounted) return;
+
+      _quickLogComponents(
+        title: food.displayName ?? food.name,
+        buildComponents: (servings) => [_foodComponent(food, servings)],
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // close loading dialog
+        MealvanaSnackbar.showError(context, 'Unable to load product details');
+      }
+    }
+  }
+
   Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
     if (!(result.hasValidId as bool)) {
       MealvanaSnackbar.showError(context, 'Cannot load details for this product');
@@ -772,8 +823,13 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     onFoodTap: _onFoodTap,
                     onCatalogTap: _onCatalogTap,
                     onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
-                    // No manual OFF search trigger — auto USDA/OFF already
-                    // covers this (see the search bar comment above).
+                    // USDA + cached Open Food Facts. Without this the shared
+                    // widget hides the whole "More Results" block and the
+                    // controller's already-fetched results are thrown away —
+                    // the user got "No foods found" for a food we hold.
+                    onNutritionProductResultTap: _handleNutritionProductTap,
+                    // No manual OFF search trigger — the results above already
+                    // include USDA + cached OFF automatically.
                     onSearchOpenFoodFacts: () {},
                     showOpenFoodFactsButton: false,
                   )
