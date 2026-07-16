@@ -211,15 +211,31 @@ class _CarbLoadingFoodSelectionScreenState
     final includeFallbackPool =
         query.isEmpty || _ownFoodMatchCount(state, query) < _fallbackPoolThreshold;
 
-    ref
-        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
-        .updateFoodPool(
-          allFoods: [
-            ...ownFoods,
-            if (includeFallbackPool) ...fallbackFoods,
-          ],
-          userFoods: userFoods,
-        );
+    final notifier =
+        ref.read(foodSearchControllerProvider(_searchControllerKey).notifier);
+
+    // Carb loading wants real food — pasta, rice, bagels, potatoes — not gels
+    // and chews. This screen was the only search surface that never called
+    // setFilter, so it ran on the default `all` and ranked a caffeinated gel
+    // level with a bowl of pasta.
+    //
+    // `generalFirst` ranks rather than hides (see FoodSearchController), so a
+    // gel is still reachable — some people do carb-load with sports drinks and
+    // energy gels; the seeded carb_loading_foods list includes both. It just
+    // stops them crowding out the foods this screen is actually for.
+    //
+    // Note this is the fuel/general axis, which is NOT carb loading's real axis
+    // (that is meal_types: breakfast/lunch/dinner/snack). Filtering by meal type
+    // needs the recommendation rail — see the audit doc §10 Phase 4.
+    notifier.setFilter(FoodSearchFilter.generalFirst);
+
+    notifier.updateFoodPool(
+      allFoods: [
+        ...ownFoods,
+        if (includeFallbackPool) ...fallbackFoods,
+      ],
+      userFoods: userFoods,
+    );
   }
 
   /// Count carb-loading's own curated foods (template + user, undeleted)

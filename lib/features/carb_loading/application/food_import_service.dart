@@ -302,33 +302,10 @@ class FoodImportService {
     }
   }
 
-  /// Parse meal types from array column (PostgreSQL array format: {1,2,3})
-  List<int> _parseMealTypesArray(String? mealTypesStr) {
-    if (mealTypesStr == null || mealTypesStr.isEmpty) return [];
-
-    try {
-      // Handle PostgreSQL array format: {1,2,3}
-      if (mealTypesStr.startsWith('{') && mealTypesStr.endsWith('}')) {
-        final content = mealTypesStr.substring(1, mealTypesStr.length - 1);
-        if (content.isEmpty) return [];
-        return content.split(',').map((s) => int.parse(s.trim())).toList();
-      }
-
-      // Handle JSON array format: [1,2,3]
-      if (mealTypesStr.startsWith('[') && mealTypesStr.endsWith(']')) {
-        final List<dynamic> parsed = jsonDecode(mealTypesStr);
-        return parsed.map((e) => e as int).toList();
-      }
-
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
 
   /// Helper: Convert Drift entity to domain model
   domain.CarbLoadingUserFood _convertToUserFoodDomain(CarbLoadingUserFood food) {
-    final mealTypeIds = _parseMealTypesArray(food.mealTypes);
+    final mealTypeIds = domain.parseMealTypeIds(food.mealTypes);
 
     return domain.CarbLoadingUserFood.fromDatabase(
       id: food.id,
