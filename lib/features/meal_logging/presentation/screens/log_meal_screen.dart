@@ -494,7 +494,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     return Food(
       id: result.id,
       name: result.title,
-      displayName: result.variantTitle ?? result.title,
+      displayName: result.displayName,
       imageAddress: result.imageUrl,
       servingSize: result.servingSize,
       caloriesPerServing: result.caloriesPerServing,
