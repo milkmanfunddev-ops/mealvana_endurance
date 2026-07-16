@@ -10,6 +10,8 @@ import '../../domain/carb_loading_day_meal.dart';
 import '../../domain/meal_type.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
+import '../../../barcode_scanning/application/product_detail_service.dart';
+import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/open_food_facts_search_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
@@ -462,12 +464,28 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           } else {
             importedFood = existingFood;
           }
-        } else {
+        } else if (await _importService.existsInFoodsTable(selectedFood.id)) {
           // Import from nutrition plan foods table
           importedFood = await _importService.importFromFoodsTable(
             deviceId: deviceId,
             userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
             sourceFoodId: selectedFood.id,
+            mealTypes: [currentState.mealType],
+          );
+        } else {
+          // A barcode scan: the Food was just fetched from the catalog / USDA /
+          // Open Food Facts and exists in neither `foods` nor `user_foods`, so
+          // importFromFoodsTable would throw 'Source food not found' — which is
+          // why scanning a barcode here used to fail every time. Create it from
+          // the scanned food's own data, which already carries real nutrition.
+          importedFood = await _importService.createCustomFood(
+            deviceId: deviceId,
+            userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
+            name: selectedFood.name,
+            displayName: selectedFood.displayName ?? selectedFood.name,
+            displayNamePlural: selectedFood.displayNamePlural,
+            carbsPerServing: selectedFood.carbsPerServing ?? 0.0,
+            imageAddress: selectedFood.imageAddress,
             mealTypes: [currentState.mealType],
           );
         }
@@ -593,14 +611,38 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
         importedFood = existingFood;
       }
     } else {
-      // Create carb loading user food from OFF search result
-      // Note: We'll need to fetch detailed nutrition info or use default values
+      // Open Food Facts *search* results carry no nutrition — only name, id and
+      // image. Fetch the product detail for the real carb value rather than
+      // guessing: this is the carb loading screen, so an invented carb number
+      // is the one number that must not be wrong. (Previously hardcoded to 30g
+      // with a "user can edit later" note.)
+      final apiProduct = await ref
+          .read(productDetailServiceProvider)
+          .getProductDetails(barcode: result.id);
+
+      // Reuse the same mapper the other search surfaces use, rather than
+      // reading raw per-100g/per-serving fields here — it already resolves
+      // serving size and unit conversion.
+      final carbs = apiProduct == null
+          ? null
+          : (await ref.read(foodMappingServiceProvider).mapToFood(apiProduct))
+              .carbsPerServing;
+
+      if (carbs == null) {
+        // No usable nutrition — surface it instead of inventing a number. The
+        // caller shows the error; the user can still add the food manually.
+        return Future.error(
+          'No carb information available for this product. '
+          'Add it manually to set the carbs yourself.',
+        );
+      }
+
       importedFood = await _importService.createFromBarcodeScan(
         deviceId: deviceId,
         userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
         barcode: result.id,
         productName: result.name,
-        carbsPerServing: 30.0, // Default - user can edit later
+        carbsPerServing: carbs,
         imageUrl: result.imageUrl,
         mealTypes: [currentState.mealType],
       );

@@ -185,6 +185,19 @@ class FoodImportService {
   }
 
   /// Check if a food from foods table is already imported
+  /// Whether [foodId] actually exists in the `foods` table.
+  ///
+  /// A barcode scan produces a [Food] that exists in neither `foods` nor
+  /// `user_foods` — it was just fetched from the catalog/USDA/Open Food Facts.
+  /// Callers must check this before [importFromFoodsTable], which throws
+  /// ArgumentError('Source food not found') for exactly that case.
+  Future<bool> existsInFoodsTable(String foodId) async {
+    final row = await (_database.select(_database.foodsTable)
+          ..where((tbl) => tbl.id.equals(foodId)))
+        .getSingleOrNull();
+    return row != null;
+  }
+
   Future<bool> isFoodAlreadyImported({
     required String deviceId,
     required String sourceFoodId,
