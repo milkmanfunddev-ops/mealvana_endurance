@@ -7,6 +7,7 @@ import '../services/food_management/nutrition_product_search_service.dart';
 import '../services/food_management/shared_food_search_service.dart';
 import '../services/logging_service.dart';
 import '../services/app_external_deps.dart';
+import '../utils/search_token_matcher.dart';
 
 part 'food_search_controller.g.dart';
 
@@ -235,22 +236,18 @@ class FoodSearchController extends _$FoodSearchController {
       return;
     }
 
-    final normalizedQuery = _normalizeSearchText(query);
-    final queryTokens = normalizedQuery
-        .split(' ')
-        .where((token) => token.isNotEmpty)
-        .toList();
+    final queryTokens = tokenizeSearchQuery(query);
 
     // Filter user foods
     final filteredUserFoods = _allUserFoods.where((food) {
       final searchText = _buildSearchText(food);
-      return _matchesSearchTokens(searchText, queryTokens);
+      return matchesSearchTokens(searchText, queryTokens);
     }).toList();
 
     // Filter template foods (already deduped from user foods in updateFoodPool)
     final filteredTemplateFoods = _allTemplateFoods.where((food) {
       final searchText = _buildSearchText(food);
-      return _matchesSearchTokens(searchText, queryTokens);
+      return matchesSearchTokens(searchText, queryTokens);
     }).toList();
 
     state = state.copyWith(
@@ -410,16 +407,8 @@ class FoodSearchController extends _$FoodSearchController {
     }
   }
 
-  String _normalizeSearchText(String value) {
-    return value
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
-
   String _buildSearchText(Food food) {
-    return _normalizeSearchText(
+    return normalizeSearchText(
       [
         food.name,
         food.displayName,
@@ -428,18 +417,5 @@ class FoodSearchController extends _$FoodSearchController {
         food.productTypeId,
       ].whereType<String>().join(' '),
     );
-  }
-
-  bool _matchesSearchTokens(String haystack, List<String> queryTokens) {
-    if (queryTokens.isEmpty) return true;
-    for (final token in queryTokens) {
-      final singular = token.endsWith('s') && token.length > 3
-          ? token.substring(0, token.length - 1)
-          : token;
-      if (!haystack.contains(token) && !haystack.contains(singular)) {
-        return false;
-      }
-    }
-    return true;
   }
 }
