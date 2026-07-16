@@ -288,11 +288,14 @@ class _CatalogResultTile extends StatelessWidget {
       child: ListTile(
         dense: true,
         title: Text(
-          result.variantTitle ?? result.title,
+          result.title,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          '${result.caloriesPerServing?.round() ?? '—'} kcal per serving',
+          [
+            if (result.variantTitle != null) result.variantTitle!,
+            '${result.caloriesPerServing?.round() ?? '—'} kcal per serving',
+          ].join(' · '),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: const Icon(Icons.add_circle_outline, size: 20),

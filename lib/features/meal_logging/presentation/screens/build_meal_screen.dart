@@ -731,7 +731,7 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
     return Food(
       id: result.id,
       name: result.title,
-      displayName: result.variantTitle ?? result.title,
+      displayName: result.displayName,
       imageAddress: result.imageUrl,
       servingSize: result.servingSize,
       caloriesPerServing: result.caloriesPerServing,
@@ -822,7 +822,7 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
   }
 
   void _onCatalogTap(CatalogSearchResult result) =>
-      _addFood(_catalogResultToFood(result), result.variantTitle ?? result.title);
+      _addFood(_catalogResultToFood(result), result.displayName);
 
   void _onRecipeTap(Recipe recipe) {
     _unfocus();
