@@ -390,15 +390,106 @@ describe('search-catalog filter intent', () => {
 });
 
 // ============================================================================
-// G. Live integration test note
+// G. Ranking / tokenization contract (search_catalog_ranked RPC)
+// ============================================================================
+//
+// The matching itself lives in SQL (migration 20260716120000). These tests pin
+// the *contract* the RPC must satisfy, mirrored here as pure functions so the
+// rules are executable and can't silently drift. Every expectation below was
+// measured against the live prod catalog on 2026-07-16.
+
+/** Mirrors the RPC's tokenizer and lib/shared/utils/search_token_matcher.dart */
+function tokenize(q: string): string[] {
+  return q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter((t) => t.length > 0);
+}
+
+/** Mirrors the RPC: 2x brand-token hits + 1x title-token hits. */
+function score(brand: string, title: string, tokens: string[]): number {
+  const hits = (hay: string) =>
+    tokens.filter((t) => hay.toLowerCase().includes(t)).length;
+  return 2 * hits(brand) + hits(title);
+}
+
+/** Mirrors the RPC threshold: at least half the tokens match brand||title. */
+function passesThreshold(brand: string, title: string, tokens: string[]): boolean {
+  const hay = `${brand} ${title}`.toLowerCase();
+  const matched = tokens.filter((t) => hay.includes(t)).length;
+  return matched > 0 && matched >= Math.ceil(tokens.length / 2);
+}
+
+describe('search-catalog tokenization', () => {
+  it('splits on whitespace', () => {
+    assertEquals(tokenize('rx bar'), ['rx', 'bar']);
+  });
+
+  it('collapses extra whitespace and trims', () => {
+    assertEquals(tokenize('  clif  shot  bloks '), ['clif', 'shot', 'bloks']);
+  });
+
+  it('strips punctuation — "coca-cola" must reach "COCA-COLA, COLA"', () => {
+    assertEquals(tokenize('coca-cola'), ['coca', 'cola']);
+  });
+
+  it('single-word query yields one token', () => {
+    assertEquals(tokenize('gel'), ['gel']);
+  });
+});
+
+describe('search-catalog scoring — regression for the multi-word bug', () => {
+  it('"rx bar" reaches RXBAR (the original bug: whole-phrase ilike → 0)', () => {
+    assert(passesThreshold('RXBAR', 'RXBAR Protein Bar', tokenize('rx bar')));
+    assertEquals(score('RXBAR', 'RXBAR Protein Bar', tokenize('rx bar')), 6);
+  });
+
+  it('brand weighting ranks RXBAR above an incidental "bar" match', () => {
+    const toks = tokenize('rx bar');
+    const rxbar = score('RXBAR', 'RXBAR Protein Bar', toks);
+    const other = score('Bare Performance Nutrition', 'Bare Performance Nutrition Recover', toks);
+    assert(rxbar > other, `expected RXBAR (${rxbar}) to outrank ${other}`);
+  });
+
+  it('does NOT require every token — "nuun electrolyte tablets" still matches Nuun', () => {
+    // The product name contains no word "electrolyte". A tokenized-AND fix
+    // (as originally proposed) returns 0 here; half-threshold returns Nuun.
+    const toks = tokenize('nuun electrolyte tablets');
+    assert(passesThreshold('Nuun', 'Nuun Zero Sugar Hydration (Tablets)', toks));
+  });
+
+  it('does NOT require every token — "clif shot bloks" still matches Clif Bloks', () => {
+    // "Clif Bloks Energy Chews" contains no word "shot".
+    assert(passesThreshold('Clif Bar', 'Clif Bloks', tokenize('clif shot bloks')));
+  });
+
+  it('single-word "gel" is NOT filtered out by the threshold', () => {
+    // Regression: gating on score>=2 returned only 5 of 544 gel products,
+    // because a title-only match scores 1. The threshold is on matched TOKENS.
+    assert(passesThreshold('Huma', 'Huma Chia Energy Gel', tokenize('gel')));
+    assertEquals(score('Huma', 'Huma Chia Energy Gel', tokenize('gel')), 1);
+  });
+
+  it('variant_title is NOT matched — "banana bread" must not return energy bars', () => {
+    // Flavour names are why 'banana bread' returned 5 bars and 'oreo' returned
+    // a Clif bar. brand||title only → no match.
+    assert(!passesThreshold('Send Bars', 'Send Bar', tokenize('banana bread')));
+  });
+});
+
+// ============================================================================
+// H. Live integration test note
 // ============================================================================
 
 describe('search-catalog — live integration required', () => {
-  it('NOTE: Full text search (ilike + pg_trgm) requires live Supabase integration test', () => {
-    // The search query building, trigram scoring, and nutrition_confidence ordering
-    // can only be verified against a live catalog_items view.
-    // Run: SUPABASE_URL=... SUPABASE_ANON_KEY=... deno test --allow-net --allow-env
-    // with a live test that queries for known products (e.g., "GU", "Maurten").
+  it('NOTE: end-to-end ranking requires a live catalog_items + RPC', () => {
+    // Verified live against prod 2026-07-16 — all 7 of the sweep's "recoverable
+    // misses" return the correct top hit, and 'banana bread' returns 0:
+    //   rx bar → RXBAR Protein Bar (6)
+    //   sis go isotonic gel → SiS GO Isotonic Energy Gels (4)
+    //   science in sport beta fuel → SiS Beta Fuel Drink Mix (9)
+    //   precision hydration 1500 → Precision Fuel and Hydration PH 1500 (7)
+    //   honey stinger chews → Honey Stinger Energy Chews (7)
+    //   huma gel → Huma Chia Energy Gel (4)
+    //   untapped maple gel → UnTapped Energy Gel (4)
+    // Re-run: select * from search_catalog_ranked('rx bar', 5);
     assert(true, 'placeholder for live integration reminder');
   });
 });

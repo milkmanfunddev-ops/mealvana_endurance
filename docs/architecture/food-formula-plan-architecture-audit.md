@@ -1,5 +1,24 @@
 # Food / Formula / Plan Architecture Audit & Cleanup Plan
 
+> ## ⚠️ STATUS AS OF 2026-07-16 — PARTS OF THIS DOC ARE STALE. READ THIS FIRST.
+>
+> Reconciled against the code on 2026-07-16. **This doc's §7 action plan is superseded by the merged roadmap in
+> [`food-search-scan-audit-2026-07-16.md`](./food-search-scan-audit-2026-07-16.md) §10.**
+>
+> | 7-03 item | Status 2026-07-16 |
+> |---|---|
+> | P0-1 `selectDefaultFormula` + safety-net auto-pin | ✅ **Shipped** — `_shared/nutrition/default-formula.ts` |
+> | P0-2 Onboarding auto-pin | ✅ Shipped (Drift 12→13) |
+> | P0-3 `personal_templates` UI → "Routine" | ✅ Shipped |
+> | P1-4 Before-phase **pin-first** | ❌ **NOT done** — still applied last as an overlay (`before-phase.ts:297`) |
+> | P1-5 **Rip out food preferences** | ⛔ **REVERSED 2026-07-08** — prefs were re-enabled and scoped to fuel foods (`7bd6d910`, `df18b0a3`). **This doc's "phantom system" §2/§7-5 and its "FoodPreferencesScreen is dead UI" claim are now WRONG** — the screen is live and routed (`app_router.dart:686`). |
+> | P1-6 Endurance/general separation | ◐ **Partial** — `is_fuel` predicate ✅ and swap `fuelOnly` ✅, but carb loading never calls `setFilter`, and the catalog `product_type` filter is **still not passed** (`shared_food_search_service.dart:120-122`) exactly as §3 described |
+> | P2-7 Delete dead code | ❌ Not done — `supabase/functions_old/` is still present (18 files / 7,620 lines) |
+> | P2-8 Retire legacy `foods` table | ❌ Not done — `getEssentialFoods` still live in before/during phase |
+> | P2-9 DB renames | ❌ Deferred as planned |
+>
+> **Still accurate and load-bearing:** §1 terminology, §3's diagnosis (the separation signal is `product_type`; one scanner, not two), §6 auto-pin design, and the "do NOT remove" list (`to_exclude_from_solver`, `is_deleted`).
+
 **Date:** 2026-07-03
 **Scope:** Terminology, the nutrition-plan generation flow (formulas vs foods), endurance-vs-general data separation, and a dead-code inventory. Produced from four parallel code investigations.
 
