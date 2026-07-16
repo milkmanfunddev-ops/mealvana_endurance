@@ -1,14 +1,37 @@
 /**
- * Search Nutrition Products Edge Function
+ * Search Nutrition Products Edge Function — the EXTERNAL food tier.
  *
- * Text search against the `nutrition_products` master (the barcode->nutrition
- * cache + future bulk-USDA-ingest DB) using pg_trgm trigram indexes on
- * product_name / brand_name. Ranked by hit_count (popularity).
+ * This is "the world" (USDA + Open Food Facts), as opposed to `search-catalog`,
+ * which is our curated Feed. The two are deliberately separate functions: they
+ * are different corpora with different ranking, and the client renders them as
+ * distinct sections ("Catalog & Suggestions" vs "More Results").
  *
- * The table is RLS-locked (service-role only), so this function reads it with
- * the service-role key and returns a curated projection to the client. It
- * intentionally returns all sources (usda_fdc + open_food_facts) for in-app
- * search — a future PAID API would filter to resale_ok = true instead.
+ * Cascade (2026-07-16). Local Drift and the Feed catalog are already exhausted
+ * by the client before it calls this at all — see
+ * FoodSearchController._maybeAutoSearchNutritionProducts, which only fires when
+ * local + catalog < 5. So we never touch an external API before our own data:
+ *
+ *   1. nutrition_products cache      (our DB, tokenized)
+ *   2. live USDA ∥ live OFF          (only if the cache is still thin)
+ *   3. write-through into the cache  (so tier 1 answers it next time)
+ *
+ * USDA and OFF run in PARALLEL and are MERGED — not a fallback chain. They are
+ * complementary and neither wins (measured 2026-07-16):
+ *   walnuts        USDA ✓            OFF "Walnusskerne" ✗
+ *   vitamin water  USDA "chocolate milk" ✗   OFF ✓
+ *   clif bloks     USDA "Clif Z bar" ✗       OFF ✓
+ * It also means an OFF outage (observed: both OFF endpoints 502 on 2026-07-16)
+ * degrades to USDA-only instead of failing.
+ *
+ * Ranking is ours, not theirs: USDA's native relevance is poor (`vitamin water`
+ * → "Milk, chocolate, lowfat, with added vitamin A"). We re-score every result
+ * with the same rule as search_catalog_ranked — 2x brand-token hits + 1x
+ * name-token hits — so all surfaces agree on what "relevant" means.
+ *
+ * Licensing: the response mixes CC0 (usda_fdc) and ODbL (open_food_facts) rows
+ * for in-app display, which ODbL permits as a "Produced Work" (attribution, no
+ * share-alike). A future PAID API must filter to resale_ok = true instead;
+ * that column is generated from `source`, so it stays correct automatically.
  *
  * Request:  { query: string, limit?: number }
  * Response: { success: true, results: [...], total: number }
@@ -18,9 +41,73 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { searchUsda, type NutritionProductLike } from '../_shared/food_sources/usda_search.ts';
+import { searchOpenFoodFacts } from '../_shared/food_sources/off_search.ts';
+import { bg } from '../_shared/food_sources/runtime.ts';
 
-// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
+
+/**
+ * Below this many cache hits we go out to USDA + OFF.
+ *
+ * Mirrors the client's own _kFewLocalResultsThreshold. Keep it low: USDA allows
+ * only 1,000 req/hour PER IP and every user shares this function's IP.
+ */
+const FEW_CACHE_HITS = 5;
+
+/**
+ * Tokenize a query. Mirrors search_catalog_ranked's SQL tokenizer and the Dart
+ * `tokenizeSearchQuery`, so client and both edge functions agree.
+ */
+export function tokenize(q: string): string[] {
+  return q
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter((t) => t.length > 0);
+}
+
+/**
+ * Relevance score: 2x brand-token hits + 1x name-token hits.
+ * Same rule as search_catalog_ranked — see that migration for why.
+ */
+export function scoreResult(r: NutritionProductLike, tokens: string[]): number {
+  const brand = (r.brand_name ?? '').toLowerCase();
+  const name = (r.product_name ?? '').toLowerCase();
+  const hits = (hay: string) => tokens.filter((t) => hay.includes(t)).length;
+  return 2 * hits(brand) + hits(name);
+}
+
+/** At least half the tokens must appear in brand||name. */
+export function passesThreshold(r: NutritionProductLike, tokens: string[]): boolean {
+  if (tokens.length === 0) return true;
+  const hay = `${r.brand_name ?? ''} ${r.product_name ?? ''}`.toLowerCase();
+  const matched = tokens.filter((t) => hay.includes(t)).length;
+  return matched > 0 && matched >= Math.ceil(tokens.length / 2);
+}
+
+/**
+ * Merge sources, preferring the higher-quality row per barcode.
+ *
+ * USDA wins ties: its data is CC0 (resale-safe) and lab/label-derived, whereas
+ * OFF is crowd-sourced and ODbL. The barcode path makes the same call.
+ */
+export function dedupeByBarcode(rows: NutritionProductLike[]): NutritionProductLike[] {
+  const byCode = new Map<string, NutritionProductLike>();
+  for (const r of rows) {
+    if (!r.barcode) continue;
+    const existing = byCode.get(r.barcode);
+    if (!existing) {
+      byCode.set(r.barcode, r);
+      continue;
+    }
+    const rank = (x: NutritionProductLike) =>
+      x.source === 'usda_fdc' || x.source === 'usda_bulk' ? 2 : 1;
+    if (rank(r) > rank(existing)) byCode.set(r.barcode, r);
+  }
+  return [...byCode.values()];
+}
 
 Deno.serve(withSentry(async (req) => {
   const corsResponse = handleCors(req);
@@ -33,13 +120,11 @@ Deno.serve(withSentry(async (req) => {
       return errorResponse('query is required and must be a non-empty string');
     }
 
-    // Sanitize for the PostgREST `.or()` filter: strip characters that would
-    // break the comma/paren-delimited filter grammar. Food names don't need them.
-    const safe = query.trim().replace(/[,()%*]/g, ' ').trim();
-    if (safe.length === 0) {
+    const trimmed = query.trim();
+    const tokens = tokenize(trimmed);
+    if (tokens.length === 0) {
       return jsonResponse({ success: true, results: [], total: 0 });
     }
-    const pattern = `%${safe}%`;
     const maxLimit = Math.min(Math.max(1, limit), 50);
 
     const supabase = createClient(
@@ -55,22 +140,78 @@ Deno.serve(withSentry(async (req) => {
       categories, suggested_product_type, nutrition_data_per, source, confidence_score
     `;
 
-    const { data, error } = await supabase
-      .from('nutrition_products')
-      .select(columns)
-      .or(`product_name.ilike.${pattern},brand_name.ilike.${pattern}`)
+    // ── Tier 1: our own cache ────────────────────────────────────────────────
+    // Tokenized: each token must match product_name OR brand_name. Chained
+    // .or() calls are implicitly ANDed, so this is "every token appears
+    // somewhere". The previous single whole-phrase ILIKE could not match
+    // 'coca cola' against USDA's comma-inverted "COCA-COLA, COLA", nor
+    // 'pringles original' against "Pringles Crisps Original 5.2oz".
+    let cacheQuery = supabase.from('nutrition_products').select(columns);
+    for (const t of tokens) {
+      const safe = t.replace(/[,()%*]/g, '');
+      if (!safe) continue;
+      cacheQuery = cacheQuery.or(
+        `product_name.ilike.%${safe}%,brand_name.ilike.%${safe}%`,
+      );
+    }
+    const { data: cacheRows, error } = await cacheQuery
       .order('hit_count', { ascending: false })
       .limit(maxLimit);
 
     if (error) {
-      console.error('⚠️ search-nutrition-products query error:', error);
-      return errorResponse('Search failed', 500, error.message);
+      console.error('⚠️ nutrition_products cache query error:', error);
+      // Not fatal — fall through to the live tier rather than fail the search.
     }
+
+    const cached = (cacheRows ?? []) as NutritionProductLike[];
+
+    // ── Tier 2: live USDA ∥ OFF, only when the cache is thin ─────────────────
+    let live: NutritionProductLike[] = [];
+    if (cached.length < FEW_CACHE_HITS) {
+      // Parallel, not sequential: they are complementary corpora, and one being
+      // down or slow must not gate the other. Both resolve to [] on failure.
+      const [usda, off] = await Promise.all([
+        searchUsda(trimmed, maxLimit),
+        searchOpenFoodFacts(trimmed, maxLimit),
+      ]);
+      live = [...usda, ...off];
+
+      // Write through so tier 1 answers this next time. Fire-and-forget: adds
+      // no latency to this response. Guarded to the two external sources —
+      // never rewrite a 'user' or 'usda_bulk' row from here.
+      if (live.length > 0) {
+        const now = new Date().toISOString();
+        const rows = dedupeByBarcode(live)
+          .filter((r) => r.source === 'usda_fdc' || r.source === 'open_food_facts')
+          .map((r) => ({ ...r, last_seen_at: now, updated_at: now }));
+        if (rows.length > 0) {
+          // onConflict: 'barcode' — the table's real unique key. Never use a
+          // partial-index column here (PostgREST throws 42P10).
+          // hit_count / first_cached_at are omitted so existing values survive.
+          bg(
+            supabase
+              .from('nutrition_products')
+              .upsert(rows, { onConflict: 'barcode' }),
+          );
+        }
+      }
+    }
+
+    // ── Merge + rank ─────────────────────────────────────────────────────────
+    const merged = dedupeByBarcode([...cached, ...live])
+      .filter((r) => passesThreshold(r, tokens))
+      .map((r) => ({ r, score: scoreResult(r, tokens) }))
+      .sort((a, b) =>
+        b.score - a.score ||
+        (b.r.confidence_score ?? 0) - (a.r.confidence_score ?? 0),
+      )
+      .slice(0, maxLimit)
+      .map(({ r }) => r);
 
     return jsonResponse({
       success: true,
-      results: data ?? [],
-      total: (data ?? []).length,
+      results: merged,
+      total: merged.length,
     });
   } catch (e) {
     console.error('❌ search-nutrition-products unexpected error:', e);
