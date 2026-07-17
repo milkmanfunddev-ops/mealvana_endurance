@@ -283,7 +283,21 @@ class _CarbLoadingFoodSelectionScreenState
     final userFoods = state.carbLoadingUserFoods
         .where((food) => !food.isDeleted)
         .toList();
-    final templateFoods = state.carbLoadingFoods;
+
+    // Show only the curated carb foods that suit the meal you're adding to.
+    // Every seeded food carries meal_types (breakfast / lunch+dinner / snacks),
+    // and CarbLoadingFood.isSuitableForMeal already reads it — but the browse
+    // list ignored both and rendered all 27, so the Breakfast screen offered
+    // pizza and the Dinner screen offered orange juice.
+    //
+    // Browse only. Search is deliberately left unfiltered: typing "pizza" at
+    // breakfast is an explicit ask and should still find it.
+    final suitable = state.carbLoadingFoods
+        .where((f) => f.isSuitableForMeal(state.mealType))
+        .toList();
+    // Never show an empty rail — if a meal type has no curated matches (or the
+    // seed data changes), fall back to the full list rather than a blank page.
+    final templateFoods = suitable.isNotEmpty ? suitable : state.carbLoadingFoods;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -350,7 +364,11 @@ class _CarbLoadingFoodSelectionScreenState
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
-              'Template Foods',
+              // Was "Template Foods" — meaningless to an athlete, and
+              // "template" already means four unrelated things in this codebase
+              // (see the 2026-07-03 architecture audit §1). The list is now
+              // filtered to this meal, so say so.
+              '${state.mealType.displayName} Carb Foods',
               style: AppTextStyles.sectionTitle.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),

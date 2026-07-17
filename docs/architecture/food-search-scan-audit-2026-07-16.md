@@ -23,33 +23,61 @@
 >
 > Commits: `2b209dc3` (Phase 1) · `badd4920` (Phase 2) · `0706b072` (carb loading) · `67782d26` (OFF retry) · `acd8ea6a` (zombie edge fns) · `c3cfc869` (food_sources extraction).
 >
-> ### ⚠️ ▶ NEXT ACTION — VERIFY THE SEARCH-A-LICIOUS MAPPING (it is unproven)
+> ### ✅ SEARCH-A-LICIOUS MAPPING — VERIFIED LIVE 2026-07-17
 >
-> `_shared/food_sources/off_search.ts` was written and shipped **while both OFF endpoints were
-> returning HTTP 502** (Search-a-licious 0/10, legacy 0/5 — a real outage, not rate limiting). The
-> mapping therefore **has never run against a live response.** It fails safe (returns `[]`, USDA
-> carries every query), so nothing is broken — but the field mapping may be wrong.
+> `off_search.ts` was written while both OFF endpoints were 502, so the mapping shipped unproven.
+> **OFF search recovered 2026-07-17 and every assumption checked out:**
 >
-> **Confirmed from an earlier healthy probe:** `hits[].code`, `product_name`, `brands` (an **array**,
-> unlike the legacy CGI's comma-string), `nutriments['energy-kcal_100g' | 'carbohydrates_100g' |
-> 'proteins_100g' | 'fat_100g']`.
-> **NOT confirmed — check these first:** `nutriments['sodium_100g']` (assumed **grams**, ×1000 → mg),
-> `serving_quantity`, `image_url`, `categories_tags`, `brands_tags`.
+> | Field | Assumed | Actual |
+> |---|---|---|
+> | `brands` | array (not the legacy CGI's comma-string) | `['Nutella']` ✅ |
+> | `nutriments['sodium_100g']` | **grams** → ×1000 = mg | `0.234` → 234mg ✅ (the riskiest guess) |
+> | `categories_tags` / `brands_tags` | lists | `['en:snacks']` / `['nutella']` ✅ |
+> | `serving_quantity` | nullable | often `null` — handled ✅ |
+> | `code`, `product_name`, `energy-kcal_100g`, `carbohydrates_100g`, `proteins_100g`, `fat_100g` | — | ✅ |
 >
-> ```bash
-> curl -s "https://search.openfoodfacts.org/search?q=nutella&page_size=1&fields=code,product_name,brands,nutriments,serving_quantity,image_url,categories_tags" | python3 -m json.tool
-> # then, once healthy:
-> curl -s -X POST "$DEV_URL/functions/v1/search-nutrition-products" -H "Authorization: Bearer $ANON" \
->   -H 'Content-Type: application/json' -d '{"query":"nutella","limit":5}'   # expect some source=open_food_facts rows
-> ```
+> **End-to-end on dev — the complementary-corpora thesis proved out:**
+> `clif bloks` → top hit is **OFF** "Clif Bloks Energy Chews" (USDA gave "Clif Z bar");
+> `vitamin water` → top hit is **OFF** "Vitamin water" (USDA gave *chocolate milk*);
+> `nutella` → top hit is **USDA**. The merge + our re-ranking picks the right source per query.
+> DB check: OFF rows land with `resale_ok = false` — the ODbL firewall is automatic. ✅
 >
-> **Also note:** the "Search-a-licious is ~3x more reliable" claim in §9c came from a healthy morning
-> window (10/10 @ 1 req/s). Hours later it was 0/10 while legacy was 0/5. It is **beta (v0.1.0) and
-> it does go fully down.** It is still the right choice (one-call nutrition, real relevance, Lucene),
-> but treat it as best-effort, never load-bearing.
+> **Reliability, corrected again:** on 2026-07-17 Search-a-licious was back to **200 while the legacy
+> `cgi/search.pl` was STILL 503**. So s-a-l is the better-maintained one — but it is beta (v0.1.0) and
+> *did* go fully down for hours on 7-16. Best-effort, never load-bearing. USDA carried 100% of
+> traffic during that outage, which is exactly why USDA ∥ OFF is parallel and not a chain.
 >
-> **Then:** pass the catalog `product_type` filter (`catalog_search_service.dart:143-146` accepts it;
-> `SharedFoodSearchService.searchCatalog(query)` drops it — 7-03 P1-6, still open).
+> ### ⚠️ KNOWN: OFF nutrition data quality
+> OFF is crowd-sourced and some rows are simply wrong — e.g. "Vitamin water | Vitamin water" cached
+> with **100 kcal / 27g carbs per 100g** (real vitaminwater is ~5g/100ml), and it ranks #1 because the
+> name matches perfectly. Our scorer measures *relevance*, not *plausibility*. USDA (CC0, label-derived,
+> `confidence_score` 0.8) only wins ties, not on quality. If this bites, options: weight
+> `confidence_score` above token score, or add a sanity filter (kcal vs macro mass). **Not a bug in
+> our code — a property of the corpus.**
+>
+> ### ❌ "Pass the catalog product_type filter" (7-03 P1-6) — WRONG PREMISE, closing it
+>
+> Both this doc and the 7-03 audit said the catalog `product_type` filter "exists but is never
+> passed", implying a cheap win. Reading the code (2026-07-17): **it cannot express what the client
+> needs, which is why nobody passed it.**
+>
+> - `FoodSearchFilter.fuelOnly` = **15 product types** (`kFuelProductTypeCodes`) **AND keeps
+>   unclassified rows** (`productTypeId == null`) because the Feed is curated
+>   (`food_search_controller.dart:186-192`).
+> - `search-catalog` accepts a **single** `product_type` string.
+>
+> Passing it would filter to ONE type and drop unclassified products — strictly worse than the
+> current client-side filter. **Do not "fix" this as written.**
+>
+> The only real cost today is limit interaction: the server returns `limit` rows, then the client
+> filters, so a fuel-only surface can end up with fewer than it asked for. If that ever bites, the
+> actual fix is to extend the RPC with `p_product_type_ids text[]` + `p_keep_unclassified boolean`
+> and pass `kFuelProductTypeCodes` — **not** the existing single-valued param. Low value; deferred.
+>
+> ### ▶ NEXT ACTION
+> Phase 4 — the carb loading recommendation rail (`carb_loading_foods` filtered by `meal_types`;
+> Lee's original ask), then the `carb_loading_user_foods` fold — **read the device-local backfill
+> warning above first.**
 >
 > **✅ AUTHORIZED (Lee, 2026-07-16) — do these unattended, no approval needed:**
 > deploy edge functions to **dev AND prod**, run **DB migrations**, **merge to `develop`**, and do the `carb_loading_user_foods` fold. Verified: `supabase` CLI 2.90.0 authed (dev `vlmtsdzpnjnavdgytcmi` linked, prod `wvmvsodrvbkxfydabqed` visible), Deno 2.7.11, push access to `origin`.
