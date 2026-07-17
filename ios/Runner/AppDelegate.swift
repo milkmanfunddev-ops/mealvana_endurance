@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import flutter_local_notifications
+import MetricKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -21,6 +22,16 @@ import flutter_local_notifications
     // capture path.
 
     GeneratedPluginRegistrant.register(with: self)
+
+    // Subscribe to Apple MetricKit and forward payloads into Sentry. Passive
+    // (iOS already collects this) — see MetricKitReporter.swift. Registered here
+    // so we're subscribed before iOS delivers the launch-time daily payload;
+    // Sentry itself is started later from Dart, which is fine (capture no-ops
+    // until then).
+    if #available(iOS 13.0, *) {
+      MetricKitReporter.shared.register()
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
