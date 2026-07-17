@@ -17,7 +17,7 @@
 > | **2 — dead code + render fix** | ✅ **DONE.** `functions_old` deleted (7,633 lines). `onNutritionProductResultTap` forwarded → verified in-app: `pringles` on food logging now returns results with carbs (was "No foods found"). `build_meal_add_food` barcode no longer shows the run-phase picker. |
 > | **3 — live FDA + OFF text search** | ✅ **DONE + DEPLOYED dev+prod.** `_shared/food_sources/` extraction (`lookup-product` 806→337). `search-nutrition-products` rewritten as the external tier: tokenized cache → **live USDA ∥ OFF in parallel** → merge/dedupe → write-through. Verified prod + in-app: **`walnuts` now returns HOODY'S/AHOLD/KIRKLAND** (never findable before); `coca cola`, `pringles original`, `cheerios`, `doritos` all hit. Dev cache 28→48 rows, `resale_ok`=30=USDA count (ODbL firewall correct). ⚠️ **The Search-a-licious mapping is UNVERIFIED live** — see below. **NOT done:** catalog `product_type` passthrough. |
 > | **— zombie edge fns** | ✅ **DONE.** 20 sourceless, uncalled functions deleted from dev + prod (47→27 on prod). `EDGE_FUNCTION_AUDIT.md` rewritten (the Dec-2025 one was 7 months stale and wrong). ⚠️ `min_app_version` is still `1.14.1` — see that doc's residual-risk section. |
-> | **4 — carb loading** | ⏳ **PARTIAL.** Barcode crash fixed; hardcoded 30g fixed. **NOT done:** delete `carb_loading_user_foods` (needs a Drift migration + backfill — see the data-loss warning), delete `CarbFoodsList`, `setFilter`, de-dupe `_parseMealTypesArray` (3 copies). |
+> | **4 — carb loading** | ⏳ **PARTIAL.** ✅ Barcode crash; ✅ hardcoded 30g; ✅ `setFilter(generalFirst)`; ✅ `_parseMealTypesArray` de-duped (3 copies → `parseMealTypeIds`, and the copies had **drifted into a latent crash** — two did `int.parse()` which throws on a name; 15 tests); ✅ **meal-type rail** — the browse list showed all 27 carb foods regardless of meal (Breakfast offered pizza); now filtered via the already-existing `isSuitableForMeal`, header "Template Foods" → "\<Meal\> Carb Foods". **Verified in-app: "Add Food to Lunch" shows exactly the 7 lunch foods, zero breakfast foods.** **NOT done:** the `carb_loading_user_foods` fold + the sync hole — **see §5a, this is now a data-loss fix, not a tidy-up**; delete `CarbFoodsList`. |
 > | **5 — sport-aware categories** | ❌ **NOT STARTED** (386 occurrences / 71 files; mapper-first). |
 > | **6 — structural debt** | ❌ **NOT STARTED.** |
 >
@@ -616,6 +616,37 @@ These are *different taxonomies*, not one taxonomy used three ways. `carb_loadin
 - `FoodRecommendationService.getRecommendations()` is a **decoy duplicate with no callers** on this path; "consolidating onto the service" would silently change behavior (it merges `userFoods` + `genericFoods`; the live path uses `templateFoods` only).
 - `to_exclude_from_solver`, `is_deleted` (7-03 load-bearing list).
 - Food-preference rip-out — **reversed 2026-07-08**, prefs are live.
+
+---
+
+## 5a. 🔴 CARB LOADING DOESN'T PERSIST — the plan syncs, its CONTENTS don't (found 2026-07-17)
+
+This is bigger than the `carb_loading_user_foods` duplication below, and it reframes Phase 4: the
+fold is not a tidy-up, it is the fix for a **live data-loss bug**.
+
+| Table | Syncable? | Registered in `sync_coordinator`? |
+|---|---|---|
+| `carb_loading_plans` (the protocol) | ✅ | ✅ |
+| `carb_loading_foods` (the global curated list) | ✅ | — (pulled by its own service) |
+| **`carb_loading_day_meals`** — *the foods you picked for each meal* | ❌ **LOCAL-ONLY** | ❌ |
+| **`carb_loading_user_foods`** — *your custom carb foods* | ❌ **LOCAL-ONLY** | ❌ |
+
+`CarbLoadingDayMealRepository` is a plain class — it does not implement `SyncableRepository` and its
+Drift table has no `needs_upload`. It **is** listed in `SyncDependencyGraph:23`
+(`'carb_loading_day_meals': ['carb_loading_days','carb_loading_foods']`), which makes it *look*
+wired up. It isn't. `sync_coordinator` only has `case 'carb_loading_plans'`.
+
+**Prod proves it (2026-07-17):** 269 users · **42** carb loading plans · **121** days ·
+**0 `carb_loading_day_meals`** · **0 `carb_loading_user_foods`**. Newest plan 2026-06-25.
+
+People set up carb loading and the food they choose never leaves the device — so it is invisible to
+coaches, gone on reinstall, and absent on a second device. The empty server tables are not "nobody
+uses it"; they are the symptom.
+
+**Consequence for the fold:** the *server-side* drop of `carb_loading_user_foods` is trivially safe
+(0 rows on prod). The risk is entirely **device-local Drift rows**, which no query here can see —
+so the `onUpgrade` backfill remains mandatory. And whatever replaces these tables must actually be
+registered in `sync_coordinator`, or we will have rebuilt the same silent hole.
 
 ---
 
