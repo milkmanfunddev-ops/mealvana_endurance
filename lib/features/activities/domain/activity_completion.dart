@@ -16,7 +16,6 @@ class ActivityCompletion {
     this.caloriesBurned,
     
     // User feedback
-    this.effortRating,
     this.nutritionRating,
     this.overallSatisfaction,
     
@@ -54,7 +53,6 @@ class ActivityCompletion {
   final int? caloriesBurned;
   
   // User feedback
-  final int? effortRating; // 1-5
   final int? nutritionRating; // 1-5
   final int? overallSatisfaction; // 1-5
   
@@ -90,7 +88,6 @@ class ActivityCompletion {
       'maxHeartRate': maxHeartRate,
       'averageHeartRate': averageHeartRate,
       'caloriesBurned': caloriesBurned,
-      'effortRating': effortRating,
       'nutritionRating': nutritionRating,
       'overallSatisfaction': overallSatisfaction,
       'textNotes': textNotes,
@@ -116,7 +113,6 @@ class ActivityCompletion {
     int? maxHeartRate,
     int? averageHeartRate,
     int? caloriesBurned,
-    int? effortRating,
     int? nutritionRating,
     int? overallSatisfaction,
     String? textNotes,
@@ -142,7 +138,6 @@ class ActivityCompletion {
       maxHeartRate: maxHeartRate ?? this.maxHeartRate,
       averageHeartRate: averageHeartRate ?? this.averageHeartRate,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
-      effortRating: effortRating ?? this.effortRating,
       nutritionRating: nutritionRating ?? this.nutritionRating,
       overallSatisfaction: overallSatisfaction ?? this.overallSatisfaction,
       textNotes: textNotes ?? this.textNotes,
@@ -173,7 +168,6 @@ class ActivityCompletion {
         other.maxHeartRate == maxHeartRate &&
         other.averageHeartRate == averageHeartRate &&
         other.caloriesBurned == caloriesBurned &&
-        other.effortRating == effortRating &&
         other.nutritionRating == nutritionRating &&
         other.overallSatisfaction == overallSatisfaction &&
         other.textNotes == textNotes &&
@@ -199,7 +193,6 @@ class ActivityCompletion {
         maxHeartRate.hashCode ^
         averageHeartRate.hashCode ^
         caloriesBurned.hashCode ^
-        effortRating.hashCode ^
         nutritionRating.hashCode ^
         overallSatisfaction.hashCode ^
         textNotes.hashCode ^
@@ -259,34 +252,12 @@ extension ActivityCompletionExtensions on ActivityCompletion {
       averagePaceMinutesPerMile != null;
   
   /// Check if completion has user feedback
-  bool get hasUserFeedback => 
-      effortRating != null || 
-      nutritionRating != null || 
+  bool get hasUserFeedback =>
+      nutritionRating != null ||
       overallSatisfaction != null ||
       (textNotes != null && textNotes!.isNotEmpty) ||
       hasVoiceRecording;
-  
-  /// Get average rating if available
-  double? get averageRating {
-    final ratings = <int?>[
-      effortRating,
-      nutritionRating,
-      overallSatisfaction,
-    ].where((r) => r != null).cast<int>().toList();
-    
-    if (ratings.isEmpty) return null;
-    
-    final sum = ratings.reduce((a, b) => a + b);
-    return sum / ratings.length;
-  }
-  
-  /// Get formatted average rating
-  String? get formattedAverageRating {
-    final avg = averageRating;
-    if (avg == null) return null;
-    return "${avg.toStringAsFixed(1)}/5.0";
-  }
-  
+
   /// Check if completion has weather data
   bool get hasWeatherData => 
       weatherConditions != null || 
