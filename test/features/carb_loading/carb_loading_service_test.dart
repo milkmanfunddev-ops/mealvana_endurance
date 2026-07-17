@@ -289,6 +289,71 @@ void main() {
       expect(result!.id, insertedPlan.id);
       expect(result.totalDays, 2);
     });
+
+    // Regression: a race between two protocol selections could insert two plans
+    // for one event, and getSingleOrNull() then threw 'Bad state: Too many
+    // elements'. That crash cascaded and left the event with no days, no
+    // calendar dots, nothing. getCarbLoadingPlan must now tolerate duplicates.
+    test('does NOT throw on duplicate plans — returns the newest', () async {
+      final older = await db.into(db.carbLoadingPlansTable).insertReturning(
+            CarbLoadingPlansTableCompanion.insert(
+              userId: testUserId,
+              eventId: const Value('dup-event'),
+              totalDays: 2,
+              startDate: DateTime(2026, 10, 3),
+              endDate: DateTime(2026, 10, 4),
+              dailyCarbTargetGrams: 700,
+              generatedAt: DateTime(2026, 9, 1, 10, 0),
+            ),
+          );
+      final newer = await db.into(db.carbLoadingPlansTable).insertReturning(
+            CarbLoadingPlansTableCompanion.insert(
+              userId: testUserId,
+              eventId: const Value('dup-event'),
+              totalDays: 3,
+              startDate: DateTime(2026, 10, 2),
+              endDate: DateTime(2026, 10, 4),
+              dailyCarbTargetGrams: 600,
+              generatedAt: DateTime(2026, 9, 1, 10, 5), // newer
+            ),
+          );
+
+      final result = await service.getCarbLoadingPlan('dup-event');
+      expect(result, isNot(equals(null)));
+      expect(result!.id, newer.id, reason: 'should keep the newest plan');
+      expect(result.totalDays, 3);
+      // Sanity: the older one existed and is distinct.
+      expect(older.id, isNot(newer.id));
+    });
+
+    test('self-heals — deletes the duplicate so only one plan remains', () async {
+      for (final gen in [
+        DateTime(2026, 9, 1, 10, 0),
+        DateTime(2026, 9, 1, 10, 5),
+        DateTime(2026, 9, 1, 10, 3),
+      ]) {
+        await db.into(db.carbLoadingPlansTable).insert(
+              CarbLoadingPlansTableCompanion.insert(
+                userId: testUserId,
+                eventId: const Value('heal-event'),
+                totalDays: 3,
+                startDate: DateTime(2026, 10, 2),
+                endDate: DateTime(2026, 10, 4),
+                dailyCarbTargetGrams: 600,
+                generatedAt: gen,
+              ),
+            );
+      }
+
+      await service.getCarbLoadingPlan('heal-event');
+
+      final remaining = await (db.select(db.carbLoadingPlansTable)
+            ..where((t) => t.eventId.equals('heal-event')))
+          .get();
+      expect(remaining.length, 1, reason: 'duplicates should be cleaned up');
+      expect(remaining.single.generatedAt, DateTime(2026, 9, 1, 10, 5),
+          reason: 'the survivor should be the newest');
+    });
   });
 
   // ---------------------------------------------------------------------------

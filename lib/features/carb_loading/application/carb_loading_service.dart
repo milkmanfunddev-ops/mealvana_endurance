@@ -82,6 +82,31 @@ class CarbLoadingService {
         }
       }
 
+      // Make create idempotent: remove any plan(s) already attached to this
+      // event first. Without this, a stale `event.hasCarbLoading` flag or a
+      // double-fired protocol selection routes through the no-guard create path
+      // twice and leaves TWO plans for one event — which then made every
+      // getCarbLoadingPlan read throw 'Too many elements' and killed the whole
+      // event (no days, no calendar dots). getCarbLoadingPlan self-heals
+      // existing duplicates; this stops new ones being born.
+      if (eventId != null) {
+        final existing = await getCarbLoadingPlan(eventId);
+        if (existing != null) {
+          _logger.info(
+            'Replacing existing carb loading plan ${existing.id} for event '
+            '$eventId before creating the new one',
+            context: 'CARB_LOADING_SERVICE',
+            data: {'eventId': eventId, 'existingPlanId': existing.id},
+          );
+          await _carbLoadingRepository.deleteCarbLoadingPlan(
+            deviceId: deviceId,
+            planId: existing.id,
+            requireRemoteAck:
+                resolvedConsistency == WriteConsistency.remoteAckRequired,
+          );
+        }
+      }
+
       // Call repository which will invoke edge function to create plan and auto-generate days
       await _carbLoadingRepository.createCarbLoadingPlan(
         deviceId: deviceId,
@@ -410,13 +435,66 @@ class CarbLoadingService {
     }
   }
 
-  /// Get carb loading plan for an event
+  /// Get carb loading plan for an event.
+  ///
+  /// Tolerates — and self-heals — duplicate plans for one event. A race between
+  /// two concurrent protocol selections (the button double-fired; see the
+  /// create/update paths) could insert more than one plan, and this used to
+  /// call `getSingleOrNull()`, which THROWS `Bad state: Too many elements` on
+  /// >1 row. That crash then cascaded through delete/update and left the whole
+  /// event dead: no carb loading days rendered, no calendar dots, nothing.
+  ///
+  /// Now: return the newest plan and delete the older duplicates so the event
+  /// converges back to a single plan on the next read.
   Future<CarbLoadingPlan?> getCarbLoadingPlan(String eventId) async {
     try {
-      final query = _database.select(_database.carbLoadingPlansTable)
-        ..where((tbl) => tbl.eventId.equals(eventId));
+      final plans =
+          await (_database.select(_database.carbLoadingPlansTable)
+                ..where((tbl) => tbl.eventId.equals(eventId))
+                ..orderBy([(tbl) => OrderingTerm.desc(tbl.generatedAt)]))
+              .get();
 
-      return await query.getSingleOrNull();
+      if (plans.isEmpty) return null;
+      final keep = plans.first;
+
+      if (plans.length > 1) {
+        _logger.warning(
+          'Found ${plans.length} carb loading plans for event $eventId — '
+          'keeping the newest (${keep.id}) and removing the duplicates',
+          context: 'CARB_LOADING_SERVICE',
+          data: {'eventId': eventId, 'keptPlanId': keep.id},
+        );
+        for (final dup in plans.skip(1)) {
+          // Local cleanup only. Delete each duplicate's days + meals first so no
+          // orphan rows remain, then the plan row itself. Best-effort: a failed
+          // cleanup must not turn a read back into the crash it just replaced.
+          try {
+            final dupDays =
+                await (_database.select(_database.carbLoadingDaysTable)
+                      ..where((t) => t.carbLoadingPlanId.equals(dup.id)))
+                    .get();
+            for (final day in dupDays) {
+              await (_database.delete(_database.carbLoadingDayMealsTable)
+                    ..where((t) => t.carbLoadingDayId.equals(day.id)))
+                  .go();
+            }
+            await (_database.delete(_database.carbLoadingDaysTable)
+                  ..where((t) => t.carbLoadingPlanId.equals(dup.id)))
+                .go();
+            await (_database.delete(_database.carbLoadingPlansTable)
+                  ..where((t) => t.id.equals(dup.id)))
+                .go();
+          } catch (e) {
+            _logger.warning(
+              'Failed to clean up duplicate carb loading plan ${dup.id}',
+              context: 'CARB_LOADING_SERVICE',
+              error: e,
+            );
+          }
+        }
+      }
+
+      return keep;
     } catch (e) {
       _logger.error(
         'Error getting carb loading plan for event: $eventId',
