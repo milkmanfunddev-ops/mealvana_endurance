@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/meal_component.dart';
+import '../../domain/portion_quantity.dart';
 
 /// An editable list of [MealComponent]s for use in the edit-meal-log flow.
 ///
@@ -219,6 +220,13 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
 /// absolute for [MealComponent.portion]; the **Quantity** field scales each
 /// known macro proportionally. Unknown (null) macros stay blank rather than
 /// being fabricated.
+///
+/// While editing, the Portion label is never rewritten (bug 39fe3fdb): it
+/// keeps showing the unit portion (e.g. "1 cup") and the Quantity field alone
+/// communicates how many were eaten. Because the persisted portion string is
+/// the only place quantity is stored, [_persistedPortion] folds the chosen
+/// quantity back into the portion at save time (e.g. "2 cup"), so saved rows
+/// render the eaten amount exactly as before.
 class _EditComponentDialog extends StatefulWidget {
   const _EditComponentDialog({required this.component, required this.onSave});
 
@@ -240,7 +248,6 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
   late final TextEditingController _sodiumCtrl;
 
   late final double _baseQty;
-  late final String _basePortion;
   late final int? _baseCal;
   late final double? _baseCarb;
   late final double? _baseProt;
@@ -262,14 +269,13 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     _sodiumCtrl =
         TextEditingController(text: item.sodiumMg?.toStringAsFixed(0) ?? '');
 
-    _baseQty = _parseLeadingQuantity(item.portion) ?? 1.0;
-    _basePortion = item.portion;
+    _baseQty = parseLeadingQuantity(item.portion) ?? 1.0;
     _baseCal = item.calories;
     _baseCarb = item.carbG;
     _baseProt = item.proteinG;
     _baseFat = item.fatG;
     _baseSodium = item.sodiumMg;
-    _qtyCtrl = TextEditingController(text: _fmtQty(_baseQty));
+    _qtyCtrl = TextEditingController(text: fmtQty(_baseQty));
     _qtyCtrl.addListener(_recompute);
   }
 
@@ -306,17 +312,28 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     if (baseSodium != null) {
       _sodiumCtrl.text = (baseSodium * ratio).toStringAsFixed(0);
     }
-    final rewritten = _replaceLeadingQuantity(_basePortion, qty);
-    if (rewritten != null) _portionCtrl.text = rewritten;
+    // The Portion label is deliberately NOT rewritten here — it stays at the
+    // unit portion while Quantity communicates the amount (bug 39fe3fdb). The
+    // quantity is folded into the persisted portion in [_persistedPortion].
+  }
+
+  /// The portion string to persist: the Portion text with the chosen Quantity
+  /// folded into its leading number, so the saved row still renders the eaten
+  /// amount ("2 cup · 300 kcal"). When Quantity is untouched (or invalid) the
+  /// Portion text is saved verbatim, preserving manual portion edits.
+  String _persistedPortion() {
+    final text = _portionCtrl.text.trim();
+    final qty = double.tryParse(_qtyCtrl.text.trim());
+    if (qty == null || qty <= 0 || qty == _baseQty) return text;
+    return replaceLeadingQuantity(text, qty) ?? text;
   }
 
   void _save() {
     final item = widget.component;
+    final persistedPortion = _persistedPortion();
     final updated = MealComponent(
       name: _nameCtrl.text.trim().isEmpty ? item.name : _nameCtrl.text.trim(),
-      portion: _portionCtrl.text.trim().isEmpty
-          ? item.portion
-          : _portionCtrl.text.trim(),
+      portion: persistedPortion.isEmpty ? item.portion : persistedPortion,
       calories: int.tryParse(_calCtrl.text) ?? item.calories,
       carbG: double.tryParse(_carbCtrl.text) ?? item.carbG,
       proteinG: double.tryParse(_protCtrl.text) ?? item.proteinG,
@@ -397,27 +414,4 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     );
   }
 
-  /// Parses the leading numeric quantity from a portion string, e.g. "2 cups"
-  /// → 2.0, "1.5 oz" → 1.5. Returns null when there is no leading number.
-  double? _parseLeadingQuantity(String portion) {
-    final match = RegExp(r'^\s*(\d+(?:\.\d+)?)').firstMatch(portion);
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  /// Rewrites the leading number of [portion] to [qty], preserving the unit
-  /// suffix (e.g. "1 cup" + 2 → "2 cup"). Returns null when there is no leading
-  /// number to replace.
-  String? _replaceLeadingQuantity(String portion, double qty) {
-    final match =
-        RegExp(r'^(\s*)(\d+(?:\.\d+)?)(.*)$').firstMatch(portion);
-    if (match == null) return null;
-    return '${match.group(1)}${_fmtQty(qty)}${match.group(3)}';
-  }
-
-  /// Formats a quantity without a trailing ".0" for whole numbers.
-  String _fmtQty(double qty) {
-    if (qty == qty.roundToDouble()) return qty.toInt().toString();
-    return qty.toString();
-  }
 }
