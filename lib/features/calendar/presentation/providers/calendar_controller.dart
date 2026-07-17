@@ -225,86 +225,9 @@ class CalendarController extends _$CalendarController {
     }
   }
 
-  /// Complete an activity by updating it with completion data
-  Future<void> completeActivity({
-    required String activityId,
-    required DateTime completedAt,
-    int? effortRating,
-    int? nutritionRating,
-    int? overallSatisfaction,
-    String? textNotes,
-    bool hasVoiceRecording = false,
-    String? weatherConditions,
-    int? temperatureFahrenheit,
-    int? humidityPercent,
-  }) async {
-    try {
-      // Get current user and activity
-      final user = await _authService.getCurrentUser();
-      final deviceId = user?.id ?? 'unknown';
-      final userId = user?.id ?? 'unknown';
-
-      final activity = await _activitiesService.getActivityById(userId, activityId);
-      if (activity == null) {
-        _logger.error('Activity not found: $activityId', error: null);
-        return;
-      }
-
-      // Update activity with completion data
-      final completedActivity = activity.copyWith(
-        status: ActivityStatus.completed,
-        completedAt: completedAt,
-        completionRating: overallSatisfaction,
-        completionNotes: textNotes,
-      );
-
-      await _activitiesService.updateActivity(
-        deviceId: deviceId,
-        activity: completedActivity,
-      );
-
-      // Refresh activities
-      ref.invalidateSelf();
-
-    } catch (e) {
-      _logger.error('Error completing activity', error: e);
-    }
-  }
-
-  /// Update activity completion notes
-  Future<void> updateActivityCompletion({
-    required String activityId,
-    String? textNotes,
-  }) async {
-    try {
-      final user = await _authService.getCurrentUser();
-      final deviceId = user?.id ?? 'unknown';
-      final userId = user?.id ?? 'unknown';
-
-      final activity = await _activitiesService.getActivityById(userId, activityId);
-      if (activity == null) {
-        _logger.error('Activity not found: $activityId', error: null);
-        return;
-      }
-
-      // Update activity with new completion notes
-      final updatedActivity = activity.copyWith(
-        completionNotes: textNotes,
-      );
-
-      await _activitiesService.updateActivity(
-        deviceId: deviceId,
-        activity: updatedActivity,
-      );
-
-      // Refresh activities
-      ref.invalidateSelf();
-
-    } catch (e) {
-      _logger.error('Error updating activity completion', error: e);
-      rethrow;
-    }
-  }
+  // NOTE: Activity completion lives in activity_detail_controller.completeActivity
+  // (writes Activity.completionRating / completionNotes). The old duplicate
+  // completion methods here were dead code and have been removed (task 398e3fdb).
 
   /// Create a new event (optionally linked to an activity)
   Future<void> createEvent({
