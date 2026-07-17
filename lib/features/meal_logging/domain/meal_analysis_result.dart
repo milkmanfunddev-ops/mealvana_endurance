@@ -39,14 +39,14 @@ class MealAnalysisItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'portion': portion,
-        'calories': calories,
-        'carb_g': carbG,
-        'protein_g': proteinG,
-        'fat_g': fatG,
-        'sodium_mg': sodiumMg,
-      };
+    'name': name,
+    'portion': portion,
+    'calories': calories,
+    'carb_g': carbG,
+    'protein_g': proteinG,
+    'fat_g': fatG,
+    'sodium_mg': sodiumMg,
+  };
 }
 
 /// Summed macros for all items in a [MealAnalysisResult].
@@ -109,6 +109,10 @@ class MealAnalysisResult {
     required this.items,
     required this.totals,
     this.notes,
+    this.inputTokens = 0,
+    this.outputTokens = 0,
+    this.model,
+    this.costUsd,
   });
 
   /// Short descriptive title, e.g. "Grilled chicken with rice and salad".
@@ -129,6 +133,16 @@ class MealAnalysisResult {
   /// Optional one-line caveat for the user.
   final String? notes;
 
+  /// Actual model usage returned by the edge function for analytics.
+  final int inputTokens;
+  final int outputTokens;
+  final String? model;
+
+  /// Actual USD charge reported by AI Gateway, when available.
+  final double? costUsd;
+
+  int get totalTokens => inputTokens + outputTokens;
+
   factory MealAnalysisResult.fromJson(Map<String, dynamic> json) {
     final slotRaw = json['suggested_slot'] as String?;
     final slot = MealSlot.fromWireValue(slotRaw) ?? MealSlot.snack;
@@ -138,6 +152,9 @@ class MealAnalysisResult {
         .cast<Map<String, dynamic>>()
         .map(MealAnalysisItem.fromJson)
         .toList();
+
+    final usage = json['_usage'];
+    final usageMap = usage is Map ? usage : const <String, dynamic>{};
 
     return MealAnalysisResult(
       name: json['name'] as String,
@@ -150,6 +167,10 @@ class MealAnalysisResult {
         json['totals'] as Map<String, dynamic>,
       ),
       notes: json['notes'] as String?,
+      inputTokens: (usageMap['input_tokens'] as num?)?.toInt() ?? 0,
+      outputTokens: (usageMap['output_tokens'] as num?)?.toInt() ?? 0,
+      model: usageMap['model'] as String?,
+      costUsd: (usageMap['cost_usd'] as num?)?.toDouble(),
     );
   }
 }

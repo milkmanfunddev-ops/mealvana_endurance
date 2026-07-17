@@ -107,7 +107,10 @@ class CarbLoadingService {
         }
       }
 
-      // Call repository which will invoke edge function to create plan and auto-generate days
+      // Repository creates the plan AND its per-day rows locally in Drift
+      // (offline-first, needs_upload=true) — not via an edge function, despite
+      // what an older comment here claimed. So the days exist on-device the
+      // moment this returns; the calendar/dashboard read them from Drift.
       await _carbLoadingRepository.createCarbLoadingPlan(
         deviceId: deviceId,
         userId: ownerId, // Use ownerId (athlete if coach is creating for them)

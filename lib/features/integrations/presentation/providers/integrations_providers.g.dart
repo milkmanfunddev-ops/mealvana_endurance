@@ -315,7 +315,7 @@ final class FinalSurgeSyncServiceProvider
 }
 
 String _$finalSurgeSyncServiceHash() =>
-    r'f49896992377053541a17a5dc89cdecd7594288f';
+    r'dcafcd6ae9db3b39f76580800e84cb78c9c4b4fb';
 
 /// Provider to get Final Surge integration for a user
 
@@ -761,7 +761,7 @@ final class TrainingPeaksSyncServiceProvider
 }
 
 String _$trainingPeaksSyncServiceHash() =>
-    r'b52b93f4c6b35c7a3d5c879adfec78add94d6d44';
+    r'4bd76ececa514f245d6075c4fbc317bbd5d16bea';
 
 /// Provider to get TrainingPeaks integration for a user
 
@@ -1617,4 +1617,4 @@ final class VdotSyncServiceProvider
   }
 }
 
-String _$vdotSyncServiceHash() => r'd5bd0a1549f8553754f5655fb2f91c55eadaaa3d';
+String _$vdotSyncServiceHash() => r'e2c2d14c1f8563fa9afad9cfcc30331606670861';

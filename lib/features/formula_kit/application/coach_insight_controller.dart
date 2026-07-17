@@ -62,7 +62,15 @@ class CoachInsightController extends _$CoachInsightController {
   ///  - `jade_chat_repository.dart` (jade-chat edge function, HTTP 402)
   ///  - describe-meal client (describe-meal edge function, HTTP 402)
   ///  - analyze-meal-photo client (analyze-meal-photo edge function, HTTP 402)
-  Future<void> generate(CoachInsightContext context) async {
+  Future<void> generate(
+    CoachInsightContext context, {
+    String trigger = 'initial',
+  }) async {
+    await _track('coach_insight_requested', {
+      'phase': context.phase.analyticsValue,
+      'trigger': trigger,
+      'component_count': context.components.length,
+    });
     state = const AsyncLoading<CoachInsight?>();
     final sw = Stopwatch()..start();
 
@@ -74,9 +82,15 @@ class CoachInsightController extends _$CoachInsightController {
         'phase': context.phase.analyticsValue,
         'mode': 'insight',
         'cached': false,
+        'generation_source': insight.generationSource,
+        'ai_called': insight.generationSource == 'model',
         'latency_ms': sw.elapsedMilliseconds,
         'input_tokens': insight.inputTokens,
         'output_tokens': insight.outputTokens,
+        'total_tokens': insight.totalTokens,
+        if (insight.model != null) 'model': insight.model,
+        if (insight.costUsd != null) 'cost_usd': insight.costUsd,
+        'component_count': context.components.length,
       });
 
       if (formulaId != null) {
@@ -102,6 +116,14 @@ class CoachInsightController extends _$CoachInsightController {
     // render its inline error.
     final result = state;
     if (result is AsyncError) {
+      sw.stop();
+      await _track('coach_insight_failed', {
+        'phase': context.phase.analyticsValue,
+        'trigger': trigger,
+        'component_count': context.components.length,
+        'latency_ms': sw.elapsedMilliseconds,
+        'error_type': result.error.runtimeType.toString(),
+      });
       maybeShowInsufficientCreditsPaywall(result.error);
     }
   }
@@ -111,7 +133,7 @@ class CoachInsightController extends _$CoachInsightController {
     await _track('coach_insight_refresh_tapped', {
       'phase': context.phase.analyticsValue,
     });
-    await generate(context);
+    await generate(context, trigger: 'refresh');
   }
 
   Future<void> _track(String event, Map<String, dynamic> properties) async {
@@ -120,7 +142,9 @@ class CoachInsightController extends _$CoachInsightController {
       await analytics.track(event, properties: properties);
     } catch (e) {
       // Analytics must never break the feature.
-      if (kDebugMode) debugPrint('[CoachInsightController] analytics error: $e');
+      if (kDebugMode) {
+        debugPrint('[CoachInsightController] analytics error: $e');
+      }
     }
   }
 }

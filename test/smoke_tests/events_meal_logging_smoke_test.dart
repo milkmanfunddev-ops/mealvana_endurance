@@ -36,6 +36,7 @@ import 'package:mealvana_endurance/features/meal_logging/presentation/screens/de
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_review_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recipe_picker_screen.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../helpers/widget_test_harness.dart';
 
@@ -72,18 +73,10 @@ Future<void> _smokeWithRouter(
 }) async {
   final router = GoRouter(
     initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => buildScreen(),
-      ),
-    ],
+    routes: [GoRoute(path: '/', builder: (_, __) => buildScreen())],
   );
 
-  final allOverrides = <Override>[
-    mockAppExternalDeps(),
-    ...overrides,
-  ];
+  final allOverrides = <Override>[mockAppExternalDeps(), ...overrides];
 
   bool isOverflow(String s) =>
       s.contains('overflowed') || s.contains('infinite size');
@@ -113,7 +106,11 @@ Future<void> _smokeWithRouter(
     router.dispose();
   }
 
-  for (dynamic e = tester.takeException(); e != null; e = tester.takeException()) {
+  for (
+    dynamic e = tester.takeException();
+    e != null;
+    e = tester.takeException()
+  ) {
     captured.add(e.toString());
   }
 
@@ -121,7 +118,8 @@ Future<void> _smokeWithRouter(
   expect(
     crashes,
     isEmpty,
-    reason: 'Screen threw during build/layout at $size:\n${crashes.join('\n\n')}',
+    reason:
+        'Screen threw during build/layout at $size:\n${crashes.join('\n\n')}',
   );
 
   addTearDown(() {
@@ -150,8 +148,9 @@ void main() {
         settle: false,
         overrides: [
           eventsControllerProvider.overrideWith(_LoadingEventsController.new),
-          activitiesControllerProvider
-              .overrideWith(_LoadingActivitiesController.new),
+          activitiesControllerProvider.overrideWith(
+            _LoadingActivitiesController.new,
+          ),
         ],
       );
     });
@@ -191,7 +190,9 @@ void main() {
     // With null extra, _originalLog stays null and the screen renders its empty
     // form (safe fallback — _submit() returns early when _originalLog == null).
     // settle:false because mealLogControllerProvider still needs the async init.
-    testWidgets('EditMealLogScreen builds (no extra, empty form)', (tester) async {
+    testWidgets('EditMealLogScreen builds (no extra, empty form)', (
+      tester,
+    ) async {
       await _smokeWithRouter(tester, () => const EditMealLogScreen());
     });
 
@@ -218,14 +219,18 @@ void main() {
     // MealReviewScreen reads GoRouterState.of(context) for MealAnalysisResult.
     // With null extra, _result == null and the screen shows 'Missing analysis
     // result.' fallback text — a defined safe state, not a crash.
-    testWidgets('MealReviewScreen builds (missing result fallback)', (tester) async {
+    testWidgets('MealReviewScreen builds (missing result fallback)', (
+      tester,
+    ) async {
       await _smokeWithRouter(tester, () => const MealReviewScreen());
     });
 
     // RecentSavedPickerScreen reads GoRouterState.of(context) for logDate and
     // watches savedMealsProvider + recentMealsProvider (both async streams).
     // settle:false — streams never emit without real Drift DB.
-    testWidgets('RecentSavedPickerScreen builds (loading state)', (tester) async {
+    testWidgets('RecentSavedPickerScreen builds (loading state)', (
+      tester,
+    ) async {
       await _smokeWithRouter(tester, () => const RecentSavedPickerScreen());
     });
 
@@ -252,16 +257,26 @@ void main() {
       );
     });
 
+    testWidgets('LogMealScreen hides Describe when release flag is off', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const LogMealScreen(logDate: '2026-07-04'),
+        settle: false,
+        appConfig: AppConfig.forTesting(describeMealEnabled: false),
+      );
+
+      expect(find.text('Describe'), findsNothing);
+    });
+
     // BuildMealScreen (Surface 2 of the meal-logging split) — same shape as
     // LogMealScreen: plain constructor params, no GoRouterState dependency.
     // Renders its empty state synchronously (draftMealControllerProvider's
     // initial state has zero components) — no async provider gates the
     // first frame, so settle:true is safe here.
     testWidgets('BuildMealScreen builds (empty draft state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const BuildMealScreen(logDate: '2026-07-04'),
-      );
+      await smokeScreen(tester, const BuildMealScreen(logDate: '2026-07-04'));
     });
   });
 }

@@ -4,6 +4,26 @@ Status: pre-wiring reference. Written 2026-07-08 after the prod engagement
 audit. **Read this before wiring Mixpanel identify/track or building any
 engagement dashboard.**
 
+## AI Analyze and Coach Insights metering
+
+The mobile client emits these Mixpanel events for the AI surfaces:
+
+- `meal_ai_action_tapped`, `meal_ai_validation_failed`, `meal_ai_started`,
+  `meal_ai_completed`, and `meal_ai_failed` (`method` is `text`, `camera`, or
+  `gallery`). Successful analysis events include `input_tokens`,
+  `output_tokens`, `total_tokens`, `model`, `cost_usd`, `latency_ms`,
+  `confidence`, and `item_count`.
+- `coach_insight_requested`, `coach_insight_generated`, and
+  `coach_insight_failed`; refreshes also emit `coach_insight_refresh_tapped`.
+  Generated events include the same token/cost/model/latency fields plus
+  `generation_source` and `ai_called`. Rule-generated insights report zero
+  tokens and cost, which makes avoided model calls measurable.
+
+`cost_usd` is the actual Vercel AI Gateway cost returned for a successful
+model call, not a client-side price estimate. Gateway requests are tagged by
+feature and modality (`feature:meal-analyze`, `feature:coach-insight`) and by
+user ID, so its spend reports can be reconciled against Mixpanel funnels.
+
 ## 1. Internal-account exclusion (`users.is_internal`)
 
 Internal team/test accounts contaminated every naive engagement metric during

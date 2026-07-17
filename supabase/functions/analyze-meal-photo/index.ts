@@ -22,47 +22,55 @@
  *   500 — missing AI_GATEWAY_API_KEY secret or unexpected server error
  */
 
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { generateObject } from 'npm:ai@6';
-import { handleCors } from '../_shared/cors.ts';
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { generateObject } from "npm:ai@6";
+import { handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
   jsonResponse,
   serverError,
   validationError,
-} from '../_shared/responses.ts';
-import { JADE_MODEL } from '../_shared/ai/model.ts';
-import { logAiUsage } from '../_shared/ai/usage.ts';
-import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
-import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
+} from "../_shared/responses.ts";
+import { ANALYZE_MEAL_PHOTO_MODEL } from "../_shared/ai/model.ts";
+import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
+import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+import {
+  debitForUsage,
+  ensureAndCheckCredits,
+  insufficientCreditsBody,
+} from "../_shared/ai/credits.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
 
 // ---------------------------------------------------------------------------
 // Auth helper — validates caller JWT via service-role admin client
 // ---------------------------------------------------------------------------
 
 async function requireUser(req: Request) {
-  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
+  const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) {
-    return { user: null, response: errorResponse('Missing authorization header', 401) };
+    return {
+      user: null,
+      response: errorResponse("Missing authorization header", 401),
+    };
   }
 
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const { data: { user }, error } = await adminClient.auth.getUser(token);
 
   if (error || !user) {
-    console.error('[analyze-meal-photo] Auth error:', error);
+    console.error("[analyze-meal-photo] Auth error:", error);
     return {
       user: null,
-      response: errorResponse('Invalid or expired authentication token', 401),
+      response: errorResponse("Invalid or expired authentication token", 401),
     };
   }
 
@@ -80,16 +88,16 @@ serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  if (req.method !== 'POST') {
-    return errorResponse('Method not allowed. Use POST.', 405);
+  if (req.method !== "POST") {
+    return errorResponse("Method not allowed. Use POST.", 405);
   }
 
   // Validate AI Gateway key is configured before doing any real work
-  const aiGatewayApiKey = Deno.env.get('AI_GATEWAY_API_KEY');
+  const aiGatewayApiKey = Deno.env.get("AI_GATEWAY_API_KEY");
   if (!aiGatewayApiKey) {
-    console.error('[analyze-meal-photo] AI_GATEWAY_API_KEY secret is not set');
+    console.error("[analyze-meal-photo] AI_GATEWAY_API_KEY secret is not set");
     return errorResponse(
-      'AI service is not configured. Please contact support.',
+      "AI service is not configured. Please contact support.",
       500,
     );
   }
@@ -98,19 +106,21 @@ serve(withSentry(async (req: Request) => {
     // Authenticate caller
     const { user, response: authResponse } = await requireUser(req);
     if (authResponse) return authResponse;
-    if (!user) return errorResponse('Invalid authentication state', 401);
+    if (!user) return errorResponse("Invalid authentication state", 401);
 
     // Parse body
     let body: { photo_path?: unknown };
     try {
       body = await req.json();
     } catch {
-      return validationError('Invalid JSON body');
+      return validationError("Invalid JSON body");
     }
 
     const photoPath = body.photo_path;
-    if (typeof photoPath !== 'string' || photoPath.trim().length === 0) {
-      return validationError('photo_path is required and must be a non-empty string');
+    if (typeof photoPath !== "string" || photoPath.trim().length === 0) {
+      return validationError(
+        "photo_path is required and must be a non-empty string",
+      );
     }
 
     // Authorization: photo must belong to the calling user
@@ -118,26 +128,36 @@ serve(withSentry(async (req: Request) => {
       console.warn(
         `[analyze-meal-photo] User ${user.id} attempted to access photo at path: ${photoPath}`,
       );
-      return errorResponse('Access denied: photo does not belong to this user', 403);
+      return errorResponse(
+        "Access denied: photo does not belong to this user",
+        403,
+      );
     }
 
     // Download image from private storage using service-role client
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // ── Credit check ─────────────────────────────────────────────────────────
-    const credit = await ensureAndCheckCredits(serviceClient, user.id, 'analyze-meal-photo');
+    const credit = await ensureAndCheckCredits(
+      serviceClient,
+      user.id,
+      "analyze-meal-photo",
+    );
     if (!credit.allowed) {
       return jsonResponse(insufficientCreditsBody(credit), 402);
     }
 
     const { data: imageData, error: storageError } = await serviceClient.storage
-      .from('meal-photos')
+      .from("meal-photos")
       .download(photoPath);
 
     if (storageError || !imageData) {
-      console.error('[analyze-meal-photo] Storage download error:', storageError);
+      console.error(
+        "[analyze-meal-photo] Storage download error:",
+        storageError,
+      );
       return errorResponse(
-        `Could not retrieve photo: ${storageError?.message ?? 'unknown error'}`,
+        `Could not retrieve photo: ${storageError?.message ?? "unknown error"}`,
         500,
       );
     }
@@ -147,7 +167,7 @@ serve(withSentry(async (req: Request) => {
     // for images over ~1MB.
     const arrayBuffer = await imageData.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
-    let binary = '';
+    let binary = "";
     const chunkSize = 8192;
     for (let i = 0; i < uint8.length; i += chunkSize) {
       binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
@@ -155,35 +175,39 @@ serve(withSentry(async (req: Request) => {
     const base64Image = btoa(binary);
 
     // Determine MIME type from path extension (default to JPEG)
-    const ext = photoPath.split('.').pop()?.toLowerCase();
-    const mimeType =
-      ext === 'png' ? 'image/png'
-      : ext === 'webp' ? 'image/webp'
-      : ext === 'gif' ? 'image/gif'
-      : 'image/jpeg';
+    const ext = photoPath.split(".").pop()?.toLowerCase();
+    const mimeType = ext === "png"
+      ? "image/png"
+      : ext === "webp"
+      ? "image/webp"
+      : ext === "gif"
+      ? "image/gif"
+      : "image/jpeg";
 
     console.log(
-      `[analyze-meal-photo] Analyzing photo for user ${user.id}, path: ${photoPath}, model: ${JADE_MODEL}`,
+      `[analyze-meal-photo] Analyzing photo for user ${user.id}, path: ${photoPath}, model: ${ANALYZE_MEAL_PHOTO_MODEL}`,
     );
 
     // Call Claude via Vercel AI Gateway
     let result;
     try {
       result = await generateObject({
-        model: JADE_MODEL as Parameters<typeof generateObject>[0]['model'],
+        model: ANALYZE_MEAL_PHOTO_MODEL as Parameters<typeof generateObject>[0]["model"],
         schema: MealAnalysisSchema,
+        maxOutputTokens: 1000,
         messages: [
           {
-            role: 'user',
+            role: "user",
             content: [
               {
-                type: 'image',
+                type: "image",
                 image: base64Image,
                 mediaType: mimeType,
               },
               {
-                type: 'text',
-                text: `You are a sports nutrition assistant helping an endurance athlete log their meals accurately.
+                type: "text",
+                text:
+                  `You are a sports nutrition assistant helping an endurance athlete log their meals accurately.
 
 Analyze this food photo and return a structured meal breakdown.
 
@@ -212,12 +236,24 @@ Return your answer as structured JSON matching the requested schema.`,
             ],
           },
         ],
+        providerOptions: {
+          gateway: {
+            user: user.id,
+            tags: [
+              "feature:meal-analyze",
+              "modality:photo",
+              "function:analyze-meal-photo",
+            ],
+          },
+        },
       });
     } catch (aiError) {
       // The model returned { not_food: true } — this will cause a zod parse
       // failure. We catch it and check if the raw text signals non-food.
       const errStr = String(aiError);
-      if (errStr.includes('not_food') || errStr.toLowerCase().includes('not food')) {
+      if (
+        errStr.includes("not_food") || errStr.toLowerCase().includes("not food")
+      ) {
         return errorResponse(
           "The photo doesn't appear to contain food. Please try a different image.",
           422,
@@ -228,6 +264,7 @@ Return your answer as structured JSON matching the requested schema.`,
 
     const analysis = result.object;
     const usage = result.usage;
+    const costUsd = gatewayCostUsd(result.providerMetadata);
 
     // Log usage to jade_calls table (fire-and-forget; never fail the request)
     // Register with waitUntil so the insert survives isolate shutdown
@@ -235,18 +272,21 @@ Return your answer as structured JSON matching the requested schema.`,
     // deno-lint-ignore no-explicit-any
     (globalThis as any).EdgeRuntime?.waitUntil?.(
       serviceClient
-        .from('jade_calls')
+        .from("jade_calls")
         .insert({
           user_id: user.id,
           conversation_id: null,
-          function_name: 'analyze-meal-photo',
-          model: JADE_MODEL,
+          function_name: "analyze-meal-photo",
+          model: ANALYZE_MEAL_PHOTO_MODEL,
           input_tokens: usage?.inputTokens ?? 0,
           output_tokens: usage?.outputTokens ?? 0,
         })
         .then(({ error: logError }) => {
           if (logError) {
-            console.error('[analyze-meal-photo] Failed to log jade_call:', logError);
+            console.error(
+              "[analyze-meal-photo] Failed to log jade_call:",
+              logError,
+            );
           }
         }),
     );
@@ -256,23 +296,33 @@ Return your answer as structured JSON matching the requested schema.`,
     (globalThis as any).EdgeRuntime?.waitUntil?.(
       logAiUsage(serviceClient, {
         userId: user.id,
-        functionName: 'analyze-meal-photo',
-        model: JADE_MODEL,
+        functionName: "analyze-meal-photo",
+        model: ANALYZE_MEAL_PHOTO_MODEL,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
       }),
     );
     // deno-lint-ignore no-explicit-any
-    (globalThis as any).EdgeRuntime?.waitUntil?.(debitForUsage(serviceClient, user.id, 'analyze-meal-photo'));
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      debitForUsage(serviceClient, user.id, "analyze-meal-photo"),
+    );
 
     console.log(
       `[analyze-meal-photo] Success for user ${user.id}: "${analysis.name}", ` +
         `${analysis.items.length} items, confidence=${analysis.confidence}`,
     );
 
-    return jsonResponse(analysis);
+    return jsonResponse({
+      ...analysis,
+      _usage: {
+        input_tokens: usage?.inputTokens ?? 0,
+        output_tokens: usage?.outputTokens ?? 0,
+        model: ANALYZE_MEAL_PHOTO_MODEL,
+        cost_usd: costUsd,
+      },
+    });
   } catch (error) {
-    console.error('[analyze-meal-photo] Fatal error:', error);
+    console.error("[analyze-meal-photo] Fatal error:", error);
     return serverError(error);
   }
 }));

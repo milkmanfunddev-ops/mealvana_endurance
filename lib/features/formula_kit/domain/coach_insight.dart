@@ -40,16 +40,21 @@ class CoachInsightContext {
       if (activities != null) 'activities': activities,
       if (name != null && name!.trim().isNotEmpty) 'name': name!.trim(),
       'components': components
-          .map((c) => <String, dynamic>{
-                FormulaMacros.kFoodName: FormulaMacros.nameOf(c),
-                FormulaMacros.kQuantity: FormulaMacros.quantityOf(c),
-                FormulaMacros.kCarbsPerServing: c[FormulaMacros.kCarbsPerServing],
-                FormulaMacros.kProteinPerServing: c[FormulaMacros.kProteinPerServing],
-                FormulaMacros.kFatPerServing: c[FormulaMacros.kFatPerServing],
-                FormulaMacros.kSodiumMg: c[FormulaMacros.kSodiumMg],
-                FormulaMacros.kFluidMlPerServing: c[FormulaMacros.kFluidMlPerServing],
-                FormulaMacros.kCaloriesPerServing: c[FormulaMacros.kCaloriesPerServing],
-              })
+          .map(
+            (c) => <String, dynamic>{
+              FormulaMacros.kFoodName: FormulaMacros.nameOf(c),
+              FormulaMacros.kQuantity: FormulaMacros.quantityOf(c),
+              FormulaMacros.kCarbsPerServing: c[FormulaMacros.kCarbsPerServing],
+              FormulaMacros.kProteinPerServing:
+                  c[FormulaMacros.kProteinPerServing],
+              FormulaMacros.kFatPerServing: c[FormulaMacros.kFatPerServing],
+              FormulaMacros.kSodiumMg: c[FormulaMacros.kSodiumMg],
+              FormulaMacros.kFluidMlPerServing:
+                  c[FormulaMacros.kFluidMlPerServing],
+              FormulaMacros.kCaloriesPerServing:
+                  c[FormulaMacros.kCaloriesPerServing],
+            },
+          )
           .toList(),
     };
   }
@@ -69,15 +74,17 @@ class CoachInsightContext {
       'a': activities,
       'n': name?.trim(),
       'c': components
-          .map((c) => [
-                FormulaMacros.nameOf(c),
-                FormulaMacros.quantityOf(c),
-                c[FormulaMacros.kCarbsPerServing],
-                c[FormulaMacros.kProteinPerServing],
-                c[FormulaMacros.kFatPerServing],
-                c[FormulaMacros.kSodiumMg],
-                c[FormulaMacros.kFluidMlPerServing],
-              ])
+          .map(
+            (c) => [
+              FormulaMacros.nameOf(c),
+              FormulaMacros.quantityOf(c),
+              c[FormulaMacros.kCarbsPerServing],
+              c[FormulaMacros.kProteinPerServing],
+              c[FormulaMacros.kFatPerServing],
+              c[FormulaMacros.kSodiumMg],
+              c[FormulaMacros.kFluidMlPerServing],
+            ],
+          )
           .toList(),
     });
     return _fnv1a(canonical);
@@ -103,6 +110,8 @@ class CoachInsight {
     this.inputTokens = 0,
     this.outputTokens = 0,
     this.model,
+    this.costUsd,
+    this.generationSource = 'model',
   });
 
   /// The coach-tone guidance sentence (~15-28 words).
@@ -114,6 +123,10 @@ class CoachInsight {
   final int inputTokens;
   final int outputTokens;
   final String? model;
+  final double? costUsd;
+  final String generationSource;
+
+  int get totalTokens => inputTokens + outputTokens;
 
   /// Whether this insight still reflects [liveMarker].
   bool isCurrentFor(String liveMarker) => staleMarker == liveMarker;

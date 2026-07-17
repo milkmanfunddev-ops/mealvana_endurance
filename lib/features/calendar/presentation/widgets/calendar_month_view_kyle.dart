@@ -37,11 +37,18 @@ class CalendarMonthViewKyle extends StatefulWidget {
     required this.selectedDate,
     required this.onDateSelected,
     this.dayIndicators = const {},
+    this.showHeaderControls = true,
   });
 
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
   final Map<DateTime, Set<DayIndicatorType>> dayIndicators;
+
+  /// When false, the internal month title / prev-next arrows / "Today" pill are
+  /// hidden and only the grid is drawn. Used by the Fuel Timeline dashboard,
+  /// whose own header already owns those controls. Defaults to true so every
+  /// other caller (e.g. coach mode) keeps the self-contained header.
+  final bool showHeaderControls;
 
   @override
   State<CalendarMonthViewKyle> createState() => _CalendarMonthViewKyleState();
@@ -70,6 +77,30 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
   }
 
   @override
+  void didUpdateWidget(CalendarMonthViewKyle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Follow an externally-driven selection change (e.g. the Fuel Timeline
+    // header's month arrows or its "Today" pill). Only re-base the swipeable
+    // grid when the selected month actually changes, so tapping a day within
+    // the visible month doesn't yank the page view.
+    final selectedMonth = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      1,
+    );
+    if (selectedMonth.year != _currentMonth.year ||
+        selectedMonth.month != _currentMonth.month) {
+      setState(() {
+        _currentMonth = selectedMonth;
+        _baseMonth = selectedMonth;
+      });
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(_initialPage);
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -86,78 +117,81 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
     return Column(
       children: [
         // Month/Year title with nav arrows and optional Today button
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Previous month arrow
-              GestureDetector(
-                key: const ValueKey('calendar.prev_month_button'),
-                onTap: _goToPreviousMonth,
-                child: Icon(
-                  Icons.chevron_left,
-                  size: 24,
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Month/Year title (tappable for date picker)
-              GestureDetector(
-                onTap: () => _showDatePicker(context),
-                child: Text(
-                  key: const ValueKey('calendar.month_label'),
-                  _formatMonthYear(widget.selectedDate),
-                  style: const TextStyle(
-                    fontFamily: 'Sansita',
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Next month arrow
-              GestureDetector(
-                key: const ValueKey('calendar.next_month_button'),
-                onTap: _goToNextMonth,
-                child: Icon(
-                  Icons.chevron_right,
-                  size: 24,
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                ),
-              ),
-              // Today button - only shown when not on current month
-              if (!isCurrentMonth) ...[
-                const SizedBox(width: 12),
+        if (widget.showHeaderControls)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Previous month arrow
                 GestureDetector(
-                  onTap: _goToToday,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                  key: const ValueKey('calendar.prev_month_button'),
+                  onTap: _goToPreviousMonth,
+                  child: Icon(
+                    Icons.chevron_left,
+                    size: 24,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Month/Year title (tappable for date picker)
+                GestureDetector(
+                  onTap: () => _showDatePicker(context),
+                  child: Text(
+                    key: const ValueKey('calendar.month_label'),
+                    _formatMonthYear(widget.selectedDate),
+                    style: const TextStyle(
+                      fontFamily: 'Sansita',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
                     ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.cream.withValues(alpha: 0.15)
-                          : AppColors.blackberry.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Text(
-                      'Today',
-                      style: TextStyle(
-                        fontFamily: 'Apercu',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Next month arrow
+                GestureDetector(
+                  key: const ValueKey('calendar.next_month_button'),
+                  onTap: _goToNextMonth,
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 24,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                ),
+                // Today button - only shown when not on current month
+                if (!isCurrentMonth) ...[
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _goToToday,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.cream.withValues(alpha: 0.15)
+                            : AppColors.blackberry.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        'Today',
+                        style: TextStyle(
+                          fontFamily: 'Apercu',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.cream
+                              : AppColors.blackberry,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
 
         // Day abbreviations header
         Row(

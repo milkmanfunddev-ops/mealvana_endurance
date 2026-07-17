@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../application/meal_ai_service.dart';
@@ -15,8 +16,7 @@ class DescribeMealScreen extends ConsumerStatefulWidget {
   const DescribeMealScreen({super.key});
 
   @override
-  ConsumerState<DescribeMealScreen> createState() =>
-      _DescribeMealScreenState();
+  ConsumerState<DescribeMealScreen> createState() => _DescribeMealScreenState();
 }
 
 class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
@@ -30,8 +30,7 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       _logDate = extra?['logDate'] as String? ?? _todayDateString();
       _initialized = true;
     }
@@ -51,14 +50,37 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
   }
 
   Future<void> _analyze() async {
-    if (!_formKey.currentState!.validate()) return;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('meal_ai_action_tapped', properties: {'method': 'text'});
+    if (!_formKey.currentState!.validate()) {
+      analytics.track(
+        'meal_ai_validation_failed',
+        properties: {'method': 'text'},
+      );
+      return;
+    }
 
     setState(() => _isAnalyzing = true);
+    analytics.track('meal_ai_started', properties: {'method': 'text'});
+    final stopwatch = Stopwatch()..start();
 
     try {
       final service = ref.read(mealAiServiceProvider);
-      final result = await service.describeMeal(
-        _descriptionCtrl.text.trim(),
+      final result = await service.describeMeal(_descriptionCtrl.text.trim());
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_completed',
+        properties: {
+          'method': 'text',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+          'input_tokens': result.inputTokens,
+          'output_tokens': result.outputTokens,
+          'total_tokens': result.totalTokens,
+          if (result.model != null) 'model': result.model,
+          if (result.costUsd != null) 'cost_usd': result.costUsd,
+          'confidence': result.confidence.name,
+          'item_count': result.items.length,
+        },
       );
 
       if (!mounted) return;
@@ -72,14 +94,43 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
         },
       );
     } on InsufficientCreditsException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': 'insufficient_credits',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': e.kind.name,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (!mounted) return;
       MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': 'unknown',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) {
         MealvanaSnackbar.showError(
-            context, 'Something went wrong. Please try again.');
+          context,
+          'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -128,10 +179,9 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
                       border: OutlineInputBorder(),
                       alignLabelWithHint: true,
                     ),
-                    validator: (v) =>
-                        (v == null || v.trim().length < 5)
-                            ? 'Please describe your meal'
-                            : null,
+                    validator: (v) => (v == null || v.trim().length < 5)
+                        ? 'Please describe your meal'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   KylePrimaryButton(
@@ -155,8 +205,9 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Jade is thinking...',
-                      style:
-                          AppTextStyles.bodyLarge.copyWith(color: Colors.white),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),

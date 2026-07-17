@@ -351,7 +351,7 @@ describe('H. Schema edge cases', () => {
     assert(!result.success, 'float totals.calories should fail int() constraint');
   });
 
-  it('multiple items — schema accepts arrays of any length >= 1', () => {
+  it('multiple items — schema accepts a practical meal-sized array', () => {
     const items = Array.from({ length: 10 }, (_, i) => ({
       name: `Item ${i}`,
       portion: '1 serving',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -47,7 +48,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _monthNav(ref, selected, isWeek, onSurface),
+          child: _monthNav(ref, selected, isWeek, onSurface, isDark),
         ),
         const SizedBox(height: 14),
         // Week strip spreads nearly edge-to-edge so the day numbers aren't
@@ -111,7 +112,10 @@ class FuelTimelineDayHeader extends ConsumerWidget {
           child: GestureDetector(
             key: const ValueKey('fuel_timeline.settings'),
             onTap: () => context.push('/settings'),
-            child: Icon(Icons.settings_outlined, size: 20, color: onSurface),
+            // Match the gear the shared TabsScreen overlay draws on every other
+            // tab (FontAwesome gear, size 18) so the settings affordance is
+            // identical across the dashboard and the Events/Learn tabs.
+            child: FaIcon(FontAwesomeIcons.gear, size: 18, color: onSurface),
           ),
         ),
       ],
@@ -123,6 +127,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
     DateTime selected,
     bool isWeek,
     Color onSurface,
+    bool isDark,
   ) {
     void shift(int dir) {
       final next = isWeek
@@ -131,25 +136,79 @@ class FuelTimelineDayHeader extends ConsumerWidget {
       ref.read(calendarSelectedDateProvider.notifier).setDate(next);
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    // Jump straight back to the current day. Shown only once the user has
+    // navigated away from today's week (week view) or month (month view),
+    // mirroring the old calendar's "Today" pill.
+    final showToday = !_isCurrentPeriod(selected, isWeek);
+
+    return Stack(
+      alignment: Alignment.center,
       children: [
-        GestureDetector(
-          onTap: () => shift(-1),
-          child: Icon(Icons.chevron_left, size: 18, color: onSurface),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => shift(-1),
+              child: Icon(Icons.chevron_left, size: 18, color: onSurface),
+            ),
+            const SizedBox(width: 18),
+            Text(
+              DateFormat('MMMM yyyy').format(selected),
+              style: FtType.monthTitle.copyWith(color: onSurface),
+            ),
+            const SizedBox(width: 18),
+            GestureDetector(
+              onTap: () => shift(1),
+              child: Icon(Icons.chevron_right, size: 18, color: onSurface),
+            ),
+          ],
         ),
-        const SizedBox(width: 18),
-        Text(
-          DateFormat('MMMM yyyy').format(selected),
-          style: FtType.monthTitle.copyWith(color: onSurface),
-        ),
-        const SizedBox(width: 18),
-        GestureDetector(
-          onTap: () => shift(1),
-          child: Icon(Icons.chevron_right, size: 18, color: onSurface),
-        ),
+        if (showToday)
+          Positioned(
+            right: 0,
+            child: GestureDetector(
+              key: const ValueKey('fuel_timeline.today_button'),
+              onTap: () => ref
+                  .read(calendarSelectedDateProvider.notifier)
+                  .setDate(DateTime.now()),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: onSurface.withValues(alpha: isDark ? 0.15 : 0.1),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Text(
+                  'Today',
+                  style: const TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ).copyWith(color: onSurface),
+                ),
+              ),
+            ),
+          ),
       ],
     );
+  }
+
+  /// Whether [selected] is within the current calendar period — the current
+  /// week when [isWeek], otherwise the current month. Drives the visibility of
+  /// the "Today" shortcut.
+  static bool _isCurrentPeriod(DateTime selected, bool isWeek) {
+    final now = DateTime.now();
+    if (isWeek) {
+      DateTime startOfWeek(DateTime d) {
+        final dayOnly = DateTime(d.year, d.month, d.day);
+        return dayOnly.subtract(Duration(days: dayOnly.weekday % 7));
+      }
+
+      return startOfWeek(selected) == startOfWeek(now);
+    }
+    return selected.year == now.year && selected.month == now.month;
   }
 
   Widget _weekStrip(

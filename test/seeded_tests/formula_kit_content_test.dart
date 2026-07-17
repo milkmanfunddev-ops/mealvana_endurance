@@ -34,6 +34,7 @@ import 'package:mealvana_endurance/features/formula_kit/presentation/screens/for
 import 'package:mealvana_endurance/features/formula_kit/presentation/screens/formula_editor_screen.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/screens/formula_library_screen.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../helpers/widget_test_harness.dart';
 
@@ -145,10 +146,32 @@ class _FakePersonalFormulasController extends PersonalFormulasController {
 class _FakeEditorController extends FormulaEditorController {
   @override
   Future<FormulaDraft> build(String? formulaId, FormulaPhase phase) async {
+    return FormulaDraft(name: '', phase: phase, components: const []);
+  }
+}
+
+class _FakeEditorWithFoodController extends FormulaEditorController {
+  @override
+  Future<FormulaDraft> build(String? formulaId, FormulaPhase phase) async {
     return FormulaDraft(
-      name: '',
+      name: 'Milk snack',
       phase: phase,
-      components: const [],
+      subPhase: 'snack',
+      components: const [
+        {
+          'food_id': 'milk-1',
+          'food_name': 'Milk',
+          'quantity': 1.0,
+          'serving_unit': 'cup',
+          'source': 'template',
+          'carbs_per_serving': 12.0,
+          'protein_per_serving': 8.0,
+          'fat_per_serving': 5.0,
+          'sodium_mg': 105.0,
+          'fluid_ml_per_serving': 240.0,
+          'calories_per_serving': 122.0,
+        },
+      ],
     );
   }
 }
@@ -156,18 +179,20 @@ class _FakeEditorController extends FormulaEditorController {
 // ─── Override helpers ──────────────────────────────────────────────────────
 
 List<Override> _libraryOverrides() => [
-      formulaLibraryControllerProvider.overrideWith(_FakeLibraryController.new),
-      formulaPinControllerProvider.overrideWith(_FakePinController.new),
-      personalFormulasControllerProvider
-          .overrideWith(_FakePersonalFormulasController.new),
-    ];
+  formulaLibraryControllerProvider.overrideWith(_FakeLibraryController.new),
+  formulaPinControllerProvider.overrideWith(_FakePinController.new),
+  personalFormulasControllerProvider.overrideWith(
+    _FakePersonalFormulasController.new,
+  ),
+];
 
 List<Override> _detailOverrides() => [
-      formulaLibraryControllerProvider.overrideWith(_FakeLibraryController.new),
-      formulaPinControllerProvider.overrideWith(_FakePinController.new),
-      personalFormulasControllerProvider
-          .overrideWith(_FakePersonalFormulasController.new),
-    ];
+  formulaLibraryControllerProvider.overrideWith(_FakeLibraryController.new),
+  formulaPinControllerProvider.overrideWith(_FakePinController.new),
+  personalFormulasControllerProvider.overrideWith(
+    _FakePersonalFormulasController.new,
+  ),
+];
 
 /// Pump [screen] inside a minimal GoRouter (required because FormulaEditorScreen
 /// and FormulaDetailScreen call context.pop() / context.push() and GoRouter
@@ -179,27 +204,27 @@ Future<void> _pumpWithRouter(
   WidgetTester tester,
   Widget screen, {
   List<Override> overrides = const [],
+  AppConfig? appConfig,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
 
   final router = GoRouter(
     initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => screen,
-      ),
-    ],
+    routes: [GoRoute(path: '/', builder: (_, __) => screen)],
   );
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         mockAppExternalDeps(),
+        appConfigProvider.overrideWithValue(
+          appConfig ?? AppConfig.forTesting(),
+        ),
         inMemoryDatabaseOverride(),
-        preferencesServiceProvider
-            .overrideWith((ref) => PreferencesService(prefs)),
+        preferencesServiceProvider.overrideWith(
+          (ref) => PreferencesService(prefs),
+        ),
         currentUserProvider.overrideWith((ref) async => null),
         ...overrides,
       ],
@@ -217,23 +242,24 @@ void main() {
 
   group('FormulaLibraryScreen', () {
     testWidgets(
-        'shows Before tab by default and renders before_card key for seeded formula',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaLibraryScreen(),
-        overrides: _libraryOverrides(),
-        settle: true,
-      );
+      'shows Before tab by default and renders before_card key for seeded formula',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaLibraryScreen(),
+          overrides: _libraryOverrides(),
+          settle: true,
+        );
 
-      // The default phase is Before — the before card key should be visible.
-      expect(
-        find.byKey(ValueKey('formula_kit.before_card_$_beforeId')),
-        findsOneWidget,
-        reason:
-            'Expected before_card_$_beforeId to be present in default Before tab',
-      );
-    });
+        // The default phase is Before — the before card key should be visible.
+        expect(
+          find.byKey(ValueKey('formula_kit.before_card_$_beforeId')),
+          findsOneWidget,
+          reason:
+              'Expected before_card_$_beforeId to be present in default Before tab',
+        );
+      },
+    );
 
     testWidgets('Before card displays the formula name', (tester) async {
       await pumpSeeded(
@@ -253,32 +279,37 @@ void main() {
     });
 
     testWidgets(
-        'switches to During tab and renders during_card key for seeded formula',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaLibraryScreen(),
-        overrides: _libraryOverrides(),
-        settle: true,
-      );
+      'switches to During tab and renders during_card key for seeded formula',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaLibraryScreen(),
+          overrides: _libraryOverrides(),
+          settle: true,
+        );
 
-      // Tap the "During" tab chip.
-      final duringChip = find.text('During');
-      expect(duringChip, findsOneWidget,
-          reason: 'During tab label should be visible');
-      await tester.tap(duringChip);
-      await tester.pumpAndSettle();
+        // Tap the "During" tab chip.
+        final duringChip = find.text('During');
+        expect(
+          duringChip,
+          findsOneWidget,
+          reason: 'During tab label should be visible',
+        );
+        await tester.tap(duringChip);
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(ValueKey('formula_kit.during_card_$_duringId')),
-        findsOneWidget,
-        reason:
-            'Expected during_card_$_duringId to be present after switching to During tab',
-      );
-    });
+        expect(
+          find.byKey(ValueKey('formula_kit.during_card_$_duringId')),
+          findsOneWidget,
+          reason:
+              'Expected during_card_$_duringId to be present after switching to During tab',
+        );
+      },
+    );
 
-    testWidgets('During card displays the formula formula string',
-        (tester) async {
+    testWidgets('During card displays the formula formula string', (
+      tester,
+    ) async {
       await pumpSeeded(
         tester,
         const FormulaLibraryScreen(),
@@ -298,45 +329,50 @@ void main() {
     });
 
     testWidgets(
-        'switches to After tab and renders after_card key for seeded formula',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaLibraryScreen(),
-        overrides: _libraryOverrides(),
-        settle: true,
-      );
+      'switches to After tab and renders after_card key for seeded formula',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaLibraryScreen(),
+          overrides: _libraryOverrides(),
+          settle: true,
+        );
 
-      final afterChip = find.text('After');
-      expect(afterChip, findsOneWidget,
-          reason: 'After tab label should be visible');
-      await tester.tap(afterChip);
-      await tester.pumpAndSettle();
+        final afterChip = find.text('After');
+        expect(
+          afterChip,
+          findsOneWidget,
+          reason: 'After tab label should be visible',
+        );
+        await tester.tap(afterChip);
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(ValueKey('formula_kit.after_card_$_afterId')),
-        findsOneWidget,
-        reason:
-            'Expected after_card_$_afterId to be present after switching to After tab',
-      );
-    });
+        expect(
+          find.byKey(ValueKey('formula_kit.after_card_$_afterId')),
+          findsOneWidget,
+          reason:
+              'Expected after_card_$_afterId to be present after switching to After tab',
+        );
+      },
+    );
 
     testWidgets(
-        'Your Formulas section header is present on the Before tab with empty personal list',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaLibraryScreen(),
-        overrides: _libraryOverrides(),
-        settle: true,
-      );
+      'Your Formulas section header is present on the Before tab with empty personal list',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaLibraryScreen(),
+          overrides: _libraryOverrides(),
+          settle: true,
+        );
 
-      expect(
-        find.text('Your Formulas'),
-        findsOneWidget,
-        reason: 'Your Formulas section header should always be visible',
-      );
-    });
+        expect(
+          find.text('Your Formulas'),
+          findsOneWidget,
+          reason: 'Your Formulas section header should always be visible',
+        );
+      },
+    );
 
     testWidgets('empty personal list shows the nudge copy', (tester) async {
       await pumpSeeded(
@@ -358,16 +394,38 @@ void main() {
   // ── FormulaEditorScreen (create-new) ──────────────────────────────────────
 
   group('FormulaEditorScreen (create-new, Before phase)', () {
-    testWidgets('renders name field, save button, and add-food button',
-        (tester) async {
+    testWidgets('hides coach insight when release flag is off', (tester) async {
+      await _pumpWithRouter(
+        tester,
+        const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
+        appConfig: AppConfig.forTesting(coachInsightsEnabled: false),
+        overrides: [
+          formulaEditorControllerProvider(
+            null,
+            FormulaPhase.before,
+          ).overrideWith(_FakeEditorWithFoodController.new),
+        ],
+      );
+
+      expect(
+        find.byKey(const ValueKey('formula_kit.coach_insight_panel')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('renders name field, save button, and add-food button', (
+      tester,
+    ) async {
       // FormulaEditorScreen reads GoRouter state via CustomAppBarBackButton
       // so we pump inside a minimal router.
       await _pumpWithRouter(
         tester,
         const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
         overrides: [
-          formulaEditorControllerProvider(null, FormulaPhase.before)
-              .overrideWith(_FakeEditorController.new),
+          formulaEditorControllerProvider(
+            null,
+            FormulaPhase.before,
+          ).overrideWith(_FakeEditorController.new),
         ],
       );
 
@@ -389,34 +447,43 @@ void main() {
     });
 
     testWidgets(
-        'app bar title is "New formula" for create-new (formulaId == null)',
-        (tester) async {
+      'app bar title is "New formula" for create-new (formulaId == null)',
+      (tester) async {
+        await _pumpWithRouter(
+          tester,
+          const FormulaEditorScreen(
+            formulaId: null,
+            phase: FormulaPhase.before,
+          ),
+          overrides: [
+            formulaEditorControllerProvider(
+              null,
+              FormulaPhase.before,
+            ).overrideWith(_FakeEditorController.new),
+          ],
+        );
+
+        expect(
+          find.text('New formula'),
+          findsOneWidget,
+          reason:
+              'App bar title must say "New formula" when formulaId is null — '
+              'if it says "Edit formula" there is a bug in the title logic',
+        );
+      },
+    );
+
+    testWidgets('Before phase scope section shows "Timing (required)" label', (
+      tester,
+    ) async {
       await _pumpWithRouter(
         tester,
         const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
         overrides: [
-          formulaEditorControllerProvider(null, FormulaPhase.before)
-              .overrideWith(_FakeEditorController.new),
-        ],
-      );
-
-      expect(
-        find.text('New formula'),
-        findsOneWidget,
-        reason:
-            'App bar title must say "New formula" when formulaId is null — '
-            'if it says "Edit formula" there is a bug in the title logic',
-      );
-    });
-
-    testWidgets('Before phase scope section shows "Timing (required)" label',
-        (tester) async {
-      await _pumpWithRouter(
-        tester,
-        const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
-        overrides: [
-          formulaEditorControllerProvider(null, FormulaPhase.before)
-              .overrideWith(_FakeEditorController.new),
+          formulaEditorControllerProvider(
+            null,
+            FormulaPhase.before,
+          ).overrideWith(_FakeEditorController.new),
         ],
       );
 
@@ -428,15 +495,17 @@ void main() {
       );
     });
 
-    testWidgets(
-        'empty component state shows "No foods yet" placeholder copy',
-        (tester) async {
+    testWidgets('empty component state shows "No foods yet" placeholder copy', (
+      tester,
+    ) async {
       await _pumpWithRouter(
         tester,
         const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
         overrides: [
-          formulaEditorControllerProvider(null, FormulaPhase.before)
-              .overrideWith(_FakeEditorController.new),
+          formulaEditorControllerProvider(
+            null,
+            FormulaPhase.before,
+          ).overrideWith(_FakeEditorController.new),
         ],
       );
 
@@ -449,49 +518,53 @@ void main() {
     });
 
     testWidgets(
-        'Save button is disabled (greyed out / null onPressed) when draft is empty',
-        (tester) async {
-      await _pumpWithRouter(
-        tester,
-        const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
-        overrides: [
-          formulaEditorControllerProvider(null, FormulaPhase.before)
-              .overrideWith(_FakeEditorController.new),
-        ],
-      );
+      'Save button is disabled (greyed out / null onPressed) when draft is empty',
+      (tester) async {
+        await _pumpWithRouter(
+          tester,
+          const FormulaEditorScreen(
+            formulaId: null,
+            phase: FormulaPhase.before,
+          ),
+          overrides: [
+            formulaEditorControllerProvider(
+              null,
+              FormulaPhase.before,
+            ).overrideWith(_FakeEditorController.new),
+          ],
+        );
 
-      // KylePrimaryButton's disabled state is driven by onPressed == null.
-      // Find the save button's ElevatedButton (or descendant) and check.
-      final saveKey = find.byKey(const ValueKey('formula_kit.editor_save'));
-      expect(saveKey, findsOneWidget);
+        // KylePrimaryButton's disabled state is driven by onPressed == null.
+        // Find the save button's ElevatedButton (or descendant) and check.
+        final saveKey = find.byKey(const ValueKey('formula_kit.editor_save'));
+        expect(saveKey, findsOneWidget);
 
-      // The button should be disabled: canSave is false when name is empty
-      // and components is empty. ElevatedButton exposes onPressed = null when
-      // disabled — verify via widget tree.
-      final elevatedButton =
-          tester.widget<ElevatedButton>(find.descendant(
-        of: saveKey,
-        matching: find.byType(ElevatedButton),
-      ));
+        // The button should be disabled: canSave is false when name is empty
+        // and components is empty. ElevatedButton exposes onPressed = null when
+        // disabled — verify via widget tree.
+        final elevatedButton = tester.widget<ElevatedButton>(
+          find.descendant(of: saveKey, matching: find.byType(ElevatedButton)),
+        );
 
-      // BUG CHECK: if onPressed != null, save is incorrectly enabled on an
-      // empty draft — that is a real bug.
-      expect(
-        elevatedButton.onPressed,
-        isNull,
-        reason:
-            'Save button must be disabled (onPressed == null) when draft has '
-            'no name and no components — POTENTIAL BUG if this fails',
-      );
-    });
+        // BUG CHECK: if onPressed != null, save is incorrectly enabled on an
+        // empty draft — that is a real bug.
+        expect(
+          elevatedButton.onPressed,
+          isNull,
+          reason:
+              'Save button must be disabled (onPressed == null) when draft has '
+              'no name and no components — POTENTIAL BUG if this fails',
+        );
+      },
+    );
   });
 
   // ── FormulaDetailScreen (known formula) ───────────────────────────────────
 
   group('FormulaDetailScreen', () {
-    testWidgets(
-        'Before detail — title renders the formula name in the app bar',
-        (tester) async {
+    testWidgets('Before detail — title renders the formula name in the app bar', (
+      tester,
+    ) async {
       await pumpSeeded(
         tester,
         const FormulaDetailScreen(id: _beforeId, phase: FormulaPhase.before),
@@ -514,8 +587,9 @@ void main() {
       );
     });
 
-    testWidgets('Before detail — component display strings are rendered',
-        (tester) async {
+    testWidgets('Before detail — component display strings are rendered', (
+      tester,
+    ) async {
       await pumpSeeded(
         tester,
         const FormulaDetailScreen(id: _beforeId, phase: FormulaPhase.before),
@@ -532,8 +606,9 @@ void main() {
       );
     });
 
-    testWidgets('Before detail — macro values are rendered correctly',
-        (tester) async {
+    testWidgets('Before detail — macro values are rendered correctly', (
+      tester,
+    ) async {
       await pumpSeeded(
         tester,
         const FormulaDetailScreen(id: _beforeId, phase: FormulaPhase.before),
@@ -542,73 +617,89 @@ void main() {
       );
 
       // totalCalories = 364, totalCarbsG = 72, totalProteinG = 10, totalFatG = 4
-      expect(find.text('364'), findsOneWidget,
-          reason: 'Calories macro should display 364');
-      expect(find.text('72g'), findsOneWidget,
-          reason: 'Carbs macro should display 72g');
-      expect(find.text('10g'), findsOneWidget,
-          reason: 'Protein macro should display 10g');
-      expect(find.text('4g'), findsOneWidget,
-          reason: 'Fat macro should display 4g');
-    });
-
-    testWidgets(
-        'During detail — title renders the formula formula string in app bar',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaDetailScreen(id: _duringId, phase: FormulaPhase.during),
-        overrides: _detailOverrides(),
-        settle: true,
-      );
-
-      // For During formulas the app bar title is set to formula.formula
-      // ("Gel + Water"), NOT formula.name — both are "Gel + Water" in this
-      // seed, but the code path is distinct (formula_detail_screen.dart:130).
       expect(
-        find.text('Gel + Water'),
-        findsWidgets,
-        reason: 'During detail must render formula string as app bar title',
-      );
-    });
-
-    testWidgets(
-        'During detail — "Macros scale to your hourly carb target" hint visible',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaDetailScreen(id: _duringId, phase: FormulaPhase.during),
-        overrides: _detailOverrides(),
-        settle: true,
-      );
-
-      expect(
-        find.textContaining('Macros scale to your hourly carb target'),
+        find.text('364'),
         findsOneWidget,
-        reason:
-            'During detail body must show the macro-scaling disclaimer banner',
+        reason: 'Calories macro should display 364',
+      );
+      expect(
+        find.text('72g'),
+        findsOneWidget,
+        reason: 'Carbs macro should display 72g',
+      );
+      expect(
+        find.text('10g'),
+        findsOneWidget,
+        reason: 'Protein macro should display 10g',
+      );
+      expect(
+        find.text('4g'),
+        findsOneWidget,
+        reason: 'Fat macro should display 4g',
       );
     });
 
     testWidgets(
-        'After detail — title renders the formula name in the app bar',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaDetailScreen(id: _afterId, phase: FormulaPhase.after),
-        overrides: _detailOverrides(),
-        settle: true,
-      );
+      'During detail — title renders the formula formula string in app bar',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaDetailScreen(id: _duringId, phase: FormulaPhase.during),
+          overrides: _detailOverrides(),
+          settle: true,
+        );
 
-      expect(
-        find.text('Chocolate Milk'),
-        findsWidgets,
-        reason: 'After detail must render formula name as app bar title',
-      );
-    });
+        // For During formulas the app bar title is set to formula.formula
+        // ("Gel + Water"), NOT formula.name — both are "Gel + Water" in this
+        // seed, but the code path is distinct (formula_detail_screen.dart:130).
+        expect(
+          find.text('Gel + Water'),
+          findsWidgets,
+          reason: 'During detail must render formula string as app bar title',
+        );
+      },
+    );
 
-    testWidgets('After detail — component display string rendered',
-        (tester) async {
+    testWidgets(
+      'During detail — "Macros scale to your hourly carb target" hint visible',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaDetailScreen(id: _duringId, phase: FormulaPhase.during),
+          overrides: _detailOverrides(),
+          settle: true,
+        );
+
+        expect(
+          find.textContaining('Macros scale to your hourly carb target'),
+          findsOneWidget,
+          reason:
+              'During detail body must show the macro-scaling disclaimer banner',
+        );
+      },
+    );
+
+    testWidgets(
+      'After detail — title renders the formula name in the app bar',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaDetailScreen(id: _afterId, phase: FormulaPhase.after),
+          overrides: _detailOverrides(),
+          settle: true,
+        );
+
+        expect(
+          find.text('Chocolate Milk'),
+          findsWidgets,
+          reason: 'After detail must render formula name as app bar title',
+        );
+      },
+    );
+
+    testWidgets('After detail — component display string rendered', (
+      tester,
+    ) async {
       await pumpSeeded(
         tester,
         const FormulaDetailScreen(id: _afterId, phase: FormulaPhase.after),
@@ -636,51 +727,53 @@ void main() {
     // a retry or navigation affordance. There is no analytics event fired.
 
     testWidgets(
-        'NOT-FOUND — renders detail_not_found key when id is absent from state',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaDetailScreen(
-          id: 'this-id-does-not-exist',
-          phase: FormulaPhase.before,
-        ),
-        overrides: _detailOverrides(),
-        settle: true,
-      );
+      'NOT-FOUND — renders detail_not_found key when id is absent from state',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaDetailScreen(
+            id: 'this-id-does-not-exist',
+            phase: FormulaPhase.before,
+          ),
+          overrides: _detailOverrides(),
+          settle: true,
+        );
 
-      expect(
-        find.byKey(const ValueKey('formula_kit.detail_not_found')),
-        findsOneWidget,
-        reason:
-            'detail_not_found widget must be visible when id is not in loaded state',
-      );
-    });
-
-    testWidgets(
-        'NOT-FOUND — renders "Formula not found." text (current behavior)',
-        (tester) async {
-      await pumpSeeded(
-        tester,
-        const FormulaDetailScreen(
-          id: 'this-id-does-not-exist',
-          phase: FormulaPhase.before,
-        ),
-        overrides: _detailOverrides(),
-        settle: true,
-      );
-
-      expect(
-        find.text('Formula not found.'),
-        findsOneWidget,
-        reason:
-            'Not-found text must exactly match "Formula not found." — '
-            'if this fails the copy was changed without updating this test',
-      );
-    });
+        expect(
+          find.byKey(const ValueKey('formula_kit.detail_not_found')),
+          findsOneWidget,
+          reason:
+              'detail_not_found widget must be visible when id is not in loaded state',
+        );
+      },
+    );
 
     testWidgets(
-        'NOT-FOUND — app bar title shows "Not found" when id is absent',
-        (tester) async {
+      'NOT-FOUND — renders "Formula not found." text (current behavior)',
+      (tester) async {
+        await pumpSeeded(
+          tester,
+          const FormulaDetailScreen(
+            id: 'this-id-does-not-exist',
+            phase: FormulaPhase.before,
+          ),
+          overrides: _detailOverrides(),
+          settle: true,
+        );
+
+        expect(
+          find.text('Formula not found.'),
+          findsOneWidget,
+          reason:
+              'Not-found text must exactly match "Formula not found." — '
+              'if this fails the copy was changed without updating this test',
+        );
+      },
+    );
+
+    testWidgets('NOT-FOUND — app bar title shows "Not found" when id is absent', (
+      tester,
+    ) async {
       await pumpSeeded(
         tester,
         const FormulaDetailScreen(
@@ -702,52 +795,53 @@ void main() {
     });
 
     testWidgets(
-        'NOT-FOUND — analytics trackDetailViewed is NOT called when formula is absent',
-        (tester) async {
-      // Capture whether trackDetailViewed was invoked by recording any
-      // analytics.track('formula_detail_viewed', ...) call via the mock.
-      // The mockAppExternalDeps() analytics stub records all .track() calls;
-      // here we pump the not-found state and confirm no such call was made.
-      //
-      // We pump enough frames that any postFrameCallback would have fired if
-      // it were going to fire.
-      await pumpSeeded(
-        tester,
-        const FormulaDetailScreen(
-          id: 'this-id-does-not-exist',
-          phase: FormulaPhase.before,
-        ),
-        overrides: _detailOverrides(),
-        settle: true,
-      );
+      'NOT-FOUND — analytics trackDetailViewed is NOT called when formula is absent',
+      (tester) async {
+        // Capture whether trackDetailViewed was invoked by recording any
+        // analytics.track('formula_detail_viewed', ...) call via the mock.
+        // The mockAppExternalDeps() analytics stub records all .track() calls;
+        // here we pump the not-found state and confirm no such call was made.
+        //
+        // We pump enough frames that any postFrameCallback would have fired if
+        // it were going to fire.
+        await pumpSeeded(
+          tester,
+          const FormulaDetailScreen(
+            id: 'this-id-does-not-exist',
+            phase: FormulaPhase.before,
+          ),
+          overrides: _detailOverrides(),
+          settle: true,
+        );
 
-      // Pump one additional frame to give any addPostFrameCallback time to run.
-      await tester.pump(const Duration(milliseconds: 100));
+        // Pump one additional frame to give any addPostFrameCallback time to run.
+        await tester.pump(const Duration(milliseconds: 100));
 
-      // The _NotFoundView must be present — confirms we are on the not-found
-      // path, not the data path.
-      expect(
-        find.byKey(const ValueKey('formula_kit.detail_not_found')),
-        findsOneWidget,
-        reason: 'Precondition: must be on the not-found path',
-      );
+        // The _NotFoundView must be present — confirms we are on the not-found
+        // path, not the data path.
+        expect(
+          find.byKey(const ValueKey('formula_kit.detail_not_found')),
+          findsOneWidget,
+          reason: 'Precondition: must be on the not-found path',
+        );
 
-      // The detail_title key must NOT contain the formula id — i.e. the screen
-      // shows "Not found" in the app bar, not a real formula name.
-      // (Analytics guard correctness is implicitly verified: if trackDetailViewed
-      // had fired it would have called analytics.track which is the
-      // MockAnalyticsTracker — no assertion needed here since a spurious call
-      // is a data-quality issue, not a test failure. The structural guard that
-      // _trackedView is NOT set prevents future frames from re-firing.)
-      //
-      // Directly assert the app bar title is "Not found" (guard outcome):
-      expect(
-        find.text('Not found'),
-        findsOneWidget,
-        reason:
-            'App bar must show "Not found" — confirms the analytics guard also '
-            'skipped tracking (the two outcomes are coupled: title set iff found)',
-      );
-    });
+        // The detail_title key must NOT contain the formula id — i.e. the screen
+        // shows "Not found" in the app bar, not a real formula name.
+        // (Analytics guard correctness is implicitly verified: if trackDetailViewed
+        // had fired it would have called analytics.track which is the
+        // MockAnalyticsTracker — no assertion needed here since a spurious call
+        // is a data-quality issue, not a test failure. The structural guard that
+        // _trackedView is NOT set prevents future frames from re-firing.)
+        //
+        // Directly assert the app bar title is "Not found" (guard outcome):
+        expect(
+          find.text('Not found'),
+          findsOneWidget,
+          reason:
+              'App bar must show "Not found" — confirms the analytics guard also '
+              'skipped tracking (the two outcomes are coupled: title set iff found)',
+        );
+      },
+    );
   });
 }

@@ -177,6 +177,8 @@ void main() {
                     'input_tokens': 120,
                     'output_tokens': 35,
                     'model': 'claude-haiku-4-5',
+                    'cost_usd': 0.00042,
+                    'source': 'model',
                   },
                 },
                 status: 200,
@@ -187,6 +189,8 @@ void main() {
       expect(insight.inputTokens, 120);
       expect(insight.outputTokens, 35);
       expect(insight.model, 'claude-haiku-4-5');
+      expect(insight.costUsd, 0.00042);
+      expect(insight.generationSource, 'model');
     });
 
     test('returns zero tokens when usage is null', () async {

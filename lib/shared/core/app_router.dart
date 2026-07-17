@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
+import '../services/app_config.dart';
 import '../../main.dart' show sentryNavigatorKey;
 
 // Import all screens
@@ -118,6 +119,15 @@ class AppRouter {
         // Allow navigation to force-upgrade route always
         if (currentPath == '/force-upgrade') {
           return null;
+        }
+
+        // Metered meal-AI routes fail closed. Hiding the entry points is the
+        // primary UX, while this guard also blocks stale deep links from an
+        // older build when the release flag is off.
+        if ((currentPath == '/meal-log/photo' ||
+                currentPath == '/meal-log/describe') &&
+            !ref.read(appConfigProvider).describeMealEnabled) {
+          return '/';
         }
 
         // ANALYTICS CONSENT.

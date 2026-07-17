@@ -33,6 +33,8 @@ class AppConfig {
     required this.revenueCatApiKeyApple,
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
+    this.describeMealEnabled = false,
+    this.coachInsightsEnabled = false,
     this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
@@ -48,8 +50,9 @@ class AppConfig {
   /// publishable key (`sb_publishable_…`) when present, falling back to the
   /// legacy anon JWT — so the legacy anon key can eventually be disabled once
   /// every build ships the publishable key.
-  String get supabaseClientKey =>
-      supabasePublishableKey.isNotEmpty ? supabasePublishableKey : supabaseAnonKey;
+  String get supabaseClientKey => supabasePublishableKey.isNotEmpty
+      ? supabasePublishableKey
+      : supabaseAnonKey;
 
   // Sentry configuration
   final String sentryDsn;
@@ -96,8 +99,9 @@ class AppConfig {
   String get vdotAuthBaseUrl => 'https://app.vdoto2.com';
 
   /// Base host for the V.O2 REST API.
-  String get vdotApiBaseUrl =>
-      vdotUseSandbox ? 'https://api.sandbox.vdoto2.com' : 'https://api.vdoto2.com';
+  String get vdotApiBaseUrl => vdotUseSandbox
+      ? 'https://api.sandbox.vdoto2.com'
+      : 'https://api.vdoto2.com';
 
   // Environment configuration
   final bool devModeEnabled;
@@ -117,6 +121,18 @@ class AppConfig {
   /// Default false — the paywall and balance chip are hidden until explicitly
   /// enabled via the `AI_CREDITS_ENABLED=true` env var.
   final bool aiCreditsEnabled;
+
+  /// Release gate for text/photo meal analysis entry points.
+  ///
+  /// Defaults off in every real build so an omitted environment variable
+  /// cannot accidentally expose a metered AI feature.
+  final bool describeMealEnabled;
+
+  /// Release gate for Formula Kit coach insights.
+  ///
+  /// Defaults off for the same fail-closed cost protection as
+  /// [describeMealEnabled].
+  final bool coachInsightsEnabled;
 
   /// Platform-appropriate RevenueCat public API key.
   ///
@@ -253,6 +269,10 @@ class AppConfig {
       ),
       aiCreditsEnabled:
           dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
+      describeMealEnabled:
+          dotenv.get('DESCRIBE_MEAL_ENABLED', fallback: 'false') == 'true',
+      coachInsightsEnabled:
+          dotenv.get('COACH_INSIGHTS_ENABLED', fallback: 'false') == 'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -291,6 +311,8 @@ class AppConfig {
     String revenueCatApiKeyApple = '',
     String revenueCatApiKeyGoogle = '',
     bool aiCreditsEnabled = false,
+    bool describeMealEnabled = true,
+    bool coachInsightsEnabled = true,
     bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
@@ -326,6 +348,8 @@ class AppConfig {
       revenueCatApiKeyApple: revenueCatApiKeyApple,
       revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
       aiCreditsEnabled: aiCreditsEnabled,
+      describeMealEnabled: describeMealEnabled,
+      coachInsightsEnabled: coachInsightsEnabled,
       analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
@@ -506,6 +530,18 @@ class AppConfig {
       aiCreditsEnabled:
           const String.fromEnvironment(
             'AI_CREDITS_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
+      describeMealEnabled:
+          const String.fromEnvironment(
+            'DESCRIBE_MEAL_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
+      coachInsightsEnabled:
+          const String.fromEnvironment(
+            'COACH_INSIGHTS_ENABLED',
             defaultValue: 'false',
           ) ==
           'true',

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../application/meal_ai_service.dart';
@@ -19,8 +20,7 @@ class PhotoCaptureScreen extends ConsumerStatefulWidget {
   const PhotoCaptureScreen({super.key});
 
   @override
-  ConsumerState<PhotoCaptureScreen> createState() =>
-      _PhotoCaptureScreenState();
+  ConsumerState<PhotoCaptureScreen> createState() => _PhotoCaptureScreenState();
 }
 
 class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
@@ -32,8 +32,7 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       _logDate = extra?['logDate'] as String? ?? _todayDateString();
       _initialized = true;
     }
@@ -47,6 +46,11 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
   }
 
   Future<void> _pickAndAnalyze(ImageSource source) async {
+    final method = source == ImageSource.camera
+        ? 'photo_camera'
+        : 'photo_gallery';
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('meal_ai_action_tapped', properties: {'method': method});
     final picker = ImagePicker();
     XFile? file;
     try {
@@ -57,7 +61,10 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
       );
     } catch (_) {
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Could not access the camera or gallery.');
+        MealvanaSnackbar.showError(
+          context,
+          'Could not access the camera or gallery.',
+        );
       }
       return;
     }
@@ -66,6 +73,8 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
     if (!mounted) return;
 
     setState(() => _isAnalyzing = true);
+    analytics.track('meal_ai_started', properties: {'method': method});
+    final stopwatch = Stopwatch()..start();
 
     try {
       final service = ref.read(mealAiServiceProvider);
@@ -81,6 +90,22 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
       } else {
         analysis = await service.analyzePhoto(File(file.path));
       }
+      stopwatch.stop();
+      final result = analysis.result;
+      analytics.track(
+        'meal_ai_completed',
+        properties: {
+          'method': method,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+          'input_tokens': result.inputTokens,
+          'output_tokens': result.outputTokens,
+          'total_tokens': result.totalTokens,
+          if (result.model != null) 'model': result.model,
+          if (result.costUsd != null) 'cost_usd': result.costUsd,
+          'confidence': result.confidence.name,
+          'item_count': result.items.length,
+        },
+      );
 
       if (!mounted) return;
       context.push(
@@ -93,8 +118,26 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
         },
       );
     } on InsufficientCreditsException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': method,
+          'error_type': 'insufficient_credits',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': method,
+          'error_type': e.kind.name,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (!mounted) return;
       switch (e.kind) {
         case MealAiFailureKind.notFood:
@@ -108,9 +151,20 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
           break;
       }
     } catch (_) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': method,
+          'error_type': 'unknown',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) {
         MealvanaSnackbar.showError(
-            context, 'Something went wrong. Please try again.');
+          context,
+          'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -188,8 +242,9 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Analyzing your meal...',
-                      style: AppTextStyles.bodyLarge
-                          .copyWith(color: Colors.white),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -227,9 +282,7 @@ class _OptionCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            border: Border.all(
-              color: isDark ? Colors.white12 : Colors.black12,
-            ),
+            border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Row(
@@ -237,7 +290,9 @@ class _OptionCard extends StatelessWidget {
               Icon(
                 icon,
                 size: 36,
-                color: isDark ? AppColors.electrolyte : AppColors.electrolyteDark,
+                color: isDark
+                    ? AppColors.electrolyte
+                    : AppColors.electrolyteDark,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

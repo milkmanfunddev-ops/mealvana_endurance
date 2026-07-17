@@ -4,6 +4,7 @@ import {
   assertStringIncludes,
 } from "https://deno.land/std@0.177.1/testing/asserts.ts";
 import {
+  buildDeterministicInsight,
   buildInsightUserMessage,
   computeNutritionState,
   type InsightComponent,
@@ -58,7 +59,11 @@ Deno.test("solid:liquid ratio is solid macro mass over fluid", () => {
   const state = computeNutritionState(
     ctx({
       components: [
-        comp({ carbs_per_serving: 60, protein_per_serving: 20, fat_per_serving: 0 }),
+        comp({
+          carbs_per_serving: 60,
+          protein_per_serving: 20,
+          fat_per_serving: 0,
+        }),
         comp({ fluid_ml_per_serving: 400 }),
       ],
     }),
@@ -124,10 +129,69 @@ Deno.test("user message injects macros and phase", () => {
 });
 
 Deno.test("before user message includes sub_phase_fit, omits carbs/hour", () => {
-  const context = ctx({ sub_phase: "snack", components: [comp({ carbs_per_serving: 40 })] });
+  const context = ctx({
+    sub_phase: "snack",
+    components: [comp({ carbs_per_serving: 40 })],
+  });
   const state = computeNutritionState(context);
   const msg = buildInsightUserMessage(context, state);
   assertStringIncludes(msg, "SUB_PHASE: snack");
   assertStringIncludes(msg, "sub_phase_fit:");
   assert(!msg.includes("carbs_per_hour:"));
+});
+
+Deno.test("full_meal storage value is evaluated as a meal", () => {
+  const state = computeNutritionState(
+    ctx({
+      sub_phase: "full_meal",
+      components: [comp({ carbs_per_serving: 10 })],
+    }),
+  );
+  assertEquals(state.subPhaseFit, "poor");
+});
+
+Deno.test("before snack prompt includes its concrete timing and carb range", () => {
+  const context = ctx({
+    sub_phase: "snack",
+    components: [comp({ food_name: "Milk", carbs_per_serving: 12 })],
+  });
+  const message = buildInsightUserMessage(
+    context,
+    computeNutritionState(context),
+  );
+  assertStringIncludes(message, "TIMING_WINDOW: 30-90 minutes before exercise");
+  assertStringIncludes(message, "heuristic_carb_range: 20-70 g");
+});
+
+Deno.test("milk-like low-carb snack gets deterministic fuel advice", () => {
+  const context = ctx({
+    sub_phase: "snack",
+    components: [
+      comp({
+        food_name: "Milk",
+        carbs_per_serving: 12,
+        protein_per_serving: 8,
+        fat_per_serving: 5,
+        fluid_ml_per_serving: 240,
+      }),
+    ],
+  });
+  const insight = buildDeterministicInsight(
+    context,
+    computeNutritionState(context),
+  );
+  assert(insight !== null);
+  assertStringIncludes(insight, "12 g carbs");
+  assertStringIncludes(insight, "water alone will not add fuel");
+});
+
+Deno.test("balanced snack still uses the model path", () => {
+  const context = ctx({
+    sub_phase: "snack",
+    components: [comp({ carbs_per_serving: 40 })],
+  });
+  assertEquals(
+    buildDeterministicInsight(context, computeNutritionState(context)),
+    null,
+  );
 });

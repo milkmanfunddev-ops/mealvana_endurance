@@ -41,52 +41,73 @@
  *   500 — missing AI_GATEWAY_API_KEY secret or unexpected server error
  */
 
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { generateText } from 'npm:ai@6';
-import { handleCors } from '../_shared/cors.ts';
-import { errorResponse, jsonResponse, serverError, validationError } from '../_shared/responses.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
-import { COACH_INSIGHT_MODEL } from '../_shared/ai/model.ts';
-import { logAiUsage } from '../_shared/ai/usage.ts';
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { generateText } from "npm:ai@6";
+import { handleCors } from "../_shared/cors.ts";
 import {
+  errorResponse,
+  jsonResponse,
+  serverError,
+  validationError,
+} from "../_shared/responses.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { COACH_INSIGHT_MODEL } from "../_shared/ai/model.ts";
+import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
+import {
+  buildDeterministicInsight,
   buildInsightUserMessage,
   COACH_INSIGHT_SYSTEM_PROMPT,
   computeNutritionState,
   type InsightComponent,
   type InsightContext,
   type InsightPhase,
-} from '../_shared/coach_insight/insight.ts';
-import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
+} from "../_shared/coach_insight/insight.ts";
+import {
+  debitForUsage,
+  ensureAndCheckCredits,
+  insufficientCreditsBody,
+} from "../_shared/ai/credits.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
 
 /** Cap component count to bound prompt size / token abuse. */
 const MAX_COMPONENTS = 30;
 
-const VALID_PHASES: ReadonlySet<string> = new Set<InsightPhase>(['before', 'during', 'after']);
+const VALID_PHASES: ReadonlySet<string> = new Set<InsightPhase>([
+  "before",
+  "during",
+  "after",
+]);
 
 // ---------------------------------------------------------------------------
 // Auth helper
 // ---------------------------------------------------------------------------
 
 async function requireUser(req: Request) {
-  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
+  const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) {
-    return { user: null, response: errorResponse('Missing authorization header', 401) };
+    return {
+      user: null,
+      response: errorResponse("Missing authorization header", 401),
+    };
   }
 
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const { data: { user }, error } = await adminClient.auth.getUser(token);
 
   if (error || !user) {
-    console.error('[ai-coach] Auth error:', error);
-    return { user: null, response: errorResponse('Invalid or expired authentication token', 401) };
+    console.error("[ai-coach] Auth error:", error);
+    return {
+      user: null,
+      response: errorResponse("Invalid or expired authentication token", 401),
+    };
   }
 
   return { user, response: null };
@@ -101,12 +122,12 @@ function parseComponents(raw: any): InsightComponent[] | null {
   if (!Array.isArray(raw)) return null;
   const out: InsightComponent[] = [];
   for (const item of raw) {
-    if (typeof item !== 'object' || item === null) continue;
+    if (typeof item !== "object" || item === null) continue;
     const name = item.food_name;
-    if (typeof name !== 'string' || name.trim().length === 0) continue;
+    if (typeof name !== "string" || name.trim().length === 0) continue;
     out.push({
       food_name: name,
-      quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+      quantity: typeof item.quantity === "number" ? item.quantity : 1,
       carbs_per_serving: numOrUndef(item.carbs_per_serving),
       protein_per_serving: numOrUndef(item.protein_per_serving),
       fat_per_serving: numOrUndef(item.fat_per_serving),
@@ -120,13 +141,13 @@ function parseComponents(raw: any): InsightComponent[] | null {
 
 // deno-lint-ignore no-explicit-any
 function numOrUndef(v: any): number | undefined {
-  return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
 }
 
 // deno-lint-ignore no-explicit-any
 function stringListOrNull(v: any): string[] | null {
   if (!Array.isArray(v)) return null;
-  const out = v.filter((e): e is string => typeof e === 'string');
+  const out = v.filter((e): e is string => typeof e === "string");
   return out.length > 0 ? out : null;
 }
 
@@ -141,22 +162,25 @@ serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  if (req.method !== 'POST') {
-    return errorResponse('Method not allowed. Use POST.', 405);
+  if (req.method !== "POST") {
+    return errorResponse("Method not allowed. Use POST.", 405);
   }
 
   // Validate AI Gateway key is configured before doing any real work.
-  const aiGatewayApiKey = Deno.env.get('AI_GATEWAY_API_KEY');
+  const aiGatewayApiKey = Deno.env.get("AI_GATEWAY_API_KEY");
   if (!aiGatewayApiKey) {
-    console.error('[ai-coach] AI_GATEWAY_API_KEY secret is not set');
-    return errorResponse('AI service is not configured. Please contact support.', 500);
+    console.error("[ai-coach] AI_GATEWAY_API_KEY secret is not set");
+    return errorResponse(
+      "AI service is not configured. Please contact support.",
+      500,
+    );
   }
 
   try {
     // ── Authenticate ────────────────────────────────────────────────────────
     const { user, response: authResponse } = await requireUser(req);
     if (authResponse) return authResponse;
-    if (!user) return errorResponse('Invalid authentication state', 401);
+    if (!user) return errorResponse("Invalid authentication state", 401);
 
     // ── Parse body ──────────────────────────────────────────────────────────
     let body: {
@@ -167,54 +191,61 @@ serve(withSentry(async (req: Request) => {
     try {
       body = await req.json();
     } catch {
-      return validationError('Invalid JSON body');
+      return validationError("Invalid JSON body");
     }
 
     const mode = body.mode;
-    if (mode !== 'insight') {
+    if (mode !== "insight") {
       return validationError("Unsupported mode. Only 'insight' is supported.");
     }
 
     const rawContext = body.context;
-    if (typeof rawContext !== 'object' || rawContext === null) {
-      return validationError('context is required and must be an object');
+    if (typeof rawContext !== "object" || rawContext === null) {
+      return validationError("context is required and must be an object");
     }
     // deno-lint-ignore no-explicit-any
     const ctx = rawContext as Record<string, any>;
 
     const phase = ctx.phase;
-    if (typeof phase !== 'string' || !VALID_PHASES.has(phase)) {
-      return validationError("context.phase must be one of 'before' | 'during' | 'after'");
+    if (typeof phase !== "string" || !VALID_PHASES.has(phase)) {
+      return validationError(
+        "context.phase must be one of 'before' | 'during' | 'after'",
+      );
     }
 
     const components = parseComponents(ctx.components);
     if (components === null) {
-      return validationError('context.components must be an array');
+      return validationError("context.components must be an array");
     }
     if (components.length === 0) {
-      return validationError('context.components must contain at least one component');
+      return validationError(
+        "context.components must contain at least one component",
+      );
     }
     if (components.length > MAX_COMPONENTS) {
-      return validationError(`context.components exceeds the maximum of ${MAX_COMPONENTS}`);
+      return validationError(
+        `context.components exceeds the maximum of ${MAX_COMPONENTS}`,
+      );
     }
 
     const staleMarker =
-      typeof body.stale_marker === 'string' && body.stale_marker.length > 0
+      typeof body.stale_marker === "string" && body.stale_marker.length > 0
         ? body.stale_marker
         : null;
 
     const context: InsightContext = {
       phase: phase as InsightPhase,
-      sub_phase: typeof ctx.sub_phase === 'string' ? ctx.sub_phase : null,
+      sub_phase: typeof ctx.sub_phase === "string" ? ctx.sub_phase : null,
       durations: stringListOrNull(ctx.durations),
       activities: stringListOrNull(ctx.activities),
-      name: typeof ctx.name === 'string' ? ctx.name : null,
+      name: typeof ctx.name === "string" ? ctx.name : null,
       components,
     };
 
     // ── Compute structured nutrition state + prompt ──────────────────────────
     const state = computeNutritionState(context);
     const userMessage = buildInsightUserMessage(context, state);
+    const deterministicInsight = buildDeterministicInsight(context, state);
 
     console.log(
       `[ai-coach] user=${user.id} mode=insight phase=${context.phase} ` +
@@ -224,29 +255,57 @@ serve(withSentry(async (req: Request) => {
     // ── Service-role client (reused for credits + ai_usage logging) ──────────
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Obvious nutrition gaps do not need a probabilistic model. This path is
+    // faster, costs nothing, and guarantees that a fuel shortfall is not
+    // answered with generic hydration advice.
+    if (deterministicInsight !== null) {
+      return jsonResponse({
+        insight: deterministicInsight,
+        stale_marker: staleMarker,
+        usage: {
+          input_tokens: 0,
+          output_tokens: 0,
+          model: "rules/pre-workout-v1",
+          cost_usd: 0,
+          source: "rules",
+        },
+      });
+    }
+
     // ── Credit check ─────────────────────────────────────────────────────────
-    const credit = await ensureAndCheckCredits(serviceClient, user.id, 'ai-coach');
+    const credit = await ensureAndCheckCredits(
+      serviceClient,
+      user.id,
+      "ai-coach",
+    );
     if (!credit.allowed) {
       return jsonResponse(insufficientCreditsBody(credit), 402);
     }
 
     // ── Call the model via Vercel AI Gateway ─────────────────────────────────
     const result = await generateText({
-      model: COACH_INSIGHT_MODEL as Parameters<typeof generateText>[0]['model'],
+      model: COACH_INSIGHT_MODEL as Parameters<typeof generateText>[0]["model"],
       system: COACH_INSIGHT_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: "user", content: userMessage }],
       // The output is one or two sentences; cap tokens so a runaway generation
       // can't blow the latency budget.
       maxOutputTokens: 120,
       temperature: 0.5,
+      providerOptions: {
+        gateway: {
+          user: user.id,
+          tags: ["feature:coach-insight", "function:ai-coach"],
+        },
+      },
     });
 
     const insight = result.text.trim();
     const usage = result.usage;
+    const costUsd = gatewayCostUsd(result.providerMetadata);
 
     if (insight.length === 0) {
-      console.error('[ai-coach] Model returned empty insight');
-      return serverError(new Error('Empty insight returned'));
+      console.error("[ai-coach] Model returned empty insight");
+      return serverError(new Error("Empty insight returned"));
     }
 
     console.log(
@@ -262,14 +321,16 @@ serve(withSentry(async (req: Request) => {
     (globalThis as any).EdgeRuntime?.waitUntil?.(
       logAiUsage(serviceClient, {
         userId: user.id,
-        functionName: 'ai-coach',
+        functionName: "ai-coach",
         model: COACH_INSIGHT_MODEL,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
       }),
     );
     // deno-lint-ignore no-explicit-any
-    (globalThis as any).EdgeRuntime?.waitUntil?.(debitForUsage(serviceClient, user.id, 'ai-coach'));
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      debitForUsage(serviceClient, user.id, "ai-coach"),
+    );
 
     return jsonResponse({
       insight,
@@ -278,10 +339,12 @@ serve(withSentry(async (req: Request) => {
         input_tokens: usage?.inputTokens ?? 0,
         output_tokens: usage?.outputTokens ?? 0,
         model: COACH_INSIGHT_MODEL,
+        cost_usd: costUsd,
+        source: "model",
       },
     });
   } catch (error) {
-    console.error('[ai-coach] Fatal error:', error);
+    console.error("[ai-coach] Fatal error:", error);
     return serverError(error);
   }
 }));

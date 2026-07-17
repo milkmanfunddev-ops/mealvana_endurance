@@ -11,6 +11,7 @@ import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/app_config.dart';
 import '../../../../shared/services/food_management/nutrition_product_search_service.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
@@ -18,6 +19,8 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
+import '../../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
@@ -193,10 +196,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   /// Fire the funnel's method-selection step. [method] is the clean method
   /// discriminator (recent/common/recipe/describe/manual/barcode/build).
   void _trackMethodSelected(String method) {
-    ref.read(appExternalDepsProvider).analytics.track(
-      'log_method_selected',
-      properties: {'method': method},
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('log_method_selected', properties: {'method': method});
   }
 
   @override
@@ -255,8 +258,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       portion: servings == servings.truncateToDouble()
           ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
           : '${servings.toStringAsFixed(1)} servings',
-      calories:
-          base.calories != null ? (base.calories! * servings).round() : null,
+      calories: base.calories != null
+          ? (base.calories! * servings).round()
+          : null,
       carbG: base.carbG != null ? base.carbG! * servings : null,
       proteinG: base.proteinG != null ? base.proteinG! * servings : null,
       fatG: base.fatG != null ? base.fatG! * servings : null,
@@ -288,7 +292,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     if (result == null || !mounted) return;
 
     final components = buildComponents(result.servings);
-    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
           name: deriveMealName(components),
           slot: result.slot,
           logDate: widget.logDate,
@@ -321,7 +327,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
     if (result == null || !mounted) return;
 
-    await ref.read(mealLogControllerProvider.notifier).logRecipe(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logRecipe(
           params: RecipeLogParams(
             recipeId: recipe.id,
             recipeName: recipe.name,
@@ -357,7 +365,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
     if (result == null || !mounted) return;
 
-    await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logSavedMeal(
           savedMeal: meal,
           slot: result.slot,
           logDate: widget.logDate,
@@ -542,7 +552,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     if (logRequest == null || !mounted) return;
 
     final components = [_foodComponent(food, logRequest.servings)];
-    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
           name: deriveMealName(components),
           slot: logRequest.slot,
           logDate: widget.logDate,
@@ -562,7 +574,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     NutritionProductSearchResult result,
   ) async {
     if (!result.hasValidId) {
-      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+      MealvanaSnackbar.showError(
+        context,
+        'Cannot load details for this product',
+      );
       return;
     }
 
@@ -606,7 +621,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
   Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
     if (!(result.hasValidId as bool)) {
-      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+      MealvanaSnackbar.showError(
+        context,
+        'Cannot load details for this product',
+      );
       return;
     }
 
@@ -657,9 +675,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       calories: food.caloriesPerServing != null
           ? (food.caloriesPerServing! * servings).round()
           : null,
-      carbG: food.carbsPerServing != null ? food.carbsPerServing! * servings : null,
-      proteinG:
-          food.proteinPerServing != null ? food.proteinPerServing! * servings : null,
+      carbG: food.carbsPerServing != null
+          ? food.carbsPerServing! * servings
+          : null,
+      proteinG: food.proteinPerServing != null
+          ? food.proteinPerServing! * servings
+          : null,
       fatG: food.fatPerServing != null ? food.fatPerServing! * servings : null,
       sodiumMg: food.sodiumMg != null ? food.sodiumMg! * servings : null,
     );
@@ -727,6 +748,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       foodSearchControllerProvider(_foodSearchControllerKey),
     );
     final isSearching = searchState.searchQuery.isNotEmpty;
+    final describeMealEnabled = ref.watch(
+      appConfigProvider.select((config) => config.describeMealEnabled),
+    );
 
     return Scaffold(
       backgroundColor: bg,
@@ -787,6 +811,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 _TabBar(
                   activeTab: _activeTab,
+                  tabs: _LogTab.values
+                      .where(
+                        (tab) => tab != _LogTab.describe || describeMealEnabled,
+                      )
+                      .toList(growable: false),
                   onTabSelected: (tab) {
                     _unfocus();
                     // Clear any in-progress search so the chosen tab actually
@@ -818,7 +847,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     onAddRecent: _onRecentTap,
                     onAddIngredient: (ingredient) => _quickLogComponents(
                       title: ingredient.name,
-                      buildComponents: (servings) => [_scale(ingredient, servings)],
+                      buildComponents: (servings) => [
+                        _scale(ingredient, servings),
+                      ],
                     ),
                     onFoodTap: _onFoodTap,
                     onCatalogTap: _onCatalogTap,
@@ -898,11 +929,13 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 class _TabBar extends StatelessWidget {
   const _TabBar({
     required this.activeTab,
+    required this.tabs,
     required this.onTabSelected,
     required this.isDark,
   });
 
   final _LogTab activeTab;
+  final List<_LogTab> tabs;
   final ValueChanged<_LogTab> onTabSelected;
   final bool isDark;
 
@@ -915,7 +948,7 @@ class _TabBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        children: _LogTab.values.map((tab) {
+        children: tabs.map((tab) {
           final isSelected = tab == activeTab;
           return Expanded(
             child: GestureDetector(
@@ -1058,9 +1091,9 @@ class _TabSectionHeader extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: textColor.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w600,
-            ),
+          color: textColor.withValues(alpha: 0.6),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -1312,17 +1345,19 @@ class _RecipesTabState extends State<_RecipesTab> {
                 )
               : ListView(
                   controller: widget.scrollController,
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
                     vertical: AppSpacing.xs,
                   ),
                   children: _filtered.map((recipe) {
                     final cal = recipe.nutrition.calories.round();
-                    final carb =
-                        recipe.nutrition.carbohydratesGrams.toStringAsFixed(0);
-                    final prot =
-                        recipe.nutrition.proteinGrams.toStringAsFixed(0);
+                    final carb = recipe.nutrition.carbohydratesGrams
+                        .toStringAsFixed(0);
+                    final prot = recipe.nutrition.proteinGrams.toStringAsFixed(
+                      0,
+                    );
                     final fat = recipe.nutrition.fatGrams.toStringAsFixed(0);
 
                     return Card(
@@ -1349,7 +1384,10 @@ class _RecipesTabState extends State<_RecipesTab> {
                           style: Theme.of(context).textTheme.bodySmall,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: const Icon(Icons.add_circle_outline, size: 18),
+                        trailing: const Icon(
+                          Icons.add_circle_outline,
+                          size: 18,
+                        ),
                         onTap: () => widget.onRecipeTap(recipe),
                       ),
                     );
@@ -1514,17 +1552,39 @@ class _AiTabState extends ConsumerState<_AiTab> {
   }
 
   Future<void> _analyze() async {
-    if (!_formKey.currentState!.validate()) return;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('meal_ai_action_tapped', properties: {'method': 'text'});
+    if (!_formKey.currentState!.validate()) {
+      analytics.track(
+        'meal_ai_validation_failed',
+        properties: {'method': 'text'},
+      );
+      return;
+    }
     FocusScope.of(context).unfocus();
     // Captured before the async gap so it stays valid if the widget unmounts.
-    final analytics = ref.read(appExternalDepsProvider).analytics;
     // 'text' keeps the typed-describe funnel distinct from the photo funnels.
     analytics.track('meal_ai_started', properties: {'method': 'text'});
+    final stopwatch = Stopwatch()..start();
     setState(() => _isAnalyzing = true);
     try {
       final service = ref.read(mealAiServiceProvider);
       final result = await service.describeMeal(_ctrl.text.trim());
-      analytics.track('meal_ai_completed', properties: {'method': 'text'});
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_completed',
+        properties: {
+          'method': 'text',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+          'input_tokens': result.inputTokens,
+          'output_tokens': result.outputTokens,
+          'total_tokens': result.totalTokens,
+          if (result.model != null) 'model': result.model,
+          if (result.costUsd != null) 'cost_usd': result.costUsd,
+          'confidence': result.confidence.name,
+          'item_count': result.items.length,
+        },
+      );
       if (!mounted) return;
       // Capture router before closing the screen.
       final router = GoRouter.of(context);
@@ -1538,13 +1598,38 @@ class _AiTabState extends ConsumerState<_AiTab> {
           'photoPath': null,
         },
       );
+    } on InsufficientCreditsException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': 'insufficient_credits',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
+      maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
-      analytics.track('meal_ai_failed',
-          properties: {'method': 'text', 'error_type': 'ai_exception'});
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': e.kind.name,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
-      analytics.track('meal_ai_failed',
-          properties: {'method': 'text', 'error_type': 'unknown'});
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': 'unknown',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -1557,6 +1642,11 @@ class _AiTabState extends ConsumerState<_AiTab> {
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
+    final method = source == ImageSource.camera
+        ? 'photo_camera'
+        : 'photo_gallery';
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('meal_ai_action_tapped', properties: {'method': method});
     final picker = ImagePicker();
     XFile? file;
     try {
@@ -1578,10 +1668,8 @@ class _AiTabState extends ConsumerState<_AiTab> {
 
     // Distinguish camera vs gallery so the two photo funnels stay separate
     // from each other and from the typed-describe funnel.
-    final method =
-        source == ImageSource.camera ? 'photo_camera' : 'photo_gallery';
-    final analytics = ref.read(appExternalDepsProvider).analytics;
     analytics.track('meal_ai_started', properties: {'method': method});
+    final stopwatch = Stopwatch()..start();
     setState(() => _isAnalyzing = true);
     try {
       final service = ref.read(mealAiServiceProvider);
@@ -1594,7 +1682,22 @@ class _AiTabState extends ConsumerState<_AiTab> {
       } else {
         analysis = await service.analyzePhoto(File(file.path));
       }
-      analytics.track('meal_ai_completed', properties: {'method': method});
+      stopwatch.stop();
+      final result = analysis.result;
+      analytics.track(
+        'meal_ai_completed',
+        properties: {
+          'method': method,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+          'input_tokens': result.inputTokens,
+          'output_tokens': result.outputTokens,
+          'total_tokens': result.totalTokens,
+          if (result.model != null) 'model': result.model,
+          if (result.costUsd != null) 'cost_usd': result.costUsd,
+          'confidence': result.confidence.name,
+          'item_count': result.items.length,
+        },
+      );
       if (!mounted) return;
       // Capture router before closing the screen.
       final router = GoRouter.of(context);
@@ -1608,13 +1711,38 @@ class _AiTabState extends ConsumerState<_AiTab> {
           'photoPath': analysis.storagePath,
         },
       );
+    } on InsufficientCreditsException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': method,
+          'error_type': 'insufficient_credits',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
+      maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
-      analytics.track('meal_ai_failed',
-          properties: {'method': method, 'error_type': 'ai_exception'});
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': method,
+          'error_type': e.kind.name,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
-      analytics.track('meal_ai_failed',
-          properties: {'method': method, 'error_type': 'unknown'});
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': method,
+          'error_type': 'unknown',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,

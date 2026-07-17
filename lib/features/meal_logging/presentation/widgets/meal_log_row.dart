@@ -48,8 +48,9 @@ class MealLogRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final subtitleColor =
-        isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant;
+    final subtitleColor = isDark
+        ? Colors.white60
+        : theme.colorScheme.onSurfaceVariant;
 
     final calories = log.calories;
     final carbsG = log.carbsG;
@@ -91,7 +92,7 @@ class MealLogRow extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _LeadingPhoto(photoPath: log.photoPath),
+                _LeadingPhoto(photoPath: log.photoPath, name: log.name),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -103,8 +104,9 @@ class MealLogRow extends ConsumerWidget {
                           Flexible(
                             child: Text(
                               log.name,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -119,8 +121,9 @@ class MealLogRow extends ConsumerWidget {
                         proteinG: proteinG,
                         fatG: fatG,
                         subtitleColor: subtitleColor,
-                        textColor:
-                            isDark ? Colors.white : theme.colorScheme.onSurface,
+                        textColor: isDark
+                            ? Colors.white
+                            : theme.colorScheme.onSurface,
                       ),
                     ],
                   ),
@@ -223,25 +226,27 @@ enum _MenuAction { saveFavorite }
 
 /// Displays a small meal photo thumbnail, or a food icon as a fallback.
 class _LeadingPhoto extends ConsumerWidget {
-  const _LeadingPhoto({required this.photoPath});
+  const _LeadingPhoto({required this.photoPath, required this.name});
 
   final String? photoPath;
+  final String name;
+
+  /// Branded circular food icon (matches the food icon on Activity Detail),
+  /// used whenever there's no meal photo to show.
+  Widget get _fallback =>
+      KyleFoodIcon(foodType: mapFoodType(name: name), size: 40);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (photoPath == null || photoPath!.isEmpty) {
-      return const CircleAvatar(
-        child: Icon(Icons.restaurant_outlined, size: 20),
-      );
+      return _fallback;
     }
 
     final urlAsync = ref.watch(mealPhotoSignedUrlProvider(photoPath));
     return urlAsync.when(
       data: (url) {
         if (url == null) {
-          return const CircleAvatar(
-            child: Icon(Icons.restaurant_outlined, size: 20),
-          );
+          return _fallback;
         }
         return ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -250,9 +255,7 @@ class _LeadingPhoto extends ConsumerWidget {
             width: 40,
             height: 40,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const CircleAvatar(
-              child: Icon(Icons.restaurant_outlined, size: 20),
-            ),
+            errorBuilder: (_, __, ___) => _fallback,
           ),
         );
       },
@@ -261,9 +264,7 @@ class _LeadingPhoto extends ConsumerWidget {
         height: 40,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (_, __) => const CircleAvatar(
-        child: Icon(Icons.restaurant_outlined, size: 20),
-      ),
+      error: (_, __) => _fallback,
     );
   }
 }
@@ -336,33 +337,39 @@ class _MacroSummaryLine extends StatelessWidget {
     );
 
     if (calories != null) {
-      spans.add(TextSpan(children: [
+      spans.add(
         TextSpan(
-          text: '$calories',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
+          children: [
+            TextSpan(
+              text: '$calories',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+              ),
+            ),
+            TextSpan(
+              text: ' kcal',
+              style: TextStyle(fontSize: 12, color: subtitleColor),
+            ),
+          ],
         ),
-        TextSpan(
-          text: ' kcal',
-          style: TextStyle(fontSize: 12, color: subtitleColor),
-        ),
-      ]));
+      );
     }
 
     void addMacro(double? value, String suffix, Color color) {
       if (value == null) return;
       if (spans.isNotEmpty) spans.add(sep);
-      spans.add(TextSpan(
-        text: '${value.toStringAsFixed(0)}$suffix',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
+      spans.add(
+        TextSpan(
+          text: '${value.toStringAsFixed(0)}$suffix',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
         ),
-      ));
+      );
     }
 
     addMacro(carbsG, 'C', kMacroColorCarbs);

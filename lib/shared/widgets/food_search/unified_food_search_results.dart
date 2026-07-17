@@ -76,7 +76,8 @@ class UnifiedFoodSearchResults extends ConsumerWidget {
   /// see no behavior change even though the controller always populates the
   /// underlying data (ITEM 18 — shared cascade stays solid for every
   /// composing surface; only opted-in surfaces render it).
-  final void Function(NutritionProductSearchResult)? onNutritionProductResultTap;
+  final void Function(NutritionProductSearchResult)?
+  onNutritionProductResultTap;
 
   /// Whether to render section headers ("My Foods", "Catalog & Suggestions",
   /// "More Results") above their respective item groups. Defaults to `true`
@@ -471,30 +472,25 @@ class _NutritionProductCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              Container(
+              SizedBox(
                 width: AppIconSizes.foodIcon,
                 height: AppIconSizes.foodIcon,
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.smRadius,
-                ),
                 child: result.imageUrl?.isNotEmpty == true
                     ? ClipRRect(
                         borderRadius: AppRadius.smRadius,
                         child: Image.network(
                           result.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => FaIcon(
-                            FontAwesomeIcons.utensils,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            size: AppIconSizes.controlIcon,
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              KyleFoodIcon(
+                                foodType: mapFoodType(name: result.displayName),
+                              ),
                         ),
                       )
-                    : FaIcon(
-                        FontAwesomeIcons.utensils,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        size: AppIconSizes.controlIcon,
+                    // Branded fallback (matches the food icon on Activity
+                    // Detail) instead of a generic cutlery glyph.
+                    : KyleFoodIcon(
+                        foodType: mapFoodType(name: result.displayName),
                       ),
               ),
               const SizedBox(width: AppSpacing.md),

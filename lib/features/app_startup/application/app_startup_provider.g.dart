@@ -39,7 +39,7 @@ final class AppStartupProvider
   AppStartup create() => AppStartup();
 }
 
-String _$appStartupHash() => r'190f89393c3ba5543055540275e5506fb9e67986';
+String _$appStartupHash() => r'c3c4ae4fbd3e1f9fff2ef5510ec63bf77b368677';
 
 /// AsyncNotifier for app startup initialization using Drift
 /// This coordinates the AppStartupService and provides async state management

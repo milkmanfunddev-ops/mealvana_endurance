@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_log.dart';
 import '../providers/meal_log_providers.dart';
@@ -39,9 +40,7 @@ class TodayLogSection extends ConsumerWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            _AddButton(
-              onPressed: () => _openLogSheet(context, ref, dateStr),
-            ),
+            _AddButton(onPressed: () => _openLogSheet(context, ref, dateStr)),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -93,10 +92,8 @@ class TodayLogSection extends ConsumerWidget {
                       onSaveFavorite: (name) => ref
                           .read(mealLogControllerProvider.notifier)
                           .saveLogAsFavorite(log, customName: name),
-                      onEdit: () => context.push(
-                        '/meal-log/edit',
-                        extra: {'log': log},
-                      ),
+                      onEdit: () =>
+                          context.push('/meal-log/edit', extra: {'log': log}),
                     ),
                   )
                   .toList(),
@@ -186,7 +183,7 @@ void _openLogSheet(BuildContext context, WidgetRef ref, String dateStr) {
 ///
 /// Declared here so [today_log_section.dart] stays self-contained.
 /// The separate file `meal_log_method_sheet.dart` re-exports this class.
-class MealLogMethodSheet extends StatelessWidget {
+class MealLogMethodSheet extends ConsumerWidget {
   const MealLogMethodSheet({
     super.key,
     required this.logDate,
@@ -197,9 +194,12 @@ class MealLogMethodSheet extends StatelessWidget {
   final void Function(String method) onMethodSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
+    final describeMealEnabled = ref.watch(
+      appConfigProvider.select((config) => config.describeMealEnabled),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -236,26 +236,30 @@ class MealLogMethodSheet extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
-          _MethodTile(
-            icon: Icons.camera_alt_outlined,
-            title: 'Take a Photo',
-            subtitle: 'Jade AI identifies food and estimates macros',
-            onTap: () => onMethodSelected('photo'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+          if (describeMealEnabled) ...[
+            _MethodTile(
+              icon: Icons.camera_alt_outlined,
+              title: 'Take a Photo',
+              subtitle: 'Jade AI identifies food and estimates macros',
+              onTap: () => onMethodSelected('photo'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           _MethodTile(
             icon: Icons.edit_outlined,
             title: 'Enter Manually',
             subtitle: 'Type name and macros by hand',
             onTap: () => onMethodSelected('manual'),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _MethodTile(
-            icon: Icons.record_voice_over_outlined,
-            title: 'Describe to Jade',
-            subtitle: 'Tell Jade what you ate in plain language',
-            onTap: () => onMethodSelected('describe'),
-          ),
+          if (describeMealEnabled) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _MethodTile(
+              icon: Icons.record_voice_over_outlined,
+              title: 'Describe to Jade',
+              subtitle: 'Tell Jade what you ate in plain language',
+              onTap: () => onMethodSelected('describe'),
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           _MethodTile(
             icon: Icons.history_outlined,
@@ -301,18 +305,16 @@ class _MethodTile extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: isDark ? Colors.white12 : Colors.black12,
-          ),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Row(
           children: [
-            Icon(icon,
-                size: 28,
-                color: isDark
-                    ? AppColors.electrolyte
-                    : AppColors.electrolyteDark),
+            Icon(
+              icon,
+              size: 28,
+              color: isDark ? AppColors.electrolyte : AppColors.electrolyteDark,
+            ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(

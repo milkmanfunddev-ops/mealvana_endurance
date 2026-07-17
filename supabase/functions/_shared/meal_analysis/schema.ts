@@ -58,8 +58,9 @@ export const MealAnalysisSchema = z.object({
   suggested_slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
   /** Model's self-reported confidence in the identification and estimates */
   confidence: z.enum(['low', 'medium', 'high']),
-  /** Individual food items identified in the meal */
-  items: z.array(MealItemSchema).min(1),
+  /** Individual dishes identified in the meal. A single meal should not need
+   * more than 12 separately logged dishes; this also bounds structured output. */
+  items: z.array(MealItemSchema).min(1).max(12),
   /** Sum of all item macros — pre-computed by the model for convenience */
   totals: MealTotalsSchema,
   /**

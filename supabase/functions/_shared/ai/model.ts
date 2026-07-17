@@ -14,6 +14,17 @@ export const JADE_MODEL: string =
   Deno.env.get('JADE_MODEL') ?? 'anthropic/claude-sonnet-4.6';
 
 /**
+ * Per-modality overrides for the meal-analysis experiment. They intentionally
+ * fall back to JADE_MODEL so existing deployments keep their current quality
+ * until a cheaper model has passed an accuracy evaluation.
+ */
+export const DESCRIBE_MEAL_MODEL: string =
+  Deno.env.get('DESCRIBE_MEAL_MODEL') ?? JADE_MODEL;
+
+export const ANALYZE_MEAL_PHOTO_MODEL: string =
+  Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL') ?? JADE_MODEL;
+
+/**
  * Model for short, latency-sensitive, low-stakes copy — currently the Formula
  * Kit coach-insight one-liner (`ai-coach`). Haiku keeps it fast and cheap; the
  * output is ~15-28 words so a frontier model would be wasted spend.
