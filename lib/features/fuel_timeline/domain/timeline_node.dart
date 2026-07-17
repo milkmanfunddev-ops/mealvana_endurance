@@ -1,5 +1,7 @@
 import '../../activities/domain/activity.dart';
+import '../../events/domain/event.dart';
 import '../../meal_logging/domain/meal_log.dart';
+import '../../../shared/database/app_database.dart' show CarbLoadingDay;
 
 /// A single entry on the unified Fuel Timeline — either a logged meal or a
 /// scheduled workout — placed on one chronological axis.
@@ -52,4 +54,46 @@ class WorkoutNode extends TimelineNode {
 
   @override
   String get id => activity.id;
+}
+
+/// The race/event itself on the day it falls.
+///
+/// Surfaces the event on the fuel timeline so a race day isn't invisible on the
+/// home screen. Ordered by its start time when known, else the start of the
+/// event date (so an all-day event sorts to the top of its day rather than
+/// "now").
+class EventNode extends TimelineNode {
+  const EventNode(this.event, this.date);
+
+  final Event event;
+
+  /// The event's date-time on the timeline. Resolved by the caller from
+  /// [Event.startTime] (precise) or [Event.eventDate] (midnight).
+  final DateTime date;
+
+  @override
+  DateTime get time => date;
+
+  @override
+  String get id => 'event_${event.id}';
+}
+
+/// A carb-loading day (one row of a plan) on its date.
+///
+/// A whole-day target, not a point in time, so it sorts to the start of its day
+/// (like an all-day banner) rather than to a clock time.
+class CarbLoadingNode extends TimelineNode {
+  const CarbLoadingNode(this.day, {this.totalDays});
+
+  final CarbLoadingDay day;
+
+  /// Total days in the parent plan, for a "Day 2 of 3" label. Null if unknown.
+  final int? totalDays;
+
+  @override
+  DateTime get time =>
+      DateTime(day.planDate.year, day.planDate.month, day.planDate.day);
+
+  @override
+  String get id => 'carb_${day.id}';
 }

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
+import 'package:mealvana_endurance/features/events/domain/event.dart';
+import 'package:mealvana_endurance/shared/database/app_database.dart' show CarbLoadingDay;
 import 'package:mealvana_endurance/features/fuel_timeline/application/day_timeline_assembler.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/domain/day_energy_summary.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/domain/fuel_timeline_filter.dart';
@@ -98,6 +100,85 @@ void main() {
       expect(result.nodes.map((n) => n.id).toList(), ['bf', 'ride', 'dn']);
       expect(result.nodes[0], isA<MealNode>());
       expect(result.nodes[1], isA<WorkoutNode>());
+    });
+
+    test('events and carb-loading days appear on the timeline', () {
+      final event = Event(
+        id: 'race1',
+        userId: 'u1',
+        eventType: ActivityType.running,
+        eventName: 'City Marathon',
+        eventDate: date,
+        startTime: '2026-06-17T09:00:00',
+        createdAt: date,
+        updatedAt: date,
+      );
+      final carbDay = CarbLoadingDay(
+        id: 'cd1',
+        carbLoadingPlanId: 'plan1',
+        planDate: date,
+        dayNumber: 2,
+        carbTargetGrams: 610,
+        carbProtocolGPerKg: 8.0,
+        mealCount: 4,
+        breakfastPercent: 0.25,
+        morningSnackPercent: 0.1,
+        lunchPercent: 0.25,
+        afternoonSnackPercent: 0.1,
+        dinnerPercent: 0.2,
+        eveningSnackPercent: 0.1,
+        loggedCarbsGrams: 0,
+        loggedCalories: 0,
+        completed: false,
+        needsUpload: false,
+        localUpdatedAt: date,
+      );
+
+      final result = assembler.assemble(
+        selectedDate: date,
+        now: DateTime(2026, 6, 17, 20),
+        meals: [meal('lunch', eatenAt: DateTime(2026, 6, 17, 12, 0))],
+        activities: const [],
+        targets: targets(),
+        consumed: const ConsumedTotals(),
+        events: [event],
+        carbLoadingDays: [carbDay],
+        planTotalDaysById: const {'plan1': 3},
+      );
+
+      // Carb day sorts to midnight (all-day), event to 09:00, lunch to noon.
+      expect(result.nodes.map((n) => n.runtimeType.toString()).toList(),
+          ['CarbLoadingNode', 'EventNode', 'MealNode']);
+
+      final carb = result.nodes.whereType<CarbLoadingNode>().single;
+      expect(carb.day.carbTargetGrams, 610);
+      expect(carb.totalDays, 3);
+
+      final ev = result.nodes.whereType<EventNode>().single;
+      expect(ev.event.eventName, 'City Marathon');
+      expect(ev.time, DateTime(2026, 6, 17, 9, 0));
+    });
+
+    test('event with no date/startTime is dropped', () {
+      final result = assembler.assemble(
+        selectedDate: date,
+        now: DateTime(2026, 6, 17, 20),
+        meals: const [],
+        activities: const [],
+        targets: targets(),
+        consumed: const ConsumedTotals(),
+        events: [
+          Event(
+            id: 'nodate',
+            userId: 'u1',
+            eventType: ActivityType.running,
+            eventName: 'Undated',
+            createdAt: date,
+            updatedAt: date,
+          ),
+        ],
+      );
+      expect(result.nodes.whereType<EventNode>(), isEmpty);
     });
 
     test('meal with no eatenAt falls back to createdAt for ordering', () {

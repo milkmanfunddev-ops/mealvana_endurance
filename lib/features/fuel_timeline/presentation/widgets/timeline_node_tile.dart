@@ -48,6 +48,10 @@ class TimelineNodeTile extends ConsumerWidget {
       // Workouts get the electrolyte teal of their icon so they read
       // distinctly from meal dots on the rail.
       WorkoutNode() => AppColors.electrolyteDark,
+      // The race itself — dragonfruit, matching the event dot on the calendar.
+      EventNode() => AppColors.dragonfruit,
+      // Carb-loading days read as a carb (amber) dot.
+      CarbLoadingNode() => kMacroColorCarbs,
       MealNode(:final meal) => switch (meal.slot) {
         MealSlot.breakfast => AppColors.orange,
         MealSlot.lunch => kMacroColorCarbs,
@@ -117,6 +121,10 @@ class TimelineNodeTile extends ConsumerWidget {
                     onSurface,
                     useMetric,
                   ),
+                  EventNode(:final event) =>
+                    _eventCard(context, event, onSurface),
+                  CarbLoadingNode(:final day, :final totalDays) =>
+                    _carbCard(context, day, totalDays, onSurface),
                 },
               ),
             ),
@@ -428,6 +436,99 @@ class TimelineNodeTile extends ConsumerWidget {
       parts.add('$dur min');
     }
     return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  /// The race/event banner on its day. Tapping opens the event detail.
+  Widget _eventCard(BuildContext context, dynamic event, Color onSurface) {
+    // event is Event (typed via the switch pattern in build()).
+    final title = (event.eventName as String?)?.trim();
+    final name = (title != null && title.isNotEmpty) ? title : 'Race day';
+    final subtitle = event.eventSubtype as String?;
+
+    return _cardShell(
+      onSurface: onSurface,
+      borderColor: AppColors.dragonfruit.withValues(alpha: 0.35),
+      fill: AppColors.dragonfruit.withValues(alpha: 0.08),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Row(
+          children: [
+            _iconCircle(
+              AppColors.dragonfruit.withValues(alpha: 0.18),
+              Icons.emoji_events_outlined,
+              AppColors.dragonfruit,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: FtType.itemName.copyWith(color: onSurface)),
+                  Text(
+                    subtitle != null && subtitle.isNotEmpty
+                        ? 'Event · $subtitle'
+                        : 'Event',
+                    style: FtType.macroLine
+                        .copyWith(color: onSurface.withValues(alpha: 0.6)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// A carb-loading day banner. Tapping opens the carb loading day.
+  Widget _carbCard(
+    BuildContext context,
+    dynamic day,
+    int? totalDays,
+    Color onSurface,
+  ) {
+    // day is CarbLoadingDay (typed via the switch pattern in build()).
+    final dayNumber = day.dayNumber as int;
+    final target = day.carbTargetGrams as int;
+    final label = totalDays != null
+        ? 'Carb Loading · Day $dayNumber of $totalDays'
+        : 'Carb Loading · Day $dayNumber';
+
+    return _cardShell(
+      onSurface: onSurface,
+      borderColor: kMacroColorCarbs.withValues(alpha: 0.35),
+      fill: kMacroColorCarbs.withValues(alpha: 0.08),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Row(
+          children: [
+            _iconCircle(
+              kMacroColorCarbs.withValues(alpha: 0.18),
+              Icons.bolt_outlined,
+              kMacroColorCarbs,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: FtType.itemName.copyWith(color: onSurface)),
+                  Text(
+                    'Target ${target}g carbs',
+                    style: FtType.macroLine
+                        .copyWith(color: onSurface.withValues(alpha: 0.6)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _cardShell({

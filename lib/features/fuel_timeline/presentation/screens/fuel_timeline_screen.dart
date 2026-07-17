@@ -9,6 +9,8 @@ import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/navigation/open_activity_fuel.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../calendar/presentation/providers/calendar_day_indicators_provider.dart';
+import '../../../events/presentation/screens/event_detail_screen.dart';
 import '../../../calendar/presentation/providers/calendar_view_provider.dart';
 import '../../../calendar/presentation/widgets/calendar_view_toggle.dart'
     show CalendarViewMode;
@@ -62,7 +64,10 @@ class FuelTimelineScreen extends ConsumerWidget {
               selectedDate: selectedDate,
               onDateSelected: (date) =>
                   ref.read(calendarSelectedDateProvider.notifier).setDate(date),
-              dayIndicators: const {},
+              // Real dots for activities, events, and carb-loading days. This
+              // used to be `const {}`, which is why nothing showed on the month
+              // calendar after the home tab moved to the fuel timeline.
+              dayIndicators: ref.watch(calendarDayIndicatorsProvider),
             ),
           ],
           Expanded(
@@ -267,6 +272,28 @@ class FuelTimelineScreen extends ConsumerWidget {
           onSwap: canEdit ? () => _openActivityEditor(context, activity) : null,
           onRemove: () => _deleteActivityWithUndo(context, ref, activity),
         );
+      case EventNode(:final event):
+        return TimelineNodeTile(
+          node: node,
+          timelineOpen: view.timelineOpen,
+          trackingOn: view.trackingOn,
+          // Tap the race banner → the event detail page.
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EventDetailScreen(eventId: event.id),
+            ),
+          ),
+        );
+      case CarbLoadingNode():
+        return TimelineNodeTile(
+          node: node,
+          timelineOpen: view.timelineOpen,
+          trackingOn: view.trackingOn,
+          // Tap a carb-loading day → the carb loading day detail. Routing is
+          // handled by the calendar's carb loading day card flow; here we just
+          // surface it. A dedicated tap target is a follow-up.
+          onTap: null,
+        );
     }
   }
 
@@ -373,12 +400,11 @@ class FuelTimelineScreen extends ConsumerWidget {
               key: const ValueKey('fuel_timeline.add_food'),
               label: '+ Add Food',
               color: onSurface.withValues(alpha: 0.8),
-              onTap: () =>
-                  openLogMealScreen(
-                    context,
-                    logDate: _ymd(selectedDate),
-                    source: 'fuel_timeline',
-                  ),
+              onTap: () => openLogMealScreen(
+                context,
+                logDate: _ymd(selectedDate),
+                source: 'fuel_timeline',
+              ),
             ),
           ),
         if (filter.showsAddFood && filter.showsAddActivity)
@@ -392,9 +418,7 @@ class FuelTimelineScreen extends ConsumerWidget {
               onTap: () {
                 ref
                     .read(analyticsTrackerProvider)
-                    .trackActivityButtonPressed(
-                      selectedDate: selectedDate,
-                    );
+                    .trackActivityButtonPressed(selectedDate: selectedDate);
                 context.pushNamed(
                   'distancepacegut',
                   extra: {'initialDate': selectedDate},

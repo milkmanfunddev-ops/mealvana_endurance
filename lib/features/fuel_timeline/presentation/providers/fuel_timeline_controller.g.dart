@@ -82,4 +82,4 @@ final class FuelTimelineDayProvider
   }
 }
 
-String _$fuelTimelineDayHash() => r'b91683e94bd6b588c4d25b55106cbb2ef26692e9';
+String _$fuelTimelineDayHash() => r'dde604f8616b8fd4798edb9497f589ba600c77ef';
