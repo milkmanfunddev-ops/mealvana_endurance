@@ -118,9 +118,9 @@ void main() {
         reason: 'Created activity should appear as a card on the calendar.',
       );
 
-      // ---- 7. DELETE — swipe the card left, confirm ---------------------
-      // The card is wrapped in a Dismissible (endToStart); drag its row left to
-      // trigger the confirm dialog, then confirm.
+      // ---- 7. DELETE — swipe the card (either direction deletes) --------
+      // Unified card interaction (391e3fdb): no confirm dialog — the swipe
+      // soft-deletes immediately and shows an Undo snackbar.
       final cardRow = find.ancestor(
         of: find.text(workoutName),
         matching: find.byType(Dismissible),
@@ -128,11 +128,11 @@ void main() {
       await $.tester.drag(cardRow.first, const Offset(-500, 0));
       await $.pump(const Duration(milliseconds: 600));
 
-      await $(const ValueKey('activity_delete.confirm_button')).waitUntilVisible(
+      await $('Activity deleted').waitUntilVisible(
         timeout: const Duration(seconds: 10),
       );
-      await $(const ValueKey('activity_delete.confirm_button')).tap();
-      await $.pump(const Duration(seconds: 1));
+      // Let the undo snackbar time out without tapping Undo.
+      await $.pump(const Duration(seconds: 4));
 
       // ---- 8. Assert the activity card is gone --------------------------
       expect(

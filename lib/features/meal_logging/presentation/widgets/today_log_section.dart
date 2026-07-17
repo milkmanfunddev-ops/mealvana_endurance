@@ -89,11 +89,10 @@ class TodayLogSection extends ConsumerWidget {
                     (log) => MealLogRow(
                       log: log,
                       onDelete: () => _deleteWithUndo(context, ref, log),
-                      onSaveFavorite: (name) => ref
-                          .read(mealLogControllerProvider.notifier)
-                          .saveLogAsFavorite(log, customName: name),
-                      onEdit: () =>
-                          context.push('/meal-log/edit', extra: {'log': log}),
+                      onEdit: () => context.push(
+                        '/meal-log/edit',
+                        extra: {'log': log},
+                      ),
                     ),
                   )
                   .toList(),
@@ -157,7 +156,11 @@ class _AddButton extends StatelessWidget {
 /// The delete is applied immediately (offline-first); the snackbar gives the
 /// user a brief window to undo before the tombstone propagates to Supabase.
 void _deleteWithUndo(BuildContext context, WidgetRef ref, MealLog log) {
+  // Clear any snackbar already in flight so a rapid double-swipe can't queue
+  // two "Meal deleted" toasts back to back (parity with the Fuel Timeline).
+  final messenger = ScaffoldMessenger.of(context);
   ref.read(mealLogControllerProvider.notifier).deleteLog(log.id);
+  messenger.clearSnackBars();
 
   MealvanaSnackbar.showInfo(
     context,

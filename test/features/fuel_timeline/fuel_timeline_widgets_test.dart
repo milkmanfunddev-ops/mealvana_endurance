@@ -141,37 +141,71 @@ void main() {
       expect(find.text('7:30 AM'), findsNothing);
     });
 
-    // Swipe direction was flipped to the iOS convention in 24470df8: right→left
-    // (endToStart) removes, left→right (startToEnd) swaps/edits. These two tests
-    // still asserted the old mapping and had been red on develop ever since.
-    testWidgets('swipe right→left fires onRemove (swipe to delete)',
-        (tester) async {
+    // Unified card interaction (391e3fdb): swipe in EITHER direction removes.
+    // Swap/Edit moved into the tap → detail/edit surfaces.
+    testWidgets('meal swipe right→left fires onRemove', (tester) async {
       var removed = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: MealNode(meal()),
         timelineOpen: true,
         trackingOn: true,
         onRemove: () => removed = true,
-        onSwap: () {},
       )));
       await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
       await tester.pumpAndSettle();
       expect(removed, isTrue);
     });
 
-    testWidgets('swipe left→right fires onSwap (swipe to swap)',
+    testWidgets('meal swipe left→right also fires onRemove', (tester) async {
+      var removed = false;
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: MealNode(meal()),
+        timelineOpen: true,
+        trackingOn: true,
+        onRemove: () => removed = true,
+      )));
+      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(removed, isTrue);
+    });
+
+    testWidgets('meal swipe backgrounds carry no Swap/Edit affordance',
         (tester) async {
-      var swapped = false;
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: MealNode(meal()),
         timelineOpen: true,
         trackingOn: true,
         onRemove: () {},
-        onSwap: () => swapped = true,
       )));
-      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
-      await tester.pumpAndSettle();
-      expect(swapped, isTrue);
+      // Dismissible only mounts its background mid-drag — reveal each side
+      // with a held gesture and assert it's the delete affordance, not Swap.
+      final center = tester.getCenter(find.byType(Dismissible));
+      for (final dx in [60.0, -60.0]) {
+        final gesture = await tester.startGesture(center);
+        await gesture.moveBy(Offset(dx, 0));
+        await tester.pump();
+        expect(find.text('Swap'), findsNothing);
+        expect(find.text('Edit'), findsNothing);
+        expect(find.byIcon(Icons.swap_horiz), findsNothing);
+        expect(find.byIcon(Icons.edit_outlined), findsNothing);
+        expect(find.text('Remove'), findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+        await gesture.up();
+        await tester.pumpAndSettle();
+      }
+    });
+
+    testWidgets('meal tap fires onTap (opens edit surface)', (tester) async {
+      var tapped = false;
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: MealNode(meal()),
+        timelineOpen: true,
+        trackingOn: true,
+        onTap: () => tapped = true,
+        onRemove: () {},
+      )));
+      await tester.tap(find.text('EVERYTHING BAGEL'));
+      expect(tapped, isTrue);
     });
 
     testWidgets('meal tile has no overflow "…" icon', (tester) async {
@@ -218,25 +252,47 @@ void main() {
         timelineOpen: true,
         trackingOn: true,
         onRemove: () => removed = true,
-        onSwap: () {},
       )));
       await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
       await tester.pumpAndSettle();
       expect(removed, isTrue);
     });
 
-    testWidgets('workout swipe left→right fires onSwap', (tester) async {
-      var swapped = false;
+    testWidgets('workout swipe left→right also fires onRemove', (tester) async {
+      var removed = false;
+      await tester.pumpWidget(wrap(TimelineNodeTile(
+        node: WorkoutNode(ride()),
+        timelineOpen: true,
+        trackingOn: true,
+        onRemove: () => removed = true,
+      )));
+      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(removed, isTrue);
+    });
+
+    testWidgets('workout swipe backgrounds carry no Swap/Edit affordance',
+        (tester) async {
       await tester.pumpWidget(wrap(TimelineNodeTile(
         node: WorkoutNode(ride()),
         timelineOpen: true,
         trackingOn: true,
         onRemove: () {},
-        onSwap: () => swapped = true,
       )));
-      await tester.drag(find.byType(Dismissible), const Offset(400, 0));
-      await tester.pumpAndSettle();
-      expect(swapped, isTrue);
+      final center = tester.getCenter(find.byType(Dismissible));
+      for (final dx in [60.0, -60.0]) {
+        final gesture = await tester.startGesture(center);
+        await gesture.moveBy(Offset(dx, 0));
+        await tester.pump();
+        expect(find.text('Swap'), findsNothing);
+        expect(find.text('Edit'), findsNothing);
+        expect(find.byIcon(Icons.swap_horiz), findsNothing);
+        expect(find.byIcon(Icons.edit_outlined), findsNothing);
+        expect(find.text('Remove'), findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+        await gesture.up();
+        await tester.pumpAndSettle();
+      }
     });
 
     testWidgets('workout card with no swipe callbacks has no Dismissible',

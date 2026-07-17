@@ -94,7 +94,6 @@ void main() {
                         MealLogRow(
                           log: r,
                           onDelete: () {},
-                          onSaveFavorite: (_) {},
                           onEdit: () {},
                         ),
                     ],

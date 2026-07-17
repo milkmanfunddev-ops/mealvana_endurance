@@ -20,8 +20,9 @@ import '../providers/activities_controller.dart';
 /// Displays activity information in a card with:
 /// - Activity icon (36px circle with Electrolyte background)
 /// - Activity title and details with scheduled time (Compadre + Apercu fonts)
-/// - Right chevron icon
-/// - Swipe-to-delete gesture (swipe left)
+/// - Tap anywhere opens the detail/edit surface
+/// - Swipe-to-delete gesture in either direction, with an Undo snackbar
+///   (unified card interaction 391e3fdb — no chevron, no confirm dialog)
 ///
 /// Selection Mode Support:
 /// - When isSelectionMode is true, shows checkbox on left side
@@ -34,7 +35,6 @@ import '../providers/activities_controller.dart';
 /// - Icon: 36px circle, Electrolyte background, Blackberry icon
 /// - Title: Compadre, 16px
 /// - Details: Apercu Mono, 12px
-/// - Chevron: 20px, theme-aware with 0.5 opacity
 class ActivityCard extends ConsumerWidget {
   const ActivityCard({
     super.key,
@@ -59,14 +59,20 @@ class ActivityCard extends ConsumerWidget {
         (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
         UnitSystem.metric;
 
-    // Wrap in Dismissible for swipe-to-delete (only when NOT in selection mode)
+    // Wrap in Dismissible for swipe-to-delete (only when NOT in selection
+    // mode). Both directions delete (unified card interaction 391e3fdb);
+    // confirmDismiss returns false so the row leaves via the provider rebuild
+    // rather than a structural dismiss.
     if (!isSelectionMode) {
       return Dismissible(
         key: Key(activity.id),
-        direction: DismissDirection.endToStart,
-        background: _buildDismissBackground(isDark),
+        direction: DismissDirection.horizontal,
+        background: _buildDismissBackground(isDark, Alignment.centerLeft),
+        secondaryBackground:
+            _buildDismissBackground(isDark, Alignment.centerRight),
         confirmDismiss: (direction) async {
-          return await _handleDelete(context, ref);
+          _handleDelete(context, ref);
+          return false;
         },
         child: _buildCard(context, ref, isDark, useMetric),
       );
@@ -114,14 +120,6 @@ class ActivityCard extends ConsumerWidget {
               Expanded(
                 child: _buildActivityDetails(context, isDark, useMetric),
               ),
-              // Show chevron when NOT in selection mode
-              if (!isSelectionMode)
-                Icon(
-                  Icons.chevron_right,
-                  color: (isDark ? AppColors.cream : AppColors.blackberry)
-                      .withValues(alpha: 0.5),
-                  size: 20,
-                ),
             ],
           ),
         ),
@@ -129,15 +127,15 @@ class ActivityCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDismissBackground(bool isDark) {
+  Widget _buildDismissBackground(bool isDark, Alignment alignment) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.error,
         borderRadius: BorderRadius.circular(15),
       ),
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: const Icon(Icons.delete, color: Colors.white, size: 24),
     );
   }
@@ -249,47 +247,37 @@ class ActivityCard extends ConsumerWidget {
     );
   }
 
-  Future<bool> _handleDelete(BuildContext context, WidgetRef ref) async {
-    final activityTitle = activity.title;
-
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Activity'),
-          content: Text('Are you sure you want to delete "$activityTitle"?'),
-          actions: [
-            TextButton(
-              key: const ValueKey('activity_delete.cancel_button'),
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              key: const ValueKey('activity_delete.confirm_button'),
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
+  /// Soft-delete with an undo affordance (offline-first) — no blocking
+  /// confirm dialog. Mirrors the Fuel Timeline's delete pattern so meal and
+  /// activity cards behave identically everywhere (391e3fdb).
+  void _handleDelete(BuildContext context, WidgetRef ref) {
+    // Capture the messenger before kicking off the delete so we're never
+    // relying on `context` staying valid past this point, and clear any
+    // snackbar already in flight so a rapid double-swipe can't queue two
+    // "Activity deleted" toasts back to back.
+    final messenger = ScaffoldMessenger.of(context);
+    ref.read(activitiesControllerProvider.notifier).deleteActivity(activity.id);
+    messenger.clearSnackBars();
+    MealvanaSnackbar.showInfo(
+      context,
+      'Activity deleted',
+      duration: const Duration(seconds: 3),
+      actionLabel: 'Undo',
+      // Read the notifier fresh at tap time (the autoDispose provider may have
+      // been recreated since delete) and surface any failure — restoreActivity
+      // returns a Future, so without this the error would be dropped silently.
+      onAction: () async {
+        try {
+          await ref
+              .read(activitiesControllerProvider.notifier)
+              .restoreActivity(activity);
+        } catch (_) {
+          if (context.mounted) {
+            MealvanaSnackbar.showError(context, 'Could not restore activity');
+          }
+        }
       },
     );
-
-    if (confirmed != true) return false;
-
-    try {
-      final activitiesController = ref.read(
-        activitiesControllerProvider.notifier,
-      );
-      await activitiesController.deleteActivity(activity.id);
-
-      MealvanaSnackbar.showSuccess(context, 'Deleted "$activityTitle"');
-      return true;
-    } catch (e) {
-      MealvanaSnackbar.showError(context, 'Error deleting activity: $e');
-      return false;
-    }
   }
 
   void _handleTap(BuildContext context, WidgetRef ref) {
