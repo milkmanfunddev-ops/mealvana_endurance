@@ -18,17 +18,16 @@ import 'slot_palette.dart';
 /// - Bold name with a small coloured slot chip
 /// - Calories and compact C/P/F macros in subtitle
 ///
-/// Interaction:
+/// Interaction (unified card interaction 391e3fdb):
 /// - Tapping the row invokes [onEdit] (opens the edit screen).
-/// - Swiping end-to-start triggers [onDelete] (soft delete with undo snackbar
-///   handled in the parent widget).
-/// - A trailing [PopupMenuButton] provides 'Save as Favorite'.
+/// - Swiping in either direction triggers [onDelete] (soft delete with undo
+///   snackbar handled in the parent widget).
+/// - A one-tap star toggles favorite status (no overflow menu).
 class MealLogRow extends ConsumerWidget {
   const MealLogRow({
     super.key,
     required this.log,
     required this.onDelete,
-    required this.onSaveFavorite,
     required this.onEdit,
   });
 
@@ -37,9 +36,6 @@ class MealLogRow extends ConsumerWidget {
   /// Called immediately when the dismiss gesture completes (soft delete already
   /// applied; parent shows undo snackbar).
   final VoidCallback onDelete;
-
-  /// Called with the name the user chose for saving (may differ from [log.name]).
-  final ValueChanged<String> onSaveFavorite;
 
   /// Called when the user taps the row to open the edit screen.
   final VoidCallback onEdit;
@@ -62,20 +58,18 @@ class MealLogRow extends ConsumerWidget {
     final favorites = favoritesAsync.asData?.value ?? const <SavedMeal>[];
     final matchedFavorite = findFavoriteMatch(log, favorites);
 
+    // Both directions delete (unified card interaction 391e3fdb).
+    // confirmDismiss fires the delete and returns false so the row leaves via
+    // the provider rebuild, never a structural dismiss.
     return Dismissible(
       key: ValueKey(log.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => onDelete(),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
-      ),
+      direction: DismissDirection.horizontal,
+      confirmDismiss: (_) async {
+        onDelete();
+        return false;
+      },
+      background: _deleteBackground(Alignment.centerLeft),
+      secondaryBackground: _deleteBackground(Alignment.centerRight),
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 4),
         child: InkWell(
@@ -83,7 +77,7 @@ class MealLogRow extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           // Custom flex layout (not ListTile): the name + macros live in an
           // Expanded column so they always get the leftover width and reflow
-          // gracefully, while only the menu button is fixed-width trailing.
+          // gracefully, while only the star button is fixed-width trailing.
           // ListTile's title/trailing tug-of-war could starve the title to a
           // few px on narrow phones and overflow.
           child: Padding(
@@ -139,27 +133,6 @@ class MealLogRow extends ConsumerWidget {
                   onPressed: () =>
                       _toggleFavorite(context, ref, matchedFavorite),
                 ),
-                PopupMenuButton<_MenuAction>(
-                  onSelected: (action) {
-                    switch (action) {
-                      case _MenuAction.saveFavorite:
-                        _showSaveFavoriteDialog(context);
-                        break;
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: _MenuAction.saveFavorite,
-                      child: Row(
-                        children: [
-                          Icon(Icons.bookmark_outline, size: 18),
-                          SizedBox(width: 8),
-                          Text('Save as Favorite'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -186,40 +159,20 @@ class MealLogRow extends ConsumerWidget {
     }
   }
 
-  void _showSaveFavoriteDialog(BuildContext context) {
-    final ctrl = TextEditingController(text: log.name);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Save as Favorite'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final name = ctrl.text.trim();
-              Navigator.of(ctx).pop();
-              onSaveFavorite(name.isEmpty ? log.name : name);
-            },
-            child: const Text('Save'),
-          ),
-        ],
+  /// Delete-red swipe background, mirrored to whichever side is revealed.
+  Widget _deleteBackground(Alignment alignment) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.dragonfruit,
+        borderRadius: BorderRadius.circular(12),
       ),
+      child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
     );
   }
 }
-
-enum _MenuAction { saveFavorite }
 
 /// Displays a small meal photo thumbnail, or a food icon as a fallback.
 class _LeadingPhoto extends ConsumerWidget {

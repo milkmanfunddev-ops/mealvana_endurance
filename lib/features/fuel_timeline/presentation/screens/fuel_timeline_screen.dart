@@ -245,26 +245,18 @@ class FuelTimelineScreen extends ConsumerWidget {
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
           // Tap the meal → edit-meal page (where components can be edited and
-          // swapped). Swipe right→left also opens it to swap; swipe left→right
-          // removes with Undo.
+          // swapped). Swipe either direction removes with Undo.
           onTap: () => context.push('/meal-log/edit', extra: {'log': meal}),
-          onSwap: () => context.push('/meal-log/edit', extra: {'log': meal}),
           onRemove: () => _deleteMealWithUndo(context, ref, meal),
         );
       case WorkoutNode(:final activity):
-        // Import-only activities (Garmin/TP/FS imports we don't natively
-        // support) can be deleted but never edited — no Swap affordance for
-        // those (see ActivityType.isImportOnly).
-        final canEdit = activity.activityType.isCreatable;
         return TimelineNodeTile(
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
-          // Tap the workout → Activity Detail page (its fuel plan).
+          // Tap the workout → Activity Detail page (its fuel plan / editor).
+          // Swipe either direction removes with Undo.
           onTap: () => openActivityFuel(context, activity),
-          // Swipe right→left → the activity editor, prefilled. Swipe
-          // left→right removes with Undo (mirrors the meal row above).
-          onSwap: canEdit ? () => _openActivityEditor(context, activity) : null,
           onRemove: () => _deleteActivityWithUndo(context, ref, activity),
         );
     }
@@ -322,37 +314,6 @@ class FuelTimelineScreen extends ConsumerWidget {
             MealvanaSnackbar.showError(context, 'Could not restore activity');
           }
         }
-      },
-    );
-  }
-
-  /// Opens the New Activity screen prefilled with [activity]'s data, matching
-  /// the existing "edit" entry point used by the Activities list
-  /// (see `activity_card.dart`'s no-nutrition-plan tap handling).
-  void _openActivityEditor(BuildContext context, Activity activity) {
-    context.push(
-      '/distancepacegut',
-      extra: {
-        'activityId': activity.id,
-        'initialDate': activity.scheduledDateTime,
-        'distance': activity.distanceMiles,
-        'initialDurationMinutes': activity.durationMinutes,
-        'goalPace': activity.paceTargetMinutesPerMile,
-        'initialTitle': activity.title,
-        'activityType': activity.activityType.name,
-        // Cycling-specific parameters
-        'cyclingSpeedMph': activity.cyclingSpeedMph,
-        'cyclingTerrain': activity.cyclingTerrain,
-        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
-        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
-        'cyclingSessionGoal': activity.cyclingSessionGoal,
-        // Swimming-specific parameters
-        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
-        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
-        'swimmingWaterTempC': activity.swimmingWaterTempC,
-        // Shared parameters
-        'intensityTarget': activity.intensityTarget,
-        'timeBeforeMinutes': activity.timeBeforeMinutes,
       },
     );
   }

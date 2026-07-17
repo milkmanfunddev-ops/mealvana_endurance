@@ -13,9 +13,10 @@ import '../fuel_timeline_type.dart';
 
 /// One row on the Fuel Timeline: the optional left time-rail + the node card.
 ///
-/// Phase 2 renders cards display-only (meal macro line + workout summary).
-/// Tap interactions — expand/Swap/Remove on meals, open the Ride Fuel sheet on
-/// workouts — arrive in Phase 3 via [onTap].
+/// Unified card interaction (391e3fdb): tapping the card opens its detail/edit
+/// surface via [onTap] (Swap lives inside those surfaces), and swiping the
+/// card in EITHER direction fires [onRemove] — the same gesture contract as
+/// every other meal/activity card in the app.
 class TimelineNodeTile extends ConsumerWidget {
   const TimelineNodeTile({
     super.key,
@@ -23,7 +24,6 @@ class TimelineNodeTile extends ConsumerWidget {
     required this.timelineOpen,
     required this.trackingOn,
     this.onTap,
-    this.onSwap,
     this.onRemove,
   });
 
@@ -34,9 +34,8 @@ class TimelineNodeTile extends ConsumerWidget {
   /// Tap on the card: opens the edit-meal page, or the activity detail page.
   final VoidCallback? onTap;
 
-  /// Meal-only swipe actions: swipe left→right removes, right→left swaps
-  /// (mirrors the Activity Detail food rows).
-  final VoidCallback? onSwap;
+  /// Swipe-to-delete in both directions. Null → the card is not deletable and
+  /// renders without a Dismissible.
   final VoidCallback? onRemove;
 
   static final _timeFmt = DateFormat('h:mm a');
@@ -203,20 +202,21 @@ class TimelineNodeTile extends ConsumerWidget {
       ),
     );
 
-    // No swipe actions wired up → return the bare card.
-    if (onSwap == null && onRemove == null) return card;
+    // Nothing deletable wired up → return the bare card.
+    if (onRemove == null) return card;
 
-    // Swipe right→left (endToStart) = Remove, swipe left→right (startToEnd) =
-    // Swap — the iOS-conventional "swipe left to delete". Matches the Activity
-    // Detail food rows (DismissibleFoodItem). confirmDismiss always returns
-    // false: the actions run via callbacks (Remove soft-deletes with Undo; Swap
-    // navigates) and never structurally dismiss the row.
+    // Swipe in EITHER direction = Remove (unified card interaction 391e3fdb).
+    // Swap stays reachable via tap → edit-meal, which has per-component swap.
+    // confirmDismiss always returns false: the delete runs via the callback
+    // (soft-delete with Undo) and the row leaves through the provider rebuild,
+    // never a structural dismiss.
     return Dismissible(
       key: ValueKey('timeline-meal-${node.id}'),
+      direction: DismissDirection.horizontal,
       background: _swipeBackground(
-        color: AppColors.electrolyteDark,
-        icon: Icons.swap_horiz,
-        label: 'Swap',
+        color: AppColors.dragonfruit,
+        icon: Icons.delete_outline,
+        label: 'Remove',
         alignment: Alignment.centerLeft,
       ),
       secondaryBackground: _swipeBackground(
@@ -226,11 +226,7 @@ class TimelineNodeTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
       ),
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.endToStart) {
-          onRemove?.call();
-        } else if (direction == DismissDirection.startToEnd) {
-          onSwap?.call();
-        }
+        onRemove?.call();
         return false;
       },
       child: card,
@@ -374,21 +370,21 @@ class TimelineNodeTile extends ConsumerWidget {
       ),
     );
 
-    // No swipe actions wired up (e.g. import-only activities have no edit
-    // affordance) → return the bare card.
-    if (onSwap == null && onRemove == null) return card;
+    // Nothing deletable wired up → return the bare card.
+    if (onRemove == null) return card;
 
-    // Swipe right→left (endToStart) = Remove, swipe left→right (startToEnd) =
-    // Edit — the iOS-conventional "swipe left to delete". Mirrors the meal
-    // row's Dismissible above: confirmDismiss always returns false, the
-    // actions run via callbacks (Remove deletes with Undo; Edit navigates)
-    // and never structurally dismiss the row.
+    // Swipe in EITHER direction = Remove (unified card interaction 391e3fdb).
+    // Editing stays reachable via tap → the Activity Detail / editor surface.
+    // Mirrors the meal row's Dismissible above: confirmDismiss always returns
+    // false, the delete runs via the callback (with Undo) and the row leaves
+    // through the provider rebuild, never a structural dismiss.
     return Dismissible(
       key: ValueKey('timeline-workout-${node.id}'),
+      direction: DismissDirection.horizontal,
       background: _swipeBackground(
-        color: AppColors.electrolyteDark,
-        icon: Icons.edit_outlined,
-        label: 'Edit',
+        color: AppColors.dragonfruit,
+        icon: Icons.delete_outline,
+        label: 'Remove',
         alignment: Alignment.centerLeft,
       ),
       secondaryBackground: _swipeBackground(
@@ -398,11 +394,7 @@ class TimelineNodeTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
       ),
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.endToStart) {
-          onRemove?.call();
-        } else if (direction == DismissDirection.startToEnd) {
-          onSwap?.call();
-        }
+        onRemove?.call();
         return false;
       },
       child: card,
