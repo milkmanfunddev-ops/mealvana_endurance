@@ -41,10 +41,22 @@ mealvana_endurance/
 - Preserve offline-first behavior with local-first writes and upload-state tracking.
 - For coach-on-athlete writes that require immediate cross-user visibility, require remote server acknowledgment before success/navigation.
 - Use repository-level on-demand sync (`ensureSynced`), not startup-wide sync-all.
+- PostgREST upserts: never `onConflict` on columns backed by a partial unique index (fails with
+  42P10) — use `onConflict: 'id'`. And `uploadDirtyRecords()` swallows exceptions into a silent
+  `UploadResult.failed()` — always check the result.
+- Skills, agents, and commands must not restate these rules or hardcode volatile facts (schema
+  versions, table lists, tier limits) — point at CLAUDE.md and `/docs` instead, and read the
+  current code for specifics.
 - Keep initialization invariant explicit: `main()` for non-recoverable setup, recoverable init in startup flow.
 - Do not run `flutter build` as assistant execution.
 - Run codegen after Riverpod/Drift annotation/schema changes.
 - Run `/task-checker` after major changes and before commit.
+- Run `/release-cut` whenever a dev or prod build is cut or pushed — it keeps the Notion cut card an
+  honest manifest of what the build carries. A missed cut is what makes the whole board go stale.
+- Run `/sprint-sync` after landing work that maps to a Sprint Task, to keep the swimlane right.
+- Notion writes are scoped to Lee-owned cards. Never edit a card owned by Xuan; never set Status or
+  Branch on the Feature Request / Bug Report boards — those belong to Xuan's worker. See
+  `.claude/notion/boards.md`.
 
 ## App Initialization Pattern (Explicit)
 - `main()` handles non-recoverable bootstrap (e.g., SDK initialization).
@@ -58,6 +70,8 @@ stored in the macOS Keychain (service `mealvana-dev-login`). Prereqs: a booted s
 and `idb`. See the script header for details.
 
 ## Docs Map
+- Notion boards (IDs, release protocol, ownership boundary): `.claude/notion/boards.md`
+- Saved multi-agent workflows (`bug-batch`, `sweep`, `daily-work` — run via the Workflow tool when Lee asks; `daily-work` is launched by the `/daily` skill): `.claude/workflows/`
 - Architecture overview: `/docs/architecture/README.md`
 - Technical patterns and standards: `/docs/technical/README.md`
 - FOA and UI/controller boundaries: `/docs/technical/foa-architecture.md`
