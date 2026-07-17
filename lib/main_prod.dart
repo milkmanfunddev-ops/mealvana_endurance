@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'shared/services/app_config.dart';
 import 'shared/services/app_external_deps.dart';
 import 'shared/services/sentry/sentry_event_filter.dart';
+import 'shared/services/sentry/sentry_replay_sampling.dart';
 import 'shared/services/sentry/sentry_provider_observer.dart';
 import 'shared/widgets/root_app_widget.dart';
 import 'shared/services/privacy/analytics_consent.dart';
@@ -43,6 +44,13 @@ Future<void> main() async {
     final sharedPreferences = await SharedPreferences.getInstance();
     final analyticsConsented =
         analyticsConsentGrantedFromPrefs(sharedPreferences);
+
+    // Resolved before init because the options callback below is synchronous,
+    // and because the cohort roll has to be persisted exactly once per install.
+    final replayOnErrorSampleRate = await resolveReplayOnErrorSampleRate(
+      sharedPreferences,
+      analyticsConsented: analyticsConsented,
+    );
 
     // Initialize Sentry with configuration from .env
     await SentryFlutter.init(
@@ -91,14 +99,18 @@ Future<void> main() async {
         //
         // Read once, at init: a user who withdraws mid-session stops Mixpanel
         // immediately, but replay stays armed until the next launch.
-        if (kDebugMode || !analyticsConsented) {
-          // Also disabled in debug to avoid 200+ lines of codec logs.
-          options.replay.sessionSampleRate = 0.0;
-          options.replay.onErrorSampleRate = 0.0;
-        } else {
-          options.replay.sessionSampleRate = 0.0;   // Don't capture regular sessions
-          options.replay.onErrorSampleRate = 1.0;   // 100% of error sessions get replay
-        }
+        options.replay.sessionSampleRate = 0.0; // Don't capture regular sessions
+        // Armed for a persisted ~10% cohort, not everyone: a non-zero rate runs
+        // the native recorder CONTINUOUSLY for the whole session, which was
+        // cooking testers' phones (measured 2026-07-16: ~1.9x idle CPU, and a
+        // CADisplayLink -> takeScreenshot() stack on a completely idle app).
+        // An armed install behaves exactly as before
+        // (every error ships its 30s video); an unarmed one never starts the
+        // recorder. 0.1 here would be the worst of both worlds — full battery
+        // cost, 90% of replays discarded. Debug stays off outright (200+ lines
+        // of codec logs). Full reasoning: sentry_replay_sampling.dart.
+        options.replay.onErrorSampleRate =
+            kDebugMode ? kReplayOff : replayOnErrorSampleRate;
 
         // Enhanced error tracking
         options.attachStacktrace = true;
