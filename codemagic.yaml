@@ -281,6 +281,13 @@ workflows:
         # lookup fails (e.g. ASC integration permissions issue or empty
         # TestFlight history), falls back to Codemagic's project-level
         # $PROJECT_BUILD_NUMBER, which auto-increments per project build.
+        #
+        # TestFlight alone is not enough: a failed run can create the
+        # Shorebird release and die before publishing, leaving a zombie
+        # release TestFlight never saw. Every retry then resolves the same
+        # number and collides forever (2026-07-17: four builds in a row died
+        # on "existing ios release for 1.21.1+103"). So take the max of both
+        # sides before incrementing.
         script: |
           set -e
           APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier com.milkman.mealvanaendurance.dev --json 2>/dev/null | jq -r '.[0].id // empty')
@@ -294,6 +301,15 @@ workflows:
             echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "TestFlight latest build for com.milkman.mealvanaendurance.dev: $LATEST"
+          fi
+          SB_LATEST=$(shorebird releases list --flavor dev 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest dev release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using TestFlight number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
@@ -491,6 +507,17 @@ workflows:
             echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
+          fi
+          # A failed run can leave a zombie Shorebird release TestFlight never
+          # saw (see the dev-ios resolver) — take the max of both sides.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using TestFlight number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
@@ -723,6 +750,17 @@ workflows:
             echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
+          fi
+          # A failed run can leave a zombie Shorebird release TestFlight never
+          # saw (see the dev-ios resolver) — take the max of both sides.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using TestFlight number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
