@@ -126,9 +126,13 @@ class AppRouter {
         // older build when the release flag is off. `/jade` rides the same
         // flag: its banner entry point is intentionally unrendered, and the
         // chat screen calls the jade-chat edge function on every send.
+        // `/buy-credits` rides it too — with every AI surface hidden there is
+        // nothing to buy credits for, and the 402 paywall flows that push it
+        // all originate from the gated AI calls.
         if ((currentPath == '/meal-log/photo' ||
                 currentPath == '/meal-log/describe' ||
-                currentPath == '/jade') &&
+                currentPath == '/jade' ||
+                currentPath == '/buy-credits') &&
             !ref.read(appConfigProvider).describeMealEnabled) {
           return '/';
         }
