@@ -123,9 +123,12 @@ class AppRouter {
 
         // Metered meal-AI routes fail closed. Hiding the entry points is the
         // primary UX, while this guard also blocks stale deep links from an
-        // older build when the release flag is off.
+        // older build when the release flag is off. `/jade` rides the same
+        // flag: its banner entry point is intentionally unrendered, and the
+        // chat screen calls the jade-chat edge function on every send.
         if ((currentPath == '/meal-log/photo' ||
-                currentPath == '/meal-log/describe') &&
+                currentPath == '/meal-log/describe' ||
+                currentPath == '/jade') &&
             !ref.read(appConfigProvider).describeMealEnabled) {
           return '/';
         }

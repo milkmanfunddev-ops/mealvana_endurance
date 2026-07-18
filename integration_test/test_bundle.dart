@@ -9,8 +9,7 @@ import 'package:patrol/src/platform/contracts/contracts.dart';
 import 'package:test_api/src/backend/invoker.dart';
 
 // START: GENERATED TEST IMPORTS
-import 'flows/settings_persist_flow_test.dart' as flows__settings_persist_flow_test;
-import 'flows/formula_create_pin_flow_test.dart' as flows__formula_create_pin_flow_test;
+import 'flows/fuel_timeline_flow_test.dart' as flows__fuel_timeline_flow_test;
 // END: GENERATED TEST IMPORTS
 
 Future<void> main() async {
@@ -73,8 +72,7 @@ Future<void> main() async {
   });
 
 // START: GENERATED TEST GROUPS
-  group('flows.settings_persist_flow_test', flows__settings_persist_flow_test.main);
-  group('flows.formula_create_pin_flow_test', flows__formula_create_pin_flow_test.main);
+  group('flows.fuel_timeline_flow_test', flows__fuel_timeline_flow_test.main);
 // END: GENERATED TEST GROUPS
 
   final dartTestGroup = await testExplorationCompleter.future;

@@ -7,7 +7,6 @@ import 'package:mealvana_endurance/features/ai_credits/presentation/screens/buy_
 import 'package:mealvana_endurance/features/pro_version/presentation/screens/pro_version_screen.dart';
 import 'package:mealvana_endurance/features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import 'package:mealvana_endurance/features/education/presentation/screens/education_screen.dart';
-import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../helpers/widget_test_harness.dart';
 
@@ -34,13 +33,10 @@ void main() {
     // "Coming Soon" body is rendered.
     testWidgets('BuyCreditsScreen (disabled) renders without overflow',
         (tester) async {
-      await smokeScreen(
-        tester,
-        const BuyCreditsScreen(),
-        overrides: [
-          appConfigProvider.overrideWithValue(AppConfig.forTesting()),
-        ],
-      );
+      // smokeScreen already overrides appConfigProvider with
+      // AppConfig.forTesting() (aiCreditsEnabled = false by default), so no
+      // extra override is needed — passing one here double-overrides and throws.
+      await smokeScreen(tester, const BuyCreditsScreen());
     });
   });
 }

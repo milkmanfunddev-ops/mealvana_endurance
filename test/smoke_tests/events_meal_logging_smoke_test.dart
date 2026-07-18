@@ -76,7 +76,11 @@ Future<void> _smokeWithRouter(
     routes: [GoRoute(path: '/', builder: (_, __) => buildScreen())],
   );
 
-  final allOverrides = <Override>[mockAppExternalDeps(), ...overrides];
+  final allOverrides = <Override>[
+    mockAppExternalDeps(),
+    appConfigProvider.overrideWithValue(AppConfig.forTesting()),
+    ...overrides,
+  ];
 
   bool isOverflow(String s) =>
       s.contains('overflowed') || s.contains('infinite size');

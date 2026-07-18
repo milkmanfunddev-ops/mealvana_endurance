@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
@@ -174,6 +175,9 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   /// happens after the user confirms, and the edit is held in memory until
   /// "Save changes" — so the unsaved-changes guard still protects it.
   Future<void> _rescanPhoto() async {
+    // Metered AI must fail closed: the button is hidden when the release flag
+    // is off, and this guard covers any path that reaches here anyway.
+    if (!ref.read(appConfigProvider).describeMealEnabled) return;
     final source = await _pickImageSource();
     if (source == null || !mounted) return;
 
@@ -504,6 +508,9 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     final controllerState = ref.watch(mealLogControllerProvider);
     final isLoading = controllerState is AsyncLoading;
     final hasComponents = _components.isNotEmpty;
+    final describeMealEnabled = ref.watch(
+      appConfigProvider.select((config) => config.describeMealEnabled),
+    );
 
     return PopScope(
       // Intercept all back-navigation so unsaved edits aren't silently
@@ -535,30 +542,36 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                   children: [
                     const SizedBox(height: AppSpacing.md),
 
-                    // Photo thumbnail — tappable to re-scan with a new photo.
+                    // Photo thumbnail — tappable to re-scan with a new photo
+                    // (view-only while the meal-AI release flag is off).
                     if (_photoPath != null && _photoPath!.isNotEmpty)
                       _PhotoThumbnail(
                         // Keyed by path so the image reloads after a re-scan.
                         key: ValueKey(_photoPath),
                         photoPath: _photoPath!,
-                        onTap: _isRescanning ? null : _rescanPhoto,
+                        onTap: !describeMealEnabled || _isRescanning
+                            ? null
+                            : _rescanPhoto,
                       ),
 
                     // Re-scan action — lets the user recapture the meal photo and
                     // have Jade AI re-estimate the items. Available even when no
                     // photo exists yet (e.g. a manual log gaining a photo).
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _isRescanning ? null : _rescanPhoto,
-                        icon: const Icon(Icons.camera_alt_outlined, size: 20),
-                        label: Text(
-                          (_photoPath != null && _photoPath!.isNotEmpty)
-                              ? 'Re-scan photo'
-                              : 'Scan a photo',
+                    // Hidden while the meal-AI release flag is off so this
+                    // metered entry point fails closed like the others.
+                    if (describeMealEnabled)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _isRescanning ? null : _rescanPhoto,
+                          icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                          label: Text(
+                            (_photoPath != null && _photoPath!.isNotEmpty)
+                                ? 'Re-scan photo'
+                                : 'Scan a photo',
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: AppSpacing.sm),
 
                     // Name

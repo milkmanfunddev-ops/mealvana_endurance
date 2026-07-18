@@ -22,6 +22,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../../helpers/widget_test_harness.dart';
@@ -79,7 +80,12 @@ Future<void> _pumpEditScreen(WidgetTester tester, MealLog log) async {
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [mockAppExternalDeps()],
+      overrides: [
+        mockAppExternalDeps(),
+        // The re-scan entry point is gated on describeMealEnabled (true in
+        // AppConfig.forTesting), so these tests exercise the enabled state.
+        appConfigProvider.overrideWithValue(AppConfig.forTesting()),
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
