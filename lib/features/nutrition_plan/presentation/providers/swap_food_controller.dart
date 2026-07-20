@@ -508,11 +508,19 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
-    await activityDetailController.addFoodItem(
-      food,
-      category,
-      customAmount: customAmount,
-    );
+    if (!params.isCoachView && controllerState.isFuelLogMode == true) {
+      activityDetailController.addFoodToFuelLogFromRawFood(
+        food,
+        category,
+        customAmount: customAmount,
+      );
+    } else {
+      await activityDetailController.addFoodItem(
+        food,
+        category,
+        customAmount: customAmount,
+      );
+    }
   }
 
   /// Refresh foods list and optionally select a food after refresh completes

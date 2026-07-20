@@ -2371,6 +2371,26 @@ class ActivityDetailController extends _$ActivityDetailController {
     );
   }
 
+  /// Add a raw food to the fuel log, converting it to FoodItemData internally.
+  void addFoodToFuelLogFromRawFood(
+    dynamic food,
+    String category, {
+    double? customAmount,
+  }) {
+    final foodItemData = _createFoodItemData(food, customAmount: customAmount);
+    final parts = category.split(':');
+    final sectionId = parts[0];
+    final subPhaseType = parts.length > 1 ? parts[1] : null;
+    addFoodToFuelLog(foodItemData, sectionId, subPhaseType: subPhaseType);
+
+    _trackAnalytics('food_added_to_fuel_log', {
+      'food_name': food?.name,
+      'food_id': food?.id,
+      'section': category,
+      'quantity': customAmount,
+    });
+  }
+
   /// Update feedback fields on the in-memory fuel log.
   void updateFuelLogFeedback({
     int? overallSatisfaction,
