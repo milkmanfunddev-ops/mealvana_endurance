@@ -49,6 +49,12 @@ class _GarminConnectBannerState extends ConsumerState<GarminConnectBanner> {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     return BaseCard(
+      // The banner owns the gap to whatever follows it, so the spacing
+      // disappears along with the banner on the three self-hiding paths
+      // above (dismissed / signed out / already connected). A SizedBox in
+      // the parent Column instead would leave a doubled dead band whenever
+      // the banner is hidden, which is the common case.
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       backgroundColor: isDark
           ? AppColors.electrolyte.withValues(alpha: 0.12)
           : AppColors.electrolyte.withValues(alpha: 0.08),

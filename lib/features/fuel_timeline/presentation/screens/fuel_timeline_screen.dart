@@ -127,6 +127,8 @@ class FuelTimelineScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               // Garmin connect prompt (self-hides once connected). Jade banner
               // intentionally not shown here (Lee, 2026-06-28).
+              // Do NOT add a SizedBox after this: the banner carries its own
+              // bottom margin so the gap vanishes when the banner self-hides.
               const GarminConnectBanner(),
               if (view.trackingOn) ...[
                 EnergyDashboardCard(
