@@ -124,24 +124,6 @@ void main() {
       );
 
       expect(result.nodes.map((n) => n.id).toList(), ['breakfast', 'ride']);
-
-      // Demonstrate the old bug: if eatenAt were on Jul 20 (wrong day),
-      // the meal would sort AFTER the Jul 19 activity.
-      final buggyResult = assembler.assemble(
-        selectedDate: jul19,
-        now: DateTime(2026, 7, 19, 20),
-        meals: [
-          meal('breakfast_wrong_day', eatenAt: DateTime(2026, 7, 20, 8, 30)),
-        ],
-        activities: [
-          workout('ride2', scheduledAt: DateTime(2026, 7, 19, 16, 0)),
-        ],
-        targets: targets(),
-        consumed: const ConsumedTotals(),
-      );
-
-      // With the wrong-day eatenAt, the activity sorts first (the old broken behavior).
-      expect(buggyResult.nodes.map((n) => n.id).toList(), ['ride2', 'breakfast_wrong_day']);
     });
 
     test('events and carb-loading days appear on the timeline', () {

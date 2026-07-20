@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/consumed_totals.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_slot.dart';
 import 'slot_chip_selector.dart';
 
@@ -45,9 +46,7 @@ Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
   MealSlot? initialSlot,
 }) {
   double servings = initialServings;
-  final parsed = DateTime.parse(logDate);
-  final now = DateTime.now();
-  DateTime eatenAt = DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute);
+  DateTime eatenAt = eatenAtForLogDate(logDate);
   MealSlot? slot = initialSlot;
 
   return showModalBottomSheet<QuickLogConfirmResult>(

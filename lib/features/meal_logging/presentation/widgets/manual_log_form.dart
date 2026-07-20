@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
 import 'slot_chip_selector.dart';
@@ -66,9 +67,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   @override
   void initState() {
     super.initState();
-    final parsed = DateTime.parse(widget.logDate);
-    final now = DateTime.now();
-    _eatenAt = DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute);
+    _eatenAt = eatenAtForLogDate(widget.logDate);
   }
 
   @override
@@ -135,9 +134,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
         _sodiumCtrl.clear();
         _notesCtrl.clear();
         _slot = null;
-        final parsed = DateTime.parse(widget.logDate);
-        final now = DateTime.now();
-        _eatenAt = DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute);
+        _eatenAt = eatenAtForLogDate(widget.logDate);
       });
     } else {
       widget.onLogError();
