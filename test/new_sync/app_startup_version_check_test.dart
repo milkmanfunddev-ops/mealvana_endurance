@@ -106,7 +106,10 @@ void main() {
         ),
       ).thenReturn(null);
       when(
-        () => mockVersionCheckService.performSchemaResync(any()),
+        () => mockVersionCheckService.performSchemaResync(
+          any(),
+          targetSchemaVersion: any(named: 'targetSchemaVersion'),
+        ),
       ).thenAnswer((_) async => true);
       when(() => mockDatabase.userDao).thenReturn(mockUserDao);
       when(
@@ -246,7 +249,10 @@ void main() {
           ),
         );
         when(
-          () => mockVersionCheckService.performSchemaResync(any()),
+          () => mockVersionCheckService.performSchemaResync(
+            any(),
+            targetSchemaVersion: any(named: 'targetSchemaVersion'),
+          ),
         ).thenAnswer((_) async => false);
 
         // Act

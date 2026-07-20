@@ -7,6 +7,7 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/version_check_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/privacy/privacy_region_service.dart';
+import '../../../shared/services/performance_telemetry.dart';
 import '../../../shared/models/version_check_result.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 
@@ -52,8 +53,11 @@ class AppStartup extends _$AppStartup {
 
   @override
   Future<AppStartupData> build() async {
+    final startupStopwatch = Stopwatch()..start();
     try {
-      final AppStartupService startupService = ref.read(appStartupServiceProvider);
+      final AppStartupService startupService = ref.read(
+        appStartupServiceProvider,
+      );
 
       // 0a. REGION: start the consent-region lookup immediately, but don't wait
       // on it yet — it overlaps the version-check round-trip below, so it
@@ -68,7 +72,10 @@ class AppStartup extends _$AppStartup {
       // 0. VERSION CHECK: Check app version and schema version BEFORE database initialization
       // This prevents incompatible app versions from accessing the database
       final versionCheckService = ref.read(versionCheckServiceProvider);
-      final versionCheckResult = await versionCheckService.checkVersion();
+      final versionCheckResult = await PerformanceTelemetry.measure(
+        'startup.version_check',
+        versionCheckService.checkVersion,
+      );
 
       // Handle version check results
       if (versionCheckResult.isUpdateRequired) {
@@ -100,6 +107,7 @@ class AppStartup extends _$AppStartup {
         // Perform schema resync: upload dirty records, delete database
         final resyncSuccess = await versionCheckService.performSchemaResync(
           userId,
+          targetSchemaVersion: resyncResult.remoteSchemaVersion,
         );
 
         if (!resyncSuccess) {
@@ -130,19 +138,31 @@ class AppStartup extends _$AppStartup {
       }
 
       // Version check passed - continue with normal startup
-      _logger.info('Version check passed - continuing with normal startup', context: 'VERSION_CHECK');
+      _logger.info(
+        'Version check passed - continuing with normal startup',
+        context: 'VERSION_CHECK',
+      );
 
       // 1. CRITICAL PATH: Run only essential initializations in parallel
       // Analytics and device info are deferred to avoid Android startup deadlock
       // NOTE: Auth state listener is now handled by AuthListenerService (initialized in RootAppWidget)
       await Future.wait([
-        startupService.initializeDatabase(),
-        startupService.setSentryUserContext(),
+        PerformanceTelemetry.measure(
+          'startup.database_initialization',
+          startupService.initializeDatabase,
+        ),
+        PerformanceTelemetry.measure(
+          'startup.sentry_user_context',
+          startupService.setSentryUserContext,
+        ),
         // Joined here so that by the time this provider hands back data — which
         // is what the router waits on before it can send anyone to the consent
         // screen — the region is settled. Without this the router could gate a
         // Californian on a device-signal guess.
-        regionFuture,
+        PerformanceTelemetry.measure(
+          'startup.privacy_region',
+          () => regionFuture,
+        ),
       ]);
 
       // Region resolution wrote to SharedPreferences behind the synchronous
@@ -167,8 +187,12 @@ class AppStartup extends _$AppStartup {
 
       // CRITICAL: Pass currentAuthUserId to getCurrentUserProfile
       // Without this, it returns null even when a valid session exists!
-      final user = await database.userDao.getCurrentUserProfile(
-        currentAuthUserId: currentAuthUserId,
+      final user = await PerformanceTelemetry.measure(
+        'startup.local_user_lookup',
+        () => database.userDao.getCurrentUserProfile(
+          currentAuthUserId: currentAuthUserId,
+        ),
+        threshold: const Duration(milliseconds: 500),
       );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
 
@@ -177,14 +201,11 @@ class AppStartup extends _$AppStartup {
       sentry.addBreadcrumb(
         message: 'App startup completed successfully',
         category: 'app_lifecycle',
-        data: {
-          'startup_time': DateTime.now().toIso8601String(),
-        },
+        data: {'startup_time': DateTime.now().toIso8601String()},
       );
 
-      final isLoggedOut = currentSession == null &&
-          user != null &&
-          hasCompletedOnboarding;
+      final isLoggedOut =
+          currentSession == null && user != null && hasCompletedOnboarding;
 
       return AppStartupData(
         user: user,
@@ -192,12 +213,19 @@ class AppStartup extends _$AppStartup {
         isLoggedOut: isLoggedOut,
       );
     } catch (e, stackTrace) {
-      _logger.error('App startup initialization failed',
+      _logger.error(
+        'App startup initialization failed',
         context: 'APP_STARTUP',
         error: e,
-        stackTrace: stackTrace
+        stackTrace: stackTrace,
       );
       rethrow; // Re-throw to trigger error state in AsyncNotifier
+    } finally {
+      startupStopwatch.stop();
+      PerformanceTelemetry.recordDuration(
+        'startup.total',
+        startupStopwatch.elapsed,
+      );
     }
   }
 }

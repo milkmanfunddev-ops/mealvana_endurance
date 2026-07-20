@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../services/performance_telemetry.dart';
+
 // Platform-specific connection implementations
 import 'connection_native.dart' if (dart.library.html) 'connection_web.dart';
 
@@ -278,7 +280,9 @@ class AppDatabase extends _$AppDatabase {
 
         Future<void> addColumn(String table, String column, String type) async {
           if (!await columnExists(table, column)) {
-            await customStatement('ALTER TABLE $table ADD COLUMN $column $type');
+            await customStatement(
+              'ALTER TABLE $table ADD COLUMN $column $type',
+            );
           }
         }
 
@@ -315,7 +319,10 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('users', 'sweat_sodium', 'TEXT');
           await addColumn('users', 'known_sweat_rate_ml_per_hour', 'INTEGER');
           await addColumn(
-              'users', 'known_sodium_concentration_mg_per_liter', 'INTEGER');
+            'users',
+            'known_sodium_concentration_mg_per_liter',
+            'INTEGER',
+          );
           await addColumn('users', 'sweat_test_date', 'INTEGER');
           await addColumn('users', 'sweat_test_source', 'TEXT');
           await addColumn('users', 'weight_pounds_updated_at', 'INTEGER');
@@ -328,7 +335,10 @@ class AppDatabase extends _$AppDatabase {
         // had no integrations table before this, so we need to seed it.
         if (from < 8) {
           await addColumn(
-              'integrations', 'needs_upload', 'INTEGER NOT NULL DEFAULT 1');
+            'integrations',
+            'needs_upload',
+            'INTEGER NOT NULL DEFAULT 1',
+          );
         }
 
         // v9: Formula Kit local tables — during/pre/post workout template
@@ -426,11 +436,7 @@ class AppDatabase extends _$AppDatabase {
             .toSet();
 
         // Seed tables (already have data - must NOT be recreated)
-        final seedTables = {
-          'foods',
-          'carb_loading_foods',
-          'user_foods',
-        };
+        final seedTables = {'foods', 'carb_loading_foods', 'user_foods'};
 
         // For each table definition, manually create with IF NOT EXISTS
         for (final table in allTables) {
@@ -467,13 +473,26 @@ class AppDatabase extends _$AppDatabase {
           // for this CHECK fix, so this idempotent in-place repair (not a
           // version bump) is what fixes existing installs that reject
           // `provider = 'vdot'` inserts.
-          await _ensureIntegrationsProviderCheck();
+          await PerformanceTelemetry.measure(
+            'database.ensure_integrations_constraint',
+            _ensureIntegrationsProviderCheck,
+            threshold: const Duration(milliseconds: 500),
+          );
 
-          await _validateSchemaIntegrity();
+          await PerformanceTelemetry.measure(
+            'database.validate_schema',
+            _validateSchemaIntegrity,
+            data: {'table_count': allTables.length},
+            threshold: const Duration(milliseconds: 500),
+          );
         }
 
         // Normalize any legacy timestamp strings in user_foods to Unix millis
-        await foodsDao.normalizeUserFoodTimestamps();
+        await PerformanceTelemetry.measure(
+          'database.normalize_user_food_timestamps',
+          foodsDao.normalizeUserFoodTimestamps,
+          threshold: const Duration(milliseconds: 500),
+        );
       },
     );
   }
@@ -515,9 +534,13 @@ class AppDatabase extends _$AppDatabase {
             .map((col) => col.$name)
             .toSet();
 
-        final missingColumns = expectedColumnNames.difference(actualColumnNames);
+        final missingColumns = expectedColumnNames.difference(
+          actualColumnNames,
+        );
         if (missingColumns.isNotEmpty) {
-          errors.add('Table "$tableName" missing columns: ${missingColumns.join(', ')}');
+          errors.add(
+            'Table "$tableName" missing columns: ${missingColumns.join(', ')}',
+          );
         }
       } catch (e) {
         errors.add('Failed to validate table "$tableName": $e');
@@ -532,7 +555,12 @@ class AppDatabase extends _$AppDatabase {
         print('🗑️ Deleting corrupted database to force fresh sync...');
       }
 
-      await deleteAndResync();
+      await deleteAndResync(
+        reason: 'schema_integrity_validation_failed',
+        oldSchemaVersion: schemaVersion,
+        newSchemaVersion: schemaVersion,
+        context: errors.take(3).join(' | '),
+      );
 
       throw DatabaseSchemaException(
         'Database schema is corrupted or incomplete. The app will resync data from the server.',
@@ -564,7 +592,9 @@ class AppDatabase extends _$AppDatabase {
     if (createSql.contains("'vdot'")) return; // already up to date
 
     if (kDebugMode) {
-      print('🔧 Rebuilding integrations table to add \'vdot\' to provider CHECK');
+      print(
+        '🔧 Rebuilding integrations table to add \'vdot\' to provider CHECK',
+      );
     }
 
     // FK toggling must happen outside a transaction; the rebuild itself is a
@@ -649,12 +679,12 @@ class AppDatabase extends _$AppDatabase {
 
     // Check for common schema-related error patterns
     return errorString.contains('check constraint failed') ||
-           errorString.contains('no such column') ||
-           errorString.contains('no such table') ||
-           errorString.contains('foreign key constraint failed') ||
-           errorString.contains('constraint failed') ||
-           errorString.contains('has no column named') ||
-           errorString.contains('table') && errorString.contains('has no column');
+        errorString.contains('no such column') ||
+        errorString.contains('no such table') ||
+        errorString.contains('foreign key constraint failed') ||
+        errorString.contains('constraint failed') ||
+        errorString.contains('has no column named') ||
+        errorString.contains('table') && errorString.contains('has no column');
   }
 
   /// Handle a schema error by closing DB, deleting files, and triggering resync
@@ -689,10 +719,14 @@ class AppDatabase extends _$AppDatabase {
     // Circuit breaker: only attempt recovery once per app session
     if (_schemaRecoveryAttempted) {
       if (kDebugMode) {
-        print('🔧 Schema error detected but recovery already attempted this session');
+        print(
+          '🔧 Schema error detected but recovery already attempted this session',
+        );
         print('   Context: ${context ?? 'unknown'}');
         print('   Error: $error');
-        print('   → Not retrying to prevent infinite loop. Please fix the Drift schema.');
+        print(
+          '   → Not retrying to prevent infinite loop. Please fix the Drift schema.',
+        );
       }
       // Don't retry, just rethrow the original error
       return;
@@ -702,7 +736,9 @@ class AppDatabase extends _$AppDatabase {
     _schemaRecoveryAttempted = true;
 
     if (kDebugMode) {
-      print('🔧 Schema error detected - deleting database and resyncing (one-time recovery)');
+      print(
+        '🔧 Schema error detected - deleting database and resyncing (one-time recovery)',
+      );
       print('   Context: ${context ?? 'unknown'}');
       print('   Error: $error');
     }
@@ -723,7 +759,11 @@ class AppDatabase extends _$AppDatabase {
     }
 
     // Delete the database files
-    await deleteAndResync();
+    await deleteAndResync(
+      reason: 'runtime_schema_error',
+      oldSchemaVersion: database?.schemaVersion,
+      context: context ?? error.runtimeType.toString(),
+    );
 
     // Throw exception to signal app needs to reinitialize database
     throw DatabaseSchemaException(
@@ -739,7 +779,18 @@ class AppDatabase extends _$AppDatabase {
   /// 2. Delete corrupted file
   /// 3. Re-initialize fresh database
   /// 4. Trigger full sync from Supabase
-  static Future<void> deleteAndResync() async {
+  static Future<void> deleteAndResync({
+    required String reason,
+    int? oldSchemaVersion,
+    int? newSchemaVersion,
+    String? context,
+  }) async {
+    PerformanceTelemetry.recordDatabaseReset(
+      reason: reason,
+      oldSchemaVersion: oldSchemaVersion,
+      newSchemaVersion: newSchemaVersion,
+      context: context,
+    );
     // On web there is no database file to delete — the drift data lives in
     // OPFS / IndexedDB, and there is no supported cross-implementation delete
     // we can call here. Recovery-by-file-deletion is native-only. Surface an

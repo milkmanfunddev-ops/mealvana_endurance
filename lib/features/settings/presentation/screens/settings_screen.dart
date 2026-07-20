@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -41,6 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // needed — without requiring 7 taps every time they open Settings.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      recordNavigationDestinationRendered('/settings');
       if (ref.read(internalDeviceFlagProvider) && !_showTesterSection) {
         setState(() => _showTesterSection = true);
       }
@@ -168,7 +170,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -885,7 +886,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           //     context.push('/settings/privacy');
           //   },
           // ),
-
           const SizedBox(height: AppSpacing.sm),
 
           // Help & Feedback

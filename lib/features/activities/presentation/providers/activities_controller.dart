@@ -10,6 +10,7 @@ import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../../../shared/services/performance_telemetry.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
 import '../../domain/brick_metadata.dart';
@@ -40,28 +41,40 @@ class ActivitiesController extends _$ActivitiesController {
     final userId = await ref.read(userIdProvider.future);
 
     // Clean up any abandoned draft activities before loading
-    await service.cleanupDraftActivities(userId);
+    await PerformanceTelemetry.measure(
+      'dashboard.activities.cleanup_drafts',
+      () => service.cleanupDraftActivities(userId),
+      threshold: const Duration(milliseconds: 500),
+    );
 
     // 1. Load local data IMMEDIATELY (no blocking sync)
-    final localData = await service.getAllActivities(userId);
+    final localData = await PerformanceTelemetry.measure(
+      'dashboard.activities.load_local',
+      () => service.getAllActivities(userId),
+      threshold: const Duration(milliseconds: 500),
+    );
 
     // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes
     //    state IN PLACE (no invalidateSelf) so dependents don't see a second
     //    build/spinner and don't re-trigger these background syncs again.
-    unawaited(_backgroundSync(userId));
+    unawaited(
+      PerformanceTelemetry.measure(
+        'dashboard.activities.background_sync',
+        () => _backgroundSync(userId),
+      ),
+    );
 
     // 3. Background integration sync (non-blocking, fire-and-forget) - also
     //    refreshes state in place, sharing the same dedupe path as #2 so a
     //    sync that changes nothing never ripples into a rebuild.
     unawaited(
-      integrationSyncCoordinator
-          .ensureIntegrationsSynced(userId)
-          .then((anySynced) async {
-            if (anySynced) {
-              await _refreshInPlace(userId);
-            }
-          })
-          .catchError((_) {}),
+      PerformanceTelemetry.measure('dashboard.integration_sync', () async {
+        final anySynced = await integrationSyncCoordinator
+            .ensureIntegrationsSynced(userId);
+        if (anySynced) {
+          await _refreshInPlace(userId);
+        }
+      }).catchError((_) {}),
     );
 
     return localData;

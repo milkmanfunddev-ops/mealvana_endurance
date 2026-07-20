@@ -7,6 +7,7 @@ import '../../features/fuel_timeline/presentation/screens/fuel_timeline_screen.d
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
+import '../core/guarded_navigation.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
@@ -102,7 +103,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                       right: 16,
                       child: GestureDetector(
                         key: const ValueKey('calendar.settings_button'),
-                        onTap: () => context.push('/settings'),
+                        onTap: () => context.pushOnce('/settings'),
                         child: FaIcon(
                           FontAwesomeIcons.gear,
                           size: 18,
@@ -140,7 +141,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                 child: GestureDetector(
                   key: const ValueKey('calendar.settings_button'),
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => context.push('/settings'),
+                  onTap: () => context.pushOnce('/settings'),
                   child: Padding(
                     padding: const EdgeInsets.all(15),
                     child: FaIcon(

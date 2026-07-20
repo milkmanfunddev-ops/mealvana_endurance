@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -16,6 +17,7 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart'
     show CalendarViewMode;
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../content/application/content_service.dart';
+import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../integrations/presentation/widgets/garmin_connect_banner.dart';
 import '../../../meal_logging/domain/meal_log.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
@@ -46,6 +48,8 @@ class FuelTimelineScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(calendarSelectedDateProvider);
     final calendarMode = ref.watch(calendarViewProvider);
+    final macrosAreCalculating =
+        ref.watch(dailyMacrosControllerProvider).value?.isCalculating ?? false;
 
     // Brand surface — resolves to blackberry in dark mode, cream in light
     // mode (matches the app's ThemeData, so the screen renders correctly in
@@ -58,6 +62,12 @@ class FuelTimelineScreen extends ConsumerWidget {
           // Header manages its own per-section insets (toggle/month inset more,
           // week strip spreads wide — matching the mockup).
           const FuelTimelineDayHeader(),
+          if (macrosAreCalculating)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              color: AppColors.electrolyte,
+              backgroundColor: Colors.transparent,
+            ),
           if (calendarMode == CalendarViewMode.month) ...[
             const SizedBox(height: 8),
             CalendarMonthViewKyle(
@@ -380,7 +390,7 @@ class FuelTimelineScreen extends ConsumerWidget {
                 ref
                     .read(analyticsTrackerProvider)
                     .trackActivityButtonPressed(selectedDate: selectedDate);
-                context.pushNamed(
+                context.pushNamedOnce(
                   'distancepacegut',
                   extra: {'initialDate': selectedDate},
                 );

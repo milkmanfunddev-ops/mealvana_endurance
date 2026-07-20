@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../calendar/presentation/providers/calendar_view_provider.dart';
@@ -111,7 +111,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
           right: 0,
           child: GestureDetector(
             key: const ValueKey('fuel_timeline.settings'),
-            onTap: () => context.push('/settings'),
+            onTap: () => context.pushOnce('/settings'),
             // Match the gear the shared TabsScreen overlay draws on every other
             // tab (FontAwesome gear, size 18) so the settings affordance is
             // identical across the dashboard and the Events/Learn tabs.

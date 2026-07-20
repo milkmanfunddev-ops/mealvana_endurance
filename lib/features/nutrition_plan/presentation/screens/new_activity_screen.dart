@@ -10,6 +10,7 @@ import '../../../activities/data/activities_repository.dart';
 import '../../../activities/domain/activity_title_formatter.dart';
 import '../../domain/run_parameters.dart' show DistanceUnit;
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/core/guarded_navigation.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
@@ -126,6 +127,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      recordNavigationDestinationRendered('name:distancepacegut');
+    });
 
     // Initialize controllers with event data after first frame
     // Using microtask to avoid modifying providers during build

@@ -16,6 +16,7 @@ import '../../../shared/services/analytics/internal_user_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/performance_telemetry.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
@@ -125,7 +126,10 @@ class AppStartupService {
 
           // Last resort: delete and recreate
           await db.close();
-          await AppDatabase.deleteAndResync();
+          await AppDatabase.deleteAndResync(
+            reason: 'startup_null_profile_recovery_failed',
+            oldSchemaVersion: db.schemaVersion,
+          );
           ref.invalidate(appDatabaseProvider);
 
           // Re-read the provider to trigger fresh database creation
@@ -184,7 +188,10 @@ class AppStartupService {
         await db.close();
 
         // Delete corrupted database files
-        await AppDatabase.deleteAndResync();
+        await AppDatabase.deleteAndResync(
+          reason: 'startup_database_health_check_failed',
+          oldSchemaVersion: db.schemaVersion,
+        );
 
         // Re-initialize with fresh database
         ref.invalidate(appDatabaseProvider);
@@ -211,7 +218,10 @@ class AppStartupService {
 
       // Last resort: try to recover from catastrophic failure
       try {
-        await AppDatabase.deleteAndResync();
+        await AppDatabase.deleteAndResync(
+          reason: 'startup_database_initialization_exception',
+          context: e.runtimeType.toString(),
+        );
         ref.invalidate(appDatabaseProvider);
       } catch (recoveryError) {
         _logger.error(
@@ -242,24 +252,42 @@ class AppStartupService {
       if (!ref.mounted) return;
       try {
         // 1. Initialize device info (safe after first frame)
-        await DeviceInfoService.instance.initialize();
+        await PerformanceTelemetry.measure(
+          'deferred.device_info',
+          DeviceInfoService.instance.initialize,
+        );
 
         // 2. Initialize analytics with device ID
-        await _initializeAnalytics();
+        await PerformanceTelemetry.measure(
+          'deferred.analytics',
+          _initializeAnalytics,
+        );
 
         // 3. Initialize local notifications and tap callbacks
-        await NotificationService.initialize();
+        await PerformanceTelemetry.measure(
+          'deferred.notifications',
+          NotificationService.initialize,
+        );
 
         // 4. Check user session for analytics identification
-        await checkUserSession();
+        await PerformanceTelemetry.measure(
+          'deferred.user_session',
+          checkUserSession,
+        );
 
         // 5. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
-        await _syncCoachStatus();
+        await PerformanceTelemetry.measure(
+          'deferred.coach_status',
+          _syncCoachStatus,
+        );
 
         // 6. Initialize RevenueCat for AI credits.
         // No-op unless aiCreditsEnabled + a RevenueCat key are configured.
-        await _initializeRevenueCat();
+        await PerformanceTelemetry.measure(
+          'deferred.revenuecat',
+          _initializeRevenueCat,
+        );
       } catch (e, stackTrace) {
         // Skip logging if the scope was disposed mid-chain — `_logger` reads
         // `ref` and would throw over the original error.
