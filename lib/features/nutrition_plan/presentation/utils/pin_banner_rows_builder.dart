@@ -65,8 +65,15 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
   // formulas" for a formula they never pinned. Treat ephemeral as absent
   // until a deliberate "we picked this — pin it?" surface is built.
   // Formula-first flip, 2026-07-03.
+  //
+  // EXCEPTION (audit 2026-07-18): an ephemeral decision that also carries
+  // `skippedPersonalFormulas` is NOT invisible. That combination means the
+  // user authored a formula for this phase, it was dropped by scope, and the
+  // safety net picked something else — precisely the case that produced
+  // "my formula was ignored" reports with no on-screen trace. Keep the row so
+  // the banner can explain the miss.
   PinDecision? realDecision(PinDecision? d) =>
-      (d != null && !d.ephemeral) ? d : null;
+      (d != null && (!d.ephemeral || d.hasSkippedFormulas)) ? d : null;
 
   bool isPinnableSubPhase(String type) =>
       type == 'meal' || type == 'snack' || type == 'top_up';

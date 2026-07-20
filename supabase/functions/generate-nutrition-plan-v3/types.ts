@@ -197,5 +197,26 @@ export interface LPPhaseResult {
      * Drives `plan_used_pin` / `plan_pin_fallthrough` analytics. 0 when pins
      * were supplied but none matched scope. Formula Kit PR 2 substep 7. */
     pin_set_size: number;
+    /**
+     * Pinned PERSONAL formulas the user authored for this phase that were
+     * excluded by activity or duration scope, with the reason for each.
+     *
+     * Rides ALONGSIDE the rest of the decision rather than replacing it: when
+     * a scope-excluded personal formula is followed by a system pin that does
+     * fire, `used_pin` is legitimately `true` for the system pin while this
+     * list still records that the user's own formula was dropped. Without it
+     * the two cases are indistinguishable on the wire, which is what made the
+     * "my formula was ignored" report undiagnosable (audit 2026-07-18).
+     *
+     * Absent when nothing was skipped. Consumed by the activity-detail pin
+     * banner's info affordance.
+     */
+    skipped_personal_formulas?: Array<{
+      id: string;
+      name: string;
+      reason: "activity_out_of_scope" | "duration_out_of_scope";
+      formula_durations: string[] | null;
+      workout_bracket: string | null;
+    }>;
   };
 }

@@ -35,6 +35,78 @@ enum PinFallthroughReason {
   }
 }
 
+/// Why a pinned personal formula the user authored for this phase was
+/// excluded from it.
+///
+/// - [activityOutOfScope] — the formula's activity list doesn't include this
+///   workout's sport.
+/// - [durationOutOfScope] — the sport matched, but the workout's duration
+///   bracket isn't one the formula targets. The common case: a "90-150 min"
+///   cycling formula on a 75-minute ride.
+enum SkippedFormulaReason {
+  activityOutOfScope('activity_out_of_scope'),
+  durationOutOfScope('duration_out_of_scope');
+
+  const SkippedFormulaReason(this.wireValue);
+
+  final String wireValue;
+
+  static SkippedFormulaReason? fromWireValue(String? value) {
+    if (value == null) return null;
+    for (final reason in SkippedFormulaReason.values) {
+      if (reason.wireValue == value) return reason;
+    }
+    return null;
+  }
+}
+
+/// One personal formula that was dropped from a phase, with the reason.
+///
+/// Added 2026-07-18 (see `docs/architecture/formula-not-honored-audit-2026-07-18.md`).
+/// Before this existed, a scope-excluded personal formula produced no signal:
+/// when an unrelated system pin fired afterwards the wire reported
+/// `usedPin: true` naming THAT pin, so the banner showed a green "pinned
+/// formula used" state for a formula the user never chose.
+class SkippedPersonalFormula {
+  const SkippedPersonalFormula({
+    required this.id,
+    required this.name,
+    required this.reason,
+    this.formulaDurations = const [],
+    this.workoutBracket,
+  });
+
+  final String id;
+  final String name;
+  final SkippedFormulaReason? reason;
+
+  /// Duration brackets the formula targets, e.g. `['90-150 min']`.
+  final List<String> formulaDurations;
+
+  /// Bracket this workout resolved to, e.g. `'< 90 min'`. Null when unknown.
+  final String? workoutBracket;
+
+  factory SkippedPersonalFormula.fromJson(Map<String, dynamic> json) {
+    return SkippedPersonalFormula(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Your formula',
+      reason: SkippedFormulaReason.fromWireValue(json['reason'] as String?),
+      formulaDurations:
+          (json['formula_durations'] as List<dynamic>?)?.cast<String>() ??
+              const [],
+      workoutBracket: json['workout_bracket'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'reason': reason?.wireValue,
+        'formula_durations': formulaDurations,
+        'workout_bracket': workoutBracket,
+      };
+}
+
 /// Pin honoring telemetry for one phase / sub-phase of a generated plan.
 ///
 /// Mirrors the edge function `pin_decision` wire shape (see PLAN.md PR 2
@@ -52,6 +124,7 @@ class PinDecision {
     required this.fallthroughReason,
     this.pinSetSize = 0,
     this.ephemeral = false,
+    this.skippedPersonalFormulas = const [],
   });
 
   /// True iff the algorithm selected a pinned template for this phase. When
@@ -85,6 +158,18 @@ class PinDecision {
   /// 0 for plans persisted before substep 7 (legacy `pin_decision` shape).
   final int pinSetSize;
 
+  /// Personal formulas the user authored for this phase that were excluded by
+  /// activity or duration scope.
+  ///
+  /// Independent of [usedPin]: a system pin can legitimately fire ([usedPin]
+  /// true) while the user's own formula was still dropped. Both facts must be
+  /// shown, which is what the banner's info affordance is for. Empty on legacy
+  /// plans and whenever nothing was skipped.
+  final List<SkippedPersonalFormula> skippedPersonalFormulas;
+
+  /// True when the user authored a formula for this phase that didn't apply.
+  bool get hasSkippedFormulas => skippedPersonalFormulas.isNotEmpty;
+
   factory PinDecision.fromJson(Map<String, dynamic> json) {
     return PinDecision(
       usedPin: json['used_pin'] as bool? ?? json['usedPin'] as bool? ?? false,
@@ -100,6 +185,13 @@ class PinDecision {
           (json['pinSetSize'] as num?)?.toInt() ??
           0,
       ephemeral: json['ephemeral'] as bool? ?? false,
+      skippedPersonalFormulas: ((json['skipped_personal_formulas'] ??
+                  json['skippedPersonalFormulas'])
+              as List<dynamic>?)
+          ?.whereType<Map<String, dynamic>>()
+          .map(SkippedPersonalFormula.fromJson)
+          .toList(growable: false) ??
+          const [],
     );
   }
 
@@ -111,6 +203,9 @@ class PinDecision {
       'fallthrough_reason': fallthroughReason?.wireValue,
       'pin_set_size': pinSetSize,
       'ephemeral': ephemeral,
+      if (skippedPersonalFormulas.isNotEmpty)
+        'skipped_personal_formulas':
+            skippedPersonalFormulas.map((f) => f.toJson()).toList(),
     };
   }
 

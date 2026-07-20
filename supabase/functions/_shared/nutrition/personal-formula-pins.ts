@@ -102,6 +102,92 @@ export function matchPersonalFormulaPin(
 }
 
 /**
+ * Why a pinned personal formula was excluded from a phase it was authored for.
+ *
+ * - `activity_out_of_scope` — the formula's `activities` list has no overlap
+ *   with the workout's activity type.
+ * - `duration_out_of_scope` — activity matched, but the workout's duration
+ *   bracket is not one the formula targets. This is the common case: a
+ *   "90-150 min" cycling formula on a 75-minute ride.
+ */
+export type PersonalFormulaSkipReason =
+  | "activity_out_of_scope"
+  | "duration_out_of_scope";
+
+export interface PersonalFormulaSkip {
+  id: string;
+  name: string;
+  reason: PersonalFormulaSkipReason;
+  /** Brackets the formula targets. Null when the formula is unscoped. */
+  formula_durations: string[] | null;
+  /** Bracket this workout resolved to, e.g. "< 90 min". Null when unknown. */
+  workout_bracket: string | null;
+}
+
+/**
+ * Explain why the user's pinned personal formulas did not apply to this
+ * workout. Mirrors the scope gates in [matchPersonalFormulaPin] exactly, but
+ * records a reason per excluded formula instead of returning the first match.
+ *
+ * Intended to be called ONLY when [matchPersonalFormulaPin] returned null —
+ * if a formula was honored there is nothing to explain.
+ *
+ * Motivation (audit 2026-07-18): a scope-excluded personal formula previously
+ * produced no signal at all. When an unrelated `during_system` pin fired later
+ * in the same phase, the wire response reported `used_pin: true` naming THAT
+ * pin, so the client rendered a green "pinned formula used" banner while the
+ * user's own formula had been silently discarded — indistinguishable from the
+ * app ignoring their formula outright. This list rides alongside whatever
+ * decision is ultimately emitted so the skip stays visible either way.
+ */
+export function collectPersonalFormulaSkips(
+  personalFormulas: PersonalFormulaPin[],
+  phase: "before" | "during" | "after",
+  activityType: string,
+  durationMinutes?: number,
+): PersonalFormulaSkip[] {
+  // `before` has no activity/duration axis — a before formula is never
+  // scope-excluded, so there is nothing to report.
+  if (phase === "before") return [];
+
+  const workoutBracket = phase === "during" && durationMinutes !== undefined
+    ? durationBracket(durationMinutes)
+    : null;
+
+  const skips: PersonalFormulaSkip[] = [];
+  for (const f of personalFormulas) {
+    if (f.phase !== phase) continue;
+
+    if (!activityInScope(f.activities, activityType)) {
+      skips.push({
+        id: f.id,
+        name: f.name,
+        reason: "activity_out_of_scope",
+        formula_durations: f.durations,
+        workout_bracket: workoutBracket,
+      });
+      continue;
+    }
+
+    if (phase === "during") {
+      const durs = f.durations;
+      if (durs !== null && durs.length > 0 && durationMinutes !== undefined) {
+        if (!durs.includes(durationBracket(durationMinutes))) {
+          skips.push({
+            id: f.id,
+            name: f.name,
+            reason: "duration_out_of_scope",
+            formula_durations: durs,
+            workout_bracket: workoutBracket,
+          });
+        }
+      }
+    }
+  }
+  return skips;
+}
+
+/**
  * Map a before personal-formula `sub_phase` tag to its BeforePhaseResult slot.
  * Returns null for an untagged (no-timing) formula — timing is required for
  * before formulas, so an untagged one is never honored (defensive: the client

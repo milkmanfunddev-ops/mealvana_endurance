@@ -119,18 +119,173 @@ class _PinStatusBannerState extends State<PinStatusBanner>
   bool get _hasAnyHonored =>
       widget.rows.any((r) => r.decision.usedPin);
 
+  /// Rows where the user authored a formula for the phase that didn't apply.
+  /// Drives the "?" affordance — this is the case the banner was previously
+  /// silent about (audit 2026-07-18).
+  List<PinStatusBannerRow> get _skippedRows => widget.rows
+      .where((r) => r.decision.hasSkippedFormulas)
+      .toList(growable: false);
+
+  bool get _hasSkippedFormulas => _skippedRows.isNotEmpty;
+
+  /// Human sentence for one skipped formula. Falls back to a generic line for
+  /// an unrecognised reason so a future server-side reason never renders blank.
+  String _skipExplanation(SkippedPersonalFormula f) {
+    switch (f.reason) {
+      case SkippedFormulaReason.durationOutOfScope:
+        final targets = f.formulaDurations.isEmpty
+            ? 'a different workout length'
+            : f.formulaDurations.join(', ');
+        final bracket = f.workoutBracket;
+        return bracket == null
+            ? '“${f.name}” is set for $targets, which doesn\'t match this '
+                'workout\'s length.'
+            : '“${f.name}” is set for $targets. This workout falls in '
+                '$bracket, so it wasn\'t used.';
+      case SkippedFormulaReason.activityOutOfScope:
+        return '“${f.name}” isn\'t set up for this activity type.';
+      case null:
+        return '“${f.name}” didn\'t match this workout.';
+    }
+  }
+
+  void _showSkipDetails() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppColors.warning,
+                    size: 22,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Why your formula wasn\'t used',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Theme.of(sheetContext).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              for (final row in _skippedRows) ...[
+                Text(
+                  row.label,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(sheetContext).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                for (final f in row.decision.skippedPersonalFormulas)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: Text(
+                      _skipExplanation(f),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(sheetContext)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              Text(
+                'You can widen the workout lengths or activities a formula '
+                'covers by editing it in your Formula Library.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              GestureDetector(
+                key: const ValueKey('pin_status_banner.skip_details_cta'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _handleFormulaLibraryTap();
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.20),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Edit in Formula Library',
+                        style: AppTextStyles.buttonPrimary.copyWith(
+                          color: Theme.of(sheetContext).colorScheme.onSurface,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xxs),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: Theme.of(sheetContext).colorScheme.onSurface,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Accent colour drives the entire banner tone. All success → teal,
   /// otherwise orange (mixed states still read as "needs attention").
-  Color get _accentColor =>
-      _hasAnyFallthrough ? AppColors.warning : AppColors.electrolyte;
+  /// A skipped personal formula counts as "needs attention" even when a
+  /// system pin fired — the user did not get what they authored.
+  Color get _accentColor => (_hasAnyFallthrough || _hasSkippedFormulas)
+      ? AppColors.warning
+      : AppColors.electrolyte;
 
   String get _headerTitle {
+    // Checked FIRST: a skipped personal formula must never render as an
+    // unqualified success, even when something else was honored. That
+    // mismatch is exactly what made "my formula was ignored" invisible.
+    if (_hasSkippedFormulas) return 'Your formula didn\'t apply here';
     if (!_hasAnyHonored) return 'Pin didn\'t apply to this workout';
     if (!_hasAnyFallthrough) return 'Using your pinned formulas';
     return 'Some pins honored, some skipped';
   }
 
   String get _headerSubtitle {
+    if (_hasSkippedFormulas) {
+      final count = _skippedRows
+          .expand((r) => r.decision.skippedPersonalFormulas)
+          .length;
+      return count == 1
+          ? '1 of your formulas was skipped — tap ? for why'
+          : '$count of your formulas were skipped — tap ? for why';
+    }
     final honoredCount =
         widget.rows.where((r) => r.decision.usedPin).length;
     final skippedCount = widget.rows.length - honoredCount;
@@ -311,6 +466,29 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                       ],
                     ),
                   ),
+                  // "?" affordance — only when the user authored a formula
+                  // for a phase that didn't apply. Without this the banner
+                  // can read "pinned formula used" while the user's own
+                  // formula was silently dropped (audit 2026-07-18).
+                  if (_hasSkippedFormulas)
+                    IconButton(
+                      key: const ValueKey(
+                        'pin_status_banner.skip_details_button',
+                      ),
+                      onPressed: _showSkipDetails,
+                      icon: Icon(
+                        Icons.help_outline,
+                        color: AppColors.warning,
+                        size: 20,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      tooltip: 'Why your formula wasn\'t used',
+                    ),
                   RotationTransition(
                     turns:
                         Tween<double>(begin: 0.0, end: 0.5).animate(

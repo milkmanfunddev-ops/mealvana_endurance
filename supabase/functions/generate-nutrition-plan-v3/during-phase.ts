@@ -37,6 +37,7 @@ import {
 import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
 import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
 import {
+  collectPersonalFormulaSkips,
   matchPersonalFormulaPin,
   personalFormulaToFoodResults,
 } from "../_shared/nutrition/personal-formula-pins.ts";
@@ -470,6 +471,44 @@ export async function generateDuringPhase(
         fallthrough_reason: "personal_formula_empty",
         pin_set_size: 1,
       };
+    } else {
+      // No personal formula matched this workout's scope. Record WHY for each
+      // formula the user authored for this phase, so the client can explain
+      // the miss instead of silently showing a system formula.
+      //
+      // Critical: this must ride alongside whatever decision is emitted
+      // downstream. A system pin firing later would otherwise overwrite the
+      // whole decision with `used_pin: true`, and the user would see a green
+      // "pinned formula used" banner naming a formula they never chose
+      // (audit 2026-07-18).
+      const skips = collectPersonalFormulaSkips(
+        personalFormulaPins,
+        "during",
+        activityType,
+        durationMinutes,
+      );
+      if (skips.length > 0) {
+        for (const s of skips) {
+          console.warn(
+            `[PLAN-V3] During: personal formula "${s.name}" (${s.id}) ` +
+              `skipped — ${s.reason}` +
+              (s.reason === "duration_out_of_scope"
+                ? ` (workout is ${s.workout_bracket}, formula targets ` +
+                  `${(s.formula_durations ?? []).join(", ")})`
+                : ""),
+          );
+        }
+        duringPinDecision = {
+          ...(duringPinDecision ?? {
+            used_pin: false,
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: "no_pin_for_scope",
+            pin_set_size: 0,
+          }),
+          skipped_personal_formulas: skips,
+        };
+      }
     }
   }
 
@@ -564,6 +603,15 @@ export async function generateDuringPhase(
               pinned_template_name: first.name,
               fallthrough_reason: null,
               pin_set_size: pinInScopeCount,
+              // Preserve any personal-formula skips recorded above. A system
+              // pin firing here does NOT mean the user got what they asked
+              // for — before this was carried forward, the response claimed
+              // `used_pin: true` naming this system pin while the user's own
+              // formula had been silently dropped (audit 2026-07-18).
+              ...(duringPinDecision?.skipped_personal_formulas && {
+                skipped_personal_formulas:
+                  duringPinDecision.skipped_personal_formulas,
+              }),
             };
           }
         }
@@ -637,6 +685,13 @@ export async function generateDuringPhase(
                 pinned_template_name: templateResult.template_name,
                 fallthrough_reason: null,
                 pin_set_size: duringPinDecision?.pin_set_size ?? 0,
+                // An ephemeral default formula is even less "what the user
+                // asked for" than a real system pin — carry the skips so the
+                // banner can still explain the miss.
+                ...(duringPinDecision?.skipped_personal_formulas && {
+                  skipped_personal_formulas:
+                    duringPinDecision.skipped_personal_formulas,
+                }),
               }
               : duringPinDecision;
             return {
@@ -681,6 +736,10 @@ export async function generateDuringPhase(
               pinned_template_name: null,
               fallthrough_reason: "pinned_template_unrenderable",
               pin_set_size: duringPinDecision.pin_set_size,
+              ...(duringPinDecision.skipped_personal_formulas && {
+                skipped_personal_formulas:
+                  duringPinDecision.skipped_personal_formulas,
+              }),
             };
           }
 
