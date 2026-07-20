@@ -104,7 +104,12 @@ class DraftMealState {
 class DraftMealController extends _$DraftMealController {
   @override
   DraftMealState build(String logDate) {
-    return DraftMealState(components: const [], eatenAt: DateTime.now());
+    final parsed = DateTime.parse(logDate);
+    final now = DateTime.now();
+    return DraftMealState(
+      components: const [],
+      eatenAt: DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute),
+    );
   }
 
   void addComponent(MealComponent component) {
@@ -177,7 +182,12 @@ class DraftMealController extends _$DraftMealController {
 
   /// Discards the current draft (e.g. user taps "Clear").
   void clear() {
-    state = DraftMealState(components: const [], eatenAt: DateTime.now());
+    final parsed = DateTime.parse(logDate);
+    final now = DateTime.now();
+    state = DraftMealState(
+      components: const [],
+      eatenAt: DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute),
+    );
   }
 
   /// Persists the draft as a single [MealLog] row via
