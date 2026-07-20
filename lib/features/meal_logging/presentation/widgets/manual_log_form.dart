@@ -60,8 +60,16 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   final _notesCtrl = TextEditingController();
 
   MealSlot? _slot;
-  DateTime _eatenAt = DateTime.now();
+  late DateTime _eatenAt;
   bool _showExtra = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final parsed = DateTime.parse(widget.logDate);
+    final now = DateTime.now();
+    _eatenAt = DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute);
+  }
 
   @override
   void dispose() {
@@ -127,7 +135,9 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
         _sodiumCtrl.clear();
         _notesCtrl.clear();
         _slot = null;
-        _eatenAt = DateTime.now();
+        final parsed = DateTime.parse(widget.logDate);
+        final now = DateTime.now();
+        _eatenAt = DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute);
       });
     } else {
       widget.onLogError();
