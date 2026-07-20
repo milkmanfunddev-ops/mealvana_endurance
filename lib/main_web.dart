@@ -100,7 +100,11 @@ Future<void> main() async {
         options.maxBreadcrumbs = 100;
 
         options.beforeSend = (event, hint) {
-          if (!kDebugMode && (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
+          // Device diagnostics (MetricKit hangs/CPU exceptions) are captured at
+          // info level by design and must not be swept up by this drop.
+          if (!kDebugMode &&
+              !isDiagnosticEvent(event) &&
+              (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
             return null;
           }
           // Drop known low-signal noise (offline/DNS, transient TLS resets,

@@ -126,7 +126,11 @@ Future<void> main() async {
         // Filter sensitive errors
         options.beforeSend = (event, hint) {
           // Don't send debug/info logs in production
-          if (!kDebugMode && (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
+          // Device diagnostics (MetricKit hangs/CPU exceptions) are captured at
+          // info level by design and must not be swept up by this drop.
+          if (!kDebugMode &&
+              !isDiagnosticEvent(event) &&
+              (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
             return null;
           }
 

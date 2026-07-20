@@ -15,6 +15,27 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 ///
 /// See the 2026-07-01 and 2026-07-11 Sentry audits for the originating issue
 /// IDs (search this file's git history / MEALVANA-ENDURANCE-DEV-* shortIds).
+/// Returns `true` when [event] is a device diagnostic that must survive the
+/// `beforeSend` level filter.
+///
+/// MetricKit payloads are captured at *info* level on purpose — see
+/// `MetricKitReporter.forward` in `ios/Runner/MetricKitReporter.swift`, which
+/// calls `scope.setLevel(.info)` so hang reports never page anyone. But every
+/// flavour's `beforeSend` drops all info events in release builds, so the
+/// highest-value real-device signal we have — `MXDiagnosticPayload` hang and
+/// CPU-exception reports, carrying native call stacks — was captured and then
+/// silently thrown away in production. Diagnostics are therefore exempt from
+/// the level drop.
+///
+/// Exempt from the *level* filter only: diagnostics still go through
+/// [isSentryNoise] like everything else.
+///
+/// Keyed on the `metrickit` tag that `MetricKitReporter` sets on every payload
+/// it forwards. If that tag is ever renamed, rename it here too or prod goes
+/// blind again — silently, because dropped events leave no trace.
+bool isDiagnosticEvent(SentryEvent event) =>
+    event.tags?.containsKey('metrickit') ?? false;
+
 bool isSentryNoise(SentryEvent event) {
   final buffer = StringBuffer();
 
