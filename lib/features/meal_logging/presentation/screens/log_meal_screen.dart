@@ -285,6 +285,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     final result = await showQuickLogConfirmSheet(
       context,
       title: title,
+      logDate: widget.logDate,
       showServingsStepper: showServingsStepper,
       initialServings: initialServings,
       previewTotals: (servings) => _totalsOf(buildComponents(servings)),
@@ -317,6 +318,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     final result = await showQuickLogConfirmSheet(
       context,
       title: recipe.name,
+      logDate: widget.logDate,
       previewTotals: (servings) => ConsumedTotals(
         calories: (nutrition.calories * servings).round(),
         carbsG: nutrition.carbohydratesGrams * servings,
@@ -354,6 +356,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     final result = await showQuickLogConfirmSheet(
       context,
       title: meal.name,
+      logDate: widget.logDate,
       showServingsStepper: false,
       previewTotals: (_) => ConsumedTotals(
         calories: meal.calories ?? 0,

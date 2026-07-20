@@ -38,13 +38,16 @@ class QuickLogConfirmResult {
 Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
   BuildContext context, {
   required String title,
+  required String logDate,
   bool showServingsStepper = true,
   double initialServings = 1.0,
   ConsumedTotals Function(double servings)? previewTotals,
   MealSlot? initialSlot,
 }) {
   double servings = initialServings;
-  DateTime eatenAt = DateTime.now();
+  final parsed = DateTime.parse(logDate);
+  final now = DateTime.now();
+  DateTime eatenAt = DateTime(parsed.year, parsed.month, parsed.day, now.hour, now.minute);
   MealSlot? slot = initialSlot;
 
   return showModalBottomSheet<QuickLogConfirmResult>(
