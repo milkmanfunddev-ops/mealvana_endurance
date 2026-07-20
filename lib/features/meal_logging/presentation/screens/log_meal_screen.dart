@@ -29,6 +29,7 @@ import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
 import '../../application/meal_logging_service.dart' show RecipeLogParams;
 import '../../domain/consumed_totals.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_auto_name.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/saved_meal.dart';
@@ -563,7 +564,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           logDate: widget.logDate,
           source: MealLogSource.manual,
           components: components,
-          eatenAt: DateTime.now(),
+          eatenAt: eatenAtForLogDate(widget.logDate),
           logMethod: 'barcode',
         );
     _afterQuickLog();

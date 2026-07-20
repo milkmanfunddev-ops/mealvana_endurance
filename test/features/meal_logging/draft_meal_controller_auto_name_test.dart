@@ -106,4 +106,44 @@ void main() {
       expect(state.nameManuallySet, isFalse);
     });
   });
+
+  group('DraftMealController eatenAt seeding', () {
+    late ProviderContainer container;
+
+    setUp(() {
+      container = ProviderContainer();
+      addTearDown(container.dispose);
+    });
+
+    test('build() seeds eatenAt on the logDate day, not today', () {
+      // Regression (bug 3a3e3fdb): eatenAt used to be DateTime.now(), so a
+      // meal built for a past day carried today's date and sank to the
+      // bottom of that day's fuel timeline.
+      final state = container.read(draftMealControllerProvider(_logDate));
+
+      expect(state.eatenAt.year, 2026);
+      expect(state.eatenAt.month, 7);
+      expect(state.eatenAt.day, 4);
+    });
+
+    test('clear() re-seeds eatenAt on the logDate day, not today', () {
+      final notifier =
+          container.read(draftMealControllerProvider(_logDate).notifier);
+      notifier.addComponent(_c('Banana'));
+      notifier.clear();
+
+      final state = container.read(draftMealControllerProvider(_logDate));
+
+      expect(state.eatenAt.year, 2026);
+      expect(state.eatenAt.month, 7);
+      expect(state.eatenAt.day, 4);
+    });
+
+    test('a malformed logDate does not throw out of build()', () {
+      expect(
+        () => container.read(draftMealControllerProvider('garbage')),
+        returnsNormally,
+      );
+    });
+  });
 }

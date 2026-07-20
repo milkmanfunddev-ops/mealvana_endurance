@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
@@ -100,7 +101,12 @@ class _RecentSavedPickerScreenState
   Future<void> _logSavedMeal(SavedMeal meal, MealSlot slot) async {
     await ref
         .read(mealLogControllerProvider.notifier)
-        .logSavedMeal(savedMeal: meal, slot: slot, logDate: _logDate!);
+        .logSavedMeal(
+          savedMeal: meal,
+          slot: slot,
+          logDate: _logDate!,
+          eatenAt: eatenAtForLogDate(_logDate!),
+        );
     if (!mounted) return;
     _checkSuccess();
   }
@@ -115,6 +121,7 @@ class _RecentSavedPickerScreenState
           logDate: _logDate!,
           source: MealLogSource.saved,
           components: [component],
+          eatenAt: eatenAtForLogDate(_logDate!),
         );
     if (!mounted) return;
     _checkSuccess();
@@ -125,7 +132,12 @@ class _RecentSavedPickerScreenState
     if (meals.isEmpty) return;
     await ref
         .read(mealLogControllerProvider.notifier)
-        .logSavedMeals(savedMeals: meals, slot: slot, logDate: _logDate!);
+        .logSavedMeals(
+          savedMeals: meals,
+          slot: slot,
+          logDate: _logDate!,
+          eatenAt: eatenAtForLogDate(_logDate!),
+        );
     if (!mounted) return;
     _checkSuccess(count: meals.length);
   }
