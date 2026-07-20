@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../domain/daily_macro_targets.dart';
 import '../domain/enums.dart';
 
@@ -14,18 +16,23 @@ DailyMacroTargetsRepository dailyMacroTargetsRepository(Ref ref) {
   return DailyMacroTargetsRepository(
     database: ref.read(appDatabaseProvider),
     supabase: Supabase.instance.client,
+    sentry: ref.read(sentryReporterProvider),
   );
 }
 
 class DailyMacroTargetsRepository {
-  const DailyMacroTargetsRepository({
+  DailyMacroTargetsRepository({
     required AppDatabase database,
     required SupabaseClient supabase,
-  })  : _database = database,
-        _supabase = supabase;
+    SentryReporter sentry = const NoopSentryReporter(),
+  }) : _database = database,
+       _supabase = supabase,
+       _sentry = sentry;
 
   final AppDatabase _database;
   final SupabaseClient _supabase;
+  final SentryReporter _sentry;
+  bool _reportedRemoteSaveFailureThisSession = false;
 
   /// Algorithm version this client expects. Cached rows from older versions
   /// are treated as misses so the next read recalculates with the current
@@ -33,16 +40,21 @@ class DailyMacroTargetsRepository {
   static const String _expectedAlgorithmVersion = 'v5.0.0';
 
   /// Get cached macro targets for a specific date
-  Future<DailyMacroTargets?> getCachedForDate(String userId, DateTime date) async {
+  Future<DailyMacroTargets?> getCachedForDate(
+    String userId,
+    DateTime date,
+  ) async {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
-    final results = await _database.customSelect(
-      'SELECT * FROM daily_macro_targets WHERE user_id = ? AND target_date = ? LIMIT 1',
-      variables: [
-        Variable.withString(userId),
-        Variable.withInt(normalizedDate.millisecondsSinceEpoch),
-      ],
-    ).get();
+    final results = await _database
+        .customSelect(
+          'SELECT * FROM daily_macro_targets WHERE user_id = ? AND target_date = ? LIMIT 1',
+          variables: [
+            Variable.withString(userId),
+            Variable.withInt(normalizedDate.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
 
     if (results.isEmpty) return null;
 
@@ -70,19 +82,24 @@ class DailyMacroTargetsRepository {
     String userId,
     DateTime startOfWeek,
   ) async {
-    final normalizedStart =
-        DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+    final normalizedStart = DateTime(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+    );
     final normalizedEnd = normalizedStart.add(const Duration(days: 6));
 
-    final results = await _database.customSelect(
-      '''SELECT * FROM daily_macro_targets
+    final results = await _database
+        .customSelect(
+          '''SELECT * FROM daily_macro_targets
          WHERE user_id = ? AND target_date >= ? AND target_date <= ?''',
-      variables: [
-        Variable.withString(userId),
-        Variable.withInt(normalizedStart.millisecondsSinceEpoch),
-        Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
-      ],
-    ).get();
+          variables: [
+            Variable.withString(userId),
+            Variable.withInt(normalizedStart.millisecondsSinceEpoch),
+            Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
 
     final map = <int, DailyMacroTargets>{};
     final staleDates = <DateTime>[];
@@ -145,12 +162,31 @@ class DailyMacroTargetsRepository {
   /// Save macro targets to Supabase
   Future<void> saveToRemote(DailyMacroTargets targets) async {
     try {
-      await _supabase.from('daily_macro_targets').upsert(
-        targets.toJson(),
-        onConflict: 'user_id,target_date',
-      );
+      await _supabase
+          .from('daily_macro_targets')
+          .upsert(targets.toJson(), onConflict: 'user_id,target_date');
     } catch (e) {
-      // Don't rethrow - remote save failures shouldn't block the UI
+      // Don't rethrow - remote save failures shouldn't block the UI. Do make
+      // them visible: RLS/user-id mismatches previously disappeared here and
+      // made remote cache health impossible to diagnose.
+      _sentry.addBreadcrumb(
+        message: 'Daily macro remote save failed',
+        category: 'daily_macros.remote_cache',
+        level: SentryLevel.warning,
+        data: {'error_type': e.runtimeType.toString()},
+      );
+      if (!_reportedRemoteSaveFailureThisSession) {
+        _reportedRemoteSaveFailureThisSession = true;
+        await _sentry.captureMessage(
+          'Daily macro remote save failed',
+          level: SentryLevel.warning,
+          tags: {
+            'component': 'daily_macros',
+            'operation': 'remote_cache_save',
+            'error_type': e.runtimeType.toString(),
+          },
+        );
+      }
     }
   }
 
@@ -160,19 +196,25 @@ class DailyMacroTargetsRepository {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final normalizedStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final normalizedStart = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
     final normalizedEnd = DateTime(endDate.year, endDate.month, endDate.day);
 
-    final results = await _database.customSelect(
-      '''SELECT * FROM daily_macro_targets
+    final results = await _database
+        .customSelect(
+          '''SELECT * FROM daily_macro_targets
          WHERE user_id = ? AND target_date >= ? AND target_date <= ?
          ORDER BY target_date ASC''',
-      variables: [
-        Variable.withString(userId),
-        Variable.withInt(normalizedStart.millisecondsSinceEpoch),
-        Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
-      ],
-    ).get();
+          variables: [
+            Variable.withString(userId),
+            Variable.withInt(normalizedStart.millisecondsSinceEpoch),
+            Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
 
     return results.map(_mapRowToDomain).toList();
   }
@@ -244,7 +286,9 @@ class DailyMacroTargetsRepository {
     return DailyMacroTargets(
       id: row.read<String>('id'),
       userId: row.read<String>('user_id'),
-      targetDate: DateTime.fromMillisecondsSinceEpoch(row.read<int>('target_date')),
+      targetDate: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('target_date'),
+      ),
       carbG: row.read<double>('carb_g'),
       protG: row.read<double>('prot_g'),
       fatG: row.read<double>('fat_g'),
@@ -257,8 +301,12 @@ class DailyMacroTargetsRepository {
       ea: row.readNullable<double>('ea'),
       eaStatus: EaStatus.fromDbValue(row.readNullable<String>('ea_status')),
       algorithmVersion: row.read<String>('algorithm_version'),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('created_at')),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('updated_at')),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('created_at'),
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('updated_at'),
+      ),
     );
   }
 }

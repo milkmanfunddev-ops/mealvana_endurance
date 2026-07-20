@@ -24,15 +24,30 @@ void main() {
 
   final epoch = DateTime(2026, 1, 1);
 
-  Activity activityOn(DateTime when, {String id = 'a1', String title = 'Run'}) {
+  Activity activityOn(
+    DateTime when, {
+    String id = 'a1',
+    String title = 'Run',
+    int? durationMinutes,
+    double? distanceMiles,
+    IntensityLevel? intensityLevel,
+    DateTime? updatedAt,
+    DateTime? lastSyncedAt,
+    bool? needsUpload,
+  }) {
     return Activity(
       id: id,
       userId: 'u1',
       activityType: ActivityType.running,
       title: title,
       scheduledDateTime: when,
+      durationMinutes: durationMinutes,
+      distanceMiles: distanceMiles,
+      intensityLevel: intensityLevel,
       createdAt: epoch,
-      updatedAt: epoch,
+      updatedAt: updatedAt ?? epoch,
+      lastSyncedAt: lastSyncedAt,
+      needsUpload: needsUpload,
     );
   }
 
@@ -130,11 +145,86 @@ void main() {
 
     test('an edited activity that did not move marks its day once', () {
       final dates = changedActivityDates(
-        [activityOn(wednesday, title: 'Easy run')],
-        [activityOn(wednesday, title: 'Tempo run')],
+        [activityOn(wednesday, durationMinutes: 45)],
+        [activityOn(wednesday, durationMinutes: 90)],
       );
       expect(dates, equals({wednesday}));
     });
+
+    test('every field the macro calculation reads counts as a change', () {
+      // One case per input in `_macroInputsDiffer`. If the macro calculation
+      // starts reading another field, add it here and there together.
+      final cases = <String, List<Activity>>{
+        'durationMinutes': [
+          activityOn(wednesday, durationMinutes: 45),
+          activityOn(wednesday, durationMinutes: 90),
+        ],
+        'distanceMiles': [
+          activityOn(wednesday, distanceMiles: 5),
+          activityOn(wednesday, distanceMiles: 12),
+        ],
+        'intensityLevel': [
+          activityOn(wednesday, intensityLevel: IntensityLevel.easy),
+          activityOn(wednesday, intensityLevel: IntensityLevel.race),
+        ],
+      };
+
+      cases.forEach((field, revisions) {
+        expect(
+          changedActivityDates([revisions[0]], [revisions[1]]),
+          equals({wednesday}),
+          reason: '$field feeds the macro calculation and must invalidate',
+        );
+      });
+    });
+
+    test('a macro-irrelevant edit changes nothing', () {
+      // Title never reaches the edge function. Renaming a workout should not
+      // cost the user a cached week and a network round trip.
+      final dates = changedActivityDates(
+        [activityOn(wednesday, title: 'Easy run')],
+        [activityOn(wednesday, title: 'Tempo run')],
+      );
+      expect(dates, isEmpty);
+    });
+
+    test(
+      'a sync that only restamps bookkeeping timestamps changes nothing',
+      () {
+        // REGRESSION: `Activity.operator==` includes updatedAt / lastSyncedAt /
+        // needsUpload, and background sync restamps them on rows nobody edited.
+        // Comparing whole objects therefore reported "modified" on every launch,
+        // and each false positive expanded to a full week — 28 cached days wiped
+        // across four unrelated weeks, forcing a blocking edge-function call to
+        // rebuild the day the dashboard was about to paint.
+        final before = activityOn(
+          wednesday,
+          durationMinutes: 60,
+          updatedAt: epoch,
+          lastSyncedAt: null,
+          needsUpload: true,
+        );
+        final afterSync = activityOn(
+          wednesday,
+          durationMinutes: 60, // identical training content
+          updatedAt: DateTime(2026, 7, 18, 9, 1),
+          lastSyncedAt: DateTime(2026, 7, 18, 9, 1),
+          needsUpload: false,
+        );
+
+        expect(
+          before == afterSync,
+          isFalse,
+          reason: 'precondition: whole-object equality still sees these differ',
+        );
+        expect(
+          changedActivityDates([before], [afterSync]),
+          isEmpty,
+          reason: 'but no macro input moved, so nothing may be invalidated',
+        );
+        expect(macroDatesToInvalidate([before], [afterSync]), isEmpty);
+      },
+    );
 
     test('reordering the list changes nothing', () {
       final a = activityOn(wednesday, id: 'a');

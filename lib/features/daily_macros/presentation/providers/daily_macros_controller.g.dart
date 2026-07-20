@@ -34,7 +34,7 @@ final class DailyMacrosControllerProvider
 }
 
 String _$dailyMacrosControllerHash() =>
-    r'4d87e7adf125fea1ac0f9faa7febc20afaab1c81';
+    r'6ae6f8f2e55a801b39dc602203af45b129dea904';
 
 abstract class _$DailyMacrosController
     extends $AsyncNotifier<DailyMacrosState> {

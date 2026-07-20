@@ -56,4 +56,4 @@ final class DailyMacroTargetsRepositoryProvider
 }
 
 String _$dailyMacroTargetsRepositoryHash() =>
-    r'7a5822b40fb83283f0ed79bf26db6a5b37d592e6';
+    r'dda74eb97b0a878af15304adc0e2e7da0079a53d';

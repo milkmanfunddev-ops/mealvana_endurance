@@ -28,6 +28,10 @@
 /// rolling load, a next-race lookahead, anything reading activities outside the
 /// window above — you MUST widen this function to match, or cached rows will go
 /// silently stale. `macro_cache_invalidation_test.dart` pins the current rule.
+///
+/// The *other* half of "did an input move?" is which field changes count at all:
+/// see [_macroInputsDiffer]. Widening the window without widening that (or vice
+/// versa) leaves a hole.
 library;
 
 import '../../activities/domain/activity.dart';
@@ -61,17 +65,64 @@ Set<DateTime> daysAffectedByActivityOn(DateTime date) {
   };
 }
 
+/// Whether two revisions of the same activity differ in a way the macro
+/// calculation can actually observe.
+///
+/// Deliberately NOT `a != b`. `Activity.operator==` is a full-field compare that
+/// includes sync bookkeeping — `updatedAt`, `lastSyncedAt`, `needsUpload`,
+/// `localUpdatedAt`. Background sync restamps those on rows it merely *touched*,
+/// so a whole-object compare reports "modified" for activities nobody edited.
+/// Each false positive then expands to a seven-day week via
+/// [daysAffectedByActivityOn], so a routine sync was observed wiping 28 cached
+/// days across four unrelated weeks — including weeks five months away — and
+/// forcing a blocking edge-function round trip to rebuild the current day.
+///
+/// So this compares exactly the fields `DailyMacroService` reads out of an
+/// activity row, and nothing else:
+///   * [Activity.scheduledDateTime] — which day owns it, and `hours_since`
+///   * [Activity.deletedAt]         — every input query filters on it
+///   * [Activity.activityType]      — maps to `sport`
+///   * [Activity.durationMinutes], [Activity.distanceMiles],
+///     [Activity.paceTargetMinutesPerMile], [Activity.cyclingSpeedMph],
+///     [Activity.swimmingPacePer100mSeconds] — the `duration_hr` derivation
+///   * [Activity.intensityDistribution] — `pct_conversational/tempo/allout`
+///   * [Activity.intensityLevel]        — drives `is_race`
+///
+/// KNOWN GAP: the edge-function input also carries each session's `tss`, which
+/// `_loadSessionsForDate` reads straight off the DB row. `Activity` has no `tss`
+/// field, so a provider-supplied TSS change is invisible here and its cached day
+/// will not be invalidated. Until `tss` is added to the domain model, treat that
+/// as unhandled — do not assume the old whole-object compare covered it on
+/// purpose; it only did so incidentally, because sync moved `lastSyncedAt` at
+/// the same time.
+///
+/// Same maintenance rule as [daysAffectedByActivityOn]: if the macro calculation
+/// starts reading another activity field, add it here or cached rows go silently
+/// stale. `macro_cache_invalidation_test.dart` pins the current set.
+bool _macroInputsDiffer(Activity a, Activity b) {
+  return a.scheduledDateTime != b.scheduledDateTime ||
+      a.deletedAt != b.deletedAt ||
+      a.activityType != b.activityType ||
+      a.durationMinutes != b.durationMinutes ||
+      a.distanceMiles != b.distanceMiles ||
+      a.paceTargetMinutesPerMile != b.paceTargetMinutesPerMile ||
+      a.cyclingSpeedMph != b.cyclingSpeedMph ||
+      a.swimmingPacePer100mSeconds != b.swimmingPacePer100mSeconds ||
+      a.intensityDistribution != b.intensityDistribution ||
+      a.intensityLevel != b.intensityLevel;
+}
+
 /// The days on which activities were added, removed, or modified between
 /// [before] and [after].
 ///
-/// Matched by `id`, compared by value (`Activity` implements `==`):
+/// Matched by `id`, compared by [_macroInputsDiffer] (NOT `==` — see there):
 ///   * present only in [before]  → removed  → its day changed
 ///   * present only in [after]   → added    → its day changed
-///   * in both but not equal     → modified → BOTH days change, since the edit
+///   * in both, macro inputs moved → modified → BOTH days change, since the edit
 ///     may have been a reschedule (Tue → Fri leaves Tuesday stale too)
 ///
 /// Reordering the list changes nothing, so it yields an empty set — macros don't
-/// depend on list order.
+/// depend on list order. Neither does a re-sync that only restamped timestamps.
 Set<DateTime> changedActivityDates(List<Activity> before, List<Activity> after) {
   final beforeById = {for (final a in before) a.id: a};
   final afterById = {for (final a in after) a.id: a};
@@ -82,7 +133,7 @@ Set<DateTime> changedActivityDates(List<Activity> before, List<Activity> after) 
     final now = afterById[entry.key];
     if (now == null) {
       dates.add(_day(entry.value.scheduledDateTime)); // removed
-    } else if (now != entry.value) {
+    } else if (_macroInputsDiffer(entry.value, now)) {
       dates.add(_day(entry.value.scheduledDateTime)); // modified: old slot
       dates.add(_day(now.scheduledDateTime)); //          and new slot
     }
