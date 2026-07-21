@@ -92,10 +92,15 @@ class ComingSoonSectionWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          KylePrimaryButton(
+          // Disabled Notify Me — mirrors _NotifyButton in
+          // integration_provider_card.dart: a light-variant secondary button
+          // whose dimmed foreground reads as inactive, instead of a primary
+          // button that renders like a live CTA.
+          KyleSecondaryButtonSmall(
             key: notifyButtonKey,
             text: 'Notify Me',
-            onPressed: null, // Disabled
+            onPressed: null, // Disabled — feature is coming soon
+            variant: SecondaryButtonVariant.light,
           ),
         ],
       ),
