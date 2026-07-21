@@ -1,0 +1,19 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-swim-001",
+      "activityType": "lap_swimming",
+      "activityName": "Lunch Swim",
+      "durationInSeconds": 3000,
+      "startTimeInSeconds": 1711641600,
+      "startTimeOffsetInSeconds": -18000,
+      "distanceInMeters": 2500,
+      "activeKilocalories": 350,
+      "averageHeartRateInBeatsPerMinute": 130,
+      "averageSwimCadenceInStrokesPerMinute": 28,
+      "averageSpeedInMetersPerSecond": 0.83
+    }
+  ]
+}

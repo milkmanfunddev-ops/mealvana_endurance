@@ -1,0 +1,40 @@
+{
+  "_comment": "PUT /v2/workouts/plan/123456789 - the update path. This is a FULL-OBJECT REPLACE: any field omitted or sent as null is written as null on TrainingPeaks' side. The safe pattern is GET the workout, change only what you need (here, appended text in Description), then PUT the complete object back. Description is free text.",
+  "_request": {
+    "method": "PUT",
+    "path": "/v2/workouts/plan/123456789",
+    "headers": {
+      "Authorization": "Bearer <ACCESS_TOKEN>",
+      "User-Agent": "<application-name>/<version>",
+      "Content-Type": "application/json"
+    }
+  },
+  "_body": {
+    "Id": 123456789,
+    "AthleteId": 54321,
+    "WorkoutDay": "2026-07-21T00:00:00",
+    "StartTimePlanned": "2026-07-21T06:30:00",
+    "WorkoutType": "Run",
+    "Title": "Track Intervals",
+    "Description": "4x1000m with recoveries\n\n---\n[Notes]\nAppended note line 1\nAppended note line 2\n[/Notes]",
+    "TotalTimePlanned": 0.75,
+    "DistancePlanned": 8000.0,
+    "TSSPlanned": 65.0,
+    "IFPlanned": 0.95,
+    "ElevationGainPlanned": 45.0,
+    "CaloriesPlanned": 520.0,
+    "Tags": ["quality", "track"],
+    "StructureDisplayUnit": "kilometer",
+    "Locked": false,
+    "Hidden": false,
+    "Structure": null
+  },
+  "_responses": {
+    "200": "body decoded as the updated workout JSON",
+    "204": "success with no body",
+    "401": "access token expired - refresh and retry once",
+    "403": "forbidden - commonly a basic (non-premium) athlete cannot modify future planned workouts",
+    "404": "workout deleted on TrainingPeaks",
+    "429/5xx": "retry with exponential backoff"
+  }
+}

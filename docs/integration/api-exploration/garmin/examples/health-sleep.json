@@ -1,0 +1,22 @@
+{
+  "sleeps": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "sleep-20240328",
+      "calendarDate": "2024-03-28",
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": -18000,
+      "durationInSeconds": 27000,
+      "deepSleepDurationInSeconds": 6300,
+      "lightSleepDurationInSeconds": 12600,
+      "remSleepInSeconds": 5400,
+      "awakeDurationInSeconds": 2700,
+      "sleepScoreQuality": "EXCELLENT",
+      "overallSleepScore": 88,
+      "sleepQualityScore": 90,
+      "sleepDurationScore": 82,
+      "restlessMomentsCount": 5
+    }
+  ]
+}

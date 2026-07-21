@@ -1,0 +1,12 @@
+{
+  "WorkoutKey": "bike-km",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=test&id=bike-km",
+  "WorkoutDate": "2025-12-30T00:00:00",
+  "WorkoutTitle": "Metric Ride",
+  "WorkoutDescription": null,
+  "WorkoutTypeName": "Bike",
+  "WorkoutIcon": 2,
+  "PlannedTime": 3600,
+  "PlannedDistance": 40.0,
+  "PlannedDistanceType": "km"
+}

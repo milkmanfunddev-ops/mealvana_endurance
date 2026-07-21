@@ -1,0 +1,9 @@
+{
+  "_comment": "HTTP 401 from any authenticated endpoint. TrainingPeaks' documented meaning is 'bad, expired or missing authorization header'. The exact JSON envelope is not guaranteed and may be empty; the STATUS CODE is authoritative. Resolution: refresh the access token and retry.",
+  "_status": 401,
+  "_body_illustrative": {
+    "error": "invalid_token",
+    "error_description": "The access token expired"
+  },
+  "_notes": "Access tokens live about 1 hour (expires_in documented at 600s, observed up to 3600s). Refresh proactively before expiry; clock skew or server-side revocation can still yield a 401 on a token that looks valid locally, so a force-refresh-and-retry-once path is recommended."
+}

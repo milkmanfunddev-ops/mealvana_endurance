@@ -1,0 +1,52 @@
+{
+  "ownerId": 12345,
+  "workoutName": "Tempo Bike",
+  "description": "Single-sport cycling workout",
+  "sport": "CYCLING",
+  "estimatedDurationInSecs": 1200,
+  "estimatedDistanceInMeters": 1400,
+  "poolLength": null,
+  "poolLengthUnit": null,
+  "workoutProvider": "example",
+  "workoutSourceId": "example",
+  "isSessionTransitionEnabled": false,
+  "segments": [
+    {
+      "segmentOrder": 1,
+      "sport": "CYCLING",
+      "poolLength": null,
+      "poolLengthUnit": null,
+      "estimatedDurationInSecs": 500,
+      "estimatedDistanceInMeters": 500,
+      "steps": [
+        {
+          "type": "WorkoutStep",
+          "stepOrder": 1,
+          "intensity": "WARMUP",
+          "durationType": "DISTANCE",
+          "durationValue": 1000,
+          "durationValueType": "METER",
+          "targetType": "OPEN"
+        },
+        {
+          "type": "WorkoutRepeatStep",
+          "stepOrder": 2,
+          "repeatType": "REPEAT_UNTIL_STEPS_CMPLT",
+          "repeatValue": 4,
+          "steps": [
+            {
+              "type": "WorkoutStep",
+              "stepOrder": 3,
+              "intensity": "INTERVAL",
+              "durationType": "DISTANCE",
+              "durationValue": 100,
+              "durationValueType": "METER",
+              "targetType": "POWER",
+              "targetValue": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

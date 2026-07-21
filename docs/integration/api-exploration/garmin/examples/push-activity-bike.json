@@ -1,0 +1,22 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-cycle-001",
+      "activityType": "road_biking",
+      "activityName": "Saturday Group Ride",
+      "durationInSeconds": 10800,
+      "startTimeInSeconds": 1711627200,
+      "startTimeOffsetInSeconds": -18000,
+      "distanceInMeters": 80000,
+      "activeKilocalories": 1200,
+      "averageHeartRateInBeatsPerMinute": 138,
+      "averageSpeedInMetersPerSecond": 7.41,
+      "averagePowerInWatts": 215,
+      "normalizedPowerInWatts": 230,
+      "elevationGainInMeters": 450,
+      "deviceName": "Garmin Edge 1040"
+    }
+  ]
+}

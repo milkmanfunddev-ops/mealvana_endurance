@@ -1,0 +1,12 @@
+{
+  "_comment": "HTTP 404. Meaning depends on the endpoint - on the events endpoints it is a NORMAL, EXPECTED empty result, not an error.",
+  "_status": 404,
+  "_body_warning": "TrainingPeaks returns an HTML error page for nonexistent routes, not JSON. Do not assume a parseable body.",
+  "_meaning_by_endpoint": {
+    "GET /v2/events/next": "No upcoming events. Not an error - treat as an empty result.",
+    "GET /v2/events/{date}": "No events on that date. Not an error - treat as an empty result.",
+    "GET /v2/workouts/id/{id}": "Workout does not exist or was deleted.",
+    "PUT /v2/workouts/plan/{id}": "Workout was deleted on TrainingPeaks since it was last read.",
+    "any unrecognised path": "Route does not exist (401 means 'exists, needs auth'; 404 means 'does not exist')."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. A planned easy run.",
+  "eventId": "78edbf80-30ef-40ba-ac93-d8661ebb2b49",
+  "eventName": "Easy Run",
+  "eventDate": "2026-06-01T00:00:00",
+  "eventType": "easyPace",
+  "status": "planned",
+  "plannedTime": 4620,
+  "plannedDistance": 15449,
+  "steps": []
+}

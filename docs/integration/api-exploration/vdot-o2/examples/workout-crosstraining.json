@@ -1,0 +1,12 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. A cross-training bike session with a null eventName. plannedDistance is absent, so no distance is prescribed.",
+  "eventId": "9b2c7de1-4a55-4f80-b0d3-6c1e9a2f7742",
+  "eventName": null,
+  "eventDate": "2026-06-04T00:00:00",
+  "eventType": "crossTraining",
+  "status": "planned",
+  "crossTrainingType": "bike",
+  "crossTrainingEffort": "moderate",
+  "plannedTime": 3600,
+  "steps": []
+}

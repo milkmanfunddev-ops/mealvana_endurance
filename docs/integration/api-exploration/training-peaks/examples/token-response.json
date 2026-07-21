@@ -1,0 +1,8 @@
+{
+  "_comment": "POST /oauth/token (authorization_code or refresh_token grant). Token values are redacted - never commit real tokens. expires_in is in SECONDS; documented as 600, observed up to 3600. scope is the space-delimited set of granted scopes.",
+  "access_token": "<ACCESS_TOKEN>",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "refresh_token": "<REFRESH_TOKEN>",
+  "scope": "athlete:profile events:read workouts:read workouts:plan nutrition:write nutrition:read"
+}

@@ -1,0 +1,28 @@
+{
+  "_comment": "POST /v1/athletes/{athleteId}/nutrition - scope nutrition:write. All macros are GRAMS; Calories are kcal. NutritionDate is the only required field. Success is HTTP 201 with the created object (including NutritionId). One nutrition card per athlete per day.",
+  "_request": {
+    "method": "POST",
+    "path": "/v1/athletes/123456/nutrition",
+    "headers": {
+      "Authorization": "Bearer <ACCESS_TOKEN>",
+      "User-Agent": "<application-name>/<version>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "NutritionDate": "2026-07-21T00:00:00",
+      "Calories": 2500.0,
+      "Carbohydrates": 320.0,
+      "Fat": 70.0,
+      "Protein": 120.0
+    }
+  },
+  "_response_201": {
+    "NutritionId": 111,
+    "AthleteId": 123456,
+    "NutritionDate": "2026-07-21T00:00:00",
+    "Calories": 2500.0,
+    "Carbohydrates": 320.0,
+    "Fat": 70.0,
+    "Protein": 120.0
+  }
+}

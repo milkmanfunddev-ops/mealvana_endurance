@@ -1,0 +1,30 @@
+{
+  "_comment": "The SAME workout as seen by a BASIC (non-premium) athlete. TrainingPeaks returns null for premium-only fields and silently ignores them on write. Identity and prescription fields (Id, WorkoutDay, WorkoutType, Title, Description, TotalTimePlanned, DistancePlanned, StartTimePlanned) remain populated.",
+  "_nulled_for_basic_athletes": [
+    "TSSPlanned", "TssActual", "IF", "IFPlanned",
+    "Calories", "CaloriesPlanned", "Energy", "EnergyPlanned",
+    "ElevationGain", "ElevationGainPlanned", "ElevationLoss",
+    "ElevationMinimum", "ElevationAverage", "ElevationMaximum",
+    "VelocityAverage", "VelocityMaximum", "NormalizedSpeed", "NormalizedPower",
+    "PowerAverage", "PowerMaximum", "TorqueAverage", "TorqueMaximum",
+    "HeartRateMinimum", "HeartRateAverage", "HeartRateMaximum",
+    "CadenceAverage", "CadenceMaximum",
+    "TempMin", "TempAvg", "TempMax",
+    "Rpe", "Feeling", "Tags"
+  ],
+  "Id": 123456789,
+  "AthleteId": 54321,
+  "WorkoutDay": "2026-07-21T00:00:00",
+  "StartTimePlanned": "2026-07-21T06:30:00",
+  "WorkoutType": "Run",
+  "Title": "Track Intervals",
+  "Description": "4x1000m with recoveries",
+  "TotalTimePlanned": 0.75,
+  "DistancePlanned": 8000.0,
+  "TSSPlanned": null,
+  "IFPlanned": null,
+  "ElevationGainPlanned": null,
+  "CaloriesPlanned": null,
+  "Tags": null,
+  "Structure": null
+}

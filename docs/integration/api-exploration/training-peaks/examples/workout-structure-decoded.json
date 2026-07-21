@@ -1,0 +1,45 @@
+{
+  "_comment": "The Structure field of workout-planned-run-structured.json, decoded from its JSON string. IntensityTarget.Value is a DECIMAL FRACTION (0.60 = 60% of FTP), not an integer percentage. Length.Unit accepts Second / Minute / Hour / Meter. MinValue/MaxValue bound a target range with Value as the midpoint.",
+  "_decoded_structure": [
+    {
+      "Type": "Step",
+      "Length": { "Unit": "Minute", "Value": 10 },
+      "IntensityClass": "WarmUp",
+      "Name": "Warm Up",
+      "IntensityTarget": { "Unit": "PercentOfFtp", "Value": 0.60 }
+    },
+    {
+      "Type": "Repetition",
+      "RepeatCount": 4,
+      "Steps": [
+        {
+          "Type": "Step",
+          "Length": { "Unit": "Minute", "Value": 3 },
+          "IntensityClass": "Active",
+          "IntensityTarget": { "Unit": "PercentOfFtp", "Value": 1.05, "MinValue": 1.00, "MaxValue": 1.10 }
+        },
+        {
+          "Type": "Step",
+          "Length": { "Unit": "Minute", "Value": 2 },
+          "IntensityClass": "Rest",
+          "IntensityTarget": { "Unit": "PercentOfFtp", "Value": 0.55 }
+        }
+      ]
+    },
+    {
+      "Type": "Step",
+      "Length": { "Unit": "Minute", "Value": 10 },
+      "IntensityClass": "CoolDown",
+      "IntensityTarget": { "Unit": "PercentOfFtp", "Value": 0.60 }
+    }
+  ],
+  "_encodes": "10 min @ 60% FTP warm-up, then 4 x (3 min @ 105% FTP + 2 min @ 55% FTP), then 10 min @ 60% FTP cool-down. Total prescribed time 40 min.",
+  "_hr_variant_example": {
+    "_comment": "The same model expressed with PercentOfMaxHr targets instead of PercentOfFtp.",
+    "structure": [
+      { "Type": "Step", "Length": { "Unit": "Minute", "Value": 20 }, "IntensityTarget": { "Unit": "PercentOfMaxHr", "Value": 0.70 } },
+      { "Type": "Step", "Length": { "Unit": "Minute", "Value": 20 }, "IntensityTarget": { "Unit": "PercentOfMaxHr", "Value": 0.88 } },
+      { "Type": "Step", "Length": { "Unit": "Minute", "Value": 20 }, "IntensityTarget": { "Unit": "PercentOfMaxHr", "Value": 0.70 } }
+    ]
+  }
+}

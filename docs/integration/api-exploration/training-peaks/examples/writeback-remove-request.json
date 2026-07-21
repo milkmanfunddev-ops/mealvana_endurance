@@ -1,0 +1,20 @@
+{
+  "_comment": "PUT /v2/workouts/plan/123456789 that REMOVES a previously appended text block from Description while preserving the original text. Read the current object, strip the block, and PUT the whole object back. If stripping changes nothing, the PUT can be skipped.",
+  "_before_description": "4x1000m with recoveries\n\n---\n[Notes]\nAppended note line 1\nAppended note line 2\n[/Notes]",
+  "_body": {
+    "Id": 123456789,
+    "AthleteId": 54321,
+    "WorkoutDay": "2026-07-21T00:00:00",
+    "StartTimePlanned": "2026-07-21T06:30:00",
+    "WorkoutType": "Run",
+    "Title": "Track Intervals",
+    "Description": "4x1000m with recoveries",
+    "TotalTimePlanned": 0.75,
+    "DistancePlanned": 8000.0,
+    "TSSPlanned": 65.0,
+    "IFPlanned": 0.95,
+    "Tags": ["quality", "track"],
+    "Structure": null
+  },
+  "_after": "The original Description text ('4x1000m with recoveries') survives intact; only the appended block is removed."
+}
