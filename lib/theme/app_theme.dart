@@ -9,11 +9,11 @@ import 'component_themes/app_bar_themes.dart';
 /// Light mode only - no dark theme support
 class AppTheme {
   // Brand Colors - Primary (Blackberry - New Endurance Theme)
-  static const Color primary900 = Color(0xFF1C0E1B);  // Darker blackberry
-  static const Color primary600 = Color(0xFF381633);  // Main blackberry
-  static const Color primary100 = Color(0xFFE6D5E3);  // Light blackberry tint
-  static const Color primary50 = Color(0xFFF2EBF1);   // Very light blackberry
-  
+  static const Color primary900 = Color(0xFF1C0E1B); // Darker blackberry
+  static const Color primary600 = Color(0xFF381633); // Main blackberry
+  static const Color primary100 = Color(0xFFE6D5E3); // Light blackberry tint
+  static const Color primary50 = Color(0xFFF2EBF1); // Very light blackberry
+
   // Highlight Colors (Coral/Pink)
   static const Color highlight600 = Color(0xFFD92D20);
   static const Color highlight600Alt = Color(0xFFDC2597);
@@ -22,28 +22,30 @@ class AppTheme {
   static const Color highlight290 = Color(0xFFFDA29B);
   static const Color highlight100 = Color(0xFFFEE4E2);
   static const Color highlight50 = Color(0xFFFEF3F2);
-  
+
   // Base Colors
   static const Color baseBlack = Color(0xFF000000);
-  static const Color baseCream = Color(0xFFF8F6EB);  // Cream from new palette
+  static const Color baseCream = Color(0xFFF8F6EB); // Cream from new palette
   static const Color baseWhite = Color(0xFFFFFFFF);
   static const Color baseGrey = Color(0xFF667085);
-  
+
   // Warning
   static const Color warning500 = Color(0xFFFFC629);
 
   // Macro-specific colors for nutrition data visualization
-  static const Color proteinColor = Color(0xFFDC2597);      // Pink for protein
-  static const Color carbsColor = Color(0xFFFFC629);        // Yellow for carbohydrates
-  static const Color fatsColor = Color(0xFF3366FF);         // Blue for fats
-  static const Color caloriesColor = Color(0xFF1C0E1B);     // Dark blackberry for calories
-  static const Color sodiumColor = Color(0xFFFFC629);       // Yellow for sodium
-  static const Color fluidsColor = Color(0xFF3366FF);       // Blue for fluids
-  
+  static const Color proteinColor = Color(0xFFDC2597); // Pink for protein
+  static const Color carbsColor = Color(0xFFFFC629); // Yellow for carbohydrates
+  static const Color fatsColor = Color(0xFF3366FF); // Blue for fats
+  static const Color caloriesColor = Color(
+    0xFF1C0E1B,
+  ); // Dark blackberry for calories
+  static const Color sodiumColor = Color(0xFFFFC629); // Yellow for sodium
+  static const Color fluidsColor = Color(0xFF3366FF); // Blue for fluids
+
   // Status colors
-  static const Color successColor = Color(0xFF4CAF50);      // Green for success
-  static const Color warningColor = Color(0xFFD92D20);      // Red for warnings
-  static const Color infoColor = Color(0xFF381633);         // Blackberry for info
+  static const Color successColor = Color(0xFF4CAF50); // Green for success
+  static const Color warningColor = Color(0xFFD92D20); // Red for warnings
+  static const Color infoColor = Color(0xFF381633); // Blackberry for info
 
   /// Light theme configuration (only theme)
   static ThemeData get lightTheme {
@@ -69,7 +71,10 @@ class AppTheme {
       elevatedButtonTheme: AppButtonThemes.elevatedButtonTheme(colorScheme),
       inputDecorationTheme: AppInputThemes.inputDecorationTheme(colorScheme),
       cardTheme: AppCardThemes.cardTheme(colorScheme),
-      appBarTheme: AppBarThemes.appBarTheme(colorScheme, _buildTextTheme(colorScheme)),
+      appBarTheme: AppBarThemes.appBarTheme(
+        colorScheme,
+        _buildTextTheme(colorScheme),
+      ),
     );
   }
 
@@ -95,7 +100,7 @@ class AppTheme {
         fontWeight: FontWeight.bold,
         height: 1.2,
       ),
-      
+
       // Headlines - Sansita for section headers
       headlineLarge: const TextStyle(
         fontFamily: 'Sansita',
@@ -180,80 +185,80 @@ class AppTheme {
       ),
     );
   }
-  
+
   // Custom text styles based on design specs
-  
+
   // Sansita-based styles
   static const TextStyle titleStyle = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 24,
     fontWeight: FontWeight.bold,
   );
-  
+
   static const TextStyle subtitleStyle = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 20,
     fontWeight: FontWeight.w600,
   );
-  
+
   static const TextStyle hintStyle = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 14,
     fontWeight: FontWeight.w400,
     fontStyle: FontStyle.italic,
   );
-  
+
   static const TextStyle heading1Style = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 32,
     fontWeight: FontWeight.bold,
   );
-  
+
   static const TextStyle heading2Style = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 28,
     fontWeight: FontWeight.bold,
   );
-  
+
   static const TextStyle heading3Style = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 24,
     fontWeight: FontWeight.w600,
   );
-  
+
   static const TextStyle calendarStyle = TextStyle(
     fontFamily: 'Sansita',
     fontSize: 16,
     fontWeight: FontWeight.w500,
   );
-  
+
   // Apercu-based styles
   static const TextStyle textStyle = TextStyle(
     fontFamily: 'Apercu',
     fontSize: 16,
     fontWeight: FontWeight.w400,
   );
-  
+
   static const TextStyle textCrossedStyle = TextStyle(
     fontFamily: 'Apercu',
     fontSize: 16,
     fontWeight: FontWeight.w400,
     decoration: TextDecoration.lineThrough,
   );
-  
+
   static const TextStyle noteStyle = TextStyle(
     fontFamily: 'Apercu',
     fontSize: 14,
     fontWeight: FontWeight.w400,
   );
-  
+
   static const TextStyle linkStyle = TextStyle(
     fontFamily: 'Apercu',
     fontSize: 14,
     fontWeight: FontWeight.w400,
     decoration: TextDecoration.underline,
   );
-  
+
   // Compadre-based style
   static const TextStyle selectionStyle = TextStyle(
     fontFamily: 'Compadre',
@@ -261,39 +266,39 @@ class AppTheme {
     fontWeight: FontWeight.w500,
     letterSpacing: 1.5,
   );
-  
+
   // Helvetica-based nutrition text styles
   static const TextStyle nutritionRegularStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 14,
     fontWeight: FontWeight.w400,
   );
-  
+
   static const TextStyle nutritionRegularObliqueStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 14,
     fontWeight: FontWeight.w400,
     fontStyle: FontStyle.italic,
   );
-  
+
   static const TextStyle nutritionFootnoteStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 12,
     fontWeight: FontWeight.w400,
   );
-  
+
   static const TextStyle nutritionBoldStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 14,
     fontWeight: FontWeight.w900,
   );
-  
+
   static const TextStyle nutritionTitleStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 16,
     fontWeight: FontWeight.w900,
   );
-  
+
   static const TextStyle nutritionLargeStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 18,
@@ -307,21 +312,21 @@ class AppTheme {
     fontWeight: FontWeight.w400,
     color: baseGrey,
   );
-  
+
   static const TextStyle macroValueStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 20,
     fontWeight: FontWeight.w900,
     color: baseBlack,
   );
-  
+
   static const TextStyle calorieTitleStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 24,
     fontWeight: FontWeight.w900,
     color: baseBlack,
   );
-  
+
   static const TextStyle nutritionFactStyle = TextStyle(
     fontFamily: 'Helvetica',
     fontSize: 14,
@@ -335,20 +340,20 @@ class AppTheme {
     offset: Offset(0, 2),
     blurRadius: 4,
   );
-  
+
   static const BoxShadow glowShadow = BoxShadow(
     color: Color(0x40FFFFFF),
     offset: Offset(0, 0),
     blurRadius: 10,
     spreadRadius: 2,
   );
-  
+
   static const BoxShadow tabBarShadow = BoxShadow(
     color: Color(0x0D000000),
     offset: Offset(0, -1),
     blurRadius: 4,
   );
-  
+
   static const BoxShadow checkboxDropShadow = BoxShadow(
     color: Color(0x0D000000),
     offset: Offset(0, 1),

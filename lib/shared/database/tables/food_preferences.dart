@@ -29,10 +29,12 @@ class FoodPreferencesTable extends Table {
       text().named('preference_source').withDefault(const Constant('manual'))();
 
   /// When the preference was created (matches Supabase food_preferences.created_at)
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime).named('created_at')();
 
   /// When the preference was last updated (matches Supabase food_preferences.updated_at)
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};

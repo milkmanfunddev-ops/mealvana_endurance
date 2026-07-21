@@ -109,8 +109,7 @@ class CatalogSearchResult {
   }
 
   /// Whether this result has nutrition data
-  bool get hasNutrition =>
-      caloriesPerServing != null || carbsG != null;
+  bool get hasNutrition => caloriesPerServing != null || carbsG != null;
 
   /// Display name combining title and variant
   String get displayName {

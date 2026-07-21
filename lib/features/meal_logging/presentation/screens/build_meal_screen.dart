@@ -292,8 +292,10 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
           child: InputDecorator(
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
             ),
             child: Row(
               children: [
@@ -306,9 +308,9 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
                 const Spacer(),
                 Text(
                   'Change',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -415,7 +417,8 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
             ),
             CheckboxListTile(
               value: _alsoSaveAsFavorite,
-              onChanged: (v) => setState(() => _alsoSaveAsFavorite = v ?? false),
+              onChanged: (v) =>
+                  setState(() => _alsoSaveAsFavorite = v ?? false),
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
               dense: true,
@@ -552,10 +555,7 @@ class _StartFromPickerSheet extends ConsumerWidget {
         .toList();
   }
 
-  List<Widget> _buildRecentLogTiles(
-    BuildContext context,
-    List<MealLog>? logs,
-  ) {
+  List<Widget> _buildRecentLogTiles(BuildContext context, List<MealLog>? logs) {
     if (logs == null || logs.isEmpty) {
       return [
         Padding(
@@ -769,7 +769,10 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
     NutritionProductSearchResult result,
   ) async {
     if (!result.hasValidId) {
-      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+      MealvanaSnackbar.showError(
+        context,
+        'Cannot load details for this product',
+      );
       return;
     }
     _unfocus();
@@ -806,7 +809,10 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
 
   Future<void> _handleOpenFoodFactsResultTap(dynamic result) async {
     if (!(result.hasValidId as bool)) {
-      MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+      MealvanaSnackbar.showError(
+        context,
+        'Cannot load details for this product',
+      );
       return;
     }
     _unfocus();
@@ -851,9 +857,12 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
       calories: food.caloriesPerServing != null
           ? (food.caloriesPerServing! * servings).round()
           : null,
-      carbG: food.carbsPerServing != null ? food.carbsPerServing! * servings : null,
-      proteinG:
-          food.proteinPerServing != null ? food.proteinPerServing! * servings : null,
+      carbG: food.carbsPerServing != null
+          ? food.carbsPerServing! * servings
+          : null,
+      proteinG: food.proteinPerServing != null
+          ? food.proteinPerServing! * servings
+          : null,
       fatG: food.fatPerServing != null ? food.fatPerServing! * servings : null,
       sodiumMg: food.sodiumMg != null ? food.sodiumMg! * servings : null,
     );
@@ -961,7 +970,8 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
                         );
                       }
                     },
-                    onFoodTap: (food) => _addFood(food, food.displayName ?? food.name),
+                    onFoodTap: (food) =>
+                        _addFood(food, food.displayName ?? food.name),
                     onCatalogTap: _onCatalogTap,
                     onOpenFoodFactsResultTap: _handleOpenFoodFactsResultTap,
                     // USDA + cached Open Food Facts. Without this the shared
@@ -1065,12 +1075,14 @@ class _AddFoodTabBar extends StatelessWidget {
                     maxLines: 1,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected
                           ? (isDark ? AppColors.blackberry : AppColors.cream)
                           : (isDark
-                              ? AppColors.cream.withValues(alpha: 0.7)
-                              : AppColors.blackberry.withValues(alpha: 0.6)),
+                                ? AppColors.cream.withValues(alpha: 0.7)
+                                : AppColors.blackberry.withValues(alpha: 0.6)),
                     ),
                   ),
                 ),

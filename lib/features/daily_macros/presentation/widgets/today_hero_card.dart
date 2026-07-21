@@ -21,7 +21,11 @@ import 'weekly_overview_chart.dart';
 // Canonical macro colours live in macro_palette.dart. Re-exported here so the
 // long-standing `today_hero_card.dart show kMacroColor*` imports keep working.
 export 'macro_palette.dart'
-    show kMacroColorCalories, kMacroColorCarbs, kMacroColorProtein, kMacroColorFat;
+    show
+        kMacroColorCalories,
+        kMacroColorCarbs,
+        kMacroColorProtein,
+        kMacroColorFat;
 
 // ---------------------------------------------------------------------------
 // Detail sheet (replaces the old card composition as the primary surface)
@@ -118,7 +122,8 @@ class _MacroDetailSheetContentState
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom +
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
             MediaQuery.of(context).padding.bottom,
       ),
       child: DraggableScrollableSheet(
@@ -131,8 +136,7 @@ class _MacroDetailSheetContentState
             children: [
               // ── Static header ──────────────────────────────────────────
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   children: [
                     // Drag handle
@@ -169,21 +173,22 @@ class _MacroDetailSheetContentState
                 child: SingleChildScrollView(
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg),
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: switch (_activeTab) {
                     _DetailTab.planned => _PlanTabBody(
-                        macros: widget.macros,
-                        showAttribution: widget.showAttribution,
-                        textColor: textColor,
-                        isDark: isDark,
-                      ),
+                      macros: widget.macros,
+                      showAttribution: widget.showAttribution,
+                      textColor: textColor,
+                      isDark: isDark,
+                    ),
                     _DetailTab.eaten => _EatenTabBody(
-                        macros: widget.macros,
-                        consumed: widget.consumed,
-                        logsAsync: logsAsync,
-                        textColor: textColor,
-                        isDark: isDark,
-                      ),
+                      macros: widget.macros,
+                      consumed: widget.consumed,
+                      logsAsync: logsAsync,
+                      textColor: textColor,
+                      isDark: isDark,
+                    ),
                     _DetailTab.weekly => _WeeklyTabBody(textColor: textColor),
                   },
                 ),
@@ -216,9 +221,7 @@ class _DetailTabBar extends StatelessWidget {
     return Container(
       height: 36,
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white12
-            : Colors.black.withValues(alpha: 0.07),
+        color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -245,13 +248,10 @@ class _DetailTabBar extends StatelessWidget {
                           ? FontWeight.w700
                           : FontWeight.w500,
                       color: isSelected
-                          ? (isDark
-                              ? AppColors.blackberry
-                              : AppColors.cream)
+                          ? (isDark ? AppColors.blackberry : AppColors.cream)
                           : (isDark
-                              ? AppColors.cream.withValues(alpha: 0.7)
-                              : AppColors.blackberry
-                                  .withValues(alpha: 0.6)),
+                                ? AppColors.cream.withValues(alpha: 0.7)
+                                : AppColors.blackberry.withValues(alpha: 0.6)),
                     ),
                   ),
                 ),
@@ -318,8 +318,9 @@ class _EatenTabBody extends StatelessWidget {
                     ),
                     Text(
                       'kcal',
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: textColor.withValues(alpha: 0.6)),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: textColor.withValues(alpha: 0.6),
+                      ),
                     ),
                   ],
                 ),
@@ -373,8 +374,7 @@ class _EatenTabBody extends StatelessWidget {
           data: (logs) {
             if (logs.isEmpty) {
               return Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Text(
                   'No meals logged yet.',
                   style: AppTextStyles.bodySmall.copyWith(
@@ -428,8 +428,9 @@ class _MacroStat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: AppTextStyles.bodySmall
-              .copyWith(color: textColor.withValues(alpha: 0.6)),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: textColor.withValues(alpha: 0.6),
+          ),
         ),
       ],
     );
@@ -455,33 +456,42 @@ class _LogEntryRow extends StatelessWidget {
       style: TextStyle(fontSize: 11, color: Colors.grey),
     );
     if (c != null) {
-      parts.add(TextSpan(
-        text: '${c.toStringAsFixed(0)}C',
-        style: const TextStyle(
+      parts.add(
+        TextSpan(
+          text: '${c.toStringAsFixed(0)}C',
+          style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: kMacroColorCarbs),
-      ));
+            color: kMacroColorCarbs,
+          ),
+        ),
+      );
     }
     if (p != null) {
       if (parts.isNotEmpty) parts.add(sep);
-      parts.add(TextSpan(
-        text: '${p.toStringAsFixed(0)}P',
-        style: const TextStyle(
+      parts.add(
+        TextSpan(
+          text: '${p.toStringAsFixed(0)}P',
+          style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: kMacroColorProtein),
-      ));
+            color: kMacroColorProtein,
+          ),
+        ),
+      );
     }
     if (f != null) {
       if (parts.isNotEmpty) parts.add(sep);
-      parts.add(TextSpan(
-        text: '${f.toStringAsFixed(0)}F',
-        style: const TextStyle(
+      parts.add(
+        TextSpan(
+          text: '${f.toStringAsFixed(0)}F',
+          style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: kMacroColorFat),
-      ));
+            color: kMacroColorFat,
+          ),
+        ),
+      );
     }
 
     return Padding(
@@ -502,8 +512,9 @@ class _LogEntryRow extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '${log.calories} kcal',
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: textColor.withValues(alpha: 0.6)),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: textColor.withValues(alpha: 0.6),
+              ),
             ),
           ],
           if (parts.isNotEmpty) ...[
@@ -691,14 +702,13 @@ class CalorieRingPainter extends CustomPainter {
 
 /// True when Garmin body comp is currently authoritative for either the
 /// user's weight or body fat.
-final garminAuthoritativeForMacrosProvider =
-    FutureProvider.autoDispose<bool>((ref) async {
+final garminAuthoritativeForMacrosProvider = FutureProvider.autoDispose<bool>((
+  ref,
+) async {
   final profile = await ref.watch(currentUserProvider.future);
   if (profile == null) return false;
 
-  final garmin = await ref.watch(
-    garminLastBodyCompProvider(profile.id).future,
-  );
+  final garmin = await ref.watch(garminLastBodyCompProvider(profile.id).future);
   if (garmin == null) return false;
 
   final userWeightKg = profile.weightPounds * 0.453592;

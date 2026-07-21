@@ -16,14 +16,10 @@ void main() {
     });
 
     test('absoluteMinutes calculates correctly', () {
-      expect(
-          const TimeSlot(hourIndex: 0, slotIndex: 0).absoluteMinutes, 0);
-      expect(
-          const TimeSlot(hourIndex: 0, slotIndex: 3).absoluteMinutes, 45);
-      expect(
-          const TimeSlot(hourIndex: 1, slotIndex: 0).absoluteMinutes, 60);
-      expect(
-          const TimeSlot(hourIndex: 2, slotIndex: 1).absoluteMinutes, 135);
+      expect(const TimeSlot(hourIndex: 0, slotIndex: 0).absoluteMinutes, 0);
+      expect(const TimeSlot(hourIndex: 0, slotIndex: 3).absoluteMinutes, 45);
+      expect(const TimeSlot(hourIndex: 1, slotIndex: 0).absoluteMinutes, 60);
+      expect(const TimeSlot(hourIndex: 2, slotIndex: 1).absoluteMinutes, 135);
     });
 
     test('JSON round-trip', () {
@@ -215,23 +211,31 @@ void main() {
 
     test('lastHourSlotCount for partial hours', () {
       expect(
-        const ByHourData(durationMinutes: 60, assignments: [])
-            .lastHourSlotCount,
+        const ByHourData(
+          durationMinutes: 60,
+          assignments: [],
+        ).lastHourSlotCount,
         4,
       );
       expect(
-        const ByHourData(durationMinutes: 90, assignments: [])
-            .lastHourSlotCount,
+        const ByHourData(
+          durationMinutes: 90,
+          assignments: [],
+        ).lastHourSlotCount,
         2,
       );
       expect(
-        const ByHourData(durationMinutes: 75, assignments: [])
-            .lastHourSlotCount,
+        const ByHourData(
+          durationMinutes: 75,
+          assignments: [],
+        ).lastHourSlotCount,
         1,
       );
       expect(
-        const ByHourData(durationMinutes: 150, assignments: [])
-            .lastHourSlotCount,
+        const ByHourData(
+          durationMinutes: 150,
+          assignments: [],
+        ).lastHourSlotCount,
         2,
       );
     });

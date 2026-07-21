@@ -20,10 +20,10 @@ class FinalSurgeApiClient {
     required String clientSecret,
     http.Client? httpClient,
     RetryConfig? retryConfig,
-  })  : _clientId = clientId,
-        _clientSecret = clientSecret,
-        _httpClient = httpClient ?? http.Client(),
-        _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
+  }) : _clientId = clientId,
+       _clientSecret = clientSecret,
+       _httpClient = httpClient ?? http.Client(),
+       _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
 
   static const _baseUrl = 'https://log.finalsurge.com';
   static const _provider = 'final_surge';
@@ -43,12 +43,16 @@ class FinalSurgeApiClient {
   }) async {
     if (kDebugMode) {
       print('🔄 Exchanging authorization code for token...');
-      print('   Code: ${code.substring(0, code.length > 8 ? 8 : code.length)}...');
+      print(
+        '   Code: ${code.substring(0, code.length > 8 ? 8 : code.length)}...',
+      );
       print('   Client ID: $_clientId');
       print('   Secret length: ${_clientSecret.length} (expected: 64)');
       if (_clientSecret.length >= 10) {
         print('   Secret first 5 chars: ${_clientSecret.substring(0, 5)}');
-        print('   Secret last 5 chars: ${_clientSecret.substring(_clientSecret.length - 5)}');
+        print(
+          '   Secret last 5 chars: ${_clientSecret.substring(_clientSecret.length - 5)}',
+        );
       } else {
         print('   ❌ SECRET TOO SHORT! Got: "$_clientSecret"');
         print('   ⚠️  The \$ characters in .env must be escaped as \\\$');
@@ -119,7 +123,9 @@ class FinalSurgeApiClient {
   ///
   /// Returns a new [FinalSurgeTokenResponse] with fresh tokens.
   /// Throws [TokenRefreshException] if refresh fails.
-  Future<FinalSurgeTokenResponse> refreshAccessToken(String refreshToken) async {
+  Future<FinalSurgeTokenResponse> refreshAccessToken(
+    String refreshToken,
+  ) async {
     if (kDebugMode) {
       print('🔄 Refreshing Final Surge access token...');
     }
@@ -228,7 +234,10 @@ class FinalSurgeApiClient {
         },
       ),
       onResponse: (response) {
-        _handleErrorResponse(response, 'Failed to fetch workouts by date range');
+        _handleErrorResponse(
+          response,
+          'Failed to fetch workouts by date range',
+        );
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         return FinalSurgeWorkoutsResponse.fromJson(json);
       },
@@ -355,9 +364,10 @@ class FinalSurgeTokenResponse {
     // The 'athlete' key exists but may be null
 
     // Get access token
-    final accessToken = json['access_token'] as String? ??
-                        json['accessToken'] as String? ??
-                        json['token'] as String?;
+    final accessToken =
+        json['access_token'] as String? ??
+        json['accessToken'] as String? ??
+        json['token'] as String?;
 
     if (accessToken == null || accessToken.isEmpty) {
       throw FinalSurgeApiException(
@@ -372,13 +382,17 @@ class FinalSurgeTokenResponse {
 
     return FinalSurgeTokenResponse(
       accessToken: accessToken,
-      refreshToken: json['refresh_token'] as String? ?? json['refreshToken'] as String?,
+      refreshToken:
+          json['refresh_token'] as String? ?? json['refreshToken'] as String?,
       expiresIn: json['expires_in'] as int? ?? json['expiresIn'] as int?,
       // Root level first (test script shows this), then nested as fallback
-      athleteId: json['id']?.toString() ??
-                 athlete?['id']?.toString() ??
-                 json['athlete_id']?.toString() ?? '',
-      firstName: json['firstname'] as String? ?? athlete?['firstname'] as String?,
+      athleteId:
+          json['id']?.toString() ??
+          athlete?['id']?.toString() ??
+          json['athlete_id']?.toString() ??
+          '',
+      firstName:
+          json['firstname'] as String? ?? athlete?['firstname'] as String?,
       lastName: json['lastname'] as String? ?? athlete?['lastname'] as String?,
       email: json['email'] as String? ?? athlete?['email'] as String?,
     );
@@ -457,7 +471,8 @@ class FinalSurgeApiException extends IntegrationApiException {
 
 /// Exception for OAuth-specific errors
 class FinalSurgeOAuthException extends IntegrationApiException {
-  const FinalSurgeOAuthException(super.message) : super(provider: 'final_surge');
+  const FinalSurgeOAuthException(super.message)
+    : super(provider: 'final_surge');
 
   @override
   String toString() => 'FinalSurgeOAuthException: $message';

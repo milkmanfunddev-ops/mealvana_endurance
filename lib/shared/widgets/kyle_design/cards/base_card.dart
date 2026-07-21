@@ -58,21 +58,14 @@ class BaseCard extends ConsumerWidget {
                 ]
               : null,
         ),
-        child: Padding(
-          padding: cardPadding,
-          child: child,
-        ),
+        child: Padding(padding: cardPadding, child: child),
       ),
     );
 
     if (onTap != null) {
       card = Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: cardRadius,
-          child: card,
-        ),
+        child: InkWell(onTap: onTap, borderRadius: cardRadius, child: card),
       );
     }
 
@@ -115,15 +108,9 @@ class HeaderCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: headerPadding ?? EdgeInsets.zero,
-            child: header,
-          ),
+          Padding(padding: headerPadding ?? EdgeInsets.zero, child: header),
           SizedBox(height: headerSpacing),
-          Padding(
-            padding: contentPadding ?? EdgeInsets.zero,
-            child: child,
-          ),
+          Padding(padding: contentPadding ?? EdgeInsets.zero, child: child),
         ],
       ),
     );
@@ -159,13 +146,15 @@ class TitledCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final defaultTitleStyle = titleStyle ?? 
+    final defaultTitleStyle =
+        titleStyle ??
         Theme.of(context).textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.bold,
           color: Theme.of(context).colorScheme.onSurface,
         );
-    
-    final defaultSubtitleStyle = subtitleStyle ??
+
+    final defaultSubtitleStyle =
+        subtitleStyle ??
         Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         );
@@ -178,16 +167,10 @@ class TitledCard extends ConsumerWidget {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: defaultTitleStyle,
-          ),
+          Text(title, style: defaultTitleStyle),
           if (subtitle != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              subtitle!,
-              style: defaultSubtitleStyle,
-            ),
+            Text(subtitle!, style: defaultSubtitleStyle),
           ],
         ],
       ),
@@ -243,35 +226,36 @@ class ActionCard extends ConsumerWidget {
             children: [
               Text(
                 title,
-                style: titleStyle ?? Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+                style:
+                    titleStyle ??
+                    Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   subtitle!,
-                  style: subtitleStyle ?? Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style:
+                      subtitleStyle ??
+                      Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ],
             ],
           ),
-          
+
           SizedBox(height: headerSpacing),
-          
+
           // Content
           child,
-          
+
           // Actions
           if (actions != null && actions!.isNotEmpty) ...[
             SizedBox(height: actionSpacing),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: actions!,
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: actions!),
           ],
         ],
       ),

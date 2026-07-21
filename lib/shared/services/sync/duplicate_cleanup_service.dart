@@ -24,8 +24,8 @@ class DuplicateCleanupService {
   const DuplicateCleanupService({
     required AppDatabase database,
     required AppLogger logger,
-  })  : _database = database,
-        _logger = logger;
+  }) : _database = database,
+       _logger = logger;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -109,11 +109,12 @@ class DuplicateCleanupService {
       final userFilter = userIdColumn == null
           ? '' // carb_loading_days doesn't filter by user
           : userIdColumn == 'device_id'
-              ? 'device_id = (SELECT device_id FROM users WHERE id = ?)' // feedback uses device_id
-              : 'user_id = ?'; // default
+          ? 'device_id = (SELECT device_id FROM users WHERE id = ?)' // feedback uses device_id
+          : 'user_id = ?'; // default
 
       // Find duplicate IDs (IDs that appear more than once)
-      final duplicateQuery = '''
+      final duplicateQuery =
+          '''
         SELECT id, COUNT(*) as count
         FROM $tableName
         ${userFilter.isEmpty ? '' : 'WHERE $userFilter'}
@@ -121,10 +122,12 @@ class DuplicateCleanupService {
         HAVING COUNT(*) > 1
       ''';
 
-      final duplicates = await _database.customSelect(
-        duplicateQuery,
-        variables: userFilter.isEmpty ? [] : [Variable(userId)],
-      ).get();
+      final duplicates = await _database
+          .customSelect(
+            duplicateQuery,
+            variables: userFilter.isEmpty ? [] : [Variable(userId)],
+          )
+          .get();
 
       if (duplicates.isEmpty) {
         return 0;
@@ -140,26 +143,22 @@ class DuplicateCleanupService {
         _logger.debug(
           'Found duplicate records in $tableName',
           context: 'DUPLICATE_CLEANUP',
-          data: {
-            'id': id,
-            'count': count,
-            'table': tableName,
-          },
+          data: {'id': id, 'count': count, 'table': tableName},
         );
 
         // Find all records with this ID, ordered by local_updated_at DESC
         // Keep the most recent one, delete the rest
-        final allRecordsQuery = '''
+        final allRecordsQuery =
+            '''
           SELECT rowid, id, local_updated_at
           FROM $tableName
           WHERE id = ?
           ORDER BY local_updated_at DESC
         ''';
 
-        final allRecords = await _database.customSelect(
-          allRecordsQuery,
-          variables: [Variable(id)],
-        ).get();
+        final allRecords = await _database
+            .customSelect(allRecordsQuery, variables: [Variable(id)])
+            .get();
 
         // Skip the first one (most recent), delete the rest
         for (int i = 1; i < allRecords.length; i++) {
@@ -190,10 +189,7 @@ class DuplicateCleanupService {
         _logger.info(
           'Cleaned duplicates from $tableName',
           context: 'DUPLICATE_CLEANUP',
-          data: {
-            'table': tableName,
-            'duplicates_deleted': deletedCount,
-          },
+          data: {'table': tableName, 'duplicates_deleted': deletedCount},
         );
       }
 
@@ -251,20 +247,18 @@ class DuplicateCleanupService {
           ORDER BY updated_at DESC
         ''';
 
-        final allRecords = await _database.customSelect(
-          allRecordsQuery,
-          variables: [Variable(id)],
-        ).get();
+        final allRecords = await _database
+            .customSelect(allRecordsQuery, variables: [Variable(id)])
+            .get();
 
         // Skip the first one (most recent), delete the rest
         for (int i = 1; i < allRecords.length; i++) {
           final rowid = allRecords[i].data['rowid'] as int;
           final updatedAt = allRecords[i].data['updated_at'];
 
-          await _database.customStatement(
-            'DELETE FROM users WHERE rowid = ?',
-            [rowid],
-          );
+          await _database.customStatement('DELETE FROM users WHERE rowid = ?', [
+            rowid,
+          ]);
 
           _logger.debug(
             'Deleted duplicate user',
@@ -285,8 +279,9 @@ class DuplicateCleanupService {
       final multipleNeedsUploadQuery = '''
         SELECT COUNT(*) as count FROM users WHERE needs_upload = 1
       ''';
-      final needsUploadCount =
-          await _database.customSelect(multipleNeedsUploadQuery).getSingle();
+      final needsUploadCount = await _database
+          .customSelect(multipleNeedsUploadQuery)
+          .getSingle();
       final count = needsUploadCount.data['count'] as int;
 
       if (count > 1) {

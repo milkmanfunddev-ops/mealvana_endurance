@@ -30,7 +30,7 @@ bool maybeShowInsufficientCreditsPaywall(Object? error) {
           error.message.trim().isNotEmpty
               ? error.message
               : "You've used all your AI credits. Get more to keep using AI "
-                  'features.',
+                    'features.',
         ),
         actions: [
           TextButton(

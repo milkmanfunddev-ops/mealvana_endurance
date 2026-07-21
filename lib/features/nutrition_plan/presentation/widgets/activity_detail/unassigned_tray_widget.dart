@@ -40,9 +40,7 @@ class _UnassignedTrayWidgetState extends State<UnassignedTrayWidget> {
       decoration: BoxDecoration(
         borderRadius: AppRadius.smRadius,
         color: widget.sectionColor.withValues(alpha: 0.04),
-        border: Border.all(
-          color: widget.sectionColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: widget.sectionColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -100,8 +98,7 @@ class _UnassignedTrayWidgetState extends State<UnassignedTrayWidget> {
               _isExpanded
                   ? Icons.keyboard_arrow_down
                   : Icons.keyboard_arrow_right,
-              color:
-                  Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 18,
             ),
           ],

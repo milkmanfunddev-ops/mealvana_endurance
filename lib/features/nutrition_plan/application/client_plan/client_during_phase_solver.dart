@@ -271,17 +271,15 @@ _ElecPick? _pickBestElectrolyte(
 
   final baselineSodiumScore = sodiumTarget > 0
       ? (max(0.0, sodiumLower - currentSodium) +
-              max(0.0, currentSodium - sodiumUpper)) /
-          sodiumTarget
+                max(0.0, currentSodium - sodiumUpper)) /
+            sodiumTarget
       : 0.0;
-  final baselineFluidPenalty =
-      (fluidTarget > 0 && currentFluid > fluidUpper)
-          ? ((currentFluid - fluidUpper) / fluidTarget) * 3
-          : 0.0;
-  final baselineCarbPenalty =
-      (carbTarget > 0 && currentCarbs > carbUpper)
-          ? ((currentCarbs - carbUpper) / carbTarget) * 2
-          : 0.0;
+  final baselineFluidPenalty = (fluidTarget > 0 && currentFluid > fluidUpper)
+      ? ((currentFluid - fluidUpper) / fluidTarget) * 3
+      : 0.0;
+  final baselineCarbPenalty = (carbTarget > 0 && currentCarbs > carbUpper)
+      ? ((currentCarbs - carbUpper) / carbTarget) * 2
+      : 0.0;
   final baselineScore =
       baselineSodiumScore + baselineFluidPenalty + baselineCarbPenalty;
 
@@ -292,12 +290,12 @@ _ElecPick? _pickBestElectrolyte(
     final gutMax = _maxServingsForGut(elec, gutTrainingLevel);
     // Build candidate serving increments (0.5 steps for divisible, 1 for indivisible)
     final candidates = <double>[];
-    final isSupp =
-        elec.productType == 'supplement' && !elec.isLiquid;
+    final isSupp = elec.productType == 'supplement' && !elec.isLiquid;
     final step = elec.isIndivisible ? 1.0 : 0.5;
     final start = elec.isIndivisible ? 1.0 : 0.5;
-    final maxCandidateServings =
-        isSupp ? min(gutMax, maxSupplementServings) : gutMax;
+    final maxCandidateServings = isSupp
+        ? min(gutMax, maxSupplementServings)
+        : gutMax;
     for (double s = start; s <= maxCandidateServings + 1e-9; s += step) {
       candidates.add(s);
     }
@@ -313,8 +311,8 @@ _ElecPick? _pickBestElectrolyte(
 
       final sodiumPenalty = sodiumTarget > 0
           ? (max(0.0, sodiumLower - sodium) +
-                  max(0.0, sodium - sodiumUpper) * 2) /
-              sodiumTarget
+                    max(0.0, sodium - sodiumUpper) * 2) /
+                sodiumTarget
           : 0.0;
       final fluidPenalty = (fluidTarget > 0 && fluid > fluidUpper)
           ? ((fluid - fluidUpper) / fluidTarget) * 3
@@ -322,11 +320,16 @@ _ElecPick? _pickBestElectrolyte(
       final carbPenalty = (carbTarget > 0 && carbs > carbUpper)
           ? ((carbs - carbUpper) / carbTarget) * 1.5
           : 0.0;
-      final capsulePenalty =
-          (isSupp && servings > 2) ? 0.05 * (servings - 2) : 0.0;
+      final capsulePenalty = (isSupp && servings > 2)
+          ? 0.05 * (servings - 2)
+          : 0.0;
       final prefBonus = elec.preferenceScore >= kPrefScoreLiked ? -0.02 : 0.0;
       final score =
-          sodiumPenalty + fluidPenalty + carbPenalty + capsulePenalty + prefBonus;
+          sodiumPenalty +
+          fluidPenalty +
+          carbPenalty +
+          capsulePenalty +
+          prefBonus;
 
       final candidate = _ElecPick(
         food: elec,
@@ -407,8 +410,7 @@ class ClientDuringPhaseSolver {
 
     // Generous upper bounds (mirrors the server's 1.1× default)
     final carbUpper = carbTarget > 0 ? carbTarget * 1.1 : double.infinity;
-    final sodiumUpper =
-        sodiumTarget > 0 ? sodiumTarget * 1.1 : double.infinity;
+    final sodiumUpper = sodiumTarget > 0 ? sodiumTarget * 1.1 : double.infinity;
     final fluidUpper = fluidTarget > 0 ? fluidTarget * 1.1 : double.infinity;
     final sodiumLower = sodiumTarget > 0 ? sodiumTarget * 0.9 : 0.0;
 
@@ -434,8 +436,7 @@ class ClientDuringPhaseSolver {
     if (primaryCarb != null) {
       // If sports drink is also available, split carb share 70/30
       final sdPeek = _pickWeighted(cat.sportsDrink);
-      final hasSportsDrink =
-          sdPeek != null && sdPeek.carbsG > 0;
+      final hasSportsDrink = sdPeek != null && sdPeek.carbsG > 0;
       final primaryShare = hasSportsDrink ? 0.7 : 1.0;
 
       final primaryCarbTarget = carbTarget * primaryShare;
@@ -475,7 +476,9 @@ class ClientDuringPhaseSolver {
 
       if (remainingCarbs > 0 && sportsDrink.carbsG > 0) {
         final rawSdServings = remainingCarbs / sportsDrink.carbsG;
-        final effectiveCarbUpper = carbTarget < 15 ? double.infinity : carbUpper;
+        final effectiveCarbUpper = carbTarget < 15
+            ? double.infinity
+            : carbUpper;
 
         var sdServings = _cappedServings(
           food: sportsDrink,
@@ -522,8 +525,9 @@ class ClientDuringPhaseSolver {
                 sdFullCarbs <= carbUpper + 1e-9) {
               // Remove primary carb and replace with sports drink alone
               if (primaryCarb != null) {
-                final idx =
-                    result.indexWhere((s) => s.foodId == primaryCarb!.id);
+                final idx = result.indexWhere(
+                  (s) => s.foodId == primaryCarb!.id,
+                );
                 if (idx >= 0) {
                   final removed = result.removeAt(idx);
                   carbsAssigned -= removed.carbsG;
@@ -554,8 +558,8 @@ class ClientDuringPhaseSolver {
         // block other primary-carb types (only allow the same product type).
         final filteredAlternates = (isRunning && primaryCarb != null)
             ? alternates
-                .where((f) => f.productType == primaryCarb!.productType)
-                .toList()
+                  .where((f) => f.productType == primaryCarb!.productType)
+                  .toList()
             : alternates;
 
         if (filteredAlternates.isNotEmpty) {
@@ -713,8 +717,9 @@ class ClientDuringPhaseSolver {
 
           // Second pass: if sodium is still below lower bound
           if (sodiumAssigned < sodiumLower) {
-            final secondPool =
-                cat.electrolyte.where((e) => e.id != firstPick.food.id).toList();
+            final secondPool = cat.electrolyte
+                .where((e) => e.id != firstPick.food.id)
+                .toList();
             final secondPick = _pickBestElectrolyte(
               secondPool,
               sodiumAssigned,

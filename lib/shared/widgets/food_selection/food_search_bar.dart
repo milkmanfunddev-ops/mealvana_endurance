@@ -133,10 +133,7 @@ class FoodSearchBar extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: AppRadius.inputRadius,
-                borderSide: const BorderSide(
-                  color: AppColors.orange,
-                  width: 2,
-                ),
+                borderSide: const BorderSide(color: AppColors.orange, width: 2),
               ),
             ),
           ),

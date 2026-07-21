@@ -49,9 +49,7 @@ class MoreFiltersSheet extends ConsumerWidget {
           ),
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(24),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
             top: false,
@@ -94,8 +92,9 @@ class MoreFiltersSheet extends ConsumerWidget {
                           minimumSize: const Size(0, 0),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           foregroundColor: AppColors.orange,
-                          disabledForegroundColor:
-                              scheme.onSurface.withValues(alpha: 0.35),
+                          disabledForegroundColor: scheme.onSurface.withValues(
+                            alpha: 0.35,
+                          ),
                         ),
                         child: Text(
                           'Reset',
@@ -175,8 +174,7 @@ class MoreFiltersSheet extends ConsumerWidget {
                                     label: d.displayName,
                                     selected: state.filter.activeDietFilters
                                         .contains(d),
-                                    onTap: () =>
-                                        controller.toggleDietFilter(d),
+                                    onTap: () => controller.toggleDietFilter(d),
                                   ),
                               // Allergens: render all 9 allergen types as
                               // chips. Profile allergens are pre-selected

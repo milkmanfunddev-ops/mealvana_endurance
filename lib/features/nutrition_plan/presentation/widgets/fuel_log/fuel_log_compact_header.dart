@@ -10,10 +10,7 @@ import '../../../domain/run_parameters.dart';
 /// Compact header shown during fuel log mode, replacing the hero section.
 /// Displays activity type label, key stats (distance, duration, pace), and date.
 class FuelLogCompactHeader extends ConsumerWidget {
-  const FuelLogCompactHeader({
-    super.key,
-    required this.activity,
-  });
+  const FuelLogCompactHeader({super.key, required this.activity});
 
   final Activity activity;
 
@@ -51,9 +48,9 @@ class FuelLogCompactHeader extends ConsumerWidget {
       );
     }
 
-    final dateStr = DateFormat('EEEE, MMM d').format(
-      activity.scheduledDateTime,
-    );
+    final dateStr = DateFormat(
+      'EEEE, MMM d',
+    ).format(activity.scheduledDateTime);
 
     return Container(
       padding: const EdgeInsets.symmetric(

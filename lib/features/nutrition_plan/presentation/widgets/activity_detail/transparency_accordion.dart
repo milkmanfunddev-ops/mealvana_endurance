@@ -76,8 +76,9 @@ class _TransparencyAccordionState extends State<TransparencyAccordion>
     final labelColor = isDark
         ? AppColors.textDarkSecondary
         : AppColors.textLightSecondary;
-    final expandedLabelColor =
-        isDark ? AppColors.textDark : AppColors.textLight;
+    final expandedLabelColor = isDark
+        ? AppColors.textDark
+        : AppColors.textLight;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -118,10 +119,7 @@ class _TransparencyAccordionState extends State<TransparencyAccordion>
               return Align(
                 alignment: Alignment.topCenter,
                 heightFactor: _heightFactor.value,
-                child: Opacity(
-                  opacity: _controller.value,
-                  child: child,
-                ),
+                child: Opacity(opacity: _controller.value, child: child),
               );
             },
             child: Padding(

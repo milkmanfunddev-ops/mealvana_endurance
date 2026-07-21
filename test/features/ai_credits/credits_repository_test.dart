@@ -59,8 +59,11 @@ void main() {
 
   group('CreditWallet.fromMap', () {
     test('parses balance correctly', () {
-      final wallet =
-          CreditWallet.fromMap({'balance': 50, 'free_period': null, 'updated_at': null});
+      final wallet = CreditWallet.fromMap({
+        'balance': 50,
+        'free_period': null,
+        'updated_at': null,
+      });
       expect(wallet.balance, 50);
     });
 
@@ -84,8 +87,11 @@ void main() {
     });
 
     test('balance 0 → balance 0 (not the zero constant)', () {
-      final wallet =
-          CreditWallet.fromMap({'balance': 0, 'free_period': null, 'updated_at': null});
+      final wallet = CreditWallet.fromMap({
+        'balance': 0,
+        'free_period': null,
+        'updated_at': null,
+      });
       expect(wallet.balance, 0);
     });
 
@@ -99,14 +105,20 @@ void main() {
     });
 
     test('null balance falls back to 0', () {
-      final wallet =
-          CreditWallet.fromMap({'balance': null, 'free_period': null, 'updated_at': null});
+      final wallet = CreditWallet.fromMap({
+        'balance': null,
+        'free_period': null,
+        'updated_at': null,
+      });
       expect(wallet.balance, 0);
     });
 
     test('null updatedAt stays null', () {
-      final wallet =
-          CreditWallet.fromMap({'balance': 1, 'free_period': null, 'updated_at': null});
+      final wallet = CreditWallet.fromMap({
+        'balance': 1,
+        'free_period': null,
+        'updated_at': null,
+      });
       expect(wallet.updatedAt, isNull);
     });
   });
@@ -139,8 +151,9 @@ void main() {
   group('fetchWallet — graceful error handling', () {
     test('returns CreditWallet.zero when Supabase throws', () async {
       when(() => mockGoTrue.currentUser).thenReturn(MockUser(_userId));
-      when(() => mockSupabase.from('token_wallets'))
-          .thenThrow(Exception('Network error'));
+      when(
+        () => mockSupabase.from('token_wallets'),
+      ).thenThrow(Exception('Network error'));
 
       final wallet = await repository.fetchWallet();
       expect(wallet.balance, 0, reason: 'Should degrade gracefully to zero');
@@ -174,11 +187,16 @@ void main() {
   group('recentLedger — graceful error handling', () {
     test('returns empty list when Supabase throws', () async {
       when(() => mockGoTrue.currentUser).thenReturn(MockUser(_userId));
-      when(() => mockSupabase.from('token_ledger'))
-          .thenThrow(Exception('Network error'));
+      when(
+        () => mockSupabase.from('token_ledger'),
+      ).thenThrow(Exception('Network error'));
 
       final ledger = await repository.recentLedger();
-      expect(ledger, isEmpty, reason: 'Should degrade gracefully to empty list');
+      expect(
+        ledger,
+        isEmpty,
+        reason: 'Should degrade gracefully to empty list',
+      );
     });
   });
 }

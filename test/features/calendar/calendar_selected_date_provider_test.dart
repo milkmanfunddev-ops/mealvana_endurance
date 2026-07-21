@@ -27,7 +27,9 @@ void main() {
       addTearDown(container.dispose);
 
       final dateWithTime = DateTime(2026, 9, 15, 14, 30, 45);
-      container.read(calendarSelectedDateProvider.notifier).setDate(dateWithTime);
+      container
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(dateWithTime);
 
       final state = container.read(calendarSelectedDateProvider);
       expect(state, DateTime(2026, 9, 15));
@@ -40,7 +42,9 @@ void main() {
       final container = makeContainer();
       addTearDown(container.dispose);
 
-      container.read(calendarSelectedDateProvider.notifier).setDate(DateTime(2026, 1, 20));
+      container
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(DateTime(2026, 1, 20));
       final state = container.read(calendarSelectedDateProvider);
       expect(state, DateTime(2026, 1, 20));
     });
@@ -49,8 +53,12 @@ void main() {
       final container = makeContainer();
       addTearDown(container.dispose);
 
-      container.read(calendarSelectedDateProvider.notifier).setDate(DateTime(2026, 1, 1));
-      container.read(calendarSelectedDateProvider.notifier).setDate(DateTime(2026, 12, 31));
+      container
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(DateTime(2026, 1, 1));
+      container
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(DateTime(2026, 12, 31));
 
       final state = container.read(calendarSelectedDateProvider);
       expect(state, DateTime(2026, 12, 31));
@@ -62,7 +70,9 @@ void main() {
 
       // Provide a DateTime that has explicit midnight via constructor
       final utcMidnight = DateTime.utc(2026, 6, 15, 0, 0, 0);
-      container.read(calendarSelectedDateProvider.notifier).setDate(utcMidnight);
+      container
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(utcMidnight);
 
       final state = container.read(calendarSelectedDateProvider);
       // Regardless of UTC/local the hour/minute/second should be zero
@@ -77,8 +87,12 @@ void main() {
       addTearDown(c1.dispose);
       addTearDown(c2.dispose);
 
-      c1.read(calendarSelectedDateProvider.notifier).setDate(DateTime(2026, 6, 1));
-      c2.read(calendarSelectedDateProvider.notifier).setDate(DateTime(2026, 9, 1));
+      c1
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(DateTime(2026, 6, 1));
+      c2
+          .read(calendarSelectedDateProvider.notifier)
+          .setDate(DateTime(2026, 9, 1));
 
       expect(c1.read(calendarSelectedDateProvider), DateTime(2026, 6, 1));
       expect(c2.read(calendarSelectedDateProvider), DateTime(2026, 9, 1));
@@ -131,14 +145,17 @@ void main() {
     // the subtraction: day - weekday + 1 = 1 - 7 + 1 = -5
     // DateTime(year, month, -5) is handled by Dart via date arithmetic.
     // Verifying Dart handles it correctly (overflow to prior month).
-    test('BUG-CHECK: Sunday Jan 5 2025 returns Monday Dec 30 2024 (cross-month)', () {
-      // 2025-01-05 is a Sunday
-      final sunday = DateTime(2025, 1, 5);
-      expect(sunday.weekday, 7); // confirm it is Sunday
-      final weekStart = getWeekStart(sunday);
-      // day - weekday + 1 = 5 - 7 + 1 = -1 → Dec 30 2024
-      expect(weekStart, DateTime(2024, 12, 30));
-    });
+    test(
+      'BUG-CHECK: Sunday Jan 5 2025 returns Monday Dec 30 2024 (cross-month)',
+      () {
+        // 2025-01-05 is a Sunday
+        final sunday = DateTime(2025, 1, 5);
+        expect(sunday.weekday, 7); // confirm it is Sunday
+        final weekStart = getWeekStart(sunday);
+        // day - weekday + 1 = 5 - 7 + 1 = -1 → Dec 30 2024
+        expect(weekStart, DateTime(2024, 12, 30));
+      },
+    );
 
     // Verify that activity day-bucketing uses local date, not UTC offset.
     // An activity at 2026-06-15 23:30 local and the filter uses naive local
@@ -147,40 +164,58 @@ void main() {
       // The activities_service uses isBetweenValues(weekStart, weekEnd)
       // where weekEnd = weekStart + 6 days + 23h 59m 59s
       final weekStart = DateTime(2026, 6, 15); // Monday
-      final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+      final weekEnd = weekStart.add(
+        const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+      );
 
       final activityTime = DateTime(2026, 6, 15, 23, 30);
-      expect(activityTime.isAfter(weekStart) || activityTime.isAtSameMomentAs(weekStart), isTrue);
+      expect(
+        activityTime.isAfter(weekStart) ||
+            activityTime.isAtSameMomentAs(weekStart),
+        isTrue,
+      );
       expect(activityTime.isBefore(weekEnd), isTrue);
     });
 
-    test('activity at midnight Mon June 15 is within week starting June 15', () {
-      final weekStart = DateTime(2026, 6, 15);
-      final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+    test(
+      'activity at midnight Mon June 15 is within week starting June 15',
+      () {
+        final weekStart = DateTime(2026, 6, 15);
+        final weekEnd = weekStart.add(
+          const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+        );
 
-      final activityMidnight = DateTime(2026, 6, 15, 0, 0, 0);
-      // isBetweenValues in Drift is >= startDate AND <= endDate
-      expect(!activityMidnight.isBefore(weekStart), isTrue);
-      expect(!activityMidnight.isAfter(weekEnd), isTrue);
-    });
+        final activityMidnight = DateTime(2026, 6, 15, 0, 0, 0);
+        // isBetweenValues in Drift is >= startDate AND <= endDate
+        expect(!activityMidnight.isBefore(weekStart), isTrue);
+        expect(!activityMidnight.isAfter(weekEnd), isTrue);
+      },
+    );
 
     // KEY TZ BUG CLASS: if scheduledDateTime were stored as UTC and then compared
     // using a naive local weekStart, an activity at 22:00 UTC (= 18:00 ET)
     // would appear to be outside the week if the comparison used UTC day.
     // This test verifies local-day interpretation.
-    test('naive-local boundary: 22:00 local on Sunday is still within that week', () {
-      final weekStart = DateTime(2026, 6, 15); // Monday
-      final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+    test(
+      'naive-local boundary: 22:00 local on Sunday is still within that week',
+      () {
+        final weekStart = DateTime(2026, 6, 15); // Monday
+        final weekEnd = weekStart.add(
+          const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+        );
 
-      // Sunday 22:00 — should be within the week
-      final sundayEvening = DateTime(2026, 6, 21, 22, 0, 0);
-      expect(!sundayEvening.isBefore(weekStart), isTrue);
-      expect(!sundayEvening.isAfter(weekEnd), isTrue);
-    });
+        // Sunday 22:00 — should be within the week
+        final sundayEvening = DateTime(2026, 6, 21, 22, 0, 0);
+        expect(!sundayEvening.isBefore(weekStart), isTrue);
+        expect(!sundayEvening.isAfter(weekEnd), isTrue);
+      },
+    );
 
     test('activity one second after weekEnd is NOT in the week', () {
       final weekStart = DateTime(2026, 6, 15);
-      final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+      final weekEnd = weekStart.add(
+        const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+      );
 
       // One second past weekEnd
       final nextWeekMon = weekEnd.add(const Duration(seconds: 1));
@@ -201,13 +236,22 @@ void main() {
       required List<DateTime> carbLoadingDates,
     }) {
       final indicators = <String>{};
-      if (activityDates.any((d) => d.year == date.year && d.month == date.month && d.day == date.day)) {
+      if (activityDates.any(
+        (d) =>
+            d.year == date.year && d.month == date.month && d.day == date.day,
+      )) {
         indicators.add('activity');
       }
-      if (eventDates.any((d) => d.year == date.year && d.month == date.month && d.day == date.day)) {
+      if (eventDates.any(
+        (d) =>
+            d.year == date.year && d.month == date.month && d.day == date.day,
+      )) {
         indicators.add('event');
       }
-      if (carbLoadingDates.any((d) => d.year == date.year && d.month == date.month && d.day == date.day)) {
+      if (carbLoadingDates.any(
+        (d) =>
+            d.year == date.year && d.month == date.month && d.day == date.day,
+      )) {
         indicators.add('carbLoading');
       }
       return indicators;

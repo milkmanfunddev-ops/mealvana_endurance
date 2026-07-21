@@ -2286,7 +2286,8 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     _trackAnalytics('fuel_log_started', {
       'activity_id': activityId,
-      'has_existing_fuel_log': _parseSavedFuelLog(currentState.activity) != null,
+      'has_existing_fuel_log':
+          _parseSavedFuelLog(currentState.activity) != null,
     });
 
     final fuelLogData =

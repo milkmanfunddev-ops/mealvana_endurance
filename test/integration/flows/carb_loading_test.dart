@@ -65,7 +65,9 @@ void main() {
       final deviceId = 'device-event-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -96,7 +98,9 @@ void main() {
       });
 
       // Insert event
-      await database.into(database.eventsTable).insert(
+      await database
+          .into(database.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               userId: userId,
               eventType: 'running',
@@ -107,7 +111,9 @@ void main() {
               goalTimeMinutes: const Value(240), // 4 hours
               goalPaceMinutesPerMile: const Value(9.09),
               hasCarbLoading: const Value(false),
-              hasNutritionPlan: const Value(false), // OBSOLETE: kept for test compatibility
+              hasNutritionPlan: const Value(
+                false,
+              ), // OBSOLETE: kept for test compatibility
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
             ),
@@ -115,9 +121,9 @@ void main() {
 
       logSection('Verifying event in database');
 
-      final events = await (database.select(database.eventsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final events = await (database.select(
+        database.eventsTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       logTestResult('event_count', events.length);
       logTestResult('event_type', events.first.eventType);
@@ -159,7 +165,9 @@ void main() {
       final deviceId = 'device-carb-calc-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -195,10 +203,14 @@ void main() {
 
       logTestResult('event_date', eventDate.toIso8601String().split('T')[0]);
       logTestResult(
-          'carb_loading_start', carbLoadingStartDate.toIso8601String().split('T')[0]);
+        'carb_loading_start',
+        carbLoadingStartDate.toIso8601String().split('T')[0],
+      );
 
       // Insert event with carb loading
-      await database.into(database.eventsTable).insert(
+      await database
+          .into(database.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               userId: userId,
               eventType: 'running',
@@ -215,17 +227,20 @@ void main() {
 
       logSection('Verifying carb loading dates');
 
-      final event = await (database.select(database.eventsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .getSingle();
+      final event = await (database.select(
+        database.eventsTable,
+      )..where((t) => t.userId.equals(userId))).getSingle();
 
       logTestResult('has_carb_loading', event.hasCarbLoading);
       logTestResult('carb_loading_days', event.carbLoadingDays);
       logTestResult(
-          'carb_loading_start_date',
-          event.carbLoadingStartDate?.toIso8601String().split('T')[0]);
+        'carb_loading_start_date',
+        event.carbLoadingStartDate?.toIso8601String().split('T')[0],
+      );
 
-      final daysBeforeEvent = eventDate.difference(event.carbLoadingStartDate!).inDays;
+      final daysBeforeEvent = eventDate
+          .difference(event.carbLoadingStartDate!)
+          .inDays;
 
       logTestResult('days_before_event', daysBeforeEvent);
 
@@ -261,7 +276,9 @@ void main() {
       final deviceId = 'device-upcoming-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -287,11 +304,7 @@ void main() {
       final futureEvent2 = today.add(const Duration(days: 45));
       final pastEvent = today.subtract(const Duration(days: 7));
 
-      logTestSetup({
-        'user_id': userId,
-        'future_events': 2,
-        'past_events': 1,
-      });
+      logTestSetup({'user_id': userId, 'future_events': 2, 'past_events': 1});
 
       // Insert multiple events
       await database.batch((batch) {
@@ -318,7 +331,9 @@ void main() {
             eventDate: Value(futureEvent2),
             hasCarbLoading: const Value(true),
             carbLoadingDays: const Value(3),
-            hasNutritionPlan: const Value(false), // OBSOLETE: kept for test compatibility
+            hasNutritionPlan: const Value(
+              false,
+            ), // OBSOLETE: kept for test compatibility
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -342,16 +357,23 @@ void main() {
       logSection('Querying upcoming events');
 
       // Query only future events
-      final upcomingEvents = await (database.select(database.eventsTable)
-            ..where((t) => t.userId.equals(userId) & t.eventDate.isBiggerOrEqualValue(today))
-            ..orderBy([(t) => OrderingTerm(expression: t.eventDate)]))
-          .get();
+      final upcomingEvents =
+          await (database.select(database.eventsTable)
+                ..where(
+                  (t) =>
+                      t.userId.equals(userId) &
+                      t.eventDate.isBiggerOrEqualValue(today),
+                )
+                ..orderBy([(t) => OrderingTerm(expression: t.eventDate)]))
+              .get();
 
       logTestResult('upcoming_event_count', upcomingEvents.length);
       if (upcomingEvents.isNotEmpty) {
         logTestResult('first_event', upcomingEvents.first.eventName);
-        logTestResult('first_event_days_away',
-            upcomingEvents.first.eventDate!.difference(today).inDays);
+        logTestResult(
+          'first_event_days_away',
+          upcomingEvents.first.eventDate!.difference(today).inDays,
+        );
       }
 
       logAssertion(
@@ -362,16 +384,17 @@ void main() {
 
       logAssertion(
         'Events sorted by date',
-        passed: upcomingEvents.length >= 2 &&
-            upcomingEvents[0]
-                .eventDate!
-                .isBefore(upcomingEvents[1].eventDate!),
+        passed:
+            upcomingEvents.length >= 2 &&
+            upcomingEvents[0].eventDate!.isBefore(upcomingEvents[1].eventDate!),
         reason: 'Events should be ordered by date ascending',
       );
 
       expect(upcomingEvents.length, equals(2));
-      expect(upcomingEvents.map((e) => e.eventName).toList(),
-          containsAll(['Spring 10K', 'Boston Marathon']));
+      expect(
+        upcomingEvents.map((e) => e.eventName).toList(),
+        containsAll(['Spring 10K', 'Boston Marathon']),
+      );
 
       logTestPass('Upcoming events retrieved successfully');
     });
@@ -383,7 +406,9 @@ void main() {
       final deviceId = 'device-duration-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -406,13 +431,12 @@ void main() {
 
       final eventDate = DateTime.now().add(const Duration(days: 60));
 
-      logTestSetup({
-        'user_id': userId,
-        'valid_durations': '1, 2, 3, 7 days',
-      });
+      logTestSetup({'user_id': userId, 'valid_durations': '1, 2, 3, 7 days'});
 
       // Test 1-day carb loading
-      await database.into(database.eventsTable).insert(
+      await database
+          .into(database.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               userId: userId,
               eventType: 'running',
@@ -427,7 +451,9 @@ void main() {
           );
 
       // Test 7-day carb loading
-      await database.into(database.eventsTable).insert(
+      await database
+          .into(database.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               userId: userId,
               eventType: 'running',
@@ -443,9 +469,9 @@ void main() {
 
       logSection('Verifying carb loading durations');
 
-      final events = await (database.select(database.eventsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final events = await (database.select(
+        database.eventsTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       final event1Day = events.firstWhere((e) => e.carbLoadingDays == 1);
       final event7Day = events.firstWhere((e) => e.carbLoadingDays == 7);
@@ -478,7 +504,9 @@ void main() {
       final deviceId = 'device-times-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -509,7 +537,9 @@ void main() {
       });
 
       // Insert event with time goals
-      await database.into(database.eventsTable).insert(
+      await database
+          .into(database.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               userId: userId,
               eventType: 'running',
@@ -518,7 +548,9 @@ void main() {
               eventDate: Value(eventDate),
               goalTimeMinutes: const Value(210), // 3:30:00
               goalPaceMinutesPerMile: const Value(8.0),
-              predictedFinishTimeMinutes: const Value(225), // 3:45:00 (realistic)
+              predictedFinishTimeMinutes: const Value(
+                225,
+              ), // 3:45:00 (realistic)
               hasCarbLoading: const Value(true),
               carbLoadingDays: const Value(3),
               hasNutritionPlan: const Value(true),
@@ -529,22 +561,30 @@ void main() {
 
       logSection('Verifying time goals');
 
-      final event = await (database.select(database.eventsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .getSingle();
+      final event = await (database.select(
+        database.eventsTable,
+      )..where((t) => t.userId.equals(userId))).getSingle();
 
       logTestResult('goal_time_minutes', event.goalTimeMinutes);
       logTestResult('goal_pace_min_per_mile', event.goalPaceMinutesPerMile);
-      logTestResult('predicted_finish_minutes', event.predictedFinishTimeMinutes);
+      logTestResult(
+        'predicted_finish_minutes',
+        event.predictedFinishTimeMinutes,
+      );
 
       final goalHours = event.goalTimeMinutes! ~/ 60;
       final goalMinutes = event.goalTimeMinutes! % 60;
       final predictedHours = event.predictedFinishTimeMinutes! ~/ 60;
       final predictedMinutes = event.predictedFinishTimeMinutes! % 60;
 
-      logTestResult('goal_time_formatted', '$goalHours:${goalMinutes.toString().padLeft(2, '0')}');
-      logTestResult('predicted_time_formatted',
-          '$predictedHours:${predictedMinutes.toString().padLeft(2, '0')}');
+      logTestResult(
+        'goal_time_formatted',
+        '$goalHours:${goalMinutes.toString().padLeft(2, '0')}',
+      );
+      logTestResult(
+        'predicted_time_formatted',
+        '$predictedHours:${predictedMinutes.toString().padLeft(2, '0')}',
+      );
 
       logAssertion(
         'Goal time stored',

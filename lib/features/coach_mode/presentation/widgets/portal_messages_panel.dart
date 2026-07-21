@@ -117,18 +117,18 @@ class _ConversationTile extends ConsumerWidget {
   final CoachAthleteRelationship relationship;
   final VoidCallback onTap;
 
-  const _ConversationTile({
-    required this.relationship,
-    required this.onTap,
-  });
+  const _ConversationTile({required this.relationship, required this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final name = relationship.athleteDisplayName ??
+    final name =
+        relationship.athleteDisplayName ??
         'Athlete ${relationship.athleteUserId.substring(0, 8)}';
 
     return FutureBuilder<List<CoachMessage>>(
-      future: ref.read(coachServiceProvider).getConversation(
+      future: ref
+          .read(coachServiceProvider)
+          .getConversation(
             coachUserId: relationship.coachUserId,
             athleteUserId: relationship.athleteUserId,
             limit: 1,

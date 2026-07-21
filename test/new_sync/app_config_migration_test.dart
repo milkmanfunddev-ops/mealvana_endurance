@@ -7,8 +7,11 @@ void main() {
       final migrationFile = File(
         'supabase/migrations/_archived/20260118_create_app_config_table.sql',
       );
-      expect(migrationFile.existsSync(), isTrue,
-          reason: 'Migration file should exist');
+      expect(
+        migrationFile.existsSync(),
+        isTrue,
+        reason: 'Migration file should exist',
+      );
     });
 
     test('migration contains required SQL statements', () {

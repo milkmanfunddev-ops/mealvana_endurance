@@ -14,7 +14,8 @@ import 'package:mealvana_endurance/features/meal_logging/presentation/providers/
 
 const _logDate = '2026-07-04';
 
-MealComponent _c(String name) => MealComponent(name: name, portion: '1 serving');
+MealComponent _c(String name) =>
+    MealComponent(name: name, portion: '1 serving');
 
 void main() {
   group('DraftMealController auto-naming', () {
@@ -33,8 +34,9 @@ void main() {
     });
 
     test('1 component auto-names to the item name', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
 
       final state = container.read(draftMealControllerProvider(_logDate));
@@ -43,8 +45,9 @@ void main() {
     });
 
     test('adding a second component recomputes the auto-name', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
       notifier.addComponent(_c('Peanut butter'));
 
@@ -53,8 +56,9 @@ void main() {
     });
 
     test('setName marks the name manually set and stops auto-recompute', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
       notifier.setName('My custom meal');
 
@@ -70,8 +74,9 @@ void main() {
     });
 
     test('clearing the name field reverts to auto-naming', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
       notifier.addComponent(_c('Peanut butter'));
       notifier.setName('My custom meal');
@@ -83,8 +88,9 @@ void main() {
     });
 
     test('removeComponentAt recomputes the auto-name', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
       notifier.addComponent(_c('Peanut butter'));
       notifier.removeComponentAt(1);
@@ -94,8 +100,9 @@ void main() {
     });
 
     test('clear() resets components, name, and nameManuallySet', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
       notifier.setName('My custom meal');
       notifier.clear();
@@ -127,8 +134,9 @@ void main() {
     });
 
     test('clear() re-seeds eatenAt on the logDate day, not today', () {
-      final notifier =
-          container.read(draftMealControllerProvider(_logDate).notifier);
+      final notifier = container.read(
+        draftMealControllerProvider(_logDate).notifier,
+      );
       notifier.addComponent(_c('Banana'));
       notifier.clear();
 

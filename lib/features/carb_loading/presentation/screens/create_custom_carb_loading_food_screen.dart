@@ -59,7 +59,10 @@ class _CreateCustomCarbLoadingFoodScreenState
     }
 
     if (_selectedMealTypes.isEmpty) {
-      MealvanaSnackbar.showWarning(context, 'Please select at least one meal type');
+      MealvanaSnackbar.showWarning(
+        context,
+        'Please select at least one meal type',
+      );
       return;
     }
 
@@ -111,9 +114,7 @@ class _CreateCustomCarbLoadingFoodScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () => context.pop(),
-        ),
+        leading: CustomAppBarBackButton(onPressed: () => context.pop()),
         title: Text(
           'Create Custom Food',
           style: AppTextStyles.sectionTitle.copyWith(
@@ -160,18 +161,26 @@ class _CreateCustomCarbLoadingFoodScreenState
                       const SizedBox(height: AppSpacing.sm),
                       TextField(
                         controller: _carbsController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d+\.?\d{0,1}'),
+                          ),
                         ],
                         decoration: InputDecoration(
                           hintText: 'e.g., 65',
                           hintStyle: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           suffixText: 'g',
                           suffixStyle: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: AppRadius.inputRadius,
@@ -226,7 +235,9 @@ class _CreateCustomCarbLoadingFoodScreenState
                         spacing: AppSpacing.xs,
                         runSpacing: AppSpacing.xs,
                         children: MealType.values.map((mealType) {
-                          final isSelected = _selectedMealTypes.contains(mealType);
+                          final isSelected = _selectedMealTypes.contains(
+                            mealType,
+                          );
                           String mealName;
                           switch (mealType) {
                             case MealType.breakfast:
@@ -263,15 +274,21 @@ class _CreateCustomCarbLoadingFoodScreenState
                               color: isSelected
                                   ? AppColors.cream
                                   : Theme.of(context).colorScheme.onSurface,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
-                            backgroundColor: Theme.of(context).colorScheme.surface,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
                             side: BorderSide(
                               color: isSelected
                                   ? AppColors.electrolyte
                                   : (isDark
-                                      ? AppColors.cream.withValues(alpha: 0.3)
-                                      : AppColors.blackberry.withValues(alpha: 0.3)),
+                                        ? AppColors.cream.withValues(alpha: 0.3)
+                                        : AppColors.blackberry.withValues(
+                                            alpha: 0.3,
+                                          )),
                             ),
                           );
                         }).toList(),

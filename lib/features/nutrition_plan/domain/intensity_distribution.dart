@@ -27,10 +27,10 @@ class IntensityDistribution {
     required this.conversationalPct,
     required this.tempoPct,
     required this.allOutPct,
-  })  : assert(conversationalPct >= 0 && conversationalPct <= 100),
-        assert(tempoPct >= 0 && tempoPct <= 100),
-        assert(allOutPct >= 0 && allOutPct <= 100),
-        assert(conversationalPct + tempoPct + allOutPct == 100);
+  }) : assert(conversationalPct >= 0 && conversationalPct <= 100),
+       assert(tempoPct >= 0 && tempoPct <= 100),
+       assert(allOutPct >= 0 && allOutPct <= 100),
+       assert(conversationalPct + tempoPct + allOutPct == 100);
 
   /// Creates an intensity distribution with runtime validation.
   ///
@@ -47,9 +47,7 @@ class IntensityDistribution {
       );
     }
     if (tempoPct < 0 || tempoPct > 100) {
-      throw ArgumentError(
-        'tempoPct must be between 0 and 100, got $tempoPct',
-      );
+      throw ArgumentError('tempoPct must be between 0 and 100, got $tempoPct');
     }
     if (allOutPct < 0 || allOutPct > 100) {
       throw ArgumentError(
@@ -128,17 +126,17 @@ class IntensityDistribution {
     final changedZone = conversationalPct != null
         ? 'conversational'
         : tempoPct != null
-            ? 'tempo'
-            : allOutPct != null
-                ? 'allOut'
-                : throw ArgumentError('At least one zone must be provided');
+        ? 'tempo'
+        : allOutPct != null
+        ? 'allOut'
+        : throw ArgumentError('At least one zone must be provided');
 
     final newValue = conversationalPct ?? tempoPct ?? allOutPct!;
     final oldValue = changedZone == 'conversational'
         ? this.conversationalPct
         : changedZone == 'tempo'
-            ? this.tempoPct
-            : this.allOutPct;
+        ? this.tempoPct
+        : this.allOutPct;
 
     // Clamp the new value to 0-100
     final clampedNewValue = newValue.clamp(0, 100);
@@ -175,7 +173,10 @@ class IntensityDistribution {
       remainingZones['allOut'] = newAllOut;
     }
 
-    final totalRemaining = remainingZones.values.fold<int>(0, (sum, val) => sum + val);
+    final totalRemaining = remainingZones.values.fold<int>(
+      0,
+      (sum, val) => sum + val,
+    );
 
     // If no remaining value to distribute
     if (totalRemaining == 0) {
@@ -271,11 +272,7 @@ class IntensityDistribution {
 
   @override
   int get hashCode {
-    return Object.hash(
-      conversationalPct,
-      tempoPct,
-      allOutPct,
-    );
+    return Object.hash(conversationalPct, tempoPct, allOutPct);
   }
 
   @override

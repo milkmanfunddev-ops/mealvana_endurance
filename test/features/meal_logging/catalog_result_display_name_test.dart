@@ -12,7 +12,10 @@ void main() {
         caloriesPerServing: 270,
       );
 
-      expect(result.displayName, "Clif Builder's Protein Bar — Oreo / Box of 12");
+      expect(
+        result.displayName,
+        "Clif Builder's Protein Bar — Oreo / Box of 12",
+      );
     });
 
     test('returns just title when variantTitle is null', () {
@@ -38,17 +41,20 @@ void main() {
       expect(result.displayName, "Clif Builder's Protein Bar");
     });
 
-    test('displayName never leads with the variant for a product with variant', () {
-      final result = CatalogSearchResult(
-        id: 'test-id',
-        title: 'Huma Chia Energy Gel',
-        variantTitle: 'Apples and Cinnamon',
-        brand: 'Huma',
-        caloriesPerServing: 100,
-      );
+    test(
+      'displayName never leads with the variant for a product with variant',
+      () {
+        final result = CatalogSearchResult(
+          id: 'test-id',
+          title: 'Huma Chia Energy Gel',
+          variantTitle: 'Apples and Cinnamon',
+          brand: 'Huma',
+          caloriesPerServing: 100,
+        );
 
-      expect(result.displayName, startsWith('Huma Chia Energy Gel'));
-      expect(result.displayName, isNot(startsWith('Apples and Cinnamon')));
-    });
+        expect(result.displayName, startsWith('Huma Chia Energy Gel'));
+        expect(result.displayName, isNot(startsWith('Apples and Cinnamon')));
+      },
+    );
   });
 }

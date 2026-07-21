@@ -104,10 +104,7 @@ class SolverFood {
   }
 
   /// Create from a Drift [UserFood].
-  factory SolverFood.fromUserFood(
-    UserFood f, {
-    required int preferenceScore,
-  }) {
+  factory SolverFood.fromUserFood(UserFood f, {required int preferenceScore}) {
     return SolverFood(
       id: f.id,
       name: f.name,
@@ -126,7 +123,8 @@ class SolverFood {
       maxServings: 4,
       preferenceScore: preferenceScore,
       isElectrolyte: f.isElectrolyte,
-      isLiquid: f.productTypeId == 'sports_drink' || f.productTypeId == 'beverage',
+      isLiquid:
+          f.productTypeId == 'sports_drink' || f.productTypeId == 'beverage',
       isUserFood: true,
       isIndivisible: _isIndivisibleProduct(f.productTypeId),
       productType: f.productTypeId,

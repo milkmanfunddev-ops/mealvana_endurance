@@ -25,7 +25,7 @@ class PlanSectionWidget extends StatelessWidget {
   final Function(String foodItemId, String foodName)? onSwapFood;
   final Function(String foodItemId)? onDeleteFood;
   final int? activityId;
-  
+
   /// Get section category from section.id (sport-agnostic)
   String get _sectionCategory {
     // section.id is already the category: 'before_run', 'during_run', 'after_run'
@@ -54,7 +54,8 @@ class PlanSectionWidget extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (section.subtitle != null && section.subtitle!.isNotEmpty) ...[
+                  if (section.subtitle != null &&
+                      section.subtitle!.isNotEmpty) ...[
                     SizedBox(height: 4.h),
                     Text(
                       section.subtitle!,
@@ -70,14 +71,14 @@ class PlanSectionWidget extends StatelessWidget {
             ),
           ],
         ),
-        
+
         SizedBox(height: 8.h),
-        
+
         // Section Macro Targets
         SectionMacroTargetsWidget(section: section),
-        
+
         SizedBox(height: 12.h),
-        
+
         // Food Items List
         if (section.foodItems.isEmpty)
           Container(
@@ -105,7 +106,7 @@ class PlanSectionWidget extends StatelessWidget {
             final index = entry.key;
             final foodItem = entry.value;
             final isLastItem = index == section.foodItems.length - 1;
-            
+
             return Column(
               children: [
                 Row(
@@ -133,7 +134,8 @@ class PlanSectionWidget extends StatelessWidget {
                               color: AppTheme.primary600,
                               size: 20.sp,
                             ),
-                            onPressed: () => onSwapFood?.call(foodItem.id, foodItem.name),
+                            onPressed: () =>
+                                onSwapFood?.call(foodItem.id, foodItem.name),
                           ),
                           IconButton(
                             icon: Icon(
@@ -151,9 +153,9 @@ class PlanSectionWidget extends StatelessWidget {
               ],
             );
           }),
-        
+
         SizedBox(height: 12.h),
-        
+
         // Add button
         Center(
           child: AddFoodButton(
@@ -162,10 +164,10 @@ class PlanSectionWidget extends StatelessWidget {
                 return;
               }
               // Navigate to swap/add screen
-              context.push('/swap-food', extra: {
-                'category': _sectionCategory,
-                'activityId': activityId,
-              });
+              context.push(
+                '/swap-food',
+                extra: {'category': _sectionCategory, 'activityId': activityId},
+              );
             },
           ),
         ),

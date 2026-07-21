@@ -102,8 +102,11 @@ void main() {
 
     test('toJson uses camelCase keys', () {
       final json = _fullItem().toJson();
-      expect(json.containsKey('carbsGrams'), isTrue,
-          reason: 'toJson should use carbsGrams, not carbs_grams');
+      expect(
+        json.containsKey('carbsGrams'),
+        isTrue,
+        reason: 'toJson should use carbsGrams, not carbs_grams',
+      );
       expect(json.containsKey('proteinGrams'), isTrue);
       expect(json.containsKey('fatGrams'), isTrue);
       expect(json.containsKey('sodiumMg'), isTrue);
@@ -148,23 +151,25 @@ void main() {
       expect(item.servingSize, '100g');
     });
 
-    test('short aliases (carbs / protein / fat / sodium / fluids) are accepted',
-        () {
-      final item = FoodItem.fromJson({
-        'id': 'food-003',
-        'name': 'Gel',
-        'quantity': '1 pack',
-        'carbs': 22.0,
-        'protein': 0.0,
-        'fat': 0.0,
-        'sodium': 200,
-        'fluids': 0.0,
-      });
+    test(
+      'short aliases (carbs / protein / fat / sodium / fluids) are accepted',
+      () {
+        final item = FoodItem.fromJson({
+          'id': 'food-003',
+          'name': 'Gel',
+          'quantity': '1 pack',
+          'carbs': 22.0,
+          'protein': 0.0,
+          'fat': 0.0,
+          'sodium': 200,
+          'fluids': 0.0,
+        });
 
-      expect(item.carbsGrams, 22.0);
-      expect(item.proteinGrams, 0.0);
-      expect(item.sodiumMg, 200);
-    });
+        expect(item.carbsGrams, 22.0);
+        expect(item.proteinGrams, 0.0);
+        expect(item.sodiumMg, 200);
+      },
+    );
 
     test('camelCase takes precedence over snake_case when both present', () {
       // camelCase key should win; snake_case is a fallback.
@@ -178,8 +183,11 @@ void main() {
         'protein_grams': 99.0,
       });
 
-      expect(item.carbsGrams, 30.0,
-          reason: 'camelCase should win over snake_case');
+      expect(
+        item.carbsGrams,
+        30.0,
+        reason: 'camelCase should win over snake_case',
+      );
       expect(item.proteinGrams, 5.0);
     });
 
@@ -203,46 +211,69 @@ void main() {
 
   group('FoodItem.fromJson — numeric type coercion', () {
     test('calories: int literal → int', () {
-      final item = FoodItem.fromJson(
-          {'id': 'x', 'name': 'x', 'quantity': '1', 'calories': 200});
+      final item = FoodItem.fromJson({
+        'id': 'x',
+        'name': 'x',
+        'quantity': '1',
+        'calories': 200,
+      });
       expect(item.calories, 200);
     });
 
     test('calories: double literal → int (truncate)', () {
-      final item = FoodItem.fromJson(
-          {'id': 'x', 'name': 'x', 'quantity': '1', 'calories': 200.9});
+      final item = FoodItem.fromJson({
+        'id': 'x',
+        'name': 'x',
+        'quantity': '1',
+        'calories': 200.9,
+      });
       // _parseIntOrNull(double) calls toInt() = 200
       expect(item.calories, 200);
     });
 
     test('calories: string literal → int parse', () {
-      final item = FoodItem.fromJson(
-          {'id': 'x', 'name': 'x', 'quantity': '1', 'calories': '150'});
+      final item = FoodItem.fromJson({
+        'id': 'x',
+        'name': 'x',
+        'quantity': '1',
+        'calories': '150',
+      });
       expect(item.calories, 150);
     });
 
     test('carbsGrams: int literal → double', () {
-      final item = FoodItem.fromJson(
-          {'id': 'x', 'name': 'x', 'quantity': '1', 'carbsGrams': 27});
+      final item = FoodItem.fromJson({
+        'id': 'x',
+        'name': 'x',
+        'quantity': '1',
+        'carbsGrams': 27,
+      });
       expect(item.carbsGrams, 27.0);
     });
 
     test('carbsGrams: string literal → double parse', () {
-      final item = FoodItem.fromJson(
-          {'id': 'x', 'name': 'x', 'quantity': '1', 'carbsGrams': '13.5'});
+      final item = FoodItem.fromJson({
+        'id': 'x',
+        'name': 'x',
+        'quantity': '1',
+        'carbsGrams': '13.5',
+      });
       expect(item.carbsGrams, 13.5);
     });
 
     test('invalid string for calories → null (no crash)', () {
-      final item = FoodItem.fromJson(
-          {'id': 'x', 'name': 'x', 'quantity': '1', 'calories': 'not-a-num'});
+      final item = FoodItem.fromJson({
+        'id': 'x',
+        'name': 'x',
+        'quantity': '1',
+        'calories': 'not-a-num',
+      });
       expect(item.calories, isNull);
     });
 
     test('quantity is coerced to string via toString()', () {
       // Edge function sometimes sends quantity as a number.
-      final item =
-          FoodItem.fromJson({'id': 'x', 'name': 'x', 'quantity': 2});
+      final item = FoodItem.fromJson({'id': 'x', 'name': 'x', 'quantity': 2});
       expect(item.quantity, '2');
     });
   });
@@ -258,8 +289,12 @@ void main() {
     });
 
     test('empty string imageAddress → null imageUrl', () {
-      const item =
-          FoodItem(id: 'x', name: 'x', quantity: '1', imageAddress: '');
+      const item = FoodItem(
+        id: 'x',
+        name: 'x',
+        quantity: '1',
+        imageAddress: '',
+      );
       expect(item.imageUrl, isNull);
     });
 
@@ -271,8 +306,10 @@ void main() {
         imageAddress:
             'https://images.openfoodfacts.org/images/products/001.jpg',
       );
-      expect(item.imageUrl,
-          'https://images.openfoodfacts.org/images/products/001.jpg');
+      expect(
+        item.imageUrl,
+        'https://images.openfoodfacts.org/images/products/001.jpg',
+      );
     });
 
     test('static openfoodfacts URL passes through unchanged', () {
@@ -283,15 +320,23 @@ void main() {
         imageAddress:
             'https://static.openfoodfacts.org/images/products/002.jpg',
       );
-      expect(item.imageUrl,
-          'https://static.openfoodfacts.org/images/products/002.jpg');
+      expect(
+        item.imageUrl,
+        'https://static.openfoodfacts.org/images/products/002.jpg',
+      );
     });
 
     test('bare filename is prefixed with S3 bucket URL', () {
       const item = FoodItem(
-          id: 'x', name: 'x', quantity: '1', imageAddress: 'banana.jpg');
-      expect(item.imageUrl,
-          'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/banana.jpg');
+        id: 'x',
+        name: 'x',
+        quantity: '1',
+        imageAddress: 'banana.jpg',
+      );
+      expect(
+        item.imageUrl,
+        'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/banana.jpg',
+      );
     });
 
     test('S3 URL prefix is not doubled for an already-S3 filename', () {
@@ -299,8 +344,12 @@ void main() {
       // through unchanged (starts with 'https://').
       const fullS3 =
           'https://milkman-dev.s3.us-east-2.amazonaws.com/foods/banana.jpg';
-      const item =
-          FoodItem(id: 'x', name: 'x', quantity: '1', imageAddress: fullS3);
+      const item = FoodItem(
+        id: 'x',
+        name: 'x',
+        quantity: '1',
+        imageAddress: fullS3,
+      );
       // The getter checks startsWith('https://openfoodfacts') first, then
       // falls through to the else branch for other https:// URLs — this test
       // guards against a future regression where non-OFF https URLs get
@@ -381,44 +430,82 @@ void main() {
         'fluidsMl': 200.0,
       };
 
-      expect(base.copyWith(id: 'new-id').id, 'new-id',
-          reason: 'id update');
-      expect(base.copyWith(name: 'New Name').name, 'New Name',
-          reason: 'name update');
-      expect(base.copyWith(quantity: '2 cups').quantity, '2 cups',
-          reason: 'quantity update');
-      expect(base.copyWith(displayName: 'new display').displayName,
-          'new display',
-          reason: 'displayName update');
+      expect(base.copyWith(id: 'new-id').id, 'new-id', reason: 'id update');
       expect(
-          base.copyWith(displayNamePlural: 'new plurals').displayNamePlural,
-          'new plurals',
-          reason: 'displayNamePlural update');
-      expect(base.copyWith(imageAddress: 'new.jpg').imageAddress, 'new.jpg',
-          reason: 'imageAddress update');
+        base.copyWith(name: 'New Name').name,
+        'New Name',
+        reason: 'name update',
+      );
       expect(
-          base.copyWith(description: 'new desc').description, 'new desc',
-          reason: 'description update');
-      expect(base.copyWith(timing: 'during').timing, 'during',
-          reason: 'timing update');
+        base.copyWith(quantity: '2 cups').quantity,
+        '2 cups',
+        reason: 'quantity update',
+      );
       expect(
-          base.copyWith(instructions: 'new instr').instructions, 'new instr',
-          reason: 'instructions update');
-      expect(base.copyWith(servingSize: '2 cups (240g)').servingSize,
-          '2 cups (240g)',
-          reason: 'servingSize update');
-      expect(base.copyWith(calories: 200).calories, 200,
-          reason: 'calories update');
-      expect(base.copyWith(carbsGrams: 50.0).carbsGrams, 50.0,
-          reason: 'carbsGrams update');
-      expect(base.copyWith(proteinGrams: 5.0).proteinGrams, 5.0,
-          reason: 'proteinGrams update');
-      expect(base.copyWith(fatGrams: 2.0).fatGrams, 2.0,
-          reason: 'fatGrams update');
-      expect(base.copyWith(sodiumMg: 10).sodiumMg, 10,
-          reason: 'sodiumMg update');
-      expect(base.copyWith(fluidsMl: 200.0).fluidsMl, 200.0,
-          reason: 'fluidsMl update');
+        base.copyWith(displayName: 'new display').displayName,
+        'new display',
+        reason: 'displayName update',
+      );
+      expect(
+        base.copyWith(displayNamePlural: 'new plurals').displayNamePlural,
+        'new plurals',
+        reason: 'displayNamePlural update',
+      );
+      expect(
+        base.copyWith(imageAddress: 'new.jpg').imageAddress,
+        'new.jpg',
+        reason: 'imageAddress update',
+      );
+      expect(
+        base.copyWith(description: 'new desc').description,
+        'new desc',
+        reason: 'description update',
+      );
+      expect(
+        base.copyWith(timing: 'during').timing,
+        'during',
+        reason: 'timing update',
+      );
+      expect(
+        base.copyWith(instructions: 'new instr').instructions,
+        'new instr',
+        reason: 'instructions update',
+      );
+      expect(
+        base.copyWith(servingSize: '2 cups (240g)').servingSize,
+        '2 cups (240g)',
+        reason: 'servingSize update',
+      );
+      expect(
+        base.copyWith(calories: 200).calories,
+        200,
+        reason: 'calories update',
+      );
+      expect(
+        base.copyWith(carbsGrams: 50.0).carbsGrams,
+        50.0,
+        reason: 'carbsGrams update',
+      );
+      expect(
+        base.copyWith(proteinGrams: 5.0).proteinGrams,
+        5.0,
+        reason: 'proteinGrams update',
+      );
+      expect(
+        base.copyWith(fatGrams: 2.0).fatGrams,
+        2.0,
+        reason: 'fatGrams update',
+      );
+      expect(
+        base.copyWith(sodiumMg: 10).sodiumMg,
+        10,
+        reason: 'sodiumMg update',
+      );
+      expect(
+        base.copyWith(fluidsMl: 200.0).fluidsMl,
+        200.0,
+        reason: 'fluidsMl update',
+      );
 
       // Ensure the updates map was fully consumed (no typos in test params).
       expect(updates.length, 16, reason: 'all 16 fields covered');
@@ -461,8 +548,11 @@ void main() {
 
   group('FoodItem.toString', () {
     test('includes id, name, and quantity', () {
-      final s = _fullItem(id: 'food-001', name: 'Banana', quantity: '1 medium')
-          .toString();
+      final s = _fullItem(
+        id: 'food-001',
+        name: 'Banana',
+        quantity: '1 medium',
+      ).toString();
       expect(s, contains('food-001'));
       expect(s, contains('Banana'));
       expect(s, contains('1 medium'));

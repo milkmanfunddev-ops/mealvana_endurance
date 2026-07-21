@@ -123,9 +123,9 @@ class JadeChatRepository {
     required SupabaseClient supabase,
     required AppConfig config,
     required AppLogger logger,
-  })  : _supabase = supabase,
-        _config = config,
-        _logger = logger;
+  }) : _supabase = supabase,
+       _config = config,
+       _logger = logger;
 
   final SupabaseClient _supabase;
   final AppConfig _config;
@@ -342,7 +342,9 @@ class JadeChatRepository {
   ///   2. Buffer a partial-line tail; flush complete lines (terminated by \n).
   ///   3. Parse each complete line as JSON; map to a [JadeStreamEvent].
   ///   4. Unknown JSON shapes / parse failures are logged and skipped.
-  Stream<JadeStreamEvent> _parseNdjsonStream(Stream<List<int>> byteStream) async* {
+  Stream<JadeStreamEvent> _parseNdjsonStream(
+    Stream<List<int>> byteStream,
+  ) async* {
     final buffer = StringBuffer();
 
     await for (final chunk in byteStream.transform(utf8.decoder)) {

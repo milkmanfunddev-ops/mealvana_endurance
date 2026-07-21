@@ -44,7 +44,9 @@ class FoodItemTile extends StatelessWidget {
     return AnimatedOpacity(
       opacity: isAvoided ? 0.5 : 1.0,
       duration: const Duration(milliseconds: 200),
-      child: showPreference ? _buildPreferenceItem() : _buildSimpleItem(context),
+      child: showPreference
+          ? _buildPreferenceItem()
+          : _buildSimpleItem(context),
     );
   }
 
@@ -100,8 +102,8 @@ class FoodItemTile extends StatelessWidget {
                       _capitalize(food.displayName ?? food.name),
                       style: AppTextStyles.foodTitle.copyWith(
                         color: isAvoided
-                          ? AppColors.dragonfruit
-                          : Theme.of(context).colorScheme.onSurface,
+                            ? AppColors.dragonfruit
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     if (food.carbsPerServing != null) ...[
@@ -113,7 +115,8 @@ class FoodItemTile extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (food.servingSize != null && food.servingSize!.isNotEmpty) ...[
+                    if (food.servingSize != null &&
+                        food.servingSize!.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
                         'Serving: ${food.servingSize}',
@@ -241,14 +244,38 @@ class FoodItemTile extends StatelessWidget {
 
     // Check if this is likely a user-imported food
     final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
+      'apple',
+      'applesauce',
+      'purée',
+      'bagel',
+      'banana',
+      'berr',
+      'chocolate milk',
+      'coconut water',
+      'coffee',
+      'date',
+      'electrolyte drink',
+      'electrolyte tablet',
+      'energy bar',
+      'energy chew',
+      'energy waffle',
+      'stroopwafel',
+      'fig bar',
+      'gel',
+      'oatmeal',
+      'orange juice',
+      'peanut butter',
+      'pickle juice',
+      'pretzel',
+      'protein bar',
+      'protein powder',
+      'protein shake',
+      'salt packet',
+      'sports drink',
+      'toast',
+      'trail mix',
+      'water',
+      'yogurt',
     ];
 
     // If none of the generic food keywords match, it's likely user-imported
@@ -265,14 +292,38 @@ class FoodItemTile extends StatelessWidget {
     final name = foodName.toLowerCase();
 
     final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
+      'apple',
+      'applesauce',
+      'purée',
+      'bagel',
+      'banana',
+      'berr',
+      'chocolate milk',
+      'coconut water',
+      'coffee',
+      'date',
+      'electrolyte drink',
+      'electrolyte tablet',
+      'energy bar',
+      'energy chew',
+      'energy waffle',
+      'stroopwafel',
+      'fig bar',
+      'gel',
+      'oatmeal',
+      'orange juice',
+      'peanut butter',
+      'pickle juice',
+      'pretzel',
+      'protein bar',
+      'protein powder',
+      'protein shake',
+      'salt packet',
+      'sports drink',
+      'toast',
+      'trail mix',
+      'water',
+      'yogurt',
     ];
 
     // User-imported foods get orange color

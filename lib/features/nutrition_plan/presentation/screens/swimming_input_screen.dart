@@ -42,7 +42,8 @@ class SwimmingInputScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SwimmingInputScreen> createState() => _SwimmingInputScreenState();
+  ConsumerState<SwimmingInputScreen> createState() =>
+      _SwimmingInputScreenState();
 }
 
 class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
@@ -60,7 +61,8 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
       // Only initialize with widget.initialDate if controller doesn't already have a user-set date
       // This preserves the date when switching between tabs
       final now = DateTime.now();
-      final isDefaultDate = currentState.selectedDate.year == now.year &&
+      final isDefaultDate =
+          currentState.selectedDate.year == now.year &&
           currentState.selectedDate.month == now.month &&
           currentState.selectedDate.day == now.day;
 
@@ -69,10 +71,12 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
       }
 
       // Set initial values from widget parameters if provided (only if not already set)
-      if (widget.initialDistanceMeters != null && currentState.distanceMeters == 1500) {
+      if (widget.initialDistanceMeters != null &&
+          currentState.distanceMeters == 1500) {
         controller.updateDistance(widget.initialDistanceMeters!);
       }
-      if (widget.initialPacePer100mSeconds != null && currentState.pacePer100mSeconds == 120) {
+      if (widget.initialPacePer100mSeconds != null &&
+          currentState.pacePer100mSeconds == 120) {
         controller.updatePace(widget.initialPacePer100mSeconds!);
       }
 
@@ -93,16 +97,16 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     FocusScope.of(context).unfocus();
 
     // ALL business logic is in the swimming controller
-    await ref.read(swimmingInputControllerProvider.notifier).generateMacros(
-      activityId: widget.activityId,
-      eventId: widget.eventId,
-    );
+    await ref
+        .read(swimmingInputControllerProvider.notifier)
+        .generateMacros(activityId: widget.activityId, eventId: widget.eventId);
 
     // Check if generation was successful by looking at the state
     final currentState = ref.read(macroTargetsControllerProvider).value;
 
     // If we have macro targets and no error, navigate
-    if (currentState?.macroTargets != null && currentState?.errorMessage == null) {
+    if (currentState?.macroTargets != null &&
+        currentState?.errorMessage == null) {
       if (mounted) {
         context.push('/adjust-macros');
       }
@@ -111,7 +115,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
-          currentState?.errorMessage ?? currentState?.errorGeneric ?? 'Something went wrong. Please try again.',
+          currentState?.errorMessage ??
+              currentState?.errorGeneric ??
+              'Something went wrong. Please try again.',
         );
       }
     }
@@ -133,22 +139,25 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
   Widget build(BuildContext context) {
     final controllerState = ref.watch(macroTargetsControllerProvider);
     final swimmingForm = ref.watch(swimmingInputControllerProvider);
-    final useMetric = (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) == UnitSystem.metric;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     return controllerState.when(
       data: (state) => _buildScreen(context, state, swimmingForm, useMetric),
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stack) => Scaffold(
-        body: Center(
-          child: Text('Error loading content: $error'),
-        ),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stack) =>
+          Scaffold(body: Center(child: Text('Error loading content: $error'))),
     );
   }
 
-  Widget _buildScreen(BuildContext context, MacroTargetsState state, SwimmingFormState swimmingForm, bool useMetric) {
+  Widget _buildScreen(
+    BuildContext context,
+    MacroTargetsState state,
+    SwimmingFormState swimmingForm,
+    bool useMetric,
+  ) {
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       extendBodyBehindAppBar: true,
@@ -165,232 +174,289 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
               child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: 20.h),
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 20.h),
 
-                  // Hero Image
-                  LargeHeroImage(
-                    imagePath: 'assets/images/woman_swimming.png',
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Date and Time Picker
-                  _buildDateTimePicker(context, swimmingForm),
-
-                  SizedBox(height: 20.h),
-
-                  // Pool / Open Water Toggle
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pool or Open Water',
-                        style: AppTheme.subtitleStyle.copyWith(
-                          fontSize: 16.sp,
-                          color: AppTheme.primary900,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildToggleButton(
-                              label: 'Pool',
-                              isSelected: swimmingForm.poolOrOpenWater == 'pool',
-                              onTap: () => ref.read(swimmingInputControllerProvider.notifier).updatePoolOrOpenWater('pool'),
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: _buildToggleButton(
-                              label: 'Open Water',
-                              isSelected: swimmingForm.poolOrOpenWater == 'open_water',
-                              onTap: () => ref.read(swimmingInputControllerProvider.notifier).updatePoolOrOpenWater('open_water'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Distance Input with Increment/Decrement
-                  IncrementDecrementWidget(
-                    label: 'Distance',
-                    value: swimmingForm.distanceMeters.toString(),
-                    formatValue: (value) => '${int.parse(value)} meters',
-                    onIncrement: () => ref.read(swimmingInputControllerProvider.notifier).updateDistance(swimmingForm.distanceMeters + 100),
-                    onDecrement: () {
-                      if (swimmingForm.distanceMeters >= 100) {
-                        ref.read(swimmingInputControllerProvider.notifier).updateDistance(swimmingForm.distanceMeters - 100);
-                      }
-                    },
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Pace per 100m Input with Increment/Decrement
-                  IncrementDecrementWidget(
-                    label: 'Pace per 100m',
-                    value: swimmingForm.pacePer100mSeconds.toString(),
-                    formatValue: (value) => _formatPace(int.parse(value)),
-                    onIncrement: () => ref.read(swimmingInputControllerProvider.notifier).updatePace(swimmingForm.pacePer100mSeconds + 5), // 5 second increments
-                    onDecrement: () {
-                      if (swimmingForm.pacePer100mSeconds > 5) {
-                        ref.read(swimmingInputControllerProvider.notifier).updatePace(swimmingForm.pacePer100mSeconds - 5);
-                      }
-                    },
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  // Duration Display (calculated)
-                  Text(
-                    'Duration: ~${_calculateDurationMinutes(swimmingForm.distanceMeters, swimmingForm.pacePer100mSeconds)} min',
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 14.sp,
-                      color: AppTheme.primary600,
-                      fontWeight: FontWeight.w500,
+                    // Hero Image
+                    LargeHeroImage(
+                      imagePath: 'assets/images/woman_swimming.png',
                     ),
-                  ),
 
-                  SizedBox(height: 20.h),
+                    SizedBox(height: 20.h),
 
-                  // Intensity Target Dropdown
-                  _buildDropdown(
-                    label: 'Intensity Target',
-                    value: swimmingForm.intensityTarget,
-                    items: const {
-                      'zone_1': 'Zone 1 - Easy',
-                      'zone_2': 'Zone 2 - Moderate',
-                      'zone_3': 'Zone 3 - Hard',
-                      'zone_4': 'Zone 4 - Very Hard',
-                    },
-                    onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateIntensityTarget(value!),
-                  ),
+                    // Date and Time Picker
+                    _buildDateTimePicker(context, swimmingForm),
 
-                  SizedBox(height: 20.h),
+                    SizedBox(height: 20.h),
 
-                  // Session Goal Dropdown
-                  _buildDropdown(
-                    label: 'Session Goal',
-                    value: swimmingForm.sessionGoal,
-                    items: const {
-                      'technique': 'Technique',
-                      'endurance': 'Endurance',
-                      'sets': 'Sets',
-                    },
-                    onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateSessionGoal(value!),
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Water Temperature Input
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Water Temperature',
-                        style: AppTheme.subtitleStyle.copyWith(
-                          fontSize: 16.sp,
-                          color: AppTheme.primary900,
+                    // Pool / Open Water Toggle
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pool or Open Water',
+                          style: AppTheme.subtitleStyle.copyWith(
+                            fontSize: 16.sp,
+                            color: AppTheme.primary900,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        '${UnitFormatter.formatTemperature(swimmingForm.waterTempC, useMetric: useMetric)} '
-                        '(${UnitFormatter.formatTemperature(swimmingForm.waterTempC, useMetric: !useMetric)})',
-                        style: AppTheme.textStyle.copyWith(
-                          fontSize: 14.sp,
-                          color: AppTheme.primary600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: AppTheme.primary600,
-                          inactiveTrackColor: AppTheme.primary600.withValues(alpha: 0.3),
-                          thumbColor: AppTheme.primary600,
-                          overlayColor: AppTheme.primary600.withValues(alpha: 0.2),
-                          trackHeight: 4.h,
-                          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.r),
-                        ),
-                        child: Slider(
-                          value: useMetric
-                              ? swimmingForm.waterTempC
-                              : UnitFormatter.celsiusToFahrenheit(swimmingForm.waterTempC),
-                          min: useMetric ? 10.0 : UnitFormatter.celsiusToFahrenheit(10),
-                          max: useMetric ? 32.0 : UnitFormatter.celsiusToFahrenheit(32),
-                          divisions: useMetric ? 44 : 40,
-                          onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateWaterTemp(
-                                useMetric ? value : UnitFormatter.fahrenheitToCelsius(value),
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildToggleButton(
+                                label: 'Pool',
+                                isSelected:
+                                    swimmingForm.poolOrOpenWater == 'pool',
+                                onTap: () => ref
+                                    .read(
+                                      swimmingInputControllerProvider.notifier,
+                                    )
+                                    .updatePoolOrOpenWater('pool'),
                               ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: _buildToggleButton(
+                                label: 'Open Water',
+                                isSelected:
+                                    swimmingForm.poolOrOpenWater ==
+                                    'open_water',
+                                onTap: () => ref
+                                    .read(
+                                      swimmingInputControllerProvider.notifier,
+                                    )
+                                    .updatePoolOrOpenWater('open_water'),
+                              ),
+                            ),
+                          ],
                         ),
+                      ],
+                    ),
+
+                    SizedBox(height: 20.h),
+
+                    // Distance Input with Increment/Decrement
+                    IncrementDecrementWidget(
+                      label: 'Distance',
+                      value: swimmingForm.distanceMeters.toString(),
+                      formatValue: (value) => '${int.parse(value)} meters',
+                      onIncrement: () => ref
+                          .read(swimmingInputControllerProvider.notifier)
+                          .updateDistance(swimmingForm.distanceMeters + 100),
+                      onDecrement: () {
+                        if (swimmingForm.distanceMeters >= 100) {
+                          ref
+                              .read(swimmingInputControllerProvider.notifier)
+                              .updateDistance(
+                                swimmingForm.distanceMeters - 100,
+                              );
+                        }
+                      },
+                    ),
+
+                    SizedBox(height: 20.h),
+
+                    // Pace per 100m Input with Increment/Decrement
+                    IncrementDecrementWidget(
+                      label: 'Pace per 100m',
+                      value: swimmingForm.pacePer100mSeconds.toString(),
+                      formatValue: (value) => _formatPace(int.parse(value)),
+                      onIncrement: () => ref
+                          .read(swimmingInputControllerProvider.notifier)
+                          .updatePace(
+                            swimmingForm.pacePer100mSeconds + 5,
+                          ), // 5 second increments
+                      onDecrement: () {
+                        if (swimmingForm.pacePer100mSeconds > 5) {
+                          ref
+                              .read(swimmingInputControllerProvider.notifier)
+                              .updatePace(swimmingForm.pacePer100mSeconds - 5);
+                        }
+                      },
+                    ),
+
+                    SizedBox(height: 12.h),
+
+                    // Duration Display (calculated)
+                    Text(
+                      'Duration: ~${_calculateDurationMinutes(swimmingForm.distanceMeters, swimmingForm.pacePer100mSeconds)} min',
+                      style: AppTheme.textStyle.copyWith(
+                        fontSize: 14.sp,
+                        color: AppTheme.primary600,
+                        fontWeight: FontWeight.w500,
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Cold (${UnitFormatter.formatTemperature(10, useMetric: useMetric)})',
-                            style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                    ),
+
+                    SizedBox(height: 20.h),
+
+                    // Intensity Target Dropdown
+                    _buildDropdown(
+                      label: 'Intensity Target',
+                      value: swimmingForm.intensityTarget,
+                      items: const {
+                        'zone_1': 'Zone 1 - Easy',
+                        'zone_2': 'Zone 2 - Moderate',
+                        'zone_3': 'Zone 3 - Hard',
+                        'zone_4': 'Zone 4 - Very Hard',
+                      },
+                      onChanged: (value) => ref
+                          .read(swimmingInputControllerProvider.notifier)
+                          .updateIntensityTarget(value!),
+                    ),
+
+                    SizedBox(height: 20.h),
+
+                    // Session Goal Dropdown
+                    _buildDropdown(
+                      label: 'Session Goal',
+                      value: swimmingForm.sessionGoal,
+                      items: const {
+                        'technique': 'Technique',
+                        'endurance': 'Endurance',
+                        'sets': 'Sets',
+                      },
+                      onChanged: (value) => ref
+                          .read(swimmingInputControllerProvider.notifier)
+                          .updateSessionGoal(value!),
+                    ),
+
+                    SizedBox(height: 20.h),
+
+                    // Water Temperature Input
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Water Temperature',
+                          style: AppTheme.subtitleStyle.copyWith(
+                            fontSize: 16.sp,
+                            color: AppTheme.primary900,
                           ),
-                          Text(
-                            'Warm (${UnitFormatter.formatTemperature(32, useMetric: useMetric)})',
-                            style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          '${UnitFormatter.formatTemperature(swimmingForm.waterTempC, useMetric: useMetric)} '
+                          '(${UnitFormatter.formatTemperature(swimmingForm.waterTempC, useMetric: !useMetric)})',
+                          style: AppTheme.textStyle.copyWith(
+                            fontSize: 14.sp,
+                            color: AppTheme.primary600,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        SizedBox(height: 8.h),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: AppTheme.primary600,
+                            inactiveTrackColor: AppTheme.primary600.withValues(
+                              alpha: 0.3,
+                            ),
+                            thumbColor: AppTheme.primary600,
+                            overlayColor: AppTheme.primary600.withValues(
+                              alpha: 0.2,
+                            ),
+                            trackHeight: 4.h,
+                            thumbShape: RoundSliderThumbShape(
+                              enabledThumbRadius: 12.r,
+                            ),
+                          ),
+                          child: Slider(
+                            value: useMetric
+                                ? swimmingForm.waterTempC
+                                : UnitFormatter.celsiusToFahrenheit(
+                                    swimmingForm.waterTempC,
+                                  ),
+                            min: useMetric
+                                ? 10.0
+                                : UnitFormatter.celsiusToFahrenheit(10),
+                            max: useMetric
+                                ? 32.0
+                                : UnitFormatter.celsiusToFahrenheit(32),
+                            divisions: useMetric ? 44 : 40,
+                            onChanged: (value) => ref
+                                .read(swimmingInputControllerProvider.notifier)
+                                .updateWaterTemp(
+                                  useMetric
+                                      ? value
+                                      : UnitFormatter.fahrenheitToCelsius(
+                                          value,
+                                        ),
+                                ),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Cold (${UnitFormatter.formatTemperature(10, useMetric: useMetric)})',
+                              style: AppTheme.textStyle.copyWith(
+                                fontSize: 12.sp,
+                                color: AppTheme.baseGrey,
+                              ),
+                            ),
+                            Text(
+                              'Warm (${UnitFormatter.formatTemperature(32, useMetric: useMetric)})',
+                              style: AppTheme.textStyle.copyWith(
+                                fontSize: 12.sp,
+                                color: AppTheme.baseGrey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
 
-                  SizedBox(height: 20.h),
+                    SizedBox(height: 20.h),
 
-                  // Pre-Swim Timing Selector
-                  PreRunTimingSelector(
-                    label: 'Pre-Swim Timing',
-                    selectedMinutes: swimmingForm.preSwimMinutes,
-                    onChanged: (int newValue) {
-                      ref.read(swimmingInputControllerProvider.notifier).updatePreSwimMinutes(newValue);
-                    },
-                  ),
+                    // Pre-Swim Timing Selector
+                    PreRunTimingSelector(
+                      label: 'Pre-Swim Timing',
+                      selectedMinutes: swimmingForm.preSwimMinutes,
+                      onChanged: (int newValue) {
+                        ref
+                            .read(swimmingInputControllerProvider.notifier)
+                            .updatePreSwimMinutes(newValue);
+                      },
+                    ),
 
-                  SizedBox(height: 20.h),
+                    SizedBox(height: 20.h),
 
-                  // Environment Section (Collapsible - for pool conditions)
-                  _buildEnvironmentSection(swimmingForm, useMetric),
+                    // Environment Section (Collapsible - for pool conditions)
+                    _buildEnvironmentSection(swimmingForm, useMetric),
 
-                  SizedBox(height: 40.h),
+                    SizedBox(height: 40.h),
 
-                  // Generate Plan Button - ONLY calls controller, no business logic
-                  PrimaryButton(
-                    text: 'Generate Nutrition Plan',
-                    onPressed: state.isGeneratingMacros ? null : _handleGenerateButtonPress,
-                    width: 280.w,
-                    height: 56.h,
-                  ),
+                    // Generate Plan Button - ONLY calls controller, no business logic
+                    PrimaryButton(
+                      text: 'Generate Nutrition Plan',
+                      onPressed: state.isGeneratingMacros
+                          ? null
+                          : _handleGenerateButtonPress,
+                      width: 280.w,
+                      height: 56.h,
+                    ),
 
-                  SizedBox(height: 40.h),
-                ],
+                    SizedBox(height: 40.h),
+                  ],
+                ),
               ),
             ),
-          ),
 
             // Loading overlay
-            if (state.isGeneratingMacros)
-              const LoadingOverlay(),
+            if (state.isGeneratingMacros) const LoadingOverlay(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDateTimePicker(BuildContext context, SwimmingFormState swimmingForm) {
+  Widget _buildDateTimePicker(
+    BuildContext context,
+    SwimmingFormState swimmingForm,
+  ) {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -411,7 +477,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                 );
                 if (picked != null) {
-                  ref.read(swimmingInputControllerProvider.notifier).updateDateTime(picked, currentForm.selectedTime);
+                  ref
+                      .read(swimmingInputControllerProvider.notifier)
+                      .updateDateTime(picked, currentForm.selectedTime);
                 }
               },
               child: Column(
@@ -427,10 +495,16 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 16, color: AppTheme.primary900),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: AppTheme.primary900,
+                      ),
                       SizedBox(width: 8.w),
                       Text(
-                        DateFormat('MMM d, yyyy').format(swimmingForm.selectedDate),
+                        DateFormat(
+                          'MMM d, yyyy',
+                        ).format(swimmingForm.selectedDate),
                         style: AppTheme.textStyle.copyWith(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -458,7 +532,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   initialTime: currentForm.selectedTime,
                 );
                 if (picked != null) {
-                  ref.read(swimmingInputControllerProvider.notifier).updateDateTime(currentForm.selectedDate, picked);
+                  ref
+                      .read(swimmingInputControllerProvider.notifier)
+                      .updateDateTime(currentForm.selectedDate, picked);
                 }
               },
               child: Column(
@@ -474,7 +550,11 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 16, color: AppTheme.primary900),
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: AppTheme.primary900,
+                      ),
                       SizedBox(width: 8.w),
                       Text(
                         swimmingForm.selectedTime.format(context),
@@ -583,12 +663,17 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
     );
   }
 
-  Widget _buildEnvironmentSection(SwimmingFormState swimmingForm, bool useMetric) {
+  Widget _buildEnvironmentSection(
+    SwimmingFormState swimmingForm,
+    bool useMetric,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: () => ref.read(swimmingInputControllerProvider.notifier).toggleEnvironmentSection(),
+          onTap: () => ref
+              .read(swimmingInputControllerProvider.notifier)
+              .toggleEnvironmentSection(),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -600,7 +685,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                 ),
               ),
               Icon(
-                swimmingForm.showEnvironment ? Icons.expand_less : Icons.expand_more,
+                swimmingForm.showEnvironment
+                    ? Icons.expand_less
+                    : Icons.expand_more,
                 color: AppTheme.primary900,
               ),
             ],
@@ -626,7 +713,8 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   // Weather Badge (inline with temperature label)
                   // Show for forecast or historical, hide for defaults
                   if (swimmingForm.weatherForecast != null &&
-                      swimmingForm.weatherForecast!.source != WeatherSource.defaultValue)
+                      swimmingForm.weatherForecast!.source !=
+                          WeatherSource.defaultValue)
                     WeatherIndicatorBadge(
                       forecast: swimmingForm.weatherForecast!,
                       onTap: () {
@@ -657,7 +745,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: AppTheme.primary600,
-                  inactiveTrackColor: AppTheme.primary600.withValues(alpha: 0.3),
+                  inactiveTrackColor: AppTheme.primary600.withValues(
+                    alpha: 0.3,
+                  ),
                   thumbColor: AppTheme.primary600,
                   overlayColor: AppTheme.primary600.withValues(alpha: 0.2),
                   trackHeight: 4.h,
@@ -666,12 +756,18 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                 child: Slider(
                   value: useMetric
                       ? swimmingForm.deckTemperature
-                      : UnitFormatter.celsiusToFahrenheit(swimmingForm.deckTemperature),
+                      : UnitFormatter.celsiusToFahrenheit(
+                          swimmingForm.deckTemperature,
+                        ),
                   min: useMetric ? 15.0 : UnitFormatter.celsiusToFahrenheit(15),
                   max: useMetric ? 35.0 : UnitFormatter.celsiusToFahrenheit(35),
                   divisions: useMetric ? 40 : 36,
-                  onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateDeckTemperature(
-                        useMetric ? value : UnitFormatter.fahrenheitToCelsius(value),
+                  onChanged: (value) => ref
+                      .read(swimmingInputControllerProvider.notifier)
+                      .updateDeckTemperature(
+                        useMetric
+                            ? value
+                            : UnitFormatter.fahrenheitToCelsius(value),
                       ),
                 ),
               ),
@@ -680,11 +776,17 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                 children: [
                   Text(
                     'Cool (${UnitFormatter.formatTemperature(15, useMetric: useMetric)})',
-                    style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                    style: AppTheme.textStyle.copyWith(
+                      fontSize: 12.sp,
+                      color: AppTheme.baseGrey,
+                    ),
                   ),
                   Text(
                     'Hot (${UnitFormatter.formatTemperature(35, useMetric: useMetric)})',
-                    style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey),
+                    style: AppTheme.textStyle.copyWith(
+                      fontSize: 12.sp,
+                      color: AppTheme.baseGrey,
+                    ),
                   ),
                 ],
               ),
@@ -717,7 +819,9 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: AppTheme.primary600,
-                  inactiveTrackColor: AppTheme.primary600.withValues(alpha: 0.3),
+                  inactiveTrackColor: AppTheme.primary600.withValues(
+                    alpha: 0.3,
+                  ),
                   thumbColor: AppTheme.primary600,
                   overlayColor: AppTheme.primary600.withValues(alpha: 0.2),
                   trackHeight: 4.h,
@@ -728,14 +832,28 @@ class _SwimmingInputScreenState extends ConsumerState<SwimmingInputScreen> {
                   min: 40,
                   max: 95,
                   divisions: 11,
-                  onChanged: (value) => ref.read(swimmingInputControllerProvider.notifier).updateDeckHumidity(value),
+                  onChanged: (value) => ref
+                      .read(swimmingInputControllerProvider.notifier)
+                      .updateDeckHumidity(value),
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Dry (40%)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
-                  Text('Humid (95%)', style: AppTheme.textStyle.copyWith(fontSize: 12.sp, color: AppTheme.baseGrey)),
+                  Text(
+                    'Dry (40%)',
+                    style: AppTheme.textStyle.copyWith(
+                      fontSize: 12.sp,
+                      color: AppTheme.baseGrey,
+                    ),
+                  ),
+                  Text(
+                    'Humid (95%)',
+                    style: AppTheme.textStyle.copyWith(
+                      fontSize: 12.sp,
+                      color: AppTheme.baseGrey,
+                    ),
+                  ),
                 ],
               ),
             ],

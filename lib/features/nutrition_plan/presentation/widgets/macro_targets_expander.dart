@@ -40,7 +40,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    
+
     if (_isExpanded) {
       _controller.value = 1.0;
     }
@@ -69,10 +69,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
       decoration: BoxDecoration(
         color: AppTheme.baseWhite, // White background
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppTheme.primary900,
-          width: 2.0,
-        ),
+        border: Border.all(color: AppTheme.primary900, width: 2.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -108,9 +105,9 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                         ],
                       ),
                     ),
-                    
+
                     SizedBox(width: 12.w),
-                    
+
                     // Plus icon (moved to right)
                     Container(
                       width: 32.w,
@@ -129,7 +126,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                 ),
               ),
             ),
-            
+
             // Expandable Content
             SizeTransition(
               sizeFactor: _expandAnimation,
@@ -147,43 +144,46 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                         color: AppTheme.baseGrey.withValues(alpha: 0.2),
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
-                      
+
                       // Phase-specific macro breakdown
                       _buildMacroPhaseItem(
                         'Carbohydrates',
-                        widget.macroTargets.carbsRange ?? 'Total: ${widget.macroTargets.carbs}g',
+                        widget.macroTargets.carbsRange ??
+                            'Total: ${widget.macroTargets.carbs}g',
                         Icons.grain,
                         AppTheme.warning500,
                       ),
-                      
+
                       SizedBox(height: 16.h),
-                      
+
                       _buildMacroPhaseItem(
                         'Protein',
-                        widget.macroTargets.proteinRange ?? 'Total: ${widget.macroTargets.protein}g',
+                        widget.macroTargets.proteinRange ??
+                            'Total: ${widget.macroTargets.protein}g',
                         Icons.fitness_center,
                         AppTheme.highlight600Alt,
                       ),
-                      
+
                       SizedBox(height: 16.h),
-                      
+
                       _buildMacroPhaseItem(
                         'Fat',
-                        widget.macroTargets.fatRange ?? 'Total: ${widget.macroTargets.fat}g',
+                        widget.macroTargets.fatRange ??
+                            'Total: ${widget.macroTargets.fat}g',
                         Icons.local_fire_department,
                         AppTheme.primary600,
                       ),
-                      
+
                       SizedBox(height: 16.h),
-                      
+
                       _buildMacroItem(
                         _formatSodium(),
                         Icons.scatter_plot,
                         AppTheme.highlight600Alt,
                       ),
-                      
+
                       SizedBox(height: 12.h),
-                      
+
                       _buildMacroItem(
                         _formatFluids(),
                         Icons.water_drop,
@@ -201,7 +201,8 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
   }
 
   String _formatSodium() {
-    if (widget.macroTargets.sodiumMin != null && widget.macroTargets.sodiumMax != null) {
+    if (widget.macroTargets.sodiumMin != null &&
+        widget.macroTargets.sodiumMax != null) {
       return 'Sodium: ${widget.macroTargets.sodiumMin}-${widget.macroTargets.sodiumMax}mg';
     } else if (widget.macroTargets.sodium != null) {
       return 'Sodium: ${widget.macroTargets.sodium}mg';
@@ -211,7 +212,8 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
 
   String _formatFluids() {
     final unitLabel = UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric);
-    if (widget.macroTargets.fluidsMin != null && widget.macroTargets.fluidsMax != null) {
+    if (widget.macroTargets.fluidsMin != null &&
+        widget.macroTargets.fluidsMax != null) {
       return 'Fluids: ${widget.macroTargets.fluidsMin}-${widget.macroTargets.fluidsMax} $unitLabel';
     } else if (widget.macroTargets.fluids != null) {
       return 'Fluids: ${widget.macroTargets.fluids} $unitLabel';
@@ -219,7 +221,12 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
     return 'Fluids: Not specified';
   }
 
-  Widget _buildMacroPhaseItem(String title, String breakdown, IconData icon, Color color) {
+  Widget _buildMacroPhaseItem(
+    String title,
+    String breakdown,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -232,11 +239,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
                 color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 18.sp,
-              ),
+              child: Icon(icon, color: color, size: 18.sp),
             ),
             SizedBox(width: 12.w),
             Text(
@@ -275,11 +278,7 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
             color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 18.sp,
-          ),
+          child: Icon(icon, color: color, size: 18.sp),
         ),
         SizedBox(width: 12.w),
         Text(
@@ -293,5 +292,4 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
       ],
     );
   }
-
 }

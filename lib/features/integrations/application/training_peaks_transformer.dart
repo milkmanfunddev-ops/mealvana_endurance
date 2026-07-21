@@ -236,7 +236,14 @@ class TrainingPeaksTransformer {
   /// Anything outside this list (x-train, strength, xc-ski, TrainingPeaks'
   /// own "other" type, etc.) is still imported, but as a generic
   /// [ActivityType.other] rather than silently dropped.
-  static const supportedTypes = ['Swim', 'Bike', 'Run', 'Walk', 'Rowing', 'MTB'];
+  static const supportedTypes = [
+    'Swim',
+    'Bike',
+    'Run',
+    'Walk',
+    'Rowing',
+    'MTB',
+  ];
 
   /// Transform a TrainingPeaks workout JSON to a Mealvana Activity
   ///
@@ -253,7 +260,9 @@ class TrainingPeaksTransformer {
     AthleteZones? zones,
   }) {
     if (kDebugMode) {
-      print('🔍 TP TRANSFORM DEBUG - Raw workout keys: ${workout.keys.toList()}');
+      print(
+        '🔍 TP TRANSFORM DEBUG - Raw workout keys: ${workout.keys.toList()}',
+      );
       print('🔍 TP TRANSFORM DEBUG - Raw workout data:');
       workout.forEach((key, value) {
         if (value != null && value.toString().isNotEmpty) {
@@ -283,14 +292,19 @@ class TrainingPeaksTransformer {
         : distanceMeters * TrainingPeaksDefaults.metersToMiles;
 
     // Calculate pace from distance and time (TrainingPeaks doesn't provide pace)
-    final paceMinPerMile = _calculatePace(distanceMiles, durationMinutes, activityType);
+    final paceMinPerMile = _calculatePace(
+      distanceMiles,
+      durationMinutes,
+      activityType,
+    );
 
     // Extract provider info
     final providerWorkoutId = extractWorkoutId(workout);
     final providerWorkoutUrl = _buildWorkoutUrl(workout);
 
     // Phase 3: Extract additional fields
-    final elevationGainMeters = (workout['ElevationGainPlanned'] as num?)?.toDouble();
+    final elevationGainMeters = (workout['ElevationGainPlanned'] as num?)
+        ?.toDouble();
     final caloriesPlanned = (workout['CaloriesPlanned'] as num?)?.toDouble();
     final tagsRaw = workout['Tags'] as List?;
     final tags = tagsRaw?.map((t) => t.toString()).toList();
@@ -304,7 +318,8 @@ class TrainingPeaksTransformer {
       title: _getTitle(workout, workoutType),
       scheduledDateTime: _parseScheduledDate(
         workout['WorkoutDay'] as String?,
-        workout['StartTime'] as String? ?? workout['StartTimePlanned'] as String?,
+        workout['StartTime'] as String? ??
+            workout['StartTimePlanned'] as String?,
       ),
       status: ActivityStatus.planned,
       distanceMiles: distanceMiles,
@@ -331,7 +346,10 @@ class TrainingPeaksTransformer {
 
     // Infer intensity distribution from structured workout or heuristics
     // When zones are available, use them for more precise classification
-    final intensityDistribution = _inferIntensityDistribution(workout, zones: zones);
+    final intensityDistribution = _inferIntensityDistribution(
+      workout,
+      zones: zones,
+    );
 
     return TrainingPeaksTransformResult(
       activity: activity,
@@ -470,17 +488,25 @@ class TrainingPeaksTransformer {
 
   /// Get duration in minutes (TotalTime is in DECIMAL HOURS)
   /// CRITICAL: This is different from Final Surge which uses seconds!
-  int _getDurationMinutes(Map<String, dynamic> workout, ActivityType activityType) {
+  int _getDurationMinutes(
+    Map<String, dynamic> workout,
+    ActivityType activityType,
+  ) {
     final totalTime = workout['TotalTime'];
     final totalTimePlanned = workout['TotalTimePlanned'];
 
     if (kDebugMode) {
       print('🔍 TP DURATION DEBUG:');
-      print('   TotalTime raw value: $totalTime (type: ${totalTime.runtimeType})');
-      print('   TotalTimePlanned raw value: $totalTimePlanned (type: ${totalTimePlanned.runtimeType})');
+      print(
+        '   TotalTime raw value: $totalTime (type: ${totalTime.runtimeType})',
+      );
+      print(
+        '   TotalTimePlanned raw value: $totalTimePlanned (type: ${totalTimePlanned.runtimeType})',
+      );
       // Also print all workout keys that contain 'time' or 'Time'
-      final timeKeys = workout.keys.where((k) =>
-        k.toString().toLowerCase().contains('time'));
+      final timeKeys = workout.keys.where(
+        (k) => k.toString().toLowerCase().contains('time'),
+      );
       print('   All time-related keys: $timeKeys');
       for (final key in timeKeys) {
         print('   $key: ${workout[key]}');
@@ -517,17 +543,23 @@ class TrainingPeaksTransformer {
 
   /// Get distance in meters (TrainingPeaks ALWAYS uses meters)
   /// CRITICAL: This is different from Final Surge which has PlannedDistanceType!
-  double _getDistanceMeters(Map<String, dynamic> workout, ActivityType activityType) {
+  double _getDistanceMeters(
+    Map<String, dynamic> workout,
+    ActivityType activityType,
+  ) {
     final distance = workout['Distance'];
     final distancePlanned = workout['DistancePlanned'];
 
     if (kDebugMode) {
       print('🔍 TP DISTANCE DEBUG:');
       print('   Distance raw value: $distance (type: ${distance.runtimeType})');
-      print('   DistancePlanned raw value: $distancePlanned (type: ${distancePlanned.runtimeType})');
+      print(
+        '   DistancePlanned raw value: $distancePlanned (type: ${distancePlanned.runtimeType})',
+      );
       // Also print all workout keys that contain 'distance' or 'Distance'
-      final distanceKeys = workout.keys.where((k) =>
-        k.toString().toLowerCase().contains('distance'));
+      final distanceKeys = workout.keys.where(
+        (k) => k.toString().toLowerCase().contains('distance'),
+      );
       print('   All distance-related keys: $distanceKeys');
       for (final key in distanceKeys) {
         print('   $key: ${workout[key]}');
@@ -535,7 +567,9 @@ class TrainingPeaksTransformer {
     }
 
     final effectiveDistance = distance ?? distancePlanned;
-    if (effectiveDistance != null && effectiveDistance is num && effectiveDistance > 0) {
+    if (effectiveDistance != null &&
+        effectiveDistance is num &&
+        effectiveDistance > 0) {
       // TrainingPeaks distance is ALWAYS in meters - no conversion needed
       return effectiveDistance.toDouble();
     }
@@ -564,7 +598,11 @@ class TrainingPeaksTransformer {
 
   /// Calculate pace from distance and duration
   /// TrainingPeaks does NOT provide pace - we must calculate it
-  double? _calculatePace(double? distanceMiles, int? durationMinutes, ActivityType activityType) {
+  double? _calculatePace(
+    double? distanceMiles,
+    int? durationMinutes,
+    ActivityType activityType,
+  ) {
     // Swimming doesn't use min/mile pace
     if (activityType == ActivityType.swimming) return null;
 
@@ -657,7 +695,8 @@ class TrainingPeaksTransformer {
     // Check title and tags for keywords
     final title = (workout['Title'] as String?)?.toLowerCase() ?? '';
     final tagsRaw = workout['Tags'] as List?;
-    final tagsStr = tagsRaw?.map((t) => t.toString().toLowerCase()).join(' ') ?? '';
+    final tagsStr =
+        tagsRaw?.map((t) => t.toString().toLowerCase()).join(' ') ?? '';
     final keywords = '$title $tagsStr'.trim();
 
     if (keywords.isNotEmpty) {
@@ -702,7 +741,8 @@ class TrainingPeaksTransformer {
   }) {
     if (kDebugMode) {
       print('🔍 TP INTENSITY DEBUG - Checking for structured workout data');
-      if (zones != null) print('   📊 Athlete zones available for precision mapping');
+      if (zones != null)
+        print('   📊 Athlete zones available for precision mapping');
     }
 
     // 1. Try to parse structured workout (uses zones for precise classification)
@@ -720,7 +760,9 @@ class TrainingPeaksTransformer {
     // 2. Try IF-based inference
     final ifValue = (workout['IFPlanned'] as num?)?.toDouble();
     if (ifValue != null && ifValue > 0) {
-      final distribution = IntensityDistributionMapper.fromIntensityFactor(ifValue);
+      final distribution = IntensityDistributionMapper.fromIntensityFactor(
+        ifValue,
+      );
       if (distribution != null) {
         if (kDebugMode) {
           print('   ✅ Inferred from IF ($ifValue): $distribution');
@@ -738,10 +780,14 @@ class TrainingPeaksTransformer {
       if (tags != null && tags.isNotEmpty) {
         keywords += ' ${tags.join(' ')}';
       }
-      final distribution = IntensityDistributionMapper.fromWorkoutType(keywords);
+      final distribution = IntensityDistributionMapper.fromWorkoutType(
+        keywords,
+      );
       if (distribution != null) {
         if (kDebugMode) {
-          print('   ✅ Inferred from title/tags keywords ("$keywords"): $distribution');
+          print(
+            '   ✅ Inferred from title/tags keywords ("$keywords"): $distribution',
+          );
         }
         return distribution;
       }
@@ -839,7 +885,8 @@ class TrainingPeaksTransformer {
       IntensityZone zone = IntensityZone.conversational; // Default
       if (intensityTarget != null) {
         final intensityUnit = intensityTarget['Unit'] as String?;
-        final intensityValue = (intensityTarget['Value'] as num?)?.toDouble() ?? 0;
+        final intensityValue =
+            (intensityTarget['Value'] as num?)?.toDouble() ?? 0;
 
         zone = _classifyIntensity(
           unit: intensityUnit,
@@ -848,10 +895,9 @@ class TrainingPeaksTransformer {
         );
       }
 
-      segments.add(WorkoutSegment(
-        durationSeconds: durationSeconds,
-        zone: zone,
-      ));
+      segments.add(
+        WorkoutSegment(durationSeconds: durationSeconds, zone: zone),
+      );
     } else if (type == 'Repetition') {
       // Repeated block of steps
       final repeatCount = (step['RepeatCount'] as num?)?.toInt() ?? 1;

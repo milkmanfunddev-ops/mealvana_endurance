@@ -74,11 +74,7 @@ MacroTargets _targets({
 
 /// Build a minimal NutritionPlan with a single section containing food items.
 NutritionPlan _plan({required List<PlanSection> sections}) {
-  return NutritionPlan(
-    id: 'plan-1',
-    name: 'Test Plan',
-    sections: sections,
-  );
+  return NutritionPlan(id: 'plan-1', name: 'Test Plan', sections: sections);
 }
 
 /// Build a FoodItemData with a numeric quantity string.
@@ -127,25 +123,37 @@ void main() {
 
     test('scales before section by carb ratio', () {
       // Plan has 30g carbs in before section; target is 60g → ratio 2.0.
-      final plan = _plan(sections: [
-        _section(id: 'before1', foodItems: [_food(quantity: '2', carbs: 15)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'before1',
+            foodItems: [_food(quantity: '2', carbs: 15)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
         targets: _targets(preCarbs: 60),
       );
 
-      final scaledQty = int.parse(scaled.sections.first.foodItems.first.quantity);
+      final scaledQty = int.parse(
+        scaled.sections.first.foodItems.first.quantity,
+      );
       // 2 * (60/30) = 4; ratio=2.0 which is at the ceiling so result = 4.
       expect(scaledQty, 4);
     });
 
     test('scales during section by carb ratio', () {
       // Plan has 60g carbs in during; target is 120g → ratio 2.0.
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [_food(quantity: '3', carbs: 20)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '3', carbs: 20)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -159,9 +167,14 @@ void main() {
 
     test('scales after section by carb ratio', () {
       // Plan has 20g carbs in after; target is 40g → ratio 2.0.
-      final plan = _plan(sections: [
-        _section(id: 'after1', foodItems: [_food(quantity: '1', carbs: 20)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'after1',
+            foodItems: [_food(quantity: '1', carbs: 20)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -179,9 +192,14 @@ void main() {
 
     test('ratio is clamped at 2.0x ceiling (does not over-scale)', () {
       // 10g carbs in plan, 100g target → raw ratio 10, clamped to 2.
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [_food(quantity: '1', carbs: 10)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '1', carbs: 10)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -195,9 +213,14 @@ void main() {
 
     test('ratio is clamped at 0.5x floor (does not under-scale too far)', () {
       // 100g carbs in plan, 1g target → raw ratio 0.01, clamped to 0.5.
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [_food(quantity: '4', carbs: 100)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '4', carbs: 100)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -215,14 +238,14 @@ void main() {
 
     test('indivisible food rounds quantity to whole number', () {
       // 2 packets × ratio 1.3 = 2.6 → rounds to 3.
-      final plan = _plan(sections: [
-        _section(
-          id: 'during1',
-          foodItems: [
-            _food(quantity: '2', carbs: 40, isIndivisible: true),
-          ],
-        ),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '2', carbs: 40, isIndivisible: true)],
+          ),
+        ],
+      );
 
       // 40g carbs, target 52g → ratio 1.3.
       final scaled = TemplateScalingService.scalePlanWithTargets(
@@ -238,14 +261,14 @@ void main() {
     test('indivisible food floors to 1 (never below 1)', () {
       // 3 packets × clamped ratio 0.5 = 1.5 → rounds to 2 (normal case).
       // But at 3 * 0.5 = 1.5 → rounds to 2, not below 1. Let's test near-zero.
-      final plan = _plan(sections: [
-        _section(
-          id: 'during1',
-          foodItems: [
-            _food(quantity: '1', carbs: 20, isIndivisible: true),
-          ],
-        ),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '1', carbs: 20, isIndivisible: true)],
+          ),
+        ],
+      );
 
       // ratio clamped to 0.5 → 1 * 0.5 = 0.5, rounds to 1 (can't go below 1).
       final scaled = TemplateScalingService.scalePlanWithTargets(
@@ -263,14 +286,14 @@ void main() {
 
     test('divisible food rounds to nearest 0.5', () {
       // 2 cups × ratio 0.8 = 1.6 → nearest 0.5 = 1.5.
-      final plan = _plan(sections: [
-        _section(
-          id: 'before1',
-          foodItems: [
-            _food(quantity: '2', carbs: 30, isIndivisible: false),
-          ],
-        ),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'before1',
+            foodItems: [_food(quantity: '2', carbs: 30, isIndivisible: false)],
+          ),
+        ],
+      );
 
       // 30g carbs, target 24g → ratio 0.8.
       final scaled = TemplateScalingService.scalePlanWithTargets(
@@ -283,14 +306,14 @@ void main() {
     });
 
     test('divisible food floors to 0.5 (never below 0.5)', () {
-      final plan = _plan(sections: [
-        _section(
-          id: 'before1',
-          foodItems: [
-            _food(quantity: '1', carbs: 20, isIndivisible: false),
-          ],
-        ),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'before1',
+            foodItems: [_food(quantity: '1', carbs: 20, isIndivisible: false)],
+          ),
+        ],
+      );
 
       // clamped ratio 0.5 → 1 * 0.5 = 0.5 (exactly at floor).
       final scaled = TemplateScalingService.scalePlanWithTargets(
@@ -317,9 +340,11 @@ void main() {
         nutritionalInfo: const NutritionalInfo(carbs: 30),
       );
 
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [food]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(id: 'during1', foodItems: [food]),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -334,33 +359,37 @@ void main() {
     // NutritionalInfo scaling
     // ----------------------------------------------------------
 
-    test('scaled food nutritionalInfo is proportional to actual quantity ratio',
-        () {
-      // 2 gels @ 22g carbs each = 44g total; target 88g → ratio 2.0 → 4 gels
-      // Expected: calories 100 * 2.0 = 200, carbs 22 * 2.0 = 44.
-      final plan = _plan(sections: [
-        _section(
-          id: 'during1',
-          foodItems: [
-            _food(
-              quantity: '2',
-              carbs: 22,
-              calories: 100,
-              isIndivisible: true, // indivisible so ratio is exact integer
+    test(
+      'scaled food nutritionalInfo is proportional to actual quantity ratio',
+      () {
+        // 2 gels @ 22g carbs each = 44g total; target 88g → ratio 2.0 → 4 gels
+        // Expected: calories 100 * 2.0 = 200, carbs 22 * 2.0 = 44.
+        final plan = _plan(
+          sections: [
+            _section(
+              id: 'during1',
+              foodItems: [
+                _food(
+                  quantity: '2',
+                  carbs: 22,
+                  calories: 100,
+                  isIndivisible: true, // indivisible so ratio is exact integer
+                ),
+              ],
             ),
           ],
-        ),
-      ]);
+        );
 
-      final scaled = TemplateScalingService.scalePlanWithTargets(
-        plan: plan,
-        targets: _targets(duringCarbs: 88), // 44g → ratio 2.0 → 4 gels
-      );
+        final scaled = TemplateScalingService.scalePlanWithTargets(
+          plan: plan,
+          targets: _targets(duringCarbs: 88), // 44g → ratio 2.0 → 4 gels
+        );
 
-      final info = scaled.sections.first.foodItems.first.nutritionalInfo!;
-      expect(info.calories, 200);
-      expect(info.carbs, 44);
-    });
+        final info = scaled.sections.first.foodItems.first.nutritionalInfo!;
+        expect(info.calories, 200);
+        expect(info.carbs, 44);
+      },
+    );
 
     test('food without nutritionalInfo passes through unchanged', () {
       final food = const FoodItemData(
@@ -370,9 +399,11 @@ void main() {
         // nutritionalInfo is null
       );
 
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [food]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(id: 'during1', foodItems: [food]),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -381,10 +412,7 @@ void main() {
 
       // Quantity string can't be parsed for scaling → food passes through.
       // Wait — quantity '1' IS parseable but carbs is null so sectionCarbTotal=0 → skip.
-      expect(
-        scaled.sections.first.foodItems.first.nutritionalInfo,
-        isNull,
-      );
+      expect(scaled.sections.first.foodItems.first.nutritionalInfo, isNull);
     });
 
     // ----------------------------------------------------------
@@ -427,9 +455,11 @@ void main() {
     test('section with zero carbs passes through unchanged', () {
       // All foods have 0 carbs → sectionCarbTotal = 0 → skip scaling.
       final food = _food(quantity: '2', carbs: 0);
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [food]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(id: 'during1', foodItems: [food]),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -440,9 +470,14 @@ void main() {
     });
 
     test('section with zero target carbs passes through unchanged', () {
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [_food(quantity: '2', carbs: 30)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '2', carbs: 30)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -454,9 +489,14 @@ void main() {
 
     test('section id without known prefix passes through unchanged', () {
       // 'recovery1' doesn't start with 'before', 'during', or 'after'.
-      final plan = _plan(sections: [
-        _section(id: 'recovery1', foodItems: [_food(quantity: '2', carbs: 30)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'recovery1',
+            foodItems: [_food(quantity: '2', carbs: 30)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -478,9 +518,11 @@ void main() {
         nutritionalInfo: NutritionalInfo(carbs: 30),
       );
 
-      final plan = _plan(sections: [
-        _section(id: 'during1', foodItems: [food]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(id: 'during1', foodItems: [food]),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -493,12 +535,14 @@ void main() {
 
     test('scaleMultiplier is set on the returned food', () {
       // 2 gels × ratio 2.0 → 4 gels; scaleMultiplier should reflect actual ratio.
-      final plan = _plan(sections: [
-        _section(
-          id: 'during1',
-          foodItems: [_food(quantity: '2', carbs: 22, isIndivisible: true)],
-        ),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'during1',
+            foodItems: [_food(quantity: '2', carbs: 22, isIndivisible: true)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,
@@ -518,11 +562,22 @@ void main() {
       // NutritionalInfo.carbs is the total carbs for the food entry at its
       // listed quantity — NOT per-unit. The during food has carbs: 60 so
       // sectionCarbTotal = 60, matching the target → ratio 1.0 → qty unchanged.
-      final plan = _plan(sections: [
-        _section(id: 'before1', foodItems: [_food(id: 'b1', quantity: '1', carbs: 30)]),
-        _section(id: 'during1', foodItems: [_food(id: 'd1', quantity: '2', carbs: 60)]),
-        _section(id: 'after1', foodItems: [_food(id: 'a1', quantity: '1', carbs: 20)]),
-      ]);
+      final plan = _plan(
+        sections: [
+          _section(
+            id: 'before1',
+            foodItems: [_food(id: 'b1', quantity: '1', carbs: 30)],
+          ),
+          _section(
+            id: 'during1',
+            foodItems: [_food(id: 'd1', quantity: '2', carbs: 60)],
+          ),
+          _section(
+            id: 'after1',
+            foodItems: [_food(id: 'a1', quantity: '1', carbs: 20)],
+          ),
+        ],
+      );
 
       final scaled = TemplateScalingService.scalePlanWithTargets(
         plan: plan,

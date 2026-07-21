@@ -15,7 +15,8 @@ import 'shared/widgets/root_app_widget.dart';
 import 'shared/services/privacy/analytics_consent.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
-final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> sentryNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 /// Web entry point
 /// Uses --dart-define for environment variables (required for web security)
@@ -33,28 +34,29 @@ final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>()
 ///   --dart-define=SENTRY_DSN=$SENTRY_DSN \
 ///   --dart-define=APP_ENVIRONMENT=prod
 Future<void> main() async {
-  runZonedGuarded(() async {
-    // Initialize widgets binding for Sentry frame tracking
-    SentryWidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      // Initialize widgets binding for Sentry frame tracking
+      SentryWidgetsFlutterBinding.ensureInitialized();
 
-    // Create app configuration from dart defines (web-safe)
-    final config = AppConfig.fromDartDefines();
+      // Create app configuration from dart defines (web-safe)
+      final config = AppConfig.fromDartDefines();
 
-    // Fetch package info before Sentry init so release/dist are available.
-    final packageInfo = await PackageInfo.fromPlatform();
-    final sentryRelease =
-        'mealvana_endurance@${packageInfo.version}+${packageInfo.buildNumber}';
-    final sentryDist = packageInfo.buildNumber;
+      // Fetch package info before Sentry init so release/dist are available.
+      final packageInfo = await PackageInfo.fromPlatform();
+      final sentryRelease =
+          'mealvana_endurance@${packageInfo.version}+${packageInfo.buildNumber}';
+      final sentryDist = packageInfo.buildNumber;
 
-    // Consent must be resolved BEFORE Sentry is configured: session replay is
-    // armed at init and cannot be disarmed for the rest of the session.
-    final sharedPreferences = await SharedPreferences.getInstance();
-    final analyticsConsented =
-        analyticsConsentGrantedFromPrefs(sharedPreferences);
+      // Consent must be resolved BEFORE Sentry is configured: session replay is
+      // armed at init and cannot be disarmed for the rest of the session.
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final analyticsConsented = analyticsConsentGrantedFromPrefs(
+        sharedPreferences,
+      );
 
-    // Initialize Sentry
-    await SentryFlutter.init(
-      (options) {
+      // Initialize Sentry
+      await SentryFlutter.init((options) {
         options.dsn = config.sentryDsn;
         options.environment = config.sentryEnvironment;
 
@@ -92,8 +94,9 @@ Future<void> main() async {
         //
         // Read once, at init: a user who withdraws mid-session stops Mixpanel
         // immediately, but replay stays armed until the next launch.
-        options.replay.onErrorSampleRate =
-            (kDebugMode || !analyticsConsented) ? 0.0 : 1.0;
+        options.replay.onErrorSampleRate = (kDebugMode || !analyticsConsented)
+            ? 0.0
+            : 1.0;
 
         options.attachStacktrace = true;
         options.sendDefaultPii = false;
@@ -104,7 +107,8 @@ Future<void> main() async {
           // info level by design and must not be swept up by this drop.
           if (!kDebugMode &&
               !isDiagnosticEvent(event) &&
-              (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
+              (event.level == SentryLevel.debug ||
+                  event.level == SentryLevel.info)) {
             return null;
           }
           // Drop known low-signal noise (offline/DNS, transient TLS resets,
@@ -117,24 +121,25 @@ Future<void> main() async {
 
         options.navigatorKey = sentryNavigatorKey;
         options.attachScreenshot = true;
-      },
-    );
+      });
 
-    // Explicit uncaught-error handlers — installed AFTER SentryFlutter.init so
-    // the SDK is ready to receive events and won't clobber these assignments.
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-      Sentry.captureException(details.exception, stackTrace: details.stack);
-    };
-    PlatformDispatcher.instance.onError = (error, stack) {
-      Sentry.captureException(error, stackTrace: stack);
-      return true;
-    };
+      // Explicit uncaught-error handlers — installed AFTER SentryFlutter.init so
+      // the SDK is ready to receive events and won't clobber these assignments.
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        Sentry.captureException(details.exception, stackTrace: details.stack);
+      };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        Sentry.captureException(error, stackTrace: stack);
+        return true;
+      };
 
-    await _runMealvanaApp(config, sharedPreferences);
-  }, (exception, stackTrace) async {
-    await Sentry.captureException(exception, stackTrace: stackTrace);
-  });
+      await _runMealvanaApp(config, sharedPreferences);
+    },
+    (exception, stackTrace) async {
+      await Sentry.captureException(exception, stackTrace: stackTrace);
+    },
+  );
 }
 
 Future<void> _runMealvanaApp(

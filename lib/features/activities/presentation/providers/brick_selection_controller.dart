@@ -100,7 +100,9 @@ class BrickSelectionController extends _$BrickSelectionController {
     final currentState = state;
 
     final selectedIds = List<String>.from(currentState.selectedActivityIds);
-    final selectedActivities = List<Activity>.from(currentState.selectedActivities);
+    final selectedActivities = List<Activity>.from(
+      currentState.selectedActivities,
+    );
 
     final index = selectedIds.indexOf(activity.id);
 

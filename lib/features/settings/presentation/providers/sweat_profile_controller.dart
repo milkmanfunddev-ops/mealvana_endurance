@@ -46,8 +46,8 @@ class SweatProfileState {
       knownSweatRateMlPerHour: identical(knownSweatRateMlPerHour, _sentinel)
           ? this.knownSweatRateMlPerHour
           : knownSweatRateMlPerHour as int?,
-      knownSodiumConcentrationMgPerLiter: identical(
-              knownSodiumConcentrationMgPerLiter, _sentinel)
+      knownSodiumConcentrationMgPerLiter:
+          identical(knownSodiumConcentrationMgPerLiter, _sentinel)
           ? this.knownSodiumConcentrationMgPerLiter
           : knownSodiumConcentrationMgPerLiter as int?,
       sweatTestDate: identical(sweatTestDate, _sentinel)

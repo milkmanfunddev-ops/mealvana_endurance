@@ -45,8 +45,9 @@ class _CreateCarbLoadingDialogState
     );
     _weightKgCtl = TextEditingController(
       text: widget.athleteWeightPounds != null
-          ? UnitFormatter.poundsToKg(widget.athleteWeightPounds!)
-              .toStringAsFixed(0)
+          ? UnitFormatter.poundsToKg(
+              widget.athleteWeightPounds!,
+            ).toStringAsFixed(0)
           : '',
     );
   }
@@ -105,14 +106,17 @@ class _CreateCarbLoadingDialogState
     // preference (unitSystemProvider resolves to the logged-in user).
     final useMetric =
         (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
-            UnitSystem.metric;
+        UnitSystem.metric;
     final weightCtl = useMetric ? _weightKgCtl : _weightLbsCtl;
 
-    final upcomingEvents = widget.events
-        .where((e) =>
-            e.eventDate != null && e.eventDate!.isAfter(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.eventDate!.compareTo(b.eventDate!));
+    final upcomingEvents =
+        widget.events
+            .where(
+              (e) =>
+                  e.eventDate != null && e.eventDate!.isAfter(DateTime.now()),
+            )
+            .toList()
+          ..sort((a, b) => a.eventDate!.compareTo(b.eventDate!));
 
     return AlertDialog(
       backgroundColor: AppColors.blackberry,
@@ -154,13 +158,15 @@ class _CreateCarbLoadingDialogState
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                 ),
                 items: [
@@ -168,13 +174,15 @@ class _CreateCarbLoadingDialogState
                     value: null,
                     child: Text('None'),
                   ),
-                  ...upcomingEvents.map((event) => DropdownMenuItem<Event?>(
-                        value: event,
-                        child: Text(
-                          '${event.eventName ?? "Event"} - ${event.eventDate!.month}/${event.eventDate!.day}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
+                  ...upcomingEvents.map(
+                    (event) => DropdownMenuItem<Event?>(
+                      value: event,
+                      child: Text(
+                        '${event.eventName ?? "Event"} - ${event.eventDate!.month}/${event.eventDate!.day}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
                 ],
                 onChanged: _onEventSelected,
               ),
@@ -201,8 +209,7 @@ class _CreateCarbLoadingDialogState
                   decoration: BoxDecoration(
                     color: AppColors.blackberryDark,
                     borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: AppColors.blackberryLight),
+                    border: Border.all(color: AppColors.blackberryLight),
                   ),
                   child: Row(
                     children: [
@@ -257,8 +264,9 @@ class _CreateCarbLoadingDialogState
               const SizedBox(height: 4),
               TextField(
                 controller: weightCtl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 style: const TextStyle(color: AppColors.cream, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Enter weight',
@@ -274,18 +282,19 @@ class _CreateCarbLoadingDialogState
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.electrolyte),
+                    borderSide: const BorderSide(color: AppColors.electrolyte),
                   ),
                 ),
               ),
@@ -322,8 +331,9 @@ class _CreateCarbLoadingDialogState
     final entered = double.tryParse(_activeWeightCtl.text.trim());
     if (entered == null || entered <= 0) return;
     // Persist canonical pounds regardless of the unit the coach entered.
-    final weightPounds =
-        _useMetric ? UnitFormatter.kgToPounds(entered) : entered;
+    final weightPounds = _useMetric
+        ? UnitFormatter.kgToPounds(entered)
+        : entered;
 
     Navigator.of(context).pop({
       'eventId': _selectedEvent?.id,

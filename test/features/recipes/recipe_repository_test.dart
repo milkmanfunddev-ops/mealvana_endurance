@@ -68,7 +68,9 @@ Future<void> _insertRecipeRow(
   String? imageUrl,
   String? tags,
 }) async {
-  await db.into(db.recipesTable).insert(
+  await db
+      .into(db.recipesTable)
+      .insert(
         RecipesTableCompanion.insert(
           id: id,
           name: name,
@@ -181,13 +183,15 @@ void main() {
       expect(await repo.isStale(), isTrue);
     });
 
-    test('returns true when cache is empty even after setting sync timestamp',
-        () async {
-      final repo = _makeRepo(db);
-      await repo.setLastSyncTime(DateTime.now());
-      // Even with a fresh timestamp, empty cache → stale.
-      expect(await repo.isStale(), isTrue);
-    });
+    test(
+      'returns true when cache is empty even after setting sync timestamp',
+      () async {
+        final repo = _makeRepo(db);
+        await repo.setLastSyncTime(DateTime.now());
+        // Even with a fresh timestamp, empty cache → stale.
+        expect(await repo.isStale(), isTrue);
+      },
+    );
 
     test('returns false when cache has rows and sync is recent', () async {
       final repo = _makeRepo(db);
@@ -214,15 +218,22 @@ void main() {
       expect(await repo.isStale(), isTrue);
     });
 
-    test('returns false when cache has current types and recent sync', () async {
-      final repo = _makeRepo(db);
-      for (final t in RecipeType.values) {
-        await _insertRecipeRow(
-            db, id: 'r-${t.wireValue}', name: 'R', type: t.wireValue);
-      }
-      await repo.setLastSyncTime(DateTime.now());
-      expect(await repo.isStale(), isFalse);
-    });
+    test(
+      'returns false when cache has current types and recent sync',
+      () async {
+        final repo = _makeRepo(db);
+        for (final t in RecipeType.values) {
+          await _insertRecipeRow(
+            db,
+            id: 'r-${t.wireValue}',
+            name: 'R',
+            type: t.wireValue,
+          );
+        }
+        await repo.setLastSyncTime(DateTime.now());
+        expect(await repo.isStale(), isFalse);
+      },
+    );
   });
 
   // =========================================================================
@@ -240,7 +251,12 @@ void main() {
       final repo = _makeRepo(db);
       await _insertRecipeRow(db, id: 'r1', name: 'Active', type: 'breakfast');
       await _insertRecipeRow(
-          db, id: 'r2', name: 'Inactive', type: 'mains', isActive: false);
+        db,
+        id: 'r2',
+        name: 'Inactive',
+        type: 'mains',
+        isActive: false,
+      );
 
       final recipes = await repo.getAllRecipes();
       expect(recipes.length, 1);
@@ -250,12 +266,25 @@ void main() {
     test('returns recipes sorted by name ascending', () async {
       final repo = _makeRepo(db);
       await _insertRecipeRow(db, id: 'r3', name: 'Zebra Bars', type: 'snacks');
-      await _insertRecipeRow(db, id: 'r1', name: 'Apple Oats', type: 'breakfast');
-      await _insertRecipeRow(db, id: 'r2', name: 'Mango Smoothie', type: 'mains');
+      await _insertRecipeRow(
+        db,
+        id: 'r1',
+        name: 'Apple Oats',
+        type: 'breakfast',
+      );
+      await _insertRecipeRow(
+        db,
+        id: 'r2',
+        name: 'Mango Smoothie',
+        type: 'mains',
+      );
 
       final recipes = await repo.getAllRecipes();
-      expect(recipes.map((r) => r.name).toList(),
-          ['Apple Oats', 'Mango Smoothie', 'Zebra Bars']);
+      expect(recipes.map((r) => r.name).toList(), [
+        'Apple Oats',
+        'Mango Smoothie',
+        'Zebra Bars',
+      ]);
     });
 
     test('returns correct domain fields for a stored row', () async {
@@ -288,48 +317,57 @@ void main() {
       expect(r.nutrition.sodiumMilligrams, 320);
     });
 
-    test('decodes JSON-encoded ingredients and instructions correctly', () async {
-      final repo = _makeRepo(db);
-      await db.into(db.recipesTable).insert(
-            RecipesTableCompanion.insert(
-              id: 'r1',
-              name: 'Test',
-              type: const Value('snacks'),
-              ingredients: const Value('["oats","milk","banana"]'),
-              instructions: const Value('["mix","eat"]'),
-              isActive: const Value(true),
-              createdAt: DateTime(2025, 1, 1),
-              updatedAt: DateTime(2025, 6, 1),
-            ),
-          );
+    test(
+      'decodes JSON-encoded ingredients and instructions correctly',
+      () async {
+        final repo = _makeRepo(db);
+        await db
+            .into(db.recipesTable)
+            .insert(
+              RecipesTableCompanion.insert(
+                id: 'r1',
+                name: 'Test',
+                type: const Value('snacks'),
+                ingredients: const Value('["oats","milk","banana"]'),
+                instructions: const Value('["mix","eat"]'),
+                isActive: const Value(true),
+                createdAt: DateTime(2025, 1, 1),
+                updatedAt: DateTime(2025, 6, 1),
+              ),
+            );
 
-      final r = (await repo.getAllRecipes()).first;
-      expect(r.ingredients, ['oats', 'milk', 'banana']);
-      expect(r.instructions, ['mix', 'eat']);
-    });
+        final r = (await repo.getAllRecipes()).first;
+        expect(r.ingredients, ['oats', 'milk', 'banana']);
+        expect(r.instructions, ['mix', 'eat']);
+      },
+    );
 
-    test('handles malformed JSON ingredients gracefully (returns empty list)',
-        () async {
-      final repo = _makeRepo(db);
-      await db.into(db.recipesTable).insert(
-            RecipesTableCompanion.insert(
-              id: 'r1',
-              name: 'Test',
-              type: const Value('snacks'),
-              // Malformed JSON — missing closing bracket.
-              ingredients: const Value('["oats","milk"'),
-              instructions: const Value('["step 1"]'),
-              isActive: const Value(true),
-              createdAt: DateTime(2025, 1, 1),
-              updatedAt: DateTime(2025, 6, 1),
-            ),
-          );
+    test(
+      'handles malformed JSON ingredients gracefully (returns empty list)',
+      () async {
+        final repo = _makeRepo(db);
+        await db
+            .into(db.recipesTable)
+            .insert(
+              RecipesTableCompanion.insert(
+                id: 'r1',
+                name: 'Test',
+                type: const Value('snacks'),
+                // Malformed JSON — missing closing bracket.
+                ingredients: const Value('["oats","milk"'),
+                instructions: const Value('["step 1"]'),
+                isActive: const Value(true),
+                createdAt: DateTime(2025, 1, 1),
+                updatedAt: DateTime(2025, 6, 1),
+              ),
+            );
 
-      final r = (await repo.getAllRecipes()).first;
-      // Should not crash; falls back to empty list.
-      expect(r.ingredients, isEmpty);
-      expect(r.instructions, ['step 1']);
-    });
+        final r = (await repo.getAllRecipes()).first;
+        // Should not crash; falls back to empty list.
+        expect(r.ingredients, isEmpty);
+        expect(r.instructions, ['step 1']);
+      },
+    );
   });
 
   // =========================================================================
@@ -348,7 +386,11 @@ void main() {
       }
       // Insert an extra breakfast recipe.
       await _insertRecipeRow(
-          db, id: 'r-breakfast-2', name: 'R breakfast 2', type: 'breakfast');
+        db,
+        id: 'r-breakfast-2',
+        name: 'R breakfast 2',
+        type: 'breakfast',
+      );
     });
 
     test('returns only breakfast recipes', () async {
@@ -370,9 +412,9 @@ void main() {
     test('returns empty list for a type with no matching rows', () async {
       final repo = _makeRepo(db);
       // Delete the workout_fuel row so the type has no rows.
-      await (db.delete(db.recipesTable)
-            ..where((t) => t.type.equals('workout_fuel')))
-          .go();
+      await (db.delete(
+        db.recipesTable,
+      )..where((t) => t.type.equals('workout_fuel'))).go();
       final results = await repo.getRecipesByType(RecipeType.workoutFuel);
       expect(results, isEmpty);
     });
@@ -380,11 +422,12 @@ void main() {
     test('excludes inactive recipes of the requested type', () async {
       final repo = _makeRepo(db);
       await _insertRecipeRow(
-          db,
-          id: 'r-snacks-inactive',
-          name: 'Stale Snack',
-          type: 'snacks',
-          isActive: false);
+        db,
+        id: 'r-snacks-inactive',
+        name: 'Stale Snack',
+        type: 'snacks',
+        isActive: false,
+      );
 
       final results = await repo.getRecipesByType(RecipeType.snacks);
       for (final r in results) {
@@ -416,16 +459,23 @@ void main() {
       expect(r.type, RecipeType.mains);
     });
 
-    test('returns inactive recipe by ID (no active filter on single-row lookup)',
-        () async {
-      // getRecipeById does NOT apply an isActive filter — it fetches by primary
-      // key only.  This is intentional: callers who know the ID get the row.
-      final repo = _makeRepo(db);
-      await _insertRecipeRow(
-          db, id: 'r-soft', name: 'Soft Deleted', type: 'mains', isActive: false);
-      final r = await repo.getRecipeById('r-soft');
-      expect(r, isNotNull, reason: 'getRecipeById has no active-only filter');
-    });
+    test(
+      'returns inactive recipe by ID (no active filter on single-row lookup)',
+      () async {
+        // getRecipeById does NOT apply an isActive filter — it fetches by primary
+        // key only.  This is intentional: callers who know the ID get the row.
+        final repo = _makeRepo(db);
+        await _insertRecipeRow(
+          db,
+          id: 'r-soft',
+          name: 'Soft Deleted',
+          type: 'mains',
+          isActive: false,
+        );
+        final r = await repo.getRecipeById('r-soft');
+        expect(r, isNotNull, reason: 'getRecipeById has no active-only filter');
+      },
+    );
   });
 
   // =========================================================================
@@ -437,8 +487,11 @@ void main() {
       final repo = _makeRepo(db);
       await _insertRecipeRow(db, id: 'r1', name: 'Fav', type: 'breakfast');
       final favorites = await repo.getFavoriteRecipes();
-      expect(favorites, isEmpty,
-          reason: 'MVP favorites are in-memory only; always empty from repo');
+      expect(
+        favorites,
+        isEmpty,
+        reason: 'MVP favorites are in-memory only; always empty from repo',
+      );
     });
   });
 
@@ -463,13 +516,16 @@ void main() {
         type: 'breakfast',
         tags: '["high-carb","vegan"]',
       );
-      await db.into(db.recipesTable).insert(
+      await db
+          .into(db.recipesTable)
+          .insert(
             RecipesTableCompanion.insert(
               id: 'r2',
               name: 'Chicken Rice Bowl',
               description: const Value('A protein-rich recovery meal.'),
-              ingredients:
-                  const Value('["chicken breast","brown rice","broccoli"]'),
+              ingredients: const Value(
+                '["chicken breast","brown rice","broccoli"]',
+              ),
               instructions: const Value('["cook chicken","serve over rice"]'),
               type: const Value('mains'),
               tags: const Value('["high-protein"]'),
@@ -540,7 +596,9 @@ void main() {
     /// by confirming that getAllRecipes() returns correctly mapped domain objects
     /// after a sync.
     RecipeRepository _mockSyncRepo(
-        AppDatabase database, List<Map<String, dynamic>> rows) {
+      AppDatabase database,
+      List<Map<String, dynamic>> rows,
+    ) {
       final mockSupa = MockSupabaseClient();
       // We cannot easily chain the full Supabase fluent API mock here without
       // significant boilerplate.  Instead we test the mapping via a direct
@@ -549,66 +607,72 @@ void main() {
     }
 
     test(
-        'JSON payload with snake_case Supabase keys maps to correct domain fields',
-        () async {
-      // We exercise _syncToLocalDatabase indirectly by inserting a row with
-      // the same shape that the Supabase response uses (snake_case keys).
-      // The _entryToRecipe mapper is the unit under test.
-      final repo = _makeRepo(db);
+      'JSON payload with snake_case Supabase keys maps to correct domain fields',
+      () async {
+        // We exercise _syncToLocalDatabase indirectly by inserting a row with
+        // the same shape that the Supabase response uses (snake_case keys).
+        // The _entryToRecipe mapper is the unit under test.
+        final repo = _makeRepo(db);
 
-      // Insert a row using the Supabase-shaped insert companion used in
-      // _syncToLocalDatabase, to verify the field mapping logic.
-      await db.into(db.recipesTable).insert(
-            RecipesTableCompanion.insert(
-              id: 'sup-001',
-              name: 'Remote Oats',
-              description: const Value('A remote recipe.'),
-              ingredients:
-                  const Value('["oats","milk"]'), // _jsonbToString output
-              instructions: const Value('["mix","eat"]'),
-              prepTimeMinutes: const Value(5),
-              servings: const Value(2),
-              type: const Value('breakfast'),
-              calories: const Value(350.0),
-              carbsG: const Value(60.0),
-              proteinG: const Value(12.0),
-              fatG: const Value(8.0),
-              fiberG: const Value(5.0),
-              sugarG: const Value(7.0),
-              sodiumMg: const Value(250.0),
-              imageUrl: const Value(null),
-              tags: const Value(null),
-              isActive: const Value(true),
-              createdAt: DateTime(2025, 1, 1),
-              updatedAt: DateTime(2025, 6, 1),
-            ),
-          );
+        // Insert a row using the Supabase-shaped insert companion used in
+        // _syncToLocalDatabase, to verify the field mapping logic.
+        await db
+            .into(db.recipesTable)
+            .insert(
+              RecipesTableCompanion.insert(
+                id: 'sup-001',
+                name: 'Remote Oats',
+                description: const Value('A remote recipe.'),
+                ingredients: const Value(
+                  '["oats","milk"]',
+                ), // _jsonbToString output
+                instructions: const Value('["mix","eat"]'),
+                prepTimeMinutes: const Value(5),
+                servings: const Value(2),
+                type: const Value('breakfast'),
+                calories: const Value(350.0),
+                carbsG: const Value(60.0),
+                proteinG: const Value(12.0),
+                fatG: const Value(8.0),
+                fiberG: const Value(5.0),
+                sugarG: const Value(7.0),
+                sodiumMg: const Value(250.0),
+                imageUrl: const Value(null),
+                tags: const Value(null),
+                isActive: const Value(true),
+                createdAt: DateTime(2025, 1, 1),
+                updatedAt: DateTime(2025, 6, 1),
+              ),
+            );
 
-      final recipes = await repo.getAllRecipes();
-      expect(recipes.length, 1);
-      final r = recipes.first;
+        final recipes = await repo.getAllRecipes();
+        expect(recipes.length, 1);
+        final r = recipes.first;
 
-      expect(r.id, 'sup-001');
-      expect(r.name, 'Remote Oats');
-      expect(r.type, RecipeType.breakfast);
-      expect(r.nutrition.calories, 350.0);
-      expect(r.nutrition.carbohydratesGrams, 60.0);
-      expect(r.nutrition.proteinGrams, 12.0);
-      expect(r.nutrition.fatGrams, 8.0);
-      expect(r.nutrition.fiberGrams, 5.0);
-      expect(r.nutrition.sugarGrams, 7.0);
-      expect(r.nutrition.sodiumMilligrams, 250.0);
-      expect(r.ingredients, ['oats', 'milk']);
-      expect(r.instructions, ['mix', 'eat']);
-      expect(r.prepTimeMinutes, 5);
-      expect(r.servings, 2);
-      expect(r.imageUrl, isNull);
-      expect(r.isFavorite, isFalse);
-    });
+        expect(r.id, 'sup-001');
+        expect(r.name, 'Remote Oats');
+        expect(r.type, RecipeType.breakfast);
+        expect(r.nutrition.calories, 350.0);
+        expect(r.nutrition.carbohydratesGrams, 60.0);
+        expect(r.nutrition.proteinGrams, 12.0);
+        expect(r.nutrition.fatGrams, 8.0);
+        expect(r.nutrition.fiberGrams, 5.0);
+        expect(r.nutrition.sugarGrams, 7.0);
+        expect(r.nutrition.sodiumMilligrams, 250.0);
+        expect(r.ingredients, ['oats', 'milk']);
+        expect(r.instructions, ['mix', 'eat']);
+        expect(r.prepTimeMinutes, 5);
+        expect(r.servings, 2);
+        expect(r.imageUrl, isNull);
+        expect(r.isFavorite, isFalse);
+      },
+    );
 
     test('bare imageUrl filename is resolved to full https URL', () async {
       final repo = _makeRepo(db);
-      await db.into(db.recipesTable).insert(
+      await db
+          .into(db.recipesTable)
+          .insert(
             RecipesTableCompanion.insert(
               id: 'r-img',
               name: 'Img Test',
@@ -629,28 +693,42 @@ void main() {
       when(() => mockSupa.storage).thenReturn(mockStorage);
       final mockBucket = MockStorageFileApi();
       when(() => mockStorage.from('recipe-images')).thenReturn(mockBucket);
-      when(() => mockBucket.getPublicUrl('overnight-oats.jpg'))
-          .thenReturn('https://cdn.example.com/recipe-images/overnight-oats.jpg');
+      when(
+        () => mockBucket.getPublicUrl('overnight-oats.jpg'),
+      ).thenReturn('https://cdn.example.com/recipe-images/overnight-oats.jpg');
 
-      final repoWithStorage = RecipeRepository(mockSupa, db,
-          logger: const NoopAppLogger());
+      final repoWithStorage = RecipeRepository(
+        mockSupa,
+        db,
+        logger: const NoopAppLogger(),
+      );
       final recipes = await repoWithStorage.getAllRecipes();
-      expect(recipes.first.imageUrl,
-          'https://cdn.example.com/recipe-images/overnight-oats.jpg');
+      expect(
+        recipes.first.imageUrl,
+        'https://cdn.example.com/recipe-images/overnight-oats.jpg',
+      );
     });
 
     test('full https:// imageUrl is passed through unchanged', () async {
       final repo = _makeRepo(db);
       const fullUrl = 'https://example.com/images/recipe.jpg';
       await _insertRecipeRow(
-          db, id: 'r-full', name: 'Full URL', type: 'mains', imageUrl: fullUrl);
+        db,
+        id: 'r-full',
+        name: 'Full URL',
+        type: 'mains',
+        imageUrl: fullUrl,
+      );
 
       // For full https:// URLs the repository does NOT call Supabase Storage —
       // it passes the URL through directly.
       final mockSupa = MockSupabaseClient();
       // If the test accidentally called supabase.storage, the mock would throw.
-      final repoWithStorage =
-          RecipeRepository(mockSupa, db, logger: const NoopAppLogger());
+      final repoWithStorage = RecipeRepository(
+        mockSupa,
+        db,
+        logger: const NoopAppLogger(),
+      );
       final recipes = await repoWithStorage.getAllRecipes();
       expect(recipes.first.imageUrl, fullUrl);
     });
@@ -664,7 +742,12 @@ void main() {
     test('null tags column → null tags in domain model', () async {
       final repo = _makeRepo(db);
       await _insertRecipeRow(
-          db, id: 'r1', name: 'No Tags', type: 'mains', tags: null);
+        db,
+        id: 'r1',
+        name: 'No Tags',
+        type: 'mains',
+        tags: null,
+      );
       final r = (await repo.getAllRecipes()).first;
       expect(r.tags, isNull);
     });
@@ -685,7 +768,12 @@ void main() {
     test('malformed tags JSON → empty list fallback (no crash)', () async {
       final repo = _makeRepo(db);
       await _insertRecipeRow(
-          db, id: 'r1', name: 'Bad Tags', type: 'mains', tags: 'not-json');
+        db,
+        id: 'r1',
+        name: 'Bad Tags',
+        type: 'mains',
+        tags: 'not-json',
+      );
       // Internally _decodeJsonStringList catches the error and returns [].
       final r = (await repo.getAllRecipes()).first;
       expect(r.tags, isEmpty);

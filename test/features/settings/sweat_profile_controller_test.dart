@@ -161,11 +161,14 @@ void main() {
       expect(cleared.knownSweatRateMlPerHour, isNull);
     });
 
-    test('copyWith knownSodiumConcentrationMgPerLiter = null explicitly clears', () {
-      const s = SweatProfileState(knownSodiumConcentrationMgPerLiter: 1200);
-      final cleared = s.copyWith(knownSodiumConcentrationMgPerLiter: null);
-      expect(cleared.knownSodiumConcentrationMgPerLiter, isNull);
-    });
+    test(
+      'copyWith knownSodiumConcentrationMgPerLiter = null explicitly clears',
+      () {
+        const s = SweatProfileState(knownSodiumConcentrationMgPerLiter: 1200);
+        final cleared = s.copyWith(knownSodiumConcentrationMgPerLiter: null);
+        expect(cleared.knownSodiumConcentrationMgPerLiter, isNull);
+      },
+    );
 
     test('copyWith sweatTestDate = null explicitly clears date', () {
       final date = DateTime(2024, 5, 1);
@@ -180,12 +183,15 @@ void main() {
       expect(cleared.sweatTestSource, isNull);
     });
 
-    test('copyWith without sentinel preserves existing knownSweatRateMlPerHour', () {
-      const s = SweatProfileState(knownSweatRateMlPerHour: 600);
-      // Not passing knownSweatRateMlPerHour → should stay 600
-      final updated = s.copyWith(sweatRate: SweatRateCat.light);
-      expect(updated.knownSweatRateMlPerHour, 600);
-    });
+    test(
+      'copyWith without sentinel preserves existing knownSweatRateMlPerHour',
+      () {
+        const s = SweatProfileState(knownSweatRateMlPerHour: 600);
+        // Not passing knownSweatRateMlPerHour → should stay 600
+        final updated = s.copyWith(sweatRate: SweatRateCat.light);
+        expect(updated.knownSweatRateMlPerHour, 600);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -216,7 +222,9 @@ void main() {
       final container = _makeContainer(profile);
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSweatRate(1200);
@@ -228,7 +236,10 @@ void main() {
       // If getCurrentUser returns null (no auth), we get a repository exception.
       // This test documents that save() short-circuits if profile is null.
       // With our mock returning null for currentUser → getCurrentUser → null.
-      expect(error, isNotNull); // 'No user profile found to update.' because auth mock returns null user
+      expect(
+        error,
+        isNotNull,
+      ); // 'No user profile found to update.' because auth mock returns null user
     });
 
     test('save() returns error for sweat rate = 0 (out of range)', () async {
@@ -239,7 +250,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSweatRate(0);
@@ -257,7 +270,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSweatRate(4000);
@@ -275,7 +290,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSweatRate(-1);
@@ -293,7 +310,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSodiumConcentration(0);
@@ -311,7 +330,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSodiumConcentration(2500);
@@ -330,7 +351,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       // Do NOT call setKnownSweatRate → remains null.
@@ -351,7 +374,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSweatRate(1); // boundary: minimum valid
@@ -371,7 +396,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setKnownSweatRate(3999); // boundary: maximum valid
@@ -396,7 +423,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setSweatRate(SweatRateCat.heavy);
@@ -413,7 +442,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setSweatSodium(SweatSodiumCat.high);
@@ -422,29 +453,40 @@ void main() {
       expect(state?.sweatSodium, SweatSodiumCat.high);
     });
 
-    test('setKnownSweatRate updates state, previous value not leaked', () async {
-      final container = ProviderContainer(
-        overrides: [
-          userRepositoryProvider.overrideWith((_) async => repository),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'setKnownSweatRate updates state, previous value not leaked',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            userRepositoryProvider.overrideWith((_) async => repository),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
-      await container.read(sweatProfileControllerProvider.future);
+        final controller = container.read(
+          sweatProfileControllerProvider.notifier,
+        );
+        await container.read(sweatProfileControllerProvider.future);
 
-      controller.setKnownSweatRate(500);
-      expect(
-        container.read(sweatProfileControllerProvider).value?.knownSweatRateMlPerHour,
-        500,
-      );
+        controller.setKnownSweatRate(500);
+        expect(
+          container
+              .read(sweatProfileControllerProvider)
+              .value
+              ?.knownSweatRateMlPerHour,
+          500,
+        );
 
-      controller.setKnownSweatRate(750);
-      expect(
-        container.read(sweatProfileControllerProvider).value?.knownSweatRateMlPerHour,
-        750,
-      );
-    });
+        controller.setKnownSweatRate(750);
+        expect(
+          container
+              .read(sweatProfileControllerProvider)
+              .value
+              ?.knownSweatRateMlPerHour,
+          750,
+        );
+      },
+    );
 
     test('setSweatTestSource updates state', () async {
       final container = ProviderContainer(
@@ -454,7 +496,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       controller.setSweatTestSource('gatorade_gx');
@@ -471,7 +515,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final controller = container.read(sweatProfileControllerProvider.notifier);
+      final controller = container.read(
+        sweatProfileControllerProvider.notifier,
+      );
       await container.read(sweatProfileControllerProvider.future);
 
       final date = DateTime(2025, 1, 15);

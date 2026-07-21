@@ -93,18 +93,18 @@ class SkippedPersonalFormula {
       reason: SkippedFormulaReason.fromWireValue(json['reason'] as String?),
       formulaDurations:
           (json['formula_durations'] as List<dynamic>?)?.cast<String>() ??
-              const [],
+          const [],
       workoutBracket: json['workout_bracket'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'reason': reason?.wireValue,
-        'formula_durations': formulaDurations,
-        'workout_bracket': workoutBracket,
-      };
+    'id': id,
+    'name': name,
+    'reason': reason?.wireValue,
+    'formula_durations': formulaDurations,
+    'workout_bracket': workoutBracket,
+  };
 }
 
 /// Pin honoring telemetry for one phase / sub-phase of a generated plan.
@@ -173,24 +173,28 @@ class PinDecision {
   factory PinDecision.fromJson(Map<String, dynamic> json) {
     return PinDecision(
       usedPin: json['used_pin'] as bool? ?? json['usedPin'] as bool? ?? false,
-      pinnedTemplateId: json['pinned_template_id'] as String? ??
+      pinnedTemplateId:
+          json['pinned_template_id'] as String? ??
           json['pinnedTemplateId'] as String?,
-      pinnedTemplateName: json['pinned_template_name'] as String? ??
+      pinnedTemplateName:
+          json['pinned_template_name'] as String? ??
           json['pinnedTemplateName'] as String?,
       fallthroughReason: PinFallthroughReason.fromWireValue(
         json['fallthrough_reason'] as String? ??
             json['fallthroughReason'] as String?,
       ),
-      pinSetSize: (json['pin_set_size'] as num?)?.toInt() ??
+      pinSetSize:
+          (json['pin_set_size'] as num?)?.toInt() ??
           (json['pinSetSize'] as num?)?.toInt() ??
           0,
       ephemeral: json['ephemeral'] as bool? ?? false,
-      skippedPersonalFormulas: ((json['skipped_personal_formulas'] ??
-                  json['skippedPersonalFormulas'])
-              as List<dynamic>?)
-          ?.whereType<Map<String, dynamic>>()
-          .map(SkippedPersonalFormula.fromJson)
-          .toList(growable: false) ??
+      skippedPersonalFormulas:
+          ((json['skipped_personal_formulas'] ??
+                      json['skippedPersonalFormulas'])
+                  as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(SkippedPersonalFormula.fromJson)
+              .toList(growable: false) ??
           const [],
     );
   }
@@ -204,8 +208,9 @@ class PinDecision {
       'pin_set_size': pinSetSize,
       'ephemeral': ephemeral,
       if (skippedPersonalFormulas.isNotEmpty)
-        'skipped_personal_formulas':
-            skippedPersonalFormulas.map((f) => f.toJson()).toList(),
+        'skipped_personal_formulas': skippedPersonalFormulas
+            .map((f) => f.toJson())
+            .toList(),
     };
   }
 

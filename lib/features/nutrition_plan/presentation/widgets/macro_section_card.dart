@@ -34,7 +34,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
   late AnimationController _animationController;
   late Animation<double> _expandAnimation;
   bool _isExpanded = false;
-  
+
   // Track validation messages for each field
   final Map<MacroField, String?> _validationMessages = {};
 
@@ -81,9 +81,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: Column(
         children: [
           // Header with title and expand/collapse button
@@ -269,13 +267,13 @@ class _MacroSectionCardState extends State<MacroSectionCard>
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    
+
     final controller = TextEditingController(text: value.toStringAsFixed(1));
-    
+
     // Get validation message for this field
     final validationMessage = _getValidationMessage(field, value);
     final hasWarning = validationMessage != null;
-    
+
     // Update validation state
     setState(() {
       _validationMessages[field] = validationMessage;
@@ -313,20 +311,26 @@ class _MacroSectionCardState extends State<MacroSectionCard>
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.r),
                     borderSide: BorderSide(
-                      color: hasWarning ? colorScheme.error : colorScheme.outline,
+                      color: hasWarning
+                          ? colorScheme.error
+                          : colorScheme.outline,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.r),
                     borderSide: BorderSide(
-                      color: hasWarning ? colorScheme.error : colorScheme.primary,
+                      color: hasWarning
+                          ? colorScheme.error
+                          : colorScheme.primary,
                       width: 2,
                     ),
                   ),
-                  enabledBorder: hasWarning ? OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: BorderSide(color: colorScheme.error),
-                  ) : null,
+                  enabledBorder: hasWarning
+                      ? OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                          borderSide: BorderSide(color: colorScheme.error),
+                        )
+                      : null,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 8.h,
@@ -339,7 +343,10 @@ class _MacroSectionCardState extends State<MacroSectionCard>
                     widget.onValueChanged(field, newValue);
                     // Update validation in real-time
                     setState(() {
-                      _validationMessages[field] = _getValidationMessage(field, newValue);
+                      _validationMessages[field] = _getValidationMessage(
+                        field,
+                        newValue,
+                      );
                     });
                   }
                 },
@@ -356,7 +363,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
             ],
           ],
         ),
-        
+
         // Validation message
         if (hasWarning) ...[
           SizedBox(height: 4.h),
@@ -364,11 +371,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
             padding: EdgeInsets.only(left: 8.w),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 14.sp,
-                  color: colorScheme.error,
-                ),
+                Icon(Icons.info_outline, size: 14.sp, color: colorScheme.error),
                 SizedBox(width: 4.w),
                 Expanded(
                   child: Text(
@@ -390,39 +393,33 @@ class _MacroSectionCardState extends State<MacroSectionCard>
   /// Build validation status indicator for the section header
   Widget _buildValidationIndicator(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     // Count warnings in this section
     final sectionFields = _getSectionFields();
     int warningCount = 0;
-    
+
     for (final field in sectionFields) {
       final value = _getFieldValue(field);
       if (_getValidationMessage(field, value) != null) {
         warningCount++;
       }
     }
-    
+
     if (warningCount == 0) {
       return const SizedBox.shrink();
     }
-    
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: colorScheme.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: colorScheme.error.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.warning_outlined,
-            size: 14.sp,
-            color: colorScheme.error,
-          ),
+          Icon(Icons.warning_outlined, size: 14.sp, color: colorScheme.error),
           SizedBox(width: 4.w),
           Text(
             '$warningCount',
@@ -477,7 +474,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         return widget.macroTargets.preRun.fluidsFlOz;
       case MacroField.preRunSodium:
         return widget.macroTargets.preRun.sodiumMg;
-      
+
       // During-run fields
       case MacroField.duringRunCarbTotal:
         return widget.macroTargets.duringRun.carbTotalG;
@@ -485,7 +482,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         return widget.macroTargets.duringRun.fluidTotalFlOz;
       case MacroField.duringRunSodiumTotal:
         return widget.macroTargets.duringRun.sodiumTotalMg;
-      
+
       // Post-run fields
       case MacroField.postRunCarbs:
         return widget.macroTargets.postRun.carbsG;
@@ -495,7 +492,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         return widget.macroTargets.postRun.fluidsFlOz;
       case MacroField.postRunSodium:
         return widget.macroTargets.postRun.sodiumMg;
-      
+
       // Unused fields for this implementation
       default:
         return 0.0;
@@ -520,11 +517,17 @@ class _MacroSectionCardState extends State<MacroSectionCard>
     }
   }
 
-  String? _validatePreRunMacro(MacroField field, double value, double bodyWeightKg) {
+  String? _validatePreRunMacro(
+    MacroField field,
+    double value,
+    double bodyWeightKg,
+  ) {
     switch (field) {
       case MacroField.preRunCarbs:
-        if (value < 1.0 * bodyWeightKg) return 'Below recommended range (1-4 g/kg)';
-        if (value > 4.0 * bodyWeightKg) return 'Above recommended range (1-4 g/kg)';
+        if (value < 1.0 * bodyWeightKg)
+          return 'Below recommended range (1-4 g/kg)';
+        if (value > 4.0 * bodyWeightKg)
+          return 'Above recommended range (1-4 g/kg)';
         break;
       case MacroField.preRunProtein:
         if (value > 0.25 * bodyWeightKg) return 'Higher than typically needed';
@@ -548,7 +551,12 @@ class _MacroSectionCardState extends State<MacroSectionCard>
     return null;
   }
 
-  String? _validateDuringRunMacro(MacroField field, double value, double bodyWeightKg, double durationH) {
+  String? _validateDuringRunMacro(
+    MacroField field,
+    double value,
+    double bodyWeightKg,
+    double durationH,
+  ) {
     switch (field) {
       case MacroField.duringRunCarbTotal:
         final ratePerHour = durationH > 0 ? value / durationH : 0;
@@ -573,14 +581,20 @@ class _MacroSectionCardState extends State<MacroSectionCard>
     return null;
   }
 
-  String? _validatePostRunMacro(MacroField field, double value, double bodyWeightKg) {
+  String? _validatePostRunMacro(
+    MacroField field,
+    double value,
+    double bodyWeightKg,
+  ) {
     switch (field) {
       case MacroField.postRunCarbs:
-        if (value < 1.0 * bodyWeightKg) return 'Below optimal recovery (1.0-1.2 g/kg)';
+        if (value < 1.0 * bodyWeightKg)
+          return 'Below optimal recovery (1.0-1.2 g/kg)';
         if (value > 1.5 * bodyWeightKg) return 'More than typically needed';
         break;
       case MacroField.postRunProtein:
-        if (value < 0.25 * bodyWeightKg) return 'Below optimal recovery (0.25-0.3 g/kg)';
+        if (value < 0.25 * bodyWeightKg)
+          return 'Below optimal recovery (0.25-0.3 g/kg)';
         if (value > 0.5 * bodyWeightKg) return 'More than typically needed';
         break;
       case MacroField.postRunFluids:

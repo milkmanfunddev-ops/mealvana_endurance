@@ -113,7 +113,8 @@ class ActivityChange {
   double? get distanceChangePercentage {
     if (oldDistanceMiles == null || newDistanceMiles == null) return null;
     if (oldDistanceMiles == 0) return 100.0;
-    return ((newDistanceMiles! - oldDistanceMiles!).abs() / oldDistanceMiles!) * 100;
+    return ((newDistanceMiles! - oldDistanceMiles!).abs() / oldDistanceMiles!) *
+        100;
   }
 
   @override

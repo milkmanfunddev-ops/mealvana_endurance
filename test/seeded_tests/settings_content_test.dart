@@ -77,34 +77,33 @@ SettingsState _makeSettingsState({
   String? lastName,
   String? email,
   NutritionTargetOverrides? nutritionTargetOverrides,
-}) =>
-    SettingsState(
-      title: 'Settings',
-      profileSectionTitle: 'Profile',
-      preferenceSectionTitle: 'Preferences',
-      genderLabel: 'Gender',
-      birthdayLabel: 'Birthday',
-      heightLabel: 'Height',
-      weightLabel: 'Weight',
-      waterBottleLabel: 'Water Bottle',
-      distanceUnitLabel: 'Distance',
-      paceUnitLabel: 'Pace',
-      gutTrainingLabel: 'Gut Training',
-      saveButtonText: 'Save',
-      gender: gender,
-      birthday: birthday ?? DateTime(1990, 6, 15),
-      heightFeet: heightFeet,
-      heightInches: heightInches,
-      weightPounds: weightPounds,
-      runsWithWaterBottle: runsWithWaterBottle,
-      unitSystem: unitSystem,
-      gutTrainingLevel: gutTraining,
-      sweatRate: sweatRate,
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
-      nutritionTargetOverrides: nutritionTargetOverrides,
-    );
+}) => SettingsState(
+  title: 'Settings',
+  profileSectionTitle: 'Profile',
+  preferenceSectionTitle: 'Preferences',
+  genderLabel: 'Gender',
+  birthdayLabel: 'Birthday',
+  heightLabel: 'Height',
+  weightLabel: 'Weight',
+  waterBottleLabel: 'Water Bottle',
+  distanceUnitLabel: 'Distance',
+  paceUnitLabel: 'Pace',
+  gutTrainingLabel: 'Gut Training',
+  saveButtonText: 'Save',
+  gender: gender,
+  birthday: birthday ?? DateTime(1990, 6, 15),
+  heightFeet: heightFeet,
+  heightInches: heightInches,
+  weightPounds: weightPounds,
+  runsWithWaterBottle: runsWithWaterBottle,
+  unitSystem: unitSystem,
+  gutTrainingLevel: gutTraining,
+  sweatRate: sweatRate,
+  firstName: firstName,
+  lastName: lastName,
+  email: email,
+  nutritionTargetOverrides: nutritionTargetOverrides,
+);
 
 UserProfile _makeUserProfile({
   double weightPounds = 165.0,
@@ -199,24 +198,48 @@ void main() {
         );
 
         // Pre-activity fields are above the fold.
-        expect(find.text('75'), findsOneWidget,
-            reason: 'pre-carbs field must show 75');
-        expect(find.text('21'), findsOneWidget,
-            reason: 'pre-protein field must show 21');
-        expect(find.text('13'), findsOneWidget,
-            reason: 'pre-fat field must show 13');
-        expect(find.text('402'), findsOneWidget,
-            reason: 'pre-sodium field must show 402');
-        expect(find.text('503'), findsOneWidget,
-            reason: 'pre-fluid field must show 503');
+        expect(
+          find.text('75'),
+          findsOneWidget,
+          reason: 'pre-carbs field must show 75',
+        );
+        expect(
+          find.text('21'),
+          findsOneWidget,
+          reason: 'pre-protein field must show 21',
+        );
+        expect(
+          find.text('13'),
+          findsOneWidget,
+          reason: 'pre-fat field must show 13',
+        );
+        expect(
+          find.text('402'),
+          findsOneWidget,
+          reason: 'pre-sodium field must show 402',
+        );
+        expect(
+          find.text('503'),
+          findsOneWidget,
+          reason: 'pre-fluid field must show 503',
+        );
 
         // During Run section is also above the fold.
-        expect(find.text('47'), findsOneWidget,
-            reason: 'during-run carb rate must show 47');
-        expect(find.text('511'), findsOneWidget,
-            reason: 'during-run sodium rate must show 511');
-        expect(find.text('622'), findsOneWidget,
-            reason: 'during-run fluid rate must show 622');
+        expect(
+          find.text('47'),
+          findsOneWidget,
+          reason: 'during-run carb rate must show 47',
+        );
+        expect(
+          find.text('511'),
+          findsOneWidget,
+          reason: 'during-run sodium rate must show 511',
+        );
+        expect(
+          find.text('622'),
+          findsOneWidget,
+          reason: 'during-run fluid rate must show 622',
+        );
       },
     );
 
@@ -243,17 +266,19 @@ void main() {
         );
 
         // Scroll far enough to bring Post-Activity and Save Changes into view.
-        await tester.drag(
-          find.byType(ListView),
-          const Offset(0, -2000),
-        );
+        await tester.drag(find.byType(ListView), const Offset(0, -2000));
         await tester.pumpAndSettle();
 
-        expect(find.text('63'), findsOneWidget,
-            reason:
-                'post-carbs field must show 63 after scrolling to bottom');
-        expect(find.text('Save Changes'), findsOneWidget,
-            reason: 'Save Changes button must be visible after scroll');
+        expect(
+          find.text('63'),
+          findsOneWidget,
+          reason: 'post-carbs field must show 63 after scrolling to bottom',
+        );
+        expect(
+          find.text('Save Changes'),
+          findsOneWidget,
+          reason: 'Save Changes button must be visible after scroll',
+        );
       },
     );
 
@@ -287,12 +312,21 @@ void main() {
         await tester.drag(find.byType(ListView), const Offset(0, -900));
         await tester.pumpAndSettle();
 
-        expect(find.text('91'), findsOneWidget,
-            reason: 'during-bike carb rate must show 91 after scroll');
-        expect(find.text('703'), findsOneWidget,
-            reason: 'during-bike sodium rate must show 703 after scroll');
-        expect(find.text('801'), findsOneWidget,
-            reason: 'during-bike fluid rate must show 801 after scroll');
+        expect(
+          find.text('91'),
+          findsOneWidget,
+          reason: 'during-bike carb rate must show 91 after scroll',
+        );
+        expect(
+          find.text('703'),
+          findsOneWidget,
+          reason: 'during-bike sodium rate must show 703 after scroll',
+        );
+        expect(
+          find.text('801'),
+          findsOneWidget,
+          reason: 'during-bike fluid rate must show 801 after scroll',
+        );
       },
     );
 
@@ -323,8 +357,11 @@ void main() {
         );
 
         // With no overrides, numeric values should not appear in the viewport.
-        expect(find.text('75'), findsNothing,
-            reason: 'no override value should appear with default state');
+        expect(
+          find.text('75'),
+          findsNothing,
+          reason: 'no override value should appear with default state',
+        );
       },
     );
   });
@@ -355,29 +392,29 @@ void main() {
         trainingPhase: TrainingPhase.build,
         carbCycleOptIn: true,
       );
-      when(() => mockRepo.getCurrentUser())
-          .thenAnswer((_) async => seedProfile);
+      when(
+        () => mockRepo.getCurrentUser(),
+      ).thenAnswer((_) async => seedProfile);
     });
 
-    testWidgets(
-      'weight field shows 165 from seeded profile',
-      (tester) async {
-        await pumpSeeded(
-          tester,
-          const NutritionProfileScreen(),
-          overrides: [
-            userRepositoryProvider.overrideWith((_) async => mockRepo),
-            garminLastBodyCompProvider
-                .overrideWith((ref, userId) async => null),
-          ],
-          settle: true,
-        );
+    testWidgets('weight field shows 165 from seeded profile', (tester) async {
+      await pumpSeeded(
+        tester,
+        const NutritionProfileScreen(),
+        overrides: [
+          userRepositoryProvider.overrideWith((_) async => mockRepo),
+          garminLastBodyCompProvider.overrideWith((ref, userId) async => null),
+        ],
+        settle: true,
+      );
 
-        // weightPounds = 165.0 → toStringAsFixed(0) = "165"
-        expect(find.text('165'), findsOneWidget,
-            reason: 'weight field must show 165 from seeded profile');
-      },
-    );
+      // weightPounds = 165.0 → toStringAsFixed(0) = "165"
+      expect(
+        find.text('165'),
+        findsOneWidget,
+        reason: 'weight field must show 165 from seeded profile',
+      );
+    });
 
     testWidgets(
       'height feet and inches fields show 5 and 11 from seeded profile',
@@ -387,58 +424,67 @@ void main() {
           const NutritionProfileScreen(),
           overrides: [
             userRepositoryProvider.overrideWith((_) async => mockRepo),
-            garminLastBodyCompProvider
-                .overrideWith((ref, userId) async => null),
+            garminLastBodyCompProvider.overrideWith(
+              (ref, userId) async => null,
+            ),
           ],
           settle: true,
         );
 
-        expect(find.text('5'), findsOneWidget,
-            reason: 'height feet field must show 5');
-        expect(find.text('11'), findsOneWidget,
-            reason: 'height inches field must show 11');
-      },
-    );
-
-    testWidgets(
-      'body fat field shows 18.5 from seeded profile',
-      (tester) async {
-        await pumpSeeded(
-          tester,
-          const NutritionProfileScreen(),
-          overrides: [
-            userRepositoryProvider.overrideWith((_) async => mockRepo),
-            garminLastBodyCompProvider
-                .overrideWith((ref, userId) async => null),
-          ],
-          settle: true,
+        expect(
+          find.text('5'),
+          findsOneWidget,
+          reason: 'height feet field must show 5',
         );
-
-        // bodyFatPct = 18.5 → toStringAsFixed(1) = "18.5"
-        expect(find.text('18.5'), findsOneWidget,
-            reason: 'body fat field must show 18.5 from seeded profile');
-      },
-    );
-
-    testWidgets(
-      'weekly training hours field shows 10.0 from seeded profile',
-      (tester) async {
-        await pumpSeeded(
-          tester,
-          const NutritionProfileScreen(),
-          overrides: [
-            userRepositoryProvider.overrideWith((_) async => mockRepo),
-            garminLastBodyCompProvider
-                .overrideWith((ref, userId) async => null),
-          ],
-          settle: true,
+        expect(
+          find.text('11'),
+          findsOneWidget,
+          reason: 'height inches field must show 11',
         );
-
-        // typicalWeeklyHours = 10.0 → toStringAsFixed(1) = "10.0"
-        expect(find.text('10.0'), findsOneWidget,
-            reason: 'weekly hours field must show 10.0');
       },
     );
+
+    testWidgets('body fat field shows 18.5 from seeded profile', (
+      tester,
+    ) async {
+      await pumpSeeded(
+        tester,
+        const NutritionProfileScreen(),
+        overrides: [
+          userRepositoryProvider.overrideWith((_) async => mockRepo),
+          garminLastBodyCompProvider.overrideWith((ref, userId) async => null),
+        ],
+        settle: true,
+      );
+
+      // bodyFatPct = 18.5 → toStringAsFixed(1) = "18.5"
+      expect(
+        find.text('18.5'),
+        findsOneWidget,
+        reason: 'body fat field must show 18.5 from seeded profile',
+      );
+    });
+
+    testWidgets('weekly training hours field shows 10.0 from seeded profile', (
+      tester,
+    ) async {
+      await pumpSeeded(
+        tester,
+        const NutritionProfileScreen(),
+        overrides: [
+          userRepositoryProvider.overrideWith((_) async => mockRepo),
+          garminLastBodyCompProvider.overrideWith((ref, userId) async => null),
+        ],
+        settle: true,
+      );
+
+      // typicalWeeklyHours = 10.0 → toStringAsFixed(1) = "10.0"
+      expect(
+        find.text('10.0'),
+        findsOneWidget,
+        reason: 'weekly hours field must show 10.0',
+      );
+    });
 
     testWidgets(
       'profile fields are absent (screen stays empty) without seeded repository',
@@ -446,15 +492,13 @@ void main() {
         // Without overriding userRepositoryProvider the in-memory DB has no
         // user, so _loadCurrentValues returns early (profile == null) and
         // all form fields remain blank.
-        await pumpSeeded(
-          tester,
-          const NutritionProfileScreen(),
-          settle: false,
-        );
+        await pumpSeeded(tester, const NutritionProfileScreen(), settle: false);
 
-        expect(find.text('165'), findsNothing,
-            reason:
-                'weight must NOT appear without seeded userRepository');
+        expect(
+          find.text('165'),
+          findsNothing,
+          reason: 'weight must NOT appear without seeded userRepository',
+        );
       },
     );
   });
@@ -467,97 +511,99 @@ void main() {
   // to initialise local form state.
 
   group('PreferencesScreen — content', () {
-    testWidgets(
-      '"Tell us about yourself" heading is visible in data state',
-      (tester) async {
-        final seededState = _makeSettingsState(
-          firstName: 'Jane',
-          lastName: 'Doe',
-          email: 'jane@example.com',
-          birthday: DateTime(1990, 6, 15),
-        );
+    testWidgets('"Tell us about yourself" heading is visible in data state', (
+      tester,
+    ) async {
+      final seededState = _makeSettingsState(
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane@example.com',
+        birthday: DateTime(1990, 6, 15),
+      );
 
-        await pumpSeeded(
-          tester,
-          const PreferencesScreen(),
-          overrides: [
-            settingsControllerProvider.overrideWith(
-              () => _SeededSettingsController(seededState),
-            ),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const PreferencesScreen(),
+        overrides: [
+          settingsControllerProvider.overrideWith(
+            () => _SeededSettingsController(seededState),
+          ),
+        ],
+        settle: true,
+      );
 
-        expect(
-          find.textContaining('Tell us about yourself'),
-          findsOneWidget,
-          reason: 'main heading must render in data state',
-        );
-      },
-    );
+      expect(
+        find.textContaining('Tell us about yourself'),
+        findsOneWidget,
+        reason: 'main heading must render in data state',
+      );
+    });
 
-    testWidgets(
-      'first name, last name and email fields show seeded values',
-      (tester) async {
-        final seededState = _makeSettingsState(
-          firstName: 'Jane',
-          lastName: 'Doe',
-          email: 'jane@example.com',
-        );
+    testWidgets('first name, last name and email fields show seeded values', (
+      tester,
+    ) async {
+      final seededState = _makeSettingsState(
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane@example.com',
+      );
 
-        await pumpSeeded(
-          tester,
-          const PreferencesScreen(),
-          overrides: [
-            settingsControllerProvider.overrideWith(
-              () => _SeededSettingsController(seededState),
-            ),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const PreferencesScreen(),
+        overrides: [
+          settingsControllerProvider.overrideWith(
+            () => _SeededSettingsController(seededState),
+          ),
+        ],
+        settle: true,
+      );
 
-        expect(find.text('Jane'), findsOneWidget,
-            reason: 'first name field must show Jane');
-        expect(find.text('Doe'), findsOneWidget,
-            reason: 'last name field must show Doe');
-        expect(find.text('jane@example.com'), findsOneWidget,
-            reason: 'email field must show jane@example.com');
-      },
-    );
+      expect(
+        find.text('Jane'),
+        findsOneWidget,
+        reason: 'first name field must show Jane',
+      );
+      expect(
+        find.text('Doe'),
+        findsOneWidget,
+        reason: 'last name field must show Doe',
+      );
+      expect(
+        find.text('jane@example.com'),
+        findsOneWidget,
+        reason: 'email field must show jane@example.com',
+      );
+    });
 
-    testWidgets(
-      'birthday renders as formatted date string 6/15/1990',
-      (tester) async {
-        final seededState = _makeSettingsState(
-          birthday: DateTime(1990, 6, 15),
-        );
+    testWidgets('birthday renders as formatted date string 6/15/1990', (
+      tester,
+    ) async {
+      final seededState = _makeSettingsState(birthday: DateTime(1990, 6, 15));
 
-        await pumpSeeded(
-          tester,
-          const PreferencesScreen(),
-          overrides: [
-            settingsControllerProvider.overrideWith(
-              () => _SeededSettingsController(seededState),
-            ),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const PreferencesScreen(),
+        overrides: [
+          settingsControllerProvider.overrideWith(
+            () => _SeededSettingsController(seededState),
+          ),
+        ],
+        settle: true,
+      );
 
-        // Screen formats birthday as '${month}/${day}/${year}'.
-        expect(
-          find.text('6/15/1990'),
-          findsOneWidget,
-          reason: 'birthday must render as 6/15/1990',
-        );
-      },
-    );
+      // Screen formats birthday as '${month}/${day}/${year}'.
+      expect(
+        find.text('6/15/1990'),
+        findsOneWidget,
+        reason: 'birthday must render as 6/15/1990',
+      );
+    });
 
     testWidgets(
       'HIGH gut training label is visible when seeded with GutTraining.high',
       (tester) async {
-        final seededState = _makeSettingsState(
-          gutTraining: GutTraining.high,
-        );
+        final seededState = _makeSettingsState(gutTraining: GutTraining.high);
 
         await pumpSeeded(
           tester,
@@ -583,9 +629,7 @@ void main() {
     testWidgets(
       'Heavy sweat rate label is visible when seeded with SweatRateCat.heavy',
       (tester) async {
-        final seededState = _makeSettingsState(
-          sweatRate: SweatRateCat.heavy,
-        );
+        final seededState = _makeSettingsState(sweatRate: SweatRateCat.heavy);
 
         await pumpSeeded(
           tester,
@@ -617,31 +661,36 @@ void main() {
   // when the toggle is in oz/hr mode. Regression test below.
 
   group('SweatProfileScreen — content', () {
-    testWidgets(
-      'Sweat Rate and Sweat Sodium section headings are visible',
-      (tester) async {
-        const seedState = SweatProfileState(
-          sweatRate: SweatRateCat.heavy,
-          sweatSodium: SweatSodiumCat.high,
-        );
+    testWidgets('Sweat Rate and Sweat Sodium section headings are visible', (
+      tester,
+    ) async {
+      const seedState = SweatProfileState(
+        sweatRate: SweatRateCat.heavy,
+        sweatSodium: SweatSodiumCat.high,
+      );
 
-        await pumpSeeded(
-          tester,
-          const SweatProfileScreen(),
-          overrides: [
-            sweatProfileControllerProvider.overrideWith(
-              () => _SeededSweatProfileController(seedState),
-            ),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const SweatProfileScreen(),
+        overrides: [
+          sweatProfileControllerProvider.overrideWith(
+            () => _SeededSweatProfileController(seedState),
+          ),
+        ],
+        settle: true,
+      );
 
-        expect(find.text('Sweat Rate'), findsOneWidget,
-            reason: 'Sweat Rate section heading must be visible');
-        expect(find.text('Sweat Sodium'), findsOneWidget,
-            reason: 'Sweat Sodium section heading must be visible');
-      },
-    );
+      expect(
+        find.text('Sweat Rate'),
+        findsOneWidget,
+        reason: 'Sweat Rate section heading must be visible',
+      );
+      expect(
+        find.text('Sweat Sodium'),
+        findsOneWidget,
+        reason: 'Sweat Sodium section heading must be visible',
+      );
+    });
 
     testWidgets(
       'Heavy sweat rate segment renders when seeded with SweatRateCat.heavy',
@@ -740,82 +789,78 @@ void main() {
       },
     );
 
-    testWidgets(
-      'known sweat rate field converts to oz/hr when the global unit '
-      'pref is imperial',
-      (tester) async {
-        const seedState = SweatProfileState(
-          sweatRate: SweatRateCat.heavy,
-          sweatSodium: SweatSodiumCat.high,
-          knownSweatRateMlPerHour: 1500,
-        );
+    testWidgets('known sweat rate field converts to oz/hr when the global unit '
+        'pref is imperial', (tester) async {
+      const seedState = SweatProfileState(
+        sweatRate: SweatRateCat.heavy,
+        sweatSodium: SweatSodiumCat.high,
+        knownSweatRateMlPerHour: 1500,
+      );
 
-        await pumpSeeded(
-          tester,
-          const SweatProfileScreen(),
-          overrides: [
-            sweatProfileControllerProvider.overrideWith(
-              () => _SeededSweatProfileController(seedState),
-            ),
-            unitSystemProvider
-                .overrideWith((ref) async => UnitSystem.imperial),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const SweatProfileScreen(),
+        overrides: [
+          sweatProfileControllerProvider.overrideWith(
+            () => _SeededSweatProfileController(seedState),
+          ),
+          unitSystemProvider.overrideWith((ref) async => UnitSystem.imperial),
+        ],
+        settle: true,
+      );
 
-        // Scroll down so the "Personalize with a sweat test" section
-        // (which contains the known-sweat-rate field) is in the viewport.
-        await tester.drag(
-          find.byType(SingleChildScrollView),
-          const Offset(0, -600),
-        );
-        await tester.pumpAndSettle();
+      // Scroll down so the "Personalize with a sweat test" section
+      // (which contains the known-sweat-rate field) is in the viewport.
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
 
-        // 1500 mL/hr × 0.033814 ≈ 50.7 → rounds to 51 oz/hr. The field is
-        // driven by the global unit pref (unitSystemProvider), not a
-        // screen-local toggle.
-        expect(
-          find.text('51'),
-          findsOneWidget,
-          reason: 'known sweat rate must be converted to oz/hr display '
-              'when the global pref is imperial',
-        );
-        expect(
-          find.text('oz/hr'),
-          findsOneWidget,
-          reason: 'field suffix must read oz/hr in imperial mode',
-        );
-      },
-    );
+      // 1500 mL/hr × 0.033814 ≈ 50.7 → rounds to 51 oz/hr. The field is
+      // driven by the global unit pref (unitSystemProvider), not a
+      // screen-local toggle.
+      expect(
+        find.text('51'),
+        findsOneWidget,
+        reason:
+            'known sweat rate must be converted to oz/hr display '
+            'when the global pref is imperial',
+      );
+      expect(
+        find.text('oz/hr'),
+        findsOneWidget,
+        reason: 'field suffix must read oz/hr in imperial mode',
+      );
+    });
 
-    testWidgets(
-      'sweat test date renders as 3/10/2024 when seeded',
-      (tester) async {
-        final seedState = SweatProfileState(
-          sweatRate: SweatRateCat.medium,
-          sweatSodium: SweatSodiumCat.average,
-          sweatTestDate: DateTime(2024, 3, 10),
-        );
+    testWidgets('sweat test date renders as 3/10/2024 when seeded', (
+      tester,
+    ) async {
+      final seedState = SweatProfileState(
+        sweatRate: SweatRateCat.medium,
+        sweatSodium: SweatSodiumCat.average,
+        sweatTestDate: DateTime(2024, 3, 10),
+      );
 
-        await pumpSeeded(
-          tester,
-          const SweatProfileScreen(),
-          overrides: [
-            sweatProfileControllerProvider.overrideWith(
-              () => _SeededSweatProfileController(seedState),
-            ),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const SweatProfileScreen(),
+        overrides: [
+          sweatProfileControllerProvider.overrideWith(
+            () => _SeededSweatProfileController(seedState),
+          ),
+        ],
+        settle: true,
+      );
 
-        // Screen formats date as '${month}/${day}/${year}'.
-        expect(
-          find.text('3/10/2024'),
-          findsOneWidget,
-          reason: 'sweat test date must render as 3/10/2024',
-        );
-      },
-    );
+      // Screen formats date as '${month}/${day}/${year}'.
+      expect(
+        find.text('3/10/2024'),
+        findsOneWidget,
+        reason: 'sweat test date must render as 3/10/2024',
+      );
+    });
 
     testWidgets(
       'HIGH sweat sodium segment renders when seeded with SweatSodiumCat.high',
@@ -887,7 +932,8 @@ void main() {
         expect(
           find.text('oz/hr'),
           findsNothing,
-          reason: 'no local toggle exists — oz/hr must not appear in metric mode',
+          reason:
+              'no local toggle exists — oz/hr must not appear in metric mode',
         );
       },
     );

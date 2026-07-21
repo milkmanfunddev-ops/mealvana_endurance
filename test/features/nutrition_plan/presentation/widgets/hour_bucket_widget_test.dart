@@ -83,10 +83,7 @@ void main() {
 
         // Sip-throughout is now global, not a dedicated per-hour section.
         expect(find.text('Sip Throughout'), findsNothing);
-        expect(
-          find.text('Not tied to a specific minute mark.'),
-          findsNothing,
-        );
+        expect(find.text('Not tied to a specific minute mark.'), findsNothing);
 
         // Instead, every slot of the hour renders as a TimeSlotRow and the
         // assignments are placed inline at their slot times (:00 and :15).

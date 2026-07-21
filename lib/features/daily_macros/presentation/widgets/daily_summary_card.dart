@@ -55,10 +55,9 @@ class _DailySummaryCardState extends ConsumerState<DailySummaryCard> {
         '${selectedDate.year}-'
         '${selectedDate.month.toString().padLeft(2, '0')}-'
         '${selectedDate.day.toString().padLeft(2, '0')}';
-    final consumed = ref.watch(consumedTotalsForDateProvider(dateStr)).maybeWhen(
-          data: (v) => v,
-          orElse: () => const ConsumedTotals(),
-        );
+    final consumed = ref
+        .watch(consumedTotalsForDateProvider(dateStr))
+        .maybeWhen(data: (v) => v, orElse: () => const ConsumedTotals());
     // Has the user logged anything for this day yet? Until the stream resolves
     // we treat the day as "not yet logged" and show the planned face.
     final hasLogs =
@@ -68,11 +67,9 @@ class _DailySummaryCardState extends ConsumerState<DailySummaryCard> {
     // reads, fall back to the same Garmin-authoritative check the rest of the
     // app uses so attribution doesn't disappear once the row is cached.
     final attributionFromFreshCalc = macros.sources?.anyFromGarmin ?? false;
-    final attributionFromGarminHealthData =
-        ref.watch(_garminAuthoritativeProvider).maybeWhen(
-              data: (v) => v,
-              orElse: () => false,
-            );
+    final attributionFromGarminHealthData = ref
+        .watch(_garminAuthoritativeProvider)
+        .maybeWhen(data: (v) => v, orElse: () => false);
     final showAttribution =
         attributionFromFreshCalc || attributionFromGarminHealthData;
 
@@ -119,11 +116,7 @@ class _DailySummaryCardState extends ConsumerState<DailySummaryCard> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: AppColors.orange,
-                  ),
+                  Icon(Icons.chevron_right, size: 18, color: AppColors.orange),
                 ],
               ),
             ],
@@ -333,9 +326,7 @@ final _garminAuthoritativeProvider = FutureProvider.autoDispose<bool>((
   final profile = await ref.watch(currentUserProvider.future);
   if (profile == null) return false;
 
-  final garmin = await ref.watch(
-    garminLastBodyCompProvider(profile.id).future,
-  );
+  final garmin = await ref.watch(garminLastBodyCompProvider(profile.id).future);
   if (garmin == null) return false;
 
   final userWeightKg = profile.weightPounds * 0.453592;

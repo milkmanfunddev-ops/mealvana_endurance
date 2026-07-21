@@ -46,14 +46,11 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
     );
   }
 
-  int get _totalCalories =>
-      _items.fold(0, (sum, item) => sum + item.calories);
-  double get _totalCarbG =>
-      _items.fold(0.0, (sum, item) => sum + item.carbG);
+  int get _totalCalories => _items.fold(0, (sum, item) => sum + item.calories);
+  double get _totalCarbG => _items.fold(0.0, (sum, item) => sum + item.carbG);
   double get _totalProteinG =>
       _items.fold(0.0, (sum, item) => sum + item.proteinG);
-  double get _totalFatG =>
-      _items.fold(0.0, (sum, item) => sum + item.fatG);
+  double get _totalFatG => _items.fold(0.0, (sum, item) => sum + item.fatG);
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +66,10 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
-              title: Text(item.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              title: Text(
+                item.name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(
                 '${item.portion} · ${item.calories} kcal  '
                 'C ${item.carbG.toStringAsFixed(0)}g  '
@@ -104,8 +103,9 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
                   'C ${_totalCarbG.toStringAsFixed(0)}g  '
                   'P ${_totalProteinG.toStringAsFixed(0)}g  '
                   'F ${_totalFatG.toStringAsFixed(0)}g',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -248,8 +248,11 @@ class _EditItemDialogState extends State<_EditItemDialog> {
             const SizedBox(height: 8),
             _field('Portion', _portionCtrl),
             const SizedBox(height: 8),
-            _numField('Quantity', _qtyCtrl,
-                helperText: 'Scales the nutrients below'),
+            _numField(
+              'Quantity',
+              _qtyCtrl,
+              helperText: 'Scales the nutrients below',
+            ),
             const SizedBox(height: 8),
             _numField('Calories', _calCtrl),
             const SizedBox(height: 8),
@@ -268,10 +271,7 @@ class _EditItemDialogState extends State<_EditItemDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        TextButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }
@@ -282,14 +282,16 @@ class _EditItemDialogState extends State<_EditItemDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
 
-  Widget _numField(String label, TextEditingController ctrl,
-      {String? helperText}) {
+  Widget _numField(
+    String label,
+    TextEditingController ctrl, {
+    String? helperText,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -300,10 +302,8 @@ class _EditItemDialogState extends State<_EditItemDialog> {
         labelText: label,
         helperText: helperText,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
-
 }

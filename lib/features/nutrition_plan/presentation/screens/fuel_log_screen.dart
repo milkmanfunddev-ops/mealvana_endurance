@@ -297,9 +297,7 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
           title: sectionTitle,
           items: sectionItems,
           sectionColor: sectionColor,
-          subPhaseGroups: subPhaseGroups?.map(
-            (k, v) => MapEntry(k, v.cast()),
-          ),
+          subPhaseGroups: subPhaseGroups?.map((k, v) => MapEntry(k, v.cast())),
           isViewOnly: false,
           onIncrement: (item) {
             _controller().updateFuelLogItemQuantity(item, 0.5);

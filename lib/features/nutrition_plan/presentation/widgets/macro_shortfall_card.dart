@@ -81,12 +81,8 @@ class MacroShortfallCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           for (final s in shortfalls) ...[
-            _ShortfallSuggestionsBlock(
-              shortfall: s,
-              dietHint: dietHint,
-            ),
-            if (s != shortfalls.last)
-              const SizedBox(height: AppSpacing.sm),
+            _ShortfallSuggestionsBlock(shortfall: s, dietHint: dietHint),
+            if (s != shortfalls.last) const SizedBox(height: AppSpacing.sm),
           ],
           if (onAdjustPreferences != null) ...[
             const SizedBox(height: AppSpacing.sm),

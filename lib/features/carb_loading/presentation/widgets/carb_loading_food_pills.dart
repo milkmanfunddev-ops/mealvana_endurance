@@ -85,83 +85,82 @@ class CarbLoadingFoodPill extends StatelessWidget {
       child: IntrinsicWidth(
         child: Row(
           children: [
-          // Decrement button
-          GestureDetector(
-            onTap: onDecrement,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              margin: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.remove,
-                color: AppColors.electrolyte,
-                size: 18,
+            // Decrement button
+            GestureDetector(
+              onTap: onDecrement,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                margin: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.remove,
+                  color: AppColors.electrolyte,
+                  size: 18,
+                ),
               ),
             ),
-          ),
 
-          // Food name, quantity and description (flexible to prevent overflow)
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Food name and quantity (top line with ellipsis overflow)
-                  Text(
-                    '${food?.displayName ?? foodName}${carbsPerServing != null ? ' ${carbsPerServing!.toInt()}g carbs' : ''} x $quantity',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.electrolyte,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-
-                  // Description (bottom line)
-                  if (food?.description != null) ...[
-                    const SizedBox(height: 2),
+            // Food name, quantity and description (flexible to prevent overflow)
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Food name and quantity (top line with ellipsis overflow)
                     Text(
-                      food!.description,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.electrolyte.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
+                      '${food?.displayName ?? foodName}${carbsPerServing != null ? ' ${carbsPerServing!.toInt()}g carbs' : ''} x $quantity',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.electrolyte,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
-                  ],
-                ],
-              ),
-            ),
-          ),
 
-          // Increment button
-          GestureDetector(
-            onTap: onIncrement,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              margin: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.add,
-                color: AppColors.electrolyte,
-                size: 18,
+                    // Description (bottom line)
+                    if (food?.description != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        food!.description,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.electrolyte.withValues(alpha: 0.7),
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+
+            // Increment button
+            GestureDetector(
+              onTap: onIncrement,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                margin: const EdgeInsets.all(4),
+                child: Icon(Icons.add, color: AppColors.electrolyte, size: 18),
+              ),
+            ),
+          ],
         ),
       ),
     );

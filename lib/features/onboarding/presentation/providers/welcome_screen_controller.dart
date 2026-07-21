@@ -40,16 +40,47 @@ class WelcomeScreenController extends _$WelcomeScreenController {
   @override
   FutureOr<WelcomeScreenState> build() {
     // Load content synchronously from in-memory cache
-    final appTitle = _contentService.getValue(ContentKeys.welcomeScreenTitle, defaultValue: 'Mealvana Endurance');
-    final subtitle = _contentService.getValue(ContentKeys.welcomeScreenSubtitle, defaultValue: 'Personalized Nutrition Plans\nfor Long Run Days');
-    final feature1Title = _contentService.getValue(ContentKeys.welcomeScreenFeature1Title, defaultValue: 'Smart Calculations');
-    final feature1Description = _contentService.getValue(ContentKeys.welcomeScreenFeature1Description, defaultValue: 'Evidence-based nutrition formulas tailored to your body and run distance');
-    final feature2Title = _contentService.getValue(ContentKeys.welcomeScreenFeature2Title, defaultValue: 'Food Preferences');
-    final feature2Description = _contentService.getValue(ContentKeys.welcomeScreenFeature2Description, defaultValue: 'Plans based on foods you actually like and want to try');
-    final feature3Title = _contentService.getValue(ContentKeys.welcomeScreenFeature3Title, defaultValue: 'Offline Ready');
-    final feature3Description = _contentService.getValue(ContentKeys.welcomeScreenFeature3Description, defaultValue: 'Works completely offline - no internet required');
-    final getStartedButtonText = _contentService.getValue(ContentKeys.welcomeScreenGetStartedButton, defaultValue: 'Get Started');
-    final skipButtonText = _contentService.getValue(ContentKeys.welcomeScreenSkipButton, defaultValue: 'Skip for Now');
+    final appTitle = _contentService.getValue(
+      ContentKeys.welcomeScreenTitle,
+      defaultValue: 'Mealvana Endurance',
+    );
+    final subtitle = _contentService.getValue(
+      ContentKeys.welcomeScreenSubtitle,
+      defaultValue: 'Personalized Nutrition Plans\nfor Long Run Days',
+    );
+    final feature1Title = _contentService.getValue(
+      ContentKeys.welcomeScreenFeature1Title,
+      defaultValue: 'Smart Calculations',
+    );
+    final feature1Description = _contentService.getValue(
+      ContentKeys.welcomeScreenFeature1Description,
+      defaultValue:
+          'Evidence-based nutrition formulas tailored to your body and run distance',
+    );
+    final feature2Title = _contentService.getValue(
+      ContentKeys.welcomeScreenFeature2Title,
+      defaultValue: 'Food Preferences',
+    );
+    final feature2Description = _contentService.getValue(
+      ContentKeys.welcomeScreenFeature2Description,
+      defaultValue: 'Plans based on foods you actually like and want to try',
+    );
+    final feature3Title = _contentService.getValue(
+      ContentKeys.welcomeScreenFeature3Title,
+      defaultValue: 'Offline Ready',
+    );
+    final feature3Description = _contentService.getValue(
+      ContentKeys.welcomeScreenFeature3Description,
+      defaultValue: 'Works completely offline - no internet required',
+    );
+    final getStartedButtonText = _contentService.getValue(
+      ContentKeys.welcomeScreenGetStartedButton,
+      defaultValue: 'Get Started',
+    );
+    final skipButtonText = _contentService.getValue(
+      ContentKeys.welcomeScreenSkipButton,
+      defaultValue: 'Skip for Now',
+    );
 
     return WelcomeScreenState(
       appTitle: appTitle,

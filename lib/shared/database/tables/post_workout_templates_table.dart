@@ -40,9 +40,8 @@ class PostWorkoutTemplatesTable extends Table {
       text().withDefault(const Constant('[]')).named('activity_types')();
 
   /// JSON array of `template_foods.name` values that compose this formula.
-  TextColumn get componentFoodNames => text()
-      .withDefault(const Constant('[]'))
-      .named('component_food_names')();
+  TextColumn get componentFoodNames =>
+      text().withDefault(const Constant('[]')).named('component_food_names')();
 
   /// JSON object mapping component food name → ratio share of the formula.
   /// e.g. `{"chocolate_milk": 1.0}`. Nullable.
@@ -66,8 +65,7 @@ class PostWorkoutTemplatesTable extends Table {
 
   /// Sensory dimension: 'sweet_creamy' | 'sweet_crunchy' | 'savory_salty' |
   /// 'warm_comforting' | 'mixed'. Used for V2 re-rolls. Nullable.
-  TextColumn get flavorProfile =>
-      text().nullable().named('flavor_profile')();
+  TextColumn get flavorProfile => text().nullable().named('flavor_profile')();
 
   /// Prep effort: 'grab_and_go' | 'assemble' | 'cook'. Nullable.
   TextColumn get prepEffort => text().nullable().named('prep_effort')();
@@ -75,8 +73,7 @@ class PostWorkoutTemplatesTable extends Table {
   /// Primary protein category (Notion taxonomy): 'whey_shake' | 'plant_shake'
   /// | 'yogurt' | 'cottage_cheese' | 'chocolate_milk' | 'smoothie' | 'egg' |
   /// 'nut_butter' | 'deli_cheese'. Nullable.
-  TextColumn get proteinAnchor =>
-      text().nullable().named('protein_anchor')();
+  TextColumn get proteinAnchor => text().nullable().named('protein_anchor')();
 
   /// JSON array of carb source tags (snake_case subset of Notion taxonomy).
   TextColumn get carbSources =>
@@ -84,13 +81,11 @@ class PostWorkoutTemplatesTable extends Table {
 
   /// Tie breaker for template selection. Higher = preferred when scores tie.
   /// Used by the PR 3 after-phase solver's non-pin fallthrough.
-  IntColumn get selectionPriority => integer()
-      .withDefault(const Constant(0))
-      .named('selection_priority')();
+  IntColumn get selectionPriority =>
+      integer().withDefault(const Constant(0)).named('selection_priority')();
 
   /// JSON array of allergens. e.g. `["dairy", "gluten"]`.
-  TextColumn get allergens =>
-      text().withDefault(const Constant('[]'))();
+  TextColumn get allergens => text().withDefault(const Constant('[]'))();
 
   /// JSON array of diets that should exclude this template.
   /// e.g. `["vegan"]`.

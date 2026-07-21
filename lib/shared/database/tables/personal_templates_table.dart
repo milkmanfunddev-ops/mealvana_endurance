@@ -8,13 +8,15 @@ class PersonalTemplatesTable extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
   TextColumn get userId => text().named('user_id')();
   TextColumn get name => text()();
-  TextColumn get activityType => text().named('activity_type')(); // 'running'/'cycling'/'swimming'/'brick'
+  TextColumn get activityType =>
+      text().named('activity_type')(); // 'running'/'cycling'/'swimming'/'brick'
 
   // Original activity context
   IntColumn get originalDurationMinutes =>
       integer().nullable().named('original_duration_minutes')();
-  RealColumn get originalDistance =>
-      real().nullable().named('original_distance')(); // miles for run/cycle, meters for swim
+  RealColumn get originalDistance => real().nullable().named(
+    'original_distance',
+  )(); // miles for run/cycle, meters for swim
   TextColumn get originalActivityTitle =>
       text().nullable().named('original_activity_title')();
 
@@ -30,8 +32,7 @@ class PersonalTemplatesTable extends Table {
       integer().nullable().named('total_sodium_mg')();
   IntColumn get totalFluidsMl =>
       integer().nullable().named('total_fluids_ml')();
-  IntColumn get totalCalories =>
-      integer().nullable().named('total_calories')();
+  IntColumn get totalCalories => integer().nullable().named('total_calories')();
 
   // Brick metadata stored as JSON string (null for single-sport)
   TextColumn get brickSegmentOrder =>
@@ -42,8 +43,7 @@ class PersonalTemplatesTable extends Table {
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
 
   // Sync tracking (offline-first architecture)
-  BoolColumn get needsUpload =>
-      boolean().nullable().named('needs_upload')();
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
   DateTimeColumn get localUpdatedAt =>
       dateTime().nullable().named('local_updated_at')();
 

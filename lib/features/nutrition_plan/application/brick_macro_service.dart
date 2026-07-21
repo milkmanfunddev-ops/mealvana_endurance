@@ -412,8 +412,7 @@ class BrickMacroService {
     final sweatSodiumValue =
         (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
     final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
-    final knownSodiumConcMgL =
-        userProfile?.knownSodiumConcentrationMgPerLiter;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
 
     // Derive is_indoor from any cycling segment that specifies indoor_outdoor.
     // If any segment is explicitly 'indoor', treat the whole brick as indoor for
@@ -544,8 +543,9 @@ class BrickMacroService {
       payload['disliked_foods'] = dislikedFoods;
     }
 
-    final willingToTryFoods =
-        await authService.getWillingToTryFoods(userProfile.id);
+    final willingToTryFoods = await authService.getWillingToTryFoods(
+      userProfile.id,
+    );
     if (willingToTryFoods.isNotEmpty) {
       payload['willing_to_try_foods'] = willingToTryFoods;
     }
@@ -734,9 +734,7 @@ class BrickMacroService {
             sodiumConcMgPerL: segmentData['sodium_conc_mg_per_l'] != null
                 ? _toDouble(segmentData['sodium_conc_mg_per_l']).round()
                 : null,
-            replacementPercent: _toDoubleOrNull(
-              segmentData['replacement_pct'],
-            ),
+            replacementPercent: _toDoubleOrNull(segmentData['replacement_pct']),
             floorMlPerH: segmentData['floor_ml_hr'] != null
                 ? _toDouble(segmentData['floor_ml_hr']).round()
                 : null,
@@ -745,8 +743,7 @@ class BrickMacroService {
                 : null,
             safetyFlags: _toStringList(segmentData['safety_flags']),
             isTested: segmentData['is_tested'] as bool? ?? false,
-            isTestedSodium:
-                segmentData['is_tested_sodium'] as bool? ?? false,
+            isTestedSodium: segmentData['is_tested_sodium'] as bool? ?? false,
           ),
         );
       }

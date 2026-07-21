@@ -251,7 +251,6 @@ class CarbLoadingFoodRepository with SyncableRepository {
     return foods.map((food) => _convertToFoodDomain(food)).toList();
   }
 
-
   /// Convert Drift entity to domain model
   domain.CarbLoadingFood _convertToFoodDomain(CarbLoadingFood food) {
     final mealTypeIds = parseMealTypeIds(food.mealTypes);

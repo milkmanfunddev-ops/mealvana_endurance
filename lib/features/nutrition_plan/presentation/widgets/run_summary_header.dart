@@ -9,10 +9,7 @@ import '../../../../shared/utils/unit_formatter.dart';
 /// Header widget displaying run summary information (distance, duration, pace)
 /// Shows key run metrics at the top of the adjust macros screen
 class RunSummaryHeader extends ConsumerWidget {
-  const RunSummaryHeader({
-    super.key,
-    required this.macroTargets,
-  });
+  const RunSummaryHeader({super.key, required this.macroTargets});
 
   final MacroTargets macroTargets;
 
@@ -46,9 +43,9 @@ class RunSummaryHeader extends ConsumerWidget {
               color: colorScheme.onSurface,
             ),
           ),
-          
+
           SizedBox(height: 12.h),
-          
+
           // Main metrics row
           Row(
             children: [
@@ -59,12 +56,14 @@ class RunSummaryHeader extends ConsumerWidget {
                   'Distance',
                   UnitFormatter.formatDistance(
                     metrics.distanceMi,
-                    unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+                    unit: useMetric
+                        ? DistanceUnit.kilometers
+                        : DistanceUnit.miles,
                   ),
                   Icons.straighten,
                 ),
               ),
-              
+
               // Duration
               Expanded(
                 child: _buildMetricColumn(
@@ -74,7 +73,7 @@ class RunSummaryHeader extends ConsumerWidget {
                   Icons.schedule,
                 ),
               ),
-              
+
               // Pace
               Expanded(
                 child: _buildMetricColumn(
@@ -83,7 +82,9 @@ class RunSummaryHeader extends ConsumerWidget {
                   metrics.paceMinPerMile != null
                       ? UnitFormatter.formatPace(
                           metrics.paceMinPerMile!,
-                          unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+                          unit: useMetric
+                              ? PaceUnit.minPerKm
+                              : PaceUnit.minPerMile,
                         )
                       : 'N/A',
                   Icons.speed,
@@ -91,9 +92,9 @@ class RunSummaryHeader extends ConsumerWidget {
               ),
             ],
           ),
-          
+
           SizedBox(height: 16.h),
-          
+
           // Secondary metrics row
           Row(
             children: [
@@ -106,7 +107,7 @@ class RunSummaryHeader extends ConsumerWidget {
                   Icons.local_fire_department,
                 ),
               ),
-              
+
               // Speed
               Expanded(
                 child: _buildMetricColumn(
@@ -119,7 +120,7 @@ class RunSummaryHeader extends ConsumerWidget {
                   Icons.flash_on,
                 ),
               ),
-              
+
               // Empty space for alignment
               const Expanded(child: SizedBox()),
             ],
@@ -144,11 +145,7 @@ class RunSummaryHeader extends ConsumerWidget {
         // Icon and label row
         Row(
           children: [
-            Icon(
-              icon,
-              size: 16.sp,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            Icon(icon, size: 16.sp, color: colorScheme.onSurfaceVariant),
             SizedBox(width: 4.w),
             Text(
               label,
@@ -159,9 +156,9 @@ class RunSummaryHeader extends ConsumerWidget {
             ),
           ],
         ),
-        
+
         SizedBox(height: 4.h),
-        
+
         // Value
         Text(
           value,

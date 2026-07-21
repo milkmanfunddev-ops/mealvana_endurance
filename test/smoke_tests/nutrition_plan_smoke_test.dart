@@ -122,11 +122,7 @@ void main() {
     testWidgets('NewActivityScreen builds (loading/initial state)', (
       tester,
     ) async {
-      await smokeScreen(
-        tester,
-        const NewActivityScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const NewActivityScreen(), settle: false);
     });
 
     // -----------------------------------------------------------------------
@@ -203,27 +199,15 @@ void main() {
     // at teardown — unblocking these three smoke tests. settle:false avoids the
     // perpetual location/weather fetch these screens kick off in initState.
     testWidgets('AdjustMacrosScreen builds (initial state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const AdjustMacrosScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const AdjustMacrosScreen(), settle: false);
     });
 
     testWidgets('CyclingInputScreen builds (initial state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const CyclingInputScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const CyclingInputScreen(), settle: false);
     });
 
     testWidgets('SwimmingInputScreen builds (initial state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const SwimmingInputScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const SwimmingInputScreen(), settle: false);
     });
 
     // -----------------------------------------------------------------------

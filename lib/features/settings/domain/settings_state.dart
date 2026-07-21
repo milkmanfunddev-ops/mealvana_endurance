@@ -35,9 +35,12 @@ class SettingsState {
   final double? weightPounds;
   final bool runsWithWaterBottle;
   final UnitSystem unitSystem;
-  
-  DistanceUnit get preferredDistanceUnit => unitSystem == UnitSystem.metric ? DistanceUnit.kilometers : DistanceUnit.miles;
-  PaceUnit get preferredPaceUnit => unitSystem == UnitSystem.metric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
+
+  DistanceUnit get preferredDistanceUnit => unitSystem == UnitSystem.metric
+      ? DistanceUnit.kilometers
+      : DistanceUnit.miles;
+  PaceUnit get preferredPaceUnit =>
+      unitSystem == UnitSystem.metric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
 
   final GutTraining gutTrainingLevel;
   final SweatRateCat sweatRate;
@@ -209,7 +212,8 @@ class SettingsState {
     return SettingsState(
       title: title ?? this.title,
       profileSectionTitle: profileSectionTitle ?? this.profileSectionTitle,
-      preferenceSectionTitle: preferenceSectionTitle ?? this.preferenceSectionTitle,
+      preferenceSectionTitle:
+          preferenceSectionTitle ?? this.preferenceSectionTitle,
       genderLabel: genderLabel ?? this.genderLabel,
       birthdayLabel: birthdayLabel ?? this.birthdayLabel,
       heightLabel: heightLabel ?? this.heightLabel,
@@ -219,7 +223,8 @@ class SettingsState {
       paceUnitLabel: paceUnitLabel ?? this.paceUnitLabel,
       gutTrainingLabel: gutTrainingLabel ?? this.gutTrainingLabel,
       saveButtonText: saveButtonText ?? this.saveButtonText,
-      sportSettingsSectionTitle: sportSettingsSectionTitle ?? this.sportSettingsSectionTitle,
+      sportSettingsSectionTitle:
+          sportSettingsSectionTitle ?? this.sportSettingsSectionTitle,
       giSensitivityLabel: giSensitivityLabel ?? this.giSensitivityLabel,
       cyclingSectionTitle: cyclingSectionTitle ?? this.cyclingSectionTitle,
       swimmingSectionTitle: swimmingSectionTitle ?? this.swimmingSectionTitle,
@@ -239,7 +244,8 @@ class SettingsState {
       typicalBikeBottles: typicalBikeBottles ?? this.typicalBikeBottles,
       hasAeroBottle: hasAeroBottle ?? this.hasAeroBottle,
       hasBentoBox: hasBentoBox ?? this.hasBentoBox,
-      cssPacePer100mSeconds: cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
+      cssPacePer100mSeconds:
+          cssPacePer100mSeconds ?? this.cssPacePer100mSeconds,
       typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
       typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
       dietaryPreference: dietaryPreference ?? this.dietaryPreference,
@@ -254,10 +260,13 @@ class SettingsState {
       isCoach: isCoach ?? this.isCoach,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
-      nutritionTargetOverrides: nutritionTargetOverrides ?? this.nutritionTargetOverrides,
+      nutritionTargetOverrides:
+          nutritionTargetOverrides ?? this.nutritionTargetOverrides,
       accountSectionTitle: accountSectionTitle ?? this.accountSectionTitle,
-      accountStatusAnonymous: accountStatusAnonymous ?? this.accountStatusAnonymous,
-      accountStatusAuthenticated: accountStatusAuthenticated ?? this.accountStatusAuthenticated,
+      accountStatusAnonymous:
+          accountStatusAnonymous ?? this.accountStatusAnonymous,
+      accountStatusAuthenticated:
+          accountStatusAuthenticated ?? this.accountStatusAuthenticated,
       createAccountButton: createAccountButton ?? this.createAccountButton,
       signOutButton: signOutButton ?? this.signOutButton,
     );

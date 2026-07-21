@@ -37,9 +37,10 @@ class TpWritebackFormatter {
     // During section (skip if < 60 min or no carbs target)
     final duringSection = _findSection(plan, 'during');
     if (duringSection != null) {
-      final effectiveDuration = durationMinutes ??
-          duringSection.byHourData?.durationMinutes;
-      if (effectiveDuration != null && effectiveDuration >= 60 &&
+      final effectiveDuration =
+          durationMinutes ?? duringSection.byHourData?.durationMinutes;
+      if (effectiveDuration != null &&
+          effectiveDuration >= 60 &&
           (duringSection.carbsTarget ?? 0) > 0) {
         lines.add(_formatDuringLine(duringSection, effectiveDuration));
       }
@@ -138,10 +139,7 @@ class TpWritebackFormatter {
   static const String feedbackEndDelimiter = '[/Mealvana Feedback]';
 
   /// Format completion feedback into a delimited text block for TP descriptions.
-  static String formatFeedbackBlock({
-    required int rating,
-    String? notes,
-  }) {
+  static String formatFeedbackBlock({required int rating, String? notes}) {
     final lines = <String>[];
     lines.add('---');
     lines.add(feedbackStartDelimiter);
@@ -155,7 +153,10 @@ class TpWritebackFormatter {
 
   /// Merge a feedback block into an existing workout description.
   /// Replaces any existing feedback block, or appends if none exists.
-  static String mergeFeedbackIntoDescription(String? existingDesc, String block) {
+  static String mergeFeedbackIntoDescription(
+    String? existingDesc,
+    String block,
+  ) {
     final desc = existingDesc ?? '';
     final stripped = stripFeedbackFromDescription(desc);
     if (stripped.trim().isEmpty) {

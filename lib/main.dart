@@ -31,42 +31,44 @@ import 'shared/services/privacy/analytics_consent.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
 /// This key is used by SentryFeedbackWidget to navigate and capture screenshots
-final GlobalKey<NavigatorState> sentryNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> sentryNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 Future<void> main() async {
-  runZonedGuarded(() async {
-    // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
-    SentryWidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      // Initialize widgets binding for Sentry frame tracking BEFORE Sentry init
+      SentryWidgetsFlutterBinding.ensureInitialized();
 
-    // Load production environment variables by default
-    // NOTE: Use main_dev.dart or main_prod.dart with flavors for environment-specific builds
-    await dotenv.load(fileName: '.env.prod.local');
+      // Load production environment variables by default
+      // NOTE: Use main_dev.dart or main_prod.dart with flavors for environment-specific builds
+      await dotenv.load(fileName: '.env.prod.local');
 
-    // Create app configuration from loaded env
-    final config = AppConfig.fromEnv();
+      // Create app configuration from loaded env
+      final config = AppConfig.fromEnv();
 
-    // Fetch package info before Sentry init so release/dist are available.
-    final packageInfo = await PackageInfo.fromPlatform();
-    final sentryRelease =
-        'mealvana_endurance@${packageInfo.version}+${packageInfo.buildNumber}';
-    final sentryDist = packageInfo.buildNumber;
+      // Fetch package info before Sentry init so release/dist are available.
+      final packageInfo = await PackageInfo.fromPlatform();
+      final sentryRelease =
+          'mealvana_endurance@${packageInfo.version}+${packageInfo.buildNumber}';
+      final sentryDist = packageInfo.buildNumber;
 
-    // Consent must be resolved BEFORE Sentry is configured: session replay is
-    // armed at init and cannot be disarmed for the rest of the session.
-    final sharedPreferences = await SharedPreferences.getInstance();
-    final analyticsConsented =
-        analyticsConsentGrantedFromPrefs(sharedPreferences);
+      // Consent must be resolved BEFORE Sentry is configured: session replay is
+      // armed at init and cannot be disarmed for the rest of the session.
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final analyticsConsented = analyticsConsentGrantedFromPrefs(
+        sharedPreferences,
+      );
 
-    // Resolved before init because the options callback below is synchronous,
-    // and because the cohort roll has to be persisted exactly once per install.
-    final replayOnErrorSampleRate = await resolveReplayOnErrorSampleRate(
-      sharedPreferences,
-      analyticsConsented: analyticsConsented,
-    );
+      // Resolved before init because the options callback below is synchronous,
+      // and because the cohort roll has to be persisted exactly once per install.
+      final replayOnErrorSampleRate = await resolveReplayOnErrorSampleRate(
+        sharedPreferences,
+        analyticsConsented: analyticsConsented,
+      );
 
-    // Initialize Sentry with configuration from .env
-    await SentryFlutter.init(
-      (options) {
+      // Initialize Sentry with configuration from .env
+      await SentryFlutter.init((options) {
         // DSN configuration from AppConfig
         options.dsn = config.sentryDsn;
 
@@ -77,12 +79,13 @@ Future<void> main() async {
         // Format: <app-id>@<version>+<build> e.g. mealvana_endurance@1.20.0+42
         options.release = sentryRelease;
         options.dist = sentryDist;
-        
+
         // Performance monitoring (config-based)
         // NOTE: Profiling disabled in debug mode due to iOS crash
         if (config.enableDebugLogging) {
           options.tracesSampleRate = 1.0; // 100% in development
-          options.profilesSampleRate = 0.0; // Disable profiling in debug mode due to crash
+          options.profilesSampleRate =
+              0.0; // Disable profiling in debug mode due to crash
           options.debug = true;
           // Suppress Sentry's warning-level diagnostic chatter (notably the
           // per-query "[sentry_drift] Active Sentry transaction does not exist"
@@ -94,7 +97,7 @@ Future<void> main() async {
           options.profilesSampleRate = config.enableSentryProfiling ? 0.1 : 0.0;
           options.debug = false;
         }
-        
+
         // Session Replay configuration
         // Captures video-like replay of user sessions for debugging
         // Disabled in debug mode to avoid verbose codec initialization logs
@@ -111,7 +114,8 @@ Future<void> main() async {
         //
         // Read once, at init: a user who withdraws mid-session stops Mixpanel
         // immediately, but replay stays armed until the next launch.
-        options.replay.sessionSampleRate = 0.0; // Don't capture regular sessions
+        options.replay.sessionSampleRate =
+            0.0; // Don't capture regular sessions
         // Armed for a persisted ~10% cohort, not everyone: a non-zero rate runs
         // the native recorder CONTINUOUSLY for the whole session, which was
         // cooking testers' phones (measured 2026-07-16: ~1.9x idle CPU, and a
@@ -121,14 +125,15 @@ Future<void> main() async {
         // recorder. 0.1 here would be the worst of both worlds — full battery
         // cost, 90% of replays discarded. Debug stays off outright (200+ lines
         // of codec logs). Full reasoning: sentry_replay_sampling.dart.
-        options.replay.onErrorSampleRate =
-            kDebugMode ? kReplayOff : replayOnErrorSampleRate;
-        
+        options.replay.onErrorSampleRate = kDebugMode
+            ? kReplayOff
+            : replayOnErrorSampleRate;
+
         // Enhanced error tracking
         options.attachStacktrace = true;
         options.sendDefaultPii = false; // Privacy-first approach
         options.maxBreadcrumbs = 100; // Increased for better debugging
-        
+
         // App-hang detection is only meaningful for release builds on real
         // devices. In debug/simulator the debugger, hot reload and JIT GC
         // pauses routinely trip the 2s threshold (Sentry DEV-53/DEV-4D/DEV-4Y
@@ -142,10 +147,11 @@ Future<void> main() async {
           // info level by design and must not be swept up by this drop.
           if (!kDebugMode &&
               !isDiagnosticEvent(event) &&
-              (event.level == SentryLevel.debug || event.level == SentryLevel.info)) {
+              (event.level == SentryLevel.debug ||
+                  event.level == SentryLevel.info)) {
             return null;
           }
-          
+
           // Drop known low-signal noise (offline/DNS, transient TLS resets,
           // cancelled sign-ins, debug assertions, test-runner failures).
           if (isSentryNoise(event)) {
@@ -154,7 +160,7 @@ Future<void> main() async {
 
           return event;
         };
-        
+
         // Enhanced breadcrumb filtering
         options.beforeBreadcrumb = (breadcrumb, hint) {
           // Don't log sensitive navigation paths
@@ -171,25 +177,26 @@ Future<void> main() async {
 
         // Enable screenshot capture for feedback
         options.attachScreenshot = true;
-      },
-    );
+      });
 
-    // Explicit uncaught-error handlers — installed AFTER SentryFlutter.init so
-    // the SDK is ready to receive events and won't clobber these assignments.
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-      Sentry.captureException(details.exception, stackTrace: details.stack);
-    };
-    PlatformDispatcher.instance.onError = (error, stack) {
-      Sentry.captureException(error, stackTrace: stack);
-      return true;
-    };
+      // Explicit uncaught-error handlers — installed AFTER SentryFlutter.init so
+      // the SDK is ready to receive events and won't clobber these assignments.
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        Sentry.captureException(details.exception, stackTrace: details.stack);
+      };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        Sentry.captureException(error, stackTrace: stack);
+        return true;
+      };
 
-    await _runMealvanaApp(config, sharedPreferences);
-  }, (exception, stackTrace) async {
-    // Capture any uncaught exceptions
-    await Sentry.captureException(exception, stackTrace: stackTrace);
-  });
+      await _runMealvanaApp(config, sharedPreferences);
+    },
+    (exception, stackTrace) async {
+      // Capture any uncaught exceptions
+      await Sentry.captureException(exception, stackTrace: stackTrace);
+    },
+  );
 }
 
 /// App runner function called after Sentry initialization
@@ -206,7 +213,6 @@ Future<void> _runMealvanaApp(
     anonKey: config.supabaseClientKey,
     httpClient: SentryHttpClient(),
   );
-
 
   // Entry point following Andrea Bizzotto's pattern with runZonedGuarded pattern
   // Widget hierarchy:

@@ -45,14 +45,42 @@ void main() {
     mockEventsRepo = MockEventsRepository();
 
     // Stub all logger calls
-    when(() => mockLogger.info(any(), context: any(named: 'context'), data: any(named: 'data'))).thenReturn(null);
-    when(() => mockLogger.debug(any(), context: any(named: 'context'), data: any(named: 'data'))).thenReturn(null);
-    when(() => mockLogger.warning(any(), context: any(named: 'context'), data: any(named: 'data'), error: any(named: 'error'))).thenReturn(null);
-    when(() => mockLogger.error(any(), context: any(named: 'context'), error: any(named: 'error'), stackTrace: any(named: 'stackTrace'), data: any(named: 'data'))).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+        error: any(named: 'error'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
 
     // Stub uploadDirtyRecords on events repo (called after carb loading plan created/deleted)
-    when(() => mockEventsRepo.uploadDirtyRecords(any()))
-        .thenAnswer((_) async => UploadResult.nothingToUpload());
+    when(
+      () => mockEventsRepo.uploadDirtyRecords(any()),
+    ).thenAnswer((_) async => UploadResult.nothingToUpload());
 
     carbLoadingRepository = CarbLoadingRepository(
       supabase: MockSupabaseClient(),
@@ -127,11 +155,20 @@ void main() {
     // If you accidentally pass daysBeforeRace: 0 (the race day itself) it falls through
     // to the else branch and returns 11g/kg instead of 8g/kg default.
     // This verifies the else-branch behaviour.
-    test('2-day: daysBeforeRace=0 falls to else → returns 11g/kg (documents current behaviour)', () {
-      // This is not a valid call but documents that there is no guard for race-day.
-      final result = service.getCarbProtocolForDay(protocolDays: 2, daysBeforeRace: 0);
-      expect(result, 11.0); // documents current (possibly surprising) behaviour
-    });
+    test(
+      '2-day: daysBeforeRace=0 falls to else → returns 11g/kg (documents current behaviour)',
+      () {
+        // This is not a valid call but documents that there is no guard for race-day.
+        final result = service.getCarbProtocolForDay(
+          protocolDays: 2,
+          daysBeforeRace: 0,
+        );
+        expect(
+          result,
+          11.0,
+        ); // documents current (possibly surprising) behaviour
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -154,12 +191,17 @@ void main() {
         double total = 0;
         for (int i = 0; i < days; i++) {
           final dbr = days - i;
-          total += service.getCarbProtocolForDay(protocolDays: days, daysBeforeRace: dbr);
+          total += service.getCarbProtocolForDay(
+            protocolDays: days,
+            daysBeforeRace: dbr,
+          );
         }
         return (total / days * weightKg).round();
       })());
 
-      final plan = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final plan = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               totalDays: days,
@@ -177,7 +219,9 @@ void main() {
           protocolDays: days,
           daysBeforeRace: daysBeforeRace,
         );
-        await db.into(db.carbLoadingDaysTable).insert(
+        await db
+            .into(db.carbLoadingDaysTable)
+            .insert(
               CarbLoadingDaysTableCompanion.insert(
                 carbLoadingPlanId: plan.id,
                 planDate: dayDate,
@@ -198,7 +242,11 @@ void main() {
     });
 
     test('returns days within range in ascending date order', () async {
-      await _seedPlan(days: 3, raceDate: DateTime(2026, 10, 5), weightPounds: 154.3236);
+      await _seedPlan(
+        days: 3,
+        raceDate: DateTime(2026, 10, 5),
+        weightPounds: 154.3236,
+      );
 
       // Range covers all 3 days: Oct 2, 3, 4
       final result = await service.getCarbLoadingDaysForRange(
@@ -215,7 +263,11 @@ void main() {
     });
 
     test('scopes to userId – prevents cross-user leakage', () async {
-      await _seedPlan(days: 2, raceDate: DateTime(2026, 10, 5), weightPounds: 154.3236);
+      await _seedPlan(
+        days: 2,
+        raceDate: DateTime(2026, 10, 5),
+        weightPounds: 154.3236,
+      );
 
       final result = await service.getCarbLoadingDaysForRange(
         userId: 'attacker-user-999',
@@ -226,32 +278,50 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('boundary: exactly on startDate is included (isBiggerOrEqualValue)', () async {
-      await _seedPlan(days: 2, raceDate: DateTime(2026, 10, 5), weightPounds: 154.3236);
-      // Oct 3 should be in the results
-      final result = await service.getCarbLoadingDaysForRange(
-        userId: testUserId,
-        startDate: DateTime(2026, 10, 3, 0, 0, 0),
-        endDate: DateTime(2026, 10, 3, 23, 59, 59),
-      );
-      expect(result.length, 1);
-      expect(result.first.planDate.day, 3);
-    });
+    test(
+      'boundary: exactly on startDate is included (isBiggerOrEqualValue)',
+      () async {
+        await _seedPlan(
+          days: 2,
+          raceDate: DateTime(2026, 10, 5),
+          weightPounds: 154.3236,
+        );
+        // Oct 3 should be in the results
+        final result = await service.getCarbLoadingDaysForRange(
+          userId: testUserId,
+          startDate: DateTime(2026, 10, 3, 0, 0, 0),
+          endDate: DateTime(2026, 10, 3, 23, 59, 59),
+        );
+        expect(result.length, 1);
+        expect(result.first.planDate.day, 3);
+      },
+    );
 
-    test('boundary: exactly on endDate is included (isSmallerOrEqualValue)', () async {
-      await _seedPlan(days: 2, raceDate: DateTime(2026, 10, 5), weightPounds: 154.3236);
-      // Oct 4 should be in the results
-      final result = await service.getCarbLoadingDaysForRange(
-        userId: testUserId,
-        startDate: DateTime(2026, 10, 4, 0, 0, 0),
-        endDate: DateTime(2026, 10, 4, 23, 59, 59),
-      );
-      expect(result.length, 1);
-      expect(result.first.planDate.day, 4);
-    });
+    test(
+      'boundary: exactly on endDate is included (isSmallerOrEqualValue)',
+      () async {
+        await _seedPlan(
+          days: 2,
+          raceDate: DateTime(2026, 10, 5),
+          weightPounds: 154.3236,
+        );
+        // Oct 4 should be in the results
+        final result = await service.getCarbLoadingDaysForRange(
+          userId: testUserId,
+          startDate: DateTime(2026, 10, 4, 0, 0, 0),
+          endDate: DateTime(2026, 10, 4, 23, 59, 59),
+        );
+        expect(result.length, 1);
+        expect(result.first.planDate.day, 4);
+      },
+    );
 
     test('race day (endDate+1) is NOT included', () async {
-      await _seedPlan(days: 2, raceDate: DateTime(2026, 10, 5), weightPounds: 154.3236);
+      await _seedPlan(
+        days: 2,
+        raceDate: DateTime(2026, 10, 5),
+        weightPounds: 154.3236,
+      );
       final result = await service.getCarbLoadingDaysForRange(
         userId: testUserId,
         startDate: DateTime(2026, 10, 5),
@@ -272,7 +342,9 @@ void main() {
     });
 
     test('returns plan when one is found', () async {
-      final insertedPlan = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final insertedPlan = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               eventId: Value('event-001'),
@@ -295,7 +367,9 @@ void main() {
     // elements'. That crash cascaded and left the event with no days, no
     // calendar dots, nothing. getCarbLoadingPlan must now tolerate duplicates.
     test('does NOT throw on duplicate plans — returns the newest', () async {
-      final older = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final older = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               eventId: const Value('dup-event'),
@@ -306,7 +380,9 @@ void main() {
               generatedAt: DateTime(2026, 9, 1, 10, 0),
             ),
           );
-      final newer = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final newer = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               eventId: const Value('dup-event'),
@@ -326,34 +402,42 @@ void main() {
       expect(older.id, isNot(newer.id));
     });
 
-    test('self-heals — deletes the duplicate so only one plan remains', () async {
-      for (final gen in [
-        DateTime(2026, 9, 1, 10, 0),
-        DateTime(2026, 9, 1, 10, 5),
-        DateTime(2026, 9, 1, 10, 3),
-      ]) {
-        await db.into(db.carbLoadingPlansTable).insert(
-              CarbLoadingPlansTableCompanion.insert(
-                userId: testUserId,
-                eventId: const Value('heal-event'),
-                totalDays: 3,
-                startDate: DateTime(2026, 10, 2),
-                endDate: DateTime(2026, 10, 4),
-                dailyCarbTargetGrams: 600,
-                generatedAt: gen,
-              ),
-            );
-      }
+    test(
+      'self-heals — deletes the duplicate so only one plan remains',
+      () async {
+        for (final gen in [
+          DateTime(2026, 9, 1, 10, 0),
+          DateTime(2026, 9, 1, 10, 5),
+          DateTime(2026, 9, 1, 10, 3),
+        ]) {
+          await db
+              .into(db.carbLoadingPlansTable)
+              .insert(
+                CarbLoadingPlansTableCompanion.insert(
+                  userId: testUserId,
+                  eventId: const Value('heal-event'),
+                  totalDays: 3,
+                  startDate: DateTime(2026, 10, 2),
+                  endDate: DateTime(2026, 10, 4),
+                  dailyCarbTargetGrams: 600,
+                  generatedAt: gen,
+                ),
+              );
+        }
 
-      await service.getCarbLoadingPlan('heal-event');
+        await service.getCarbLoadingPlan('heal-event');
 
-      final remaining = await (db.select(db.carbLoadingPlansTable)
-            ..where((t) => t.eventId.equals('heal-event')))
-          .get();
-      expect(remaining.length, 1, reason: 'duplicates should be cleaned up');
-      expect(remaining.single.generatedAt, DateTime(2026, 9, 1, 10, 5),
-          reason: 'the survivor should be the newest');
-    });
+        final remaining = await (db.select(
+          db.carbLoadingPlansTable,
+        )..where((t) => t.eventId.equals('heal-event'))).get();
+        expect(remaining.length, 1, reason: 'duplicates should be cleaned up');
+        expect(
+          remaining.single.generatedAt,
+          DateTime(2026, 9, 1, 10, 5),
+          reason: 'the survivor should be the newest',
+        );
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -367,7 +451,9 @@ void main() {
     });
 
     test('returns days in ascending dayNumber order', () async {
-      final plan = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final plan = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               totalDays: 3,
@@ -380,7 +466,9 @@ void main() {
 
       // Insert days out of order to verify ordering
       for (final dayNum in [3, 1, 2]) {
-        await db.into(db.carbLoadingDaysTable).insert(
+        await db
+            .into(db.carbLoadingDaysTable)
+            .insert(
               CarbLoadingDaysTableCompanion.insert(
                 carbLoadingPlanId: plan.id,
                 planDate: DateTime(2026, 10, 1 + dayNum),
@@ -402,7 +490,9 @@ void main() {
 
   group('deleteCarbLoadingDay', () {
     test('removes the carb loading day record', () async {
-      final plan = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final plan = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               totalDays: 1,
@@ -413,7 +503,9 @@ void main() {
             ),
           );
 
-      final day = await db.into(db.carbLoadingDaysTable).insertReturning(
+      final day = await db
+          .into(db.carbLoadingDaysTable)
+          .insertReturning(
             CarbLoadingDaysTableCompanion.insert(
               carbLoadingPlanId: plan.id,
               planDate: DateTime(2026, 10, 4),
@@ -429,7 +521,9 @@ void main() {
     });
 
     test('also deletes meals associated with the day', () async {
-      final plan = await db.into(db.carbLoadingPlansTable).insertReturning(
+      final plan = await db
+          .into(db.carbLoadingPlansTable)
+          .insertReturning(
             CarbLoadingPlansTableCompanion.insert(
               userId: testUserId,
               totalDays: 1,
@@ -440,7 +534,9 @@ void main() {
             ),
           );
 
-      final day = await db.into(db.carbLoadingDaysTable).insertReturning(
+      final day = await db
+          .into(db.carbLoadingDaysTable)
+          .insertReturning(
             CarbLoadingDaysTableCompanion.insert(
               carbLoadingPlanId: plan.id,
               planDate: DateTime(2026, 10, 4),
@@ -450,11 +546,15 @@ void main() {
           );
 
       // Insert a meal for this day (must provide exactly one of carbLoadingFoodId or carbLoadingUserFoodId)
-      await db.into(db.carbLoadingDayMealsTable).insert(
+      await db
+          .into(db.carbLoadingDayMealsTable)
+          .insert(
             CarbLoadingDayMealsTableCompanion.insert(
               carbLoadingDayId: day.id,
               mealTypeId: 1,
-              carbLoadingFoodId: Value('food-uuid-001'), // required: exactly one food FK
+              carbLoadingFoodId: Value(
+                'food-uuid-001',
+              ), // required: exactly one food FK
               carbsConsumed: 50.0,
             ),
           );
@@ -474,10 +574,12 @@ void main() {
 
   group('createCarbLoadingPlan – coach-athlete authorization', () {
     test('throws when coach has no active relationship with athlete', () async {
-      when(() => mockCoachRepo.isActiveCoachAthleteRelationship(
-            coachUserId: testUserId,
-            athleteUserId: 'athlete-456',
-          )).thenAnswer((_) async => false);
+      when(
+        () => mockCoachRepo.isActiveCoachAthleteRelationship(
+          coachUserId: testUserId,
+          athleteUserId: 'athlete-456',
+        ),
+      ).thenAnswer((_) async => false);
 
       expect(
         () => service.createCarbLoadingPlan(
@@ -488,21 +590,25 @@ void main() {
           raceDate: DateTime(2026, 10, 5),
           bodyWeightPounds: 154.0,
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Not authorized'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Not authorized'),
+          ),
+        ),
       );
     });
   });
 
   group('deleteCarbLoadingPlan – coach-athlete authorization', () {
     test('throws when coach has no active relationship with athlete', () async {
-      when(() => mockCoachRepo.isActiveCoachAthleteRelationship(
-            coachUserId: testUserId,
-            athleteUserId: 'athlete-456',
-          )).thenAnswer((_) async => false);
+      when(
+        () => mockCoachRepo.isActiveCoachAthleteRelationship(
+          coachUserId: testUserId,
+          athleteUserId: 'athlete-456',
+        ),
+      ).thenAnswer((_) async => false);
 
       expect(
         () => service.deleteCarbLoadingPlan(
@@ -511,11 +617,13 @@ void main() {
           currentUserId: testUserId,
           planOwnerId: 'athlete-456',
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Not authorized'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Not authorized'),
+          ),
+        ),
       );
     });
   });

@@ -91,25 +91,25 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     final chatAsync = ref.watch(jadeChatControllerProvider);
 
     // Consume any error message exactly once per error.
-    ref.listen<AsyncValue<JadeChatState>>(
-      jadeChatControllerProvider,
-      (_, next) {
-        final s = next.value;
-        if (s?.errorMessage != null && !_hasShownError) {
-          _hasShownError = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            MealvanaSnackbar.showError(context, s!.errorMessage!);
-            ref.read(jadeChatControllerProvider.notifier).clearError();
-            _hasShownError = false;
-          });
-        }
-        // Auto-scroll when new messages arrive or streaming progresses.
-        if (s != null && (s.messages.isNotEmpty || s.isStreaming)) {
-          _scrollToBottom();
-        }
-      },
-    );
+    ref.listen<AsyncValue<JadeChatState>>(jadeChatControllerProvider, (
+      _,
+      next,
+    ) {
+      final s = next.value;
+      if (s?.errorMessage != null && !_hasShownError) {
+        _hasShownError = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          MealvanaSnackbar.showError(context, s!.errorMessage!);
+          ref.read(jadeChatControllerProvider.notifier).clearError();
+          _hasShownError = false;
+        });
+      }
+      // Auto-scroll when new messages arrive or streaming progresses.
+      if (s != null && (s.messages.isNotEmpty || s.isStreaming)) {
+        _scrollToBottom();
+      }
+    });
 
     final jadeName = contentService.getValue(
       'jade.coach_name',
@@ -126,7 +126,9 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
               child: chatAsync.when(
                 data: (state) => _buildBody(context, state, contentService),
                 loading: () => const Center(
-                  child: CircularProgressIndicator(color: AppColors.electrolyte),
+                  child: CircularProgressIndicator(
+                    color: AppColors.electrolyte,
+                  ),
                 ),
                 error: (_, __) => _buildLoadError(context),
               ),
@@ -151,11 +153,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: FaIcon(
-          FontAwesomeIcons.chevronLeft,
-          color: textColor,
-          size: 18,
-        ),
+        icon: FaIcon(FontAwesomeIcons.chevronLeft, color: textColor, size: 18),
         onPressed: () => Navigator.of(context).pop(),
         tooltip: 'Back',
       ),
@@ -228,10 +226,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
         final msg = state.messages[index];
         final isLastAndStreaming =
             state.isStreaming && index == state.messages.length - 1;
-        return _MessageBubble(
-          message: msg,
-          isStreaming: isLastAndStreaming,
-        );
+        return _MessageBubble(message: msg, isStreaming: isLastAndStreaming);
       },
     );
   }
@@ -329,8 +324,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
           _RetryButton(
-            onPressed: () =>
-                ref.invalidate(jadeChatControllerProvider),
+            onPressed: () => ref.invalidate(jadeChatControllerProvider),
           ),
         ],
       ),
@@ -355,9 +349,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
         ? AppColors.cream.withValues(alpha: 0.2)
         : AppColors.blackberry.withValues(alpha: 0.15);
 
-    final inputBg = isDark
-        ? AppColors.blackberryLight
-        : AppColors.surfaceLight;
+    final inputBg = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -368,9 +360,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
       ),
       decoration: BoxDecoration(
         color: isDark ? AppColors.blackberry : AppColors.cream,
-        border: Border(
-          top: BorderSide(color: borderColor, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: borderColor, width: 0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -457,10 +447,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
 // ---------------------------------------------------------------------------
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({
-    required this.message,
-    required this.isStreaming,
-  });
+  const _MessageBubble({required this.message, required this.isStreaming});
 
   final JadeMessage message;
   final bool isStreaming;
@@ -535,7 +522,9 @@ class _AssistantBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubbleBg = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
+    final bubbleBg = isDark
+        ? AppColors.blackberryLight
+        : AppColors.surfaceLight;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     final hasText = message.content.isNotEmpty;
@@ -671,11 +660,8 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           animation: _controller,
           builder: (_, __) {
             final progress = (_controller.value - i * 0.2).clamp(0.0, 1.0);
-            final alpha =
-                (0.3 + 0.7 * (1.0 - (2 * (progress - 0.5)).abs())).clamp(
-              0.3,
-              1.0,
-            );
+            final alpha = (0.3 + 0.7 * (1.0 - (2 * (progress - 0.5)).abs()))
+                .clamp(0.3, 1.0);
             return Container(
               width: 6,
               height: 6,

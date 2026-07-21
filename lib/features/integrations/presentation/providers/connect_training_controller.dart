@@ -781,8 +781,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     const retryDelay = Duration(minutes: 30);
     if (retryDelay >= _garminBackfillCooldown) return;
     final prefs = ref.read(sharedPreferencesProvider);
-    final retryAt =
-        DateTime.now().subtract(_garminBackfillCooldown - retryDelay);
+    final retryAt = DateTime.now().subtract(
+      _garminBackfillCooldown - retryDelay,
+    );
     await prefs.setInt(
       '$_garminBackfillLastAtKeyPrefix$userId',
       retryAt.millisecondsSinceEpoch,
@@ -916,8 +917,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       var uploadFailed = false;
       if (!_isUsingTempUserId) {
         try {
-          final uploadResult =
-              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+            _currentUserId!,
+          );
           // success covers both a real upload and "nothing to upload" (count 0).
           uploadFailed = !uploadResult.success;
           if (kDebugMode) {
@@ -972,7 +974,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           // the retry above will pick them up.
           errorMessage: uploadFailed
               ? 'Workouts saved, but syncing to your account didn\'t finish. '
-                  'We\'ll retry automatically.'
+                    'We\'ll retry automatically.'
               : null,
           clearErrorMessage: !uploadFailed,
           vdotLastSyncAt: DateTime.now(),
@@ -995,7 +997,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
-      _trackIntegrationSyncFailed('vdot', 'exception', errorMessage: e.toString());
+      _trackIntegrationSyncFailed(
+        'vdot',
+        'exception',
+        errorMessage: e.toString(),
+      );
       return VdotSyncResult.error(e.toString());
     } finally {
       _syncingProviders.remove('vdot');

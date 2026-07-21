@@ -7,12 +7,8 @@ import '../../theme/app_theme.dart';
 class LoadingOverlay extends StatelessWidget {
   final Color? backgroundColor;
   final Color? spinnerColor;
-  
-  const LoadingOverlay({
-    super.key,
-    this.backgroundColor,
-    this.spinnerColor,
-  });
+
+  const LoadingOverlay({super.key, this.backgroundColor, this.spinnerColor});
 
   @override
   Widget build(BuildContext context) {

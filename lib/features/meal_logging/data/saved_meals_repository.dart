@@ -41,10 +41,10 @@ class SavedMealsRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _sentry = sentry;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -135,11 +135,11 @@ class SavedMealsRepository with SyncableRepository {
         data: {'userId': userId},
       );
 
-      final dirtyEntries = await (_database.select(_database.savedMealsTable)
-            ..where(
-              (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
-            ))
-          .get();
+      final dirtyEntries =
+          await (_database.select(_database.savedMealsTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
+              ))
+              .get();
 
       if (dirtyEntries.isEmpty) return UploadResult.nothingToUpload();
 
@@ -187,21 +187,19 @@ class SavedMealsRepository with SyncableRepository {
   /// ascending as a stable tiebreaker.
   Stream<List<SavedMeal>> watchSavedMeals(String userId) {
     final query = _database.select(_database.savedMealsTable)
-      ..where(
-        (t) => t.userId.equals(userId) & t.isDeleted.equals(false),
-      )
+      ..where((t) => t.userId.equals(userId) & t.isDeleted.equals(false))
       ..orderBy([
         (t) => OrderingTerm(
-              expression: t.lastUsedAt,
-              mode: OrderingMode.desc,
-              nulls: NullsOrder.last,
-            ),
+          expression: t.lastUsedAt,
+          mode: OrderingMode.desc,
+          nulls: NullsOrder.last,
+        ),
         (t) => OrderingTerm.asc(t.name),
       ]);
 
-    return query
-        .watch()
-        .map((entries) => entries.map(SavedMeal.fromDriftEntry).toList());
+    return query.watch().map(
+      (entries) => entries.map(SavedMeal.fromDriftEntry).toList(),
+    );
   }
 
   // ========================================================================
@@ -239,9 +237,9 @@ class SavedMealsRepository with SyncableRepository {
   /// Bump [SavedMeal.lastUsedAt] to now (called when the meal is re-logged).
   Future<void> touchLastUsed(String mealId) async {
     final now = DateTime.now();
-    await (_database.update(_database.savedMealsTable)
-          ..where((t) => t.id.equals(mealId) & t.isDeleted.equals(false)))
-        .write(
+    await (_database.update(
+      _database.savedMealsTable,
+    )..where((t) => t.id.equals(mealId) & t.isDeleted.equals(false))).write(
       SavedMealsTableCompanion(
         lastUsedAt: Value(now),
         updatedAt: Value(now),
@@ -280,18 +278,19 @@ class SavedMealsRepository with SyncableRepository {
 
   /// Soft-delete a saved meal by id. No-op if no active row exists.
   Future<void> softDelete(String mealId) async {
-    final row = await (_database.select(_database.savedMealsTable)
-          ..where((t) => t.id.equals(mealId) & t.isDeleted.equals(false))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.savedMealsTable)
+              ..where((t) => t.id.equals(mealId) & t.isDeleted.equals(false))
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return;
 
     final meal = SavedMeal.fromDriftEntry(row);
     final now = DateTime.now();
 
-    await (_database.update(_database.savedMealsTable)
-          ..where((t) => t.id.equals(mealId)))
-        .write(
+    await (_database.update(
+      _database.savedMealsTable,
+    )..where((t) => t.id.equals(mealId))).write(
       SavedMealsTableCompanion(
         isDeleted: const Value(true),
         updatedAt: Value(now),
@@ -321,10 +320,7 @@ class SavedMealsRepository with SyncableRepository {
 
   /// Apply a batch of remote rows to Drift, preserving dirty local rows.
   @visibleForTesting
-  Future<int> hydrateFromRemote(
-    String userId, {
-    DateTime? since,
-  }) async {
+  Future<int> hydrateFromRemote(String userId, {DateTime? since}) async {
     final response = await _supabase
         .from('saved_meals')
         .select('*')
@@ -352,11 +348,9 @@ class SavedMealsRepository with SyncableRepository {
     if (remoteById.isEmpty) return 0;
 
     final remoteIds = remoteById.keys.toList(growable: false);
-    final dirtyRows = await (_database.select(_database.savedMealsTable)
-          ..where(
-            (t) => t.id.isIn(remoteIds) & t.needsUpload.equals(true),
-          ))
-        .get();
+    final dirtyRows = await (_database.select(
+      _database.savedMealsTable,
+    )..where((t) => t.id.isIn(remoteIds) & t.needsUpload.equals(true))).get();
     final dirtyIds = dirtyRows.map((r) => r.id).toSet();
 
     if (dirtyIds.isNotEmpty) {

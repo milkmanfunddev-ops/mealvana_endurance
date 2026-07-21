@@ -40,9 +40,7 @@ class KyleSecondaryButton extends ConsumerWidget {
           foregroundColor: colors.foreground,
           disabledForegroundColor: colors.foreground.withOpacity(0.4),
           side: BorderSide(color: colors.border, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
           textStyle: AppTextStyles.buttonPrimary,
         ),
@@ -100,10 +98,7 @@ class KyleSecondaryButton extends ConsumerWidget {
         );
       case SecondaryButtonVariant.light:
         final onSurface = Theme.of(context).colorScheme.onSurface;
-        return _ButtonColors(
-          foreground: onSurface,
-          border: onSurface,
-        );
+        return _ButtonColors(foreground: onSurface, border: onSurface);
     }
   }
 }
@@ -170,9 +165,7 @@ class KyleSecondaryIconButton extends ConsumerWidget {
           foregroundColor: colors.foreground,
           disabledForegroundColor: colors.foreground.withOpacity(0.4),
           side: BorderSide(color: colors.border, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.circularRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.circularRadius),
           padding: EdgeInsets.zero,
         ),
         child: isLoading
@@ -184,11 +177,7 @@ class KyleSecondaryIconButton extends ConsumerWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(colors.foreground),
                 ),
               )
-            : Icon(
-                icon,
-                size: size * 0.5,
-                color: colors.foreground,
-              ),
+            : Icon(icon, size: size * 0.5, color: colors.foreground),
       ),
     );
   }
@@ -198,7 +187,7 @@ class KyleSecondaryIconButton extends ConsumerWidget {
 enum SecondaryButtonVariant {
   /// Orange outline for emphasis actions
   orange,
-  
+
   /// Blackberry outline for neutral actions
   blackberry,
 
@@ -208,10 +197,7 @@ enum SecondaryButtonVariant {
 
 /// Helper class for button colors
 class _ButtonColors {
-  const _ButtonColors({
-    required this.foreground,
-    required this.border,
-  });
+  const _ButtonColors({required this.foreground, required this.border});
 
   final Color foreground;
   final Color border;

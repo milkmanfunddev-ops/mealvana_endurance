@@ -46,12 +46,14 @@ void main() {
       );
     }
 
-    cachedTokenData = jsonDecode(tokenFile.readAsStringSync()) as Map<String, dynamic>;
+    cachedTokenData =
+        jsonDecode(tokenFile.readAsStringSync()) as Map<String, dynamic>;
     accessToken = cachedTokenData['access_token'] as String;
 
     logTestHeading('Final Surge Live API Integration Tests');
     logTestSetup({
-      'Athlete': '${cachedTokenData['firstname']} ${cachedTokenData['lastname']}',
+      'Athlete':
+          '${cachedTokenData['firstname']} ${cachedTokenData['lastname']}',
       'Athlete ID': cachedTokenData['id'],
       'Token cached at': cachedTokenData['cached_at'],
     });
@@ -62,18 +64,19 @@ void main() {
       logSection('Fetching upcoming workouts');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
-          queryParameters: {'NumDays': '7', 'NumWorkouts': '21'},
-        ),
+        Uri.parse(
+          '$baseUrl/API/v1/UpcomingWorkouts',
+        ).replace(queryParameters: {'NumDays': '7', 'NumWorkouts': '21'}),
         headers: {
           'client-id': clientId,
           'Authorization': 'Bearer $accessToken',
         },
       );
 
-      logApiCall('/API/v1/UpcomingWorkouts', params: {
-        'Status': response.statusCode,
-      });
+      logApiCall(
+        '/API/v1/UpcomingWorkouts',
+        params: {'Status': response.statusCode},
+      );
 
       expect(response.statusCode, equals(200));
 
@@ -91,9 +94,9 @@ void main() {
       logSection('Validating workout structure');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
-          queryParameters: {'NumDays': '7', 'NumWorkouts': '21'},
-        ),
+        Uri.parse(
+          '$baseUrl/API/v1/UpcomingWorkouts',
+        ).replace(queryParameters: {'NumDays': '7', 'NumWorkouts': '21'}),
         headers: {
           'client-id': clientId,
           'Authorization': 'Bearer $accessToken',
@@ -104,7 +107,10 @@ void main() {
       final workouts = data['Workouts'] as List;
 
       if (workouts.isEmpty) {
-        logTestResult('Workouts', 'NONE FOUND - add workouts to Final Surge to test');
+        logTestResult(
+          'Workouts',
+          'NONE FOUND - add workouts to Final Surge to test',
+        );
         return;
       }
 
@@ -120,16 +126,29 @@ void main() {
         'PlannedDistance': workout['PlannedDistance'],
         'PlannedDistanceType': workout['PlannedDistanceType'],
         'PlannedPace': workout['PlannedPace'],
-        'WorkoutDescription': workout['WorkoutDescription']?.toString().substring(
+        'WorkoutDescription': workout['WorkoutDescription']
+            ?.toString()
+            .substring(
               0,
-              (workout['WorkoutDescription']?.toString().length ?? 0) > 50 ? 50 : null,
+              (workout['WorkoutDescription']?.toString().length ?? 0) > 50
+                  ? 50
+                  : null,
             ),
       });
 
       // Validate required fields exist
-      logAssertion('WorkoutKey is present', passed: workout['WorkoutKey'] != null);
-      logAssertion('WorkoutDate is present', passed: workout['WorkoutDate'] != null);
-      logAssertion('WorkoutTypeName is present', passed: workout['WorkoutTypeName'] != null);
+      logAssertion(
+        'WorkoutKey is present',
+        passed: workout['WorkoutKey'] != null,
+      );
+      logAssertion(
+        'WorkoutDate is present',
+        passed: workout['WorkoutDate'] != null,
+      );
+      logAssertion(
+        'WorkoutTypeName is present',
+        passed: workout['WorkoutTypeName'] != null,
+      );
 
       expect(workout['WorkoutKey'], isNotNull);
       expect(workout['WorkoutDate'], isNotNull);
@@ -142,9 +161,9 @@ void main() {
       logSection('Validating PlannedTime format');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
-          queryParameters: {'NumDays': '14', 'NumWorkouts': '50'},
-        ),
+        Uri.parse(
+          '$baseUrl/API/v1/UpcomingWorkouts',
+        ).replace(queryParameters: {'NumDays': '14', 'NumWorkouts': '50'}),
         headers: {
           'client-id': clientId,
           'Authorization': 'Bearer $accessToken',
@@ -155,17 +174,17 @@ void main() {
       final workouts = data['Workouts'] as List;
 
       // Find a workout with PlannedTime
-      final workoutWithTime = workouts.firstWhere(
-        (w) {
-          final time = (w as Map<String, dynamic>)['PlannedTime'];
-          return time != null && time is num && time > 0;
-        },
-        orElse: () => <String, dynamic>{},
-      );
+      final workoutWithTime = workouts.firstWhere((w) {
+        final time = (w as Map<String, dynamic>)['PlannedTime'];
+        return time != null && time is num && time > 0;
+      }, orElse: () => <String, dynamic>{});
 
       if ((workoutWithTime as Map).isEmpty) {
         logTestResult('PlannedTime', 'NO WORKOUTS WITH TIME FOUND');
-        logTestResult('Suggestion', 'Add a workout with duration to Final Surge');
+        logTestResult(
+          'Suggestion',
+          'Add a workout with duration to Final Surge',
+        );
         return;
       }
 
@@ -188,7 +207,10 @@ void main() {
 
       if (isLikelySeconds) {
         final minutes = plannedTime / 60;
-        logTestResult('Converted to minutes', '${minutes.toStringAsFixed(1)} min');
+        logTestResult(
+          'Converted to minutes',
+          '${minutes.toStringAsFixed(1)} min',
+        );
       }
 
       // This test passes if we can determine the format
@@ -200,9 +222,9 @@ void main() {
       logSection('Validating pace format');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
-          queryParameters: {'NumDays': '14', 'NumWorkouts': '50'},
-        ),
+        Uri.parse(
+          '$baseUrl/API/v1/UpcomingWorkouts',
+        ).replace(queryParameters: {'NumDays': '14', 'NumWorkouts': '50'}),
         headers: {
           'client-id': clientId,
           'Authorization': 'Bearer $accessToken',
@@ -217,13 +239,17 @@ void main() {
       final pacePattern = RegExp(r'@\s*([\d]+:[\d]+)(?:\s*-\s*([\d]+:[\d]+))?');
 
       for (final workout in workouts) {
-        final desc = (workout as Map<String, dynamic>)['WorkoutDescription'] as String?;
+        final desc =
+            (workout as Map<String, dynamic>)['WorkoutDescription'] as String?;
         if (desc != null && pacePattern.hasMatch(desc)) {
           descriptionsWithPace.add(desc);
         }
       }
 
-      logTestResult('Workouts with pace in description', descriptionsWithPace.length);
+      logTestResult(
+        'Workouts with pace in description',
+        descriptionsWithPace.length,
+      );
 
       if (descriptionsWithPace.isEmpty) {
         logTestResult('Note', 'No workouts found with @ pace format');
@@ -253,9 +279,9 @@ void main() {
       logSection('Validating workout types');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
-          queryParameters: {'NumDays': '14', 'NumWorkouts': '50'},
-        ),
+        Uri.parse(
+          '$baseUrl/API/v1/UpcomingWorkouts',
+        ).replace(queryParameters: {'NumDays': '14', 'NumWorkouts': '50'}),
         headers: {
           'client-id': clientId,
           'Authorization': 'Bearer $accessToken',
@@ -268,13 +294,17 @@ void main() {
       // Count workout types
       final typeCounts = <String, int>{};
       for (final workout in workouts) {
-        final typeName = (workout as Map<String, dynamic>)['WorkoutTypeName'] as String? ?? 'Unknown';
+        final typeName =
+            (workout as Map<String, dynamic>)['WorkoutTypeName'] as String? ??
+            'Unknown';
         typeCounts[typeName] = (typeCounts[typeName] ?? 0) + 1;
       }
 
       logTestResult('Workout types found', typeCounts.keys.length);
       for (final entry in typeCounts.entries) {
-        final isSupported = FinalSurgeTransformer.supportedTypes.contains(entry.key);
+        final isSupported = FinalSurgeTransformer.supportedTypes.contains(
+          entry.key,
+        );
         logTestResult(
           entry.key,
           '${entry.value} workouts ${isSupported ? "(SUPPORTED)" : "(filtered out)"}',
@@ -290,9 +320,9 @@ void main() {
       logSection('Testing transformer with real data');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
-          queryParameters: {'NumDays': '14', 'NumWorkouts': '50'},
-        ),
+        Uri.parse(
+          '$baseUrl/API/v1/UpcomingWorkouts',
+        ).replace(queryParameters: {'NumDays': '14', 'NumWorkouts': '50'}),
         headers: {
           'client-id': clientId,
           'Authorization': 'Bearer $accessToken',
@@ -326,20 +356,28 @@ void main() {
           logSection('Transformed workout #$transformed');
           logTestResults({
             'Title': ResultData(actual: result.activity.title),
-            'Activity Type': ResultData(actual: result.activity.activityType.name),
+            'Activity Type': ResultData(
+              actual: result.activity.activityType.name,
+            ),
             'Duration': ResultData(
               actual: result.activity.durationMinutes,
               unit: 'min',
             ),
             'Distance': ResultData(
               actual: result.activity.distanceMiles ?? result.distanceMeters,
-              unit: result.activity.activityType == ActivityType.swimming ? 'm' : 'mi',
+              unit: result.activity.activityType == ActivityType.swimming
+                  ? 'm'
+                  : 'mi',
             ),
             'Target Pace': ResultData(
-              actual: result.activity.paceTargetMinutesPerMile?.toStringAsFixed(2),
+              actual: result.activity.paceTargetMinutesPerMile?.toStringAsFixed(
+                2,
+              ),
               unit: 'min/mi',
             ),
-            'Intensity': ResultData(actual: result.activity.intensityLevel?.name),
+            'Intensity': ResultData(
+              actual: result.activity.intensityLevel?.name,
+            ),
           });
 
           // Validate transformation
@@ -397,20 +435,35 @@ void main() {
       // Verify defaults match expected values
       logAssertion(
         'Distance default applied',
-        passed: result.activity.distanceMiles == FinalSurgeDefaults.runningDistanceMiles,
+        passed:
+            result.activity.distanceMiles ==
+            FinalSurgeDefaults.runningDistanceMiles,
       );
       logAssertion(
         'Duration default applied',
-        passed: result.activity.durationMinutes == FinalSurgeDefaults.runningDurationMinutes,
+        passed:
+            result.activity.durationMinutes ==
+            FinalSurgeDefaults.runningDurationMinutes,
       );
       logAssertion(
         'Pace default applied',
-        passed: result.activity.paceTargetMinutesPerMile == FinalSurgeDefaults.runningPaceMinPerMile,
+        passed:
+            result.activity.paceTargetMinutesPerMile ==
+            FinalSurgeDefaults.runningPaceMinPerMile,
       );
 
-      expect(result.activity.distanceMiles, equals(FinalSurgeDefaults.runningDistanceMiles));
-      expect(result.activity.durationMinutes, equals(FinalSurgeDefaults.runningDurationMinutes));
-      expect(result.activity.paceTargetMinutesPerMile, equals(FinalSurgeDefaults.runningPaceMinPerMile));
+      expect(
+        result.activity.distanceMiles,
+        equals(FinalSurgeDefaults.runningDistanceMiles),
+      );
+      expect(
+        result.activity.durationMinutes,
+        equals(FinalSurgeDefaults.runningDurationMinutes),
+      );
+      expect(
+        result.activity.paceTargetMinutesPerMile,
+        equals(FinalSurgeDefaults.runningPaceMinPerMile),
+      );
 
       logTestPass('Sensible defaults are correctly applied');
     });

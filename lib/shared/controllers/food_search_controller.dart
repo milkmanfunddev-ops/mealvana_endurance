@@ -163,9 +163,7 @@ class FoodSearchController extends _$FoodSearchController {
       case FoodSearchFilter.all:
         return foods;
       case FoodSearchFilter.fuelOnly:
-        return foods
-            .where((f) => isFuelProductType(f.productTypeId))
-            .toList();
+        return foods.where((f) => isFuelProductType(f.productTypeId)).toList();
       case FoodSearchFilter.generalFirst:
         final general = <Food>[];
         final fuel = <Food>[];
@@ -187,8 +185,10 @@ class FoodSearchController extends _$FoodSearchController {
         return results;
       case FoodSearchFilter.fuelOnly:
         return results
-            .where((c) =>
-                c.productTypeId == null || isFuelProductType(c.productTypeId))
+            .where(
+              (c) =>
+                  c.productTypeId == null || isFuelProductType(c.productTypeId),
+            )
             .toList();
       case FoodSearchFilter.generalFirst:
         final general = <CatalogSearchResult>[];
@@ -235,8 +235,9 @@ class FoodSearchController extends _$FoodSearchController {
     // Separate user foods from template foods
     final userFoodIds = userFoods.map((f) => f.id).toSet();
     _allUserFoods = userFoods;
-    _allTemplateFoods =
-        allFoods.where((f) => !userFoodIds.contains(f.id)).toList();
+    _allTemplateFoods = allFoods
+        .where((f) => !userFoodIds.contains(f.id))
+        .toList();
   }
 
   /// Update the search query and filter local foods + trigger catalog search.

@@ -15,10 +15,7 @@ import 'app_startup_error_widget.dart';
 /// Deep links and URL navigation work immediately since GoRouter
 /// is initialized before this widget.
 class AppStartupWidget extends ConsumerWidget {
-  const AppStartupWidget({
-    super.key,
-    required this.onLoaded,
-  });
+  const AppStartupWidget({super.key, required this.onLoaded});
 
   /// Callback that receives the router child when initialization is complete
   final WidgetBuilder onLoaded;

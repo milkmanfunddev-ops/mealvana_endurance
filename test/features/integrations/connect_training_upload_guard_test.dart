@@ -50,8 +50,11 @@ void main() {
           onboardingCompleted: onboardingCompleted,
         );
 
-        expect(isOnboardingInProgress, isTrue,
-            reason: 'Should detect onboarding in progress');
+        expect(
+          isOnboardingInProgress,
+          isTrue,
+          reason: 'Should detect onboarding in progress',
+        );
         expect(
           shouldSkipUpload(
             isUsingTempUserId: isUsingTempUserId,
@@ -63,81 +66,72 @@ void main() {
       },
     );
 
-    test(
-      'anonymous session with null user profile → skip upload',
-      () {
-        // User has auth session but no local profile at all (user == null)
-        // user?.onboardingCompleted is null, so != true is true.
-        const isUsingTempUserId = false;
-        const bool? onboardingCompleted = null;
+    test('anonymous session with null user profile → skip upload', () {
+      // User has auth session but no local profile at all (user == null)
+      // user?.onboardingCompleted is null, so != true is true.
+      const isUsingTempUserId = false;
+      const bool? onboardingCompleted = null;
 
-        final isOnboardingInProgress = computeIsOnboardingInProgress(
+      final isOnboardingInProgress = computeIsOnboardingInProgress(
+        isUsingTempUserId: isUsingTempUserId,
+        onboardingCompleted: onboardingCompleted,
+      );
+
+      expect(isOnboardingInProgress, isTrue);
+      expect(
+        shouldSkipUpload(
           isUsingTempUserId: isUsingTempUserId,
-          onboardingCompleted: onboardingCompleted,
-        );
+          isOnboardingInProgress: isOnboardingInProgress,
+        ),
+        isTrue,
+        reason: 'Upload must be skipped when no profile exists',
+      );
+    });
 
-        expect(isOnboardingInProgress, isTrue);
-        expect(
-          shouldSkipUpload(
-            isUsingTempUserId: isUsingTempUserId,
-            isOnboardingInProgress: isOnboardingInProgress,
-          ),
-          isTrue,
-          reason: 'Upload must be skipped when no profile exists',
-        );
-      },
-    );
+    test('temp user ID (no auth session) → skip upload via existing guard', () {
+      // No Supabase session at all — using a generated temp UUID.
+      // The original guard already handles this case.
+      const isUsingTempUserId = true;
+      const onboardingCompleted = false;
 
-    test(
-      'temp user ID (no auth session) → skip upload via existing guard',
-      () {
-        // No Supabase session at all — using a generated temp UUID.
-        // The original guard already handles this case.
-        const isUsingTempUserId = true;
-        const onboardingCompleted = false;
+      final isOnboardingInProgress = computeIsOnboardingInProgress(
+        isUsingTempUserId: isUsingTempUserId,
+        onboardingCompleted: onboardingCompleted,
+      );
 
-        final isOnboardingInProgress = computeIsOnboardingInProgress(
+      // When using temp ID, _isOnboardingInProgress is false (the temp guard
+      // handles it), but upload is still skipped via _isUsingTempUserId.
+      expect(isOnboardingInProgress, isFalse);
+      expect(
+        shouldSkipUpload(
           isUsingTempUserId: isUsingTempUserId,
-          onboardingCompleted: onboardingCompleted,
-        );
+          isOnboardingInProgress: isOnboardingInProgress,
+        ),
+        isTrue,
+        reason: 'Upload skipped via temp user ID guard',
+      );
+    });
 
-        // When using temp ID, _isOnboardingInProgress is false (the temp guard
-        // handles it), but upload is still skipped via _isUsingTempUserId.
-        expect(isOnboardingInProgress, isFalse);
-        expect(
-          shouldSkipUpload(
-            isUsingTempUserId: isUsingTempUserId,
-            isOnboardingInProgress: isOnboardingInProgress,
-          ),
-          isTrue,
-          reason: 'Upload skipped via temp user ID guard',
-        );
-      },
-    );
+    test('completed onboarding → allow upload', () {
+      // User has completed onboarding — profile row exists in Supabase.
+      // Upload should proceed normally.
+      const isUsingTempUserId = false;
+      const onboardingCompleted = true;
 
-    test(
-      'completed onboarding → allow upload',
-      () {
-        // User has completed onboarding — profile row exists in Supabase.
-        // Upload should proceed normally.
-        const isUsingTempUserId = false;
-        const onboardingCompleted = true;
+      final isOnboardingInProgress = computeIsOnboardingInProgress(
+        isUsingTempUserId: isUsingTempUserId,
+        onboardingCompleted: onboardingCompleted,
+      );
 
-        final isOnboardingInProgress = computeIsOnboardingInProgress(
+      expect(isOnboardingInProgress, isFalse);
+      expect(
+        shouldSkipUpload(
           isUsingTempUserId: isUsingTempUserId,
-          onboardingCompleted: onboardingCompleted,
-        );
-
-        expect(isOnboardingInProgress, isFalse);
-        expect(
-          shouldSkipUpload(
-            isUsingTempUserId: isUsingTempUserId,
-            isOnboardingInProgress: isOnboardingInProgress,
-          ),
-          isFalse,
-          reason: 'Upload allowed when onboarding is complete',
-        );
-      },
-    );
+          isOnboardingInProgress: isOnboardingInProgress,
+        ),
+        isFalse,
+        reason: 'Upload allowed when onboarding is complete',
+      );
+    });
   });
 }

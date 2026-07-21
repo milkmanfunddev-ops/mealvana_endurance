@@ -229,7 +229,9 @@ class NutritionTargetsHelpBottomSheet extends StatelessWidget {
       child: Text(
         value,
         style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.85),
         ),
       ),
     );

@@ -472,21 +472,20 @@ class CarbLoadingService {
           // orphan rows remain, then the plan row itself. Best-effort: a failed
           // cleanup must not turn a read back into the crash it just replaced.
           try {
-            final dupDays =
-                await (_database.select(_database.carbLoadingDaysTable)
-                      ..where((t) => t.carbLoadingPlanId.equals(dup.id)))
-                    .get();
+            final dupDays = await (_database.select(
+              _database.carbLoadingDaysTable,
+            )..where((t) => t.carbLoadingPlanId.equals(dup.id))).get();
             for (final day in dupDays) {
-              await (_database.delete(_database.carbLoadingDayMealsTable)
-                    ..where((t) => t.carbLoadingDayId.equals(day.id)))
-                  .go();
+              await (_database.delete(
+                _database.carbLoadingDayMealsTable,
+              )..where((t) => t.carbLoadingDayId.equals(day.id))).go();
             }
-            await (_database.delete(_database.carbLoadingDaysTable)
-                  ..where((t) => t.carbLoadingPlanId.equals(dup.id)))
-                .go();
-            await (_database.delete(_database.carbLoadingPlansTable)
-                  ..where((t) => t.id.equals(dup.id)))
-                .go();
+            await (_database.delete(
+              _database.carbLoadingDaysTable,
+            )..where((t) => t.carbLoadingPlanId.equals(dup.id))).go();
+            await (_database.delete(
+              _database.carbLoadingPlansTable,
+            )..where((t) => t.id.equals(dup.id))).go();
           } catch (e) {
             _logger.warning(
               'Failed to clean up duplicate carb loading plan ${dup.id}',

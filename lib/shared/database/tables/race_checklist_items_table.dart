@@ -21,10 +21,12 @@ class RaceChecklistItemsTable extends Table {
   TextColumn get itemName => text().named('item_name')();
 
   /// Sort order for display (lower numbers first)
-  IntColumn get sortOrder => integer().withDefault(const Constant(0)).named('sort_order')();
+  IntColumn get sortOrder =>
+      integer().withDefault(const Constant(0)).named('sort_order')();
 
   /// Whether the item has been checked off
-  BoolColumn get isChecked => boolean().withDefault(const Constant(false)).named('is_checked')();
+  BoolColumn get isChecked =>
+      boolean().withDefault(const Constant(false)).named('is_checked')();
 
   /// When the item was checked (nullable - only set when checked)
   DateTimeColumn get checkedAt => dateTime().nullable().named('checked_at')();
@@ -33,11 +35,14 @@ class RaceChecklistItemsTable extends Table {
   TextColumn get notes => text().nullable()();
 
   /// Whether this is a default template item (true) or user-added custom item (false)
-  BoolColumn get isTemplateItem => boolean().withDefault(const Constant(true)).named('is_template_item')();
+  BoolColumn get isTemplateItem =>
+      boolean().withDefault(const Constant(true)).named('is_template_item')();
 
   /// Metadata
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime).named('created_at')();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};

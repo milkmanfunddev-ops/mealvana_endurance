@@ -15,12 +15,15 @@ void main() {
       expect(parseMealTypeIds('{1,2,3}'), [1, 2, 3]);
     });
 
-    test('parses NAME strings: {breakfast,lunch} — two old copies threw here', () {
-      expect(
-        parseMealTypeIds('{breakfast,lunch}'),
-        [MealType.breakfast.id, MealType.lunch.id],
-      );
-    });
+    test(
+      'parses NAME strings: {breakfast,lunch} — two old copies threw here',
+      () {
+        expect(parseMealTypeIds('{breakfast,lunch}'), [
+          MealType.breakfast.id,
+          MealType.lunch.id,
+        ]);
+      },
+    );
 
     test('parses a mixed array', () {
       expect(parseMealTypeIds('{1,dinner}'), [1, MealType.dinner.id]);
@@ -41,10 +44,10 @@ void main() {
     });
 
     test('parses names: ["breakfast","dinner"]', () {
-      expect(
-        parseMealTypeIds('["breakfast","dinner"]'),
-        [MealType.breakfast.id, MealType.dinner.id],
-      );
+      expect(parseMealTypeIds('["breakfast","dinner"]'), [
+        MealType.breakfast.id,
+        MealType.dinner.id,
+      ]);
     });
 
     test('empty array -> []', () {
@@ -58,10 +61,10 @@ void main() {
     });
 
     test('parses afternoon_snack and evening_snack', () {
-      expect(
-        parseMealTypeIds('{afternoon_snack,evening_snack}'),
-        [MealType.afternoonSnack.id, MealType.eveningSnack.id],
-      );
+      expect(parseMealTypeIds('{afternoon_snack,evening_snack}'), [
+        MealType.afternoonSnack.id,
+        MealType.eveningSnack.id,
+      ]);
     });
   });
 

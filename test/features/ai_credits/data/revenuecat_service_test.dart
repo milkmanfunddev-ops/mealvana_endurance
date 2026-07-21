@@ -65,8 +65,11 @@ void main() {
     test('getOfferings returns null when disabled', () async {
       final svc = _service(enabled: false);
       final result = await svc.getOfferings();
-      expect(result, isNull,
-          reason: 'getOfferings must return null when disabled — not throw.');
+      expect(
+        result,
+        isNull,
+        reason: 'getOfferings must return null when disabled — not throw.',
+      );
     });
 
     test('purchase returns false when disabled', () async {
@@ -100,11 +103,14 @@ void main() {
       await expectLater(svc.configureIfPossible(), completes);
     });
 
-    test('getOfferings returns null when API key is empty (not configured)', () async {
-      final svc = _service(enabled: true, appleKey: '', googleKey: '');
-      final result = await svc.getOfferings();
-      expect(result, isNull);
-    });
+    test(
+      'getOfferings returns null when API key is empty (not configured)',
+      () async {
+        final svc = _service(enabled: true, appleKey: '', googleKey: '');
+        final result = await svc.getOfferings();
+        expect(result, isNull);
+      },
+    );
 
     test('restore is safe when API key is empty (not configured)', () async {
       final svc = _service(enabled: true, appleKey: '', googleKey: '');
@@ -122,8 +128,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('RevenueCatService — double-configure guard', () {
-    test(
-        'configureIfPossible with empty key never sets _configured=true, '
+    test('configureIfPossible with empty key never sets _configured=true, '
         'so second call is safe (no double-configure)', () async {
       // Use empty key so the first call no-ops without hitting native.
       final svc = _service(enabled: true, appleKey: '', googleKey: '');
@@ -194,7 +199,8 @@ void main() {
       expect(
         [config.revenueCatApiKeyApple, config.revenueCatApiKeyGoogle, ''],
         contains(key),
-        reason: 'revenueCatApiKey must return apple key, google key, or empty string.',
+        reason:
+            'revenueCatApiKey must return apple key, google key, or empty string.',
       );
     });
 
@@ -212,8 +218,11 @@ void main() {
   group('AppConfig — aiCreditsEnabled flag', () {
     test('aiCreditsEnabled=false is the default in AppConfig.forTesting', () {
       final config = AppConfig.forTesting();
-      expect(config.aiCreditsEnabled, isFalse,
-          reason: 'AI credits must be opt-in; default should be false.');
+      expect(
+        config.aiCreditsEnabled,
+        isFalse,
+        reason: 'AI credits must be opt-in; default should be false.',
+      );
     });
 
     test('aiCreditsEnabled can be explicitly set to true', () {
@@ -230,8 +239,11 @@ void main() {
     test('returns null when SDK is not configured (empty key)', () async {
       final svc = _service(enabled: true, appleKey: '', googleKey: '');
       final result = await svc.getOfferings();
-      expect(result, isNull,
-          reason: 'getOfferings must null-guard, not throw, when not configured.');
+      expect(
+        result,
+        isNull,
+        reason: 'getOfferings must null-guard, not throw, when not configured.',
+      );
     });
   });
 
@@ -245,8 +257,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('RevenueCatService — _canUse invariant', () {
-    test(
-        'a service configured with aiCreditsEnabled=false and empty keys '
+    test('a service configured with aiCreditsEnabled=false and empty keys '
         'never reaches native SDK', () async {
       final svc = _service(enabled: false, appleKey: '', googleKey: '');
       // None of these should throw or interact with native code.

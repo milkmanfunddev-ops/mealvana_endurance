@@ -33,10 +33,7 @@ class UserFixtures {
   }
 
   /// Completed onboarding user
-  static UserProfile completedUser({
-    String? id,
-    String? deviceId,
-  }) {
+  static UserProfile completedUser({String? id, String? deviceId}) {
     return UserProfile(
       id: id ?? 'test-user-completed',
       deviceId: deviceId ?? 'device-completed-456',

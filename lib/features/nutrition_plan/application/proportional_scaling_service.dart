@@ -11,9 +11,25 @@ import '../domain/nutrition_plan.dart';
 class ProportionalScalingService {
   /// Friendly fractions that users can see
   static const _friendlyFractions = [
-    0.25, 0.33, 0.5, 0.67, 0.75, 1.0,
-    1.25, 1.33, 1.5, 1.67, 1.75, 2.0,
-    2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0,
+    0.25,
+    0.33,
+    0.5,
+    0.67,
+    0.75,
+    1.0,
+    1.25,
+    1.33,
+    1.5,
+    1.67,
+    1.75,
+    2.0,
+    2.5,
+    3.0,
+    3.5,
+    4.0,
+    4.5,
+    5.0,
+    6.0,
   ];
 
   /// Snap a value to the nearest friendly fraction
@@ -91,7 +107,9 @@ class ProportionalScalingService {
     if (item.nutritionalInfo != null) {
       final info = item.nutritionalInfo!;
       scaledNutrition = NutritionalInfo(
-        calories: info.calories != null ? (info.calories! * ratio).round() : null,
+        calories: info.calories != null
+            ? (info.calories! * ratio).round()
+            : null,
         carbs: info.carbs != null ? (info.carbs! * ratio).round() : null,
         protein: info.protein != null ? (info.protein! * ratio).round() : null,
         fat: info.fat != null ? (info.fat! * ratio).round() : null,
@@ -122,7 +140,8 @@ class ProportionalScalingService {
   /// Format a quantity as a display string
   static String _formatQuantity(double value) {
     if (value == 0) return '0';
-    if ((value - value.roundToDouble()).abs() < 0.01) return value.round().toString();
+    if ((value - value.roundToDouble()).abs() < 0.01)
+      return value.round().toString();
     if ((value - 0.25).abs() < 0.05) return '0.25';
     if ((value - 0.33).abs() < 0.05) return '0.33';
     if ((value - 0.5).abs() < 0.05) return '0.5';
@@ -160,6 +179,8 @@ class ProportionalScalingService {
 }
 
 /// Provider for ProportionalScalingService
-final proportionalScalingServiceProvider = Provider<ProportionalScalingService>((ref) {
-  return ProportionalScalingService();
-});
+final proportionalScalingServiceProvider = Provider<ProportionalScalingService>(
+  (ref) {
+    return ProportionalScalingService();
+  },
+);

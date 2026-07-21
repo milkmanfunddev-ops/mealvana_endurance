@@ -89,9 +89,9 @@ class _LogScannedFoodScreenState extends State<LogScannedFoodScreen> {
   }
 
   void _confirm() {
-    Navigator.of(context).pop(
-      ScannedFoodLogRequest(servings: _servings, slot: _slot),
-    );
+    Navigator.of(
+      context,
+    ).pop(ScannedFoodLogRequest(servings: _servings, slot: _slot));
   }
 
   @override
@@ -148,10 +148,7 @@ class _LogScannedFoodScreenState extends State<LogScannedFoodScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
-                child: KylePrimaryButton(
-                  text: 'Log Food',
-                  onPressed: _confirm,
-                ),
+                child: KylePrimaryButton(text: 'Log Food', onPressed: _confirm),
               ),
             ],
           ),
@@ -232,9 +229,8 @@ class _LogScannedFoodScreenState extends State<LogScannedFoodScreen> {
     final fat = _food.fatPerServing;
     final sodium = _food.sodiumMg;
 
-    String scaledInt(num? perServing) => perServing == null
-        ? '—'
-        : (perServing * _servings).round().toString();
+    String scaledInt(num? perServing) =>
+        perServing == null ? '—' : (perServing * _servings).round().toString();
 
     return BaseCard(
       child: Padding(
@@ -251,11 +247,19 @@ class _LogScannedFoodScreenState extends State<LogScannedFoodScreen> {
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                _macroTile('Calories', scaledInt(calories), 'kcal',
-                    kMacroColorCalories),
+                _macroTile(
+                  'Calories',
+                  scaledInt(calories),
+                  'kcal',
+                  kMacroColorCalories,
+                ),
                 _macroTile('Carbs', scaledInt(carbs), 'g', kMacroColorCarbs),
                 _macroTile(
-                    'Protein', scaledInt(protein), 'g', kMacroColorProtein),
+                  'Protein',
+                  scaledInt(protein),
+                  'g',
+                  kMacroColorProtein,
+                ),
                 _macroTile('Fat', scaledInt(fat), 'g', kMacroColorFat),
               ],
             ),
@@ -285,10 +289,7 @@ class _LogScannedFoodScreenState extends State<LogScannedFoodScreen> {
               color: color,
             ),
           ),
-          Text(
-            unit,
-            style: AppTextStyles.smallLabel.copyWith(color: color),
-          ),
+          Text(unit, style: AppTextStyles.smallLabel.copyWith(color: color)),
           const SizedBox(height: AppSpacing.xxs),
           Text(
             label,

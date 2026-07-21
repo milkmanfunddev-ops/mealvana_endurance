@@ -150,9 +150,7 @@ class _ContinueButton extends StatelessWidget {
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           elevation: isEnabled ? 2 : 0,
         ),
         child: isLoading
@@ -174,10 +172,7 @@ class _ContinueButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                  ),
+                  const Icon(Icons.arrow_forward_ios, size: 16),
                 ],
               ),
       ),

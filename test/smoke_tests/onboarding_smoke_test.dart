@@ -25,11 +25,15 @@ void main() {
       await smokeScreen(tester, const UserProfileScreen());
     });
 
-    testWidgets('CyclingDetailsScreen renders without overflow', (tester) async {
+    testWidgets('CyclingDetailsScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(tester, const CyclingDetailsScreen());
     });
 
-    testWidgets('SwimmingDetailsScreen renders without overflow', (tester) async {
+    testWidgets('SwimmingDetailsScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(tester, const SwimmingDetailsScreen());
     });
   });

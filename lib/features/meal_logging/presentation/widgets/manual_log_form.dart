@@ -104,7 +104,9 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
 
-    await ref.read(mealLogControllerProvider.notifier).logManualMeal(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logManualMeal(
           name: _nameCtrl.text.trim(),
           slot: _slot,
           logDate: widget.logDate,
@@ -113,9 +115,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           proteinG: double.tryParse(_protCtrl.text),
           fatG: double.tryParse(_fatCtrl.text),
           sodiumMg: double.tryParse(_sodiumCtrl.text),
-          notes: _notesCtrl.text.trim().isEmpty
-              ? null
-              : _notesCtrl.text.trim(),
+          notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
           eatenAt: _eatenAt,
         );
 
@@ -169,10 +169,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
 
           // Slot selector — optional (build-a-meal redesign): the user may
           // leave a logged meal untagged.
-          Text(
-            'Meal type',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+          Text('Meal type', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
           OptionalSlotChipSelector(
             selectedSlot: _slot,
@@ -181,10 +178,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           const SizedBox(height: AppSpacing.md),
 
           // Time eaten
-          Text(
-            'Time eaten',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+          Text('Time eaten', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
           InkWell(
             onTap: _pickTime,
@@ -192,8 +186,10 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
             child: InputDecorator(
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
               child: Row(
                 children: [

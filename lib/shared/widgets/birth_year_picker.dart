@@ -144,22 +144,21 @@ class _BirthYearPickerSheetState extends State<_BirthYearPickerSheet> {
                   _selectedYear = widget.minYear + index;
                 });
               },
-              children: List.generate(
-                widget.maxYear - widget.minYear + 1,
-                (index) {
-                  final year = widget.minYear + index;
-                  return Center(
-                    child: Text(
-                      year.toString(),
-                      style: TextStyle(
-                        fontFamily: 'Apercu',
-                        fontSize: 22,
-                        color: isDark ? AppColors.cream : AppColors.blackberry,
-                      ),
+              children: List.generate(widget.maxYear - widget.minYear + 1, (
+                index,
+              ) {
+                final year = widget.minYear + index;
+                return Center(
+                  child: Text(
+                    year.toString(),
+                    style: TextStyle(
+                      fontFamily: 'Apercu',
+                      fontSize: 22,
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              }),
             ),
           ),
 

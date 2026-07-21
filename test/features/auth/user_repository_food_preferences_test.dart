@@ -68,50 +68,57 @@ void main() {
   });
 
   group('#23: getLikedFoods / getDislikedFoods Drift-first fallback', () {
-    test('returns Drift-stored disliked foods (remote reconcile is best-effort)',
-        () async {
-      await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
-        'baked_potato': FoodPreference.dislike,
-        'cream_cheese': FoodPreference.dislike,
-        'oatmeal': FoodPreference.like,
-      });
+    test(
+      'returns Drift-stored disliked foods (remote reconcile is best-effort)',
+      () async {
+        await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
+          'baked_potato': FoodPreference.dislike,
+          'cream_cheese': FoodPreference.dislike,
+          'oatmeal': FoodPreference.like,
+        });
 
-      // The read returns Drift data directly. A TTL-gated background reconcile
-      // (_reconcileFoodPreferencesIfStale) may fire against Supabase, but it is
-      // best-effort: even though mockSupabase has no stubs (so the fetch
-      // throws), the returned data still comes from Drift and the read does not
-      // throw. (The old contract asserted Supabase was never consulted; the
-      // reconcile-if-stale behaviour intentionally superseded that.)
-      final dislikes = await repository.getDislikedFoods(testUserId);
+        // The read returns Drift data directly. A TTL-gated background reconcile
+        // (_reconcileFoodPreferencesIfStale) may fire against Supabase, but it is
+        // best-effort: even though mockSupabase has no stubs (so the fetch
+        // throws), the returned data still comes from Drift and the read does not
+        // throw. (The old contract asserted Supabase was never consulted; the
+        // reconcile-if-stale behaviour intentionally superseded that.)
+        final dislikes = await repository.getDislikedFoods(testUserId);
 
-      expect(dislikes, containsAll(['baked_potato', 'cream_cheese']));
-      expect(dislikes, hasLength(2));
-    });
+        expect(dislikes, containsAll(['baked_potato', 'cream_cheese']));
+        expect(dislikes, hasLength(2));
+      },
+    );
 
-    test('returns Drift-stored liked foods (remote reconcile is best-effort)',
-        () async {
-      await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
-        'oatmeal': FoodPreference.like,
-        'bagel': FoodPreference.like,
-        'baked_potato': FoodPreference.dislike,
-      });
+    test(
+      'returns Drift-stored liked foods (remote reconcile is best-effort)',
+      () async {
+        await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
+          'oatmeal': FoodPreference.like,
+          'bagel': FoodPreference.like,
+          'baked_potato': FoodPreference.dislike,
+        });
 
-      final likes = await repository.getLikedFoods(testUserId);
+        final likes = await repository.getLikedFoods(testUserId);
 
-      expect(likes, containsAll(['oatmeal', 'bagel']));
-      expect(likes, hasLength(2));
-    });
+        expect(likes, containsAll(['oatmeal', 'bagel']));
+        expect(likes, hasLength(2));
+      },
+    );
 
-    test('returns [] safely when Drift is empty AND Supabase fallback throws', () async {
-      // No Supabase stubs → any chained .from(...).select(...).eq(...) call
-      // will throw via mocktail. _safeHydrateFoodPreferencesFromRemote must
-      // catch that so the read returns [] rather than throwing into the
-      // plan-generation pipeline.
-      final dislikes = await repository.getDislikedFoods(testUserId);
-      expect(dislikes, isEmpty);
+    test(
+      'returns [] safely when Drift is empty AND Supabase fallback throws',
+      () async {
+        // No Supabase stubs → any chained .from(...).select(...).eq(...) call
+        // will throw via mocktail. _safeHydrateFoodPreferencesFromRemote must
+        // catch that so the read returns [] rather than throwing into the
+        // plan-generation pipeline.
+        final dislikes = await repository.getDislikedFoods(testUserId);
+        expect(dislikes, isEmpty);
 
-      final likes = await repository.getLikedFoods(testUserId);
-      expect(likes, isEmpty);
-    });
+        final likes = await repository.getLikedFoods(testUserId);
+        expect(likes, isEmpty);
+      },
+    );
   });
 }

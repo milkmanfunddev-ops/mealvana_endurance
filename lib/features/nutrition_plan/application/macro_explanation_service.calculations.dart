@@ -55,65 +55,50 @@ extension _$CalculationsExt on MacroExplanationService {
 
     // Step 1: base rate (tested or category)
     final FormulaLine step1 = during.isTested
-        ? FormulaLine(
-            [
-              fAccent('sweat test '),
-              fOp('→ '),
-              fDim('${baseRate.toStringAsFixed(2)} L/hr '),
-              fResult('TESTED ✓'),
-            ],
-            stepNumber: '①',
-          )
-        : FormulaLine(
-            [
-              fAccent('${_sweaterLabel(baseRate)} sweater '),
-              fOp('→ '),
-              fDim('${baseRate.toStringAsFixed(2)} L/hr '),
-              fOp(_sweaterPercentile(baseRate)),
-            ],
-            stepNumber: '①',
-          );
+        ? FormulaLine([
+            fAccent('sweat test '),
+            fOp('→ '),
+            fDim('${baseRate.toStringAsFixed(2)} L/hr '),
+            fResult('TESTED ✓'),
+          ], stepNumber: '①')
+        : FormulaLine([
+            fAccent('${_sweaterLabel(baseRate)} sweater '),
+            fOp('→ '),
+            fDim('${baseRate.toStringAsFixed(2)} L/hr '),
+            fOp(_sweaterPercentile(baseRate)),
+          ], stepNumber: '①');
 
     // Step 2: temp mult
     double running = baseRate;
     running *= tempMult;
-    final FormulaLine step2 = FormulaLine(
-      [
-        fAccent('${during.tempC?.toStringAsFixed(0) ?? '22'}°C '),
-        fOp('→ × '),
-        fDim('${tempMult.toStringAsFixed(2)} '),
-        fOp('= '),
-        fDim('${running.toStringAsFixed(2)} L/hr'),
-      ],
-      stepNumber: '②',
-    );
+    final FormulaLine step2 = FormulaLine([
+      fAccent('${during.tempC?.toStringAsFixed(0) ?? '22'}°C '),
+      fOp('→ × '),
+      fDim('${tempMult.toStringAsFixed(2)} '),
+      fOp('= '),
+      fDim('${running.toStringAsFixed(2)} L/hr'),
+    ], stepNumber: '②');
 
     // Step 3: humidity mult
     running *= humidityMult;
-    final FormulaLine step3 = FormulaLine(
-      [
-        fAccent('${during.humidityPct?.toStringAsFixed(0) ?? '50'}% humidity '),
-        fOp('→ × '),
-        fDim('${humidityMult.toStringAsFixed(2)} '),
-        fOp('= '),
-        fDim('${running.toStringAsFixed(2)} L/hr'),
-      ],
-      stepNumber: '③',
-    );
+    final FormulaLine step3 = FormulaLine([
+      fAccent('${during.humidityPct?.toStringAsFixed(0) ?? '50'}% humidity '),
+      fOp('→ × '),
+      fDim('${humidityMult.toStringAsFixed(2)} '),
+      fOp('= '),
+      fDim('${running.toStringAsFixed(2)} L/hr'),
+    ], stepNumber: '③');
 
     // Step 4: indoor/outdoor mult
     running *= indoorMult;
-    final FormulaLine step4 = FormulaLine(
-      [
-        fAccent(during.isIndoor == true ? 'indoor ' : 'outdoor '),
-        fOp('→ × '),
-        fDim('${indoorMult.toStringAsFixed(2)} '),
-        fOp('= '),
-        fDim('${effective.toStringAsFixed(2)} L/hr '),
-        fAccent('effective'),
-      ],
-      stepNumber: '④',
-    );
+    final FormulaLine step4 = FormulaLine([
+      fAccent(during.isIndoor == true ? 'indoor ' : 'outdoor '),
+      fOp('→ × '),
+      fDim('${indoorMult.toStringAsFixed(2)} '),
+      fOp('= '),
+      fDim('${effective.toStringAsFixed(2)} L/hr '),
+      fAccent('effective'),
+    ], stepNumber: '④');
 
     final sweatRateSection = CalculationSection(
       header: 'CALCULATE EFFECTIVE SWEAT RATE',
@@ -123,47 +108,42 @@ extension _$CalculationsExt on MacroExplanationService {
     // ── REPLACEMENT STRATEGY ───────────────────────────────────────────────
     final effectiveMlHr = (effective * 1000).round();
 
-    final step5 = FormulaLine(
-      [
-        fAccent('$durationMin min '),
-        fOp('→ '),
-        fAccent('$replacePctInt% '),
-        fOp('→ '),
-        fDim('${effective.toStringAsFixed(2)} '),
-        fOp('× '),
-        fDim('1000 '),
-        fOp('× '),
-        fDim('${(replacementPct).toStringAsFixed(2)} '),
-        fOp('= '),
-        fResult(_fmtMlRate((effectiveMlHr * replacementPct).round(), useImperial)),
-      ],
-      stepNumber: '⑤',
-    );
+    final step5 = FormulaLine([
+      fAccent('$durationMin min '),
+      fOp('→ '),
+      fAccent('$replacePctInt% '),
+      fOp('→ '),
+      fDim('${effective.toStringAsFixed(2)} '),
+      fOp('× '),
+      fDim('1000 '),
+      fOp('× '),
+      fDim('${(replacementPct).toStringAsFixed(2)} '),
+      fOp('= '),
+      fResult(
+        _fmtMlRate((effectiveMlHr * replacementPct).round(), useImperial),
+      ),
+    ], stepNumber: '⑤');
 
     final replacementLines = <FormulaLine>[step5];
 
     if (floorMlH != null) {
       replacementLines.add(
-        FormulaLine(
-          [
-            fOp('↓ '),
-            fAccent('floor '),
-            fDim('= ${_fmtMlRate(floorMlH, useImperial)} '),
-            fOp('(2% of ${bodyWeightKg.round()} kg)'),
-          ],
-        ),
+        FormulaLine([
+          fOp('↓ '),
+          fAccent('floor '),
+          fDim('= ${_fmtMlRate(floorMlH, useImperial)} '),
+          fOp('(2% of ${bodyWeightKg.round()} kg)'),
+        ]),
       );
     }
     if (ceilingMlH != null) {
       replacementLines.add(
-        FormulaLine(
-          [
-            fOp('↑ '),
-            fAccent('ceiling '),
-            fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} '),
-            fOp('(GI limit)'),
-          ],
-        ),
+        FormulaLine([
+          fOp('↑ '),
+          fAccent('ceiling '),
+          fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} '),
+          fOp('(GI limit)'),
+        ]),
       );
     }
 
@@ -171,30 +151,28 @@ extension _$CalculationsExt on MacroExplanationService {
     final pctBased = (effectiveMlHr * replacementPct).round();
     if (floorMlH != null) {
       replacementLines.add(
-        FormulaLine(
-          [
-            fDim('${_fmtMlRate(pctBased, useImperial)} '),
-            fOp(pctBased > floorMlH ? '> ' : '< '),
-            fDim(_fmtMlRate(floorMlH, useImperial)),
-            fOp(' → '),
-            fAccent(pctBased > floorMlH ? 'no floor override' : 'floor raises target'),
-          ],
-        ),
+        FormulaLine([
+          fDim('${_fmtMlRate(pctBased, useImperial)} '),
+          fOp(pctBased > floorMlH ? '> ' : '< '),
+          fDim(_fmtMlRate(floorMlH, useImperial)),
+          fOp(' → '),
+          fAccent(
+            pctBased > floorMlH ? 'no floor override' : 'floor raises target',
+          ),
+        ]),
       );
     }
     if (ceilingMlH != null) {
       replacementLines.add(
-        FormulaLine(
-          [
-            fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
-            fOp(fluidRateMlH < ceilingMlH ? '< ' : '= '),
-            fDim(_fmtMlRate(ceilingMlH, useImperial)),
-            fOp(' → '),
-            fAccent(
-              fluidRateMlH < ceilingMlH ? 'no ceiling cap' : 'capped at ceiling',
-            ),
-          ],
-        ),
+        FormulaLine([
+          fDim('${_fmtMlRate(fluidRateMlH, useImperial)} '),
+          fOp(fluidRateMlH < ceilingMlH ? '< ' : '= '),
+          fDim(_fmtMlRate(ceilingMlH, useImperial)),
+          fOp(' → '),
+          fAccent(
+            fluidRateMlH < ceilingMlH ? 'no ceiling cap' : 'capped at ceiling',
+          ),
+        ]),
       );
     }
 
@@ -263,25 +241,19 @@ extension _$CalculationsExt on MacroExplanationService {
     final sweatSection = CalculationSection(
       header: 'CALCULATE SODIUM RATE',
       lines: [
-        FormulaLine(
-          [
-            fAccent('${_sodiumSaltLabel(conc)} salt '),
-            fOp('→ '),
-            fDim('$conc mg/L '),
-            fOp(_saltPercentile(conc)),
-          ],
-          stepNumber: '①',
-        ),
-        FormulaLine(
-          [
-            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
-            fOp('× '),
-            fDim('($conc ÷ 1000) '),
-            fOp('= '),
-            fResult('$sodiumRateMgH mg/hr'),
-          ],
-          stepNumber: '②',
-        ),
+        FormulaLine([
+          fAccent('${_sodiumSaltLabel(conc)} salt '),
+          fOp('→ '),
+          fDim('$conc mg/L '),
+          fOp(_saltPercentile(conc)),
+        ], stepNumber: '①'),
+        FormulaLine([
+          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
+          fOp('× '),
+          fDim('($conc ÷ 1000) '),
+          fOp('= '),
+          fResult('$sodiumRateMgH mg/hr'),
+        ], stepNumber: '②'),
       ],
     );
 
@@ -292,7 +264,9 @@ extension _$CalculationsExt on MacroExplanationService {
         FormulaLine([
           fOp('↓ '),
           fAccent('floor '),
-          fDim('= ${_fmtMlRate(floorMlH, useImperial)} × ($conc ÷ 1000) = $floorMg mg/hr'),
+          fDim(
+            '= ${_fmtMlRate(floorMlH, useImperial)} × ($conc ÷ 1000) = $floorMg mg/hr',
+          ),
         ]),
       );
     }
@@ -302,7 +276,9 @@ extension _$CalculationsExt on MacroExplanationService {
         FormulaLine([
           fOp('↑ '),
           fAccent('ceiling '),
-          fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} × ($conc ÷ 1000) = $ceilMg mg/hr'),
+          fDim(
+            '= ${_fmtMlRate(ceilingMlH, useImperial)} × ($conc ÷ 1000) = $ceilMg mg/hr',
+          ),
         ]),
       );
     }
@@ -387,102 +363,112 @@ extension _$CalculationsExt on MacroExplanationService {
     final sweatLines = <FormulaLine>[];
     sweatLines.add(
       segment.isTested
-          ? FormulaLine(
-              [
-                fAccent('sweat test '),
-                fOp('→ '),
-                fDim('${baseRate.toStringAsFixed(2)} L/hr '),
-                fResult('TESTED ✓'),
-              ],
-              stepNumber: '①',
-            )
-          : FormulaLine(
-              [
-                fAccent('${_sweaterLabel(baseRate)} sweater '),
-                fOp('→ '),
-                fDim('${baseRate.toStringAsFixed(2)} L/hr '),
-                fOp(_sweaterPercentile(baseRate)),
-              ],
-              stepNumber: '①',
-            ),
+          ? FormulaLine([
+              fAccent('sweat test '),
+              fOp('→ '),
+              fDim('${baseRate.toStringAsFixed(2)} L/hr '),
+              fResult('TESTED ✓'),
+            ], stepNumber: '①')
+          : FormulaLine([
+              fAccent('${_sweaterLabel(baseRate)} sweater '),
+              fOp('→ '),
+              fDim('${baseRate.toStringAsFixed(2)} L/hr '),
+              fOp(_sweaterPercentile(baseRate)),
+            ], stepNumber: '①'),
     );
     running *= tempMult;
-    sweatLines.add(FormulaLine([
-      fAccent('${during.tempC?.toStringAsFixed(0) ?? '22'}°C '),
-      fOp('→ × '),
-      fDim('${tempMult.toStringAsFixed(2)} '),
-      fOp('= '),
-      fDim('${running.toStringAsFixed(2)} L/hr'),
-    ], stepNumber: '②'));
+    sweatLines.add(
+      FormulaLine([
+        fAccent('${during.tempC?.toStringAsFixed(0) ?? '22'}°C '),
+        fOp('→ × '),
+        fDim('${tempMult.toStringAsFixed(2)} '),
+        fOp('= '),
+        fDim('${running.toStringAsFixed(2)} L/hr'),
+      ], stepNumber: '②'),
+    );
     running *= humidityMult;
-    sweatLines.add(FormulaLine([
-      fAccent('${during.humidityPct?.toStringAsFixed(0) ?? '50'}% humidity '),
-      fOp('→ × '),
-      fDim('${humidityMult.toStringAsFixed(2)} '),
-      fOp('= '),
-      fDim('${running.toStringAsFixed(2)} L/hr'),
-    ], stepNumber: '③'));
+    sweatLines.add(
+      FormulaLine([
+        fAccent('${during.humidityPct?.toStringAsFixed(0) ?? '50'}% humidity '),
+        fOp('→ × '),
+        fDim('${humidityMult.toStringAsFixed(2)} '),
+        fOp('= '),
+        fDim('${running.toStringAsFixed(2)} L/hr'),
+      ], stepNumber: '③'),
+    );
     running *= indoorMult;
-    sweatLines.add(FormulaLine([
-      fAccent(during.isIndoor == true ? 'indoor ' : 'outdoor '),
-      fOp('→ × '),
-      fDim('${indoorMult.toStringAsFixed(2)} '),
-      fOp('= '),
-      fDim('${effective.toStringAsFixed(2)} L/hr '),
-      fAccent('effective'),
-    ], stepNumber: '④'));
+    sweatLines.add(
+      FormulaLine([
+        fAccent(during.isIndoor == true ? 'indoor ' : 'outdoor '),
+        fOp('→ × '),
+        fDim('${indoorMult.toStringAsFixed(2)} '),
+        fOp('= '),
+        fDim('${effective.toStringAsFixed(2)} L/hr '),
+        fAccent('effective'),
+      ], stepNumber: '④'),
+    );
 
     // ── Replacement strategy section ────────────────────────────────────
     final replacementLines = <FormulaLine>[];
-    replacementLines.add(FormulaLine([
-      fAccent('$totalEventMin min total '),
-      fOp('→ '),
-      fAccent('$replacePctInt% '),
-      fOp('→ '),
-      fDim('event-based replacement %'),
-    ], stepNumber: '⑤'));
+    replacementLines.add(
+      FormulaLine([
+        fAccent('$totalEventMin min total '),
+        fOp('→ '),
+        fAccent('$replacePctInt% '),
+        fOp('→ '),
+        fDim('event-based replacement %'),
+      ], stepNumber: '⑤'),
+    );
 
     if (floorMlH != null) {
-      replacementLines.add(FormulaLine([
-        fOp('↓ '),
-        fAccent('floor '),
-        fDim('= ${_fmtMlRate(floorMlH, useImperial)} '),
-        fOp('(2% of ${bodyWeightKg.round()} kg BW)'),
-      ]));
+      replacementLines.add(
+        FormulaLine([
+          fOp('↓ '),
+          fAccent('floor '),
+          fDim('= ${_fmtMlRate(floorMlH, useImperial)} '),
+          fOp('(2% of ${bodyWeightKg.round()} kg BW)'),
+        ]),
+      );
     }
     if (ceilingMlH != null) {
       final sportLabel = segment.sport.toLowerCase().contains('run')
           ? 'running GI'
           : segment.sport.toLowerCase().contains('cycl')
-              ? 'cycling GI'
-              : 'sport GI';
-      replacementLines.add(FormulaLine([
-        fOp('↑ '),
-        fAccent('ceiling '),
-        fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} '),
-        fOp('($sportLabel limit)'),
-      ]));
+          ? 'cycling GI'
+          : 'sport GI';
+      replacementLines.add(
+        FormulaLine([
+          fOp('↑ '),
+          fAccent('ceiling '),
+          fDim('= ${_fmtMlRate(ceilingMlH, useImperial)} '),
+          fOp('($sportLabel limit)'),
+        ]),
+      );
     }
 
     if (showRedistributionNote) {
-      replacementLines.add(FormulaLine([
-        fOp('# '),
-        fAccent('redistribution '),
-        fDim('run shortfall → bike (bike absorbed extra)'),
-      ]));
+      replacementLines.add(
+        FormulaLine([
+          fOp('# '),
+          fAccent('redistribution '),
+          fDim('run shortfall → bike (bike absorbed extra)'),
+        ]),
+      );
     }
 
-    replacementLines.add(FormulaLine(
-      [
-        fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
-        fOp('× '),
-        fAccent('${_formatDuration(segDurationH)} hr '),
-        fOp('= '),
-        fResult(_fmtMlAmount(waterTotalMl, useImperial)),
-      ],
-      isResultLine: true,
-      showDividerBefore: true,
-    ));
+    replacementLines.add(
+      FormulaLine(
+        [
+          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
+          fOp('× '),
+          fAccent('${_formatDuration(segDurationH)} hr '),
+          fOp('= '),
+          fResult(_fmtMlAmount(waterTotalMl, useImperial)),
+        ],
+        isResultLine: true,
+        showDividerBefore: true,
+      ),
+    );
 
     // Priority: Redistribution (purple) takes precedence over the
     // Multi-Segment transition-absorption note (blue) since the two would
@@ -594,15 +580,12 @@ extension _$CalculationsExt on MacroExplanationService {
       CalculationSection(
         header: 'TRANSITION BOLUS',
         lines: [
-          FormulaLine(
-            [
-              fAccent('$transitionLabel '),
-              fOp('→ '),
-              fResult('${_fmtMlAmount(waterMl, useImperial)} fixed'),
-              fDim(' (sip, then go)'),
-            ],
-            stepNumber: '①',
-          ),
+          FormulaLine([
+            fAccent('$transitionLabel '),
+            fOp('→ '),
+            fResult('${_fmtMlAmount(waterMl, useImperial)} fixed'),
+            fDim(' (sip, then go)'),
+          ], stepNumber: '①'),
           FormulaLine([
             fOp('range '),
             fOp('→ '),
@@ -673,8 +656,9 @@ extension _$CalculationsExt on MacroExplanationService {
     bool useImperial = false,
   }) {
     final bool isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
-    final bool isTier2 =
-        tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
+    final bool isTier2 = tier != null
+        ? tier == 2
+        : (!isTier3 && fluidsMl <= 300);
 
     // Gate-fired: short + mild workout → no plan needed.
     if (isGateFired) {
@@ -683,7 +667,10 @@ extension _$CalculationsExt on MacroExplanationService {
           header: 'PRE-WORKOUT HYDRATION',
           lines: const [
             FormulaLine([
-              FormulaSegment('no structured intake ', style: SegmentStyle.accent),
+              FormulaSegment(
+                'no structured intake ',
+                style: SegmentStyle.accent,
+              ),
               FormulaSegment('→ ', style: SegmentStyle.op),
               FormulaSegment(
                 'workout < 60 min + temp < 30°C → no protocol needed',
@@ -702,7 +689,10 @@ extension _$CalculationsExt on MacroExplanationService {
           header: 'PRE-WORKOUT HYDRATION',
           lines: const [
             FormulaLine([
-              FormulaSegment('no structured intake ', style: SegmentStyle.accent),
+              FormulaSegment(
+                'no structured intake ',
+                style: SegmentStyle.accent,
+              ),
               FormulaSegment('→ ', style: SegmentStyle.op),
               FormulaSegment(
                 '< 10 min pre-start — fluid won\'t absorb in time',
@@ -729,12 +719,16 @@ extension _$CalculationsExt on MacroExplanationService {
               fAccent('fixed top-up '),
               fOp('= '),
               fResult('${_fmtMlAmount(fluidsMl, useImperial)} '),
-              fDim('[${_fmtMlRange(fluidsLowMl ?? 200, fluidsHighMl ?? 300, useImperial)}]'),
+              fDim(
+                '[${_fmtMlRange(fluidsLowMl ?? 200, fluidsHighMl ?? 300, useImperial)}]',
+              ),
             ], stepNumber: '②'),
             const FormulaLine([
               FormulaSegment('→ ', style: SegmentStyle.op),
-              FormulaSegment('not enough time for full protocol; rely on during-workout',
-                  style: SegmentStyle.dim),
+              FormulaSegment(
+                'not enough time for full protocol; rely on during-workout',
+                style: SegmentStyle.dim,
+              ),
             ]),
           ],
         ),
@@ -752,7 +746,10 @@ extension _$CalculationsExt on MacroExplanationService {
           const FormulaLine([
             FormulaSegment('≥ 2 hr window ', style: SegmentStyle.accent),
             FormulaSegment('→ ', style: SegmentStyle.op),
-            FormulaSegment('full ACSM protocol (body-weight scaled)', style: SegmentStyle.accent),
+            FormulaSegment(
+              'full ACSM protocol (body-weight scaled)',
+              style: SegmentStyle.accent,
+            ),
           ], stepNumber: '①'),
           FormulaLine([
             fAccent('body weight '),
@@ -761,7 +758,9 @@ extension _$CalculationsExt on MacroExplanationService {
             fDim('$mlPerKg ml/kg '),
             fOp('= '),
             fResult('${_fmtMlAmount(fluidsMl, useImperial)} '),
-            fDim('[${_fmtMlRange(fluidsLowMl ?? (bodyWeightKg * 5).round(), fluidsHighMl ?? (bodyWeightKg * 7).round(), useImperial)}]'),
+            fDim(
+              '[${_fmtMlRange(fluidsLowMl ?? (bodyWeightKg * 5).round(), fluidsHighMl ?? (bodyWeightKg * 7).round(), useImperial)}]',
+            ),
           ], stepNumber: '②'),
         ],
       ),
@@ -786,7 +785,10 @@ extension _$CalculationsExt on MacroExplanationService {
           header: 'PRE-WORKOUT SODIUM',
           lines: [
             FormulaLine([
-              const FormulaSegment('no structured sodium ', style: SegmentStyle.accent),
+              const FormulaSegment(
+                'no structured sodium ',
+                style: SegmentStyle.accent,
+              ),
               const FormulaSegment('→ ', style: SegmentStyle.op),
               FormulaSegment(reasonText, style: SegmentStyle.dim),
             ], stepNumber: '①'),
@@ -797,8 +799,7 @@ extension _$CalculationsExt on MacroExplanationService {
 
     // ≥ 2 hr window (~450 mg) vs 10–120 min window (~150 mg): cutoff at 300 mg.
     final isFullProtocol = sodiumMg >= 300;
-    final windowLabel =
-        isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
+    final windowLabel = isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
     final header = 'PRE-WORKOUT SODIUM';
     return [
       CalculationSection(
@@ -807,19 +808,25 @@ extension _$CalculationsExt on MacroExplanationService {
           FormulaLine([
             fAccent('$windowLabel '),
             fOp('→ '),
-            fAccent(isFullProtocol ? 'full ACSM protocol' : 'short-window top-up'),
+            fAccent(
+              isFullProtocol ? 'full ACSM protocol' : 'short-window top-up',
+            ),
           ], stepNumber: '①'),
           FormulaLine([
             fAccent('fixed sodium '),
             fOp('= '),
             fResult('$sodiumMg mg '),
-            fDim('[${sodiumLowMg ?? (isFullProtocol ? 300 : 100)}–${sodiumHighMg ?? (isFullProtocol ? 600 : 200)} mg]'),
+            fDim(
+              '[${sodiumLowMg ?? (isFullProtocol ? 300 : 100)}–${sodiumHighMg ?? (isFullProtocol ? 600 : 200)} mg]',
+            ),
           ], stepNumber: '②'),
           FormulaLine([
             fOp('→ '),
-            fDim(isFullProtocol
-                ? 'retains consumed fluid; aligns with ACSM 300–600 mg window'
-                : 'keeps the ${_fmtMlAmount(250, useImperial)} in your body until start'),
+            fDim(
+              isFullProtocol
+                  ? 'retains consumed fluid; aligns with ACSM 300–600 mg window'
+                  : 'keeps the ${_fmtMlAmount(250, useImperial)} in your body until start',
+            ),
           ]),
         ],
       ),
@@ -829,5 +836,4 @@ extension _$CalculationsExt on MacroExplanationService {
   // ---------------------------------------------------------------------------
   // DURING SINGLE SPORT FLUID
   // ---------------------------------------------------------------------------
-
 }

@@ -24,18 +24,12 @@ class ContentArea extends StatelessWidget {
   });
 
   /// 800 px — for lists, tab screens, and content-heavy pages.
-  const ContentArea.wide({
-    super.key,
-    required this.child,
-    this.padding,
-  }) : maxWidth = 800;
+  const ContentArea.wide({super.key, required this.child, this.padding})
+    : maxWidth = 800;
 
   /// 480 px — for auth screens, simple forms, and onboarding.
-  const ContentArea.narrow({
-    super.key,
-    required this.child,
-    this.padding,
-  }) : maxWidth = 480;
+  const ContentArea.narrow({super.key, required this.child, this.padding})
+    : maxWidth = 480;
 
   final Widget child;
 

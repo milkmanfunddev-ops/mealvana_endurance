@@ -30,7 +30,7 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _slideAnimation;
-  
+
   SatisfactionLevel _selectedLevel = SatisfactionLevel.justRight;
   AppFeedbackOption? _selectedAppFeedback;
   final TextEditingController _suggestionsController = TextEditingController();
@@ -47,7 +47,7 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    
+
     if (widget.isVisible) {
       _controller.forward();
     }
@@ -74,7 +74,7 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
 
   void _handleSubmit() async {
     if (_isSubmitting) return;
-    
+
     setState(() {
       _isSubmitting = true;
     });
@@ -82,7 +82,9 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
     final feedback = FeedbackResponse(
       satisfactionLevel: _selectedLevel,
       appFeedback: _selectedAppFeedback,
-      suggestions: _suggestionsController.text.isNotEmpty ? _suggestionsController.text : null,
+      suggestions: _suggestionsController.text.isNotEmpty
+          ? _suggestionsController.text
+          : null,
       planName: widget.planName,
       timestamp: DateTime.now(),
     );
@@ -124,10 +126,12 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
               GestureDetector(
                 onTap: _handleClose,
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.5 * _slideAnimation.value),
+                  color: Colors.black.withValues(
+                    alpha: 0.5 * _slideAnimation.value,
+                  ),
                 ),
               ),
-            
+
             // Drawer
             Positioned(
               bottom: 0,
@@ -166,11 +170,16 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                           ],
                         ),
                       ),
-                      
+
                       // Main content with SafeArea and padding - Scrollable
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.w), // Minimal top padding
+                          padding: EdgeInsets.fromLTRB(
+                            16.w,
+                            4.h,
+                            16.w,
+                            16.w,
+                          ), // Minimal top padding
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -181,9 +190,9 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                                   fontSize: 14.sp,
                                 ),
                               ),
-                              
+
                               SizedBox(height: 24.h),
-                              
+
                               // Question
                               Text(
                                 'What do you think about this plan?',
@@ -193,9 +202,9 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              
+
                               SizedBox(height: 12.h),
-                              
+
                               // Emoji Slider
                               EmojiSlider(
                                 selectedLevel: _selectedLevel,
@@ -205,9 +214,9 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                                   });
                                 },
                               ),
-                              
+
                               SizedBox(height: 16.h),
-                              
+
                               // App feedback question
                               Text(
                                 'What do you think about this tiny app?',
@@ -217,9 +226,9 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              
+
                               SizedBox(height: 8.h),
-                              
+
                               // App feedback options component
                               AppFeedbackOptions(
                                 selectedOption: _selectedAppFeedback,
@@ -230,9 +239,9 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                                 },
                                 suggestionsController: _suggestionsController,
                               ),
-                              
+
                               SizedBox(height: 20.h),
-                              
+
                               // Submit button
                               Center(
                                 child: PrimaryButton(
@@ -242,8 +251,10 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
                                   width: 160.w,
                                 ),
                               ),
-                              
-                              SizedBox(height: 20.h), // Bottom padding for scroll
+
+                              SizedBox(
+                                height: 20.h,
+                              ), // Bottom padding for scroll
                             ],
                           ),
                         ),
@@ -258,4 +269,4 @@ class _FeedbackDrawerState extends State<FeedbackDrawer>
       },
     );
   }
-} 
+}

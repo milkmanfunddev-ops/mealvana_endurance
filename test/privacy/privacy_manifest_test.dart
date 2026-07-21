@@ -37,10 +37,9 @@ void main() {
     final file = File('ios/Runner/PrivacyInfo.xcprivacy');
     expect(file.existsSync(), isTrue, reason: 'privacy manifest is missing');
     // <plist> wraps the top-level <dict> that actually holds the keys.
-    root = XmlDocument.parse(file.readAsStringSync())
-        .rootElement
-        .findElements('dict')
-        .single;
+    root = XmlDocument.parse(
+      file.readAsStringSync(),
+    ).rootElement.findElements('dict').single;
     declared = _parseCollectedDataTypes(root);
   });
 
@@ -62,13 +61,15 @@ void main() {
       expect(
         actualLinked,
         expectedLinked,
-        reason: '$type: linked flag disagrees with the live App Store label. '
+        reason:
+            '$type: linked flag disagrees with the live App Store label. '
             'Manifest and label must be reconciled together — see docs/privacy/.',
       );
       expect(
         actualPurposes,
         unorderedEquals(expectedPurposes),
-        reason: '$type: purposes disagree with the live App Store label. '
+        reason:
+            '$type: purposes disagree with the live App Store label. '
             'Manifest and label must be reconciled together — see docs/privacy/.',
       );
     }
@@ -110,16 +111,19 @@ Map<String, (bool, Set<String>)> _parseCollectedDataTypes(XmlElement root) {
   final result = <String, (bool, Set<String>)>{};
 
   for (final dict in _collectedDataTypeDicts(root)) {
-    final type = _valueAfter(dict, 'NSPrivacyCollectedDataType')!
-        .innerText
-        .replaceFirst('NSPrivacyCollectedDataType', '');
+    final type = _valueAfter(
+      dict,
+      'NSPrivacyCollectedDataType',
+    )!.innerText.replaceFirst('NSPrivacyCollectedDataType', '');
 
     final linked = _boolAfter(dict, 'NSPrivacyCollectedDataTypeLinked');
 
     final purposes = _valueAfter(dict, 'NSPrivacyCollectedDataTypePurposes')!
         .findElements('string')
-        .map((e) =>
-            e.innerText.replaceFirst('NSPrivacyCollectedDataTypePurpose', ''))
+        .map(
+          (e) =>
+              e.innerText.replaceFirst('NSPrivacyCollectedDataTypePurpose', ''),
+        )
         .toSet();
 
     result[type] = (linked, purposes);

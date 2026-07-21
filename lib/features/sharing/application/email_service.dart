@@ -50,14 +50,10 @@ class EmailService {
           );
         }
       } else {
-        return ShareResult.failure(
-          error: 'Server error: ${response.status}',
-        );
+        return ShareResult.failure(error: 'Server error: ${response.status}');
       }
     } catch (e) {
-      return ShareResult.failure(
-        error: 'Failed to send email: $e',
-      );
+      return ShareResult.failure(error: 'Failed to send email: $e');
     }
   }
 }

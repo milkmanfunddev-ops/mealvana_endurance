@@ -131,14 +131,17 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
 
   void _selectProtocol(BuildContext context, WidgetRef ref, int days) {
     try {
-      ref.read(appExternalDepsProvider).analytics.track(
-        'carb_loading_protocol_selected',
-        properties: {
-          'protocol': '${days}_day',
-          'protocol_days': days,
-          'event_id': event.id,
-        },
-      );
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'carb_loading_protocol_selected',
+            properties: {
+              'protocol': '${days}_day',
+              'protocol_days': days,
+              'event_id': event.id,
+            },
+          );
     } catch (_) {}
 
     // TODO: Navigate to carb loading plan generation

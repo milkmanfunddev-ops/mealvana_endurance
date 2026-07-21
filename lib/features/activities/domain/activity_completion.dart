@@ -6,7 +6,7 @@ class ActivityCompletion {
     required this.userId,
     required this.completedAt,
     this.completionType = CompletionType.manual,
-    
+
     // Performance data
     this.actualDistanceMiles,
     this.actualDurationMinutes,
@@ -14,21 +14,21 @@ class ActivityCompletion {
     this.maxHeartRate,
     this.averageHeartRate,
     this.caloriesBurned,
-    
+
     // User feedback
     this.nutritionRating,
     this.overallSatisfaction,
-    
+
     // Notes and feedback
     this.textNotes,
     this.voiceNoteId,
     this.hasVoiceRecording = false,
-    
+
     // Conditions
     this.weatherConditions,
     this.temperatureFahrenheit,
     this.humidityPercent,
-    
+
     // Analysis
     this.nutritionAdherenceScore,
     this.performanceVsTarget,
@@ -43,7 +43,7 @@ class ActivityCompletion {
   final String userId;
   final DateTime completedAt;
   final CompletionType completionType;
-  
+
   // Performance data
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
@@ -51,21 +51,21 @@ class ActivityCompletion {
   final int? maxHeartRate;
   final int? averageHeartRate;
   final int? caloriesBurned;
-  
+
   // User feedback
   final int? nutritionRating; // 1-5
   final int? overallSatisfaction; // 1-5
-  
+
   // Notes and feedback
   final String? textNotes;
   final String? voiceNoteId;
   final bool hasVoiceRecording;
-  
+
   // Conditions
   final String? weatherConditions;
   final int? temperatureFahrenheit;
   final int? humidityPercent;
-  
+
   // Analysis
   final double? nutritionAdherenceScore; // 0.0 to 1.0
   final double? performanceVsTarget;
@@ -133,8 +133,10 @@ class ActivityCompletion {
       completedAt: completedAt ?? this.completedAt,
       completionType: completionType ?? this.completionType,
       actualDistanceMiles: actualDistanceMiles ?? this.actualDistanceMiles,
-      actualDurationMinutes: actualDurationMinutes ?? this.actualDurationMinutes,
-      averagePaceMinutesPerMile: averagePaceMinutesPerMile ?? this.averagePaceMinutesPerMile,
+      actualDurationMinutes:
+          actualDurationMinutes ?? this.actualDurationMinutes,
+      averagePaceMinutesPerMile:
+          averagePaceMinutesPerMile ?? this.averagePaceMinutesPerMile,
       maxHeartRate: maxHeartRate ?? this.maxHeartRate,
       averageHeartRate: averageHeartRate ?? this.averageHeartRate,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
@@ -144,9 +146,11 @@ class ActivityCompletion {
       voiceNoteId: voiceNoteId ?? this.voiceNoteId,
       hasVoiceRecording: hasVoiceRecording ?? this.hasVoiceRecording,
       weatherConditions: weatherConditions ?? this.weatherConditions,
-      temperatureFahrenheit: temperatureFahrenheit ?? this.temperatureFahrenheit,
+      temperatureFahrenheit:
+          temperatureFahrenheit ?? this.temperatureFahrenheit,
       humidityPercent: humidityPercent ?? this.humidityPercent,
-      nutritionAdherenceScore: nutritionAdherenceScore ?? this.nutritionAdherenceScore,
+      nutritionAdherenceScore:
+          nutritionAdherenceScore ?? this.nutritionAdherenceScore,
       performanceVsTarget: performanceVsTarget ?? this.performanceVsTarget,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
@@ -212,11 +216,7 @@ class ActivityCompletion {
 }
 
 /// Completion type enum
-enum CompletionType {
-  manual,
-  automatic,
-  imported,
-}
+enum CompletionType { manual, automatic, imported }
 
 /// Activity completion extensions for utility methods
 extension ActivityCompletionExtensions on ActivityCompletion {
@@ -227,7 +227,7 @@ extension ActivityCompletionExtensions on ActivityCompletion {
     final seconds = ((averagePaceMinutesPerMile! - minutes) * 60).round();
     return "$minutes:${seconds.toString().padLeft(2, '0')}/mi";
   }
-  
+
   /// Get formatted duration if available
   String? get formattedDuration {
     if (actualDurationMinutes == null) return null;
@@ -238,19 +238,19 @@ extension ActivityCompletionExtensions on ActivityCompletion {
     }
     return "${minutes}m";
   }
-  
+
   /// Get formatted distance if available
   String? get formattedDistance {
     if (actualDistanceMiles == null) return null;
     return "${actualDistanceMiles!.toStringAsFixed(1)} mi";
   }
-  
+
   /// Check if completion has performance data
-  bool get hasPerformanceData => 
-      actualDistanceMiles != null || 
-      actualDurationMinutes != null || 
+  bool get hasPerformanceData =>
+      actualDistanceMiles != null ||
+      actualDurationMinutes != null ||
       averagePaceMinutesPerMile != null;
-  
+
   /// Check if completion has user feedback
   bool get hasUserFeedback =>
       nutritionRating != null ||
@@ -259,15 +259,15 @@ extension ActivityCompletionExtensions on ActivityCompletion {
       hasVoiceRecording;
 
   /// Check if completion has weather data
-  bool get hasWeatherData => 
-      weatherConditions != null || 
-      temperatureFahrenheit != null || 
+  bool get hasWeatherData =>
+      weatherConditions != null ||
+      temperatureFahrenheit != null ||
       humidityPercent != null;
-  
+
   /// Get formatted weather description
   String? get formattedWeather {
     if (!hasWeatherData) return null;
-    
+
     final parts = <String>[];
     if (weatherConditions != null) {
       parts.add(weatherConditions!);
@@ -278,7 +278,7 @@ extension ActivityCompletionExtensions on ActivityCompletion {
     if (humidityPercent != null) {
       parts.add("$humidityPercent% humidity");
     }
-    
+
     return parts.join(', ');
   }
 }

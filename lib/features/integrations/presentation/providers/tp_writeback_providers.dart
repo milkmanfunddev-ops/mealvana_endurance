@@ -13,7 +13,9 @@ part 'tp_writeback_providers.g.dart';
 @Riverpod(keepAlive: true)
 Future<TpWritebackService> tpWritebackService(Ref ref) async {
   final apiClient = await ref.watch(trainingPeaksApiClientProvider.future);
-  final oauthService = await ref.watch(trainingPeaksOAuthServiceProvider.future);
+  final oauthService = await ref.watch(
+    trainingPeaksOAuthServiceProvider.future,
+  );
   final preferencesService = ref.watch(preferencesServiceProvider);
   final database = ref.watch(appDatabaseProvider);
 

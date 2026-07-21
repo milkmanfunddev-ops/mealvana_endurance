@@ -160,7 +160,8 @@ enum ActivityType {
       case 'other':
         return ActivityType.other;
       default:
-        return ActivityType.other; // Safe fallback — do not silently call it a run
+        return ActivityType
+            .other; // Safe fallback — do not silently call it a run
     }
   }
 

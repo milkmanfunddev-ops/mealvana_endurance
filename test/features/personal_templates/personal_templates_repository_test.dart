@@ -27,13 +27,13 @@ class MockSentryReporter extends Mock implements SentryReporter {}
 
 /// Minimal plan data JSON that satisfies NutritionPlan.toJson() shape.
 Map<String, dynamic> _minimalPlanData({String id = 'plan-1'}) => {
-      'id': id,
-      'name': 'Test Plan',
-      'sections': <dynamic>[],
-      'version': 1,
-      'isDeleted': false,
-      'conflictResolution': 'last_write_wins',
-    };
+  'id': id,
+  'name': 'Test Plan',
+  'sections': <dynamic>[],
+  'version': 1,
+  'isDeleted': false,
+  'conflictResolution': 'last_write_wins',
+};
 
 /// Supabase-shape JSON that mimics what _mapSupabaseJsonToCompanion expects.
 Map<String, dynamic> _remoteTemplateJson({
@@ -123,36 +123,46 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Permissive logger stubs
-    when(() => mockLogger.info(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.debug(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
 
     repository = PersonalTemplatesRepository(
       supabase: mockSupabase,
@@ -205,9 +215,7 @@ void main() {
       // the mock chain is not set up — that's expected; dirty flag should remain).
       await Future<void>.delayed(Duration.zero);
 
-      final rows = await database
-          .select(database.personalTemplatesTable)
-          .get();
+      final rows = await database.select(database.personalTemplatesTable).get();
 
       expect(rows.length, 1);
       expect(rows.first.needsUpload, isTrue);
@@ -215,9 +223,12 @@ void main() {
     });
 
     test('getTemplatesForUser lists only that user\'s templates', () async {
-      await repository.createTemplate(_buildTemplate(id: 'tpl-1', userId: testUserId));
       await repository.createTemplate(
-          _buildTemplate(id: 'tpl-2', userId: otherUserId, name: 'Other'));
+        _buildTemplate(id: 'tpl-1', userId: testUserId),
+      );
+      await repository.createTemplate(
+        _buildTemplate(id: 'tpl-2', userId: otherUserId, name: 'Other'),
+      );
 
       await Future<void>.delayed(Duration.zero);
 
@@ -234,22 +245,20 @@ void main() {
       expect(results.length, 1);
     });
 
-    test('getTemplatesForUser returns empty list when user has no templates',
-        () async {
-      final results = await repository.getTemplatesForUser('no-such-user');
-      expect(results, isEmpty);
-    });
+    test(
+      'getTemplatesForUser returns empty list when user has no templates',
+      () async {
+        final results = await repository.getTemplatesForUser('no-such-user');
+        expect(results, isEmpty);
+      },
+    );
 
     test('createTemplate preserves planData JSON round-trip', () async {
       final plan = {
         'id': 'p1',
         'name': 'Rich Plan',
         'sections': [
-          {
-            'id': 'before1',
-            'title': 'Before',
-            'foodItems': <dynamic>[],
-          }
+          {'id': 'before1', 'title': 'Before', 'foodItems': <dynamic>[]},
         ],
         'version': 1,
         'isDeleted': false,
@@ -277,21 +286,25 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final results = await repository.getTemplatesForUser(testUserId);
-      expect(results.first.brickSegmentOrder, ['swimming', 'cycling', 'running']);
+      expect(results.first.brickSegmentOrder, [
+        'swimming',
+        'cycling',
+        'running',
+      ]);
     });
 
     test('getTemplatesForUser sorts by updatedAt descending', () async {
       final old = DateTime.utc(2026, 1, 1);
       final recent = DateTime.utc(2026, 6, 1);
 
-      final t1 = _buildTemplate(id: 'tpl-old', name: 'Old').copyWith(
-        updatedAt: old,
-        createdAt: old,
-      );
-      final t2 = _buildTemplate(id: 'tpl-new', name: 'New').copyWith(
-        updatedAt: recent,
-        createdAt: recent,
-      );
+      final t1 = _buildTemplate(
+        id: 'tpl-old',
+        name: 'Old',
+      ).copyWith(updatedAt: old, createdAt: old);
+      final t2 = _buildTemplate(
+        id: 'tpl-new',
+        name: 'New',
+      ).copyWith(updatedAt: recent, createdAt: recent);
 
       await repository.createTemplate(t1);
       await repository.createTemplate(t2);
@@ -328,16 +341,24 @@ void main() {
   group('getTemplatesForSport', () {
     test('filters by activityType', () async {
       await repository.createTemplate(
-          _buildTemplate(id: 'run-1', activityType: 'running'));
+        _buildTemplate(id: 'run-1', activityType: 'running'),
+      );
       await repository.createTemplate(
-          _buildTemplate(id: 'cyc-1', activityType: 'cycling'));
+        _buildTemplate(id: 'cyc-1', activityType: 'cycling'),
+      );
       await Future<void>.delayed(Duration.zero);
 
-      final running = await repository.getTemplatesForSport(testUserId, 'running');
+      final running = await repository.getTemplatesForSport(
+        testUserId,
+        'running',
+      );
       expect(running.length, 1);
       expect(running.first.id, 'run-1');
 
-      final cycling = await repository.getTemplatesForSport(testUserId, 'cycling');
+      final cycling = await repository.getTemplatesForSport(
+        testUserId,
+        'cycling',
+      );
       expect(cycling.length, 1);
       expect(cycling.first.id, 'cyc-1');
     });
@@ -346,7 +367,10 @@ void main() {
       await repository.createTemplate(_buildTemplate(activityType: 'running'));
       await Future<void>.delayed(Duration.zero);
 
-      final swim = await repository.getTemplatesForSport(testUserId, 'swimming');
+      final swim = await repository.getTemplatesForSport(
+        testUserId,
+        'swimming',
+      );
       expect(swim, isEmpty);
     });
   });
@@ -372,13 +396,18 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
 
-      final tri = await repository.getTemplatesForBrick(
-          testUserId, ['swimming', 'cycling', 'running']);
+      final tri = await repository.getTemplatesForBrick(testUserId, [
+        'swimming',
+        'cycling',
+        'running',
+      ]);
       expect(tri.length, 1);
       expect(tri.first.id, 'brick-tri');
 
-      final duo =
-          await repository.getTemplatesForBrick(testUserId, ['cycling', 'running']);
+      final duo = await repository.getTemplatesForBrick(testUserId, [
+        'cycling',
+        'running',
+      ]);
       expect(duo.length, 1);
       expect(duo.first.id, 'brick-duo');
     });
@@ -392,8 +421,10 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
 
-      final results = await repository.getTemplatesForBrick(
-          testUserId, ['running', 'cycling']);
+      final results = await repository.getTemplatesForBrick(testUserId, [
+        'running',
+        'cycling',
+      ]);
       expect(results, isEmpty);
     });
   });
@@ -417,9 +448,11 @@ void main() {
 
     test('counts only the specified user\'s templates', () async {
       await repository.createTemplate(
-          _buildTemplate(id: 'mine-1', userId: testUserId));
+        _buildTemplate(id: 'mine-1', userId: testUserId),
+      );
       await repository.createTemplate(
-          _buildTemplate(id: 'theirs-1', userId: otherUserId));
+        _buildTemplate(id: 'theirs-1', userId: otherUserId),
+      );
       await Future<void>.delayed(Duration.zero);
 
       expect(await repository.getTemplateCount(testUserId), 1);
@@ -434,9 +467,9 @@ void main() {
     test('updates name and sets needsUpload=true', () async {
       await repository.createTemplate(_buildTemplate(id: 'tpl-rename'));
       // Clear the dirty flag manually to simulate a clean synced state.
-      await (database.update(database.personalTemplatesTable)
-            ..where((t) => t.id.equals('tpl-rename')))
-          .write(
+      await (database.update(
+        database.personalTemplatesTable,
+      )..where((t) => t.id.equals('tpl-rename'))).write(
         const PersonalTemplatesTableCompanion(needsUpload: Value(false)),
       );
 
@@ -445,9 +478,9 @@ void main() {
       await repository.updateTemplateName('tpl-rename', 'Renamed Plan');
       await Future<void>.delayed(Duration.zero);
 
-      final rows = await (database.select(database.personalTemplatesTable)
-            ..where((t) => t.id.equals('tpl-rename')))
-          .get();
+      final rows = await (database.select(
+        database.personalTemplatesTable,
+      )..where((t) => t.id.equals('tpl-rename'))).get();
 
       expect(rows.first.name, 'Renamed Plan');
       expect(rows.first.needsUpload, isTrue);
@@ -476,9 +509,7 @@ void main() {
       await repository.deleteTemplate('tpl-del', testUserId);
       await Future<void>.delayed(Duration.zero);
 
-      final rows = await database
-          .select(database.personalTemplatesTable)
-          .get();
+      final rows = await database.select(database.personalTemplatesTable).get();
       expect(rows, isEmpty);
     });
 
@@ -526,9 +557,7 @@ void main() {
       await repository.createTemplate(_buildTemplate());
       await Future<void>.delayed(Duration.zero);
 
-      final rows = await database
-          .select(database.personalTemplatesTable)
-          .get();
+      final rows = await database.select(database.personalTemplatesTable).get();
       expect(rows.first.needsUpload, isTrue);
     });
 
@@ -537,15 +566,15 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       // Clear dirty flag manually (simulates successful upload acknowledgement)
-      await (database.update(database.personalTemplatesTable)
-            ..where((t) => t.id.equals('clean-me')))
-          .write(
+      await (database.update(
+        database.personalTemplatesTable,
+      )..where((t) => t.id.equals('clean-me'))).write(
         const PersonalTemplatesTableCompanion(needsUpload: Value(false)),
       );
 
-      final rows = await (database.select(database.personalTemplatesTable)
-            ..where((t) => t.id.equals('clean-me')))
-          .get();
+      final rows = await (database.select(
+        database.personalTemplatesTable,
+      )..where((t) => t.id.equals('clean-me'))).get();
       expect(rows.first.needsUpload, isFalse);
     });
   });
@@ -559,89 +588,97 @@ void main() {
     /// Because the SupabaseQueryBuilder chain is hard to mock, we instead
     /// drive the Drift batch directly, verifying the invariant holds.
 
-    test('dirty local row is not overwritten by conflicting remote payload',
-        () async {
-      // Seed a locally-dirty template.
-      await database.into(database.personalTemplatesTable).insert(
-            PersonalTemplatesTableCompanion.insert(
-              id: const Value('tpl-dirty'),
-              userId: testUserId,
-              name: 'Local Offline Edit',
-              activityType: 'running',
-              planData: jsonEncode(_minimalPlanData()),
-              createdAt: DateTime.utc(2026, 1, 1),
-              updatedAt: DateTime.utc(2026, 1, 1),
-              needsUpload: const Value(true),
-            ),
-          );
+    test(
+      'dirty local row is not overwritten by conflicting remote payload',
+      () async {
+        // Seed a locally-dirty template.
+        await database
+            .into(database.personalTemplatesTable)
+            .insert(
+              PersonalTemplatesTableCompanion.insert(
+                id: const Value('tpl-dirty'),
+                userId: testUserId,
+                name: 'Local Offline Edit',
+                activityType: 'running',
+                planData: jsonEncode(_minimalPlanData()),
+                createdAt: DateTime.utc(2026, 1, 1),
+                updatedAt: DateTime.utc(2026, 1, 1),
+                needsUpload: const Value(true),
+              ),
+            );
 
-      // Simulate what the syncFromRemote upsert batch does for a non-dirty row.
-      // For a dirty row, the implementation SKIPS the upsert. We verify by
-      // checking the name was NOT overwritten.
-      final remoteIds = ['tpl-dirty'];
-      final dirtyRows =
-          await (database.select(database.personalTemplatesTable)
-                ..where(
+        // Simulate what the syncFromRemote upsert batch does for a non-dirty row.
+        // For a dirty row, the implementation SKIPS the upsert. We verify by
+        // checking the name was NOT overwritten.
+        final remoteIds = ['tpl-dirty'];
+        final dirtyRows =
+            await (database.select(database.personalTemplatesTable)..where(
                   (tbl) =>
                       tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
                 ))
-              .get();
-      final dirtyIds = dirtyRows.map((row) => row.id).toSet();
-      expect(dirtyIds.contains('tpl-dirty'), isTrue,
-          reason: 'Local dirty row should be in dirty set before sync');
+                .get();
+        final dirtyIds = dirtyRows.map((row) => row.id).toSet();
+        expect(
+          dirtyIds.contains('tpl-dirty'),
+          isTrue,
+          reason: 'Local dirty row should be in dirty set before sync',
+        );
 
-      // Confirm that name is still 'Local Offline Edit' (not overwritten).
-      final row = await (database.select(database.personalTemplatesTable)
-            ..where((t) => t.id.equals('tpl-dirty')))
-          .getSingleOrNull();
-      expect(row?.name, 'Local Offline Edit');
-    });
+        // Confirm that name is still 'Local Offline Edit' (not overwritten).
+        final row = await (database.select(
+          database.personalTemplatesTable,
+        )..where((t) => t.id.equals('tpl-dirty'))).getSingleOrNull();
+        expect(row?.name, 'Local Offline Edit');
+      },
+    );
 
-    test('clean remote rows are upserted via syncFromRemote companion path',
-        () async {
-      // Verify _mapSupabaseJsonToCompanion round-trip by inserting via the
-      // companion factory used internally during sync.
-      final remoteJson = _remoteTemplateJson(
-        id: 'remote-1',
-        name: 'Remote Plan',
-        planData: {'id': 'p1', 'name': 'RP', 'sections': <dynamic>[]},
-      );
+    test(
+      'clean remote rows are upserted via syncFromRemote companion path',
+      () async {
+        // Verify _mapSupabaseJsonToCompanion round-trip by inserting via the
+        // companion factory used internally during sync.
+        final remoteJson = _remoteTemplateJson(
+          id: 'remote-1',
+          name: 'Remote Plan',
+          planData: {'id': 'p1', 'name': 'RP', 'sections': <dynamic>[]},
+        );
 
-      // Manually execute the same batch insert logic the method uses:
-      final planDataRaw = remoteJson['plan_data'];
-      final planDataStr = planDataRaw is Map || planDataRaw is List
-          ? jsonEncode(planDataRaw)
-          : planDataRaw as String? ?? '{}';
+        // Manually execute the same batch insert logic the method uses:
+        final planDataRaw = remoteJson['plan_data'];
+        final planDataStr = planDataRaw is Map || planDataRaw is List
+            ? jsonEncode(planDataRaw)
+            : planDataRaw as String? ?? '{}';
 
-      final companion = PersonalTemplatesTableCompanion.insert(
-        id: const Value('remote-1'),
-        userId: testUserId,
-        name: 'Remote Plan',
-        activityType: 'running',
-        planData: planDataStr,
-        totalCarbsG: const Value(80),
-        totalProteinG: const Value(20),
-        totalFatG: const Value(10),
-        totalSodiumMg: const Value(300),
-        totalFluidsMl: const Value(500),
-        totalCalories: const Value(450),
-        createdAt: DateTime.utc(2026, 1, 15, 10),
-        updatedAt: DateTime.utc(2026, 1, 15, 10),
-        needsUpload: const Value(false),
-        localUpdatedAt: const Value(null),
-      );
+        final companion = PersonalTemplatesTableCompanion.insert(
+          id: const Value('remote-1'),
+          userId: testUserId,
+          name: 'Remote Plan',
+          activityType: 'running',
+          planData: planDataStr,
+          totalCarbsG: const Value(80),
+          totalProteinG: const Value(20),
+          totalFatG: const Value(10),
+          totalSodiumMg: const Value(300),
+          totalFluidsMl: const Value(500),
+          totalCalories: const Value(450),
+          createdAt: DateTime.utc(2026, 1, 15, 10),
+          updatedAt: DateTime.utc(2026, 1, 15, 10),
+          needsUpload: const Value(false),
+          localUpdatedAt: const Value(null),
+        );
 
-      await database
-          .into(database.personalTemplatesTable)
-          .insert(companion, mode: InsertMode.insertOrReplace);
+        await database
+            .into(database.personalTemplatesTable)
+            .insert(companion, mode: InsertMode.insertOrReplace);
 
-      final row = await (database.select(database.personalTemplatesTable)
-            ..where((t) => t.id.equals('remote-1')))
-          .getSingleOrNull();
-      expect(row, isNotNull);
-      expect(row!.name, 'Remote Plan');
-      expect(row.needsUpload, isFalse);
-    });
+        final row = await (database.select(
+          database.personalTemplatesTable,
+        )..where((t) => t.id.equals('remote-1'))).getSingleOrNull();
+        expect(row, isNotNull);
+        expect(row!.name, 'Remote Plan');
+        expect(row.needsUpload, isFalse);
+      },
+    );
   });
 
   // ============================================================
@@ -670,10 +707,22 @@ void main() {
     });
 
     test('activityTypeDisplay maps known types to display names', () {
-      expect(_buildTemplate(activityType: 'running').activityTypeDisplay, 'Running');
-      expect(_buildTemplate(activityType: 'cycling').activityTypeDisplay, 'Cycling');
-      expect(_buildTemplate(activityType: 'swimming').activityTypeDisplay, 'Swimming');
-      expect(_buildTemplate(activityType: 'brick').activityTypeDisplay, 'Brick');
+      expect(
+        _buildTemplate(activityType: 'running').activityTypeDisplay,
+        'Running',
+      );
+      expect(
+        _buildTemplate(activityType: 'cycling').activityTypeDisplay,
+        'Cycling',
+      );
+      expect(
+        _buildTemplate(activityType: 'swimming').activityTypeDisplay,
+        'Swimming',
+      );
+      expect(
+        _buildTemplate(activityType: 'brick').activityTypeDisplay,
+        'Brick',
+      );
     });
 
     test('activityTypeDisplay falls back to raw value for unknown types', () {
@@ -700,26 +749,30 @@ void main() {
       expect(t.brickSegmentDisplay, isNull);
     });
 
-    test('fromDriftEntry decodes corrupt planData to empty map (safe fallback)',
-        () async {
-      // Insert a row with invalid JSON in planData.
-      await database.into(database.personalTemplatesTable).insert(
-            PersonalTemplatesTableCompanion.insert(
-              id: const Value('bad-json'),
-              userId: testUserId,
-              name: 'Corrupt',
-              activityType: 'running',
-              planData: 'NOT_VALID_JSON',
-              createdAt: DateTime.utc(2026, 1, 1),
-              updatedAt: DateTime.utc(2026, 1, 1),
-            ),
-          );
+    test(
+      'fromDriftEntry decodes corrupt planData to empty map (safe fallback)',
+      () async {
+        // Insert a row with invalid JSON in planData.
+        await database
+            .into(database.personalTemplatesTable)
+            .insert(
+              PersonalTemplatesTableCompanion.insert(
+                id: const Value('bad-json'),
+                userId: testUserId,
+                name: 'Corrupt',
+                activityType: 'running',
+                planData: 'NOT_VALID_JSON',
+                createdAt: DateTime.utc(2026, 1, 1),
+                updatedAt: DateTime.utc(2026, 1, 1),
+              ),
+            );
 
-      // getTemplatesForUser calls fromDriftEntry internally — must not throw.
-      final results = await repository.getTemplatesForUser(testUserId);
-      expect(results.length, 1);
-      expect(results.first.planData, isEmpty);
-    });
+        // getTemplatesForUser calls fromDriftEntry internally — must not throw.
+        final results = await repository.getTemplatesForUser(testUserId);
+        expect(results.length, 1);
+        expect(results.first.planData, isEmpty);
+      },
+    );
 
     test('fromSupabaseJson parses plan_data as String', () {
       final json = _remoteTemplateJson(
@@ -781,27 +834,36 @@ void main() {
   // Edge cases
   // ============================================================
   group('edge cases', () {
-    test('multiple createTemplate calls do not exceed DB constraints', () async {
-      for (var i = 0; i < 10; i++) {
-        await repository.createTemplate(_buildTemplate(id: 'tpl-$i'));
-      }
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'multiple createTemplate calls do not exceed DB constraints',
+      () async {
+        for (var i = 0; i < 10; i++) {
+          await repository.createTemplate(_buildTemplate(id: 'tpl-$i'));
+        }
+        await Future<void>.delayed(Duration.zero);
 
-      expect(await repository.getTemplateCount(testUserId), 10);
-    });
+        expect(await repository.getTemplateCount(testUserId), 10);
+      },
+    );
 
-    test('getTemplatesForUser returns templates across multiple sports', () async {
-      await repository.createTemplate(
-          _buildTemplate(id: 't-run', activityType: 'running'));
-      await repository.createTemplate(
-          _buildTemplate(id: 't-cyc', activityType: 'cycling'));
-      await repository.createTemplate(
-          _buildTemplate(id: 't-swim', activityType: 'swimming'));
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'getTemplatesForUser returns templates across multiple sports',
+      () async {
+        await repository.createTemplate(
+          _buildTemplate(id: 't-run', activityType: 'running'),
+        );
+        await repository.createTemplate(
+          _buildTemplate(id: 't-cyc', activityType: 'cycling'),
+        );
+        await repository.createTemplate(
+          _buildTemplate(id: 't-swim', activityType: 'swimming'),
+        );
+        await Future<void>.delayed(Duration.zero);
 
-      final all = await repository.getTemplatesForUser(testUserId);
-      expect(all.length, 3);
-    });
+        final all = await repository.getTemplatesForUser(testUserId);
+        expect(all.length, 3);
+      },
+    );
 
     test('template with null macro totals is created without error', () async {
       final now = DateTime.utc(2026, 1, 15);

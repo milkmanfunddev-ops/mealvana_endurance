@@ -44,15 +44,10 @@ class CoachPortalScreen extends ConsumerWidget {
           PortalSidebar(onBackToApp: onBackToApp),
 
           // Divider
-          const VerticalDivider(
-            width: 1,
-            color: AppColors.blackberryLight,
-          ),
+          const VerticalDivider(width: 1, color: AppColors.blackberryLight),
 
           // Right panel
-          Expanded(
-            child: _buildRightPanel(portalState),
-          ),
+          Expanded(child: _buildRightPanel(portalState)),
         ],
       ),
     );

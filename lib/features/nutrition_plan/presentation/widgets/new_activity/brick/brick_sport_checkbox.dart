@@ -36,10 +36,7 @@ class BrickSportCheckbox extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Select at least 2 sports',
-            style: TextStyle(
-              color: AppColors.error,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.error, fontSize: 14),
           ),
         ],
       ],
@@ -61,10 +58,7 @@ class BrickSportCheckbox extends StatelessWidget {
           : null, // Disable if at minimum and this is selected
       title: Text(
         label,
-        style: const TextStyle(
-          fontSize: 16,
-          fontFamily: 'Apercu',
-        ),
+        style: const TextStyle(fontSize: 16, fontFamily: 'Apercu'),
       ),
       controlAffinity: ListTileControlAffinity.leading,
       activeColor: AppColors.electrolyte,

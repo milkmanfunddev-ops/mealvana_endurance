@@ -12,13 +12,11 @@ part 'content_repository.g.dart';
 /// Repository for managing app content with local caching and remote syncing
 /// Uses SharedPreferences for simple content caching instead of Drift database
 class ContentRepository {
-  ContentRepository({
-    required this.supabase,
-    required this.sharedPreferences,
-  });
+  ContentRepository({required this.supabase, required this.sharedPreferences});
 
   static const String _contentKey = 'app_content_cache';
-  static const String _defaultsAssetPath = 'assets/config/content_defaults.json';
+  static const String _defaultsAssetPath =
+      'assets/config/content_defaults.json';
   static const String supabaseTableName = 'app_content';
 
   final SupabaseClient supabase;
@@ -31,21 +29,21 @@ class ContentRepository {
   }) async {
     // First try to get from local cache
     final cachedContent = await _getCachedContent();
-    
-    if (cachedContent != null && 
-        cachedContent.environment == environment && 
+
+    if (cachedContent != null &&
+        cachedContent.environment == environment &&
         cachedContent.locale == locale &&
         cachedContent.isActive) {
       return cachedContent;
     }
-    
+
     // Try to fetch from Supabase
     final remoteContent = await _fetchFromSupabase(environment, locale);
     if (remoteContent != null) {
       await _cacheContent(remoteContent);
       return remoteContent;
     }
-    
+
     // Fallback to local defaults
     return await _loadDefaultContent();
   }
@@ -54,7 +52,7 @@ class ContentRepository {
   Future<AppContent?> _getCachedContent() async {
     try {
       final cachedJson = sharedPreferences.getString(_contentKey);
-      
+
       if (cachedJson != null) {
         final Map<String, dynamic> contentMap = json.decode(cachedJson);
         return AppContent.fromJson(contentMap);
@@ -76,7 +74,10 @@ class ContentRepository {
   }
 
   /// Fetch content from Supabase
-  Future<AppContent?> _fetchFromSupabase(String environment, String locale) async {
+  Future<AppContent?> _fetchFromSupabase(
+    String environment,
+    String locale,
+  ) async {
     try {
       final response = await supabase
           .from(supabaseTableName)
@@ -102,7 +103,7 @@ class ContentRepository {
     try {
       final String jsonString = await rootBundle.loadString(_defaultsAssetPath);
       final Map<String, dynamic> jsonMap = json.decode(jsonString);
-      
+
       // Wrap the defaults in AppContent structure
       return AppContent(
         version: 1,
@@ -133,23 +134,32 @@ class ContentRepository {
   }) async {
     // Clear local cache
     await sharedPreferences.remove(_contentKey);
-    
+
     // Force fetch from remote
-    final content = await getActiveContent(environment: environment, locale: locale);
+    final content = await getActiveContent(
+      environment: environment,
+      locale: locale,
+    );
     return content ?? await _loadDefaultContent();
   }
 
   /// Get specific content value by key path (dot notation)
-  Future<String?> getContentValue(String keyPath, {String? defaultValue}) async {
+  Future<String?> getContentValue(
+    String keyPath, {
+    String? defaultValue,
+  }) async {
     final content = await getActiveContent();
-    return content?.getValue(keyPath, defaultValue: defaultValue) ?? defaultValue;
+    return content?.getValue(keyPath, defaultValue: defaultValue) ??
+        defaultValue;
   }
 
   /// Check if cached content is stale (older than specified duration)
-  Future<bool> isCacheStale({Duration maxAge = const Duration(hours: 24)}) async {
+  Future<bool> isCacheStale({
+    Duration maxAge = const Duration(hours: 24),
+  }) async {
     final cachedContent = await _getCachedContent();
     if (cachedContent == null) return true;
-    
+
     final age = DateTime.now().difference(cachedContent.lastUpdated);
     return age > maxAge;
   }

@@ -257,8 +257,8 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                           widget.showQuantity
                               ? _buildQuantityDescription()
                               : (widget.food.displayName?.isNotEmpty == true
-                                  ? widget.food.displayName!
-                                  : widget.food.name),
+                                    ? widget.food.displayName!
+                                    : widget.food.name),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
@@ -310,14 +310,17 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                         Text(
                           'Quantity',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            border:
-                                Border.all(color: AppColors.orange, width: 2),
+                            border: Border.all(
+                              color: AppColors.orange,
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -350,8 +353,9 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                               Text(
                                 food_utils.formatQuantity(_quantity),
                                 style: AppTextStyles.bodyMedium.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

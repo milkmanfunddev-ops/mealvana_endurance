@@ -142,8 +142,7 @@ class PersonalFormula {
       provenance: provenance,
       phase: phase,
       sourceTemplateId: entry.sourceTemplateId,
-      sourceTemplateKind:
-          TemplateKind.fromWireValue(entry.sourceTemplateKind),
+      sourceTemplateKind: TemplateKind.fromWireValue(entry.sourceTemplateKind),
       subPhase: entry.subPhase,
       digestSpeed: entry.digestSpeed,
       activities: _decodeStringList(entry.activities),
@@ -254,8 +253,9 @@ class PersonalFormula {
       provenance: provenance,
       phase: phase,
       sourceTemplateId: json['source_template_id'] as String?,
-      sourceTemplateKind:
-          TemplateKind.fromWireValue(json['source_template_kind'] as String?),
+      sourceTemplateKind: TemplateKind.fromWireValue(
+        json['source_template_kind'] as String?,
+      ),
       subPhase: json['sub_phase'] as String?,
       digestSpeed: json['digest_speed'] as String?,
       activities: _coerceStringList(json['activities']),

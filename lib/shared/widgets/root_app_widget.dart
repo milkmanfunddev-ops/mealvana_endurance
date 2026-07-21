@@ -305,8 +305,8 @@ Widget _appShell(BuildContext context, Widget child, {required bool isDev}) {
     child: !isDev
         ? child
         : kDebugMode
-            ? _DevAccessibilityTools(child: child)
-            : _DevTestingTools(child: child),
+        ? _DevAccessibilityTools(child: child)
+        : _DevTestingTools(child: child),
   );
 }
 

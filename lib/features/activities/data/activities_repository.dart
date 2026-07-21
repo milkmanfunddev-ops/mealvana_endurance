@@ -885,10 +885,9 @@ class ActivitiesRepository with SyncableRepository {
   /// also guards this, but returning early closes the timing window between
   /// the dirty write and the sync upload.
   Future<void> refreshActivityFromRemote(String activityId) async {
-    final localRow =
-        await (_database.select(_database.activitiesTable)
-              ..where((tbl) => tbl.id.equals(activityId)))
-            .getSingleOrNull();
+    final localRow = await (_database.select(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
     if (localRow?.needsUpload == true) {
       _logger.debug(
         'Skipping remote refresh for dirty local activity',

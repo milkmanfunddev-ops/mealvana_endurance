@@ -56,12 +56,14 @@ class DeckConditionsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isAutoFilled = _hasWeatherIntegration &&
+    final isAutoFilled =
+        _hasWeatherIntegration &&
         weatherSource != null &&
         weatherSource != WeatherSource.defaultValue;
     final showWeatherPrompt =
         _hasWeatherIntegration && hasAttemptedWeatherFetch && !isAutoFilled;
-    final showLocationPrompt = showWeatherPrompt && locationFailureReason != null;
+    final showLocationPrompt =
+        showWeatherPrompt && locationFailureReason != null;
     final isServicesDisabled =
         locationFailureReason == LocationFailureReason.servicesDisabled;
     final isPermissionDenied =
@@ -151,7 +153,9 @@ class DeckConditionsSection extends StatelessWidget {
             children: [
               KylePlusMinusDecimalControl(
                 label: 'Deck Temperature',
-                value: useImperial ? (deckTemperature * 9 / 5) + 32 : deckTemperature,
+                value: useImperial
+                    ? (deckTemperature * 9 / 5) + 32
+                    : deckTemperature,
                 onChanged: useImperial
                     ? (f) => onTemperatureChanged((f - 32) * 5 / 9)
                     : onTemperatureChanged,
@@ -199,10 +203,11 @@ class DeckConditionsSection extends StatelessWidget {
                         Text(
                           'Location services are off.',
                           style: AppTextStyles.smallLabel.copyWith(
-                            color: (isDark
-                                    ? AppColors.cream
-                                    : AppColors.blackberry)
-                                .withValues(alpha: 0.7),
+                            color:
+                                (isDark
+                                        ? AppColors.cream
+                                        : AppColors.blackberry)
+                                    .withValues(alpha: 0.7),
                             fontSize: 11,
                           ),
                         ),
@@ -222,10 +227,11 @@ class DeckConditionsSection extends StatelessWidget {
                         Text(
                           'Location permission blocked.',
                           style: AppTextStyles.smallLabel.copyWith(
-                            color: (isDark
-                                    ? AppColors.cream
-                                    : AppColors.blackberry)
-                                .withValues(alpha: 0.7),
+                            color:
+                                (isDark
+                                        ? AppColors.cream
+                                        : AppColors.blackberry)
+                                    .withValues(alpha: 0.7),
                             fontSize: 11,
                           ),
                         ),
@@ -245,10 +251,11 @@ class DeckConditionsSection extends StatelessWidget {
                         Text(
                           'Allow location to auto-fill.',
                           style: AppTextStyles.smallLabel.copyWith(
-                            color: (isDark
-                                    ? AppColors.cream
-                                    : AppColors.blackberry)
-                                .withValues(alpha: 0.7),
+                            color:
+                                (isDark
+                                        ? AppColors.cream
+                                        : AppColors.blackberry)
+                                    .withValues(alpha: 0.7),
                             fontSize: 11,
                           ),
                         ),
@@ -258,8 +265,7 @@ class DeckConditionsSection extends StatelessWidget {
                             'Enable location',
                             style: AppTextStyles.smallLabel.copyWith(
                               color: isLoadingWeather
-                                  ? AppColors.dragonfruit
-                                      .withValues(alpha: 0.4)
+                                  ? AppColors.dragonfruit.withValues(alpha: 0.4)
                                   : AppColors.dragonfruit,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -283,10 +289,11 @@ class DeckConditionsSection extends StatelessWidget {
                         Text(
                           "Couldn't fetch weather. Enter manually or",
                           style: AppTextStyles.smallLabel.copyWith(
-                            color: (isDark
-                                    ? AppColors.cream
-                                    : AppColors.blackberry)
-                                .withValues(alpha: 0.7),
+                            color:
+                                (isDark
+                                        ? AppColors.cream
+                                        : AppColors.blackberry)
+                                    .withValues(alpha: 0.7),
                             fontSize: 11,
                           ),
                         ),
@@ -296,8 +303,7 @@ class DeckConditionsSection extends StatelessWidget {
                             'try again',
                             style: AppTextStyles.smallLabel.copyWith(
                               color: isLoadingWeather
-                                  ? AppColors.dragonfruit
-                                      .withValues(alpha: 0.4)
+                                  ? AppColors.dragonfruit.withValues(alpha: 0.4)
                                   : AppColors.dragonfruit,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,

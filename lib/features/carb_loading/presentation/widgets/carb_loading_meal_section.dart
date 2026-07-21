@@ -56,7 +56,10 @@ class CarbLoadingMealSection extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4285F4),
                     borderRadius: BorderRadius.circular(20),
@@ -69,7 +72,6 @@ class CarbLoadingMealSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                
               ],
             ),
 
@@ -117,7 +119,6 @@ class CarbLoadingMealSection extends StatelessWidget {
             //     ),
             //   ],
             // ),
-
             const SizedBox(height: 12),
 
             // Quick Add section
@@ -135,7 +136,9 @@ class CarbLoadingMealSection extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: CarbFoodsList.quickAddFoods.map((food) {
-                final isSelected = mealFoods.selectedFoods.containsKey(food.name);
+                final isSelected = mealFoods.selectedFoods.containsKey(
+                  food.name,
+                );
                 final quantity = mealFoods.selectedFoods[food.name] ?? 0;
 
                 if (isSelected) {
@@ -209,7 +212,6 @@ class CarbLoadingMealSection extends StatelessWidget {
         return mealName;
     }
   }
-
 }
 
 /// Quick Add food button widget
@@ -217,10 +219,7 @@ class _QuickAddFoodButton extends StatelessWidget {
   final CarbFood food;
   final VoidCallback onTap;
 
-  const _QuickAddFoodButton({
-    required this.food,
-    required this.onTap,
-  });
+  const _QuickAddFoodButton({required this.food, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -237,9 +236,7 @@ class _QuickAddFoodButton extends StatelessWidget {
         ),
         child: Text(
           food.displayName,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[700],
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
         ),
       ),
     );

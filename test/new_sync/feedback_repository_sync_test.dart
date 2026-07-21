@@ -39,27 +39,44 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Set up logger to not throw on method calls
-    when(() => mockLogger.info(any(),
-            context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.debug(any(),
-            context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
 
-    repository = FeedbackRepository(database, mockLogger, mockSupabase, mockSentry);
+    repository = FeedbackRepository(
+      database,
+      mockLogger,
+      mockSupabase,
+      mockSentry,
+    );
   });
 
   tearDown(() async {
@@ -138,7 +155,8 @@ void main() {
 
     test('uploads dirty feedback records to Supabase', () async {
       // Create a dirty feedback record in local database
-      final feedbackId = 'test-feedback-${DateTime.now().millisecondsSinceEpoch}';
+      final feedbackId =
+          'test-feedback-${DateTime.now().millisecondsSinceEpoch}';
       final companion = FeedbackTableCompanion(
         id: Value(feedbackId),
         deviceId: const Value(testUserId),
@@ -161,9 +179,9 @@ void main() {
       await database.into(database.feedbackTable).insert(companion);
 
       // Verify dirty record exists
-      final dirtyRecords = await (database.select(database.feedbackTable)
-            ..where((t) => t.needsUpload.equals(true)))
-          .get();
+      final dirtyRecords = await (database.select(
+        database.feedbackTable,
+      )..where((t) => t.needsUpload.equals(true))).get();
       expect(dirtyRecords.length, equals(1));
 
       // Upload dirty records
@@ -174,9 +192,9 @@ void main() {
 
       if (result.success) {
         // If upload succeeded, dirty flag should be cleared
-        final remainingDirty = await (database.select(database.feedbackTable)
-              ..where((t) => t.needsUpload.equals(true)))
-            .get();
+        final remainingDirty = await (database.select(
+          database.feedbackTable,
+        )..where((t) => t.needsUpload.equals(true))).get();
         expect(remainingDirty.isEmpty, isTrue);
       }
     });
@@ -206,9 +224,9 @@ void main() {
 
       // If failed, dirty flag should remain set for retry
       if (!result.success) {
-        final dirtyRecords = await (database.select(database.feedbackTable)
-              ..where((t) => t.needsUpload.equals(true)))
-            .get();
+        final dirtyRecords = await (database.select(
+          database.feedbackTable,
+        )..where((t) => t.needsUpload.equals(true))).get();
         expect(dirtyRecords.isNotEmpty, isTrue);
       }
     });

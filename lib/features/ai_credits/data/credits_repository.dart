@@ -18,8 +18,7 @@ CreditsRepository creditsRepository(Ref ref) {
 /// (RLS: read-own). All mutations are performed server-side by edge functions
 /// and RevenueCat webhooks.
 class CreditsRepository {
-  CreditsRepository({required SupabaseClient supabase})
-      : _supabase = supabase;
+  CreditsRepository({required SupabaseClient supabase}) : _supabase = supabase;
 
   final SupabaseClient _supabase;
 

@@ -23,10 +23,10 @@ class ActivityCoachNotesWidget extends StatelessWidget {
     final providerName = isFromTP
         ? 'TrainingPeaks'
         : isFromFS
-            ? 'Final Surge'
-            : isFromVdot
-                ? 'V.O2'
-                : null;
+        ? 'Final Surge'
+        : isFromVdot
+        ? 'V.O2'
+        : null;
 
     // Extract the coach description (before metadata line)
     // The notes format from TP transformer: "description\nElevation: ... | Calories: ... | Tags: ..."
@@ -52,8 +52,8 @@ class ActivityCoachNotesWidget extends StatelessWidget {
                 isFromGarmin
                     ? 'Coach Notes (from'
                     : providerName != null
-                        ? 'Coach Notes (from $providerName)'
-                        : 'Notes',
+                    ? 'Coach Notes (from $providerName)'
+                    : 'Notes',
                 style: const TextStyle(
                   color: AppColors.electrolyte,
                   fontSize: 12,

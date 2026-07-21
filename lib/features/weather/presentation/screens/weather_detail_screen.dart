@@ -19,15 +19,12 @@ class WeatherDetailScreen extends ConsumerWidget {
   final WeatherForecast forecast;
   final domain.Location? location;
 
-  const WeatherDetailScreen({
-    super.key,
-    required this.forecast,
-    this.location,
-  });
+  const WeatherDetailScreen({super.key, required this.forecast, this.location});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unitSystem = ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
+    final unitSystem =
+        ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
     final useMetric = unitSystem == UnitSystem.metric;
     final useImperial = !useMetric;
 
@@ -63,7 +60,10 @@ class WeatherDetailScreen extends ConsumerWidget {
                   Icon(_getWeatherIcon(), size: 80, color: Colors.white),
                   SizedBox(height: 16.h),
                   Text(
-                    UnitFormatter.formatTemperature(forecast.temperatureC, useMetric: useMetric),
+                    UnitFormatter.formatTemperature(
+                      forecast.temperatureC,
+                      useMetric: useMetric,
+                    ),
                     style: TextStyle(
                       fontSize: 48.sp,
                       fontWeight: FontWeight.bold,
@@ -116,7 +116,10 @@ class WeatherDetailScreen extends ConsumerWidget {
                 children: [
                   _buildInfoRow(
                     'Temperature',
-                    UnitFormatter.formatTemperature(forecast.temperatureC, useMetric: useMetric),
+                    UnitFormatter.formatTemperature(
+                      forecast.temperatureC,
+                      useMetric: useMetric,
+                    ),
                   ),
                   _buildInfoRow('Humidity', '${forecast.humidityPct}%'),
                   if (forecast.windSpeedKmh != null)

@@ -16,10 +16,7 @@ class SyncResult {
 
   /// Successful sync with the number of records synced
   factory SyncResult.success({required int count}) {
-    return SyncResult._(
-      status: SyncStatus.success,
-      count: count,
-    );
+    return SyncResult._(status: SyncStatus.success, count: count);
   }
 
   /// Sync failed with error information
@@ -38,10 +35,7 @@ class SyncResult {
 
   /// No records to sync (repository already up to date)
   factory SyncResult.nothingToSync() {
-    return const SyncResult._(
-      status: SyncStatus.nothingToSync,
-      count: 0,
-    );
+    return const SyncResult._(status: SyncStatus.nothingToSync, count: 0);
   }
 
   bool get isSuccess => status == SyncStatus.success;
@@ -77,8 +71,4 @@ class SyncResult {
 }
 
 /// Status of a sync operation
-enum SyncStatus {
-  success,
-  failure,
-  nothingToSync,
-}
+enum SyncStatus { success, failure, nothingToSync }

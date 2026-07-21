@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/events/domain/event.dart';
-import 'package:mealvana_endurance/shared/database/app_database.dart' show CarbLoadingDay;
+import 'package:mealvana_endurance/shared/database/app_database.dart'
+    show CarbLoadingDay;
 import 'package:mealvana_endurance/features/fuel_timeline/application/day_timeline_assembler.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/domain/day_energy_summary.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/domain/fuel_timeline_filter.dart';
@@ -92,7 +93,9 @@ void main() {
           meal('bf', eatenAt: DateTime(2026, 6, 17, 7, 30)),
           meal('dn', eatenAt: DateTime(2026, 6, 17, 19, 0)),
         ],
-        activities: [workout('ride', scheduledAt: DateTime(2026, 6, 17, 16, 15))],
+        activities: [
+          workout('ride', scheduledAt: DateTime(2026, 6, 17, 16, 15)),
+        ],
         targets: targets(),
         consumed: const ConsumedTotals(),
       );
@@ -102,29 +105,30 @@ void main() {
       expect(result.nodes[1], isA<WorkoutNode>());
     });
 
-    test('meal eatenAt on the correct calendar day sorts before later activity', () {
-      // Regression: eatenAt was initialized with DateTime.now() instead of the
-      // target logDate, so a meal logged for Jul 19 got eatenAt on Jul 20.
-      // The assembler sorts by full DateTime, so the wrong-day meal appeared
-      // after same-day activities despite an earlier clock time.
-      final jul19 = DateTime(2026, 7, 19);
+    test(
+      'meal eatenAt on the correct calendar day sorts before later activity',
+      () {
+        // Regression: eatenAt was initialized with DateTime.now() instead of the
+        // target logDate, so a meal logged for Jul 19 got eatenAt on Jul 20.
+        // The assembler sorts by full DateTime, so the wrong-day meal appeared
+        // after same-day activities despite an earlier clock time.
+        final jul19 = DateTime(2026, 7, 19);
 
-      // Correct: eatenAt on Jul 19 at 08:30 should sort before activity at 16:00
-      final result = assembler.assemble(
-        selectedDate: jul19,
-        now: DateTime(2026, 7, 19, 20),
-        meals: [
-          meal('breakfast', eatenAt: DateTime(2026, 7, 19, 8, 30)),
-        ],
-        activities: [
-          workout('ride', scheduledAt: DateTime(2026, 7, 19, 16, 0)),
-        ],
-        targets: targets(),
-        consumed: const ConsumedTotals(),
-      );
+        // Correct: eatenAt on Jul 19 at 08:30 should sort before activity at 16:00
+        final result = assembler.assemble(
+          selectedDate: jul19,
+          now: DateTime(2026, 7, 19, 20),
+          meals: [meal('breakfast', eatenAt: DateTime(2026, 7, 19, 8, 30))],
+          activities: [
+            workout('ride', scheduledAt: DateTime(2026, 7, 19, 16, 0)),
+          ],
+          targets: targets(),
+          consumed: const ConsumedTotals(),
+        );
 
-      expect(result.nodes.map((n) => n.id).toList(), ['breakfast', 'ride']);
-    });
+        expect(result.nodes.map((n) => n.id).toList(), ['breakfast', 'ride']);
+      },
+    );
 
     test('events and carb-loading days appear on the timeline', () {
       final event = Event(
@@ -171,8 +175,11 @@ void main() {
       );
 
       // Carb day sorts to midnight (all-day), event to 09:00, lunch to noon.
-      expect(result.nodes.map((n) => n.runtimeType.toString()).toList(),
-          ['CarbLoadingNode', 'EventNode', 'MealNode']);
+      expect(result.nodes.map((n) => n.runtimeType.toString()).toList(), [
+        'CarbLoadingNode',
+        'EventNode',
+        'MealNode',
+      ]);
 
       final carb = result.nodes.whereType<CarbLoadingNode>().single;
       expect(carb.day.carbTargetGrams, 610);
@@ -220,7 +227,10 @@ void main() {
       final result = assembler.assemble(
         selectedDate: date,
         now: DateTime(2026, 6, 17, 20),
-        meals: [meal('later', eatenAt: DateTime(2026, 6, 17, 9, 0)), m],
+        meals: [
+          meal('later', eatenAt: DateTime(2026, 6, 17, 9, 0)),
+          m,
+        ],
         activities: const [],
         targets: targets(),
         consumed: const ConsumedTotals(),
@@ -377,7 +387,10 @@ void main() {
         burnByActivityId: const {'w': 500},
       );
       expect(r.summary.workoutKcal, 0);
-      expect(r.summary.burnedCalories, 700); // 500 resting + 200 daily, no workout
+      expect(
+        r.summary.burnedCalories,
+        700,
+      ); // 500 resting + 200 daily, no workout
     });
 
     test('future day shows targets only — no burn, net equals eaten', () {
@@ -399,27 +412,30 @@ void main() {
   });
 
   group('intake summary', () {
-    test('macros + target + clamped pct flow through from targets/consumed', () {
-      final r = assembler.assemble(
-        selectedDate: date,
-        now: DateTime(2026, 6, 17, 12),
-        meals: const [],
-        activities: const [],
-        targets: targets(carbG: 300, protG: 140, fatG: 75),
-        consumed: const ConsumedTotals(
-          calories: 1000,
-          carbsG: 150,
-          proteinG: 70,
-          fatG: 30,
-        ),
-      );
-      // target calories = 300*4 + 140*4 + 75*9 = 2435
-      expect(r.summary.targetCalories, 2435);
-      expect(r.summary.carbsEaten, 150);
-      expect(r.summary.carbsTarget, 300);
-      expect(r.summary.carbsPct, closeTo(0.5, 1e-9));
-      expect(r.summary.caloriesPct, closeTo(1000 / 2435, 1e-9));
-    });
+    test(
+      'macros + target + clamped pct flow through from targets/consumed',
+      () {
+        final r = assembler.assemble(
+          selectedDate: date,
+          now: DateTime(2026, 6, 17, 12),
+          meals: const [],
+          activities: const [],
+          targets: targets(carbG: 300, protG: 140, fatG: 75),
+          consumed: const ConsumedTotals(
+            calories: 1000,
+            carbsG: 150,
+            proteinG: 70,
+            fatG: 30,
+          ),
+        );
+        // target calories = 300*4 + 140*4 + 75*9 = 2435
+        expect(r.summary.targetCalories, 2435);
+        expect(r.summary.carbsEaten, 150);
+        expect(r.summary.carbsTarget, 300);
+        expect(r.summary.carbsPct, closeTo(0.5, 1e-9));
+        expect(r.summary.caloriesPct, closeTo(1000 / 2435, 1e-9));
+      },
+    );
 
     test('caloriesPct clamps to 1.0 when over target', () {
       final r = assembler.assemble(

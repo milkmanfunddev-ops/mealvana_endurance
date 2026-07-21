@@ -59,7 +59,9 @@ class LocationInputField extends StatelessWidget {
               Icon(
                 Icons.location_on,
                 size: 20,
-                color: location != null ? AppTheme.primary600 : AppTheme.baseGrey,
+                color: location != null
+                    ? AppTheme.primary600
+                    : AppTheme.baseGrey,
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -67,7 +69,9 @@ class LocationInputField extends StatelessWidget {
                   location?.displayName ?? 'No location set',
                   style: AppTheme.textStyle.copyWith(
                     fontSize: 14.sp,
-                    color: location != null ? AppTheme.primary900 : AppTheme.baseGrey,
+                    color: location != null
+                        ? AppTheme.primary900
+                        : AppTheme.baseGrey,
                   ),
                 ),
               ),

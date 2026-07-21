@@ -6,18 +6,12 @@ part 'plan_rating_controller.g.dart';
 
 /// Controller state for plan rating
 class PlanRatingState {
-  const PlanRatingState({
-    this.isSubmitting = false,
-    this.error,
-  });
+  const PlanRatingState({this.isSubmitting = false, this.error});
 
   final bool isSubmitting;
   final String? error;
 
-  PlanRatingState copyWith({
-    bool? isSubmitting,
-    String? error,
-  }) {
+  PlanRatingState copyWith({bool? isSubmitting, String? error}) {
     return PlanRatingState(
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error ?? this.error,
@@ -44,28 +38,32 @@ class PlanRatingController extends _$PlanRatingController {
 
     state = await AsyncValue.guard(() async {
       try {
-        final repository = await ref.read(nutritionPlanRepositoryProvider.future);
+        final repository = await ref.read(
+          nutritionPlanRepositoryProvider.future,
+        );
 
         await repository.updatePlanFeedbackForActivity(
           activityId: activityId,
           rating: rating,
           notes: null,
         );
-        
+
         return const PlanRatingState();
       } catch (error) {
         return PlanRatingState(error: error.toString());
       }
     });
   }
-  
+
   /// Skip feedback for a nutrition plan - marks it as addressed without rating
   Future<void> skipFeedback(String activityId) async {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       try {
-        final repository = await ref.read(nutritionPlanRepositoryProvider.future);
+        final repository = await ref.read(
+          nutritionPlanRepositoryProvider.future,
+        );
 
         // Mark plan as addressed by adding a skip note
         await repository.updatePlanFeedbackForActivity(
@@ -73,7 +71,7 @@ class PlanRatingController extends _$PlanRatingController {
           rating: null,
           notes: 'Feedback skipped',
         );
-        
+
         return const PlanRatingState();
       } catch (error) {
         return PlanRatingState(error: error.toString());

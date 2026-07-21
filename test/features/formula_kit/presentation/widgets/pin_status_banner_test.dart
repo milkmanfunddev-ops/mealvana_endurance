@@ -20,14 +20,13 @@ PinDecision _honored({
   String name = 'Bagel + Jam',
   String id = 'tpl-bagel',
   int setSize = 1,
-}) =>
-    PinDecision(
-      usedPin: true,
-      pinnedTemplateId: id,
-      pinnedTemplateName: name,
-      fallthroughReason: null,
-      pinSetSize: setSize,
-    );
+}) => PinDecision(
+  usedPin: true,
+  pinnedTemplateId: id,
+  pinnedTemplateName: name,
+  fallthroughReason: null,
+  pinSetSize: setSize,
+);
 
 const _noPinForScope = PinDecision(
   usedPin: false,
@@ -75,33 +74,48 @@ Future<void> _expand(WidgetTester tester) async {
 
 void main() {
   group('PinStatusBanner — header summary', () {
-    testWidgets('all honored → "Using your pinned formulas" + N pins honored',
-        (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: _honored(name: 'Bagel')),
-        PinStatusBannerRow(label: 'Snack', decision: _honored(name: 'OJ')),
-      ]));
+    testWidgets('all honored → "Using your pinned formulas" + N pins honored', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(
+            label: 'Meal',
+            decision: _honored(name: 'Bagel'),
+          ),
+          PinStatusBannerRow(
+            label: 'Snack',
+            decision: _honored(name: 'OJ'),
+          ),
+        ]),
+      );
       expect(find.text('Using your pinned formulas'), findsOneWidget);
       expect(find.text('2 pins honored'), findsOneWidget);
     });
 
-    testWidgets("zero honored → \"Pin didn't apply to this workout\"",
-        (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: _noPinForScope),
-        PinStatusBannerRow(label: 'During', decision: _noPinForScope),
-      ]));
+    testWidgets("zero honored → \"Pin didn't apply to this workout\"", (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(label: 'Meal', decision: _noPinForScope),
+          PinStatusBannerRow(label: 'During', decision: _noPinForScope),
+        ]),
+      );
       expect(find.text("Pin didn't apply to this workout"), findsOneWidget);
       expect(find.text('No in-scope pin for this activity'), findsOneWidget);
     });
 
-    testWidgets('mixed → "Some pins honored, some skipped" + counts',
-        (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: _honored()),
-        PinStatusBannerRow(label: 'Snack', decision: _noPinForScope),
-        PinStatusBannerRow(label: 'During', decision: _noPinForScope),
-      ]));
+    testWidgets('mixed → "Some pins honored, some skipped" + counts', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(label: 'Meal', decision: _honored()),
+          PinStatusBannerRow(label: 'Snack', decision: _noPinForScope),
+          PinStatusBannerRow(label: 'During', decision: _noPinForScope),
+        ]),
+      );
       expect(find.text('Some pins honored, some skipped'), findsOneWidget);
       expect(find.text('1 honored · 2 skipped'), findsOneWidget);
     });
@@ -109,46 +123,52 @@ void main() {
 
   group('PinStatusBanner — row copy (two-state rule)', () {
     testWidgets('honored row shows the pinned template name', (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(
-            label: 'Snack', decision: _honored(name: 'OJ + Toast')),
-      ]));
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(
+            label: 'Snack',
+            decision: _honored(name: 'OJ + Toast'),
+          ),
+        ]),
+      );
       await _expand(tester);
       expect(find.text('OJ + Toast'), findsOneWidget);
     });
 
-    testWidgets('honored row falls back to "Pinned formula" when name is null',
-        (tester) async {
-      const namelessPin = PinDecision(
-        usedPin: true,
-        pinnedTemplateId: 'tpl-x',
-        pinnedTemplateName: null,
-        fallthroughReason: null,
-        pinSetSize: 1,
-      );
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: namelessPin),
-      ]));
-      await _expand(tester);
-      expect(find.text('Pinned formula'), findsOneWidget);
-    });
+    testWidgets(
+      'honored row falls back to "Pinned formula" when name is null',
+      (tester) async {
+        const namelessPin = PinDecision(
+          usedPin: true,
+          pinnedTemplateId: 'tpl-x',
+          pinnedTemplateName: null,
+          fallthroughReason: null,
+          pinSetSize: 1,
+        );
+        await tester.pumpWidget(
+          _host([PinStatusBannerRow(label: 'Meal', decision: namelessPin)]),
+        );
+        await _expand(tester);
+        expect(find.text('Pinned formula'), findsOneWidget);
+      },
+    );
 
-    testWidgets('non-honored row with pin_set_size == 0 → "No pin found"',
-        (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'During', decision: _noPinForScope),
-      ]));
+    testWidgets('non-honored row with pin_set_size == 0 → "No pin found"', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host([PinStatusBannerRow(label: 'During', decision: _noPinForScope)]),
+      );
       await _expand(tester);
       expect(find.text('No pin found'), findsOneWidget);
       expect(find.text('Pins fell through'), findsNothing);
     });
 
-    testWidgets(
-        'non-honored row with pin_set_size > 0 → "Pins fell through" '
+    testWidgets('non-honored row with pin_set_size > 0 → "Pins fell through" '
         '(V2-forward-compat branch)', (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: _fellThrough),
-      ]));
+      await tester.pumpWidget(
+        _host([PinStatusBannerRow(label: 'Meal', decision: _fellThrough)]),
+      );
       await _expand(tester);
       expect(find.text('Pins fell through'), findsOneWidget);
       expect(find.text('No pin found'), findsNothing);
@@ -156,13 +176,17 @@ void main() {
 
     testWidgets('mixed rows render the correct copy per row', (tester) async {
       // Scenario-4-shaped: snack honored, the rest unmatched.
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: _noPinForScope),
-        PinStatusBannerRow(
-            label: 'Snack', decision: _honored(name: 'OJ + Toast')),
-        PinStatusBannerRow(label: 'Top-Off', decision: _noPinForScope),
-        PinStatusBannerRow(label: 'During', decision: _noPinForScope),
-      ]));
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(label: 'Meal', decision: _noPinForScope),
+          PinStatusBannerRow(
+            label: 'Snack',
+            decision: _honored(name: 'OJ + Toast'),
+          ),
+          PinStatusBannerRow(label: 'Top-Off', decision: _noPinForScope),
+          PinStatusBannerRow(label: 'During', decision: _noPinForScope),
+        ]),
+      );
       await _expand(tester);
 
       expect(find.text('OJ + Toast'), findsOneWidget);
@@ -172,38 +196,49 @@ void main() {
   });
 
   group('PinStatusBanner — CTA', () {
-    testWidgets('CTA reads "Pin your favorite formula" (substep 11 copy)',
-        (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(label: 'Meal', decision: _honored()),
-      ]));
+    testWidgets('CTA reads "Pin your favorite formula" (substep 11 copy)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host([PinStatusBannerRow(label: 'Meal', decision: _honored())]),
+      );
       await _expand(tester);
       expect(find.text('Pin your favorite formula'), findsOneWidget);
-      expect(find.text('Browse Formula Library'), findsNothing,
-          reason: 'pre-substep-11 copy must not appear');
+      expect(
+        find.text('Browse Formula Library'),
+        findsNothing,
+        reason: 'pre-substep-11 copy must not appear',
+      );
     });
 
     testWidgets('CTA invokes onFormulaLibraryTapped callback', (tester) async {
       var taps = 0;
-      await tester.pumpWidget(_host(
-        [PinStatusBannerRow(label: 'Meal', decision: _honored())],
-        onCta: () => taps++,
-      ));
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(label: 'Meal', decision: _honored()),
+        ], onCta: () => taps++),
+      );
       await _expand(tester);
       await tester.tap(
-          find.byKey(const ValueKey('pin_status_banner.formula_library_cta')));
+        find.byKey(const ValueKey('pin_status_banner.formula_library_cta')),
+      );
       await tester.pump();
       expect(taps, 1);
     });
   });
 
   group('PinStatusBanner — interaction', () {
-    testWidgets('starts collapsed; rows hidden until header tapped',
-        (tester) async {
-      await tester.pumpWidget(_host([
-        PinStatusBannerRow(
-            label: 'Snack', decision: _honored(name: 'OJ + Toast')),
-      ]));
+    testWidgets('starts collapsed; rows hidden until header tapped', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host([
+          PinStatusBannerRow(
+            label: 'Snack',
+            decision: _honored(name: 'OJ + Toast'),
+          ),
+        ]),
+      );
       // Header summary visible; row body hidden.
       expect(find.text('Using your pinned formulas'), findsOneWidget);
       expect(find.text('OJ + Toast'), findsNothing);
@@ -219,40 +254,52 @@ void main() {
   // vertical space), expand to reveal the subtext + CTA.
   group('PinStatusBanner — onboarding mode', () {
     Future<void> expandOnboarding(WidgetTester tester) async {
-      await tester.tap(find
-          .byKey(const ValueKey('pin_status_banner.onboarding_header')));
+      await tester.tap(
+        find.byKey(const ValueKey('pin_status_banner.onboarding_header')),
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
     }
 
-    testWidgets('starts collapsed: header visible, subtext + CTA hidden',
-        (tester) async {
+    testWidgets('starts collapsed: header visible, subtext + CTA hidden', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(const [], isOnboarding: true));
       // Header always visible.
       expect(find.text('Pin formulas you love'), findsOneWidget);
       // Body hidden until tapped.
-      expect(find.text("We'll use them whenever they fit your activity."),
-          findsNothing);
+      expect(
+        find.text("We'll use them whenever they fit your activity."),
+        findsNothing,
+      );
       expect(find.text('Pin your favorite formula'), findsNothing);
     });
 
-    testWidgets('tapping header expands: subtext + CTA revealed',
-        (tester) async {
+    testWidgets('tapping header expands: subtext + CTA revealed', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(const [], isOnboarding: true));
       await expandOnboarding(tester);
-      expect(find.text("We'll use them whenever they fit your activity."),
-          findsOneWidget);
+      expect(
+        find.text("We'll use them whenever they fit your activity."),
+        findsOneWidget,
+      );
       expect(find.text('Pin your favorite formula'), findsOneWidget);
     });
 
-    testWidgets('uses the onboarding ValueKey, not the status header key',
-        (tester) async {
+    testWidgets('uses the onboarding ValueKey, not the status header key', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(const [], isOnboarding: true));
-      expect(find.byKey(const ValueKey('pin_status_banner.onboarding')),
-          findsOneWidget);
-      expect(find.byKey(const ValueKey('pin_status_banner.header')),
-          findsNothing,
-          reason: 'status-mode header key must not appear in onboarding');
+      expect(
+        find.byKey(const ValueKey('pin_status_banner.onboarding')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('pin_status_banner.header')),
+        findsNothing,
+        reason: 'status-mode header key must not appear in onboarding',
+      );
     });
 
     testWidgets('does NOT render status-mode header copy', (tester) async {
@@ -265,17 +312,17 @@ void main() {
       expect(find.text('Some pins honored, some skipped'), findsNothing);
     });
 
-    testWidgets('CTA invokes onFormulaLibraryTapped callback in onboarding',
-        (tester) async {
+    testWidgets('CTA invokes onFormulaLibraryTapped callback in onboarding', (
+      tester,
+    ) async {
       var taps = 0;
-      await tester.pumpWidget(_host(
-        const [],
-        isOnboarding: true,
-        onCta: () => taps++,
-      ));
+      await tester.pumpWidget(
+        _host(const [], isOnboarding: true, onCta: () => taps++),
+      );
       await expandOnboarding(tester);
       await tester.tap(
-          find.byKey(const ValueKey('pin_status_banner.formula_library_cta')));
+        find.byKey(const ValueKey('pin_status_banner.formula_library_cta')),
+      );
       await tester.pump();
       expect(taps, 1);
     });

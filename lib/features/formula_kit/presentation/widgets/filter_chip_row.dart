@@ -65,9 +65,7 @@ class _Chip extends StatelessWidget {
     final bg = selected
         ? AppColors.electrolyte.withValues(alpha: 0.25)
         : scheme.surfaceContainerHighest;
-    final border = selected
-        ? AppColors.electrolyte
-        : scheme.outlineVariant;
+    final border = selected ? AppColors.electrolyte : scheme.outlineVariant;
     return Material(
       color: bg,
       borderRadius: AppRadius.circularRadius,

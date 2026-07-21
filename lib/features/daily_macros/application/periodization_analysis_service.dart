@@ -172,7 +172,9 @@ class PeriodizationAnalysisService {
         ? _dayNames[group.startIndex]
         : '${_dayNames[group.startIndex]}-${_dayNames[group.endIndex]}';
 
-    final carbRange = carbMin == carbMax ? '${carbMin}g' : '$carbMin-${carbMax}g';
+    final carbRange = carbMin == carbMax
+        ? '${carbMin}g'
+        : '$carbMin-${carbMax}g';
 
     // Pattern match for category label + explanation
     String categoryLabel;
@@ -220,8 +222,8 @@ class PeriodizationAnalysisService {
       tier = group.carbLevel == CarbLevel.high
           ? InsightTier.high
           : group.carbLevel == CarbLevel.low
-              ? InsightTier.low
-              : InsightTier.moderate;
+          ? InsightTier.low
+          : InsightTier.moderate;
     }
 
     return PeriodizationInsight(

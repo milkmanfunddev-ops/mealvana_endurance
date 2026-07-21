@@ -10,11 +10,15 @@ void main() {
     test('events depends on activities (events.activity_id FK)', () {
       // Regression: Sentry MEALVANA-ENDURANCE-DEV-5K. Uploading a dirty event
       // before its activity violates events_activity_id_fkey (Postgres 23503).
-      expect(SyncDependencyGraph.dependenciesFor('events'), contains('activities'));
+      expect(
+        SyncDependencyGraph.dependenciesFor('events'),
+        contains('activities'),
+      );
     });
 
     test('every declared dependency is itself a known repository', () {
-      for (final entry in SyncDependencyGraph.dependenciesByRepository.entries) {
+      for (final entry
+          in SyncDependencyGraph.dependenciesByRepository.entries) {
         for (final dep in entry.value) {
           expect(
             SyncDependencyGraph.dependenciesByRepository.containsKey(dep),
@@ -32,7 +36,8 @@ void main() {
         SyncDependencyGraph.repositoryKeys,
       );
 
-      for (final entry in SyncDependencyGraph.dependenciesByRepository.entries) {
+      for (final entry
+          in SyncDependencyGraph.dependenciesByRepository.entries) {
         final repoLevel = _levelOf(levels, entry.key);
         for (final dep in entry.value) {
           expect(
@@ -51,7 +56,10 @@ void main() {
         'users',
       ]);
 
-      expect(_levelOf(levels, 'users'), lessThan(_levelOf(levels, 'activities')));
+      expect(
+        _levelOf(levels, 'users'),
+        lessThan(_levelOf(levels, 'activities')),
+      );
       expect(
         _levelOf(levels, 'activities'),
         lessThan(_levelOf(levels, 'events')),

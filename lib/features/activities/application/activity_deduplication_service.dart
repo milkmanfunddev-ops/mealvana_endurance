@@ -6,10 +6,7 @@ part 'activity_deduplication_service.g.dart';
 
 /// Result of deduplication analysis containing keepers and duplicates.
 class DeduplicationResult {
-  const DeduplicationResult({
-    required this.keepers,
-    required this.duplicates,
-  });
+  const DeduplicationResult({required this.keepers, required this.duplicates});
 
   /// Activities to keep (one per unique key)
   final List<Activity> keepers;
@@ -20,9 +17,7 @@ class DeduplicationResult {
 
 @riverpod
 ActivityDeduplicationService activityDeduplicationService(Ref ref) {
-  return ActivityDeduplicationService(
-    logger: ref.read(appLoggerProvider),
-  );
+  return ActivityDeduplicationService(logger: ref.read(appLoggerProvider));
 }
 
 /// Service for detecting and removing duplicate provider-synced activities.
@@ -31,9 +26,7 @@ ActivityDeduplicationService activityDeduplicationService(Ref ref) {
 /// This service is stateless and works with data provided by the repository layer.
 /// It does not access the database or Supabase directly.
 class ActivityDeduplicationService {
-  ActivityDeduplicationService({
-    required AppLogger logger,
-  }) : _logger = logger;
+  ActivityDeduplicationService({required AppLogger logger}) : _logger = logger;
 
   final AppLogger _logger;
 

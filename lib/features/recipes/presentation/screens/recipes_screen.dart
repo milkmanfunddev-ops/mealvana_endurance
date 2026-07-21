@@ -57,8 +57,13 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
       // remote fetch, which will succeed as long as the Supabase session is
       // active.
       final userId =
-          ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.id ??
-              '';
+          ref
+              .read(appExternalDepsProvider)
+              .supabaseClient
+              .auth
+              .currentUser
+              ?.id ??
+          '';
       await service.ensureSynced(userId, force: force);
 
       final recipes = await service.getAllRecipes();
@@ -81,7 +86,8 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredRecipes = _recipes.where((recipe) {
-        final matchesSearch = recipe.name.toLowerCase().contains(query) ||
+        final matchesSearch =
+            recipe.name.toLowerCase().contains(query) ||
             recipe.description.toLowerCase().contains(query);
         final matchesType =
             _selectedType == null || recipe.type == _selectedType;
@@ -151,9 +157,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
             ),
           ),
           // Recipes list / loading / error states
-          Expanded(
-            child: _buildBody(context),
-          ),
+          Expanded(child: _buildBody(context)),
         ],
       ),
     );
@@ -171,16 +175,13 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
           children: [
             Text(
               _errorMessage!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.red[700],
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.red[700]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadRecipes,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: _loadRecipes, child: const Text('Retry')),
           ],
         ),
       );
@@ -188,10 +189,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
 
     if (_filteredRecipes.isEmpty) {
       return const Center(
-        child: Text(
-          'No recipes found',
-          style: TextStyle(fontSize: 16),
-        ),
+        child: Text('No recipes found', style: TextStyle(fontSize: 16)),
       );
     }
 
@@ -266,18 +264,14 @@ class _RecipeCard extends StatelessWidget {
                       children: [
                         Text(
                           recipe.name,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           recipe.description,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -315,8 +309,7 @@ class _RecipeCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _NutritionChip(
-                    label:
-                        '${recipe.nutrition.proteinGrams.round()}g protein',
+                    label: '${recipe.nutrition.proteinGrams.round()}g protein',
                     icon: Icons.fitness_center,
                   ),
                 ],
@@ -350,10 +343,7 @@ class _RecipeCard extends StatelessWidget {
 /// to load.  Uses [Image.network] with an [errorBuilder] — no extra package
 /// required.
 class _RecipeThumbnail extends StatelessWidget {
-  const _RecipeThumbnail({
-    required this.imageUrl,
-    required this.type,
-  });
+  const _RecipeThumbnail({required this.imageUrl, required this.type});
 
   final String? imageUrl;
   final RecipeType type;
@@ -437,10 +427,7 @@ class _RecipeThumbnail extends StatelessWidget {
 }
 
 class _NutritionChip extends StatelessWidget {
-  const _NutritionChip({
-    required this.label,
-    required this.icon,
-  });
+  const _NutritionChip({required this.label, required this.icon});
 
   final String label;
   final IconData icon;
@@ -458,13 +445,7 @@ class _NutritionChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: Colors.grey[600]),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
     );

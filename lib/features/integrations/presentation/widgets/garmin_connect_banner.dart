@@ -39,10 +39,7 @@ class _GarminConnectBannerState extends ConsumerState<GarminConnectBanner> {
     // Hide when Garmin is already connected.
     final isConnected = ref
         .watch(isGarminConnectedProvider(userId))
-        .maybeWhen(
-          data: (v) => v,
-          orElse: () => false,
-        );
+        .maybeWhen(data: (v) => v, orElse: () => false);
     if (isConnected) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;

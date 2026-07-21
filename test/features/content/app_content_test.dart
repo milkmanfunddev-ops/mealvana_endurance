@@ -10,15 +10,14 @@ void main() {
     int version = 1,
     String environment = 'production',
     String locale = 'en',
-  }) =>
-      AppContent(
-        version: version,
-        environment: environment,
-        locale: locale,
-        content: content,
-        lastUpdated: _baseDate,
-        isActive: true,
-      );
+  }) => AppContent(
+    version: version,
+    environment: environment,
+    locale: locale,
+    content: content,
+    lastUpdated: _baseDate,
+    isActive: true,
+  );
 
   // ---------------------------------------------------------------------------
   // getValue — dot-notation key resolution
@@ -31,18 +30,22 @@ void main() {
     });
 
     test('resolves one level of nesting', () {
-      final c = _make(content: {
-        'main_screen': {'title': 'Mealvana Endurance'},
-      });
+      final c = _make(
+        content: {
+          'main_screen': {'title': 'Mealvana Endurance'},
+        },
+      );
       expect(c.getValue('main_screen.title'), 'Mealvana Endurance');
     });
 
     test('resolves two levels of nesting', () {
-      final c = _make(content: {
-        'adjust_macros': {
-          'banner': {'short_run': 'Carbs optional'},
+      final c = _make(
+        content: {
+          'adjust_macros': {
+            'banner': {'short_run': 'Carbs optional'},
+          },
         },
-      });
+      );
       expect(c.getValue('adjust_macros.banner.short_run'), 'Carbs optional');
     });
 
@@ -58,13 +61,19 @@ void main() {
 
     test('returns defaultValue when intermediate key is absent', () {
       final c = _make(content: {'main_screen': <String, dynamic>{}});
-      expect(c.getValue('main_screen.title', defaultValue: 'default'), 'default');
+      expect(
+        c.getValue('main_screen.title', defaultValue: 'default'),
+        'default',
+      );
     });
 
     test('returns defaultValue when value is not a map at intermediate step', () {
       // 'main_screen' is a String, not a Map — traversal should bail gracefully
       final c = _make(content: {'main_screen': 'flat_string'});
-      expect(c.getValue('main_screen.title', defaultValue: 'fallback'), 'fallback');
+      expect(
+        c.getValue('main_screen.title', defaultValue: 'fallback'),
+        'fallback',
+      );
     });
 
     test('converts non-String leaf values to string', () {

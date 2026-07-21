@@ -116,7 +116,6 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
                   ],
                   onTap: () => _selectProtocol(context, ref, 2),
                 ),
-
               ],
             ),
           ),

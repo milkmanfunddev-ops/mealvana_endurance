@@ -79,11 +79,9 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
   Future<void> _ensureIntegrationsRowsSynced(String userId) async {
     try {
       final repo = ref.read(integrationsRepositoryProvider);
-      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
-            'integrations',
-            userId,
-            repository: repo,
-          );
+      await ref
+          .read(syncCoordinatorProvider.notifier)
+          .ensureSynced('integrations', userId, repository: repo);
     } catch (e, stackTrace) {
       _logger.warning(
         'Integration row sync failed; continuing with local data',
@@ -161,7 +159,9 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       final controller = ref.read(connectTrainingControllerProvider.notifier);
       if (controller.isSyncingProvider(provider)) {
         if (kDebugMode) {
-          print('🔄 Integration sync skipped ($provider) - manual sync in progress');
+          print(
+            '🔄 Integration sync skipped ($provider) - manual sync in progress',
+          );
         }
         return;
       }
@@ -182,8 +182,9 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           await service.syncWorkouts(userId);
           break;
         case 'training_peaks':
-          final service =
-              await ref.read(trainingPeaksSyncServiceProvider.future);
+          final service = await ref.read(
+            trainingPeaksSyncServiceProvider.future,
+          );
           await service.syncAll(userId);
           break;
         case 'vdot':
@@ -223,10 +224,12 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           if (kDebugMode) {
             if (uploadResult.success) {
               print(
-                  '☁️  Integration sync uploaded ${uploadResult.count} dirty records for $provider');
+                '☁️  Integration sync uploaded ${uploadResult.count} dirty records for $provider',
+              );
             } else {
               print(
-                  '⚠️  Integration sync upload had no records or failed for $provider: ${uploadResult.error}');
+                '⚠️  Integration sync upload had no records or failed for $provider: ${uploadResult.error}',
+              );
             }
           }
         } catch (e, stackTrace) {
@@ -239,7 +242,8 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           );
           if (kDebugMode) {
             print(
-                '⚠️  Integration sync upload failed for $provider (best-effort): $e');
+              '⚠️  Integration sync upload failed for $provider (best-effort): $e',
+            );
           }
         }
       }

@@ -12,7 +12,11 @@ class UnitFormatter {
   static const double kMeterPerFoot = 0.3048;
   static const double kFootPerMeter = 3.28084;
 
-  static String formatFluids(double ml, {bool useImperial = false, bool useMetric = false}) {
+  static String formatFluids(
+    double ml, {
+    bool useImperial = false,
+    bool useMetric = false,
+  }) {
     // Support both parameter names for backward compatibility
     final shouldUseMetric = useMetric || !useImperial;
 
@@ -69,7 +73,8 @@ class UnitFormatter {
     return "$feet'$inches\"";
   }
 
-  static int totalInchesToCm(int totalInches) => (totalInches * kCmPerInch).round();
+  static int totalInchesToCm(int totalInches) =>
+      (totalInches * kCmPerInch).round();
 
   static int cmToTotalInches(int cm) => (cm / kCmPerInch).round();
 
@@ -89,7 +94,8 @@ class UnitFormatter {
 
   static double celsiusToFahrenheit(double celsius) => (celsius * 9 / 5) + 32;
 
-  static double fahrenheitToCelsius(double fahrenheit) => (fahrenheit - 32) * 5 / 9;
+  static double fahrenheitToCelsius(double fahrenheit) =>
+      (fahrenheit - 32) * 5 / 9;
 
   // Speed conversion methods (base unit: mph, matching
   // UserProfile.defaultCyclingSpeedMph and other imperial-base fields)
@@ -118,15 +124,21 @@ class UnitFormatter {
   static double metersToFeet(double meters) => meters * kFootPerMeter;
 
   // Unit label helpers
-  static String fluidUnitLabel({required bool useMetric}) => useMetric ? 'mL' : 'oz';
+  static String fluidUnitLabel({required bool useMetric}) =>
+      useMetric ? 'mL' : 'oz';
 
-  static String weightUnitLabel({required bool useMetric}) => useMetric ? 'kg' : 'lbs';
+  static String weightUnitLabel({required bool useMetric}) =>
+      useMetric ? 'kg' : 'lbs';
 
-  static String heightUnitLabel({required bool useMetric}) => useMetric ? 'cm' : 'ft/in';
+  static String heightUnitLabel({required bool useMetric}) =>
+      useMetric ? 'cm' : 'ft/in';
 
-  static String temperatureUnitLabel({required bool useMetric}) => useMetric ? '°C' : '°F';
+  static String temperatureUnitLabel({required bool useMetric}) =>
+      useMetric ? '°C' : '°F';
 
-  static String speedUnitLabel({required bool useMetric}) => useMetric ? 'km/h' : 'mph';
+  static String speedUnitLabel({required bool useMetric}) =>
+      useMetric ? 'km/h' : 'mph';
 
-  static String elevationUnitLabel({required bool useMetric}) => useMetric ? 'm' : 'ft';
+  static String elevationUnitLabel({required bool useMetric}) =>
+      useMetric ? 'm' : 'ft';
 }

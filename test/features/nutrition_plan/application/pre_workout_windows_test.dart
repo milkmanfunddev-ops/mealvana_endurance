@@ -30,40 +30,36 @@ void main() {
     );
 
     test('fluid blurb says no plan needed, not "too late"', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       expect(data.tldrBody, isNotNull);
       expect(data.tldrBody, contains('No structured pre-hydration needed'));
       expect(data.tldrBody, isNot(contains('Too late')));
       expect(data.tldrLines, isEmpty);
-      expect(data.tldrTip, isNull,
-          reason: 'urine tip is full-protocol-only');
+      expect(data.tldrTip, isNull, reason: 'urine tip is full-protocol-only');
     });
 
     test('sodium blurb references gate, not the standard retention copy', () {
-      final data = service
-          .getSodiumTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getSodiumTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       expect(data.tldrBody, contains('No structured pre-hydration sodium'));
       expect(data.tldrLines, isEmpty);
     });
 
     test('fluid calc accordion shows gate condition, not "<10 min"', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final flat = _flattenFormula(data.calculationSections);
       expect(flat, contains('workout < 60 min'));
@@ -84,12 +80,11 @@ void main() {
     );
 
     test('fluid blurb says "Too late" and points to during-workout', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       expect(data.tldrBody, contains('Too late for structured pre-hydration'));
       expect(data.tldrBody, contains('during-workout plan'));
@@ -98,12 +93,11 @@ void main() {
     });
 
     test('fluid calc accordion shows < 10 min, not gate language', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final flat = _flattenFormula(data.calculationSections);
       expect(flat, contains('< 10 min pre-start'));
@@ -111,12 +105,11 @@ void main() {
     });
 
     test('Full Story skips "Where does 5–7 ml/kg come from?" Q', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final questions = data.storySections.map((s) => s.question).toList();
       expect(
@@ -145,54 +138,52 @@ void main() {
     );
 
     test('fluid blurb uses spec wording for the short window', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
-      expect(data.tldrBody,
-          contains('Not enough time for the full protocol'));
+      expect(data.tldrBody, contains('Not enough time for the full protocol'));
       expect(data.tldrBody, contains('250 mL'));
     });
 
     test('fluid formula shows "10–120 min window" not "Tier 2"', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
-      final flat = _flattenFormula(data.calculationSections) +
+      final flat =
+          _flattenFormula(data.calculationSections) +
           _flattenLines(data.tldrLines);
       expect(flat, contains('10–120 min window'));
       expect(flat.toLowerCase(), isNot(contains('tier')));
     });
 
-    test('sodium formula shows "10–120 min window" with the right midpoint',
-        () {
-      final data = service
-          .getSodiumTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+    test(
+      'sodium formula shows "10–120 min window" with the right midpoint',
+      () {
+        final data = service.getSodiumTransparencyData(
+          phase: ExplanationPhase.before,
+          macroTargets: targets,
+          bodyWeightKg: bodyWeightKg,
+        )![Scenario.singleSport]!;
 
-      final flat = _flattenLines(data.tldrLines);
-      expect(flat, contains('10–120 min window'));
-      expect(flat, contains('150 mg'));
-      expect(flat, contains('100–200 mg'));
-    });
+        final flat = _flattenLines(data.tldrLines);
+        expect(flat, contains('10–120 min window'));
+        expect(flat, contains('150 mg'));
+        expect(flat, contains('100–200 mg'));
+      },
+    );
 
     test('no urine tip in the short window', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       expect(data.tldrTip, isNull);
     });
@@ -215,12 +206,11 @@ void main() {
     );
 
     test('fluid blurb mentions the back-derived hours and target ml', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       expect(data.tldrBody, contains('euhydrated'));
       expect(data.tldrBody, contains('390 mL'));
@@ -230,12 +220,11 @@ void main() {
     });
 
     test('fluid formula uses the inline kg × ml/kg form', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final flat = _flattenLines(data.tldrLines);
       expect(flat, contains('65 kg'));
@@ -249,12 +238,11 @@ void main() {
     });
 
     test('urine tip is present', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       expect(data.tldrTip, isNotNull);
       expect(data.tldrTip, contains('pale yellow'));
@@ -262,12 +250,11 @@ void main() {
     });
 
     test('sodium formula uses "≥ 2 hr window" with 450 mg midpoint', () {
-      final data = service
-          .getSodiumTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getSodiumTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final flat = _flattenLines(data.tldrLines);
       expect(flat, contains('≥ 2 hr window'));
@@ -277,35 +264,37 @@ void main() {
     });
 
     test('Full Story includes all four hydration Qs', () {
-      final data = service
-          .getFluidTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final questions = data.storySections.map((s) => s.question).toList();
-      expect(questions, contains('What is euhydration and why does it matter?'));
+      expect(
+        questions,
+        contains('What is euhydration and why does it matter?'),
+      );
       expect(questions, contains('Where does 5–7 ml/kg come from?'));
-      expect(questions,
-          contains('Why does the recommendation change with time available?'));
+      expect(
+        questions,
+        contains('Why does the recommendation change with time available?'),
+      );
       expect(questions, contains('What about early morning workouts?'));
     });
 
     test('Full Story includes all four sodium Qs', () {
-      final data = service
-          .getSodiumTransparencyData(
-            phase: ExplanationPhase.before,
-            macroTargets: targets,
-            bodyWeightKg: bodyWeightKg,
-          )![Scenario.singleSport]!;
+      final data = service.getSodiumTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: targets,
+        bodyWeightKg: bodyWeightKg,
+      )![Scenario.singleSport]!;
 
       final questions = data.storySections.map((s) => s.question).toList();
       expect(questions, contains('How does sodium help retain fluid?'));
       expect(questions, contains('Where does 300–600 mg come from?'));
       expect(
-        questions
-            .any((q) => q.contains("isn't sodium scaled to body weight")),
+        questions.any((q) => q.contains("isn't sodium scaled to body weight")),
         isTrue,
       );
       expect(questions, contains('Is this the same as sodium loading?'));
@@ -316,39 +305,39 @@ void main() {
   group('Pre-workout — no internal tier terminology in any window', () {
     for (final sample in [
       _preTargets(
-          fluidsMl: 0,
-          sodiumMg: 0,
-          carbsG: 0,
-          durationMin: 45,
-          tempC: 20),
+        fluidsMl: 0,
+        sodiumMg: 0,
+        carbsG: 0,
+        durationMin: 45,
+        tempC: 20,
+      ),
       _preTargets(
-          fluidsMl: 250,
-          sodiumMg: 150,
-          carbsG: 33,
-          durationMin: 90,
-          tempC: 25),
+        fluidsMl: 250,
+        sodiumMg: 150,
+        carbsG: 33,
+        durationMin: 90,
+        tempC: 25,
+      ),
       _preTargets(
-          fluidsMl: 390,
-          sodiumMg: 450,
-          carbsG: 195,
-          durationMin: 120,
-          tempC: 25),
+        fluidsMl: 390,
+        sodiumMg: 450,
+        carbsG: 195,
+        durationMin: 120,
+        tempC: 25,
+      ),
     ]) {
-      test(
-          'fluid + sodium copy free of "Tier 1/2/3" '
+      test('fluid + sodium copy free of "Tier 1/2/3" '
           '(fluidsMl=${sample.preRun.fluidsMl})', () {
-        final fluid = service
-            .getFluidTransparencyData(
-              phase: ExplanationPhase.before,
-              macroTargets: sample,
-              bodyWeightKg: bodyWeightKg,
-            )![Scenario.singleSport]!;
-        final sodium = service
-            .getSodiumTransparencyData(
-              phase: ExplanationPhase.before,
-              macroTargets: sample,
-              bodyWeightKg: bodyWeightKg,
-            )![Scenario.singleSport]!;
+        final fluid = service.getFluidTransparencyData(
+          phase: ExplanationPhase.before,
+          macroTargets: sample,
+          bodyWeightKg: bodyWeightKg,
+        )![Scenario.singleSport]!;
+        final sodium = service.getSodiumTransparencyData(
+          phase: ExplanationPhase.before,
+          macroTargets: sample,
+          bodyWeightKg: bodyWeightKg,
+        )![Scenario.singleSport]!;
 
         for (final data in [fluid, sodium]) {
           final allText = [
@@ -442,9 +431,7 @@ MacroTargets _preTargets({
 }
 
 String _flattenLines(List<FormulaLine> lines) {
-  return lines
-      .expand((l) => l.segments.map((s) => s.text))
-      .join('');
+  return lines.expand((l) => l.segments.map((s) => s.text)).join('');
 }
 
 String _flattenFormula(List<CalculationSection> sections) {

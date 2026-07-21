@@ -1116,7 +1116,8 @@ class CoachService {
   }
 
   /// Get the current coach's active pairing code, if any.
-  Future<({String code, DateTime expiresAt})?> getActiveCoachPairingCode() async {
+  Future<({String code, DateTime expiresAt})?>
+  getActiveCoachPairingCode() async {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) return null;

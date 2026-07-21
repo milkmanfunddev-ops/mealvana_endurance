@@ -15,42 +15,38 @@ void main() {
   final now = DateTime(2026, 6, 13);
 
   MealLog log() => MealLog(
-        id: 'log-1',
-        userId: 'u1',
-        logDate: '2026-06-13',
-        slot: MealSlot.lunch,
-        name: 'Chicken rice bowl',
-        source: MealLogSource.manual,
-        components: const [],
-        calories: 640,
-        carbsG: 72,
-        proteinG: 45,
-        fatG: 18,
-        createdAt: now,
-        updatedAt: now,
-      );
+    id: 'log-1',
+    userId: 'u1',
+    logDate: '2026-06-13',
+    slot: MealSlot.lunch,
+    name: 'Chicken rice bowl',
+    source: MealLogSource.manual,
+    components: const [],
+    calories: 640,
+    carbsG: 72,
+    proteinG: 45,
+    fatG: 18,
+    createdAt: now,
+    updatedAt: now,
+  );
 
-  Widget host({
-    VoidCallback? onDelete,
-    VoidCallback? onEdit,
-  }) =>
-      ProviderScope(
-        overrides: [
-          // Keep the favorite lookup off the real DB stack.
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value(const <SavedMeal>[]),
-          ),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: MealLogRow(
-              log: log(),
-              onDelete: onDelete ?? () {},
-              onEdit: onEdit ?? () {},
-            ),
-          ),
+  Widget host({VoidCallback? onDelete, VoidCallback? onEdit}) => ProviderScope(
+    overrides: [
+      // Keep the favorite lookup off the real DB stack.
+      savedMealsProvider.overrideWith(
+        (ref) => Stream.value(const <SavedMeal>[]),
+      ),
+    ],
+    child: MaterialApp(
+      home: Scaffold(
+        body: MealLogRow(
+          log: log(),
+          onDelete: onDelete ?? () {},
+          onEdit: onEdit ?? () {},
         ),
-      );
+      ),
+    ),
+  );
 
   testWidgets('renders no ellipsis/overflow menu — star stays as the only '
       'trailing affordance', (tester) async {

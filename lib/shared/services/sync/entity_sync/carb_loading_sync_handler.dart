@@ -21,8 +21,8 @@ class CarbLoadingSyncHandler {
   const CarbLoadingSyncHandler({
     required AppDatabase database,
     required AppLogger logger,
-  })  : _database = database,
-        _logger = logger;
+  }) : _database = database,
+       _logger = logger;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -30,17 +30,21 @@ class CarbLoadingSyncHandler {
   /// Upsert a carb loading plan from remote data.
   Future<void> upsertCarbLoadingPlan(Map<String, dynamic> data) async {
     try {
-      final planId = SyncTypeConverters.toRequiredStringId(data['id'], 'carb_loading_plan.id');
-      final existingPlan = await (_database.select(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.id.equals(planId)))
-          .getSingleOrNull();
+      final planId = SyncTypeConverters.toRequiredStringId(
+        data['id'],
+        'carb_loading_plan.id',
+      );
+      final existingPlan = await (_database.select(
+        _database.carbLoadingPlansTable,
+      )..where((tbl) => tbl.id.equals(planId))).getSingleOrNull();
 
       final remoteUpdatedAt = (data['local_updated_at'] as String?) != null
           ? DateTime.parse(data['local_updated_at'] as String)
           : null;
 
       // Only upsert if we don't have it locally or the server copy is newer
-      final shouldUpsert = existingPlan == null ||
+      final shouldUpsert =
+          existingPlan == null ||
           (remoteUpdatedAt != null &&
               remoteUpdatedAt.isAfter(existingPlan.localUpdatedAt));
 
@@ -48,17 +52,24 @@ class CarbLoadingSyncHandler {
         final companion = CarbLoadingPlansTableCompanion.insert(
           id: Value(planId),
           eventId: Value(SyncTypeConverters.toStringId(data['event_id'])),
-          userId: SyncTypeConverters.toRequiredStringId(data['user_id'], 'carb_loading_plan.user_id'),
+          userId: SyncTypeConverters.toRequiredStringId(
+            data['user_id'],
+            'carb_loading_plan.user_id',
+          ),
           totalDays: data['total_days'] as int,
           startDate: DateTime.parse(data['start_date'] as String),
           endDate: DateTime.parse(data['end_date'] as String),
           dailyCarbTargetGrams: data['daily_carb_target_grams'] as int,
           dailyCalorieTarget: Value(data['daily_calorie_target'] as int?),
           generatedAt: DateTime.parse(data['generated_at'] as String),
-          algorithmVersion: Value(data['algorithm_version'] as String? ?? 'v1.0'),
+          algorithmVersion: Value(
+            data['algorithm_version'] as String? ?? 'v1.0',
+          ),
           adherenceScore: Value((data['adherence_score'] as num?)?.toDouble()),
           completedAt: Value(
-            data['completed_at'] != null ? DateTime.parse(data['completed_at'] as String) : null,
+            data['completed_at'] != null
+                ? DateTime.parse(data['completed_at'] as String)
+                : null,
           ),
           needsUpload: const Value(false),
           localUpdatedAt: Value(remoteUpdatedAt ?? DateTime.now()),
@@ -75,14 +86,16 @@ class CarbLoadingSyncHandler {
           final totalDays = data['total_days'] as int;
           final startDate = DateTime.parse(data['start_date'] as String);
 
-          await (_database.update(_database.eventsTable)
-                ..where((tbl) => tbl.id.equals(eventId)))
-              .write(EventsTableCompanion(
-                hasCarbLoading: const Value(true),
-                carbLoadingDays: Value(totalDays),
-                carbLoadingStartDate: Value(startDate),
-                // Don't mark as needsUpload since we're syncing FROM server
-              ));
+          await (_database.update(
+            _database.eventsTable,
+          )..where((tbl) => tbl.id.equals(eventId))).write(
+            EventsTableCompanion(
+              hasCarbLoading: const Value(true),
+              carbLoadingDays: Value(totalDays),
+              carbLoadingStartDate: Value(startDate),
+              // Don't mark as needsUpload since we're syncing FROM server
+            ),
+          );
         }
       }
     } catch (e, stackTrace) {
@@ -99,16 +112,20 @@ class CarbLoadingSyncHandler {
   /// Upsert a carb loading day from remote data.
   Future<void> upsertCarbLoadingDay(Map<String, dynamic> data) async {
     try {
-      final dayId = SyncTypeConverters.toRequiredStringId(data['id'], 'carb_loading_day.id');
-      final existingDay = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.id.equals(dayId)))
-          .getSingleOrNull();
+      final dayId = SyncTypeConverters.toRequiredStringId(
+        data['id'],
+        'carb_loading_day.id',
+      );
+      final existingDay = await (_database.select(
+        _database.carbLoadingDaysTable,
+      )..where((tbl) => tbl.id.equals(dayId))).getSingleOrNull();
 
       final remoteUpdatedAt = (data['local_updated_at'] as String?) != null
           ? DateTime.parse(data['local_updated_at'] as String)
           : null;
 
-      final shouldUpsert = existingDay == null ||
+      final shouldUpsert =
+          existingDay == null ||
           (remoteUpdatedAt != null &&
               remoteUpdatedAt.isAfter(existingDay.localUpdatedAt));
 
@@ -116,7 +133,9 @@ class CarbLoadingSyncHandler {
         final companion = CarbLoadingDaysTableCompanion.insert(
           id: Value(dayId),
           carbLoadingPlanId: SyncTypeConverters.toRequiredStringId(
-              data['carb_loading_plan_id'], 'carb_loading_day.carb_loading_plan_id'),
+            data['carb_loading_plan_id'],
+            'carb_loading_day.carb_loading_plan_id',
+          ),
           planDate: DateTime.parse(data['plan_date'] as String),
           dayNumber: data['day_number'] as int,
           carbTargetGrams: data['carb_target_grams'] as int,
@@ -125,12 +144,24 @@ class CarbLoadingSyncHandler {
           ),
           calorieTarget: Value(data['calorie_target'] as int?),
           mealCount: Value(data['meal_count'] as int? ?? 6),
-          breakfastPercent: Value((data['breakfast_percent'] as num?)?.toDouble() ?? 0.25),
-          morningSnackPercent: Value((data['morning_snack_percent'] as num?)?.toDouble() ?? 0.10),
-          lunchPercent: Value((data['lunch_percent'] as num?)?.toDouble() ?? 0.25),
-          afternoonSnackPercent: Value((data['afternoon_snack_percent'] as num?)?.toDouble() ?? 0.15),
-          dinnerPercent: Value((data['dinner_percent'] as num?)?.toDouble() ?? 0.20),
-          eveningSnackPercent: Value((data['evening_snack_percent'] as num?)?.toDouble() ?? 0.05),
+          breakfastPercent: Value(
+            (data['breakfast_percent'] as num?)?.toDouble() ?? 0.25,
+          ),
+          morningSnackPercent: Value(
+            (data['morning_snack_percent'] as num?)?.toDouble() ?? 0.10,
+          ),
+          lunchPercent: Value(
+            (data['lunch_percent'] as num?)?.toDouble() ?? 0.25,
+          ),
+          afternoonSnackPercent: Value(
+            (data['afternoon_snack_percent'] as num?)?.toDouble() ?? 0.15,
+          ),
+          dinnerPercent: Value(
+            (data['dinner_percent'] as num?)?.toDouble() ?? 0.20,
+          ),
+          eveningSnackPercent: Value(
+            (data['evening_snack_percent'] as num?)?.toDouble() ?? 0.05,
+          ),
           loggedCarbsGrams: Value(data['logged_carbs_grams'] as int? ?? 0),
           loggedCalories: Value(data['logged_calories'] as int? ?? 0),
           completed: Value(data['completed'] as bool? ?? false),

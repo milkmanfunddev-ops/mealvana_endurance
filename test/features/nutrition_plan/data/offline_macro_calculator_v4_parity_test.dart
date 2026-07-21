@@ -404,18 +404,20 @@ void main() {
   // =========================================================================
   // calculateGrossCalories
   // =========================================================================
-  test('calculateGrossCalories: MET=10, 70kg, 90min → round(10×3.5×70/200×90)',
-      () {
-    final expected = (10 * 3.5 * 70 / 200.0 * 90).round();
-    expect(
-      OfflineMacroCalculator.calculateGrossCalories(
-        weightKg: 70,
-        durationMin: 90,
-        met: 10,
-      ),
-      expected,
-    );
-  });
+  test(
+    'calculateGrossCalories: MET=10, 70kg, 90min → round(10×3.5×70/200×90)',
+    () {
+      final expected = (10 * 3.5 * 70 / 200.0 * 90).round();
+      expect(
+        OfflineMacroCalculator.calculateGrossCalories(
+          weightKg: 70,
+          durationMin: 90,
+          met: 10,
+        ),
+        expected,
+      );
+    },
+  );
 
   // =========================================================================
   // calculateNetCalories
@@ -496,34 +498,37 @@ void main() {
     });
   });
 
-  group('calculateCyclingMacros integration — 25mi/14.7mph flat (180-min ride)', () {
-    // Use 37 miles at same speed to get ~150 min → band [60,90], rate=75
-    // 37 / 14.7 * 60 = 151.0 min → band [60,90]
-    late Map<String, dynamic> result;
-    setUp(() {
-      result = OfflineMacroCalculator.calculateCyclingMacros(
-        weightKg: 70.0,
-        distanceMiles: 37.0,
-        speedMph: 14.7,
-        terrain: 'flat',
-        hoursBefore: 3.0,
-        isFasted: false,
-        gutTraining: 'moderate',
-      );
-    });
+  group(
+    'calculateCyclingMacros integration — 25mi/14.7mph flat (180-min ride)',
+    () {
+      // Use 37 miles at same speed to get ~150 min → band [60,90], rate=75
+      // 37 / 14.7 * 60 = 151.0 min → band [60,90]
+      late Map<String, dynamic> result;
+      setUp(() {
+        result = OfflineMacroCalculator.calculateCyclingMacros(
+          weightKg: 70.0,
+          distanceMiles: 37.0,
+          speedMph: 14.7,
+          terrain: 'flat',
+          hoursBefore: 3.0,
+          isFasted: false,
+          gutTraining: 'moderate',
+        );
+      });
 
-    test('during_rate_g_per_h is 75.0 for 151min ride', () {
-      expect(result['during_rate_g_per_h'], 75.0);
-    });
+      test('during_rate_g_per_h is 75.0 for 151min ride', () {
+        expect(result['during_rate_g_per_h'], 75.0);
+      });
 
-    test('during_band_low_g_per_h = 60', () {
-      expect(result['during_band_low_g_per_h'], 60);
-    });
+      test('during_band_low_g_per_h = 60', () {
+        expect(result['during_band_low_g_per_h'], 60);
+      });
 
-    test('during_band_high_g_per_h = 90', () {
-      expect(result['during_band_high_g_per_h'], 90);
-    });
-  });
+      test('during_band_high_g_per_h = 90', () {
+        expect(result['during_band_high_g_per_h'], 90);
+      });
+    },
+  );
 
   // =========================================================================
   // Full calculateRunningMacros integration — fasted

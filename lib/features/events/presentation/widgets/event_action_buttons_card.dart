@@ -265,5 +265,4 @@ class EventActionButtonsCard extends ConsumerWidget {
       }
     }
   }
-
 }

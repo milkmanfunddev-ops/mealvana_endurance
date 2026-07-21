@@ -26,7 +26,10 @@ final class SentryProviderObserver extends ProviderObserver {
       stackTrace: stackTrace,
       withScope: (scope) {
         scope.setTag('component', 'riverpod_provider');
-        scope.setTag('provider', context.provider.name ?? context.provider.runtimeType.toString());
+        scope.setTag(
+          'provider',
+          context.provider.name ?? context.provider.runtimeType.toString(),
+        );
         scope.level = SentryLevel.error;
       },
     );

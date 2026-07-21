@@ -12,7 +12,8 @@ class CoachMessage {
   final String id;
   final String coachUserId; // The coach in this conversation
   final String athleteUserId; // The athlete in this conversation
-  final String senderUserId; // Who sent this specific message (coach or athlete)
+  final String
+  senderUserId; // Who sent this specific message (coach or athlete)
   final String messageText;
   final String? nutritionPlanId; // Optional: comment on a nutrition plan
   final String? activityId; // Optional: comment on an activity

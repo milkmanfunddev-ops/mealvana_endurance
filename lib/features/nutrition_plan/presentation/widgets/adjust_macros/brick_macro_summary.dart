@@ -64,7 +64,9 @@ class BrickMacroSummary extends StatelessWidget {
                 style: AppTextStyles.sectionTitle.copyWith(
                   fontSize: 12,
                   letterSpacing: 1.2,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               if (onInfoPressed != null)
@@ -75,12 +77,16 @@ class BrickMacroSummary extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
                     child: FaIcon(
                       FontAwesomeIcons.circleQuestion,
                       size: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -143,10 +149,7 @@ class BrickMacroSummary extends StatelessWidget {
     return Row(
       children: [
         // Icon
-        Text(
-          icon,
-          style: const TextStyle(fontSize: 20),
-        ),
+        Text(icon, style: const TextStyle(fontSize: 20)),
         const SizedBox(width: 12),
 
         // Label

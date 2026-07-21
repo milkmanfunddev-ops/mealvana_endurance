@@ -4,7 +4,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-
 /// Tertiary button for Kyle's design system
 /// Text only with Dragonfruit color
 class KyleTertiaryButton extends ConsumerWidget {
@@ -31,9 +30,7 @@ class KyleTertiaryButton extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.dragonfruit,
         disabledForegroundColor: AppColors.dragonfruit.withOpacity(0.4),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.smRadius,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
@@ -46,7 +43,9 @@ class KyleTertiaryButton extends ConsumerWidget {
               width: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 1.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.dragonfruit),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.dragonfruit,
+                ),
               ),
             )
           : Row(
@@ -104,7 +103,9 @@ class KyleTertiaryButtonUnderlined extends ConsumerWidget {
                 width: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.dragonfruit),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.dragonfruit,
+                  ),
                 ),
               )
             : Row(
@@ -156,9 +157,7 @@ class KyleTertiaryButtonSmall extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.dragonfruit,
         disabledForegroundColor: AppColors.dragonfruit.withOpacity(0.4),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.smRadius,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xs,
           vertical: AppSpacing.xxs,
@@ -171,28 +170,30 @@ class KyleTertiaryButtonSmall extends ConsumerWidget {
               width: 12,
               child: CircularProgressIndicator(
                 strokeWidth: 1,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.dragonfruit),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.dragonfruit,
+                ),
               ),
             )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(
-                      icon,
-                      size: AppIconSizes.xs,
-                      color: AppColors.dragonfruit,
-                    ),
-                    const SizedBox(width: AppSpacing.xxs),
-                  ],
-                  Text(
-                    text,
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: AppColors.dragonfruit,
-                    ),
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: AppIconSizes.xs,
+                    color: AppColors.dragonfruit,
                   ),
+                  const SizedBox(width: AppSpacing.xxs),
                 ],
-              ),
+                Text(
+                  text,
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: AppColors.dragonfruit,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -227,14 +228,12 @@ class KyleTertiaryIconButton extends ConsumerWidget {
                 height: size,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.dragonfruit),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.dragonfruit,
+                  ),
                 ),
               )
-            : Icon(
-                icon,
-                size: size,
-                color: AppColors.dragonfruit,
-              ),
+            : Icon(icon, size: size, color: AppColors.dragonfruit),
       ),
     );
   }

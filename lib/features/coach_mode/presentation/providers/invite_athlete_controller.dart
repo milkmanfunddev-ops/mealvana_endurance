@@ -14,9 +14,7 @@ class InviteAthleteController extends _$InviteAthleteController {
   }
 
   /// Send an invitation to an athlete
-  Future<bool> inviteAthlete({
-    required String athleteUserId,
-  }) async {
+  Future<bool> inviteAthlete({required String athleteUserId}) async {
     state = const AsyncLoading();
 
     try {

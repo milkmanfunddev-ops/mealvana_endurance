@@ -255,15 +255,18 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   /// Fire the scan-failure event so the barcode funnel can measure no-match /
   /// invalid / error rate (OpenFoodFacts coverage is barcode's make-or-break).
   void _trackLookupFailed(String reason, String code) {
-    ref.read(appExternalDepsProvider).analytics.track(
-      'barcode_lookup_failed',
-      properties: {
-        'reason': reason,
-        'code': code,
-        'category': widget.category,
-        'context': widget.context,
-      },
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'barcode_lookup_failed',
+          properties: {
+            'reason': reason,
+            'code': code,
+            'category': widget.category,
+            'context': widget.context,
+          },
+        );
   }
 
   void _showSuccessResult(Food food, String barcode) {
@@ -721,7 +724,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             key: const ValueKey('barcode.flash_button'),
             onPressed: _toggleFlashlight,
             icon: Icon(
-              _flashOn ? FontAwesomeIcons.bolt.data : FontAwesomeIcons.bolt.data,
+              _flashOn
+                  ? FontAwesomeIcons.bolt.data
+                  : FontAwesomeIcons.bolt.data,
               color: _flashOn ? AppColors.orange : Colors.white,
               size: AppIconSizes.md,
             ),

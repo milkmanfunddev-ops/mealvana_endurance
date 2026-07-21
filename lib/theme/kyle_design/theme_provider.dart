@@ -4,20 +4,21 @@ import '../../shared/services/app_external_deps.dart';
 
 /// Theme mode provider for Kyle's design system
 /// Manages light/dark theme switching with persistence
-final kyleThemeModeProvider = AsyncNotifierProvider<AppThemeModeNotifier, ThemeMode>(() {
-  return AppThemeModeNotifier();
-});
+final kyleThemeModeProvider =
+    AsyncNotifierProvider<AppThemeModeNotifier, ThemeMode>(() {
+      return AppThemeModeNotifier();
+    });
 
 class AppThemeModeNotifier extends AsyncNotifier<ThemeMode> {
   static const String _themeKey = 'kyle_theme_mode';
-  
+
   @override
   Future<ThemeMode> build() async {
     // Default to dark mode per requirements
     _loadTheme();
     return state.value ?? ThemeMode.dark;
   }
-  
+
   /// Load theme from shared preferences
   void _loadTheme() {
     final prefs = ref.read(sharedPreferencesProvider);
@@ -51,14 +52,16 @@ class AppThemeModeNotifier extends AsyncNotifier<ThemeMode> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(_themeKey, mode.name);
   }
-  
+
   /// Toggle between light and dark themes
   Future<void> toggleTheme() async {
     final currentMode = state.value ?? ThemeMode.dark;
-    final newMode = currentMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    final newMode = currentMode == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
     await setThemeMode(newMode);
   }
-  
+
   /// Check if current theme is dark
   bool isDark(BuildContext context) {
     final currentMode = state.value ?? ThemeMode.dark;
@@ -71,7 +74,7 @@ class AppThemeModeNotifier extends AsyncNotifier<ThemeMode> {
         return MediaQuery.of(context).platformBrightness == Brightness.dark;
     }
   }
-  
+
   /// Check if current theme is light
   bool isLight(BuildContext context) {
     return !isDark(context);

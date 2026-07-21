@@ -22,7 +22,7 @@ class CalendarSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Only this widget will rebuild when view mode changes
     final calendarMode = ref.watch(calendarViewProvider);
-    
+
     return Column(
       children: [
         // Calendar view toggle
@@ -61,6 +61,3 @@ class CalendarSection extends ConsumerWidget {
     );
   }
 }
-
-
-

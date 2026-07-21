@@ -17,10 +17,7 @@ import '../../domain/plan_section.dart';
 /// See `docs/features/formula-kit/PLAN.md` (PinStatusBanner V1 polish,
 /// substep 11) for the rationale behind each state.
 class PinBannerData {
-  const PinBannerData({
-    required this.rows,
-    required this.isOnboarding,
-  });
+  const PinBannerData({required this.rows, required this.isOnboarding});
 
   /// Per-phase rows for the Status mode. Empty in Hidden and Onboarding modes.
   final List<PinStatusBannerRow> rows;

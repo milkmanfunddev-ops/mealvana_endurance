@@ -182,8 +182,9 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
+            activityDetailControllerProvider(
+              activityId: 'act-1',
+            ).overrideWith(() => _FakeActivityDetailController(state)),
           ],
           settle: true,
         );
@@ -203,8 +204,9 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
+            activityDetailControllerProvider(
+              activityId: 'act-1',
+            ).overrideWith(() => _FakeActivityDetailController(state)),
           ],
           settle: true,
         );
@@ -221,25 +223,25 @@ void main() {
       },
     );
 
-    testWidgets(
-      'renders the banana food name from the before-run section',
-      (tester) async {
-        final state = _makeDetailState();
+    testWidgets('renders the banana food name from the before-run section', (
+      tester,
+    ) async {
+      final state = _makeDetailState();
 
-        await pumpSeeded(
-          tester,
-          const ActivityDetailScreen(activityId: 'act-1'),
-          overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const ActivityDetailScreen(activityId: 'act-1'),
+        overrides: [
+          activityDetailControllerProvider(
+            activityId: 'act-1',
+          ).overrideWith(() => _FakeActivityDetailController(state)),
+        ],
+        settle: true,
+      );
 
-        // At least one widget should show "Banana".
-        expect(find.textContaining('Banana'), findsWidgets);
-      },
-    );
+      // At least one widget should show "Banana".
+      expect(find.textContaining('Banana'), findsWidgets);
+    });
 
     testWidgets(
       'renders the energy gel food name from the during-run section',
@@ -250,8 +252,9 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
+            activityDetailControllerProvider(
+              activityId: 'act-1',
+            ).overrideWith(() => _FakeActivityDetailController(state)),
           ],
           settle: true,
         );
@@ -269,8 +272,9 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
+            activityDetailControllerProvider(
+              activityId: 'act-1',
+            ).overrideWith(() => _FakeActivityDetailController(state)),
           ],
           settle: true,
         );
@@ -279,45 +283,45 @@ void main() {
       },
     );
 
-    testWidgets(
-      'shows Complete button for a non-completed activity',
-      (tester) async {
-        final state = _makeDetailState();
+    testWidgets('shows Complete button for a non-completed activity', (
+      tester,
+    ) async {
+      final state = _makeDetailState();
 
-        await pumpSeeded(
-          tester,
-          const ActivityDetailScreen(activityId: 'act-1'),
-          overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const ActivityDetailScreen(activityId: 'act-1'),
+        overrides: [
+          activityDetailControllerProvider(
+            activityId: 'act-1',
+          ).overrideWith(() => _FakeActivityDetailController(state)),
+        ],
+        settle: true,
+      );
 
-        expect(find.text('Complete'), findsOneWidget);
-      },
-    );
+      expect(find.text('Complete'), findsOneWidget);
+    });
 
-    testWidgets(
-      'carbs value from before-run section food is rendered (25g)',
-      (tester) async {
-        final state = _makeDetailState();
+    testWidgets('carbs value from before-run section food is rendered (25g)', (
+      tester,
+    ) async {
+      final state = _makeDetailState();
 
-        await pumpSeeded(
-          tester,
-          const ActivityDetailScreen(activityId: 'act-1'),
-          overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
-          ],
-          settle: true,
-        );
+      await pumpSeeded(
+        tester,
+        const ActivityDetailScreen(activityId: 'act-1'),
+        overrides: [
+          activityDetailControllerProvider(
+            activityId: 'act-1',
+          ).overrideWith(() => _FakeActivityDetailController(state)),
+        ],
+        settle: true,
+      );
 
-        // The macro summary row shows actual/target as "25/25g" or "25g";
-        // at minimum the value "25" must appear.
-        expect(find.textContaining('25'), findsWidgets);
-      },
-    );
+      // The macro summary row shows actual/target as "25/25g" or "25g";
+      // at minimum the value "25" must appear.
+      expect(find.textContaining('25'), findsWidgets);
+    });
 
     testWidgets(
       'delete button is visible (trash icon) for an existing activity',
@@ -328,8 +332,9 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            activityDetailControllerProvider(activityId: 'act-1')
-                .overrideWith(() => _FakeActivityDetailController(state)),
+            activityDetailControllerProvider(
+              activityId: 'act-1',
+            ).overrideWith(() => _FakeActivityDetailController(state)),
           ],
           settle: true,
         );
@@ -352,84 +357,65 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('NewActivityScreen — sport selector tabs', () {
-    testWidgets(
-      'running tab button is present by key',
-      (tester) async {
-        // NewActivityScreen reads newActivityCoordinatorProvider (a plain
-        // @riverpod Notifier, not Async) — the harness's mockAppExternalDeps()
-        // satisfies analytics/supabase; the coordinator boots synchronously from
-        // its build() default, so no extra override is needed.
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('running tab button is present by key', (tester) async {
+      // NewActivityScreen reads newActivityCoordinatorProvider (a plain
+      // @riverpod Notifier, not Async) — the harness's mockAppExternalDeps()
+      // satisfies analytics/supabase; the coordinator boots synchronously from
+      // its build() default, so no extra override is needed.
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(
-          find.byKey(const ValueKey('activity_create.tab_running')),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(
+        find.byKey(const ValueKey('activity_create.tab_running')),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'biking tab button is present by key',
-      (tester) async {
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('biking tab button is present by key', (tester) async {
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(
-          find.byKey(const ValueKey('activity_create.tab_biking')),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(
+        find.byKey(const ValueKey('activity_create.tab_biking')),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'swimming tab button is present by key',
-      (tester) async {
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('swimming tab button is present by key', (tester) async {
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(
-          find.byKey(const ValueKey('activity_create.tab_swimming')),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(
+        find.byKey(const ValueKey('activity_create.tab_swimming')),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'brick tab button is present by key',
-      (tester) async {
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('brick tab button is present by key', (tester) async {
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(
-          find.byKey(const ValueKey('activity_create.tab_brick')),
-          findsOneWidget,
-        );
-      },
-    );
+      expect(
+        find.byKey(const ValueKey('activity_create.tab_brick')),
+        findsOneWidget,
+      );
+    });
 
-    testWidgets(
-      'RUNNING label is rendered on the running tab',
-      (tester) async {
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('RUNNING label is rendered on the running tab', (tester) async {
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(find.text('RUNNING'), findsOneWidget);
-      },
-    );
+      expect(find.text('RUNNING'), findsOneWidget);
+    });
 
-    testWidgets(
-      'BIKING label is rendered on the biking tab',
-      (tester) async {
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('BIKING label is rendered on the biking tab', (tester) async {
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(find.text('BIKING'), findsOneWidget);
-      },
-    );
+      expect(find.text('BIKING'), findsOneWidget);
+    });
 
-    testWidgets(
-      'SWIMMING label is rendered on the swimming tab',
-      (tester) async {
-        await pumpSeeded(tester, const NewActivityScreen());
+    testWidgets('SWIMMING label is rendered on the swimming tab', (
+      tester,
+    ) async {
+      await pumpSeeded(tester, const NewActivityScreen());
 
-        expect(find.text('SWIMMING'), findsOneWidget);
-      },
-    );
+      expect(find.text('SWIMMING'), findsOneWidget);
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -445,14 +431,13 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('AdjustMacrosScreen — bug #4 regression canary', () {
-    testWidgets(
-      'mounts AdjustMacrosScreen without crashing (bug #4 fixed)',
-      (tester) async {
-        // Regression guard for macro_targets_controller.dart use-after-dispose.
-        // If this test fails again, it means the fix regressed.
-        await pumpSeeded(tester, const AdjustMacrosScreen(), settle: false);
-        expect(find.byType(AdjustMacrosScreen), findsOneWidget);
-      },
-    );
+    testWidgets('mounts AdjustMacrosScreen without crashing (bug #4 fixed)', (
+      tester,
+    ) async {
+      // Regression guard for macro_targets_controller.dart use-after-dispose.
+      // If this test fails again, it means the fix regressed.
+      await pumpSeeded(tester, const AdjustMacrosScreen(), settle: false);
+      expect(find.byType(AdjustMacrosScreen), findsOneWidget);
+    });
   });
 }

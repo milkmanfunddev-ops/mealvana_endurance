@@ -31,7 +31,10 @@ void main() {
     testWidgets('displays current version', (WidgetTester tester) async {
       await pumpScreen(tester);
 
-      expect(find.text('Your current version: $currentVersion'), findsOneWidget);
+      expect(
+        find.text('Your current version: $currentVersion'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('displays required version', (WidgetTester tester) async {
@@ -61,7 +64,9 @@ void main() {
       expect(find.byIcon(Icons.system_update), findsOneWidget);
     });
 
-    testWidgets('blocks back navigation with PopScope', (WidgetTester tester) async {
+    testWidgets('blocks back navigation with PopScope', (
+      WidgetTester tester,
+    ) async {
       await pumpScreen(tester);
 
       // Find the PopScope widget and verify canPop is false

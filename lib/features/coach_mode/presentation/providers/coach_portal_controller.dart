@@ -3,11 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'coach_portal_controller.g.dart';
 
 /// Navigation sections in the coach portal sidebar
-enum PortalSection {
-  athletes,
-  reports,
-  messages,
-}
+enum PortalSection { athletes, reports, messages }
 
 /// Controller for coach portal UI state (selected athlete, active section)
 @riverpod

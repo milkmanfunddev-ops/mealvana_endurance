@@ -23,8 +23,8 @@ class SyncStatusIndicator extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
-          ? AppColors.blackberry.withOpacity(0.15)
-          : AppColors.blackberry.withOpacity(0.1),
+            ? AppColors.blackberry.withOpacity(0.15)
+            : AppColors.blackberry.withOpacity(0.1),
         border: Border(
           bottom: BorderSide(
             color: AppColors.blackberry.withOpacity(0.3),
@@ -42,7 +42,9 @@ class SyncStatusIndicator extends ConsumerWidget {
             child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(
-                isDark ? AppColors.blackberry.withOpacity(0.8) : AppColors.blackberry,
+                isDark
+                    ? AppColors.blackberry.withOpacity(0.8)
+                    : AppColors.blackberry,
               ),
             ),
           ),
@@ -53,8 +55,8 @@ class SyncStatusIndicator extends ConsumerWidget {
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: isDark
-                ? AppColors.blackberry.withOpacity(0.9)
-                : AppColors.blackberry,
+                  ? AppColors.blackberry.withOpacity(0.9)
+                  : AppColors.blackberry,
             ),
           ),
         ],

@@ -79,10 +79,11 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
 
   /// Activity type for sport-aware UI (e.g., solid food warning badge on running)
   final ActivityType activityType;
-  final void Function(String foodId, String foodName, String category) onSwapFood;
+  final void Function(String foodId, String foodName, String category)
+  onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
-      onUpdateQuantity;
+  onUpdateQuantity;
   final void Function(String category) onAddFood;
 
   /// Called on first toggle to By Hour to initialize byHourData
@@ -90,25 +91,46 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
 
   /// Called when a food item is dragged to a new time slot
   final void Function(
-          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
-      onMoveFoodToTimeSlot;
+    String foodId,
+    String category,
+    TimeSlot sourceTimeSlot,
+    TimeSlot newTimeSlot,
+  )
+  onMoveFoodToTimeSlot;
 
   /// Called when a food is placed from the unassigned tray into a slot.
-  final void Function(String foodId, String category, TimeSlot slot, double qty,
-      TimingCategory? timingCategory, bool isSipThroughout) onPlaceFoodInSlot;
+  final void Function(
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double qty,
+    TimingCategory? timingCategory,
+    bool isSipThroughout,
+  )
+  onPlaceFoodInSlot;
 
   /// Called when a food is removed from a slot (returns to tray).
   final void Function(String foodId, String category, TimeSlot slot)
-      onRemoveFoodFromSlot;
+  onRemoveFoodFromSlot;
 
   /// Called to adjust a placed food's slot quantity by delta.
   final void Function(
-      String foodId, String category, TimeSlot slot, double delta)?
-      onAdjustSlotQuantity;
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double delta,
+  )?
+  onAdjustSlotQuantity;
 
   /// Called when a sip food is moved from global sip into a specific hour slot.
-  final void Function(String foodId, String category, TimeSlot targetSlot,
-      double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
+  final void Function(
+    String foodId,
+    String category,
+    TimeSlot targetSlot,
+    double qty,
+    TimingCategory? timingCategory,
+  )?
+  onMoveSipFoodToSlot;
 
   final bool showSwipeHint;
   final int? carbsLow;
@@ -295,10 +317,12 @@ class _DuringPhaseSectionWidgetState
               },
               textStyle: AppTextStyles.smallLabel.copyWith(fontSize: 12),
               selectedTextColor: Colors.white,
-              unselectedTextColor:
-                  Theme.of(context).colorScheme.onSurfaceVariant,
-              trackColor:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+              unselectedTextColor: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant,
+              trackColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.15),
               thumbColor: AppColors.orange,
               height: 32,
               thumbInset: 2,
@@ -327,10 +351,12 @@ class _DuringPhaseSectionWidgetState
               category: widget.category,
               onSwap: () =>
                   widget.onSwapFood(food.id, food.name, widget.category),
-              onDelete: () =>
-                  widget.onDeleteFood(food.id, widget.category),
+              onDelete: () => widget.onDeleteFood(food.id, widget.category),
               onQuantityChange: (newQuantity) => widget.onUpdateQuantity(
-                  food.id, widget.category, newQuantity),
+                food.id,
+                widget.category,
+                newQuantity,
+              ),
               showSwipeHint: widget.showSwipeHint,
               useImperial: widget.useImperial,
             ),

@@ -73,7 +73,10 @@ void main() {
       });
 
       test('true when only text notes are present', () {
-        expect(buildCompletion(textNotes: 'Felt great').hasUserFeedback, isTrue);
+        expect(
+          buildCompletion(textNotes: 'Felt great').hasUserFeedback,
+          isTrue,
+        );
       });
 
       test('false when no feedback at all', () {

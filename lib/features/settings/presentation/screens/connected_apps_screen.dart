@@ -85,15 +85,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     // all — so the funnel had no denominator: we could see users completing
     // step 0 but never how many reached it. Every other step already tracks
     // this in initState; match them.
-    ref.read(appExternalDepsProvider).analytics.track(
-      'screen_viewed',
-      properties: {
-        'screen_name': isOnboarding
-            ? 'Connect Training Onboarding'
-            : 'Connected Apps Settings',
-        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
-      },
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': isOnboarding
+                ? 'Connect Training Onboarding'
+                : 'Connected Apps Settings',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
 
     // Refresh integration status when screen loads (especially important
     // for settings mode after connecting in onboarding)
@@ -414,8 +417,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           name: 'V.O2',
           isAvailable: true,
           isConnected: data.isVdotConnected,
-          isConnecting:
-              data.isConnecting && data.connectingProvider == 'vdot',
+          isConnecting: data.isConnecting && data.connectingProvider == 'vdot',
           isSyncing: data.syncingProvider == 'vdot',
           athleteName: data.vdotAthleteName,
           lastSyncAt: data.vdotLastSyncAt,
@@ -607,8 +609,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           name: 'V.O2',
           isAvailable: true,
           isConnected: data.isVdotConnected,
-          isConnecting:
-              data.isConnecting && data.connectingProvider == 'vdot',
+          isConnecting: data.isConnecting && data.connectingProvider == 'vdot',
           isSyncing: data.syncingProvider == 'vdot',
           athleteName: data.vdotAthleteName,
           lastSyncAt: data.vdotLastSyncAt,
@@ -1073,10 +1074,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _syncVdotWithState(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _syncVdotWithState(BuildContext context, WidgetRef ref) async {
     await syncVdot(context, ref, showLoadingSnackbar: false);
 
     final state = ref.read(connectTrainingControllerProvider).value;

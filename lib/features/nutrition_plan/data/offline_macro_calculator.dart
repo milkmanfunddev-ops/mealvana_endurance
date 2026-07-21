@@ -131,8 +131,8 @@ class OfflineMacroCalculator {
     final baseSodium = sweatSodiumCat == 'low'
         ? 300
         : sweatSodiumCat == 'medium'
-            ? 450
-            : 600;
+        ? 450
+        : 600;
     final envBump = (envLabel == 'hot' || envLabel == 'very_hot') ? 100 : 0;
     final mealSodium = baseSodium + envBump;
     final snackSodium = ((baseSodium + envBump) * 0.5).round();
@@ -262,17 +262,15 @@ class OfflineMacroCalculator {
     final duringSodiumMg =
         (actualSweatRateLph * sodiumConcMgPerL * 0.6 * durationH).round();
     final sodiumDeficitMg = totalSodiumLossMg - duringSodiumMg;
-    final postSodiumMg =
-        math.max(300, math.min(700, (sodiumDeficitMg * 0.5).round()));
+    final postSodiumMg = math.max(
+      300,
+      math.min(700, (sodiumDeficitMg * 0.5).round()),
+    );
     final totalHydrationLossMl = actualSweatRateLph * 1000.0 * durationH;
     final hydrationDeficitMl = totalHydrationLossMl - duringHydrationMl;
-    final postHydrationMl =
-        math.max(500, (hydrationDeficitMl * 1.5).round());
+    final postHydrationMl = math.max(500, (hydrationDeficitMl * 1.5).round());
 
-    return {
-      'sodium_mg': postSodiumMg,
-      'hydration_ml': postHydrationMl,
-    };
+    return {'sodium_mg': postSodiumMg, 'hydration_ml': postHydrationMl};
   }
 
   // ============================================================================
@@ -402,8 +400,9 @@ class OfflineMacroCalculator {
     required String gender, // kept for API compatibility (unused)
     bool isFasted = false,
   }) {
-    final weightKg =
-        weightUnit.toLowerCase() == 'kg' ? weight : weight * 0.45359237;
+    final weightKg = weightUnit.toLowerCase() == 'kg'
+        ? weight
+        : weight * 0.45359237;
     final distanceMiles = distanceUnit.toLowerCase().startsWith('k')
         ? runDistance / _miToKm
         : runDistance;
@@ -425,7 +424,8 @@ class OfflineMacroCalculator {
     double minutes;
     if (pace.contains(':')) {
       final parts = pace.split(':');
-      minutes = (double.tryParse(parts[0].trim()) ?? 0) +
+      minutes =
+          (double.tryParse(parts[0].trim()) ?? 0) +
           (double.tryParse(parts.length > 1 ? parts[1].trim() : '0') ?? 0) /
               60.0;
     } else {
@@ -540,8 +540,7 @@ class OfflineMacroCalculator {
   }) {
     const activityType = 'swimming';
     final distanceKm = distanceMeters / 1000.0;
-    final durationMin =
-        (distanceMeters / 100.0) * paceSecondsper100m / 60.0;
+    final durationMin = (distanceMeters / 100.0) * paceSecondsper100m / 60.0;
     final durationH = durationMin / 60.0;
     final met = swimmingMETFromPace(
       pacePer100m: paceSecondsper100m.toDouble(),
@@ -610,8 +609,7 @@ class OfflineMacroCalculator {
       activityType: activityType,
       gutTraining: gutTraining,
     );
-    final duringCarbRate =
-        (duringCarbs['rate_gph'] as num).toDouble();
+    final duringCarbRate = (duringCarbs['rate_gph'] as num).toDouble();
     final duringCarbTotal = (duringCarbRate * durationH).round();
 
     // During-workout hydration
@@ -897,7 +895,11 @@ class OfflineMacroCalculator {
     final h = humidityPct ?? _humidityBaselinePct;
     final rawHumidityMult =
         1.0 + math.max(0.0, h - _humidityBaselinePct) * _humidityCoefficient;
-    final humidityMult = _clamp(rawHumidityMult, _humidityMultMin, _humidityMultMax);
+    final humidityMult = _clamp(
+      rawHumidityMult,
+      _humidityMultMin,
+      _humidityMultMax,
+    );
 
     // Indoor multiplier
     final indoorMult = isIndoor ? _indoorMultiplier : 1.0;
@@ -913,8 +915,10 @@ class OfflineMacroCalculator {
   // ---------------------------------------------------------------------------
 
   /// Result from [calculateDuringWorkoutHydration].
-  static const String _shortWorkoutGateFlag = 'No structured hydration plan needed.';
-  static const String _ceilingLtFloorFlag = 'Even at maximum intake, you will exceed 2% BW loss.';
+  static const String _shortWorkoutGateFlag =
+      'No structured hydration plan needed.';
+  static const String _ceilingLtFloorFlag =
+      'Even at maximum intake, you will exceed 2% BW loss.';
 
   /// Calculate during-workout hydration targets for a single-sport session.
   ///
@@ -944,7 +948,8 @@ class OfflineMacroCalculator {
     final effectiveSweatRateMlph = effectiveSweatRateLph * 1000.0;
 
     // Sodium concentration
-    final sodiumConcMgPerL = knownSodiumConcMgPerL?.round() ??
+    final sodiumConcMgPerL =
+        knownSodiumConcMgPerL?.round() ??
         sodiumConcentrationFromCategory(sweatSodiumCat);
 
     // Swim-only: no drinking possible
@@ -1030,8 +1035,8 @@ class OfflineMacroCalculator {
       }
     }
 
-    final sodiumRateMgph =
-        ((recommendedMlHr / 1000.0) * sodiumConcMgPerL).round();
+    final sodiumRateMgph = ((recommendedMlHr / 1000.0) * sodiumConcMgPerL)
+        .round();
 
     return DuringWorkoutHydrationResult(
       hydrationRateMlph: recommendedMlHr,
@@ -1085,7 +1090,8 @@ class OfflineMacroCalculator {
         sodiumMg: 0,
         sodiumLowMg: 0,
         sodiumHighMg: 0,
-        message: 'No structured pre-hydration needed for short workouts in mild conditions.',
+        message:
+            'No structured pre-hydration needed for short workouts in mild conditions.',
       );
     }
 
@@ -1131,7 +1137,8 @@ class OfflineMacroCalculator {
       sodiumMg: 0,
       sodiumLowMg: 0,
       sodiumHighMg: 0,
-      message: 'Too late for structured pre-hydration. Focus on your during-workout plan.',
+      message:
+          'Too late for structured pre-hydration. Focus on your during-workout plan.',
     );
   }
 
@@ -1170,12 +1177,15 @@ class OfflineMacroCalculator {
     final effectiveSweatRateMlph = effectiveSweatRateLph * 1000.0;
 
     // Sodium concentration
-    final sodiumConcMgPerL = knownSodiumConcMgPerL?.round() ??
+    final sodiumConcMgPerL =
+        knownSodiumConcMgPerL?.round() ??
         sodiumConcentrationFromCategory(sweatSodiumCat);
 
     // Total duration → replacement %
-    final totalDurationMin =
-        segments.fold<double>(0.0, (s, seg) => s + seg.durationMin);
+    final totalDurationMin = segments.fold<double>(
+      0.0,
+      (s, seg) => s + seg.durationMin,
+    );
     final replacementPct = replacementPctForDuration(totalDurationMin);
 
     // Per-segment sweat losses (swim uses 0.4× modifier)
@@ -1183,7 +1193,8 @@ class OfflineMacroCalculator {
     for (final seg in segments) {
       final durationH = seg.durationMin / 60.0;
       if (seg.sport.toLowerCase() == 'swimming') {
-        totalLossMl += effectiveSweatRateMlph * swimmingSweatModifier * durationH;
+        totalLossMl +=
+            effectiveSweatRateMlph * swimmingSweatModifier * durationH;
       } else {
         totalLossMl += effectiveSweatRateMlph * durationH;
       }
@@ -1202,12 +1213,14 @@ class OfflineMacroCalculator {
       } else {
         transitionName = 'T${i + 1}';
       }
-      transitions.add(_BrickTransitionRaw(
-        index: i,
-        name: transitionName,
-        afterSport: afterSport,
-        beforeSport: beforeSport,
-      ));
+      transitions.add(
+        _BrickTransitionRaw(
+          index: i,
+          name: transitionName,
+          afterSport: afterSport,
+          beforeSport: beforeSport,
+        ),
+      );
     }
 
     final transitionCount = transitions.length;
@@ -1222,10 +1235,11 @@ class OfflineMacroCalculator {
     final floorTotalMl = math.max(0.0, rawFloorTotalMl);
 
     // Subtract transition intake
-    final remainingRequired =
-        math.max(0.0, requiredTotalMl - totalTransitionFluidMl);
-    final remainingFloor =
-        math.max(0.0, floorTotalMl - totalTransitionFluidMl);
+    final remainingRequired = math.max(
+      0.0,
+      requiredTotalMl - totalTransitionFluidMl,
+    );
+    final remainingFloor = math.max(0.0, floorTotalMl - totalTransitionFluidMl);
 
     // Drinkable hours: non-swim segments only
     final drinkableMinutes = segments
@@ -1246,11 +1260,11 @@ class OfflineMacroCalculator {
 
     // Per-segment ceilings
     final segmentCeilings = <String, int>{
-      'cycling': math.min(
-              _giCeilingMlHr['cycling']!, effectiveSweatRateMlph)
+      'cycling': math
+          .min(_giCeilingMlHr['cycling']!, effectiveSweatRateMlph)
           .round(),
-      'running': math.min(
-              _giCeilingMlHr['running']!, effectiveSweatRateMlph)
+      'running': math
+          .min(_giCeilingMlHr['running']!, effectiveSweatRateMlph)
           .round(),
       'swimming': 0,
     };
@@ -1268,8 +1282,9 @@ class OfflineMacroCalculator {
     }
 
     // Run→bike redistribution
-    final nonSwimSegs =
-        segments.where((s) => s.sport.toLowerCase() != 'swimming').toList();
+    final nonSwimSegs = segments
+        .where((s) => s.sport.toLowerCase() != 'swimming')
+        .toList();
 
     var redistributionFailed = false;
     for (final seg in nonSwimSegs) {
@@ -1285,15 +1300,20 @@ class OfflineMacroCalculator {
         final bikeSegs = nonSwimSegs
             .where((s) => s.sport.toLowerCase() == 'cycling')
             .toList();
-        final totalBikeHours =
-            bikeSegs.fold<double>(0.0, (s, b) => s + b.durationMin / 60.0);
+        final totalBikeHours = bikeSegs.fold<double>(
+          0.0,
+          (s, b) => s + b.durationMin / 60.0,
+        );
 
         if (totalBikeHours > 0) {
           final addPerHr = shortfallTotal / totalBikeHours;
           final bikeCeiling = segmentCeilings['cycling']!;
           for (final bikeSeg in bikeSegs) {
             final current = segmentRates[bikeSeg.order]!.toDouble();
-            final newRate = math.min(current + addPerHr, bikeCeiling.toDouble());
+            final newRate = math.min(
+              current + addPerHr,
+              bikeCeiling.toDouble(),
+            );
             segmentRates[bikeSeg.order] = newRate.round();
           }
         }
@@ -1305,7 +1325,9 @@ class OfflineMacroCalculator {
         final actualBikeIntake = nonSwimSegs
             .where((s) => s.sport.toLowerCase() == 'cycling')
             .fold<double>(
-                0.0, (s, b) => s + segmentRates[b.order]! * b.durationMin / 60.0);
+              0.0,
+              (s, b) => s + segmentRates[b.order]! * b.durationMin / 60.0,
+            );
         final actualRunIntake = segmentRates[seg.order]! * runDurationH;
         final totalActualIntake =
             actualBikeIntake + actualRunIntake + totalTransitionFluidMl;
@@ -1319,7 +1341,8 @@ class OfflineMacroCalculator {
 
     if (redistributionFailed) {
       safetyFlags.add(
-          'Even at maximum intake on all segments, you will exceed 2% BW loss.');
+        'Even at maximum intake on all segments, you will exceed 2% BW loss.',
+      );
     }
 
     // Total intake safety check
@@ -1354,8 +1377,7 @@ class OfflineMacroCalculator {
         sodiumRateMgph: sodiumRate,
         ceilingMlHr: ceiling,
         floorMlHr: sport == 'swimming' ? 0 : floorMlHr,
-        effectiveSweatRateLph:
-            ((segEffectiveLph * 1000).round() / 1000.0),
+        effectiveSweatRateLph: ((segEffectiveLph * 1000).round() / 1000.0),
       );
     }).toList();
 
@@ -1363,8 +1385,8 @@ class OfflineMacroCalculator {
     // sodium_conc_mg_per_l. The phantom 0.3 factor was a ~3.3× under-estimate
     // and has been removed to match the edge function.
     final resultTransitions = transitions.map((t) {
-      final sodiumMg =
-          ((_transitionFluidMl / 1000.0) * sodiumConcMgPerL).round();
+      final sodiumMg = ((_transitionFluidMl / 1000.0) * sodiumConcMgPerL)
+          .round();
       return BrickHydrationTransitionResult(
         transitionName: t.name,
         afterSport: t.afterSport,

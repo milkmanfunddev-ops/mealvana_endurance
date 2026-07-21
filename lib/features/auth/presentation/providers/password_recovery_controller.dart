@@ -23,15 +23,18 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Sending password reset code', context: 'PASSWORD_RECOVERY', data: {
-        'email_length': email.length,
-      });
+      _logger.info(
+        'Sending password reset code',
+        context: 'PASSWORD_RECOVERY',
+        data: {'email_length': email.length},
+      );
       await _authService.resetPassword(email: email);
       _logger.info('Password reset code sent', context: 'PASSWORD_RECOVERY');
     });
 
     if (state.hasError) {
-      _logger.error('Failed to send reset code',
+      _logger.error(
+        'Failed to send reset code',
         context: 'PASSWORD_RECOVERY',
         error: state.error,
       );
@@ -51,7 +54,8 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     });
 
     if (state.hasError) {
-      _logger.error('Reset code verification failed',
+      _logger.error(
+        'Reset code verification failed',
         context: 'PASSWORD_RECOVERY',
         error: state.error,
       );
@@ -67,11 +71,15 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = await AsyncValue.guard(() async {
       _logger.info('Setting new password', context: 'PASSWORD_RECOVERY');
       await _authService.updatePassword(newPassword: password);
-      _logger.info('Password updated successfully', context: 'PASSWORD_RECOVERY');
+      _logger.info(
+        'Password updated successfully',
+        context: 'PASSWORD_RECOVERY',
+      );
     });
 
     if (state.hasError) {
-      _logger.error('Failed to set new password',
+      _logger.error(
+        'Failed to set new password',
         context: 'PASSWORD_RECOVERY',
         error: state.error,
       );

@@ -4,10 +4,7 @@ import '../../theme/app_theme.dart';
 
 /// Custom close button with white X and highlight 290 background
 class CustomCloseButton extends StatelessWidget {
-  const CustomCloseButton({
-    super.key,
-    required this.onTap,
-  });
+  const CustomCloseButton({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
@@ -22,11 +19,7 @@ class CustomCloseButton extends StatelessWidget {
           color: AppTheme.primary900,
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.close,
-          color: AppTheme.baseWhite,
-          size: 18.sp,
-        ),
+        child: Icon(Icons.close, color: AppTheme.baseWhite, size: 18.sp),
       ),
     );
   }

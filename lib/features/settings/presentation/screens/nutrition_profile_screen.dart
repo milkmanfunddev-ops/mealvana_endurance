@@ -157,9 +157,9 @@ class _NutritionProfileScreenState
         setState(() {
           _weightController.text = _useMetric
               ? garminData.weightKg!.toStringAsFixed(1)
-              : UnitFormatter.kgToPounds(garminData.weightKg!)
-                    .round()
-                    .toString();
+              : UnitFormatter.kgToPounds(
+                  garminData.weightKg!,
+                ).round().toString();
           _weightFromGarmin = true;
         });
       }
@@ -219,11 +219,12 @@ class _NutritionProfileScreenState
       // away from whatever Garmin auto-filled. If the displayed value still
       // matches Garmin's reading, leave the timestamp on Garmin's so the
       // edge-function resolver can still resolve weight correctly.
-      final weightChanged = weightLbs != null &&
+      final weightChanged =
+          weightLbs != null &&
           !_weightFromGarmin &&
           weightLbs != profile.weightPounds;
-      final bodyFatChanged = bodyFat != profile.bodyFatPct &&
-          !_bodyFatFromGarmin;
+      final bodyFatChanged =
+          bodyFat != profile.bodyFatPct && !_bodyFatFromGarmin;
 
       final updated = profile.copyWith(
         weightPounds: weightLbs ?? profile.weightPounds,
@@ -447,9 +448,7 @@ class _NutritionProfileScreenState
         hintText: _useMetric ? 'e.g., 75' : 'e.g., 165',
         suffixText: _useMetric ? 'kg' : 'lbs',
         keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-        ],
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (_) {
           // User edit supersedes Garmin — clear the chip and mark dirty.
           if (_weightFromGarmin) {
@@ -470,9 +469,7 @@ class _NutritionProfileScreenState
           hintText: 'cm',
           suffixText: 'cm',
           keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: (_) => _markChanged(),
         ),
       );
@@ -488,9 +485,7 @@ class _NutritionProfileScreenState
               hintText: 'ft',
               suffixText: 'ft',
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (_) => _markChanged(),
             ),
           ),
@@ -502,9 +497,7 @@ class _NutritionProfileScreenState
               hintText: 'in',
               suffixText: 'in',
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (_) => _markChanged(),
             ),
           ),

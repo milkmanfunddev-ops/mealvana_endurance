@@ -49,22 +49,22 @@ void main() {
   });
 
   UserProfile profileFixture() => UserProfile(
-        id: _userId,
-        deviceId: 'dev-001',
-        authUserId: 'aa000000-0000-0000-0000-000000000001',
-        authProvider: 'email',
-        isAnonymous: false,
-        gender: Gender.male,
-        birthday: DateTime(1985, 3, 20),
-        heightFeet: 6,
-        heightInches: 0,
-        weightPounds: 180.0,
-        runsWithWaterBottle: false,
-        createdAt: DateTime(2024),
-        updatedAt: DateTime(2024),
-        onboardingCompleted: true,
-        appVersion: '1.0',
-      );
+    id: _userId,
+    deviceId: 'dev-001',
+    authUserId: 'aa000000-0000-0000-0000-000000000001',
+    authProvider: 'email',
+    isAnonymous: false,
+    gender: Gender.male,
+    birthday: DateTime(1985, 3, 20),
+    heightFeet: 6,
+    heightInches: 0,
+    weightPounds: 180.0,
+    runsWithWaterBottle: false,
+    createdAt: DateTime(2024),
+    updatedAt: DateTime(2024),
+    onboardingCompleted: true,
+    appVersion: '1.0',
+  );
 
   DayTimelineResult fixtureResult() {
     final date = DateTime(2026, 6, 17);
@@ -127,9 +127,9 @@ void main() {
   }
 
   List<Override> baseOverrides() => [
-        preferencesServiceProvider.overrideWithValue(prefs),
-        fuelTimelineDayProvider.overrideWith((ref) async => fixtureResult()),
-      ];
+    preferencesServiceProvider.overrideWithValue(prefs),
+    fuelTimelineDayProvider.overrideWith((ref) async => fixtureResult()),
+  ];
 
   /// The banner's painted bottom edge. Anchoring on the [DecoratedBox] rather
   /// than the Container/BaseCard matters: `Container` implements `margin` by
@@ -164,7 +164,8 @@ void main() {
       // Guard: view.trackingOn defaults true; fail loudly if that ever flips.
       expect(find.byType(EnergyDashboardCard), findsOneWidget);
 
-      final gap = tester.getTopLeft(find.byType(EnergyDashboardCard)).dy -
+      final gap =
+          tester.getTopLeft(find.byType(EnergyDashboardCard)).dy -
           bannerPaintedBottom(tester);
 
       expect(gap, closeTo(AppSpacing.md, 0.5));
@@ -193,13 +194,15 @@ void main() {
             matching: find.byType(Column),
           )
           .first;
-      final gap = tester.getTopLeft(find.byType(EnergyDashboardCard)).dy -
+      final gap =
+          tester.getTopLeft(find.byType(EnergyDashboardCard)).dy -
           tester.getTopLeft(column).dy;
 
       expect(
         gap,
         closeTo(AppSpacing.md, 0.5),
-        reason: 'A hidden banner must not leave a doubled 32px dead band. '
+        reason:
+            'A hidden banner must not leave a doubled 32px dead band. '
             'If this reads ~32, the gap was added as an unconditional '
             'SizedBox in the screen instead of a margin on the banner.',
       );

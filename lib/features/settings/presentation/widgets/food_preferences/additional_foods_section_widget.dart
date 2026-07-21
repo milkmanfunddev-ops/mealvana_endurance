@@ -73,10 +73,7 @@ class AdditionalFoodsSectionWidget extends StatelessWidget {
         ),
 
         // Expandable content
-        if (isExpanded) ...[
-          const SizedBox(height: AppSpacing.md),
-          ...children,
-        ],
+        if (isExpanded) ...[const SizedBox(height: AppSpacing.md), ...children],
       ],
     );
   }

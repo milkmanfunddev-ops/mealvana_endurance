@@ -33,8 +33,11 @@ class PortalReportsPanel extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline,
-              size: 48, color: AppColors.dragonfruit),
+          const Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.dragonfruit,
+          ),
           const SizedBox(height: 16),
           Text(
             error.toString(),
@@ -47,8 +50,7 @@ class PortalReportsPanel extends ConsumerWidget {
                 ref.read(coachReportsControllerProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
             label: const Text('Retry'),
-            style:
-                TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
+            style: TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
           ),
         ],
       ),
@@ -56,7 +58,10 @@ class PortalReportsPanel extends ConsumerWidget {
   }
 
   Widget _buildContent(
-      BuildContext context, WidgetRef ref, CoachReportsState state) {
+    BuildContext context,
+    WidgetRef ref,
+    CoachReportsState state,
+  ) {
     return Column(
       children: [
         _ReportsHeader(state: state),
@@ -104,7 +109,7 @@ class _ReportsHeader extends ConsumerWidget {
             state.isTriageView
                 ? 'Athlete Reports'
                 : state.selectedReport?.relationship.athleteDisplayName ??
-                    'Athlete Report',
+                      'Athlete Report',
             style: const TextStyle(
               color: AppColors.cream,
               fontSize: 18,
@@ -115,8 +120,7 @@ class _ReportsHeader extends ConsumerWidget {
           // Date range chips
           _DateChip(
             label: 'This Week',
-            isSelected:
-                state.dateRange.type == ReportsDateRangeType.thisWeek,
+            isSelected: state.dateRange.type == ReportsDateRangeType.thisWeek,
             onTap: () => ref
                 .read(coachReportsControllerProvider.notifier)
                 .setDateRange(const ReportsDateRange.thisWeek()),
@@ -124,8 +128,7 @@ class _ReportsHeader extends ConsumerWidget {
           const SizedBox(width: 6),
           _DateChip(
             label: 'Last Week',
-            isSelected:
-                state.dateRange.type == ReportsDateRangeType.lastWeek,
+            isSelected: state.dateRange.type == ReportsDateRangeType.lastWeek,
             onTap: () => ref
                 .read(coachReportsControllerProvider.notifier)
                 .setDateRange(const ReportsDateRange.lastWeek()),
@@ -135,8 +138,7 @@ class _ReportsHeader extends ConsumerWidget {
             label: state.dateRange.type == ReportsDateRangeType.custom
                 ? state.dateRange.label
                 : 'Custom...',
-            isSelected:
-                state.dateRange.type == ReportsDateRangeType.custom,
+            isSelected: state.dateRange.type == ReportsDateRangeType.custom,
             onTap: () => _showDateRangePicker(context, ref),
           ),
           const SizedBox(width: 8),
@@ -152,8 +154,7 @@ class _ReportsHeader extends ConsumerWidget {
     );
   }
 
-  Future<void> _showDateRangePicker(
-      BuildContext context, WidgetRef ref) async {
+  Future<void> _showDateRangePicker(BuildContext context, WidgetRef ref) async {
     final now = DateTime.now();
     final picked = await showDateRangePicker(
       context: context,
@@ -162,13 +163,15 @@ class _ReportsHeader extends ConsumerWidget {
       initialDateRange: state.dateRange.type == ReportsDateRangeType.custom
           ? DateTimeRange(
               start: state.dateRange.resolvedStart,
-              end: state.dateRange.resolvedEnd
-                  .subtract(const Duration(days: 1)),
+              end: state.dateRange.resolvedEnd.subtract(
+                const Duration(days: 1),
+              ),
             )
           : DateTimeRange(
               start: state.dateRange.resolvedStart,
-              end: state.dateRange.resolvedEnd
-                  .subtract(const Duration(days: 1)),
+              end: state.dateRange.resolvedEnd.subtract(
+                const Duration(days: 1),
+              ),
             ),
       builder: (context, child) {
         return Theme(
@@ -186,9 +189,9 @@ class _ReportsHeader extends ConsumerWidget {
     );
 
     if (picked != null) {
-      ref.read(coachReportsControllerProvider.notifier).setDateRange(
-            ReportsDateRange.custom(picked.start, picked.end),
-          );
+      ref
+          .read(coachReportsControllerProvider.notifier)
+          .setDateRange(ReportsDateRange.custom(picked.start, picked.end));
     }
   }
 }
@@ -266,63 +269,81 @@ class _TriageOverview extends ConsumerWidget {
         children: [
           // Table header
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.blackberry,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(8)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
               border: Border.all(color: AppColors.blackberryLight),
             ),
             child: const Row(
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text('Athlete',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Athlete',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('Completed',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Completed',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('Fuel Logs',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Fuel Logs',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('Adherence',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Adherence',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text('Last Completed',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Last Completed',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text('Next Event',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Next Event',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -353,7 +374,8 @@ class _TriageRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final name = overview.relationship.athleteDisplayName ??
+    final name =
+        overview.relationship.athleteDisplayName ??
         'Athlete ${overview.relationship.athleteUserId.substring(0, 8)}';
 
     return Material(
@@ -447,8 +469,8 @@ class _TriageRow extends ConsumerWidget {
                   style: TextStyle(
                     color: overview.avgAdherence != null
                         ? (overview.avgAdherence! >= 0.8
-                            ? AppColors.electrolyte
-                            : AppColors.orange)
+                              ? AppColors.electrolyte
+                              : AppColors.orange)
                         : AppColors.textDarkSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -472,8 +494,9 @@ class _TriageRow extends ConsumerWidget {
                           ),
                           if (overview.lastCompletedDate != null)
                             Text(
-                              DateFormat.MMMd()
-                                  .format(overview.lastCompletedDate!),
+                              DateFormat.MMMd().format(
+                                overview.lastCompletedDate!,
+                              ),
                               style: const TextStyle(
                                 color: AppColors.textDarkSecondary,
                                 fontSize: 11,
@@ -506,8 +529,7 @@ class _TriageRow extends ConsumerWidget {
                           ),
                           if (overview.nextEventDate != null)
                             Text(
-                              DateFormat.MMMd()
-                                  .format(overview.nextEventDate!),
+                              DateFormat.MMMd().format(overview.nextEventDate!),
                               style: const TextStyle(
                                 color: AppColors.textDarkSecondary,
                                 fontSize: 11,
@@ -562,9 +584,7 @@ class _AthleteDashboard extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ActivityTable(activities: report.activities),
-        ],
+        children: [_ActivityTable(activities: report.activities)],
       ),
     );
   }
@@ -612,54 +632,77 @@ class _ActivityTableState extends State<_ActivityTable> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: AppColors.blackberry,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(8)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             border: Border.all(color: AppColors.blackberryLight),
           ),
           child: const Row(
             children: [
               Expanded(
-                  flex: 6,
-                  child: Text('Activity',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                flex: 6,
+                child: Text(
+                  'Activity',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                  flex: 2,
-                  child: Text('Date',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                flex: 2,
+                child: Text(
+                  'Date',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                  flex: 2,
-                  child: Text('Duration',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                flex: 2,
+                child: Text(
+                  'Duration',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                  flex: 2,
-                  child: Text('Carbs',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                flex: 2,
+                child: Text(
+                  'Carbs',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                  flex: 2,
-                  child: Text('Calories',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                flex: 2,
+                child: Text(
+                  'Calories',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                  flex: 2,
-                  child: Text('Status',
-                      style: TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                flex: 2,
+                child: Text(
+                  'Status',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -682,14 +725,12 @@ class _ActivityTableState extends State<_ActivityTable> {
           child: InkWell(
             onTap: () {
               setState(() {
-                _expandedActivityId =
-                    isExpanded ? null : activity.activityId;
+                _expandedActivityId = isExpanded ? null : activity.activityId;
               });
             },
             hoverColor: AppColors.blackberryLight.withValues(alpha: 0.2),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border(
                   left: BorderSide(color: AppColors.blackberryLight),
@@ -780,13 +821,19 @@ class _ActivityTableState extends State<_ActivityTable> {
                     child: Row(
                       children: [
                         if (activity.isCompleted)
-                          const Icon(Icons.check_circle,
-                              size: 14, color: AppColors.electrolyte)
+                          const Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: AppColors.electrolyte,
+                          )
                         else
-                          Icon(Icons.schedule,
-                              size: 14,
-                              color: AppColors.textDarkSecondary
-                                  .withValues(alpha: 0.5)),
+                          Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: AppColors.textDarkSecondary.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
                         const SizedBox(width: 4),
                         Text(
                           activity.isCompleted ? 'Done' : 'Planned',
@@ -900,7 +947,9 @@ class _ExpandedActivityDetail extends StatelessWidget {
                   Text(
                     _buildStars(activity.satisfactionRating!),
                     style: const TextStyle(
-                        color: AppColors.electrolyte, fontSize: 12),
+                      color: AppColors.electrolyte,
+                      fontSize: 12,
+                    ),
                   ),
               ],
             ),
@@ -965,10 +1014,10 @@ class _ExpandedActivityDetail extends StatelessWidget {
   }
 
   void _openActivityDetail(BuildContext context, ActivityReportItem activity) {
-    context.push('/plan', extra: {
-      'activityId': activity.activityId,
-      'isCoachView': true,
-    });
+    context.push(
+      '/plan',
+      extra: {'activityId': activity.activityId, 'isCoachView': true},
+    );
   }
 
   String _buildStars(int rating) {
@@ -1057,10 +1106,7 @@ class _MacroCard extends StatelessWidget {
             macros != null
                 ? '${macros.carbs}g C / ${macros.protein}g P / ${macros.fat}g F'
                 : '--',
-            style: const TextStyle(
-              color: AppColors.cream,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.cream, fontSize: 12),
           ),
         ),
       ],

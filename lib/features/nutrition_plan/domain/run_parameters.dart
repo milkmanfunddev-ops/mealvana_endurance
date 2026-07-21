@@ -5,7 +5,7 @@ class RunParameters {
   final String pace; // Format: "M:SS" or number (minutes)
   final PaceUnit paceUnit;
   final int timeBeforeRunMin; // Minutes available before start
-  
+
   const RunParameters({
     required this.distance,
     this.distanceUnit = DistanceUnit.miles,

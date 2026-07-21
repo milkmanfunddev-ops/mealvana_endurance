@@ -15,8 +15,8 @@ class FoodImportService {
   const FoodImportService({
     required AppDatabase database,
     required CarbLoadingUserFoodRepository userFoodRepository,
-  })  : _database = database,
-        _userFoodRepository = userFoodRepository;
+  }) : _database = database,
+       _userFoodRepository = userFoodRepository;
 
   final AppDatabase _database;
   final CarbLoadingUserFoodRepository _userFoodRepository;
@@ -29,9 +29,9 @@ class FoodImportService {
     required List<domain.MealType> mealTypes,
   }) async {
     // Fetch the source food from foods table
-    final sourceFood = await (_database.select(_database.foodsTable)
-          ..where((tbl) => tbl.id.equals(sourceFoodId)))
-        .getSingleOrNull();
+    final sourceFood = await (_database.select(
+      _database.foodsTable,
+    )..where((tbl) => tbl.id.equals(sourceFoodId))).getSingleOrNull();
 
     if (sourceFood == null) {
       throw ArgumentError('Source food not found');
@@ -41,7 +41,8 @@ class FoodImportService {
     final carbsPerServing = sourceFood.carbsPerServing ?? 0.0;
 
     // Use the food's existing display name or generate one
-    final displayName = sourceFood.displayName != null && sourceFood.displayName!.isNotEmpty
+    final displayName =
+        sourceFood.displayName != null && sourceFood.displayName!.isNotEmpty
         ? sourceFood.displayName!
         : (sourceFood.name ?? '');
 
@@ -65,9 +66,9 @@ class FoodImportService {
     required List<domain.MealType> mealTypes,
   }) async {
     // Fetch the source user food from user_foods table
-    final sourceUserFood = await (_database.select(_database.userFoodsTable)
-          ..where((tbl) => tbl.id.equals(sourceUserFoodId)))
-        .getSingleOrNull();
+    final sourceUserFood = await (_database.select(
+      _database.userFoodsTable,
+    )..where((tbl) => tbl.id.equals(sourceUserFoodId))).getSingleOrNull();
 
     if (sourceUserFood == null) {
       throw ArgumentError('Source user food not found');
@@ -77,7 +78,9 @@ class FoodImportService {
     final carbsPerServing = sourceUserFood.carbsPerServing ?? 0.0;
 
     // Use the food's existing display name or generate one
-    final displayName = sourceUserFood.displayName != null && sourceUserFood.displayName!.isNotEmpty
+    final displayName =
+        sourceUserFood.displayName != null &&
+            sourceUserFood.displayName!.isNotEmpty
         ? sourceUserFood.displayName!
         : sourceUserFood.name;
 
@@ -176,10 +179,12 @@ class FoodImportService {
     required String searchTerm,
   }) async {
     final query = _database.select(_database.userFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.displayName.contains(searchTerm) &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.displayName.contains(searchTerm) &
+            tbl.isDeleted.equals(false),
+      );
 
     return query.get();
   }
@@ -192,9 +197,9 @@ class FoodImportService {
   /// Callers must check this before [importFromFoodsTable], which throws
   /// ArgumentError('Source food not found') for exactly that case.
   Future<bool> existsInFoodsTable(String foodId) async {
-    final row = await (_database.select(_database.foodsTable)
-          ..where((tbl) => tbl.id.equals(foodId)))
-        .getSingleOrNull();
+    final row = await (_database.select(
+      _database.foodsTable,
+    )..where((tbl) => tbl.id.equals(foodId))).getSingleOrNull();
     return row != null;
   }
 
@@ -203,10 +208,12 @@ class FoodImportService {
     required String sourceFoodId,
   }) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.sourceFoodId.equals(sourceFoodId) &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.sourceFoodId.equals(sourceFoodId) &
+            tbl.isDeleted.equals(false),
+      );
 
     final existing = await query.getSingleOrNull();
     return existing != null;
@@ -218,10 +225,12 @@ class FoodImportService {
     required String sourceUserFoodId,
   }) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.sourceUserFoodId.equals(sourceUserFoodId) &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.sourceUserFoodId.equals(sourceUserFoodId) &
+            tbl.isDeleted.equals(false),
+      );
 
     final existing = await query.getSingleOrNull();
     return existing != null;
@@ -233,46 +242,60 @@ class FoodImportService {
     required String barcode,
   }) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.barcode.equals(barcode) &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.barcode.equals(barcode) &
+            tbl.isDeleted.equals(false),
+      );
 
     final existing = await query.getSingleOrNull();
     return existing != null;
   }
 
   /// Get all foods imported from foods table
-  Future<List<domain.CarbLoadingUserFood>> getImportedFoods(String deviceId) async {
+  Future<List<domain.CarbLoadingUserFood>> getImportedFoods(
+    String deviceId,
+  ) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.sourceFoodId.isNotNull() &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.sourceFoodId.isNotNull() &
+            tbl.isDeleted.equals(false),
+      );
 
     final foods = await query.get();
     return foods.map((food) => _convertToUserFoodDomain(food)).toList();
   }
 
   /// Get all foods imported from user_foods table
-  Future<List<domain.CarbLoadingUserFood>> getImportedUserFoods(String deviceId) async {
+  Future<List<domain.CarbLoadingUserFood>> getImportedUserFoods(
+    String deviceId,
+  ) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.sourceUserFoodId.isNotNull() &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.sourceUserFoodId.isNotNull() &
+            tbl.isDeleted.equals(false),
+      );
 
     final foods = await query.get();
     return foods.map((food) => _convertToUserFoodDomain(food)).toList();
   }
 
   /// Get all foods created from barcode scans
-  Future<List<domain.CarbLoadingUserFood>> getScannedFoods(String deviceId) async {
+  Future<List<domain.CarbLoadingUserFood>> getScannedFoods(
+    String deviceId,
+  ) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.barcode.isNotNull() &
-          tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.barcode.isNotNull() &
+            tbl.isDeleted.equals(false),
+      );
 
     final foods = await query.get();
     return foods.map((food) => _convertToUserFoodDomain(food)).toList();
@@ -302,9 +325,10 @@ class FoodImportService {
     }
   }
 
-
   /// Helper: Convert Drift entity to domain model
-  domain.CarbLoadingUserFood _convertToUserFoodDomain(CarbLoadingUserFood food) {
+  domain.CarbLoadingUserFood _convertToUserFoodDomain(
+    CarbLoadingUserFood food,
+  ) {
     final mealTypeIds = domain.parseMealTypeIds(food.mealTypes);
 
     return domain.CarbLoadingUserFood.fromDatabase(

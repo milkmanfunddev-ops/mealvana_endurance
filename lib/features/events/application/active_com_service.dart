@@ -20,10 +20,7 @@ class ActiveComService {
   final SupabaseClient supabase;
   final AppLogger logger;
 
-  ActiveComService({
-    required this.supabase,
-    required this.logger,
-  });
+  ActiveComService({required this.supabase, required this.logger});
 
   /// Search for events by keyword
   ///

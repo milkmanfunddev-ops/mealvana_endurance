@@ -25,10 +25,7 @@ final _uuidPattern = RegExp(r'^[0-9a-fA-F-]{36}$');
 
 /// Convert legacy product_type_id values to the new product_type enum codes.
 /// Returns null when we can't confidently map the value to avoid enum errors upstream.
-String? normalizeProductType(
-  dynamic rawValue, {
-  AppLogger? logger,
-}) {
+String? normalizeProductType(dynamic rawValue, {AppLogger? logger}) {
   final value = rawValue?.toString();
   if (value == null || value.isEmpty) return null;
 

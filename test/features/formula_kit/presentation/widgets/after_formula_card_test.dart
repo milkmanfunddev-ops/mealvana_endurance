@@ -43,7 +43,7 @@ AfterFormulaView _fixture({
 /// "unpinned" affordance without touching repositories / Drift.
 class _StubPinController extends FormulaPinController {
   _StubPinController({Set<String> pinned = const <String>{}})
-      : _pinned = pinned;
+    : _pinned = pinned;
 
   final Set<String> _pinned;
 
@@ -58,15 +58,13 @@ class _StubPinController extends FormulaPinController {
 /// the IconData / FaIconData boundary.
 Finder _thumbtackFinder() {
   return find.byWidgetPredicate(
-    (w) => w is FaIcon &&
+    (w) =>
+        w is FaIcon &&
         w.icon?.codePoint == FontAwesomeIcons.thumbtack.codePoint,
   );
 }
 
-Widget _wrap(
-  Widget child, {
-  Set<String> pinned = const <String>{},
-}) {
+Widget _wrap(Widget child, {Set<String> pinned = const <String>{}}) {
   return ProviderScope(
     overrides: [
       formulaPinControllerProvider.overrideWith(
@@ -80,34 +78,40 @@ Widget _wrap(
 void main() {
   group('AfterFormulaCard', () {
     testWidgets('renders the formula name', (tester) async {
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(
-          formula: _fixture(name: 'Greek Yogurt + Berries'),
-          onTap: () {},
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(name: 'Greek Yogurt + Berries'),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('Greek Yogurt + Berries'), findsOneWidget);
     });
 
-    testWidgets('renders the travel-friendliness pill when set',
-        (tester) async {
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(
-          formula: _fixture(travelFriendliness: 'in_bag'),
-          onTap: () {},
+    testWidgets('renders the travel-friendliness pill when set', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(travelFriendliness: 'in_bag'),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('In bag'), findsOneWidget);
     });
 
-    testWidgets('hides the travel-friendliness pill when null',
-        (tester) async {
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(
-          formula: _fixture(travelFriendliness: null),
-          onTap: () {},
+    testWidgets('hides the travel-friendliness pill when null', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(travelFriendliness: null),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       // No travel-friendliness pill present.
       expect(find.text('In bag'), findsNothing);
       expect(find.text('Cooler-friendly'), findsNothing);
@@ -115,67 +119,79 @@ void main() {
     });
 
     testWidgets('renders C:P ratio meta pill when set', (tester) async {
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(
-          formula: _fixture(targetCarbProteinRatio: '4:1'),
-          onTap: () {},
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(targetCarbProteinRatio: '4:1'),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('C:P 4:1'), findsOneWidget);
     });
 
     testWidgets('hides C:P ratio meta pill when null', (tester) async {
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(
-          formula: _fixture(targetCarbProteinRatio: null),
-          onTap: () {},
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(targetCarbProteinRatio: null),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.textContaining('C:P'), findsNothing);
     });
 
     testWidgets('hides C:P ratio meta pill when empty string', (tester) async {
       // Defensive: the card branches on `isNotEmpty`, not just null.
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(
-          formula: _fixture(targetCarbProteinRatio: ''),
-          onTap: () {},
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(targetCarbProteinRatio: ''),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.textContaining('C:P'), findsNothing);
     });
 
-    testWidgets('renders pin affordance for every After formula',
-        (tester) async {
+    testWidgets('renders pin affordance for every After formula', (
+      tester,
+    ) async {
       // V1 policy: AfterFormulaView.isPinnable is hard-coded true, so every
       // After card surfaces a pin toggle (unlike Before, which gates by
       // template_type).
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(formula: _fixture(), onTap: () {}),
-      ));
+      await tester.pumpWidget(
+        _wrap(AfterFormulaCard(formula: _fixture(), onTap: () {})),
+      );
       await tester.pumpAndSettle();
       expect(find.byType(PinToggleAfter), findsOneWidget);
       expect(_thumbtackFinder(), findsOneWidget);
     });
 
-    testWidgets('pin toggle reflects pinned state from controller',
-        (tester) async {
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(formula: _fixture(id: 'pinned-id'), onTap: () {}),
-        pinned: const {'pinned-id'},
-      ));
+    testWidgets('pin toggle reflects pinned state from controller', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          AfterFormulaCard(
+            formula: _fixture(id: 'pinned-id'),
+            onTap: () {},
+          ),
+          pinned: const {'pinned-id'},
+        ),
+      );
       await tester.pumpAndSettle();
       // Pinned thumbtack uses the orange brand color; unpinned uses muted.
-      final faIcon =
-          tester.widget<FaIcon>(_thumbtackFinder());
+      final faIcon = tester.widget<FaIcon>(_thumbtackFinder());
       expect(faIcon.color, isNotNull);
     });
 
     testWidgets('invokes onTap when card is tapped', (tester) async {
       var taps = 0;
-      await tester.pumpWidget(_wrap(
-        AfterFormulaCard(formula: _fixture(), onTap: () => taps++),
-      ));
+      await tester.pumpWidget(
+        _wrap(AfterFormulaCard(formula: _fixture(), onTap: () => taps++)),
+      );
       // Tap the card body, not the pin toggle.
       await tester.tap(find.text('Chocolate Milk Solo'));
       await tester.pump();

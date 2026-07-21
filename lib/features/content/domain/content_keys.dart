@@ -6,7 +6,8 @@ class ContentKeys {
   static const String mainScreenDistanceLabel = 'main_screen.distance_label';
   static const String mainScreenPaceLabel = 'main_screen.pace_label';
   static const String mainScreenPreRunLabel = 'main_screen.pre_run_label';
-  static const String mainScreenGutTrainingLabel = 'main_screen.gut_training_label';
+  static const String mainScreenGutTrainingLabel =
+      'main_screen.gut_training_label';
   static const String mainScreenGenerateButton = 'main_screen.generate_button';
   static const String mainScreenTipsText = 'main_screen.tips_text';
 
@@ -18,24 +19,35 @@ class ContentKeys {
   static const String planScreenSaveButton = 'plan_screen.save_button';
   static const String planScreenSavedButton = 'plan_screen.saved_button';
   static const String planScreenMacroTargets = 'plan_screen.macro_targets';
-  static const String planScreenFeedbackSuccess = 'plan_screen.feedback_success_message';
-  static const String planScreenFeedbackFailure = 'plan_screen.feedback_failure_message';
+  static const String planScreenFeedbackSuccess =
+      'plan_screen.feedback_success_message';
+  static const String planScreenFeedbackFailure =
+      'plan_screen.feedback_failure_message';
   static const String planScreenNoPlan = 'plan_screen.no_plan_message';
-  static const String planScreenNoPlanDescription = 'plan_screen.no_plan_description';
-  static const String planScreenGeneratePlanButton = 'plan_screen.generate_plan_button';
+  static const String planScreenNoPlanDescription =
+      'plan_screen.no_plan_description';
+  static const String planScreenGeneratePlanButton =
+      'plan_screen.generate_plan_button';
   static const String planScreenError = 'plan_screen.error_message';
   static const String planScreenTryAgainButton = 'plan_screen.try_again_button';
 
   // Welcome Screen
   static const String welcomeScreenTitle = 'welcome_screen.title';
   static const String welcomeScreenSubtitle = 'welcome_screen.subtitle';
-  static const String welcomeScreenFeature1Title = 'welcome_screen.feature_1_title';
-  static const String welcomeScreenFeature1Description = 'welcome_screen.feature_1_description';
-  static const String welcomeScreenFeature2Title = 'welcome_screen.feature_2_title';
-  static const String welcomeScreenFeature2Description = 'welcome_screen.feature_2_description';
-  static const String welcomeScreenFeature3Title = 'welcome_screen.feature_3_title';
-  static const String welcomeScreenFeature3Description = 'welcome_screen.feature_3_description';
-  static const String welcomeScreenGetStartedButton = 'welcome_screen.get_started_button';
+  static const String welcomeScreenFeature1Title =
+      'welcome_screen.feature_1_title';
+  static const String welcomeScreenFeature1Description =
+      'welcome_screen.feature_1_description';
+  static const String welcomeScreenFeature2Title =
+      'welcome_screen.feature_2_title';
+  static const String welcomeScreenFeature2Description =
+      'welcome_screen.feature_2_description';
+  static const String welcomeScreenFeature3Title =
+      'welcome_screen.feature_3_title';
+  static const String welcomeScreenFeature3Description =
+      'welcome_screen.feature_3_description';
+  static const String welcomeScreenGetStartedButton =
+      'welcome_screen.get_started_button';
   static const String welcomeScreenSkipButton = 'welcome_screen.skip_button';
 
   // User Profile Screen
@@ -47,33 +59,46 @@ class ContentKeys {
   static const String userProfileBirthdayHint = 'user_profile.birthday_hint';
   static const String userProfileHeightLabel = 'user_profile.height_label';
   static const String userProfileWeightLabel = 'user_profile.weight_label';
-  static const String userProfileRunningHabitsLabel = 'user_profile.running_habits_label';
-  static const String userProfileWaterBottleLabel = 'user_profile.water_bottle_label';
-  static const String userProfileWaterBottleSubtitle = 'user_profile.water_bottle_subtitle';
-  static const String userProfileContinueButton = 'user_profile.continue_button';
+  static const String userProfileRunningHabitsLabel =
+      'user_profile.running_habits_label';
+  static const String userProfileWaterBottleLabel =
+      'user_profile.water_bottle_label';
+  static const String userProfileWaterBottleSubtitle =
+      'user_profile.water_bottle_subtitle';
+  static const String userProfileContinueButton =
+      'user_profile.continue_button';
 
   // Food Preferences Screen
   static const String foodPreferencesTitle = 'food_preferences.title';
-  static const String foodPreferencesOptionLike = 'food_preferences.option_like';
-  static const String foodPreferencesOptionWillingToTry = 'food_preferences.option_willing_to_try';
-  static const String foodPreferencesOptionDislike = 'food_preferences.option_dislike';
-  static const String foodPreferencesCompleteButton = 'food_preferences.complete_button';
+  static const String foodPreferencesOptionLike =
+      'food_preferences.option_like';
+  static const String foodPreferencesOptionWillingToTry =
+      'food_preferences.option_willing_to_try';
+  static const String foodPreferencesOptionDislike =
+      'food_preferences.option_dislike';
+  static const String foodPreferencesCompleteButton =
+      'food_preferences.complete_button';
 
   // Settings Screen
   static const String settingsTitle = 'settings.title';
   static const String settingsAccountSection = 'settings.account_section';
-  static const String settingsAccountStatusAnonymous = 'settings.account_status_anonymous';
-  static const String settingsAccountStatusAuthenticated = 'settings.account_status_authenticated';
-  static const String settingsCreateAccountButton = 'settings.create_account_button';
+  static const String settingsAccountStatusAnonymous =
+      'settings.account_status_anonymous';
+  static const String settingsAccountStatusAuthenticated =
+      'settings.account_status_authenticated';
+  static const String settingsCreateAccountButton =
+      'settings.create_account_button';
   static const String settingsSignOutButton = 'settings.sign_out_button';
   static const String settingsProfileSection = 'settings.profile_section';
-  static const String settingsPreferencesSection = 'settings.preferences_section';
+  static const String settingsPreferencesSection =
+      'settings.preferences_section';
   static const String settingsGenderLabel = 'settings.gender_label';
   static const String settingsBirthdayLabel = 'settings.birthday_label';
   static const String settingsHeightLabel = 'settings.height_label';
   static const String settingsWeightLabel = 'settings.weight_label';
   static const String settingsWaterBottleLabel = 'settings.water_bottle_label';
-  static const String settingsDistanceUnitLabel = 'settings.distance_unit_label';
+  static const String settingsDistanceUnitLabel =
+      'settings.distance_unit_label';
   static const String settingsPaceUnitLabel = 'settings.pace_unit_label';
   static const String settingsGutTrainingLabel = 'settings.gut_training_label';
   static const String settingsSaveButton = 'settings.save_button';
@@ -96,9 +121,12 @@ class ContentKeys {
   static const String gutTrainingLow = 'gut_training.low';
   static const String gutTrainingModerate = 'gut_training.moderate';
   static const String gutTrainingHigh = 'gut_training.high';
-  static const String gutTrainingLowDescription = 'gut_training.low_description';
-  static const String gutTrainingModerateDescription = 'gut_training.moderate_description';
-  static const String gutTrainingHighDescription = 'gut_training.high_description';
+  static const String gutTrainingLowDescription =
+      'gut_training.low_description';
+  static const String gutTrainingModerateDescription =
+      'gut_training.moderate_description';
+  static const String gutTrainingHighDescription =
+      'gut_training.high_description';
 
   // Pre-run Timing
   static const String preRunTiming1Hour = 'pre_run_timing.1_hour';

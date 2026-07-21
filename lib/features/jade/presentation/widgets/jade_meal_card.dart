@@ -150,17 +150,27 @@ class _MacroRow extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.fire, size: 11, color: AppColors.electrolyte),
-            const SizedBox(width: 3),
-            _MacroLabel(
-              label: '${suggestion.kcal} kcal',
-              textColor: textColor,
+            FaIcon(
+              FontAwesomeIcons.fire,
+              size: 11,
+              color: AppColors.electrolyte,
             ),
+            const SizedBox(width: 3),
+            _MacroLabel(label: '${suggestion.kcal} kcal', textColor: textColor),
           ],
         ),
-        _MacroLabel(label: '${suggestion.carbG.round()}g C', textColor: textColor),
-        _MacroLabel(label: '${suggestion.proteinG.round()}g P', textColor: textColor),
-        _MacroLabel(label: '${suggestion.fatG.round()}g F', textColor: textColor),
+        _MacroLabel(
+          label: '${suggestion.carbG.round()}g C',
+          textColor: textColor,
+        ),
+        _MacroLabel(
+          label: '${suggestion.proteinG.round()}g P',
+          textColor: textColor,
+        ),
+        _MacroLabel(
+          label: '${suggestion.fatG.round()}g F',
+          textColor: textColor,
+        ),
       ],
     );
   }
@@ -372,13 +382,15 @@ class _LogConfirmSheetState extends ConsumerState<_LogConfirmSheet> {
   Future<void> _confirmLog() async {
     final today = _todayString();
 
-    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
-      name: widget.suggestion.name,
-      slot: _selectedSlot,
-      logDate: today,
-      source: MealLogSource.describe,
-      components: widget.suggestion.components,
-    );
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
+          name: widget.suggestion.name,
+          slot: _selectedSlot,
+          logDate: today,
+          source: MealLogSource.describe,
+          components: widget.suggestion.components,
+        );
 
     if (!mounted) return;
 
@@ -410,10 +422,7 @@ class _LogConfirmSheetState extends ConsumerState<_LogConfirmSheet> {
 // ---------------------------------------------------------------------------
 
 class _SlotSelector extends StatelessWidget {
-  const _SlotSelector({
-    required this.selected,
-    required this.onChanged,
-  });
+  const _SlotSelector({required this.selected, required this.onChanged});
 
   final MealSlot selected;
   final ValueChanged<MealSlot> onChanged;

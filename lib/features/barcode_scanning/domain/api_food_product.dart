@@ -32,7 +32,8 @@ class ApiFoodProduct {
   final double? servingQuantity; // serving_quantity from API
   final String? servingQuantityUnit; // serving_quantity_unit from API
   final double? productQuantity; // product_quantity from API (fallback)
-  final String? productQuantityUnit; // product_quantity_unit from API (fallback)
+  final String?
+  productQuantityUnit; // product_quantity_unit from API (fallback)
 
   // Product type detection (from OFF taxonomy + brand + name heuristics)
   final String? suggestedProductType;
@@ -115,7 +116,9 @@ class ApiFoodProduct {
     DebugLogger.debug('🧮 DEBUG - calculateForServing:');
     DebugLogger.debug('  Requested serving: ${servingGrams}g');
     DebugLogger.debug('  API serving grams: ${this.servingGrams}g');
-    DebugLogger.debug('  Nutrition data per: ${nutritionDataPer ?? "100g (default)"}');
+    DebugLogger.debug(
+      '  Nutrition data per: ${nutritionDataPer ?? "100g (default)"}',
+    );
 
     // If we have per-serving data, prefer it
     if (caloriesPerServing != null) {
@@ -126,7 +129,8 @@ class ApiFoodProduct {
       DebugLogger.debug('    Fat: $fatPerServing');
 
       // If the serving size matches exactly or we don't have serving_grams, use values directly
-      if (this.servingGrams == null || (servingGrams - this.servingGrams!).abs() < 5.0) {
+      if (this.servingGrams == null ||
+          (servingGrams - this.servingGrams!).abs() < 5.0) {
         return NutritionalValues(
           calories: caloriesPerServing?.round(),
           carbohydrates: carbohydratesPerServing,
@@ -139,14 +143,24 @@ class ApiFoodProduct {
       // If serving sizes don't match, scale the per-serving values
       if (this.servingGrams != null && this.servingGrams! > 0) {
         final scaleFactor = servingGrams / this.servingGrams!;
-        DebugLogger.debug('  Scaling per-serving values by factor: $scaleFactor');
+        DebugLogger.debug(
+          '  Scaling per-serving values by factor: $scaleFactor',
+        );
 
         return NutritionalValues(
-          calories: caloriesPerServing != null ? (caloriesPerServing! * scaleFactor).round() : null,
-          carbohydrates: carbohydratesPerServing != null ? carbohydratesPerServing! * scaleFactor : null,
-          protein: proteinPerServing != null ? proteinPerServing! * scaleFactor : null,
+          calories: caloriesPerServing != null
+              ? (caloriesPerServing! * scaleFactor).round()
+              : null,
+          carbohydrates: carbohydratesPerServing != null
+              ? carbohydratesPerServing! * scaleFactor
+              : null,
+          protein: proteinPerServing != null
+              ? proteinPerServing! * scaleFactor
+              : null,
           fat: fatPerServing != null ? fatPerServing! * scaleFactor : null,
-          sodiumMg: sodiumMgPerServing != null ? (sodiumMgPerServing! * scaleFactor).round() : null,
+          sodiumMg: sodiumMgPerServing != null
+              ? (sodiumMgPerServing! * scaleFactor).round()
+              : null,
         );
       }
     }
@@ -154,14 +168,22 @@ class ApiFoodProduct {
     // Fallback to per-100g calculation
     final factor = servingGrams / 100.0;
     DebugLogger.debug('  Using per-100g calculation with factor: $factor');
-    DebugLogger.debug('  Calculation: $caloriesPer100g * $factor = ${caloriesPer100g != null ? (caloriesPer100g! * factor) : null}');
+    DebugLogger.debug(
+      '  Calculation: $caloriesPer100g * $factor = ${caloriesPer100g != null ? (caloriesPer100g! * factor) : null}',
+    );
 
     return NutritionalValues(
-      calories: caloriesPer100g != null ? (caloriesPer100g! * factor).round() : null,
-      carbohydrates: carbohydratesPer100g != null ? carbohydratesPer100g! * factor : null,
+      calories: caloriesPer100g != null
+          ? (caloriesPer100g! * factor).round()
+          : null,
+      carbohydrates: carbohydratesPer100g != null
+          ? carbohydratesPer100g! * factor
+          : null,
       protein: proteinPer100g != null ? proteinPer100g! * factor : null,
       fat: fatPer100g != null ? fatPer100g! * factor : null,
-      sodiumMg: sodiumMgPer100g != null ? (sodiumMgPer100g! * factor).round() : null,
+      sodiumMg: sodiumMgPer100g != null
+          ? (sodiumMgPer100g! * factor).round()
+          : null,
     );
   }
 

@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
-
 /// Food icon for Kyle's design system
 /// 36px circular icon with Electrolyte background
 class KyleFoodIcon extends ConsumerWidget {
@@ -30,15 +29,8 @@ class KyleFoodIcon extends ConsumerWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        iconData,
-        size: size * 0.5,
-        color: icColor,
-      ),
+      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+      child: Icon(iconData, size: size * 0.5, color: icColor),
     );
   }
 
@@ -56,7 +48,7 @@ class KyleFoodIcon extends ConsumerWidget {
         return FontAwesomeIcons.burger.data;
       case KyleFoodType.pasta:
         return FontAwesomeIcons.bowlFood.data;
-      case KyleFoodType.rice: 
+      case KyleFoodType.rice:
         return FontAwesomeIcons.bowlRice.data;
       case KyleFoodType.protein:
         return FontAwesomeIcons.drumstickBite.data;
@@ -137,7 +129,7 @@ class KyleFoodPreferenceIcon extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = _getColorsForPreference(preferenceLevel);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -147,10 +139,7 @@ class KyleFoodPreferenceIcon extends ConsumerWidget {
         decoration: BoxDecoration(
           color: colors.backgroundColor,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: colors.borderColor,
-            width: 2,
-          ),
+          border: Border.all(color: colors.borderColor, width: 2),
         ),
         child: Icon(
           _getIconForFoodType(foodType),
@@ -244,11 +233,11 @@ enum KyleFoodType {
 
 /// Preference levels enum
 enum KylePreferenceLevel {
-  avoid,    // 0 - Dragonfruit
-  dislike,  // 1 - Orange
-  neutral,  // 2 - Electrolyte light
-  like,     // 3 - Electrolyte medium
-  love,     // 4 - Electrolyte full
+  avoid, // 0 - Dragonfruit
+  dislike, // 1 - Orange
+  neutral, // 2 - Electrolyte light
+  like, // 3 - Electrolyte medium
+  love, // 4 - Electrolyte full
 }
 
 /// Maps a product_type_id (from database) and/or food name to a [KyleFoodType].
@@ -296,7 +285,8 @@ KyleFoodType mapFoodType({String? productTypeId, String name = ''}) {
       lowerName.contains('pill') ||
       lowerName.contains('vitamin')) {
     return KyleFoodType.supplement;
-  } else if (lowerName.contains('waffle') || lowerName.contains('stroopwafel')) {
+  } else if (lowerName.contains('waffle') ||
+      lowerName.contains('stroopwafel')) {
     return KyleFoodType.snack;
   } else if (lowerName.contains('chew')) {
     return KyleFoodType.gel;

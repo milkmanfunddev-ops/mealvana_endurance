@@ -103,24 +103,32 @@ class _PortalNutritionTargetsFormState
     // Pre
     final pre = overrides.pre;
     if (pre != null) {
-      if (pre.carbsG != null) _preCarbsCtl.text = pre.carbsG!.toStringAsFixed(0);
-      if (pre.proteinG != null) _preProteinCtl.text = pre.proteinG!.toStringAsFixed(0);
+      if (pre.carbsG != null)
+        _preCarbsCtl.text = pre.carbsG!.toStringAsFixed(0);
+      if (pre.proteinG != null)
+        _preProteinCtl.text = pre.proteinG!.toStringAsFixed(0);
       if (pre.fatG != null) _preFatCtl.text = pre.fatG!.toStringAsFixed(0);
-      if (pre.sodiumMg != null) _preSodiumCtl.text = pre.sodiumMg!.toStringAsFixed(0);
-      if (pre.fluidMl != null) _preFluidCtl.text = pre.fluidMl!.toStringAsFixed(0);
+      if (pre.sodiumMg != null)
+        _preSodiumCtl.text = pre.sodiumMg!.toStringAsFixed(0);
+      if (pre.fluidMl != null)
+        _preFluidCtl.text = pre.fluidMl!.toStringAsFixed(0);
     }
 
     // During Run (fallback to legacy during)
     final duringRun = overrides.duringRun ?? overrides.during;
     if (duringRun != null) {
       if (duringRun.carbRateGPerH != null) {
-        _duringRunCarbRateCtl.text = duringRun.carbRateGPerH!.toStringAsFixed(0);
+        _duringRunCarbRateCtl.text = duringRun.carbRateGPerH!.toStringAsFixed(
+          0,
+        );
       }
       if (duringRun.sodiumRateMgPerH != null) {
-        _duringRunSodiumRateCtl.text = duringRun.sodiumRateMgPerH!.toStringAsFixed(0);
+        _duringRunSodiumRateCtl.text = duringRun.sodiumRateMgPerH!
+            .toStringAsFixed(0);
       }
       if (duringRun.fluidRateMlPerH != null) {
-        _duringRunFluidRateCtl.text = duringRun.fluidRateMlPerH!.toStringAsFixed(0);
+        _duringRunFluidRateCtl.text = duringRun.fluidRateMlPerH!
+            .toStringAsFixed(0);
       }
     }
 
@@ -128,13 +136,17 @@ class _PortalNutritionTargetsFormState
     final duringBike = overrides.duringCycling ?? overrides.during;
     if (duringBike != null) {
       if (duringBike.carbRateGPerH != null) {
-        _duringBikeCarbRateCtl.text = duringBike.carbRateGPerH!.toStringAsFixed(0);
+        _duringBikeCarbRateCtl.text = duringBike.carbRateGPerH!.toStringAsFixed(
+          0,
+        );
       }
       if (duringBike.sodiumRateMgPerH != null) {
-        _duringBikeSodiumRateCtl.text = duringBike.sodiumRateMgPerH!.toStringAsFixed(0);
+        _duringBikeSodiumRateCtl.text = duringBike.sodiumRateMgPerH!
+            .toStringAsFixed(0);
       }
       if (duringBike.fluidRateMlPerH != null) {
-        _duringBikeFluidRateCtl.text = duringBike.fluidRateMlPerH!.toStringAsFixed(0);
+        _duringBikeFluidRateCtl.text = duringBike.fluidRateMlPerH!
+            .toStringAsFixed(0);
       }
     }
 
@@ -142,20 +154,26 @@ class _PortalNutritionTargetsFormState
     final duringSwim = overrides.duringSwimming ?? overrides.during;
     if (duringSwim != null) {
       if (duringSwim.sodiumRateMgPerH != null) {
-        _duringSwimSodiumRateCtl.text = duringSwim.sodiumRateMgPerH!.toStringAsFixed(0);
+        _duringSwimSodiumRateCtl.text = duringSwim.sodiumRateMgPerH!
+            .toStringAsFixed(0);
       }
       if (duringSwim.fluidRateMlPerH != null) {
-        _duringSwimFluidRateCtl.text = duringSwim.fluidRateMlPerH!.toStringAsFixed(0);
+        _duringSwimFluidRateCtl.text = duringSwim.fluidRateMlPerH!
+            .toStringAsFixed(0);
       }
     }
 
     // Post
     final post = overrides.post;
     if (post != null) {
-      if (post.carbsG != null) _postCarbsCtl.text = post.carbsG!.toStringAsFixed(0);
-      if (post.proteinG != null) _postProteinCtl.text = post.proteinG!.toStringAsFixed(0);
-      if (post.sodiumMg != null) _postSodiumCtl.text = post.sodiumMg!.toStringAsFixed(0);
-      if (post.fluidMl != null) _postFluidCtl.text = post.fluidMl!.toStringAsFixed(0);
+      if (post.carbsG != null)
+        _postCarbsCtl.text = post.carbsG!.toStringAsFixed(0);
+      if (post.proteinG != null)
+        _postProteinCtl.text = post.proteinG!.toStringAsFixed(0);
+      if (post.sodiumMg != null)
+        _postSodiumCtl.text = post.sodiumMg!.toStringAsFixed(0);
+      if (post.fluidMl != null)
+        _postFluidCtl.text = post.fluidMl!.toStringAsFixed(0);
     }
   }
 
@@ -267,11 +285,23 @@ class _PortalNutritionTargetsFormState
 
       // Clear all controllers
       for (final c in [
-        _preCarbsCtl, _preProteinCtl, _preFatCtl, _preSodiumCtl, _preFluidCtl,
-        _duringRunCarbRateCtl, _duringRunSodiumRateCtl, _duringRunFluidRateCtl,
-        _duringBikeCarbRateCtl, _duringBikeSodiumRateCtl, _duringBikeFluidRateCtl,
-        _duringSwimSodiumRateCtl, _duringSwimFluidRateCtl,
-        _postCarbsCtl, _postProteinCtl, _postSodiumCtl, _postFluidCtl,
+        _preCarbsCtl,
+        _preProteinCtl,
+        _preFatCtl,
+        _preSodiumCtl,
+        _preFluidCtl,
+        _duringRunCarbRateCtl,
+        _duringRunSodiumRateCtl,
+        _duringRunFluidRateCtl,
+        _duringBikeCarbRateCtl,
+        _duringBikeSodiumRateCtl,
+        _duringBikeFluidRateCtl,
+        _duringSwimSodiumRateCtl,
+        _duringSwimFluidRateCtl,
+        _postCarbsCtl,
+        _postProteinCtl,
+        _postSodiumCtl,
+        _postFluidCtl,
       ]) {
         c.clear();
       }
@@ -294,7 +324,7 @@ class _PortalNutritionTargetsFormState
     // preference (unitSystemProvider resolves to the logged-in user).
     final useMetric =
         (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
-            UnitSystem.metric;
+        UnitSystem.metric;
     _applyFluidUnitsOnce(useMetric);
     final fluidUnitLabel = useMetric ? 'mL' : 'fl oz';
     final fluidRateUnitLabel = useMetric ? 'mL/hr' : 'fl oz/hr';
@@ -354,7 +384,10 @@ class _PortalNutritionTargetsFormState
               const SizedBox(width: 8),
               _buildField('Sodium (mg/hr)', _duringRunSodiumRateCtl),
               const SizedBox(width: 8),
-              _buildField('Fluid ($fluidRateUnitLabel)', _duringRunFluidRateCtl),
+              _buildField(
+                'Fluid ($fluidRateUnitLabel)',
+                _duringRunFluidRateCtl,
+              ),
             ],
           ),
 
@@ -369,7 +402,10 @@ class _PortalNutritionTargetsFormState
               const SizedBox(width: 8),
               _buildField('Sodium (mg/hr)', _duringBikeSodiumRateCtl),
               const SizedBox(width: 8),
-              _buildField('Fluid ($fluidRateUnitLabel)', _duringBikeFluidRateCtl),
+              _buildField(
+                'Fluid ($fluidRateUnitLabel)',
+                _duringBikeFluidRateCtl,
+              ),
             ],
           ),
 
@@ -382,7 +418,10 @@ class _PortalNutritionTargetsFormState
             children: [
               _buildField('Sodium (mg/hr)', _duringSwimSodiumRateCtl),
               const SizedBox(width: 8),
-              _buildField('Fluid ($fluidRateUnitLabel)', _duringSwimFluidRateCtl),
+              _buildField(
+                'Fluid ($fluidRateUnitLabel)',
+                _duringSwimFluidRateCtl,
+              ),
               const SizedBox(width: 8),
               const Expanded(child: SizedBox()), // spacer
             ],

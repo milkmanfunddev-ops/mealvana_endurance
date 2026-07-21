@@ -105,21 +105,24 @@ class DefaultFormulaSelector {
 
       // Activity overlap.
       final activitiesLower = c.activityTypes.map((a) => a.toLowerCase());
-      final activityMatch = (c.emptyActivityIsUniversal && c.activityTypes.isEmpty) ||
+      final activityMatch =
+          (c.emptyActivityIsUniversal && c.activityTypes.isEmpty) ||
           activitiesLower.contains(activity);
       if (!activityMatch) continue;
 
       // Diet exclusion (safety).
       if (dietLower != null && dietLower.isNotEmpty) {
-        final excluded =
-            c.excludedDiets.any((d) => d.toLowerCase() == dietLower);
+        final excluded = c.excludedDiets.any(
+          (d) => d.toLowerCase() == dietLower,
+        );
         if (excluded) continue;
       }
 
       // Allergen overlap (safety).
       if (allergiesLower.isNotEmpty && c.allergens.isNotEmpty) {
-        final overlaps =
-            c.allergens.any((a) => allergiesLower.contains(a.toLowerCase()));
+        final overlaps = c.allergens.any(
+          (a) => allergiesLower.contains(a.toLowerCase()),
+        );
         if (overlaps) continue;
       }
 

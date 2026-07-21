@@ -28,8 +28,10 @@ class CarbsPerHourBaseline {
   double? get average =>
       history.isEmpty ? null : history.reduce((a, b) => a + b) / history.length;
 
-  static const CarbsPerHourBaseline empty =
-      CarbsPerHourBaseline(history: <double>[], count: 0);
+  static const CarbsPerHourBaseline empty = CarbsPerHourBaseline(
+    history: <double>[],
+    count: 0,
+  );
 }
 
 /// Everything the carbs/hr card needs to render, assembled by

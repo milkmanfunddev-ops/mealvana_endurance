@@ -274,8 +274,7 @@ class MacroGenerationService {
 
     // Known sweat-test overrides (null = use algorithmic estimate)
     final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
-    final knownSodiumConcMgL =
-        userProfile?.knownSodiumConcentrationMgPerLiter;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
 
     // Treadmill runs: callers pass indoorOutdoor='indoor'. The edge function
     // applies the 1.30× sweat rate multiplier per spec when is_indoor=true.
@@ -306,7 +305,8 @@ class MacroGenerationService {
       'carb_source': 'dual',
       // Sweat profile (Phase 6: read from UserProfile instead of hardcoding)
       'sweat_sodium': sweatSodiumValue,
-      'sweat_rate_category': sweatRateCat?.name ?? userProfile?.sweatRate.name ?? 'medium',
+      'sweat_rate_category':
+          sweatRateCat?.name ?? userProfile?.sweatRate.name ?? 'medium',
       'is_indoor': isIndoor,
       if (knownSweatRateMlHr != null)
         'known_sweat_rate_ml_hr': knownSweatRateMlHr,
@@ -350,8 +350,7 @@ class MacroGenerationService {
     final sweatSodiumValue =
         (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
     final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
-    final knownSodiumConcMgL =
-        userProfile?.knownSodiumConcentrationMgPerLiter;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
 
     return {
       'activity_type': 'cycling',
@@ -423,8 +422,7 @@ class MacroGenerationService {
     final isIndoor = poolOrOpenWater == 'pool';
 
     final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
-    final knownSodiumConcMgL =
-        userProfile?.knownSodiumConcentrationMgPerLiter;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
 
     return {
       'activity_type': 'swimming',
@@ -491,8 +489,9 @@ class MacroGenerationService {
       payload['disliked_foods'] = dislikedFoods;
     }
 
-    final willingToTryFoods =
-        await authService.getWillingToTryFoods(userProfile.id);
+    final willingToTryFoods = await authService.getWillingToTryFoods(
+      userProfile.id,
+    );
     if (willingToTryFoods.isNotEmpty) {
       payload['willing_to_try_foods'] = willingToTryFoods;
     }
@@ -668,13 +667,12 @@ class MacroGenerationService {
     final gutTraining = requestData['gut_training'] as String? ?? 'moderate';
     final sweatRateCategory =
         requestData['sweat_rate_category'] as String? ?? 'medium';
-    final sweatSodiumCat =
-        requestData['sweat_sodium'] as String? ?? 'average';
+    final sweatSodiumCat = requestData['sweat_sodium'] as String? ?? 'average';
     final tempC = (requestData['temp_c'] as num?)?.toDouble();
     final humidityPct = (requestData['humidity_pct'] as num?)?.toDouble();
     final isIndoor = requestData['is_indoor'] as bool? ?? false;
-    final knownSweatRateMlHr =
-        (requestData['known_sweat_rate_ml_hr'] as num?)?.toDouble();
+    final knownSweatRateMlHr = (requestData['known_sweat_rate_ml_hr'] as num?)
+        ?.toDouble();
     final knownSodiumConcMgL =
         (requestData['known_sodium_concentration_mg_l'] as num?)?.toDouble();
 
@@ -703,8 +701,7 @@ class MacroGenerationService {
       case ActivityType.cycling:
         final distanceMiles =
             (requestData['distance_miles'] as num?)?.toDouble() ?? 0.0;
-        final speedMph =
-            (requestData['speed_mph'] as num?)?.toDouble() ?? 20.0;
+        final speedMph = (requestData['speed_mph'] as num?)?.toDouble() ?? 20.0;
         final terrain = requestData['terrain'] as String? ?? 'flat';
         return OfflineMacroCalculator.calculateCyclingMacros(
           weightKg: weightKg,

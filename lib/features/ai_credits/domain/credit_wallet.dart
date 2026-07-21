@@ -3,11 +3,7 @@
 /// Read-only projection from the `token_wallets` Supabase table.
 /// All mutation is performed server-side (by edge functions and webhooks).
 class CreditWallet {
-  const CreditWallet({
-    required this.balance,
-    this.freePeriod,
-    this.updatedAt,
-  });
+  const CreditWallet({required this.balance, this.freePeriod, this.updatedAt});
 
   /// Current credit balance. Never negative from the server, but clamp on
   /// display just in case.

@@ -29,11 +29,11 @@ class SearchResultItemWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.blackberry.withOpacity(0.3) : Theme.of(context).colorScheme.surface,
+          color: isDark
+              ? AppColors.blackberry.withOpacity(0.3)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: AppRadius.cardRadius,
-          border: Border.all(
-            color: AppColors.electrolyte.withOpacity(0.3),
-          ),
+          border: Border.all(color: AppColors.electrolyte.withOpacity(0.3)),
         ),
         child: Row(
           children: [

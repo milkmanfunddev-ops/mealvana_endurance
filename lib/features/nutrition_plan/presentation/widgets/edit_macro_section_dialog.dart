@@ -116,8 +116,8 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
                 ],
               ),
             ),
-            
-            // Compact content with input fields  
+
+            // Compact content with input fields
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(16.w),
@@ -127,7 +127,7 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
                 ),
               ),
             ),
-            
+
             // Compact action buttons
             Container(
               width: double.infinity,
@@ -189,7 +189,7 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
 
   List<Widget> _buildInputFields() {
     final fields = <Widget>[];
-    
+
     widget.initialValues.forEach((key, value) {
       if (fields.isNotEmpty) {
         fields.add(SizedBox(height: 12.h));
@@ -230,10 +230,7 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
               fillColor: Colors.white,
               suffix: Text(
                 unit,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppTheme.baseGrey,
-                ),
+                style: TextStyle(fontSize: 12.sp, color: AppTheme.baseGrey),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.r),
@@ -243,12 +240,12 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(
-                  color: widget.iconColor,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: widget.iconColor, width: 2),
               ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 12.h,
+              ),
             ),
           ),
         ),
@@ -258,12 +255,18 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
 
   String _getFieldLabel(String key) {
     switch (key) {
-      case 'carbs': return 'Carbohydrates';
-      case 'protein': return 'Protein';
-      case 'fatCap': return 'Fat Cap';
-      case 'fluids': return 'Fluids';
-      case 'sodium': return 'Sodium';
-      default: return key.toUpperCase();
+      case 'carbs':
+        return 'Carbohydrates';
+      case 'protein':
+        return 'Protein';
+      case 'fatCap':
+        return 'Fat Cap';
+      case 'fluids':
+        return 'Fluids';
+      case 'sodium':
+        return 'Sodium';
+      default:
+        return key.toUpperCase();
     }
   }
 
@@ -284,13 +287,13 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
 
   void _saveChanges() async {
     final controller = widget.ref.read(macroTargetsControllerProvider.notifier);
-    
+
     // Update each field value through the controller
     for (final entry in _controllers.entries) {
       final key = entry.key;
       final textController = entry.value;
       final value = double.tryParse(textController.text) ?? 0.0;
-      
+
       // Map the field key to the appropriate MacroField enum
       final macroField = _getMacroField(widget.section, key);
       if (macroField != null) {
@@ -311,26 +314,40 @@ class _EditMacroSectionDialogState extends State<EditMacroSectionDialog> {
     switch (section) {
       case MacroSection.preRun:
         switch (key) {
-          case 'carbs': return MacroField.preRunCarbs;
-          case 'protein': return MacroField.preRunProtein;
-          case 'fluids': return MacroField.preRunFluids;
-          case 'sodium': return MacroField.preRunSodium;
-          default: return null;
+          case 'carbs':
+            return MacroField.preRunCarbs;
+          case 'protein':
+            return MacroField.preRunProtein;
+          case 'fluids':
+            return MacroField.preRunFluids;
+          case 'sodium':
+            return MacroField.preRunSodium;
+          default:
+            return null;
         }
       case MacroSection.duringRun:
         switch (key) {
-          case 'carbs': return MacroField.duringRunCarbTotal;
-          case 'fluids': return MacroField.duringRunFluidTotal;
-          case 'sodium': return MacroField.duringRunSodiumTotal;
-          default: return null;
+          case 'carbs':
+            return MacroField.duringRunCarbTotal;
+          case 'fluids':
+            return MacroField.duringRunFluidTotal;
+          case 'sodium':
+            return MacroField.duringRunSodiumTotal;
+          default:
+            return null;
         }
       case MacroSection.postRun:
         switch (key) {
-          case 'carbs': return MacroField.postRunCarbs;
-          case 'protein': return MacroField.postRunProtein;
-          case 'fluids': return MacroField.postRunFluids;
-          case 'sodium': return MacroField.postRunSodium;
-          default: return null;
+          case 'carbs':
+            return MacroField.postRunCarbs;
+          case 'protein':
+            return MacroField.postRunProtein;
+          case 'fluids':
+            return MacroField.postRunFluids;
+          case 'sodium':
+            return MacroField.postRunSodium;
+          default:
+            return null;
         }
     }
   }

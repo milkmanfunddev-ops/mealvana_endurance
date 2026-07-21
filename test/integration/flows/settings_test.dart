@@ -65,7 +65,9 @@ void main() {
       final deviceId = 'device-update-profile-123';
 
       // Create initial user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -97,9 +99,9 @@ void main() {
       logSection('Updating profile settings');
 
       // Update weight and water bottle preference
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           weightPounds: const Value(175.0),
           runsWithWaterBottle: const Value(true),
@@ -107,12 +109,15 @@ void main() {
         ),
       );
 
-      final updatedProfile = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .getSingle();
+      final updatedProfile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).getSingle();
 
       logTestResult('weight_pounds', updatedProfile.weightPounds);
-      logTestResult('runs_with_water_bottle', updatedProfile.runsWithWaterBottle);
+      logTestResult(
+        'runs_with_water_bottle',
+        updatedProfile.runsWithWaterBottle,
+      );
 
       logAssertion(
         'Weight updated',
@@ -139,7 +144,9 @@ void main() {
       final deviceId = 'device-gut-level-123';
 
       // Create user with low gut training
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -169,18 +176,18 @@ void main() {
       logSection('Updating to moderate');
 
       // Update to moderate
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           gutTrainingLevel: const Value('moderate'),
           updatedAt: Value(DateTime.now()),
         ),
       );
 
-      var profile = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .getSingle();
+      var profile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).getSingle();
       logTestResult('gut_training_level', profile.gutTrainingLevel);
 
       expect(profile.gutTrainingLevel, equals('moderate'));
@@ -188,18 +195,18 @@ void main() {
       logSection('Updating to high');
 
       // Update to high
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           gutTrainingLevel: const Value('high'),
           updatedAt: Value(DateTime.now()),
         ),
       );
 
-      profile = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .getSingle();
+      profile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).getSingle();
       logTestResult('gut_training_level', profile.gutTrainingLevel);
 
       logAssertion(
@@ -220,7 +227,9 @@ void main() {
       final deviceId = 'device-units-123';
 
       // Create user with default units (miles)
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -254,9 +263,9 @@ void main() {
       logSection('Updating to metric units');
 
       // Update to kilometers
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           preferredDistanceUnit: const Value('kilometers'),
           preferredPaceUnit: const Value('minPerKm'),
@@ -264,9 +273,9 @@ void main() {
         ),
       );
 
-      final profileEntries = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .get();
+      final profileEntries = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).get();
       final profile = profileEntries.first;
 
       logTestResult('preferred_distance_unit', profile.preferredDistanceUnit);
@@ -297,7 +306,9 @@ void main() {
       final deviceId = 'device-calendar-123';
 
       // Create user with default calendar settings
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -334,9 +345,9 @@ void main() {
       logSection('Updating calendar preferences');
 
       // Update calendar settings
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           calendarWeekStart: const Value('sunday'),
           defaultActivityDay: const Value('friday'),
@@ -346,9 +357,9 @@ void main() {
         ),
       );
 
-      final profileEntries = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .get();
+      final profileEntries = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).get();
       final profile = profileEntries.first;
 
       logTestResult('calendar_week_start', profile.calendarWeekStart);
@@ -389,7 +400,9 @@ void main() {
       final deviceId = 'device-notif-123';
 
       // Create user with default notification settings
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -426,9 +439,9 @@ void main() {
       logSection('Enabling notifications with custom reminder');
 
       // Enable notifications and set custom reminder
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           notificationsEnabled: const Value(true),
           defaultReminderDay: const Value(5), // Friday
@@ -439,16 +452,19 @@ void main() {
         ),
       );
 
-      final profileEntries = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .get();
+      final profileEntries = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).get();
       final profile = profileEntries.first;
 
       logTestResult('notifications_enabled', profile.notificationsEnabled);
       logTestResult('default_reminder_day', profile.defaultReminderDay);
       logTestResult('default_reminder_hour', profile.defaultReminderHour);
       logTestResult('default_reminder_minute', profile.defaultReminderMinute);
-      logTestResult('default_reminder_recurring', profile.defaultReminderRecurring);
+      logTestResult(
+        'default_reminder_recurring',
+        profile.defaultReminderRecurring,
+      );
 
       logAssertion(
         'Notifications enabled',
@@ -464,7 +480,8 @@ void main() {
 
       logAssertion(
         'Reminder time set correctly',
-        passed: profile.defaultReminderHour == 18 &&
+        passed:
+            profile.defaultReminderHour == 18 &&
             profile.defaultReminderMinute == 30,
         reason: 'Reminder time should be customizable',
       );
@@ -491,7 +508,9 @@ void main() {
       final deviceId = 'device-atomic-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -522,9 +541,9 @@ void main() {
       logSection('Performing atomic update of multiple settings');
 
       // Update multiple settings in one transaction
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           weightPounds: const Value(180.0),
           gutTrainingLevel: const Value('moderate'),
@@ -536,9 +555,9 @@ void main() {
         ),
       );
 
-      final profileEntries = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .get();
+      final profileEntries = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).get();
       final profile = profileEntries.first;
 
       logTestResult('weight_pounds', profile.weightPounds);
@@ -549,7 +568,8 @@ void main() {
 
       logAssertion(
         'All settings updated',
-        passed: profile.weightPounds == 180.0 &&
+        passed:
+            profile.weightPounds == 180.0 &&
             profile.gutTrainingLevel == 'moderate' &&
             profile.preferredDistanceUnit == 'kilometers' &&
             profile.notificationsEnabled == true &&

@@ -207,24 +207,30 @@ class ActivitiesController extends _$ActivitiesController {
       // workouts fire the same event from their sync service with
       // `source: 'synced'`.
       try {
-        ref.read(appExternalDepsProvider).analytics.trackWorkoutPlanned(
-          sport: activityType.name,
-          source: 'manual',
-          durationMinutes: durationMinutes,
-          activityId: createdActivity.id,
-          isCoachCreated: forUserId != null,
-        );
+        ref
+            .read(appExternalDepsProvider)
+            .analytics
+            .trackWorkoutPlanned(
+              sport: activityType.name,
+              source: 'manual',
+              durationMinutes: durationMinutes,
+              activityId: createdActivity.id,
+              isCoachCreated: forUserId != null,
+            );
       } catch (_) {}
 
       if (priorCount == 0) {
         try {
-          ref.read(appExternalDepsProvider).analytics.track(
-            'first_activity_added',
-            properties: {
-              'activity_type': activityType.name,
-              'activity_id': createdActivity.id,
-            },
-          );
+          ref
+              .read(appExternalDepsProvider)
+              .analytics
+              .track(
+                'first_activity_added',
+                properties: {
+                  'activity_type': activityType.name,
+                  'activity_id': createdActivity.id,
+                },
+              );
         } catch (_) {}
       }
 
@@ -304,10 +310,8 @@ class ActivitiesController extends _$ActivitiesController {
     final previous = state.value ?? const <Activity>[];
     // Optimistically re-add (guard against a duplicate) and keep the list
     // ordered by scheduled time so the card reappears in its original slot.
-    final next = [
-      ...previous.where((a) => a.id != activity.id),
-      activity,
-    ]..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+    final next = [...previous.where((a) => a.id != activity.id), activity]
+      ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
     state = AsyncData(List.unmodifiable(next));
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);

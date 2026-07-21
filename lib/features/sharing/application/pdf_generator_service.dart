@@ -37,7 +37,9 @@ class PdfGeneratorService {
         UnitSystem.metric;
     final pdf = pw.Document();
 
-    final logoBytes = await rootBundle.load('assets/images/endurance_welcome_logo.png');
+    final logoBytes = await rootBundle.load(
+      'assets/images/endurance_welcome_logo.png',
+    );
     final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
 
     pdf.addPage(
@@ -46,7 +48,12 @@ class PdfGeneratorService {
         margin: const pw.EdgeInsets.all(40),
         build: (context) => [
           pw.Center(
-            child: pw.Image(logo, width: 200, height: 100, fit: pw.BoxFit.contain),
+            child: pw.Image(
+              logo,
+              width: 200,
+              height: 100,
+              fit: pw.BoxFit.contain,
+            ),
           ),
           pw.SizedBox(height: 30),
           pw.Center(
@@ -105,10 +112,7 @@ class PdfGeneratorService {
               ),
               pw.Text(
                 activityDate,
-                style: const pw.TextStyle(
-                  fontSize: 12,
-                  color: _blackColor,
-                ),
+                style: const pw.TextStyle(fontSize: 12, color: _blackColor),
               ),
             ],
           ),
@@ -126,10 +130,7 @@ class PdfGeneratorService {
               ),
               pw.Text(
                 dateFormat.format(sentDate),
-                style: const pw.TextStyle(
-                  fontSize: 12,
-                  color: _blackColor,
-                ),
+                style: const pw.TextStyle(fontSize: 12, color: _blackColor),
               ),
             ],
           ),
@@ -148,10 +149,7 @@ class PdfGeneratorService {
                 ),
                 pw.Text(
                   senderName,
-                  style: const pw.TextStyle(
-                    fontSize: 12,
-                    color: _blackColor,
-                  ),
+                  style: const pw.TextStyle(fontSize: 12, color: _blackColor),
                 ),
               ],
             ),
@@ -223,10 +221,7 @@ class PdfGeneratorService {
         pw.SizedBox(height: 4),
         pw.Text(
           label,
-          style: const pw.TextStyle(
-            fontSize: 10,
-            color: _blackColor,
-          ),
+          style: const pw.TextStyle(fontSize: 10, color: _blackColor),
         ),
       ],
     );
@@ -283,7 +278,9 @@ class PdfGeneratorService {
 
     // Sodium (unit-invariant)
     if (section.sodiumTarget != null && section.sodiumTarget! > 0) {
-      parts.add('${totals['sodium']}/${section.sodiumTarget!.toInt()}mg sodium');
+      parts.add(
+        '${totals['sodium']}/${section.sodiumTarget!.toInt()}mg sodium',
+      );
     }
 
     return parts.join(', ');
@@ -318,7 +315,10 @@ class PdfGeneratorService {
         children: [
           pw.Container(
             width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const pw.EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 16,
+            ),
             decoration: pw.BoxDecoration(
               color: _primaryColor,
               borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),

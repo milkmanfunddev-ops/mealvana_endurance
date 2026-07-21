@@ -29,7 +29,9 @@ class NutritionData {
       afterRunFoods: (json['afterRunFoods'] as List? ?? [])
           .map((e) => FoodItem.fromJson(e as Map<String, dynamic>))
           .toList(),
-      macroTargets: MacroTargets.fromJson(json['macroTargets'] as Map<String, dynamic>),
+      macroTargets: MacroTargets.fromJson(
+        json['macroTargets'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -67,10 +69,7 @@ class NutritionData {
 
   /// Get total calories across all phases
   int get totalCalories {
-    return allFoods.fold<int>(
-      0,
-      (sum, food) => sum + (food.calories ?? 0),
-    );
+    return allFoods.fold<int>(0, (sum, food) => sum + (food.calories ?? 0));
   }
 
   /// Get total carbs across all phases
@@ -124,7 +123,8 @@ class NutritionData {
   }
 
   @override
-  String toString() => 'NutritionData(foods: ${allFoods.length}, macros: $macroTargets)';
+  String toString() =>
+      'NutritionData(foods: ${allFoods.length}, macros: $macroTargets)';
 }
 
 /// Macro nutrient targets for nutrition data

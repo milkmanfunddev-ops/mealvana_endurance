@@ -60,19 +60,21 @@ class DayTimelineAssembler {
         .where((e) => e.eventDate != null || e.startTime != null)
         .map((e) => EventNode(e, _eventTime(e, selectedDate)));
     final carbNodes = carbLoadingDays.map(
-      (d) => CarbLoadingNode(d, totalDays: planTotalDaysById[d.carbLoadingPlanId]),
+      (d) =>
+          CarbLoadingNode(d, totalDays: planTotalDaysById[d.carbLoadingPlanId]),
     );
 
     // Interleave by time; tie-break on id for stable, deterministic ordering.
-    final ordered = <TimelineNode>[
-      ...mealNodes,
-      ...workoutNodes,
-      ...eventNodes,
-      ...carbNodes,
-    ]..sort((a, b) {
-        final byTime = a.time.compareTo(b.time);
-        return byTime != 0 ? byTime : a.id.compareTo(b.id);
-      });
+    final ordered =
+        <TimelineNode>[
+          ...mealNodes,
+          ...workoutNodes,
+          ...eventNodes,
+          ...carbNodes,
+        ]..sort((a, b) {
+          final byTime = a.time.compareTo(b.time);
+          return byTime != 0 ? byTime : a.id.compareTo(b.id);
+        });
 
     final nodes = ordered.where(filter.matches).toList(growable: false);
 

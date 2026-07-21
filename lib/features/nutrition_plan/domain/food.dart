@@ -10,15 +10,16 @@ class Food {
   final double? servingAmount;
 
   // Simplified display approach
-  final String? displayName;        // e.g., "cup cooked oatmeal"
-  final String? displayNamePlural;  // e.g., "cups cooked oatmeal"
+  final String? displayName; // e.g., "cup cooked oatmeal"
+  final String? displayNamePlural; // e.g., "cups cooked oatmeal"
 
   // Categories array (new approach)
   final List<String> categories; // e.g., ['before_run', 'during_run']
 
   // Allergen and dietary exclusion data (for food filtering)
   final List<Allergy> allergens; // e.g., [Allergy.dairy, Allergy.gluten]
-  final List<DietaryPreference> excludedDiets; // e.g., [DietaryPreference.vegan, DietaryPreference.keto]
+  final List<DietaryPreference>
+  excludedDiets; // e.g., [DietaryPreference.vegan, DietaryPreference.keto]
 
   // Deprecated fields (legacy compatibility)
   final String? servingUnit;
@@ -87,10 +88,12 @@ class Food {
       displayName: json['display_name'] as String?,
       displayNamePlural: json['display_name_plural'] as String?,
       categories: json['categories'] != null
-        ? List<String>.from(json['categories'])
-        : [],
+          ? List<String>.from(json['categories'])
+          : [],
       allergens: Allergy.fromDbArray(json['allergens'] as String?),
-      excludedDiets: DietaryPreference.fromDbArray(json['excluded_diets'] as String?),
+      excludedDiets: DietaryPreference.fromDbArray(
+        json['excluded_diets'] as String?,
+      ),
       servingUnit: json['serving_unit'] as String?,
       servingUnitPlural: json['serving_unit_plural'] as String?,
       servingQualifier: json['serving_qualifier'] as String?,
@@ -135,7 +138,9 @@ class Food {
   /// Examples: "1 cup cooked oatmeal", "2 cups cooked oatmeal", "1 medium banana"
   String generateQuantityDisplay({double? customAmount}) {
     final amount = customAmount ?? servingAmount ?? 1.0;
-    final amountStr = amount == amount.toInt() ? amount.toInt().toString() : amount.toStringAsFixed(1);
+    final amountStr = amount == amount.toInt()
+        ? amount.toInt().toString()
+        : amount.toStringAsFixed(1);
 
     // NEW SIMPLIFIED APPROACH: Use display names if available
     if (displayName != null && displayName!.isNotEmpty) {
@@ -145,7 +150,8 @@ class Food {
     }
 
     // LEGACY FALLBACK: Complex serving unit logic for compatibility
-    final unit = amount > 1 && servingUnitPlural != null && servingUnitPlural!.isNotEmpty
+    final unit =
+        amount > 1 && servingUnitPlural != null && servingUnitPlural!.isNotEmpty
         ? servingUnitPlural!
         : servingUnit ?? 'serving';
 

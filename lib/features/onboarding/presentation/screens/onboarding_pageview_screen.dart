@@ -29,10 +29,12 @@ class OnboardingPageViewScreen extends ConsumerStatefulWidget {
   const OnboardingPageViewScreen({super.key});
 
   @override
-  ConsumerState<OnboardingPageViewScreen> createState() => _OnboardingPageViewScreenState();
+  ConsumerState<OnboardingPageViewScreen> createState() =>
+      _OnboardingPageViewScreenState();
 }
 
-class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScreen> {
+class _OnboardingPageViewScreenState
+    extends ConsumerState<OnboardingPageViewScreen> {
   late PageController _pageController;
   int _currentPageIndex = 0;
 
@@ -152,7 +154,9 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_pageController.hasClients) {
-      final selectedSports = ref.read(onboardingControllerProvider.notifier).cachedSelectedSports;
+      final selectedSports = ref
+          .read(onboardingControllerProvider.notifier)
+          .cachedSelectedSports;
       final pages = _buildPages(selectedSports);
 
       // Every step's Continue routes through here, so this is the one place
@@ -179,13 +183,16 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
 
   void _trackStepCompleted(int stepIndex) {
     try {
-      ref.read(appExternalDepsProvider).analytics.track(
-        'onboarding_step_completed',
-        properties: {
-          'step_name': onboardingStepName(stepIndex),
-          'step_index': stepIndex,
-        },
-      );
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'onboarding_step_completed',
+            properties: {
+              'step_name': onboardingStepName(stepIndex),
+              'step_index': stepIndex,
+            },
+          );
     } catch (_) {
       // Analytics must never block onboarding navigation.
     }
@@ -194,15 +201,18 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
   void _trackOnboardingCompleted(int stepCount) {
     try {
       final durationSec = OnboardingAnalytics.durationSec();
-      ref.read(appExternalDepsProvider).analytics.track(
-        'onboarding_completed',
-        properties: {
-          'step_count': stepCount,
-          // Omitted rather than zeroed when onboarding wasn't entered through
-          // the welcome screen — a bogus 0 would drag the median down.
-          if (durationSec != null) 'duration_sec': durationSec,
-        },
-      );
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'onboarding_completed',
+            properties: {
+              'step_count': stepCount,
+              // Omitted rather than zeroed when onboarding wasn't entered through
+              // the welcome screen — a bogus 0 would drag the median down.
+              if (durationSec != null) 'duration_sec': durationSec,
+            },
+          );
     } catch (_) {
       // Analytics must never block onboarding navigation.
     }
@@ -241,7 +251,9 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
     // Watch the controller to rebuild when sports selection changes
     ref.watch(onboardingControllerProvider);
 
-    final selectedSports = ref.read(onboardingControllerProvider.notifier).cachedSelectedSports;
+    final selectedSports = ref
+        .read(onboardingControllerProvider.notifier)
+        .cachedSelectedSports;
     final pages = _buildPages(selectedSports);
 
     // Each screen has its own Scaffold and progress bar, so we just use PageView

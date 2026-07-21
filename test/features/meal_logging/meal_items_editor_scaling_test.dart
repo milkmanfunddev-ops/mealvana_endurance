@@ -16,8 +16,8 @@ import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/me
 import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/meal_items_editor.dart';
 
 Finder _fieldByLabel(String label) => find.byWidgetPredicate(
-      (w) => w is TextField && w.decoration?.labelText == label,
-    );
+  (w) => w is TextField && w.decoration?.labelText == label,
+);
 
 String _controllerText(WidgetTester tester, String label) =>
     (tester.widget(_fieldByLabel(label)) as TextField).controller!.text;

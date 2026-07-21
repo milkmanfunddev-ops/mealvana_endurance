@@ -51,7 +51,8 @@ class TrainingPeaksSyncService {
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
 
-  void _trackSyncedWorkoutPlanned(Activity activity) => trackSyncedWorkoutPlanned(
+  void _trackSyncedWorkoutPlanned(Activity activity) =>
+      trackSyncedWorkoutPlanned(
         _analytics,
         activity,
         provider: 'training_peaks',

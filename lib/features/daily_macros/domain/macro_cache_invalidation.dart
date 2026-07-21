@@ -123,7 +123,10 @@ bool _macroInputsDiffer(Activity a, Activity b) {
 ///
 /// Reordering the list changes nothing, so it yields an empty set — macros don't
 /// depend on list order. Neither does a re-sync that only restamped timestamps.
-Set<DateTime> changedActivityDates(List<Activity> before, List<Activity> after) {
+Set<DateTime> changedActivityDates(
+  List<Activity> before,
+  List<Activity> after,
+) {
   final beforeById = {for (final a in before) a.id: a};
   final afterById = {for (final a in after) a.id: a};
 

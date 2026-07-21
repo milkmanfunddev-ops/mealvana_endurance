@@ -68,8 +68,10 @@ class ActivityCard extends ConsumerWidget {
         key: Key(activity.id),
         direction: DismissDirection.horizontal,
         background: _buildDismissBackground(isDark, Alignment.centerLeft),
-        secondaryBackground:
-            _buildDismissBackground(isDark, Alignment.centerRight),
+        secondaryBackground: _buildDismissBackground(
+          isDark,
+          Alignment.centerRight,
+        ),
         confirmDismiss: (direction) async {
           _handleDelete(context, ref);
           return false;

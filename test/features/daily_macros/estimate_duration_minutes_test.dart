@@ -81,21 +81,24 @@ void main() {
       expect(duration, 64);
     });
 
-    test('14-mile run should always produce higher calorie duration than 8-mile run at same pace', () {
-      final longRun = estimateDurationMinutes(
-        durationMinutes: null,
-        activityType: 'running',
-        distanceMiles: 14.0,
-        paceTargetMinutesPerMile: 10.0,
-      );
-      final shortRun = estimateDurationMinutes(
-        durationMinutes: null,
-        activityType: 'running',
-        distanceMiles: 8.0,
-        paceTargetMinutesPerMile: 10.0,
-      );
-      expect(longRun, greaterThan(shortRun));
-    });
+    test(
+      '14-mile run should always produce higher calorie duration than 8-mile run at same pace',
+      () {
+        final longRun = estimateDurationMinutes(
+          durationMinutes: null,
+          activityType: 'running',
+          distanceMiles: 14.0,
+          paceTargetMinutesPerMile: 10.0,
+        );
+        final shortRun = estimateDurationMinutes(
+          durationMinutes: null,
+          activityType: 'running',
+          distanceMiles: 8.0,
+          paceTargetMinutesPerMile: 10.0,
+        );
+        expect(longRun, greaterThan(shortRun));
+      },
+    );
 
     test('explicit duration_minutes is used when present', () {
       final duration = estimateDurationMinutes(

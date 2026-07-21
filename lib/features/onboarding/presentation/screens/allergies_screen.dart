@@ -64,13 +64,16 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
     final screenName = _isOnboarding
         ? 'Allergies Onboarding'
         : 'Allergies Settings';
-    ref.read(appExternalDepsProvider).analytics.track(
-      'screen_viewed',
-      properties: {
-        'screen_name': screenName,
-        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
-      },
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': screenName,
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {

@@ -29,15 +29,8 @@ class KyleActivityIcon extends ConsumerWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        iconData,
-        size: size * 0.5,
-        color: icColor,
-      ),
+      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+      child: Icon(iconData, size: size * 0.5, color: icColor),
     );
   }
 
@@ -129,7 +122,9 @@ class KyleActivityTypeSelectorIcon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bgColor = isSelected ? AppColors.electrolyte : AppColors.electrolyte.withOpacity(0.2);
+    final bgColor = isSelected
+        ? AppColors.electrolyte
+        : AppColors.electrolyte.withOpacity(0.2);
     final icColor = isSelected ? AppColors.textLight : AppColors.electrolyte;
 
     return GestureDetector(
@@ -171,7 +166,7 @@ class KyleActivityTypeSelectorIcon extends ConsumerWidget {
         return FontAwesomeIcons.spa.data;
       case KyleActivityType.hiking:
         return FontAwesomeIcons.personHiking.data;
-      case KyleActivityType.walking:  
+      case KyleActivityType.walking:
         return FontAwesomeIcons.personWalking.data;
       case KyleActivityType.other:
         return FontAwesomeIcons.circle.data;

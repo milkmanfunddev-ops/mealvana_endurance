@@ -173,8 +173,7 @@ class NutritionPlanService {
       if (allergies != null) 'allergies': allergies,
       if (likedFoods != null) 'liked_foods': likedFoods,
       if (dislikedFoods != null) 'disliked_foods': dislikedFoods,
-      if (willingToTryFoods != null)
-        'willing_to_try_foods': willingToTryFoods,
+      if (willingToTryFoods != null) 'willing_to_try_foods': willingToTryFoods,
       if (durationMinutes != null) 'duration_minutes': durationMinutes,
       // Always send a valid gut training level ('low' | 'moderate' | 'high').
       // A null/absent value makes the V3 edge function skip its formula

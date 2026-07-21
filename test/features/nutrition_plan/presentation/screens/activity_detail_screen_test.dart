@@ -24,7 +24,9 @@ import 'package:mockito/annotations.dart';
 @GenerateMocks([])
 void main() {
   group('Activity Detail Screen - Delete Button', () {
-    testWidgets('Delete button is visible for existing activities', (tester) async {
+    testWidgets('Delete button is visible for existing activities', (
+      tester,
+    ) async {
       // Create a mock activity
       final activity = Activity(
         id: 'test-activity-1',
@@ -165,7 +167,9 @@ void main() {
   });
 
   group('Activity Detail Screen - Complete Button', () {
-    testWidgets('Complete button is visible for non-completed activities', (tester) async {
+    testWidgets('Complete button is visible for non-completed activities', (
+      tester,
+    ) async {
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',

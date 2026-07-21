@@ -16,9 +16,9 @@ class FoodSelectionService {
     required CarbLoadingDayMealRepository dayMealRepository,
     required CarbLoadingFoodService foodService,
     required AnalyticsTracker analytics,
-  })  : _dayMealRepository = dayMealRepository,
-        _foodService = foodService,
-        _analytics = analytics;
+  }) : _dayMealRepository = dayMealRepository,
+       _foodService = foodService,
+       _analytics = analytics;
 
   final CarbLoadingDayMealRepository _dayMealRepository;
   final CarbLoadingFoodService _foodService;
@@ -210,7 +210,9 @@ class FoodSelectionService {
   }
 
   /// Get all meals for a specific day
-  Future<List<CarbLoadingDayMeal>> getMealsByDay(String carbLoadingDayId) async {
+  Future<List<CarbLoadingDayMeal>> getMealsByDay(
+    String carbLoadingDayId,
+  ) async {
     return _dayMealRepository.getMealsByDay(carbLoadingDayId);
   }
 
@@ -271,11 +273,8 @@ class FoodSelectionService {
   /// Bulk add multiple foods to different meals
   Future<List<CarbLoadingDayMeal>> bulkAddFoods({
     required String carbLoadingDayId,
-    required List<({
-      MealType mealType,
-      dynamic food,
-      int quantity,
-    })> foodSelections,
+    required List<({MealType mealType, dynamic food, int quantity})>
+    foodSelections,
   }) async {
     final meals = foodSelections.map((selection) {
       final food = selection.food;
@@ -325,13 +324,15 @@ class FoodSelectionService {
 
   /// Calculate progress towards carb target
   Future<({double consumed, double remaining, double percentage})>
-      calculateProgress({
+  calculateProgress({
     required String carbLoadingDayId,
     required double targetCarbs,
   }) async {
     final consumed = await calculateTotalCarbsForDay(carbLoadingDayId);
     final remaining = (targetCarbs - consumed).clamp(0.0, targetCarbs);
-    final percentage = targetCarbs > 0 ? (consumed / targetCarbs * 100).clamp(0.0, 100.0) : 0.0;
+    final percentage = targetCarbs > 0
+        ? (consumed / targetCarbs * 100).clamp(0.0, 100.0)
+        : 0.0;
 
     return (consumed: consumed, remaining: remaining, percentage: percentage);
   }
@@ -343,24 +344,18 @@ class FoodSelectionService {
       throw ArgumentError('Meal not found');
     }
 
-    return updateMealQuantity(
-      mealId: mealId,
-      newQuantity: meal.quantity + 1,
-    );
+    return updateMealQuantity(mealId: mealId, newQuantity: meal.quantity + 1);
   }
 
   /// Decrement meal quantity by 1 (minimum 1)
-  Future<CarbLoadingDayMeal> decrementMealQuantity(String mealId) async{
+  Future<CarbLoadingDayMeal> decrementMealQuantity(String mealId) async {
     final meal = await _dayMealRepository.getMealById(mealId);
     if (meal == null) {
       throw ArgumentError('Meal not found');
     }
 
     final newQuantity = (meal.quantity - 1).clamp(1, meal.quantity);
-    return updateMealQuantity(
-      mealId: mealId,
-      newQuantity: newQuantity,
-    );
+    return updateMealQuantity(mealId: mealId, newQuantity: newQuantity);
   }
 }
 

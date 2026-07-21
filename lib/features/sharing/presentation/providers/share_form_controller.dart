@@ -63,9 +63,9 @@ class ShareFormController extends _$ShareFormController {
     // Get sender name from database
     final user = await _database.userDao.getCurrentUserProfile();
     final userEntry = user != null
-        ? await (_database.select(_database.userProfilesTable)
-            ..where((u) => u.id.equals(user.id))
-          ).getSingleOrNull()
+        ? await (_database.select(
+            _database.userProfilesTable,
+          )..where((u) => u.id.equals(user.id))).getSingleOrNull()
         : null;
     final senderName = userEntry?.senderName ?? '';
 
@@ -77,8 +77,10 @@ class ShareFormController extends _$ShareFormController {
       'sharing.subject_default',
       defaultValue: 'Nutrition Plan on {date}',
     );
-    final defaultSubject = defaultSubjectTemplate
-        .replaceAll('{date}', activityDate);
+    final defaultSubject = defaultSubjectTemplate.replaceAll(
+      '{date}',
+      activityDate,
+    );
 
     final defaultComments = _contentService.getValue(
       'sharing.comments_default',
@@ -133,14 +135,20 @@ class ShareFormController extends _$ShareFormController {
       final pdfBytes = await _pdfService.generateNutritionPlanPdf(
         nutritionPlan: nutritionPlan,
         sentDate: DateTime.now(),
-        senderName: currentState.senderName.isNotEmpty ? currentState.senderName : null,
+        senderName: currentState.senderName.isNotEmpty
+            ? currentState.senderName
+            : null,
       );
 
       final formData = ShareFormData(
         recipientEmail: currentState.recipientEmail,
-        senderName: currentState.senderName.isNotEmpty ? currentState.senderName : null,
+        senderName: currentState.senderName.isNotEmpty
+            ? currentState.senderName
+            : null,
         subject: currentState.subject.isNotEmpty ? currentState.subject : null,
-        comments: currentState.comments.isNotEmpty ? currentState.comments : null,
+        comments: currentState.comments.isNotEmpty
+            ? currentState.comments
+            : null,
       );
 
       final result = await _emailService.sendNutritionPlanEmail(
@@ -153,9 +161,9 @@ class ShareFormController extends _$ShareFormController {
         if (currentState.senderName.isNotEmpty) {
           final user = await _database.userDao.getCurrentUserProfile();
           if (user != null) {
-            await (_database.update(_database.userProfilesTable)
-              ..where((u) => u.id.equals(user.id))
-            ).write(
+            await (_database.update(
+              _database.userProfilesTable,
+            )..where((u) => u.id.equals(user.id))).write(
               UserProfilesTableCompanion(
                 senderName: Value(currentState.senderName),
                 updatedAt: Value(DateTime.now()),
@@ -164,35 +172,42 @@ class ShareFormController extends _$ShareFormController {
           }
         }
 
-        await _analytics.track('plan_shared', properties: {
-          'plan_id': nutritionPlan.id,
-          'has_sender_name': currentState.senderName.isNotEmpty,
-          'has_comments': currentState.comments.isNotEmpty,
-        });
+        await _analytics.track(
+          'plan_shared',
+          properties: {
+            'plan_id': nutritionPlan.id,
+            'has_sender_name': currentState.senderName.isNotEmpty,
+            'has_comments': currentState.comments.isNotEmpty,
+          },
+        );
       } else {
-        await _analytics.track('plan_share_failed', properties: {
-          'plan_id': nutritionPlan.id,
-          'error_message': result.error ?? 'Unknown error',
-        });
+        await _analytics.track(
+          'plan_share_failed',
+          properties: {
+            'plan_id': nutritionPlan.id,
+            'error_message': result.error ?? 'Unknown error',
+          },
+        );
       }
 
-      state = AsyncValue.data(currentState.copyWith(
-        isSending: false,
-        lastResult: result,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(isSending: false, lastResult: result),
+      );
 
       return result;
     } catch (e) {
-      await _analytics.track('plan_share_failed', properties: {
-        'plan_id': nutritionPlan.id,
-        'error_message': e.toString(),
-      });
+      await _analytics.track(
+        'plan_share_failed',
+        properties: {
+          'plan_id': nutritionPlan.id,
+          'error_message': e.toString(),
+        },
+      );
 
       final errorResult = ShareResult.failure(error: e.toString());
-      state = AsyncValue.data(currentState.copyWith(
-        isSending: false,
-        lastResult: errorResult,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(isSending: false, lastResult: errorResult),
+      );
       return errorResult;
     }
   }

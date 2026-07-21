@@ -61,361 +61,375 @@ class _CoachRegistrationScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl),
 
-              // Header icon
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.electrolyte.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+                // Header icon
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.electrolyte.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const FaIcon(
+                      FontAwesomeIcons.userTie,
+                      color: AppColors.electrolyte,
+                      size: 36,
+                    ),
                   ),
-                  child: const FaIcon(
-                    FontAwesomeIcons.userTie,
-                    color: AppColors.electrolyte,
-                    size: 36,
+                ),
+
+                const SizedBox(height: AppSpacing.xl),
+
+                // Title
+                Text(
+                  'Apply to Become a Mealvana Coach',
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Description
+                Text(
+                  'Help endurance athletes reach their nutrition goals. '
+                  'Fill out the form below to apply.',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                // Form fields in BaseCard
+                BaseCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // First Name
+                      Text(
+                        'First Name',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      TextFormField(
+                        controller: _firstNameController,
+                        keyboardType: TextInputType.name,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your first name',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          prefixIcon: Icon(
+                            FontAwesomeIcons.user.data,
+                            size: AppIconSizes.controlIcon,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.electrolyte,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.dragonfruit,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.md,
+                          ),
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'First name is required';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Last Name
+                      Text(
+                        'Last Name',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      TextFormField(
+                        controller: _lastNameController,
+                        keyboardType: TextInputType.name,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your last name',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          prefixIcon: Icon(
+                            FontAwesomeIcons.user.data,
+                            size: AppIconSizes.controlIcon,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.electrolyte,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.dragonfruit,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.md,
+                          ),
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Last name is required';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Email
+                      Text(
+                        'Email',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        decoration: InputDecoration(
+                          hintText: 'you@example.com',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          prefixIcon: Icon(
+                            FontAwesomeIcons.envelope.data,
+                            size: AppIconSizes.controlIcon,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.electrolyte,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.dragonfruit,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.md,
+                          ),
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          // Simple email validation
+                          if (!value.contains('@') || !value.contains('.')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Bio (optional)
+                      Text(
+                        'Bio (Optional)',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      TextFormField(
+                        controller: _bioController,
+                        maxLines: 4,
+                        maxLength: 500,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Tell us about your coaching experience and expertise...',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.electrolyte,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          contentPadding: const EdgeInsets.all(AppSpacing.md),
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xxl),
 
-              // Title
-              Text(
-                'Apply to Become a Mealvana Coach',
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  child: KylePrimaryButton(
+                    text: asyncState.isLoading
+                        ? 'Submitting...'
+                        : 'Submit Application',
+                    onPressed: asyncState.isLoading ? null : _handleSubmit,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
 
-              const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
 
-              // Description
-              Text(
-                'Help endurance athletes reach their nutrition goals. '
-                'Fill out the form below to apply.',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                // Note about review process
+                Text(
+                  'After submitting your application, we\'ll review it and get back to you via email.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
 
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Form fields in BaseCard
-              BaseCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // First Name
-                    Text(
-                      'First Name',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextFormField(
-                      controller: _firstNameController,
-                      keyboardType: TextInputType.name,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        hintText: 'Enter your first name',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.user.data,
-                          size: AppIconSizes.controlIcon,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.dragonfruit,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'First name is required';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Last Name
-                    Text(
-                      'Last Name',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextFormField(
-                      controller: _lastNameController,
-                      keyboardType: TextInputType.name,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        hintText: 'Enter your last name',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.user.data,
-                          size: AppIconSizes.controlIcon,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.dragonfruit,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Last name is required';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Email
-                    Text(
-                      'Email',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        hintText: 'you@example.com',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.envelope.data,
-                          size: AppIconSizes.controlIcon,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.dragonfruit,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Email is required';
-                        }
-                        // Simple email validation
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Bio (optional)
-                    Text(
-                      'Bio (Optional)',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextFormField(
-                      controller: _bioController,
-                      maxLines: 4,
-                      maxLength: 500,
-                      keyboardType: TextInputType.multiline,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText:
-                            'Tell us about your coaching experience and expertise...',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: const BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
-                        contentPadding: const EdgeInsets.all(AppSpacing.md),
-                      ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Submit button
-              SizedBox(
-                width: double.infinity,
-                child: KylePrimaryButton(
-                  text: asyncState.isLoading
-                      ? 'Submitting...'
-                      : 'Submit Application',
-                  onPressed: asyncState.isLoading ? null : _handleSubmit,
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              // Note about review process
-              Text(
-                'After submitting your application, we\'ll review it and get back to you via email.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.xxxl),
-            ],
+                const SizedBox(height: AppSpacing.xxxl),
+              ],
             ),
           ),
         ),

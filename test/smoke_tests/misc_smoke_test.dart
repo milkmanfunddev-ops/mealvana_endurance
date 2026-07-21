@@ -16,12 +16,10 @@ void main() {
       await smokeScreen(tester, const ProVersionScreen());
     });
 
-    testWidgets('PostOnboardingAuthScreen builds without overflow',
-        (tester) async {
-      await smokeScreen(
-        tester,
-        const PostOnboardingAuthScreen(),
-      );
+    testWidgets('PostOnboardingAuthScreen builds without overflow', (
+      tester,
+    ) async {
+      await smokeScreen(tester, const PostOnboardingAuthScreen());
     });
 
     testWidgets('EducationScreen renders without overflow', (tester) async {
@@ -31,8 +29,9 @@ void main() {
     // BuyCreditsScreen in the disabled state (aiCreditsEnabled = false, the
     // default). No async providers are exercised — only the static
     // "Coming Soon" body is rendered.
-    testWidgets('BuyCreditsScreen (disabled) renders without overflow',
-        (tester) async {
+    testWidgets('BuyCreditsScreen (disabled) renders without overflow', (
+      tester,
+    ) async {
       // smokeScreen already overrides appConfigProvider with
       // AppConfig.forTesting() (aiCreditsEnabled = false by default), so no
       // extra override is needed — passing one here double-overrides and throws.

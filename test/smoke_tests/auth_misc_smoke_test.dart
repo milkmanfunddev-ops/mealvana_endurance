@@ -69,7 +69,6 @@ import 'package:mealvana_endurance/shared/screens/food_detail_screen.dart';
 // Barcode scanner screen
 import 'package:mealvana_endurance/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
 
-
 import '../helpers/widget_test_harness.dart';
 
 // ---------------------------------------------------------------------------
@@ -78,8 +77,7 @@ import '../helpers/widget_test_harness.dart';
 
 /// Fake PostOnboardingAuthController that resolves immediately so auth screens
 /// can settle without hitting Supabase.
-class _FakePostOnboardingAuthController
-    extends PostOnboardingAuthController {
+class _FakePostOnboardingAuthController extends PostOnboardingAuthController {
   @override
   FutureOr<void> build() {
     // Synchronous return — no Supabase call.
@@ -143,8 +141,9 @@ void main() {
         tester,
         const EmailLoginScreen(),
         overrides: [
-          postOnboardingAuthControllerProvider
-              .overrideWith(_FakePostOnboardingAuthController.new),
+          postOnboardingAuthControllerProvider.overrideWith(
+            _FakePostOnboardingAuthController.new,
+          ),
         ],
       );
     });
@@ -154,42 +153,51 @@ void main() {
         tester,
         const EmailSignupScreen(),
         overrides: [
-          postOnboardingAuthControllerProvider
-              .overrideWith(_FakePostOnboardingAuthController.new),
+          postOnboardingAuthControllerProvider.overrideWith(
+            _FakePostOnboardingAuthController.new,
+          ),
         ],
       );
     });
 
-    testWidgets('ForgotPasswordScreen renders without overflow', (tester) async {
+    testWidgets('ForgotPasswordScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const ForgotPasswordScreen(),
         overrides: [
-          passwordRecoveryControllerProvider
-              .overrideWith(_FakePasswordRecoveryController.new),
+          passwordRecoveryControllerProvider.overrideWith(
+            _FakePasswordRecoveryController.new,
+          ),
         ],
       );
     });
 
-    testWidgets('VerifyResetCodeScreen renders without overflow',
-        (tester) async {
+    testWidgets('VerifyResetCodeScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const VerifyResetCodeScreen(email: 'test@example.com'),
         overrides: [
-          passwordRecoveryControllerProvider
-              .overrideWith(_FakePasswordRecoveryController.new),
+          passwordRecoveryControllerProvider.overrideWith(
+            _FakePasswordRecoveryController.new,
+          ),
         ],
       );
     });
 
-    testWidgets('SetNewPasswordScreen renders without overflow', (tester) async {
+    testWidgets('SetNewPasswordScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const SetNewPasswordScreen(),
         overrides: [
-          passwordRecoveryControllerProvider
-              .overrideWith(_FakePasswordRecoveryController.new),
+          passwordRecoveryControllerProvider.overrideWith(
+            _FakePasswordRecoveryController.new,
+          ),
         ],
       );
     });
@@ -202,11 +210,7 @@ void main() {
     // we assert the screen builds without crashing while in the error state
     // (no auth session → AsyncError → _buildErrorState).
     testWidgets('ActivitiesListScreen builds without overflow', (tester) async {
-      await smokeScreen(
-        tester,
-        const ActivitiesListScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const ActivitiesListScreen(), settle: false);
     });
   });
 
@@ -216,8 +220,7 @@ void main() {
         tester,
         const JadeChatScreen(),
         overrides: [
-          jadeChatControllerProvider
-              .overrideWith(_FakeJadeChatController.new),
+          jadeChatControllerProvider.overrideWith(_FakeJadeChatController.new),
         ],
         // Settle is fine because the fake build() returns synchronously.
         settle: true,
@@ -230,24 +233,22 @@ void main() {
     // would require a live Supabase session. settle:false lets the loading
     // state lay out without the async work ever resolving.
     testWidgets('RecipesScreen builds (loading state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const RecipesScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const RecipesScreen(), settle: false);
     });
   });
 
   group('Share Nutrition Plan screen smoke test', () {
-    testWidgets('ShareNutritionPlanScreen renders without overflow',
-        (tester) async {
+    testWidgets('ShareNutritionPlanScreen renders without overflow', (
+      tester,
+    ) async {
       final plan = _minimalPlan();
       await smokeScreen(
         tester,
         ShareNutritionPlanScreen(nutritionPlan: plan),
         overrides: [
-          shareFormControllerProvider(plan)
-              .overrideWith(_FakeShareFormController.new),
+          shareFormControllerProvider(
+            plan,
+          ).overrideWith(_FakeShareFormController.new),
         ],
       );
     });
@@ -273,8 +274,9 @@ void main() {
     // in initState. In the test environment the network is unavailable so the
     // controller will set _hasError=true and render the error state. settle:false
     // avoids a timeout waiting for the Future; we assert no *crash* occurs.
-    testWidgets('VideoPlayerScreen builds (error state, no crash)',
-        (tester) async {
+    testWidgets('VideoPlayerScreen builds (error state, no crash)', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const VideoPlayerScreen(

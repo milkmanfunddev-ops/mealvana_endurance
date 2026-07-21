@@ -20,15 +20,17 @@ class FoodPreferenceSyncHandler {
   const FoodPreferenceSyncHandler({
     required AppDatabase database,
     required AppLogger logger,
-  })  : _database = database,
-        _logger = logger;
+  }) : _database = database,
+       _logger = logger;
 
   final AppDatabase _database;
   final AppLogger _logger;
 
   /// Sync food preferences from edge function response.
   /// Uses merge mode to preserve local preferences not in server response.
-  Future<void> syncFoodPreferencesFromEdgeFunction(List<dynamic> foodPreferences) async {
+  Future<void> syncFoodPreferencesFromEdgeFunction(
+    List<dynamic> foodPreferences,
+  ) async {
     try {
       if (foodPreferences.isEmpty) {
         return;
@@ -71,7 +73,8 @@ class FoodPreferenceSyncHandler {
 
       // SAFETY CHECK: Don't wipe local data if server returned empty
       if (preferences.isEmpty) {
-        final localPrefs = await _database.foodPreferencesDao.getUserFoodPreferences(userId);
+        final localPrefs = await _database.foodPreferencesDao
+            .getUserFoodPreferences(userId);
         if (localPrefs.isNotEmpty) {
           _logger.warning(
             'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',

@@ -121,13 +121,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       });
     }
 
-    ref.read(appExternalDepsProvider).analytics.track(
-      'screen_viewed',
-      properties: {
-        'screen_name': 'User Profile Onboarding',
-        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
-      },
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': 'User Profile Onboarding',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
   }
 
   /// Load profile data from connected integrations (Training Peaks takes precedence)
@@ -263,10 +266,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   /// [oldSystem] to [newSystem] so the user doesn't lose their entry when
   /// toggling the unit preference. Best-effort — unparsable/empty fields are
   /// left untouched.
-  void _convertFieldsForUnitChange(
-    UnitSystem oldSystem,
-    UnitSystem newSystem,
-  ) {
+  void _convertFieldsForUnitChange(UnitSystem oldSystem, UnitSystem newSystem) {
     if (oldSystem == newSystem) return;
 
     if (newSystem == UnitSystem.metric) {

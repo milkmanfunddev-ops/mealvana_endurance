@@ -107,12 +107,7 @@ MockSentryReporter _silentSentry() {
 EventsRepository _offlineRepo(AppDatabase db, {CarbLoadingRepository? carb}) {
   final mockSupa = MockSupabaseClient();
   when(() => mockSupa.from(any())).thenThrow(Exception('network'));
-  return _makeRepo(
-    db,
-    supabase: mockSupa,
-    sentry: _silentSentry(),
-    carb: carb,
-  );
+  return _makeRepo(db, supabase: mockSupa, sentry: _silentSentry(), carb: carb);
 }
 
 /// Minimal domain Event for tests.
@@ -182,11 +177,14 @@ void main() {
         event: _makeEvent(),
       );
 
-      final row = await (db.select(db.eventsTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingle();
-      expect(row.needsUpload, isTrue,
-          reason: 'should stay dirty when upload fails');
+      final row = await (db.select(
+        db.eventsTable,
+      )..where((t) => t.id.equals(created.id))).getSingle();
+      expect(
+        row.needsUpload,
+        isTrue,
+        reason: 'should stay dirty when upload fails',
+      );
     });
 
     test('persists all scalar fields correctly', () async {
@@ -213,9 +211,9 @@ void main() {
         event: event,
       );
 
-      final row = await (db.select(db.eventsTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingle();
+      final row = await (db.select(
+        db.eventsTable,
+      )..where((t) => t.id.equals(created.id))).getSingle();
 
       expect(row.userId, equals('user-xyz'));
       expect(row.eventType, equals('triathlon'));
@@ -275,22 +273,25 @@ void main() {
       expect(events, isEmpty);
     });
 
-    test('getEvents returns only events belonging to the requested userId', () async {
-      final repo = _offlineRepo(db);
+    test(
+      'getEvents returns only events belonging to the requested userId',
+      () async {
+        final repo = _offlineRepo(db);
 
-      await repo.createEvent(
-        deviceId: 'alice',
-        event: _makeEvent(userId: 'alice', eventName: "Alice's Race"),
-      );
-      await repo.createEvent(
-        deviceId: 'bob',
-        event: _makeEvent(userId: 'bob', eventName: "Bob's Race"),
-      );
+        await repo.createEvent(
+          deviceId: 'alice',
+          event: _makeEvent(userId: 'alice', eventName: "Alice's Race"),
+        );
+        await repo.createEvent(
+          deviceId: 'bob',
+          event: _makeEvent(userId: 'bob', eventName: "Bob's Race"),
+        );
 
-      final aliceEvents = await repo.getEvents('alice');
-      expect(aliceEvents.length, equals(1));
-      expect(aliceEvents.first.eventName, equals("Alice's Race"));
-    });
+        final aliceEvents = await repo.getEvents('alice');
+        expect(aliceEvents.length, equals(1));
+        expect(aliceEvents.first.eventName, equals("Alice's Race"));
+      },
+    );
 
     test('getEvents is case-insensitive for userId', () async {
       final repo = _offlineRepo(db);
@@ -328,37 +329,51 @@ void main() {
       expect(found.eventName, equals('Target Race'));
     });
 
-    test('getEventById respects userId scoping — cannot read another user event',
-        () async {
-      final repo = _offlineRepo(db);
+    test(
+      'getEventById respects userId scoping — cannot read another user event',
+      () async {
+        final repo = _offlineRepo(db);
 
-      final aliceEvent = await repo.createEvent(
-        deviceId: 'alice',
-        event: _makeEvent(userId: 'alice', eventName: "Alice's Race"),
-      );
+        final aliceEvent = await repo.createEvent(
+          deviceId: 'alice',
+          event: _makeEvent(userId: 'alice', eventName: "Alice's Race"),
+        );
 
-      final result = await repo.getEventById('bob', aliceEvent.id);
-      expect(result, isNull,
-          reason: "Bob should not be able to read Alice's event");
-    });
+        final result = await repo.getEventById('bob', aliceEvent.id);
+        expect(
+          result,
+          isNull,
+          reason: "Bob should not be able to read Alice's event",
+        );
+      },
+    );
 
-    test('getEventForActivity returns null when no event has that activityId', () async {
-      final repo = _makeRepo(db);
-      final result = await repo.getEventForActivity('activity-xyz');
-      expect(result, isNull);
-    });
+    test(
+      'getEventForActivity returns null when no event has that activityId',
+      () async {
+        final repo = _makeRepo(db);
+        final result = await repo.getEventForActivity('activity-xyz');
+        expect(result, isNull);
+      },
+    );
 
-    test('getEvents maps eventType string back to correct ActivityType', () async {
-      final repo = _offlineRepo(db);
+    test(
+      'getEvents maps eventType string back to correct ActivityType',
+      () async {
+        final repo = _offlineRepo(db);
 
-      await repo.createEvent(
-        deviceId: 'user-1',
-        event: _makeEvent(userId: 'user-1', eventType: ActivityType.triathlon),
-      );
+        await repo.createEvent(
+          deviceId: 'user-1',
+          event: _makeEvent(
+            userId: 'user-1',
+            eventType: ActivityType.triathlon,
+          ),
+        );
 
-      final events = await repo.getEvents('user-1');
-      expect(events.first.eventType, equals(ActivityType.triathlon));
-    });
+        final events = await repo.getEvents('user-1');
+        expect(events.first.eventType, equals(ActivityType.triathlon));
+      },
+    );
   });
 
   // =========================================================================
@@ -381,43 +396,51 @@ void main() {
 
       expect(updated.eventName, equals('New Name'));
 
-      final row = await (db.select(db.eventsTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingle();
+      final row = await (db.select(
+        db.eventsTable,
+      )..where((t) => t.id.equals(created.id))).getSingle();
       expect(row.eventName, equals('New Name'));
     });
 
-    test('updateEvent sets needsUpload=true when Supabase is unreachable', () async {
-      final repo = _offlineRepo(db);
+    test(
+      'updateEvent sets needsUpload=true when Supabase is unreachable',
+      () async {
+        final repo = _offlineRepo(db);
 
-      final created = await repo.createEvent(
-        deviceId: 'user-1',
-        event: _makeEvent(userId: 'user-1'),
-      );
+        final created = await repo.createEvent(
+          deviceId: 'user-1',
+          event: _makeEvent(userId: 'user-1'),
+        );
 
-      // Manually clear dirty flag so we can verify update re-sets it.
-      await (db.update(db.eventsTable)..where((t) => t.id.equals(created.id)))
-          .write(const EventsTableCompanion(needsUpload: Value(false)));
+        // Manually clear dirty flag so we can verify update re-sets it.
+        await (db.update(db.eventsTable)..where((t) => t.id.equals(created.id)))
+            .write(const EventsTableCompanion(needsUpload: Value(false)));
 
-      await repo.updateEvent(
-        deviceId: 'user-1',
-        event: created.copyWith(eventName: 'Updated Race'),
-      );
+        await repo.updateEvent(
+          deviceId: 'user-1',
+          event: created.copyWith(eventName: 'Updated Race'),
+        );
 
-      final row = await (db.select(db.eventsTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingle();
-      expect(row.needsUpload, isTrue,
-          reason: 'updateEvent must mark row dirty on failed upload');
-    });
+        final row = await (db.select(
+          db.eventsTable,
+        )..where((t) => t.id.equals(created.id))).getSingle();
+        expect(
+          row.needsUpload,
+          isTrue,
+          reason: 'updateEvent must mark row dirty on failed upload',
+        );
+      },
+    );
 
     test('updateEvent preserves unchanged fields', () async {
       final repo = _offlineRepo(db);
 
       final created = await repo.createEvent(
         deviceId: 'user-1',
-        event: _makeEvent(userId: 'user-1', eventType: ActivityType.cycling)
-            .copyWith(goalTimeMinutes: 120),
+        event: _makeEvent(
+          userId: 'user-1',
+          eventType: ActivityType.cycling,
+        ).copyWith(goalTimeMinutes: 120),
       );
 
       await repo.updateEvent(
@@ -425,11 +448,14 @@ void main() {
         event: created.copyWith(location: 'New City'),
       );
 
-      final row = await (db.select(db.eventsTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingle();
-      expect(row.goalTimeMinutes, equals(120),
-          reason: 'unchanged fields must be preserved on update');
+      final row = await (db.select(
+        db.eventsTable,
+      )..where((t) => t.id.equals(created.id))).getSingle();
+      expect(
+        row.goalTimeMinutes,
+        equals(120),
+        reason: 'unchanged fields must be preserved on update',
+      );
       expect(row.location, equals('New City'));
     });
 
@@ -446,8 +472,11 @@ void main() {
       );
 
       final all = await repo.getEvents('user-1');
-      expect(all.length, equals(1),
-          reason: 'update must not create a second row');
+      expect(
+        all.length,
+        equals(1),
+        reason: 'update must not create a second row',
+      );
     });
   });
 
@@ -562,12 +591,16 @@ void main() {
         event: _makeEvent(userId: 'user-1'),
       );
 
-      final rows = await (db.select(db.eventsTable)
-            ..where(
-                (t) => t.needsUpload.equals(true) & t.userId.equals('user-1')))
-          .get();
-      expect(rows.length, equals(1),
-          reason: 'one dirty row must exist before upload');
+      final rows =
+          await (db.select(db.eventsTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals('user-1'),
+              ))
+              .get();
+      expect(
+        rows.length,
+        equals(1),
+        reason: 'one dirty row must exist before upload',
+      );
     });
 
     test('syncFromRemote returns failed result when Supabase throws', () async {
@@ -587,22 +620,25 @@ void main() {
   // =========================================================================
 
   group('dirty flag preserved on sync', () {
-    test('dirty local row is not cleared by a manual Drift flag write', () async {
-      // This tests the mechanism the repository uses to preserve dirty rows.
-      final repo = _offlineRepo(db);
+    test(
+      'dirty local row is not cleared by a manual Drift flag write',
+      () async {
+        // This tests the mechanism the repository uses to preserve dirty rows.
+        final repo = _offlineRepo(db);
 
-      final created = await repo.createEvent(
-        deviceId: 'user-1',
-        event: _makeEvent(userId: 'user-1', eventName: 'My Dirty Event'),
-      );
+        final created = await repo.createEvent(
+          deviceId: 'user-1',
+          event: _makeEvent(userId: 'user-1', eventName: 'My Dirty Event'),
+        );
 
-      // Confirm dirty.
-      final dirtyRow = await (db.select(db.eventsTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingle();
-      expect(dirtyRow.needsUpload, isTrue);
-      expect(dirtyRow.eventName, equals('My Dirty Event'));
-    });
+        // Confirm dirty.
+        final dirtyRow = await (db.select(
+          db.eventsTable,
+        )..where((t) => t.id.equals(created.id))).getSingle();
+        expect(dirtyRow.needsUpload, isTrue);
+        expect(dirtyRow.eventName, equals('My Dirty Event'));
+      },
+    );
   });
 
   // =========================================================================
@@ -725,8 +761,11 @@ void main() {
         eventName: 'Dawn Patrol Race',
         eventDate: DateTime(2027, 9, 15, 7, 0, 0), // 7am
       );
-      expect(found, isNotNull,
-          reason: 'time component on same date should still match');
+      expect(
+        found,
+        isNotNull,
+        reason: 'time component on same date should still match',
+      );
     });
   });
 
@@ -736,12 +775,12 @@ void main() {
 
   group('Event extensions', () {
     domain.Event baseEvent() => domain.Event(
-          id: 'e1',
-          userId: 'u1',
-          eventType: ActivityType.running,
-          createdAt: DateTime(2027, 1, 1),
-          updatedAt: DateTime(2027, 1, 1),
-        );
+      id: 'e1',
+      userId: 'u1',
+      eventType: ActivityType.running,
+      createdAt: DateTime(2027, 1, 1),
+      updatedAt: DateTime(2027, 1, 1),
+    );
 
     test('formattedGoalTime — null when goalTimeMinutes is null', () {
       expect(baseEvent().formattedGoalTime, isNull);

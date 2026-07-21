@@ -7,10 +7,7 @@ import '../../../../theme/app_theme.dart';
 
 /// First page of survey: Confidence level and reuse intent
 class SurveyPage1 extends ConsumerWidget {
-  const SurveyPage1({
-    super.key,
-    required this.onContinue,
-  });
+  const SurveyPage1({super.key, required this.onContinue});
 
   final VoidCallback onContinue;
 
@@ -33,24 +30,18 @@ class SurveyPage1 extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              content['title']!,
-              style: AppTheme.titleStyle,
-            ),
+            Text(content['title']!, style: AppTheme.titleStyle),
             const SizedBox(height: 8),
             Text(
               content['subtitle']!,
               style: AppTheme.textStyle.copyWith(color: AppTheme.baseGrey),
             ),
             const SizedBox(height: 32),
-            
+
             // Confidence Level Selector
-            Text(
-              'Confidence Level',
-              style: AppTheme.subtitleStyle,
-            ),
+            Text('Confidence Level', style: AppTheme.subtitleStyle),
             const SizedBox(height: 16),
-            
+
             // Confidence scale 1-5
             Row(
               children: [
@@ -66,7 +57,7 @@ class SurveyPage1 extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: ConfidenceLevel.values.map((level) {
@@ -78,9 +69,13 @@ class SurveyPage1 extends ConsumerWidget {
                     height: 48,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
+                      color: isSelected
+                          ? AppTheme.primary600
+                          : AppTheme.baseWhite,
                       border: Border.all(
-                        color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+                        color: isSelected
+                            ? AppTheme.primary600
+                            : AppTheme.baseGrey,
                         width: 2,
                       ),
                     ),
@@ -88,7 +83,9 @@ class SurveyPage1 extends ConsumerWidget {
                       child: Text(
                         level.value.toString(),
                         style: AppTheme.subtitleStyle.copyWith(
-                          color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
+                          color: isSelected
+                              ? AppTheme.baseWhite
+                              : AppTheme.baseBlack,
                         ),
                       ),
                     ),
@@ -96,7 +93,7 @@ class SurveyPage1 extends ConsumerWidget {
                 );
               }).toList(),
             ),
-            
+
             const SizedBox(height: 8),
             if (state.confidenceLevel != null)
               Text(
@@ -104,16 +101,13 @@ class SurveyPage1 extends ConsumerWidget {
                 style: AppTheme.textStyle.copyWith(color: AppTheme.primary600),
                 textAlign: TextAlign.center,
               ),
-            
+
             const SizedBox(height: 40),
-            
+
             // Reuse Intent Question
-            Text(
-              content['reuse_question']!,
-              style: AppTheme.subtitleStyle,
-            ),
+            Text(content['reuse_question']!, style: AppTheme.subtitleStyle),
             const SizedBox(height: 16),
-            
+
             // Reuse Intent Options
             ...ReuseIntent.values.map((intent) {
               final isSelected = state.reuseIntent == intent;
@@ -125,10 +119,14 @@ class SurveyPage1 extends ConsumerWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primary100 : AppTheme.baseWhite,
+                      color: isSelected
+                          ? AppTheme.primary100
+                          : AppTheme.baseWhite,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+                        color: isSelected
+                            ? AppTheme.primary600
+                            : AppTheme.baseGrey,
                         width: 2,
                       ),
                     ),
@@ -139,9 +137,13 @@ class SurveyPage1 extends ConsumerWidget {
                           height: 20,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected ? AppTheme.primary600 : Colors.transparent,
+                            color: isSelected
+                                ? AppTheme.primary600
+                                : Colors.transparent,
                             border: Border.all(
-                              color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+                              color: isSelected
+                                  ? AppTheme.primary600
+                                  : AppTheme.baseGrey,
                               width: 2,
                             ),
                           ),
@@ -158,7 +160,9 @@ class SurveyPage1 extends ConsumerWidget {
                           child: Text(
                             intent.label,
                             style: AppTheme.textStyle.copyWith(
-                              color: isSelected ? AppTheme.primary600 : AppTheme.baseBlack,
+                              color: isSelected
+                                  ? AppTheme.primary600
+                                  : AppTheme.baseBlack,
                             ),
                           ),
                         ),
@@ -168,9 +172,9 @@ class SurveyPage1 extends ConsumerWidget {
                 ),
               );
             }),
-            
+
             const SizedBox(height: 40),
-            
+
             // Continue Button
             SizedBox(
               width: double.infinity,
@@ -179,7 +183,7 @@ class SurveyPage1 extends ConsumerWidget {
                 onPressed: state.isPage1Complete ? onContinue : null,
               ),
             ),
-            
+
             const SizedBox(height: 32),
           ],
         ),

@@ -94,12 +94,7 @@ class RecipeService {
   }
 }
 
-enum RecipeSortOption {
-  name,
-  prepTime,
-  calories,
-  newest,
-}
+enum RecipeSortOption { name, prepTime, calories, newest }
 
 // ============================================================================
 // Riverpod Provider

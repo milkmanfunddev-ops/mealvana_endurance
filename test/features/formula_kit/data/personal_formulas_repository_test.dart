@@ -58,41 +58,53 @@ void main() {
     mockLogger = MockAppLogger();
     mockSentry = MockSentryReporter();
 
-    when(() => mockLogger.info(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.debug(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
-    when(() => mockSentry.captureMessage(
-          any(),
-          level: any(named: 'level'),
-          tags: any(named: 'tags'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSentry.captureMessage(
+        any(),
+        level: any(named: 'level'),
+        tags: any(named: 'tags'),
+      ),
+    ).thenAnswer((_) async {});
 
     repository = PersonalFormulasRepository(
       supabase: mockSupabase,
@@ -202,30 +214,34 @@ void main() {
   });
 
   group('upsertRemoteFormulasPreservingDirty', () {
-    test('dirty-preserve: skips remote overwrite for needs_upload=true rows',
-        () async {
-      // Seed a locally-dirty row (user edited offline).
-      await database.into(database.personalFormulasTable).insert(
-            PersonalFormulasTableCompanion.insert(
-              id: const Value('f1'),
-              userId: testUserId,
-              name: 'Local Edit',
-              provenance: 'from_scratch_formula',
-              phase: 'before',
-              createdAt: DateTime.utc(2026, 5, 21, 10),
-              updatedAt: DateTime.utc(2026, 5, 21, 10),
-              needsUpload: const Value(true),
-            ),
-          );
+    test(
+      'dirty-preserve: skips remote overwrite for needs_upload=true rows',
+      () async {
+        // Seed a locally-dirty row (user edited offline).
+        await database
+            .into(database.personalFormulasTable)
+            .insert(
+              PersonalFormulasTableCompanion.insert(
+                id: const Value('f1'),
+                userId: testUserId,
+                name: 'Local Edit',
+                provenance: 'from_scratch_formula',
+                phase: 'before',
+                createdAt: DateTime.utc(2026, 5, 21, 10),
+                updatedAt: DateTime.utc(2026, 5, 21, 10),
+                needsUpload: const Value(true),
+              ),
+            );
 
-      final applied = await repository.upsertRemoteFormulasPreservingDirty([
-        remotePayload(id: 'f1'),
-      ]);
+        final applied = await repository.upsertRemoteFormulasPreservingDirty([
+          remotePayload(id: 'f1'),
+        ]);
 
-      expect(applied, 0, reason: 'dirty row should be skipped');
-      final row = await repository.getById('f1');
-      expect(row!.name, 'Local Edit', reason: 'local edit preserved');
-    });
+        expect(applied, 0, reason: 'dirty row should be skipped');
+        final row = await repository.getById('f1');
+        expect(row!.name, 'Local Edit', reason: 'local edit preserved');
+      },
+    );
 
     test('applies clean remote rows and skips unparseable ones', () async {
       final applied = await repository.upsertRemoteFormulasPreservingDirty([
@@ -238,19 +254,20 @@ void main() {
       expect(await repository.getById('bad'), isNull);
     });
 
-    test('tombstone propagation: is_deleted row hides from active reads',
-        () async {
-      await repository.upsertRemoteFormulasPreservingDirty([
-        remotePayload(id: 'gone', isDeleted: true),
-      ]);
-      expect(await repository.getById('gone'), isNull);
-      expect(await repository.getFormulasForUser(testUserId), isEmpty);
-    });
+    test(
+      'tombstone propagation: is_deleted row hides from active reads',
+      () async {
+        await repository.upsertRemoteFormulasPreservingDirty([
+          remotePayload(id: 'gone', isDeleted: true),
+        ]);
+        expect(await repository.getById('gone'), isNull);
+        expect(await repository.getFormulasForUser(testUserId), isEmpty);
+      },
+    );
   });
 
   group('mutations', () {
-    test('create persists active + dirty and getActiveCount sees it',
-        () async {
+    test('create persists active + dirty and getActiveCount sees it', () async {
       final now = DateTime.now();
       await repository.create(
         PersonalFormula(
@@ -271,33 +288,35 @@ void main() {
       );
     });
 
-    test('delete soft-deletes: row hidden from reads but tombstone remains',
-        () async {
-      final now = DateTime.now();
-      final created = await repository.create(
-        PersonalFormula(
-          id: '',
-          userId: testUserId,
-          name: 'Doomed',
-          provenance: FormulaProvenance.fromScratchFormula,
-          phase: FormulaPhase.after,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
+    test(
+      'delete soft-deletes: row hidden from reads but tombstone remains',
+      () async {
+        final now = DateTime.now();
+        final created = await repository.create(
+          PersonalFormula(
+            id: '',
+            userId: testUserId,
+            name: 'Doomed',
+            provenance: FormulaProvenance.fromScratchFormula,
+            phase: FormulaPhase.after,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
 
-      await repository.delete(id: created.id, userId: testUserId);
+        await repository.delete(id: created.id, userId: testUserId);
 
-      expect(await repository.getById(created.id), isNull);
-      expect(await repository.getActiveCount(testUserId), 0);
+        expect(await repository.getById(created.id), isNull);
+        expect(await repository.getActiveCount(testUserId), 0);
 
-      // Physical row still present (tombstone for sync).
-      final raw = await (database.select(database.personalFormulasTable)
-            ..where((t) => t.id.equals(created.id)))
-          .getSingleOrNull();
-      expect(raw, isNotNull);
-      expect(raw!.isDeleted, isTrue);
-      expect(raw.needsUpload, isTrue);
-    });
+        // Physical row still present (tombstone for sync).
+        final raw = await (database.select(
+          database.personalFormulasTable,
+        )..where((t) => t.id.equals(created.id))).getSingleOrNull();
+        expect(raw, isNotNull);
+        expect(raw!.isDeleted, isTrue);
+        expect(raw.needsUpload, isTrue);
+      },
+    );
   });
 }

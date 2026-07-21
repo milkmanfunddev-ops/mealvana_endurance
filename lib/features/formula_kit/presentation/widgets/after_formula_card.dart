@@ -24,8 +24,9 @@ class AfterFormulaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final travel =
-        TravelFriendliness.fromStorageValue(formula.travelFriendliness);
+    final travel = TravelFriendliness.fromStorageValue(
+      formula.travelFriendliness,
+    );
     return BaseCard(
       child: InkWell(
         onTap: onTap,
@@ -67,9 +68,7 @@ class AfterFormulaCard extends StatelessWidget {
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: [
-                    _MetaPill(
-                      label: 'C:P ${formula.targetCarbProteinRatio}',
-                    ),
+                    _MetaPill(label: 'C:P ${formula.targetCarbProteinRatio}'),
                   ],
                 ),
               ],
@@ -79,7 +78,6 @@ class AfterFormulaCard extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _Pill extends StatelessWidget {

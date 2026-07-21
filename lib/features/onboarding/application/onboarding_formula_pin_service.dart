@@ -107,10 +107,10 @@ class OnboardingFormulaPinService {
 /// Riverpod provider for [OnboardingFormulaPinService].
 final onboardingFormulaPinServiceProvider =
     Provider<OnboardingFormulaPinService>((ref) {
-  return OnboardingFormulaPinService(
-    ref.watch(duringWorkoutTemplatesRepositoryProvider),
-    ref.watch(postWorkoutTemplatesRepositoryProvider),
-    ref.watch(formulaPinsRepositoryProvider),
-    logger: ref.watch(appLoggerProvider),
-  );
-});
+      return OnboardingFormulaPinService(
+        ref.watch(duringWorkoutTemplatesRepositoryProvider),
+        ref.watch(postWorkoutTemplatesRepositoryProvider),
+        ref.watch(formulaPinsRepositoryProvider),
+        logger: ref.watch(appLoggerProvider),
+      );
+    });

@@ -462,7 +462,8 @@ class BrickNutritionSections extends StatelessWidget {
                   planId: brick.id,
                   brickSegment: brickSegment,
                   // Always true for during/transition — we're in BrickNutritionSections
-                  isBrick: phase != ExplanationPhase.before &&
+                  isBrick:
+                      phase != ExplanationPhase.before &&
                       phase != ExplanationPhase.after,
                   onRegenerate: onRegenerate,
                 );

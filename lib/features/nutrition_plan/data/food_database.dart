@@ -305,7 +305,7 @@
 //   ) {
 //     final categoryFoods = getFoodsByCategory(category);
 //     return categoryFoods.where((food) {
-//       return likedFoodIds.contains(food.id) || 
+//       return likedFoodIds.contains(food.id) ||
 //              willingToTryIds.contains(food.id);
 //     }).toList();
 //   }

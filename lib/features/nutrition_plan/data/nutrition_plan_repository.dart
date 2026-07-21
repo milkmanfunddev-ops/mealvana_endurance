@@ -37,7 +37,9 @@ class NutritionPlanRepository {
   final ActivitiesRepository activitiesRepository;
 
   Future<Activity?> _getActivityRowWithPlan(String activityId) async {
-    final activity = await database.activityDao.getActivityByIdLocal(activityId);
+    final activity = await database.activityDao.getActivityByIdLocal(
+      activityId,
+    );
     if (activity == null || activity.nutritionPlanData == null) {
       return null;
     }
@@ -57,11 +59,16 @@ class NutritionPlanRepository {
   }
 
   /// Cache nutrition plan locally in Drift database
-  Future<void> cachePlanLocally(String userId, domain.NutritionPlan plan) async {
+  Future<void> cachePlanLocally(
+    String userId,
+    domain.NutritionPlan plan,
+  ) async {
     try {
       final activityId = plan.activityId;
       if (activityId == null) {
-        DebugLogger.warning('⚠️ Cannot cache plan ${plan.id} without activityId');
+        DebugLogger.warning(
+          '⚠️ Cannot cache plan ${plan.id} without activityId',
+        );
         return;
       }
 
@@ -76,7 +83,11 @@ class NutritionPlanRepository {
       );
       DebugLogger.info('✅ Plan cached on activity row');
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Error caching plan locally', error: e, stackTrace: stackTrace);
+      DebugLogger.error(
+        '❌ Error caching plan locally',
+        error: e,
+        stackTrace: stackTrace,
+      );
       await sentry.reportDatabaseError(
         e,
         operation: 'setActivityNutritionPlan',
@@ -93,7 +104,9 @@ class NutritionPlanRepository {
     String userId,
     String activityId,
   ) async {
-    DebugLogger.info('🔍 Getting nutrition plan for activityId: $activityId, userId: $userId');
+    DebugLogger.info(
+      '🔍 Getting nutrition plan for activityId: $activityId, userId: $userId',
+    );
 
     try {
       // Get activity with nutrition plan data
@@ -107,7 +120,10 @@ class NutritionPlanRepository {
       final planJson = _decodePlanJson(activity.nutritionPlanData!);
       return NutritionPlanMapper.fromJson(planJson);
     } catch (e, stackTrace) {
-      DebugLogger.error('Failed to get nutrition plan for activity $activityId', error: e);
+      DebugLogger.error(
+        'Failed to get nutrition plan for activity $activityId',
+        error: e,
+      );
       DebugLogger.debug(stackTrace.toString());
       return null;
     }
@@ -133,7 +149,11 @@ class NutritionPlanRepository {
 
       return true;
     } catch (e, stackTrace) {
-      DebugLogger.error('Error deleting nutrition plan', error: e, stackTrace: stackTrace);
+      DebugLogger.error(
+        'Error deleting nutrition plan',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }
@@ -141,20 +161,29 @@ class NutritionPlanRepository {
   /// Get latest cached plan (local only)
   Future<domain.NutritionPlan?> getLatestCachedPlan(String userId) async {
     try {
-      final activity = await database.activityDao.getLatestActivityWithNutritionPlan(userId);
+      final activity = await database.activityDao
+          .getLatestActivityWithNutritionPlan(userId);
       if (activity?.nutritionPlanData == null) {
         return null;
       }
-      final planData = json.decode(activity!.nutritionPlanData!) as Map<String, dynamic>;
+      final planData =
+          json.decode(activity!.nutritionPlanData!) as Map<String, dynamic>;
       return NutritionPlanMapper.fromJson(planData);
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting cached plan', error: e, stackTrace: stackTrace);
+      DebugLogger.error(
+        'Error getting cached plan',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
 
   /// Update plan run date/time (store in JSON planData since runDateTime field doesn't exist)
-  Future<void> updatePlanRunDateTimeForActivity(String activityId, DateTime runDateTime) async {
+  Future<void> updatePlanRunDateTimeForActivity(
+    String activityId,
+    DateTime runDateTime,
+  ) async {
     try {
       final activity = await _getActivityRowWithPlan(activityId);
       if (activity == null) {
@@ -169,10 +198,16 @@ class NutritionPlanRepository {
         planData: jsonEncode(planJson),
       );
 
-      DebugLogger.info('✅ Plan run date updated: activityId=$activityId, runDateTime=$runDateTime');
+      DebugLogger.info(
+        '✅ Plan run date updated: activityId=$activityId, runDateTime=$runDateTime',
+      );
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to update plan run date: $e');
-      await sentry.reportDatabaseError(e, stackTrace: stackTrace, operation: 'updatePlanRunDateTime');
+      await sentry.reportDatabaseError(
+        e,
+        stackTrace: stackTrace,
+        operation: 'updatePlanRunDateTime',
+      );
       rethrow;
     }
   }
@@ -183,19 +218,22 @@ class NutritionPlanRepository {
   /// - Have nutrition plan data
   /// - Are completed (or past scheduled date)
   /// - Don't have a completion rating yet
-  Future<List<domain.NutritionPlan>> getPlansPendingFeedback(String userId) async {
+  Future<List<domain.NutritionPlan>> getPlansPendingFeedback(
+    String userId,
+  ) async {
     DebugLogger.info('🔍 Getting plans pending feedback for userId: $userId');
 
     try {
       final now = DateTime.now();
 
       // Query activities with nutrition plan data and no rating
-      final activities = await (database.select(database.activitiesTable)
-            ..where((tbl) => tbl.userId.equals(userId))
-            ..where((tbl) => tbl.nutritionPlanData.isNotNull())
-            ..where((tbl) => tbl.completionRating.isNull())
-            ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]))
-          .get();
+      final activities =
+          await (database.select(database.activitiesTable)
+                ..where((tbl) => tbl.userId.equals(userId))
+                ..where((tbl) => tbl.nutritionPlanData.isNotNull())
+                ..where((tbl) => tbl.completionRating.isNull())
+                ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]))
+              .get();
 
       // Filter to past activities and parse nutrition plans
       final plans = <domain.NutritionPlan>[];
@@ -211,7 +249,9 @@ class NutritionPlanRepository {
             plans.add(NutritionPlanMapper.fromJson(planJson));
           }
         } catch (e) {
-          DebugLogger.warning('Failed to parse plan for activity ${activity.id}: $e');
+          DebugLogger.warning(
+            'Failed to parse plan for activity ${activity.id}: $e',
+          );
         }
       }
 
@@ -227,16 +267,19 @@ class NutritionPlanRepository {
   /// Get all nutrition plans for a user
   ///
   /// Returns all activities with nutrition plan data
-  Future<List<domain.NutritionPlan>> getUserNutritionPlans(String userId) async {
+  Future<List<domain.NutritionPlan>> getUserNutritionPlans(
+    String userId,
+  ) async {
     DebugLogger.info('🔍 Getting all nutrition plans for userId: $userId');
 
     try {
       // Query all activities with nutrition plan data
-      final activities = await (database.select(database.activitiesTable)
-            ..where((tbl) => tbl.userId.equals(userId))
-            ..where((tbl) => tbl.nutritionPlanData.isNotNull())
-            ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]))
-          .get();
+      final activities =
+          await (database.select(database.activitiesTable)
+                ..where((tbl) => tbl.userId.equals(userId))
+                ..where((tbl) => tbl.nutritionPlanData.isNotNull())
+                ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]))
+              .get();
 
       // Parse nutrition plans from activity rows
       final plans = <domain.NutritionPlan>[];
@@ -247,7 +290,9 @@ class NutritionPlanRepository {
             plans.add(NutritionPlanMapper.fromJson(planJson));
           }
         } catch (e) {
-          DebugLogger.warning('Failed to parse plan for activity ${activity.id}: $e');
+          DebugLogger.warning(
+            'Failed to parse plan for activity ${activity.id}: $e',
+          );
         }
       }
 
@@ -285,7 +330,9 @@ class CreateNutritionPlanResult {
 Future<NutritionPlanRepository> nutritionPlanRepository(Ref ref) async {
   final database = ref.watch(appDatabaseProvider);
   final sentry = ref.watch(sentryReporterProvider);
-  final transformationService = ref.watch(foodDataTransformationServiceProvider);
+  final transformationService = ref.watch(
+    foodDataTransformationServiceProvider,
+  );
   final calendarService = ref.watch(calendarServiceProvider);
   final activitiesRepository = ref.watch(activitiesRepositoryProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;

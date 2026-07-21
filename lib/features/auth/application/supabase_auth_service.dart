@@ -180,10 +180,7 @@ class SupabaseAuthService {
   }
 
   /// Verify OTP code for password recovery
-  Future<void> verifyOtp({
-    required String email,
-    required String token,
-  }) async {
+  Future<void> verifyOtp({required String email, required String token}) async {
     try {
       await _supabase.auth.verifyOTP(
         email: email,

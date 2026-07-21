@@ -180,8 +180,7 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
                 itemCount: _results.length,
                 itemBuilder: (context, index) {
                   final location = _results[index];
-                  final formatted =
-                      LocationFormatter.formatCityState(location);
+                  final formatted = LocationFormatter.formatCityState(location);
                   return ListTile(
                     dense: true,
                     leading: FaIcon(

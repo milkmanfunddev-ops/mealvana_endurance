@@ -27,11 +27,7 @@ import '../widgets/pin_toggle.dart';
 ///
 /// Edit / personalize / favorite affordances land in PR 2-5.
 class FormulaDetailScreen extends ConsumerStatefulWidget {
-  const FormulaDetailScreen({
-    super.key,
-    required this.id,
-    required this.phase,
-  });
+  const FormulaDetailScreen({super.key, required this.id, required this.phase});
 
   final String id;
   final FormulaPhase phase;
@@ -54,15 +50,21 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     if (!_trackedView) {
       asyncState.whenData((state) {
         final found = switch (widget.phase) {
-          FormulaPhase.before => state.beforeFormulas
-              .cast<BeforeFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
-          FormulaPhase.during => state.duringFormulas
-              .cast<DuringFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
-          FormulaPhase.after => state.afterFormulas
-              .cast<AfterFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
+          FormulaPhase.before =>
+            state.beforeFormulas.cast<BeforeFormulaView?>().firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            ),
+          FormulaPhase.during =>
+            state.duringFormulas.cast<DuringFormulaView?>().firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            ),
+          FormulaPhase.after =>
+            state.afterFormulas.cast<AfterFormulaView?>().firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            ),
         };
         if (found != null) {
           _trackedView = true;
@@ -81,7 +83,9 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     }
 
     return AdaptivePageScaffold(
-      key: ValueKey('formula_kit.detail_screen.${widget.phase.name}.${widget.id}'),
+      key: ValueKey(
+        'formula_kit.detail_screen.${widget.phase.name}.${widget.id}',
+      ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, asyncState),
       contentWidth: AdaptiveContentWidth.standard,
@@ -96,28 +100,19 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
             case FormulaPhase.before:
               final formula = state.beforeFormulas
                   .cast<BeforeFormulaView?>()
-                  .firstWhere(
-                    (f) => f?.id == widget.id,
-                    orElse: () => null,
-                  );
+                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
               if (formula == null) return const _NotFoundView();
               return _BeforeDetailBody(formula: formula);
             case FormulaPhase.during:
               final formula = state.duringFormulas
                   .cast<DuringFormulaView?>()
-                  .firstWhere(
-                    (f) => f?.id == widget.id,
-                    orElse: () => null,
-                  );
+                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
               if (formula == null) return const _NotFoundView();
               return _DuringDetailBody(formula: formula);
             case FormulaPhase.after:
               final formula = state.afterFormulas
                   .cast<AfterFormulaView?>()
-                  .firstWhere(
-                    (f) => f?.id == widget.id,
-                    orElse: () => null,
-                  );
+                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
               if (formula == null) return const _NotFoundView();
               return _AfterDetailBody(formula: formula);
           }
@@ -139,26 +134,17 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         case FormulaPhase.before:
           beforeFormula = state.beforeFormulas
               .cast<BeforeFormulaView?>()
-              .firstWhere(
-                (f) => f?.id == widget.id,
-                orElse: () => null,
-              );
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
           title = beforeFormula != null ? beforeFormula!.name : 'Not found';
         case FormulaPhase.during:
           duringFormula = state.duringFormulas
               .cast<DuringFormulaView?>()
-              .firstWhere(
-                (f) => f?.id == widget.id,
-                orElse: () => null,
-              );
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
           title = duringFormula != null ? duringFormula!.formula : 'Not found';
         case FormulaPhase.after:
           afterFormula = state.afterFormulas
               .cast<AfterFormulaView?>()
-              .firstWhere(
-                (f) => f?.id == widget.id,
-                orElse: () => null,
-              );
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
           title = afterFormula != null ? afterFormula!.name : 'Not found';
       }
     });
@@ -186,9 +172,8 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       );
     }
 
-    final hasFormula = beforeFormula != null ||
-        duringFormula != null ||
-        afterFormula != null;
+    final hasFormula =
+        beforeFormula != null || duringFormula != null || afterFormula != null;
 
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -250,8 +235,8 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     final tappedPhase = before != null
         ? FormulaPhase.before
         : during != null
-            ? FormulaPhase.during
-            : FormulaPhase.after;
+        ? FormulaPhase.during
+        : FormulaPhase.after;
     await library.trackForkStarted(
       sourceTemplateId: tappedId,
       phase: tappedPhase,
@@ -428,8 +413,11 @@ class _BeforeDetailBody extends StatelessWidget {
               ),
             )
           else
-            for (var i = 0; i < formula.componentDisplayStrings.length;
-                i++) ...[
+            for (
+              var i = 0;
+              i < formula.componentDisplayStrings.length;
+              i++
+            ) ...[
               if (i > 0) const SizedBox(height: AppSpacing.xs),
               _ComponentRow(label: formula.componentDisplayStrings[i]),
             ],
@@ -528,8 +516,7 @@ class _DuringDetailBody extends StatelessWidget {
                   child: _LabeledList(
                     label: 'Gut training',
                     items: formula.gutTrainingLevels
-                        .map((g) =>
-                            '${g[0].toUpperCase()}${g.substring(1)}')
+                        .map((g) => '${g[0].toUpperCase()}${g.substring(1)}')
                         .toList(),
                   ),
                 ),
@@ -560,8 +547,7 @@ class _DuringDetailBody extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.orange.withValues(alpha: 0.10),
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.sm),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Row(
                       children: [
@@ -664,8 +650,7 @@ class _AfterDetailBody extends StatelessWidget {
                   label: _humanize(formula.travelFriendliness!),
                   color: AppColors.electrolyte,
                 ),
-              if (formula.prepEffort != null &&
-                  formula.prepEffort!.isNotEmpty)
+              if (formula.prepEffort != null && formula.prepEffort!.isNotEmpty)
                 _InfoPill(
                   label: _humanize(formula.prepEffort!),
                   color: AppColors.electrolyte,
@@ -705,8 +690,11 @@ class _AfterDetailBody extends StatelessWidget {
               ),
             )
           else
-            for (var i = 0; i < formula.componentDisplayStrings.length;
-                i++) ...[
+            for (
+              var i = 0;
+              i < formula.componentDisplayStrings.length;
+              i++
+            ) ...[
               if (i > 0) const SizedBox(height: AppSpacing.xs),
               _ComponentRow(label: formula.componentDisplayStrings[i]),
             ],
@@ -931,28 +919,35 @@ class _MacrosCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Expanded(child: _Macro(label: 'Cal', value: '$calories')),
                 Expanded(
-                    child: _Macro(label: 'Carbs', value: '${carbs.round()}g')),
+                  child: _Macro(label: 'Cal', value: '$calories'),
+                ),
                 Expanded(
-                    child:
-                        _Macro(label: 'Protein', value: '${protein.round()}g')),
-                Expanded(child: _Macro(label: 'Fat', value: '${fat.round()}g')),
+                  child: _Macro(label: 'Carbs', value: '${carbs.round()}g'),
+                ),
+                Expanded(
+                  child: _Macro(label: 'Protein', value: '${protein.round()}g'),
+                ),
+                Expanded(
+                  child: _Macro(label: 'Fat', value: '${fat.round()}g'),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
-                    child: _Macro(
-                        label: 'Sodium', value: '${sodium.round()}mg')),
+                  child: _Macro(label: 'Sodium', value: '${sodium.round()}mg'),
+                ),
                 Expanded(
-                    child: _Macro(
-                        label: 'Fluid',
-                        value: UnitFormatter.formatFluids(
-                          fluid,
-                          useImperial: !useMetric,
-                        ))),
+                  child: _Macro(
+                    label: 'Fluid',
+                    value: UnitFormatter.formatFluids(
+                      fluid,
+                      useImperial: !useMetric,
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 const Spacer(),
               ],
@@ -1016,8 +1011,7 @@ class _DietTags extends StatelessWidget {
           spacing: AppSpacing.xs,
           runSpacing: AppSpacing.xs,
           children: [
-            for (final a in allergens)
-              _Tag(label: 'Contains $a'),
+            for (final a in allergens) _Tag(label: 'Contains $a'),
             for (final d in excludedDiets)
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -1069,10 +1063,7 @@ class _NotFoundView extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'Formula not found.',
-              style: AppTextStyles.subtitle,
-            ),
+            Text('Formula not found.', style: AppTextStyles.subtitle),
           ],
         ),
       ),

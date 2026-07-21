@@ -29,23 +29,29 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Set up Sentry to not throw on method calls
-    when(() => mockSentry.addBreadcrumb(
-          message: any(named: 'message'),
-          category: any(named: 'category'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockSentry.reportDatabaseError(
-          any(),
-          operation: any(named: 'operation'),
-          table: any(named: 'table'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockSentry.addBreadcrumb(
+        message: any(named: 'message'),
+        category: any(named: 'category'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockSentry.reportDatabaseError(
+        any(),
+        operation: any(named: 'operation'),
+        table: any(named: 'table'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
   });
 
   tearDown(() async {
@@ -150,19 +156,21 @@ void main() {
   });
 
   group('UserFoodsRepository - Basic Functionality', () {
-    test('uploadDirtyRecords should return nothingToUpload when no dirty records',
-        () async {
-      final mockSupabase = MockSupabaseClient();
-      final repository = UserFoodsRepository(
-        database: database,
-        supabase: mockSupabase,
-        sentry: mockSentry,
-      );
+    test(
+      'uploadDirtyRecords should return nothingToUpload when no dirty records',
+      () async {
+        final mockSupabase = MockSupabaseClient();
+        final repository = UserFoodsRepository(
+          database: database,
+          supabase: mockSupabase,
+          sentry: mockSentry,
+        );
 
-      final result = await repository.uploadDirtyRecords(testUserId);
+        final result = await repository.uploadDirtyRecords(testUserId);
 
-      expect(result.success, true);
-      expect(result.count, 0);
-    });
+        expect(result.success, true);
+        expect(result.count, 0);
+      },
+    );
   });
 }

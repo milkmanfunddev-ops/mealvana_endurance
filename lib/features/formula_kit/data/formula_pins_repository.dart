@@ -49,10 +49,10 @@ class FormulaPinsRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _sentry = sentry;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -105,9 +105,9 @@ class FormulaPinsRepository with SyncableRepository {
   /// write and rewritten by every successful sync.
   @override
   Future<bool> isStale() async {
-    final activeLocal = await (_database.select(_database.formulaPinsTable)
-          ..where((tbl) => tbl.isDeleted.equals(false)))
-        .get();
+    final activeLocal = await (_database.select(
+      _database.formulaPinsTable,
+    )..where((tbl) => tbl.isDeleted.equals(false))).get();
     if (activeLocal.isEmpty) {
       final prefs = await SharedPreferences.getInstance();
       final confirmedEmpty = prefs.getBool(_confirmedEmptyPrefsKey) ?? false;
@@ -189,10 +189,9 @@ class FormulaPinsRepository with SyncableRepository {
   /// after a successful sync; clear it otherwise. Run after every sync so
   /// the sentinel tracks the latest remote-side truth.
   Future<void> _refreshConfirmedEmptySentinel() async {
-    final activeCount = (await (_database.select(_database.formulaPinsTable)
-              ..where((tbl) => tbl.isDeleted.equals(false)))
-            .get())
-        .length;
+    final activeCount = (await (_database.select(
+      _database.formulaPinsTable,
+    )..where((tbl) => tbl.isDeleted.equals(false))).get()).length;
     final prefs = await SharedPreferences.getInstance();
     if (activeCount == 0) {
       await prefs.setBool(_confirmedEmptyPrefsKey, true);
@@ -216,9 +215,7 @@ class FormulaPinsRepository with SyncableRepository {
   /// This lets the dirty-preserve + tombstone-propagation invariants be locked
   /// down without a SupabaseQueryBuilder mock stack.
   @visibleForTesting
-  Future<int> upsertRemotePinsPreservingDirty(
-    List<dynamic> remotePins,
-  ) async {
+  Future<int> upsertRemotePinsPreservingDirty(List<dynamic> remotePins) async {
     final remoteById = <String, Map<String, dynamic>>{};
 
     for (final item in remotePins) {
@@ -232,11 +229,11 @@ class FormulaPinsRepository with SyncableRepository {
     if (remoteById.isEmpty) return 0;
 
     final remoteIds = remoteById.keys.toList(growable: false);
-    final dirtyRows = await (_database.select(_database.formulaPinsTable)
-          ..where(
-            (tbl) => tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
-          ))
-        .get();
+    final dirtyRows =
+        await (_database.select(_database.formulaPinsTable)..where(
+              (tbl) => tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
+            ))
+            .get();
     final dirtyIds = dirtyRows.map((row) => row.id).toSet();
 
     var upsertedCount = 0;
@@ -277,11 +274,11 @@ class FormulaPinsRepository with SyncableRepository {
         data: {'userId': userId},
       );
 
-      final dirtyRecords = await (_database.select(_database.formulaPinsTable)
-            ..where(
-              (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
-            ))
-          .get();
+      final dirtyRecords =
+          await (_database.select(_database.formulaPinsTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
+              ))
+              .get();
 
       if (dirtyRecords.isEmpty) {
         return UploadResult.nothingToUpload();
@@ -302,8 +299,9 @@ class FormulaPinsRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      final pinsToUpload =
-          decodedPins.map((pin) => pin.toSupabaseJson()).toList();
+      final pinsToUpload = decodedPins
+          .map((pin) => pin.toSupabaseJson())
+          .toList();
 
       await _supabase
           .from('formula_pins')
@@ -370,16 +368,17 @@ class FormulaPinsRepository with SyncableRepository {
     required String templateId,
     required TemplateKind kind,
   }) async {
-    final row = await (_database.select(_database.formulaPinsTable)
-          ..where(
-            (tbl) =>
-                tbl.userId.equals(userId) &
-                tbl.templateId.equals(templateId) &
-                tbl.templateKind.equals(kind.wireValue) &
-                tbl.isDeleted.equals(false),
-          )
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.formulaPinsTable)
+              ..where(
+                (tbl) =>
+                    tbl.userId.equals(userId) &
+                    tbl.templateId.equals(templateId) &
+                    tbl.templateKind.equals(kind.wireValue) &
+                    tbl.isDeleted.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
     return row != null;
   }
 
@@ -389,16 +388,17 @@ class FormulaPinsRepository with SyncableRepository {
     required String templateId,
     required TemplateKind kind,
   }) async {
-    final row = await (_database.select(_database.formulaPinsTable)
-          ..where(
-            (tbl) =>
-                tbl.userId.equals(userId) &
-                tbl.templateId.equals(templateId) &
-                tbl.templateKind.equals(kind.wireValue) &
-                tbl.isDeleted.equals(false),
-          )
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.formulaPinsTable)
+              ..where(
+                (tbl) =>
+                    tbl.userId.equals(userId) &
+                    tbl.templateId.equals(templateId) &
+                    tbl.templateKind.equals(kind.wireValue) &
+                    tbl.isDeleted.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return null;
     final pin = FormulaPin.fromDriftEntry(row);
     if (pin == null) {
@@ -456,11 +456,7 @@ class FormulaPinsRepository with SyncableRepository {
     _logger.info(
       'Pinned formula',
       context: 'FORMULA_PINS_REPOSITORY',
-      data: {
-        'pinId': pin.id,
-        'templateId': templateId,
-        'kind': kind.wireValue,
-      },
+      data: {'pinId': pin.id, 'templateId': templateId, 'kind': kind.wireValue},
     );
 
     _scheduleImmediateUpload(pin, label: 'pin');
@@ -490,9 +486,9 @@ class FormulaPinsRepository with SyncableRepository {
       localUpdatedAt: now,
     );
 
-    await (_database.update(_database.formulaPinsTable)
-          ..where((tbl) => tbl.id.equals(active.id)))
-        .write(
+    await (_database.update(
+      _database.formulaPinsTable,
+    )..where((tbl) => tbl.id.equals(active.id))).write(
       FormulaPinsTableCompanion(
         isDeleted: const Value(true),
         updatedAt: Value(now),
@@ -587,19 +583,13 @@ class FormulaPinsRepository with SyncableRepository {
     _logger.warning(
       'Skipping formula pin with unknown template_kind',
       context: 'FORMULA_PINS_REPOSITORY',
-      data: {
-        'pin_id': entry.id,
-        'template_kind': entry.templateKind,
-      },
+      data: {'pin_id': entry.id, 'template_kind': entry.templateKind},
     );
     unawaited(
       _sentry.captureMessage(
         'Skipped formula pin with unknown template_kind',
         level: SentryLevel.warning,
-        tags: {
-          'pin_id': entry.id,
-          'template_kind': entry.templateKind,
-        },
+        tags: {'pin_id': entry.id, 'template_kind': entry.templateKind},
       ),
     );
   }

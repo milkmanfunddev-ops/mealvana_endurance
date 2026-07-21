@@ -4,6 +4,7 @@
 /// and preserves user data correctly. We use in-memory databases
 /// to test the actual migration logic without strict schema verification.
 library;
+
 import 'package:drift/drift.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:test/test.dart' as test_pkg;
@@ -34,14 +35,16 @@ void main() {
       final db = AppDatabase.memory();
 
       // Insert a test user
-      await db.into(db.userProfilesTable).insert(
-        UserProfilesTableCompanion.insert(
-          id: 'test-user-123',
-          deviceId: 'device-123',
-          authProvider: const Value('anonymous'),
-          isAnonymous: const Value(true),
-        ),
-      );
+      await db
+          .into(db.userProfilesTable)
+          .insert(
+            UserProfilesTableCompanion.insert(
+              id: 'test-user-123',
+              deviceId: 'device-123',
+              authProvider: const Value('anonymous'),
+              isAnonymous: const Value(true),
+            ),
+          );
 
       // Verify we can read the user including v2 columns
       final users = await db.select(db.userProfilesTable).get();
@@ -62,15 +65,17 @@ void main() {
       final db = AppDatabase.memory();
 
       // Insert a test food preference (id must be 36 chars - UUID format)
-      await db.into(db.foodPreferencesTable).insert(
-        FoodPreferencesTableCompanion.insert(
-          id: 'pref-123-abcd-efgh-ijkl-mnopqrst1234',
-          userId: 'user-123',
-          foodName: 'banana',
-          preference: 'like',
-          preferenceLevel: const Value(3),
-        ),
-      );
+      await db
+          .into(db.foodPreferencesTable)
+          .insert(
+            FoodPreferencesTableCompanion.insert(
+              id: 'pref-123-abcd-efgh-ijkl-mnopqrst1234',
+              userId: 'user-123',
+              foodName: 'banana',
+              preference: 'like',
+              preferenceLevel: const Value(3),
+            ),
+          );
 
       final prefs = await db.select(db.foodPreferencesTable).get();
       expect(prefs, hasLength(1));
@@ -83,17 +88,19 @@ void main() {
       final db = AppDatabase.memory();
 
       // Insert a test activity with UUID id
-      await db.into(db.activitiesTable).insert(
-        ActivitiesTableCompanion.insert(
-          id: const Value('abc12345-1234-1234-1234-123456789abc'),
-          userId: 'user-123',
-          activityType: 'running',
-          title: 'Morning Run',
-          scheduledDateTime: DateTime.now(),
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      );
+      await db
+          .into(db.activitiesTable)
+          .insert(
+            ActivitiesTableCompanion.insert(
+              id: const Value('abc12345-1234-1234-1234-123456789abc'),
+              userId: 'user-123',
+              activityType: 'running',
+              title: 'Morning Run',
+              scheduledDateTime: DateTime.now(),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
 
       final activities = await db.select(db.activitiesTable).get();
       expect(activities, hasLength(1));
@@ -107,15 +114,17 @@ void main() {
       final db = AppDatabase.memory();
 
       // Insert a test event with UUID id
-      await db.into(db.eventsTable).insert(
-        EventsTableCompanion.insert(
-          id: const Value('event-uuid-1234-5678-abcd-123456789abc'),
-          userId: 'user-123',
-          eventType: 'running',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      );
+      await db
+          .into(db.eventsTable)
+          .insert(
+            EventsTableCompanion.insert(
+              id: const Value('event-uuid-1234-5678-abcd-123456789abc'),
+              userId: 'user-123',
+              eventType: 'running',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
 
       final events = await db.select(db.eventsTable).get();
       expect(events, hasLength(1));
@@ -129,40 +138,52 @@ void main() {
       final db = AppDatabase.memory();
 
       // Insert food preferences with different preference values (UUIDs must be 36 chars)
-      await db.into(db.foodPreferencesTable).insert(
-        FoodPreferencesTableCompanion.insert(
-          id: 'pref-001-abcd-efgh-ijkl-mnopqrst0001',
-          userId: 'user-1',
-          foodName: 'banana',
-          preference: 'like',
-          preferenceLevel: const Value(3), // like → 3
-        ),
-      );
-      await db.into(db.foodPreferencesTable).insert(
-        FoodPreferencesTableCompanion.insert(
-          id: 'pref-002-abcd-efgh-ijkl-mnopqrst0002',
-          userId: 'user-1',
-          foodName: 'oatmeal',
-          preference: 'dislike',
-          preferenceLevel: const Value(1), // dislike → 1
-        ),
-      );
-      await db.into(db.foodPreferencesTable).insert(
-        FoodPreferencesTableCompanion.insert(
-          id: 'pref-003-abcd-efgh-ijkl-mnopqrst0003',
-          userId: 'user-1',
-          foodName: 'gel',
-          preference: 'willing_to_try',
-          preferenceLevel: const Value(2), // neutral → 2
-        ),
-      );
+      await db
+          .into(db.foodPreferencesTable)
+          .insert(
+            FoodPreferencesTableCompanion.insert(
+              id: 'pref-001-abcd-efgh-ijkl-mnopqrst0001',
+              userId: 'user-1',
+              foodName: 'banana',
+              preference: 'like',
+              preferenceLevel: const Value(3), // like → 3
+            ),
+          );
+      await db
+          .into(db.foodPreferencesTable)
+          .insert(
+            FoodPreferencesTableCompanion.insert(
+              id: 'pref-002-abcd-efgh-ijkl-mnopqrst0002',
+              userId: 'user-1',
+              foodName: 'oatmeal',
+              preference: 'dislike',
+              preferenceLevel: const Value(1), // dislike → 1
+            ),
+          );
+      await db
+          .into(db.foodPreferencesTable)
+          .insert(
+            FoodPreferencesTableCompanion.insert(
+              id: 'pref-003-abcd-efgh-ijkl-mnopqrst0003',
+              userId: 'user-1',
+              foodName: 'gel',
+              preference: 'willing_to_try',
+              preferenceLevel: const Value(2), // neutral → 2
+            ),
+          );
 
       final prefs = await db.select(db.foodPreferencesTable).get();
       expect(prefs, hasLength(3));
 
       // Verify each preference level
-      expect(prefs.firstWhere((p) => p.foodName == 'banana').preferenceLevel, 3);
-      expect(prefs.firstWhere((p) => p.foodName == 'oatmeal').preferenceLevel, 1);
+      expect(
+        prefs.firstWhere((p) => p.foodName == 'banana').preferenceLevel,
+        3,
+      );
+      expect(
+        prefs.firstWhere((p) => p.foodName == 'oatmeal').preferenceLevel,
+        1,
+      );
       expect(prefs.firstWhere((p) => p.foodName == 'gel').preferenceLevel, 2);
 
       await db.close();
@@ -170,21 +191,24 @@ void main() {
   });
 
   group('migration code verification', () {
-    test('database exposes a current schema version and migration strategy', () {
-      // The schema has advanced well past v2. There are no step-by-step
-      // upgrade migrations anymore: VersionCheckService handles mismatches by
-      // delete & resync, and onUpgrade recreates all tables as a fallback.
-      // Verify the current contract: a current schema version plus a
-      // configured MigrationStrategy with onCreate/onUpgrade handlers.
-      final db = AppDatabase.memory();
-      // Don't hardcode the exact version — it advances every additive
-      // migration. The contract is simply that a current schema version is
-      // exposed (past the v2 baseline) alongside a configured strategy.
-      expect(db.schemaVersion, greaterThanOrEqualTo(2));
-      expect(db.migration, test_pkg.isNotNull);
-      expect(db.migration.onCreate, test_pkg.isNotNull);
-      expect(db.migration.onUpgrade, test_pkg.isNotNull);
-      db.close();
-    });
+    test(
+      'database exposes a current schema version and migration strategy',
+      () {
+        // The schema has advanced well past v2. There are no step-by-step
+        // upgrade migrations anymore: VersionCheckService handles mismatches by
+        // delete & resync, and onUpgrade recreates all tables as a fallback.
+        // Verify the current contract: a current schema version plus a
+        // configured MigrationStrategy with onCreate/onUpgrade handlers.
+        final db = AppDatabase.memory();
+        // Don't hardcode the exact version — it advances every additive
+        // migration. The contract is simply that a current schema version is
+        // exposed (past the v2 baseline) alongside a configured strategy.
+        expect(db.schemaVersion, greaterThanOrEqualTo(2));
+        expect(db.migration, test_pkg.isNotNull);
+        expect(db.migration.onCreate, test_pkg.isNotNull);
+        expect(db.migration.onUpgrade, test_pkg.isNotNull);
+        db.close();
+      },
+    );
   });
 }
