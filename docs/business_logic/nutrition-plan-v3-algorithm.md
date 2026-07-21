@@ -83,27 +83,63 @@ If user has custom foods (from barcode scanning or manual entry):
 Converts V4 `PreWorkoutPhaseResult[]` into V2's `BeforePhaseResult` shape:
 - `{ meal?: SubPhaseResult, snack?: SubPhaseResult, top_up?: SubPhaseResult }`
 
-## During Phase: Rule-Based Solver
+## During Phase: Pin -> Template Solver -> Rule Solver -> Closing Pass
 
-**File:** `during-phase.ts`
+**File:** `during-phase.ts` (restructured 2026-07-21, bug 3a3e3fdb)
 
-### Primary Path: Rule Solver
-1. Fetches foods from `template_foods` for "during" phase
-2. Calls `generateDuringPhaseRuleBased()` from `during-rule-solver.ts`
-3. Rule solver picks foods sequentially: primary carb source -> sports drink -> water -> electrolytes
-4. Validates result against macro ranges
+**Stage 1 — one shared food pool.** `getTemplateFoodsForDuringWithConstraints()` loads the
+during-phase food pool exactly once. The template solver, the rule solver, and the closing
+gap-fill pass all consume this same pool, so falling from one tier to the next can no longer
+change which foods exist. Unlike before-phase, the during pool does **not** include imported
+user foods.
 
-### Fallback Path: LP Solver
-If rule solver result is out of range:
-1. Falls back to `generateLPPhase()` with "during" phase
-2. LP solver uses javascript-lp-solver library to optimize food selection
-3. Two-pass approach: LP focuses on carbs (sodium weight reduced to 0.05), then post-processing adds electrolytes for sodium deficit
+### Stage 2: Cascade (best-effort plan selection)
+1. **Pinned personal formula** (highest priority): an in-scope pinned personal formula is
+   honored unconditionally — its components are scaled to the carb target and a
+   fluid/sodium backfill (from essential foods) runs if needed. No gap-fill runs on this
+   path (user-authored, scaled by construction).
+2. **Template solver** (`during-template-solver.ts`): guarded **only by `duration_minutes`
+   being positive** — `gut_training_level` is a constraint input (per-hour caps, template
+   matching), never an on/off switch for this tier. Raw client values are normalized via
+   `normalizeGutTrainingLevel()` (shared with `brick-handler.ts`); a missing/invalid value
+   (including the legacy `'medium'` literal) degrades to `'moderate'` and still runs the
+   full formula tier — this was Failure Mode A of bug 3a3e3fdb (a null/invalid gut level
+   used to skip every formula and fall through to a differently-pooled rule solver).
+3. **Rule solver** (`during-rule-solver.ts`, `generateDuringPhaseRuleBased()`): fallback when
+   the template solver finds no matching template or all candidates fail validation. Runs on
+   the same Stage 1 pool.
+
+### Stage 3: Closing pass (every path)
+Every exit of `generateDuringPhase` — template, rule, or empty-pool — runs through
+`finalizeDuringFoods()`:
+1. **Carb gap-fill** (`during-gap-fill.ts`, `gapFillDuringCarbs()`): when delivered carbs are
+   below 90% of target, tops up from the unused pool. Append-only (never replaces or removes
+   an existing pin), clamped to gut-training per-hour caps, capped at 3 new distinct items.
+   Skipped on the personal-formula path.
+2. **Shortfall computation**: `collectShortfalls()` runs on the final totals. **Invariant:** a
+   during phase can only ship under-target with a populated `shortfalls` field — this closes
+   Failure Mode B of bug 3a3e3fdb (pinned templates used to accept a shortfall and return
+   without topping up, and only the template path computed shortfalls at all).
 
 ### Swimming Exception
 Swimming activities return empty during phase (no nutrition during swim).
 
-### Imported User Food Sanitization
-If LP result is out of range and imported user foods are in the pool, retries without them to prevent extreme nutritional values from imported labels.
+### No During-Phase LP Tier
+The former LP last-resort tier for during is deleted (`postProcessDuringPhase` and
+`by-hour-apportionment.ts` are gone). It ran on a different food pool with no gut caps and
+shipped unvalidated output — strictly dominated by the rule solver + closing gap-fill pass.
+`lp-phase.ts` is after-phase-only now (see below); its imported-user-food sanitization retry
+no longer applies to during.
+
+### By-Hour Data
+The server always returns `by_hour_data: null` for the during phase — the client creates
+empty buckets for user-driven placement.
+
+### Plan-Generation Ledger
+`plan-generation-log.ts` writes one best-effort row per plan to `plan_generation_log`
+(service-role only, `EdgeRuntime.waitUntil`): targets vs. delivered per phase, the during
+cascade path taken (`generation_path`), shortfalls, pin decisions, and warnings. Lets the
+carb-shortfall failure rate be measured directly instead of inferred from user reports.
 
 ## After Phase: LP Solver
 
@@ -114,7 +150,7 @@ If LP result is out of range and imported user foods are in the pool, retries wi
 3. Builds LP model with phase-specific optimization weights
 4. Solves LP model (maximize score = weighted sum of carb/protein/sodium/water fit + preference)
 5. Falls back to greedy algorithm if LP is infeasible
-6. **Imported user food retry**: Same sanitization logic as during phase
+6. **Imported user food retry**: If out of range and imported user foods are in the pool, retries without them. This retry is after-phase-only — the during-phase LP tier that used to share this logic was deleted in the 2026-07-21 refactor.
 
 ### LP Solver Details (lp-solver.ts)
 - Uses `javascript-lp-solver` library
@@ -153,4 +189,5 @@ Every phase result is validated against macro ranges:
 2. **LP rounding drift**: Continuous LP solutions rounded to 0.5 increments can overshoot small targets by up to 25%
 3. **During rule solver can't backtrack**: Sequential picks are final; if Step 1 overshoots, later steps can't compensate
 4. **Limited after-phase food pool**: Aggressive filtering can leave too few options for LP
-5. **By-hour apportionment is deprecated**: Server generates it but client creates empty buckets for user-driven placement
+5. **No server-side by-hour apportionment**: `by-hour-apportionment.ts` was deleted 2026-07-21; the server always returns `by_hour_data: null` and the client creates empty buckets for user-driven placement
+6. **Gap-fill can leave a low-gut athlete short**: the closing carb gap-fill respects gut-training per-hour caps, so a `low`-gut athlete with a high target can still land under target — reported honestly via `shortfalls`, not papered over

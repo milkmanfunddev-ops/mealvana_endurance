@@ -35,6 +35,16 @@ Many target areas are *currently broken*. Write assertions for **correct** behav
 - `validatePhaseResultAgainstTargets` tolerance: during carbs/sodium/water [0.9,1.1]; before/after [0.85,1.1]. Assert in/out-of-range classification.
 - File: `generate-nutrition-plan-v3/macro-adherence.test.ts`.
 
+### P3b — During invariant matrix (bug 3a3e3fdb, shipped 2026-07-21)
+- Runs the real during cascade (personal formula → template solver → rule solver → closing
+  gap-fill/shortfall pass) against a fake Supabase client across activity × duration × gut
+  level, including `null` and the legacy invalid `'medium'` literal. Asserts carbs >= 90% of
+  target OR a carbs shortfall is reported — closing exactly the P3 gap above (this was
+  previously template-path-only; now every during path is covered by the invariant).
+- Mutation-tested: reintroducing the old gut-level on/off guard fails the suite.
+- File: `generate-nutrition-plan-v3/during-invariant-matrix.test.ts` (registered as `1j2` in
+  `run-algorithm-tests.sh §1`).
+
 ### P4 — After-phase ignores macro targets (silent non-adherence)
 - After uses canonical template portions, not `post_run` targets. Assert: high `post_run.carbs_g` ⇒ validation surfaces a non-fatal warning in `response.warnings` (and that it IS surfaced, so the client can show it).
 - File: `generate-nutrition-plan-v3/after-phase-adherence.test.ts`.

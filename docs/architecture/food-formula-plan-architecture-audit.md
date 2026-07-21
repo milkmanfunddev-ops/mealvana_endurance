@@ -80,7 +80,11 @@
 - `_shared/nutrition/food-queries.ts` → `getFoodsForPhase` / `getElectrolyteFoods`: defined, never called in v3. Dead.
 - `FoodPreferencesScreen` + `/settings/food-preferences` route + `food_preferences_v2_screen`: orphaned (nav removed 2026-06-25). Dead UI.
 - Legacy **`foods` table**: down to a single live use — `getEssentialFoods` (water/salt backfill on the pin path). Migrate essentials → `template_foods.is_essential`, then retire (behind version gate).
-- `postProcessDuringPhase`: `@deprecated` for the rule path, still used by LP.
+- `postProcessDuringPhase`: `@deprecated` for the rule path, still used by LP. *(Addendum
+  2026-07-21: this removal candidate is resolved — the 2026-07-21 during-phase refactor
+  (bug 3a3e3fdb) deleted `postProcessDuringPhase`, `by-hour-apportionment.ts`, and the
+  during-phase LP tier entirely, replacing them with a closing gap-fill + shortfall pass
+  shared by every during path. See `docs/business_logic/nutrition-plan-v3-algorithm.md`.)*
 
 ### 🔩 Load-bearing — do NOT remove
 - `to_exclude_from_solver` — actively filters the solver pool at runtime (`template-food-queries.ts:359/807/1119`).
@@ -116,7 +120,7 @@ Ideal per phase: **pinned formula → default formula → solver → generic.** 
 
 | Phase | Actual order | Matches vision? |
 |---|---|---|
-| **During** | personal-formula pin → template solver → rule → LP → greedy | ✅ (no default-formula tier exists) |
+| **During** | personal-formula pin → template solver → rule → LP → greedy | ✅ (no default-formula tier exists) *(Addendum 2026-07-21: the LP/greedy leg is gone — bug 3a3e3fdb deleted the during-phase LP tier and replaced it with a closing gap-fill + shortfall pass shared by every path. Current order: personal-formula pin → template solver → rule solver → gap-fill/shortfall.)* |
 | **After** | personal-formula pin → post-template solver → LP | ✅ |
 | **Before** | template solver (Algo C) → user-substitution → **formula pin overlay LAST** | ❌ pin should be first |
 
