@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ⚠️ LEGACY / DEPRECATED — predates the Patrol migration.
+# These flows are now Patrol tests and must run via `patrol test` (see
+# integration_test/README.md), NOT `flutter test`. This script shells out to
+# `flutter test` against renamed files and will not run the tests correctly.
+# Kept for reference only.
+#
 # Integration Test Runner for Mealvana Endurance
 #
 # Usage:
