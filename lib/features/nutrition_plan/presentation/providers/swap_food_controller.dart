@@ -508,6 +508,19 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
+    // In fuel-log mode the fuel log screen renders from state.fuelLogData,
+    // not the nutrition plan — route the write there or the food silently
+    // never appears despite the success snackbar (bug 3a3e3fdb). This also
+    // keeps the plan itself untouched while logging what was consumed.
+    if (!params.isCoachView && controllerState.isFuelLogMode == true) {
+      activityDetailController.addFoodToFuelLogFromRawFood(
+        food,
+        category,
+        customAmount: customAmount,
+      );
+      return;
+    }
+
     await activityDetailController.addFoodItem(
       food,
       category,
