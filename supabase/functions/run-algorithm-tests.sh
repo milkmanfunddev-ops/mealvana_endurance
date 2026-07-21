@@ -96,6 +96,11 @@ run_test \
   --allow-write --node-modules-dir=none
 
 run_test \
+  "1e2. Pre-Workout Drink Headroom + Sodium Trim (before-water 0% / before-sodium 154% regressions)" \
+  "$SCRIPT_DIR/generate-macros-v4/pre-workout-drink-trim.test.ts" \
+  --allow-write --node-modules-dir=none
+
+run_test \
   "1f. During Template Solver (unit tests)" \
   "$SHARED_DIR/during-template-solver.test.ts" \
   --allow-write
