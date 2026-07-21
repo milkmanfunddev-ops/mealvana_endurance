@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
+import '../domain/macro_shortfall.dart';
 import '../domain/time_slot_assignment.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
@@ -158,6 +159,25 @@ class NutritionPlanMapper {
                 section = section.copyWith(
                   pinDecision: PinDecision.fromJson(pinDecisionJson),
                 );
+              }
+              // Parse macro shortfalls the solver reported for this phase
+              // (bug 3a3e3fdb: previously dropped on the floor, so plans
+              // that knowingly missed carb targets showed no explanation).
+              // Mirrors BeforeSubPhase.shortfalls; absent or malformed
+              // entries are skipped rather than failing the whole parse.
+              final shortfallsJson = duringMap['shortfalls'];
+              if (shortfallsJson is List) {
+                final shortfalls = shortfallsJson
+                    .whereType<Map>()
+                    .map(
+                      (e) => MacroShortfall.fromJson(
+                        Map<String, dynamic>.from(e),
+                      ),
+                    )
+                    .toList();
+                if (shortfalls.isNotEmpty) {
+                  section = section.copyWith(shortfalls: shortfalls);
+                }
               }
               parsedSections.add(section);
             } else if (plan['during'] is List) {
