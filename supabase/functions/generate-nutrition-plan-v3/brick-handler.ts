@@ -28,7 +28,7 @@ import {
 } from "../_shared/nutrition/template-food-queries.ts";
 import {
   generateDuringPhaseTemplate,
-  type GutTrainingLevel,
+  normalizeGutTrainingLevel,
   selectTemplateCandidates,
 } from "../_shared/nutrition/during-template-solver.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
@@ -184,13 +184,7 @@ async function generateTransitionPhase(
     return { foods: [] };
   }
 
-  const resolvedGutTrainingLevel = (
-    gutTrainingLevel === "low" ||
-      gutTrainingLevel === "moderate" ||
-      gutTrainingLevel === "high"
-      ? gutTrainingLevel
-      : "moderate"
-  ) as GutTrainingLevel;
+  const resolvedGutTrainingLevel = normalizeGutTrainingLevel(gutTrainingLevel);
 
   try {
     const [templates, constrainedFoods] = await Promise.all([
@@ -521,8 +515,6 @@ export async function handleBrickPlan(
       input.willing_to_try_foods,
       input.disliked_foods,
       input.device_id,
-      undefined,
-      undefined,
       input.allergies,
       input.dietary_preference,
     )

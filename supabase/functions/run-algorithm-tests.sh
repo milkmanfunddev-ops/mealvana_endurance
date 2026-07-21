@@ -130,6 +130,11 @@ run_test \
   --allow-read --allow-write --node-modules-dir=none
 
 run_test \
+  "1j2. During Invariant Matrix — carbs on-target OR reported, guard regression, gap-fill (bug 3a3e3fdb)" \
+  "$E2E_DIR/during-invariant-matrix.test.ts" \
+  --allow-write --node-modules-dir=none
+
+run_test \
   "1k. After-Phase Adherence — canonical portioning mismatch detection (P4)" \
   "$E2E_DIR/after-phase-adherence.test.ts" \
   --allow-write --node-modules-dir=none
@@ -190,6 +195,8 @@ run_test \
   --allow-env --node-modules-dir=none
 
 run_test \
+  "1w. search-nutrition-products — query validation, response assembly" \
+  "$SCRIPT_DIR/search-nutrition-products/index.test.ts" \
   --allow-env --node-modules-dir=none
 
 run_test \

@@ -515,8 +515,6 @@ export async function generateAfterPhase(
     willingToTryFoods,
     dislikedFoods,
     deviceId,
-    undefined,
-    undefined,
     allergies,
     dietaryPreference,
   );

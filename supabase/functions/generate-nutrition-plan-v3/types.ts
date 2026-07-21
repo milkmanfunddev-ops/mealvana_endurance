@@ -146,6 +146,14 @@ export interface PhaseShortfall {
 export interface LPPhaseResult {
   foods: FoodResult[];
   by_hour_data?: ByHourData | null;
+  /**
+   * INTERNAL: which tier of the during cascade produced the foods
+   * (`personal_formula` | `template` | `rule` | `empty` | `swimming`).
+   * Consumed by the plan-generation ledger for failure-rate analytics.
+   * Deliberately NOT copied onto the wire response — the response builder in
+   * index.ts copies keys explicitly, keeping the client contract unchanged.
+   */
+  generation_path?: string;
   template_metadata?: TemplateMetadata | null;
   /**
    * One entry per macro that fell short of target due to preference filtering.

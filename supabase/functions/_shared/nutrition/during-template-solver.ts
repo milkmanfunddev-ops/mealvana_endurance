@@ -107,6 +107,25 @@ export interface TemplateSolverResult {
 
 export type GutTrainingLevel = "low" | "moderate" | "high";
 
+/**
+ * Coerce an untrusted gut-training value to a valid {@link GutTrainingLevel}.
+ *
+ * The client may omit the field (null profile at generation time) or send a
+ * legacy invalid literal (`'medium'` shipped in 1.21.1). Both used to disable
+ * the whole template/formula tier: a falsy value failed the solver guard, and
+ * a truthy-but-invalid one matched no template's `gut_training_levels` and
+ * silently fell through to the rule solver (bug 3a3e3fdb, Critical).
+ * `moderate` is the physiological middle ground and the long-standing default
+ * elsewhere in the engine (brick handler, by-hour apportionment).
+ */
+export function normalizeGutTrainingLevel(
+  level: string | null | undefined,
+): GutTrainingLevel {
+  return level === "low" || level === "moderate" || level === "high"
+    ? level
+    : "moderate";
+}
+
 // ============================================================================
 // Duration Bracket Matching
 // ============================================================================
@@ -473,7 +492,7 @@ function clampAndRound(
   return Math.max(0, Math.min(upperBound, clamped));
 }
 
-function maxAllowedServingsForDuration(
+export function maxAllowedServingsForDuration(
   food: FoodWithConstraints,
   durationHours: number,
   gutTrainingLevel: GutTrainingLevel,
@@ -512,7 +531,7 @@ function servingCandidatesForFood(
   return [...values].sort((a, b) => a - b);
 }
 
-function addOrUpdateFoodResult(
+export function addOrUpdateFoodResult(
   foods: FoodResult[],
   food: FoodWithConstraints,
   servings: number,
@@ -839,7 +858,7 @@ function generateDuringPhaseTemplateBySearch(
  * Threshold: shortfall is emitted when delivered < 90% of target. Above that
  * the gap is small enough to be noise.
  */
-function collectShortfalls(
+export function collectShortfalls(
   totals: { carbs_g: number; sodium_mg: number; water_ml: number },
   targets: MacroTargets,
   dislikedFoods?: Set<string>,

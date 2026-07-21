@@ -1,39 +1,46 @@
 /**
  * During Phase generation for nutrition plan V3.
  *
- * - generateDuringPhase(): Rule-based solver with LP fallback
- * - postProcessDuringPhase(): Electrolyte supplement post-processing (deprecated)
+ * Structure (2026-07-21 refactor, bug 3a3e3fdb Critical):
+ *   Stage 1 — one food pool, loaded once (`getTemplateFoodsForDuringWithConstraints`).
+ *             Every solver below consumes the same pool, so falling from one
+ *             tier to the next can no longer change which foods exist.
+ *   Stage 2 — best-effort plan selection:
+ *             pinned personal formula → template solver → rule solver.
+ *   Stage 3 — one closing pass for every path: carb gap-fill from the unused
+ *             pool (gut-cap clamped), then shortfall computation. A plan can
+ *             leave this function under-target ONLY with a populated
+ *             `shortfalls` field.
+ *
+ * The former LP last-resort tier is gone: it played by different rules
+ * (different food pool, no gut caps, unvalidated output) and is strictly
+ * dominated by rule solver + gap-fill. `postProcessDuringPhase` went with it.
  */
 
 import { createServiceClient } from "../_shared/supabase-client.ts";
-import { roundToIncrement } from "../_shared/utils.ts";
 import {
   type ActivityType,
-  buildLPModel,
   calculateTotals,
   type FoodResult,
-  getOptimizationWeights,
-  getSportConfig,
-  greedyFallback,
   type MacroTargets,
-  POST_PROCESS_THRESHOLDS,
-  solveLPModel,
 } from "../_shared/nutrition/index.ts";
 import {
   buildFoodsByNameMap,
   getDuringWorkoutTemplates,
-  getTemplateElectrolyteFoods,
   getTemplateFoodsForDuringWithConstraints,
-  getTemplateFoodsForPhase,
 } from "../_shared/nutrition/template-food-queries.ts";
 import { generateDuringPhaseRuleBased } from "../_shared/nutrition/during-rule-solver.ts";
 import {
+  collectShortfalls,
   type DuringWorkoutTemplate,
   filterPinnedTemplatesInScope,
+  type FoodWithConstraints,
   generateDuringPhaseTemplate,
   type GutTrainingLevel,
+  normalizeGutTrainingLevel,
   selectTemplateCandidates,
 } from "../_shared/nutrition/during-template-solver.ts";
+import { gapFillDuringCarbs } from "../_shared/nutrition/during-gap-fill.ts";
 import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
 import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
 import {
@@ -47,8 +54,6 @@ import {
 } from "../_shared/nutrition/pin-backfill.ts";
 import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 import type { LPPhaseResult } from "./types.ts";
-import { validatePhaseResultAgainstTargets } from "./validation.ts";
-import { generateLPPhase } from "./lp-phase.ts";
 
 // ============================================================================
 // Pin telemetry helpers
@@ -89,204 +94,48 @@ export function initialDuringPinDecision(
 }
 
 // ============================================================================
-// During Phase Post-Processing (Two-Pass Approach)
+// Closing pass (Stage 3)
 // ============================================================================
 
 /**
- * @deprecated No longer used for during phase (rule solver handles electrolytes inline).
- * Kept for potential future use.
- *
- * Post-process during-phase results to fill sodium deficit with electrolyte supplements.
- *
- * Pass 1 (LP solver) focuses on carbs + preference with reduced sodium weight.
- * Pass 2 (this function) adds electrolyte supplements to fill any sodium gap.
- *
- * Adapted from v1's postProcessPhase() pattern.
+ * Apply the closing pass to a during-phase food list: optional carb gap-fill
+ * from the shared pool, then shortfall computation on the FINAL totals. Every
+ * exit of `generateDuringPhase` (except swimming) goes through here, which is
+ * what guarantees the invariant: under-target ⇒ `shortfalls` populated.
  */
-export async function postProcessDuringPhase(
-  supabase: ReturnType<typeof createServiceClient>,
-  resultFoods: FoodResult[],
+function finalizeDuringFoods(
+  foods: FoodResult[],
+  pool: FoodWithConstraints[],
   targets: MacroTargets,
-  maxFoodsAllowed: number,
-  likedFoods?: string[],
-  willingToTryFoods?: string[],
-  dislikedFoods?: string[],
-): Promise<FoodResult[]> {
-  const totals = calculateTotals(resultFoods);
-  const sodiumDeficit = targets.sodium_mg - totals.sodium_mg;
-  const deficitPercent = targets.sodium_mg > 0
-    ? sodiumDeficit / targets.sodium_mg
-    : 0;
-  const existingElectrolyteIndex = resultFoods.findIndex(
-    (f) => f.is_electrolyte === true || f.timing_category === "electrolyte",
-  );
-
-  console.log(
-    `[POST-PROCESS-DURING] Totals: sodium=${totals.sodium_mg.toFixed(0)}mg, ` +
-      `target=${targets.sodium_mg}mg, deficit=${sodiumDeficit.toFixed(0)}mg (${
-        (deficitPercent * 100).toFixed(1)
-      }%)`,
-  );
-
-  // Skip if sodium deficit is within threshold
-  if (deficitPercent <= POST_PROCESS_THRESHOLDS.sodium_deficit_percent) {
-    console.log(
-      `[POST-PROCESS-DURING] Sodium within threshold (${
-        (deficitPercent * 100).toFixed(1)
-      }% <= ${(POST_PROCESS_THRESHOLDS.sodium_deficit_percent *
-        100)}%), skipping`,
+  durationMinutes: number | undefined,
+  gutLevel: GutTrainingLevel,
+  dislikedSet: Set<string> | undefined,
+  options: { gapFill: boolean },
+): { foods: FoodResult[]; shortfalls: LPPhaseResult["shortfalls"] } {
+  let finalFoods = foods;
+  if (options.gapFill) {
+    const fill = gapFillDuringCarbs(
+      foods,
+      pool,
+      targets,
+      durationMinutes,
+      gutLevel,
     );
-    return resultFoods;
+    finalFoods = fill.foods;
   }
-
-  // Skip if already at max food items and we can't edit an existing electrolyte item.
-  if (resultFoods.length >= maxFoodsAllowed && existingElectrolyteIndex < 0) {
-    console.log(
-      `[POST-PROCESS-DURING] Already ${resultFoods.length} foods, skipping electrolyte addition`,
-    );
-    return resultFoods;
-  }
-
-  // If an electrolyte already exists, top it up first instead of skipping.
-  if (existingElectrolyteIndex >= 0) {
-    const existing = resultFoods[existingElectrolyteIndex];
-    const currentServings = Math.max(1, existing.quantity || 1);
-    const sodiumPerServing = existing.sodium_mg / currentServings;
-
-    if (sodiumPerServing > 0) {
-      let additionalServings = sodiumDeficit / sodiumPerServing;
-      const isIndivisible = existing.is_indivisible ?? true;
-      additionalServings = isIndivisible
-        ? Math.max(1, Math.round(additionalServings))
-        : roundToIncrement(additionalServings);
-
-      const maxSodiumAllowed = targets.sodium_mg * 1.1;
-      const maxAdditionalForCap = (maxSodiumAllowed - totals.sodium_mg) /
-        sodiumPerServing;
-      const cappedAdditional = isIndivisible
-        ? Math.max(0, Math.floor(maxAdditionalForCap))
-        : roundToIncrement(Math.max(0, maxAdditionalForCap));
-      additionalServings = Math.min(additionalServings, cappedAdditional);
-
-      if (additionalServings > 0) {
-        const nextServings = currentServings + additionalServings;
-        const perServingCarbs = existing.carbs_grams / currentServings;
-        const perServingProtein = existing.protein_grams / currentServings;
-        const perServingFat = existing.fat_grams / currentServings;
-        const perServingFluids = existing.fluids_ml / currentServings;
-        const perServingCalories = existing.calories / currentServings;
-
-        const updated = {
-          ...existing,
-          quantity: nextServings,
-          carbs_grams: existing.carbs_grams +
-            perServingCarbs * additionalServings,
-          protein_grams: existing.protein_grams +
-            perServingProtein * additionalServings,
-          fat_grams: existing.fat_grams + perServingFat * additionalServings,
-          sodium_mg: existing.sodium_mg + sodiumPerServing * additionalServings,
-          fluids_ml: existing.fluids_ml + perServingFluids * additionalServings,
-          calories: Math.round(
-            existing.calories + perServingCalories * additionalServings,
-          ),
-        } as FoodResult;
-
-        const updatedFoods = [...resultFoods];
-        updatedFoods[existingElectrolyteIndex] = updated;
-        return updatedFoods;
-      }
-    }
-  }
-
-  // Fetch electrolyte foods
-  const electrolytes = await getTemplateElectrolyteFoods(
-    supabase,
-    likedFoods,
-    willingToTryFoods,
-    dislikedFoods,
+  const shortfalls = collectShortfalls(
+    calculateTotals(finalFoods),
+    targets,
+    dislikedSet,
   );
-  if (electrolytes.length === 0) {
-    console.log(`[POST-PROCESS-DURING] No electrolyte foods available`);
-    return resultFoods;
-  }
-
-  // Sort by sodium-to-water ratio (prefer high sodium, low water — tablets over drinks)
-  const sortedElectrolytes = [...electrolytes].sort((a, b) => {
-    const ratioA = a.per_serving.sodium_mg /
-      Math.max(1, a.per_serving.water_ml);
-    const ratioB = b.per_serving.sodium_mg /
-      Math.max(1, b.per_serving.water_ml);
-    return ratioB - ratioA;
-  });
-
-  const best = sortedElectrolytes[0];
-
-  // Calculate needed servings to fill deficit
-  if (best.per_serving.sodium_mg <= 0) {
-    console.log(
-      `[POST-PROCESS-DURING] Best electrolyte has 0mg sodium, skipping`,
-    );
-    return resultFoods;
-  }
-
-  let neededServings = sodiumDeficit / best.per_serving.sodium_mg;
-
-  // Enforce is_indivisible rounding (electrolytes are typically tablets)
-  neededServings = best.is_indivisible
-    ? Math.max(1, Math.round(neededServings))
-    : roundToIncrement(neededServings);
-
-  // Cap: don't overshoot sodium by more than 10%
-  const maxSodiumAllowed = targets.sodium_mg * 1.1;
-  const maxServingsForCap = (maxSodiumAllowed - totals.sodium_mg) /
-    best.per_serving.sodium_mg;
-  const cappedServings = best.is_indivisible
-    ? Math.max(1, Math.floor(maxServingsForCap))
-    : roundToIncrement(Math.max(0.5, maxServingsForCap));
-
-  neededServings = Math.min(neededServings, cappedServings);
-
-  if (neededServings <= 0) {
-    console.log(
-      `[POST-PROCESS-DURING] Needed servings <= 0 after capping, skipping`,
-    );
-    return resultFoods;
-  }
-
-  console.log(
-    `[POST-PROCESS-DURING] Adding ${neededServings}x "${
-      best.display_name ?? best.name
-    }" ` +
-      `(${(best.per_serving.sodium_mg * neededServings).toFixed(0)}mg sodium)`,
-  );
-
-  const electrolyteFoodResult: FoodResult = {
-    food_id: best.id,
-    quantity: neededServings,
-    carbs_grams: best.per_serving.carbs_g * neededServings,
-    protein_grams: best.per_serving.protein_g * neededServings,
-    fat_grams: best.per_serving.fat_g * neededServings,
-    sodium_mg: best.per_serving.sodium_mg * neededServings,
-    fluids_ml: best.per_serving.water_ml * neededServings,
-    calories: best.per_serving.calories * neededServings,
-    timing: "Throughout activity",
-    display_name: best.display_name ?? undefined,
-    display_name_plural: best.display_name_plural ?? undefined,
-    description: best.description ?? undefined,
-    image_address: best.image_address ?? undefined,
-    is_liquid: false,
-    is_electrolyte: true,
-    is_drink: false,
-    is_indivisible: best.is_indivisible ?? true,
-    timing_category: "electrolyte",
-    product_type: best.product_type,
+  return {
+    foods: finalFoods,
+    shortfalls: shortfalls.length > 0 ? shortfalls : undefined,
   };
-
-  return [...resultFoods, electrolyteFoodResult];
 }
 
 // ============================================================================
-// During Phase (Rule-Based)
+// During Phase
 // ============================================================================
 
 /**
@@ -324,8 +173,9 @@ function derivePinnedComponentNames(
 }
 
 /**
- * Generate during-phase food selection using deterministic rules.
- * Swimming returns empty immediately. Run/bike use the rule solver.
+ * Generate during-phase food selection.
+ * Swimming returns empty immediately. Run/bike use the template solver with a
+ * rule-solver fallback, followed by the closing gap-fill + shortfall pass.
  * No server-side by-hour apportionment (client creates empty buckets).
  */
 export async function generateDuringPhase(
@@ -338,7 +188,10 @@ export async function generateDuringPhase(
   deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
-  gutTrainingLevel?: GutTrainingLevel,
+  /** Raw client value; normalized to a valid level internally. A null or
+   * invalid value (e.g. the legacy `'medium'` literal) must never disable
+   * the formula engine — that was the accidental-8g-carbs bug (3a3e3fdb). */
+  gutTrainingLevel?: string,
   durationMinutes?: number,
   /** During-workout template ids the user has actively pinned. When an
    * in-scope pin (activity × duration_bracket match) exists, the selector
@@ -367,6 +220,19 @@ export async function generateDuringPhase(
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
 
+  // Gut training is a CONSTRAINT INPUT (per-hour caps, template matching),
+  // never an on/off switch for the engine. Normalize whatever the client
+  // sent; a missing profile or a legacy invalid literal degrades to
+  // 'moderate', not to "skip the formula tier entirely".
+  const gutLevel = normalizeGutTrainingLevel(gutTrainingLevel);
+  if (gutTrainingLevel !== gutLevel) {
+    console.log(
+      `[PLAN-V3] Normalized gut_training_level ${
+        JSON.stringify(gutTrainingLevel ?? null)
+      } -> "${gutLevel}"`,
+    );
+  }
+
   // Pin telemetry default: when pins were supplied but never fire, we
   // surface `no_pin_for_scope` so the client knows the user has pins that
   // didn't apply to this workout. Refined to `used_pin: true` below if the
@@ -386,15 +252,17 @@ export async function generateDuringPhase(
     return {
       foods: [],
       by_hour_data: null,
+      generation_path: "swimming",
       ...(duringPinDecision && { pin_decision: duringPinDecision }),
     };
   }
 
   console.log(
-    `[PLAN-V3] Generating during phase (${activityType}, gut=${
-      gutTrainingLevel ?? "n/a"
-    }, duration=${durationMinutes ?? "n/a"}min)`,
+    `[PLAN-V3] Generating during phase (${activityType}, gut=${gutLevel}, ` +
+      `duration=${durationMinutes ?? "n/a"}min)`,
   );
+
+  const dislikedSet = buildPreferenceSet(dislikedFoods);
 
   // ---- Pinned personal formula (highest priority) ----
   // An in-scope pinned personal formula is honored unconditionally, emitting
@@ -442,9 +310,23 @@ export async function generateDuringPhase(
             `(${foods.length} components, scaled to ${targets.carbs_g}g carbs), ` +
             `bypassing template solver`,
         );
-        return {
+        // No gap-fill on a personal formula — it is user-authored and scaled
+        // to the carb target by construction; anything it still can't cover
+        // is reported honestly rather than papered over with system foods.
+        const closed = finalizeDuringFoods(
           foods,
+          [],
+          targets,
+          durationMinutes,
+          gutLevel,
+          dislikedSet,
+          { gapFill: false },
+        );
+        return {
+          foods: closed.foods,
           by_hour_data: null,
+          generation_path: "personal_formula",
+          ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
           pin_decision: {
             used_pin: true,
             pinned_template_id: match.id,
@@ -512,248 +394,255 @@ export async function generateDuringPhase(
     }
   }
 
-  // ---- Template solver (primary path) ----
-  if (gutTrainingLevel && durationMinutes && durationMinutes > 0) {
+  // ---- Stage 1: shared pool + templates, loaded ONCE ----
+  // Templates load first so pinned-component names can bypass the pool's
+  // dislike/allergen/diet filters (honor-pin policy, PR 2 5c). The SAME pool
+  // then feeds the template solver, the rule solver, and the gap-fill pass.
+  const poolQueryStart = performance.now();
+  const templates = await getDuringWorkoutTemplates(supabase);
+  // Compute in-scope pin count for analytics (pin_set_size). Mirrors the
+  // scope filter used by `selectTemplateCandidates`. Formula Kit PR 2
+  // substep 7. The same list drives component-name bypass for the food
+  // loader (PR 2 5c), scope-tightened 2026-05-28 so a cycling pin doesn't
+  // leak its components past dislike/allergen filters on a running workout.
+  const pinnedInScope =
+    pinsSupplied && durationMinutes !== undefined && durationMinutes > 0
+      ? filterPinnedTemplatesInScope(
+        templates,
+        activityType,
+        durationMinutes,
+        pinnedTemplateIds ?? new Set(),
+      )
+      : [];
+  if (pinsSupplied) {
+    pinInScopeCount = pinnedInScope.length;
+    if (duringPinDecision) {
+      duringPinDecision = {
+        ...duringPinDecision,
+        pin_set_size: pinInScopeCount,
+      };
+    }
+  }
+  const pinnedComponentNames = derivePinnedComponentNames(pinnedInScope);
+  const constrainedFoods = await getTemplateFoodsForDuringWithConstraints(
+    supabase,
+    activityType,
+    likedFoods,
+    willingToTryFoods,
+    dislikedFoods,
+    deviceId,
+    allergies,
+    dietaryPreference,
+    pinnedComponentNames,
+  );
+  console.log(
+    `[PLAN-V3-TIMING] during_pool_queries completed in ${
+      elapsed(poolQueryStart)
+    }ms ` +
+      `(templates=${templates.length}, foods=${constrainedFoods.length}, ` +
+      `pinnedComponents=${pinnedComponentNames.size})`,
+  );
+
+  // ---- Stage 2a: template solver (primary path) ----
+  // Guarded ONLY by duration now — gut level is normalized above and must
+  // never skip this block (that skip was Failure Mode A of bug 3a3e3fdb).
+  if (
+    durationMinutes !== undefined && durationMinutes > 0 &&
+    templates.length > 0 && constrainedFoods.length > 0
+  ) {
     try {
-      const templateQueryStart = performance.now();
-      // Load templates first so we can derive pinned-component names before
-      // querying foods. The foods query needs to know which foods to bypass
-      // dislike/allergen/diet filters for (honor-pin policy, PR 2 5c).
-      const templates = await getDuringWorkoutTemplates(supabase);
-      // Compute in-scope pin count for analytics (pin_set_size). Mirrors the
-      // scope filter used by `selectTemplateCandidates`. Updated lazily here
-      // because we need templates loaded first. Formula Kit PR 2 substep 7.
-      //
-      // We reuse the same `pinnedInScope` list to derive component-name bypass
-      // for the food loader (PR 2 5c) — scope-tightened 2026-05-28 so a
-      // cycling pin doesn't leak its components past dislike/allergen filters
-      // on a running workout. Out-of-scope pinned templates simply aren't
-      // candidates for this generation, so their components have no business
-      // bypassing the food-pool filters either.
-      const pinnedInScope = pinsSupplied
-        ? filterPinnedTemplatesInScope(
-          templates,
-          activityType,
-          durationMinutes,
-          pinnedTemplateIds ?? new Set(),
-        )
-        : [];
+      const templateSelectStart = performance.now();
+      const foodsByName = buildFoodsByNameMap(constrainedFoods);
+      const likedSet = buildPreferenceSet(likedFoods);
+      const willingSet = buildPreferenceSet(willingToTryFoods);
+
+      const templateCandidates = selectTemplateCandidates(
+        templates,
+        activityType,
+        durationMinutes,
+        gutLevel,
+        foodsByName,
+        likedSet,
+        willingSet,
+        dislikedSet,
+        allergies,
+        dietaryPreference,
+        pinnedTemplateIds,
+      );
+
+      // Refine pin telemetry: the selector returns ONLY pinned templates
+      // when pin override fires (per its doc), so membership of
+      // candidate[0] in the pin set tells us whether a pin actually fired.
+      // If no pin fired, the `no_pin_for_scope` default stays in place.
       if (pinsSupplied) {
-        pinInScopeCount = pinnedInScope.length;
-        if (duringPinDecision) {
+        const first = templateCandidates[0];
+        if (
+          first !== undefined && (pinnedTemplateIds?.has(first.id) ?? false)
+        ) {
           duringPinDecision = {
-            ...duringPinDecision,
+            used_pin: true,
+            pinned_template_id: first.id,
+            pinned_template_name: first.name,
+            fallthrough_reason: null,
             pin_set_size: pinInScopeCount,
+            // Preserve any personal-formula skips recorded above. A system
+            // pin firing here does NOT mean the user got what they asked
+            // for — before this was carried forward, the response claimed
+            // `used_pin: true` naming this system pin while the user's own
+            // formula had been silently dropped (audit 2026-07-18).
+            ...(duringPinDecision?.skipped_personal_formulas && {
+              skipped_personal_formulas:
+                duringPinDecision.skipped_personal_formulas,
+            }),
           };
         }
       }
-      const pinnedComponentNames = derivePinnedComponentNames(pinnedInScope);
-      const constrainedFoods = await getTemplateFoodsForDuringWithConstraints(
-        supabase,
-        activityType,
-        likedFoods,
-        willingToTryFoods,
-        dislikedFoods,
-        deviceId,
-        allergies,
-        dietaryPreference,
-        pinnedComponentNames,
-      );
       console.log(
-        `[PLAN-V3-TIMING] during_template_queries completed in ${
-          elapsed(templateQueryStart)
+        `[PLAN-V3-TIMING] during_template_select completed in ${
+          elapsed(templateSelectStart)
         }ms ` +
-          `(templates=${templates.length}, foods=${constrainedFoods.length}, ` +
-          `pinnedComponents=${pinnedComponentNames.size})`,
+          `(candidates=${templateCandidates.length}, selected=${
+            templateCandidates[0]?.template_number ?? "none"
+          })`,
       );
 
-      if (templates.length > 0 && constrainedFoods.length > 0) {
-        const templateSelectStart = performance.now();
-        const foodsByName = buildFoodsByNameMap(constrainedFoods);
-        const likedSet = buildPreferenceSet(likedFoods);
-        const willingSet = buildPreferenceSet(willingToTryFoods);
-        const dislikedSet = buildPreferenceSet(dislikedFoods);
-
-        const templateCandidates = selectTemplateCandidates(
-          templates,
-          activityType,
-          durationMinutes,
-          gutTrainingLevel,
-          foodsByName,
-          likedSet,
-          willingSet,
-          dislikedSet,
-          allergies,
-          dietaryPreference,
-          pinnedTemplateIds,
+      if (templateCandidates.length > 0) {
+        const templateSolveStart = performance.now();
+        let templateResult: ReturnType<typeof generateDuringPhaseTemplate> =
+          null;
+        let triedTemplates = 0;
+        for (const template of templateCandidates) {
+          triedTemplates++;
+          templateResult = generateDuringPhaseTemplate(
+            template,
+            foodsByName,
+            targets,
+            durationMinutes,
+            gutLevel,
+            dislikedSet,
+            // Pin override: when a pin fired, selectTemplateCandidates returns
+            // ONLY pinned templates, so every candidate here is pin-selected.
+            // Let the solver accept a macro shortfall (reported to the UI)
+            // rather than returning null — fixes the pinned drink-only formula
+            // not being scheduled for sub-90-min runs.
+            duringPinDecision?.used_pin === true,
+          );
+          if (templateResult) break;
+        }
+        console.log(
+          `[PLAN-V3-TIMING] during_template_solve completed in ${
+            elapsed(templateSolveStart)
+          }ms ` +
+            `(result=${
+              templateResult ? "success" : "null"
+            }, tried=${triedTemplates})`,
         );
 
-        // Refine pin telemetry: the selector returns ONLY pinned templates
-        // when pin override fires (per its doc), so membership of
-        // candidate[0] in the pin set tells us whether a pin actually fired.
-        // If no pin fired, the `no_pin_for_scope` default stays in place.
-        if (pinsSupplied) {
-          const first = templateCandidates[0];
-          if (
-            first !== undefined && (pinnedTemplateIds?.has(first.id) ?? false)
-          ) {
-            duringPinDecision = {
+        if (templateResult) {
+          console.log(
+            `[PLAN-V3] Template solver succeeded: template ${templateResult.template_number} (${templateResult.template_name})`,
+          );
+          // ---- Stage 3: closing pass (gap-fill + shortfalls) ----
+          // Gap-fill runs for pinned and unpinned templates alike: pins stay
+          // fully honored (fill only appends, never replaces) and the fill is
+          // clamped to the gut-training per-hour caps, so a `low`-gut athlete
+          // is never silently overfed (decision: Lee, 2026-07-20).
+          const closed = finalizeDuringFoods(
+            templateResult.foods,
+            constrainedFoods,
+            targets,
+            durationMinutes,
+            gutLevel,
+            dislikedSet,
+            { gapFill: true },
+          );
+          console.log(
+            `[PLAN-V3-TIMING] during_phase_total completed in ${
+              elapsed(phaseStart)
+            }ms (path=template)`,
+          );
+          // Ephemeral default-formula safety net (formula-first flip):
+          // the template path IS the default-formula tier — its candidates
+          // are ranked by `selection_priority`, so the template that
+          // rendered is the best-fit system formula for this workout. When
+          // no REAL pin fired AND the client opted in, tag the outcome as
+          // an ephemeral pin so the plan reads formula-first without writing
+          // any `formula_pins` rows. For opted-out (old) clients this falls
+          // back to the pre-safety-net conditional emission, byte-identical
+          // to legacy v3. Behavior of the food output is unchanged either
+          // way; this only enriches telemetry.
+          const emittedPinDecision = duringPinDecision?.used_pin === true
+            ? duringPinDecision
+            : emitEphemeralDefault
+            ? {
               used_pin: true,
-              pinned_template_id: first.id,
-              pinned_template_name: first.name,
+              ephemeral: true,
+              pinned_template_id: templateResult.template_id,
+              pinned_template_name: templateResult.template_name,
               fallthrough_reason: null,
-              pin_set_size: pinInScopeCount,
-              // Preserve any personal-formula skips recorded above. A system
-              // pin firing here does NOT mean the user got what they asked
-              // for — before this was carried forward, the response claimed
-              // `used_pin: true` naming this system pin while the user's own
-              // formula had been silently dropped (audit 2026-07-18).
+              pin_set_size: duringPinDecision?.pin_set_size ?? 0,
+              // An ephemeral default formula is even less "what the user
+              // asked for" than a real system pin — carry the skips so the
+              // banner can still explain the miss.
               ...(duringPinDecision?.skipped_personal_formulas && {
                 skipped_personal_formulas:
                   duringPinDecision.skipped_personal_formulas,
               }),
-            };
-          }
+            }
+            : duringPinDecision;
+          return {
+            foods: closed.foods,
+            by_hour_data: null,
+            generation_path: "template",
+            template_metadata: {
+              template_id: templateResult.template_id,
+              template_number: templateResult.template_number,
+              template_name: templateResult.template_name,
+              template_formula: templateResult.template_formula,
+            },
+            ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
+            ...(emittedPinDecision && { pin_decision: emittedPinDecision }),
+          };
         }
+
+        // Option A guard (parity with after-phase commit aa652f11):
+        // pin override selected a template but `generateDuringPhaseTemplate`
+        // returned null for every candidate (validation failed). Without
+        // this the wire would claim `used_pin: true` while the section
+        // actually served rule-solver foods — exactly the kind of
+        // banner/data inconsistency that surfaced for After in the
+        // 2026-05-26 Chocolate Milk Solo smoke test. Downgrade to
+        // `used_pin: false` with `pinned_template_unrenderable` so the
+        // wire reflects reality. Option B food-load bypass via
+        // pinnedComponentNames should make this unreachable in practice;
+        // this stays as belt-and-braces.
+        if (duringPinDecision?.used_pin === true) {
+          console.log(
+            `[PLAN-V3] Pin override selected ${
+              templateCandidates[0]?.template_number
+            } (${
+              templateCandidates[0]?.name
+            }) but generateDuringPhaseTemplate returned null for all ${triedTemplates} candidates — downgrading pin_decision.used_pin to false (pinned_template_unrenderable)`,
+          );
+          duringPinDecision = {
+            used_pin: false,
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: "pinned_template_unrenderable",
+            pin_set_size: duringPinDecision.pin_set_size,
+            ...(duringPinDecision.skipped_personal_formulas && {
+              skipped_personal_formulas:
+                duringPinDecision.skipped_personal_formulas,
+            }),
+          };
+        }
+
         console.log(
-          `[PLAN-V3-TIMING] during_template_select completed in ${
-            elapsed(templateSelectStart)
-          }ms ` +
-            `(candidates=${templateCandidates.length}, selected=${
-              templateCandidates[0]?.template_number ?? "none"
-            })`,
+          "[PLAN-V3] Template solver returned null for all candidates (validation failed), falling back to rule solver",
         );
-
-        if (templateCandidates.length > 0) {
-          const templateSolveStart = performance.now();
-          let templateResult: ReturnType<typeof generateDuringPhaseTemplate> =
-            null;
-          let triedTemplates = 0;
-          for (const template of templateCandidates) {
-            triedTemplates++;
-            templateResult = generateDuringPhaseTemplate(
-              template,
-              foodsByName,
-              targets,
-              durationMinutes,
-              gutTrainingLevel,
-              dislikedSet,
-              // Pin override: when a pin fired, selectTemplateCandidates returns
-              // ONLY pinned templates, so every candidate here is pin-selected.
-              // Let the solver accept a macro shortfall (reported to the UI)
-              // rather than returning null — fixes the pinned drink-only formula
-              // not being scheduled for sub-90-min runs.
-              duringPinDecision?.used_pin === true,
-            );
-            if (templateResult) break;
-          }
-          console.log(
-            `[PLAN-V3-TIMING] during_template_solve completed in ${
-              elapsed(templateSolveStart)
-            }ms ` +
-              `(result=${
-                templateResult ? "success" : "null"
-              }, tried=${triedTemplates})`,
-          );
-
-          if (templateResult) {
-            console.log(
-              `[PLAN-V3] Template solver succeeded: template ${templateResult.template_number} (${templateResult.template_name})`,
-            );
-            console.log(
-              `[PLAN-V3-TIMING] during_phase_total completed in ${
-                elapsed(phaseStart)
-              }ms (path=template)`,
-            );
-            // Ephemeral default-formula safety net (formula-first flip):
-            // the template path IS the default-formula tier — its candidates
-            // are ranked by `selection_priority`, so the template that
-            // rendered is the best-fit system formula for this workout. When
-            // no REAL pin fired AND the client opted in, tag the outcome as
-            // an ephemeral pin so the plan reads formula-first without writing
-            // any `formula_pins` rows. For opted-out (old) clients this falls
-            // back to the pre-safety-net conditional emission, byte-identical
-            // to legacy v3. Behavior of the food output is unchanged either
-            // way; this only enriches telemetry.
-            const emittedPinDecision = duringPinDecision?.used_pin === true
-              ? duringPinDecision
-              : emitEphemeralDefault
-              ? {
-                used_pin: true,
-                ephemeral: true,
-                pinned_template_id: templateResult.template_id,
-                pinned_template_name: templateResult.template_name,
-                fallthrough_reason: null,
-                pin_set_size: duringPinDecision?.pin_set_size ?? 0,
-                // An ephemeral default formula is even less "what the user
-                // asked for" than a real system pin — carry the skips so the
-                // banner can still explain the miss.
-                ...(duringPinDecision?.skipped_personal_formulas && {
-                  skipped_personal_formulas:
-                    duringPinDecision.skipped_personal_formulas,
-                }),
-              }
-              : duringPinDecision;
-            return {
-              foods: templateResult.foods,
-              by_hour_data: null,
-              template_metadata: {
-                template_id: templateResult.template_id,
-                template_number: templateResult.template_number,
-                template_name: templateResult.template_name,
-                template_formula: templateResult.template_formula,
-              },
-              ...(templateResult.shortfalls &&
-                templateResult.shortfalls.length > 0 && {
-                shortfalls: templateResult.shortfalls,
-              }),
-              ...(emittedPinDecision && { pin_decision: emittedPinDecision }),
-            };
-          }
-
-          // Option A guard (parity with after-phase commit aa652f11):
-          // pin override selected a template but `generateDuringPhaseTemplate`
-          // returned null for every candidate (validation failed). Without
-          // this the wire would claim `used_pin: true` while the section
-          // actually served rule-solver or LP foods — exactly the kind of
-          // banner/data inconsistency that surfaced for After in the
-          // 2026-05-26 Chocolate Milk Solo smoke test. Downgrade to
-          // `used_pin: false` with `pinned_template_unrenderable` so the
-          // wire reflects reality. Option B food-load bypass via
-          // pinnedComponentNames should make this unreachable in practice;
-          // this stays as belt-and-braces.
-          if (duringPinDecision?.used_pin === true) {
-            console.log(
-              `[PLAN-V3] Pin override selected ${
-                templateCandidates[0]?.template_number
-              } (${
-                templateCandidates[0]?.name
-              }) but generateDuringPhaseTemplate returned null for all ${triedTemplates} candidates — downgrading pin_decision.used_pin to false (pinned_template_unrenderable)`,
-            );
-            duringPinDecision = {
-              used_pin: false,
-              pinned_template_id: null,
-              pinned_template_name: null,
-              fallthrough_reason: "pinned_template_unrenderable",
-              pin_set_size: duringPinDecision.pin_set_size,
-              ...(duringPinDecision.skipped_personal_formulas && {
-                skipped_personal_formulas:
-                  duringPinDecision.skipped_personal_formulas,
-              }),
-            };
-          }
-
-          console.log(
-            "[PLAN-V3] Template solver returned null for all candidates (validation failed), falling back to rule solver",
-          );
-        } else {
-          console.log(
-            "[PLAN-V3] No matching template found, falling back to rule solver",
-          );
-        }
       } else {
         console.log(
-          `[PLAN-V3] Template solver skipped: ${templates.length} templates, ${constrainedFoods.length} constrained foods`,
+          "[PLAN-V3] No matching template found, falling back to rule solver",
         );
       }
     } catch (err) {
@@ -762,54 +651,30 @@ export async function generateDuringPhase(
         err,
       );
     }
-  }
-
-  // ---- Rule solver (fallback) ----
-  const ruleFoodsQueryStart = performance.now();
-  let foods = await getTemplateFoodsForPhase(
-    supabase,
-    "during",
-    activityType,
-    likedFoods,
-    willingToTryFoods,
-    dislikedFoods,
-    deviceId,
-    false,
-    allergies,
-    dietaryPreference,
-  );
-  console.log(
-    `[PLAN-V3-TIMING] during_rule_food_query completed in ${
-      elapsed(ruleFoodsQueryStart)
-    }ms ` +
-      `(foods=${foods.length})`,
-  );
-
-  if (foods.length === 0) {
-    console.log("[PLAN-V3] No during foods found, trying expanded pool");
-    const expandedFoodsQueryStart = performance.now();
-    foods = await getTemplateFoodsForPhase(
-      supabase,
-      "during",
-      activityType,
-      likedFoods,
-      willingToTryFoods,
-      dislikedFoods,
-      deviceId,
-      true,
-      allergies,
-      dietaryPreference,
-    );
+  } else if (durationMinutes === undefined || durationMinutes <= 0) {
     console.log(
-      `[PLAN-V3-TIMING] during_expanded_food_query completed in ${
-        elapsed(expandedFoodsQueryStart)
-      }ms ` +
-        `(foods=${foods.length})`,
+      `[PLAN-V3] Template solver skipped: no positive duration_minutes (${
+        durationMinutes ?? "n/a"
+      })`,
+    );
+  } else {
+    console.log(
+      `[PLAN-V3] Template solver skipped: ${templates.length} templates, ${constrainedFoods.length} constrained foods`,
     );
   }
 
-  if (foods.length === 0) {
+  // ---- Stage 2b: rule solver (fallback) — SAME pool as the template tier ----
+  if (constrainedFoods.length === 0) {
     console.log("[PLAN-V3] No during foods available at all");
+    const closed = finalizeDuringFoods(
+      [],
+      [],
+      targets,
+      durationMinutes,
+      gutLevel,
+      dislikedSet,
+      { gapFill: false },
+    );
     console.log(
       `[PLAN-V3-TIMING] during_phase_total completed in ${
         elapsed(phaseStart)
@@ -817,83 +682,44 @@ export async function generateDuringPhase(
     );
     return {
       foods: [],
+      generation_path: "empty",
+      ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
       ...(duringPinDecision && { pin_decision: duringPinDecision }),
     };
   }
 
   const ruleSolveStart = performance.now();
-  const ruleResult = generateDuringPhaseRuleBased(foods, targets, activityType);
+  const ruleResult = generateDuringPhaseRuleBased(
+    constrainedFoods,
+    targets,
+    activityType,
+  );
   console.log(
     `[PLAN-V3-TIMING] during_rule_solve completed in ${
       elapsed(ruleSolveStart)
     }ms`,
   );
-  const ruleValidation = validatePhaseResultAgainstTargets(
+
+  // ---- Stage 3: closing pass (gap-fill + shortfalls) ----
+  const closed = finalizeDuringFoods(
     ruleResult.foods,
+    constrainedFoods,
     targets,
-    "during",
+    durationMinutes,
+    gutLevel,
+    dislikedSet,
+    { gapFill: true },
   );
-
-  if (ruleValidation.ok) {
-    console.log(
-      `[PLAN-V3-TIMING] during_phase_total completed in ${
-        elapsed(phaseStart)
-      }ms (path=rule)`,
-    );
-    return {
-      foods: ruleResult.foods,
-      by_hour_data: null,
-      ...(duringPinDecision && { pin_decision: duringPinDecision }),
-    };
-  }
-
-  console.warn(
-    `[PLAN-V3] During rule-solver out of range (${
-      ruleValidation.issues.join("; ")
-    }). ` +
-      `Retrying with LP solver.`,
-  );
-
-  // ---- LP solver (last resort) ----
-  const lpStart = performance.now();
-  const lpResult = await generateLPPhase(
-    supabase,
-    "during",
-    targets,
-    activityType,
-    likedFoods,
-    willingToTryFoods,
-    dislikedFoods,
-    deviceId,
-    undefined,
-    undefined,
-    allergies,
-    dietaryPreference,
-  );
-  console.log(
-    `[PLAN-V3-TIMING] during_lp_fallback completed in ${elapsed(lpStart)}ms`,
-  );
-
-  const lpValidation = validatePhaseResultAgainstTargets(
-    lpResult.foods,
-    targets,
-    "during",
-  );
-  if (!lpValidation.ok) {
-    console.warn(
-      `[PLAN-V3] During phase LP out of range (non-fatal): ${
-        lpValidation.issues.join("; ")
-      }`,
-    );
-  }
-
   console.log(
     `[PLAN-V3-TIMING] during_phase_total completed in ${
       elapsed(phaseStart)
-    }ms (path=lp)`,
+    }ms (path=rule)`,
   );
   return {
-    ...lpResult,
+    foods: closed.foods,
+    by_hour_data: null,
+    generation_path: "rule",
+    ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
     ...(duringPinDecision && { pin_decision: duringPinDecision }),
   };
 }

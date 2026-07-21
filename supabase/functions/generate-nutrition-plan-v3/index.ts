@@ -20,13 +20,13 @@
  *
  * Module structure:
  * - types.ts: PlanInputV2, LPPhaseResult interfaces
- * - by-hour-apportionment.ts: deprecated server-side by-hour placement
- * - during-phase.ts: during-workout template + rule solver + LP fallback
+ * - during-phase.ts: during-workout template + rule solver + gap-fill closing pass
  * - after-phase.ts: post-workout template solver + LP fallback
- * - lp-phase.ts: LP solver orchestration
+ * - lp-phase.ts: LP solver orchestration (after phase only)
  * - validation.ts: phase result validation
  * - brick-handler.ts: brick workout multi-segment handler
  * - before-phase.ts: Algorithm C transformation layer
+ * - plan-generation-log.ts: per-plan targets-vs-delivered ledger
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
@@ -50,7 +50,10 @@ import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
 import { generateAfterPhase } from "./after-phase.ts";
-import { generateLPPhase } from "./lp-phase.ts";
+import {
+  buildPlanGenerationLogRow,
+  insertPlanGenerationLog,
+} from "./plan-generation-log.ts";
 import {
   flattenBeforeFoods,
   validatePhaseResultAgainstTargets,
@@ -445,6 +448,31 @@ serve(withSentry(async (req) => {
         elapsedMs(requestStart)
       }ms`,
     );
+
+    // Ledger: record targets vs delivered for failure-rate analytics.
+    // Best-effort — insertPlanGenerationLog never throws. Runs after the
+    // response via waitUntil when the runtime provides it.
+    const ledgerWrite = insertPlanGenerationLog(
+      supabase,
+      buildPlanGenerationLogRow({
+        planId,
+        input,
+        activityType,
+        beforeFoods: flattenBeforeFoods(
+          beforeResult as Record<string, { foods?: FoodResult[] }>,
+        ),
+        duringResult: duringPhaseResult,
+        afterResult: afterPhaseResult,
+        warnings,
+      }),
+    );
+    // deno-lint-ignore no-explicit-any
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (typeof runtime?.waitUntil === "function") {
+      runtime.waitUntil(ledgerWrite);
+    } else {
+      await ledgerWrite;
+    }
 
     return jsonResponse(response);
   } catch (error) {
