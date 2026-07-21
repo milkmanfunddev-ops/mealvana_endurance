@@ -226,7 +226,10 @@ export interface SubPhaseTargets {
 // ============================================================================
 
 export const BUDGET_SPLITS = {
-  carbs:   { meal: 0.60, snack: 0.25, top_up: 0.15 },
+  // Carbs per the Notion spec 31fe3fdb: 60/30/10 three-tier; the two-tier
+  // snack+top_up renormalization of 30/10 is exactly the spec's 75/25.
+  // (Was 60/25/15, a drift — 2026-07-21.)
+  carbs:   { meal: 0.60, snack: 0.30, top_up: 0.10 },
   protein: { meal: 0.70, snack: 0.25, top_up: 0.05 },
   fat:     { meal: 0.80, snack: 0.15, top_up: 0.05 },
   sodium:  { meal: 0.30, snack: 0.50, top_up: 0.20 },

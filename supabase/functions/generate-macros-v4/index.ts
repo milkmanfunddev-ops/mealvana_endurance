@@ -55,13 +55,17 @@ serve(withSentry(async (req: Request) => {
   try {
     const input: MacroInputV4 = await req.json();
 
-    // Food preferences (liked / disliked) are no longer consumed by
-    // before-phase selection — the preferences UI was removed and the signal
-    // proved unreliable. Diet + allergy filtering (separate inputs) are
-    // unaffected. Neutralize the preference channel so every downstream
-    // selector receives empty sets. Ripped out 2026-07-03 (plan Phase 2 #6).
-    input.liked_foods = [];
-    input.disliked_foods = [];
+    // Food preferences (liked / disliked) are consumed again as of
+    // 2026-07-21 — parity with the 2026-07-08 re-enable that covered the
+    // plan function's solvers but never reached this function's Algorithm C.
+    // Safe against the failure mode behind the 2026-07-03 rip-out (a stale
+    // disliked list collapsing the pool to an empty plan) because Algorithm C
+    // now degrades softly: an all-disliked phase redistributes its budget and
+    // emits shortfalls (#15), Pass 1.5 universal fallback foods only gate on
+    // dislikes + headroom, and liked foods are a scoring boost, never a
+    // filter. Diet + allergy remain separate, hard inputs.
+    input.liked_foods = input.liked_foods ?? [];
+    input.disliked_foods = input.disliked_foods ?? [];
 
     // Client opt-in for the ephemeral default-formula safety net on the
     // before phase (formula-first flip, plan Phase 2 #5). Threaded to

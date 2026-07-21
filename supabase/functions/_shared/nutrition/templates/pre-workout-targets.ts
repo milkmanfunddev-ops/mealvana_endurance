@@ -19,7 +19,7 @@ import { type SubPhaseType, type SubPhaseTargets } from './types.ts';
  * Each array is [meal%, snack%, top_up%] summing to 1.0
  */
 const BUDGET_SPLITS = {
-  carbs:    { meal: 0.60, snack: 0.25, top_up: 0.15 },
+  carbs:    { meal: 0.60, snack: 0.30, top_up: 0.10 }, // spec 31fe3fdb (2-tier renorm = 75/25)
   protein:  { meal: 0.70, snack: 0.25, top_up: 0.05 },
   fat:      { meal: 0.80, snack: 0.15, top_up: 0.05 },
   sodium:   { meal: 0.30, snack: 0.50, top_up: 0.20 },
