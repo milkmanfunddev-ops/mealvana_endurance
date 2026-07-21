@@ -373,6 +373,18 @@ class CyclingInputController extends _$CyclingInputController {
     state = state.copyWith(isFasted: isFasted);
   }
 
+  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
+  ///
+  /// This controller is keepAlive, so a fasted toggle left ON by a previous
+  /// ride would otherwise silently send `is_fasted: true` for the next
+  /// activity and zero its pre-workout targets on the Adjust Macros screen.
+  /// See RunningInputController.resetFasted for the full rationale.
+  void resetFasted() {
+    if (state.isFasted) {
+      state = state.copyWith(isFasted: false);
+    }
+  }
+
   void updateIntensityTarget(String intensityTarget) {
     state = state.copyWith(intensityTarget: intensityTarget);
   }
