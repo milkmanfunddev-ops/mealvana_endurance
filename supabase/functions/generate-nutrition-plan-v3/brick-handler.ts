@@ -357,6 +357,13 @@ export async function handleBrickPlan(
 
   // 2. Generate during phase for each segment + transitions between them
   const duringSegments: Record<string, FoodResult[]> = {};
+  // Segment shortfalls ride as a SIBLING key (additive; old clients ignore it)
+  // so brick segments get the same honest-shortfall contract as single-
+  // activity during phases instead of silently dropping them. 2026-07-21.
+  const duringSegmentShortfalls: Record<
+    string,
+    NonNullable<LPPhaseResult["shortfalls"]>
+  > = {};
   const transitions: Record<string, FoodResult[]> = {};
   const segmentTargetsList: Array<{
     segment_order: number;
@@ -447,6 +454,9 @@ export async function handleBrickPlan(
     );
 
     duringSegments[String(segmentOrder)] = duringResult.foods;
+    if (duringResult.shortfalls && duringResult.shortfalls.length > 0) {
+      duringSegmentShortfalls[String(segmentOrder)] = duringResult.shortfalls;
+    }
 
     // Generate transition after each segment (except the last)
     if (i < segments.length - 1) {
@@ -542,6 +552,8 @@ export async function handleBrickPlan(
     plan: {
       before: beforeResult,
       during_segments: duringSegments,
+      ...(Object.keys(duringSegmentShortfalls).length > 0 &&
+        { during_segment_shortfalls: duringSegmentShortfalls }),
       transitions: transitions,
       after: afterResult.foods,
     },

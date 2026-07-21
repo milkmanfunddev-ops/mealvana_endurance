@@ -34,38 +34,7 @@ import { calculateTotals } from "../_shared/nutrition/food-utils.ts";
 import type { MacroTargets } from "../_shared/nutrition/types.ts";
 import { buildFoodResult } from "../_shared/nutrition/during-utils.ts";
 
-// ============================================================================
-// Fake Supabase client
-// ============================================================================
-
-/**
- * Chainable stub: every query on a table resolves to ALL of that table's
- * fixture rows (filters are no-ops — fixtures are scoped per test). Awaitable
- * at any point in the chain, matching supabase-js thenable behavior.
- */
-function fakeSupabase(tables: Record<string, Record<string, unknown>[]>) {
-  const from = (table: string) => {
-    const rows = tables[table] ?? [];
-    // deno-lint-ignore no-explicit-any
-    const b: any = {};
-    const chain = () => b;
-    for (
-      const m of ["select", "eq", "filter", "or", "in", "order", "limit"]
-    ) {
-      b[m] = chain;
-    }
-    b.single = () => Promise.resolve({ data: rows[0] ?? null, error: null });
-    b.then = (
-      // deno-lint-ignore no-explicit-any
-      resolve: (v: any) => unknown,
-      // deno-lint-ignore no-explicit-any
-      reject: (e: any) => unknown,
-    ) => Promise.resolve({ data: rows, error: null }).then(resolve, reject);
-    return b;
-  };
-  // deno-lint-ignore no-explicit-any
-  return { from } as any;
-}
+import { fakeSupabase } from "../_shared/nutrition/test-fake-supabase.ts";
 
 // ============================================================================
 // Fixtures (DB row shape — the loaders do the mapping)
@@ -98,6 +67,7 @@ function dbFood(
     to_exclude_from_solver: false,
     is_essential: false,
     is_indivisible: true,
+    is_active: true,
     categories: ["during_run", "during_ride"],
     activity_types: ["running", "cycling"],
     is_liquid: false,

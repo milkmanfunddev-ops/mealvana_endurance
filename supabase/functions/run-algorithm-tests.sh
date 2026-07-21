@@ -135,6 +135,11 @@ run_test \
   --allow-write --node-modules-dir=none
 
 run_test \
+  "1j3. During Invariant — REAL catalog snapshot (every template pinned+free, 3-macro invariant, diets/allergies)" \
+  "$E2E_DIR/during-invariant-real-catalog.test.ts" \
+  --allow-read --allow-write --node-modules-dir=none
+
+run_test \
   "1k. After-Phase Adherence — canonical portioning mismatch detection (P4)" \
   "$E2E_DIR/after-phase-adherence.test.ts" \
   --allow-write --node-modules-dir=none
@@ -250,6 +255,11 @@ if [ "$1" = "--e2e" ]; then
     run_test \
       "2b. generate-nutrition-plan-v3 strict macro E2E" \
       "$E2E_DIR/strict-macro-e2e.test.ts" \
+      --allow-net --allow-env
+
+    run_test \
+      "2b2. generate-nutrition-plan-v3 during-invariant remote E2E (failure modes: gut null/'medium', pref collapse)" \
+      "$E2E_DIR/during-invariant-remote-e2e.test.ts" \
       --allow-net --allow-env
 
     run_test \

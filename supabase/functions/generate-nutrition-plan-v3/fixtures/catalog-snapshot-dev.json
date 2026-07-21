@@ -1,0 +1,5238 @@
+{
+ "snapshot_date": "2026-07-21",
+ "source": "DEV vlmtsdzpnjnavdgytcmi",
+ "during_workout_templates": [
+  {
+   "activity_types": [
+    "triathlon_transition"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_gel": 0.8,
+    "sports_drink": 0.2
+   },
+   "component_food_names": [
+    "energy_gel",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "90-150 min",
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "Gel + Water + sip of Sports Drink",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "a57187c2-65ca-49c2-bd52-92d1adbef133",
+   "is_active": true,
+   "name": "Quick Gel Module (T1/T2)",
+   "notes": "Transition-specific. Keep it simple \u2014 one gel chased with a quick sip. Do not waste transition time on solids.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 0
+  },
+  {
+   "activity_types": [
+    "running",
+    "triathlon_run"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_gel": 1
+   },
+   "component_food_names": [
+    "energy_gel",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "Gel + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "e28d4a71-a3cc-4a6f-a866-91710efb22cd",
+   "is_active": true,
+   "name": "Gel + Water",
+   "notes": "Most portable running option. Chase gel with water to aid absorption. Electrolyte add-on optional.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 1
+  },
+  {
+   "activity_types": [
+    "running",
+    "triathlon_run"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_gel": 0.7,
+    "sports_drink": 0.3
+   },
+   "component_food_names": [
+    "energy_gel",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "90-150 min",
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "(Gel + Water) + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "ef02c939-03db-4fab-8886-8fde45dea1bf",
+   "is_active": true,
+   "name": "(Gel + Water) + Sports Drink",
+   "notes": "Higher carb rate via dual liquid sources. Alternate gel with sports drink sips. Watch total carb concentration to avoid GI issues.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 2
+  },
+  {
+   "activity_types": [
+    "running",
+    "triathlon_run"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_chews": 1
+   },
+   "component_food_names": [
+    "energy_chews",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "Chew + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "a7820eb0-11c4-43f6-925a-4677c7e7bdad",
+   "is_active": true,
+   "name": "Chew + Water",
+   "notes": "Easier to pace intake vs. gels. Chewing may reduce nausea for some athletes. Good entry point for newer runners.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 3
+  },
+  {
+   "activity_types": [
+    "running",
+    "triathlon_run"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_chews": 0.7,
+    "sports_drink": 0.3
+   },
+   "component_food_names": [
+    "energy_chews",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "90-150 min",
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "Chew + Water + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "a635da29-34b6-471b-83c6-fe8f5cebfa79",
+   "is_active": true,
+   "name": "Chew + Water + Sports Drink",
+   "notes": "Dual carb source for longer efforts. Good alternative if gels cause GI distress.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 4
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "triathlon_bike",
+    "triathlon_run"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "sports_drink": 1
+   },
+   "component_food_names": [
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "< 90 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid Only",
+   "formula": "Sports Drink Only",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "037500d6-7d5a-48d6-8ae5-a7fec39dc873",
+   "is_active": true,
+   "name": "Sports Drink Only",
+   "notes": "Default for sub-90 min efforts. Sip consistently rather than large boluses. Sufficient for moderate intensity.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 5
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "high_carb_drink_mix": 1
+   },
+   "component_food_names": [
+    "high_carb_drink_mix",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min",
+    "150-240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid Only",
+   "formula": "High Carb Drink Mix + Water",
+   "gut_training_levels": [
+    "high"
+   ],
+   "id": "e011e626-d82c-4cc5-b13e-179cd83533c0",
+   "is_active": true,
+   "name": "High Carb Drink Mix + Water",
+   "notes": "Highest liquid carb density. Requires well-trained gut. Separate plain water bottle essential to manage osmolality and rinse mouth.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 6
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_bar": 0.55,
+    "sports_drink": 0.45
+   },
+   "component_food_names": [
+    "energy_bar",
+    "sports_drink",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "Bar + Sports Drink + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "2429e831-2162-480b-91ea-24a9745c1062",
+   "is_active": true,
+   "name": "Bar + Sports Drink + Water",
+   "notes": "Steady energy from solid + liquid combo. Eat in small bites during low-intensity segments. Bars with simple ingredients preferred.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 7
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_bar": 0.35,
+    "energy_gel": 0.35,
+    "sports_drink": 0.3
+   },
+   "component_food_names": [
+    "energy_bar",
+    "energy_gel",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "150-240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Mixed (Solid + Gel + Liquid)",
+   "formula": "Bar + (Gel + Water) + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "27e69bef-639c-413f-b904-c08149113679",
+   "is_active": true,
+   "name": "Bar + (Gel + Water) + Sports Drink",
+   "notes": "Triple source for sustained long rides. Rotate solid -> gel -> drink in cadence. Shift toward gel/liquid as intensity increases.",
+   "primary_to_secondary_ratio": "1:1",
+   "selection_priority": 0,
+   "template_number": 8
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "component_carb_ratios": {
+    "sports_drink": 0.45,
+    "stroopwafel": 0.55
+   },
+   "component_food_names": [
+    "stroopwafel",
+    "sports_drink",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min"
+   ],
+   "excluded_diets": [
+    "vegan",
+    "gluten_free"
+   ],
+   "food_form": "Liquid + Solid",
+   "formula": "Stroopwafel + Sports Drink + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "816624a4-d482-4685-bac5-37542bcc9e79",
+   "is_active": true,
+   "name": "Stroopwafel + Sports Drink + Water",
+   "notes": "Highly palatable on-bike option. Warm on top tube to soften. Easy to eat at pace. Popular with triathletes.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 9
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "component_carb_ratios": {
+    "energy_gel": 0.35,
+    "sports_drink": 0.3,
+    "stroopwafel": 0.35
+   },
+   "component_food_names": [
+    "stroopwafel",
+    "energy_gel",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "150-240 min"
+   ],
+   "excluded_diets": [
+    "vegan",
+    "gluten_free"
+   ],
+   "food_form": "Mixed (Solid + Gel + Liquid)",
+   "formula": "Stroopwafel + (Gel + Water) + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "af2f0eee-7604-4021-b5d4-17b301e82024",
+   "is_active": true,
+   "name": "Stroopwafel + (Gel + Water) + Sports Drink",
+   "notes": "Variety prevents flavor fatigue on longer rides. Stroopwafel early, transition to gel as effort intensifies.",
+   "primary_to_secondary_ratio": "1:1",
+   "selection_priority": 0,
+   "template_number": 10
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "banana": 0.55,
+    "sports_drink": 0.45
+   },
+   "component_food_names": [
+    "banana",
+    "sports_drink",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "Banana + Sports Drink + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "36c2b70b-a9cf-48c7-aefa-2dd8254889c6",
+   "is_active": true,
+   "name": "Banana + Sports Drink + Water",
+   "notes": "Real food option with natural potassium. Pre-peel and store in jersey pocket or bento box.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 11
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "banana": 0.35,
+    "energy_gel": 0.35,
+    "sports_drink": 0.3
+   },
+   "component_food_names": [
+    "banana",
+    "energy_gel",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "150-240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Mixed (Solid + Gel + Liquid)",
+   "formula": "Banana + (Gel + Water) + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "6d18ff96-63ea-4733-896a-462eb6ab44b4",
+   "is_active": true,
+   "name": "Banana + (Gel + Water) + Sports Drink",
+   "notes": "Real food + gel combo. Banana early when intensity is lower; transition to gel as effort rises.",
+   "primary_to_secondary_ratio": "1:1",
+   "selection_priority": 0,
+   "template_number": 12
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "rice_cake_during": 0.55,
+    "sports_drink": 0.45
+   },
+   "component_food_names": [
+    "rice_cake_during",
+    "sports_drink",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min",
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "Rice Cake + Sports Drink + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "b49457f0-e143-4346-b44c-4e6d7f252119",
+   "is_active": true,
+   "name": "Rice Cake + Sports Drink + Water",
+   "notes": "Savory option breaks sweet monotony. Popular in pro peloton. Wrap in foil for jersey pocket. Real food priority for ultra-long efforts.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 13
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_gel": 0.35,
+    "rice_cake_during": 0.35,
+    "sports_drink": 0.3
+   },
+   "component_food_names": [
+    "rice_cake_during",
+    "energy_gel",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Mixed (Solid + Gel + Liquid)",
+   "formula": "Rice Cake + (Gel + Water) + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "10116d0e-3349-429d-92cb-92cbee2e4106",
+   "is_active": true,
+   "name": "Rice Cake + (Gel + Water) + Sports Drink",
+   "notes": "Best for ultra-long rides. Real food priority with gel bridging for quick carb hits. Shift rice cake -> gel ratio as race progresses.",
+   "primary_to_secondary_ratio": "1:1",
+   "selection_priority": 0,
+   "template_number": 14
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_chews": 1
+   },
+   "component_food_names": [
+    "energy_chews",
+    "water"
+   ],
+   "duration_brackets": [
+    "90-150 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "Chew + Water",
+   "gut_training_levels": [
+    "low",
+    "moderate",
+    "high"
+   ],
+   "id": "bee0bac9-76a2-4634-b4a0-769c7b69873c",
+   "is_active": true,
+   "name": "Chew + Water (Cycling)",
+   "notes": "Cycling chew option for athletes who prefer chewing over gels. Easier to dose in small bites while riding. Low GI demand.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 15
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_chews": 0.7,
+    "sports_drink": 0.3
+   },
+   "component_food_names": [
+    "energy_chews",
+    "water",
+    "sports_drink"
+   ],
+   "duration_brackets": [
+    "90-150 min",
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Gel/Chew",
+   "formula": "Chew + Water + Sports Drink",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "7848e4d7-3e2e-420c-8a37-95138ffebda5",
+   "is_active": true,
+   "name": "Chew + Water + Sports Drink (Cycling)",
+   "notes": "Dual carb source on the bike using chews instead of gels. Good for athletes with gel aversion. Chews easier to portion on long rides.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 0,
+   "template_number": 16
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "energy_bar": 0.3,
+    "high_carb_drink_mix": 0.7
+   },
+   "component_food_names": [
+    "high_carb_drink_mix",
+    "energy_bar",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "High Carb Drink Mix + Bar + Water",
+   "gut_training_levels": [
+    "high"
+   ],
+   "id": "79d30b5a-d852-46b9-b1a8-282317a43043",
+   "is_active": true,
+   "name": "High Carb Drink Mix + Bar + Water",
+   "notes": "Pro-level fueling: max liquid carb density in the bottle + solid food on top. Requires very well-trained gut. Separate plain water bottle mandatory.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 40,
+   "template_number": 17
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "component_carb_ratios": {
+    "high_carb_drink_mix": 0.7,
+    "stroopwafel": 0.3
+   },
+   "component_food_names": [
+    "high_carb_drink_mix",
+    "stroopwafel",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [
+    "vegan",
+    "gluten_free"
+   ],
+   "food_form": "Liquid + Solid",
+   "formula": "High Carb Drink Mix + Stroopwafel + Water",
+   "gut_training_levels": [
+    "high"
+   ],
+   "id": "169a9417-194f-4c26-b093-d27260a9903e",
+   "is_active": true,
+   "name": "High Carb Drink Mix + Stroopwafel + Water",
+   "notes": "High carb liquid base + palatable solid. Stroopwafel is easier to eat at tempo than bars. Warm on top tube. Plain water essential to manage osmolality.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 40,
+   "template_number": 18
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "banana": 0.3,
+    "high_carb_drink_mix": 0.7
+   },
+   "component_food_names": [
+    "high_carb_drink_mix",
+    "banana",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "High Carb Drink Mix + Banana + Water",
+   "gut_training_levels": [
+    "high"
+   ],
+   "id": "d23712e1-36d1-403e-a78b-c229f028445f",
+   "is_active": true,
+   "name": "High Carb Drink Mix + Banana + Water",
+   "notes": "High carb liquid base + real food. Natural potassium from banana complements the drink mix. Pre-peel banana. Plain water bottle required.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 40,
+   "template_number": 19
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "high_carb_drink_mix": 0.7,
+    "rice_cake_during": 0.3
+   },
+   "component_food_names": [
+    "high_carb_drink_mix",
+    "rice_cake_during",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "High Carb Drink Mix + Rice Cake + Water",
+   "gut_training_levels": [
+    "high"
+   ],
+   "id": "d8fbedfe-9e79-4596-af99-f3b49b472064",
+   "is_active": true,
+   "name": "High Carb Drink Mix + Rice Cake + Water",
+   "notes": "Maximum fueling template: high carb liquid + savory solid. Breaks sweet monotony. Pro peloton staple for ultra-long rides and Ironman bike legs. Plain water mandatory.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 40,
+   "template_number": 20
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "carb_drink_mix": 0.7,
+    "energy_bar": 0.3
+   },
+   "component_food_names": [
+    "carb_drink_mix",
+    "energy_bar",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "Carb Drink Mix + Bar + Water",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "094b06ac-0a88-42e7-a85d-916d111bd5dd",
+   "is_active": true,
+   "name": "Carb Drink Mix + Bar + Water",
+   "notes": "Moderate long-ride bottle option: 60g carb drink mix plus small bites of bar and separate plain water.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 30,
+   "template_number": 21
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "component_carb_ratios": {
+    "carb_drink_mix": 0.7,
+    "stroopwafel": 0.3
+   },
+   "component_food_names": [
+    "carb_drink_mix",
+    "stroopwafel",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [
+    "vegan",
+    "gluten_free"
+   ],
+   "food_form": "Liquid + Solid",
+   "formula": "Carb Drink Mix + Stroopwafel + Water",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "dd3b7aa9-2682-47bd-90e6-a586f76ca7eb",
+   "is_active": true,
+   "name": "Carb Drink Mix + Stroopwafel + Water",
+   "notes": "Moderate long-ride bottle option with a palatable solid. Plain water remains separate for rinsing and hydration.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 30,
+   "template_number": 22
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "banana": 0.3,
+    "carb_drink_mix": 0.7
+   },
+   "component_food_names": [
+    "carb_drink_mix",
+    "banana",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "Carb Drink Mix + Banana + Water",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "3cd2c19f-7865-4da7-b353-ad4501e80fe1",
+   "is_active": true,
+   "name": "Carb Drink Mix + Banana + Water",
+   "notes": "Moderate long-ride bottle option with real-food carbohydrate. Use early when intensity is lower.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 30,
+   "template_number": 23
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "triathlon_bike"
+   ],
+   "allergens": [],
+   "component_carb_ratios": {
+    "carb_drink_mix": 0.7,
+    "rice_cake_during": 0.3
+   },
+   "component_food_names": [
+    "carb_drink_mix",
+    "rice_cake_during",
+    "water"
+   ],
+   "duration_brackets": [
+    "150-240 min",
+    "> 240 min"
+   ],
+   "excluded_diets": [],
+   "food_form": "Liquid + Solid",
+   "formula": "Carb Drink Mix + Rice Cake + Water",
+   "gut_training_levels": [
+    "moderate",
+    "high"
+   ],
+   "id": "2856a343-5daf-47e3-a280-78f6ade5a762",
+   "is_active": true,
+   "name": "Carb Drink Mix + Rice Cake + Water",
+   "notes": "Moderate long-ride bottle option with savory solid food. Plain water is still required alongside the carb bottle.",
+   "primary_to_secondary_ratio": null,
+   "selection_priority": 30,
+   "template_number": 24
+  }
+ ],
+ "template_foods": [
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "tree_nuts"
+   ],
+   "calories": 98,
+   "carbs_g": "3.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Almond Butter",
+   "display_name_plural": "tbsp Almond Butter",
+   "excluded_diets": [],
+   "fat_g": "9.0",
+   "fluid_ml": "0.0",
+   "id": "b9af7791-a7b3-4ab3-815d-aac2acfbf34f",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "almond_butter",
+   "product_type": "condiment",
+   "protein_g": "3.4",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "36.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 95,
+   "carbs_g": "25.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Apple (medium)",
+   "display_name_plural": "Apples",
+   "excluded_diets": [],
+   "fat_g": "0.3",
+   "fluid_ml": "156.0",
+   "id": "b59bc86a-6e35-44db-8a6e-597c3a5844b2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "apple",
+   "product_type": "real_food",
+   "protein_g": "0.5",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium",
+   "serving_unit": null,
+   "sodium_mg": "2.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 105,
+   "carbs_g": "28.0",
+   "categories": [
+    "after_run",
+    "before_run"
+   ],
+   "default_during": false,
+   "description": "Unsweetened applesauce. Gentle on the gut, fast carbs, useful when nothing solid sounds good.",
+   "display_name": "Applesauce",
+   "display_name_plural": "cups Applesauce",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "215.0",
+   "id": "16b52d6f-f530-485e-9e8a-2d2020d26c7b",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 1,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "applesauce",
+   "product_type": "whole_food",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (244g)",
+   "serving_unit": "cup",
+   "sodium_mg": "5.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 42,
+   "carbs_g": "11.0",
+   "categories": [
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Applesauce Pouch",
+   "display_name_plural": "pouches Applesauce",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "77.0",
+   "id": "97642f6e-55df-4af5-8e5d-8e34bb9538d7",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "applesauce_pouch",
+   "product_type": "real_food",
+   "protein_g": "0.2",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 pouch (90g)",
+   "serving_unit": null,
+   "sodium_mg": "3.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 80,
+   "carbs_g": "4.3",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Avocado",
+   "display_name_plural": "Avocados",
+   "excluded_diets": [],
+   "fat_g": "7.3",
+   "fluid_ml": "37.0",
+   "id": "b362bc80-6995-4821-87ab-0d715930fcf6",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "avocado",
+   "product_type": "real_food",
+   "protein_g": "1.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bc medium",
+   "serving_unit": null,
+   "sodium_mg": "4.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 275,
+   "carbs_g": "53.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Bagel (large)",
+   "display_name_plural": "Bagels",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "1.5",
+   "fluid_ml": "0.0",
+   "id": "09deaae5-a7da-484c-87fe-55f387d619c6",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "bagel",
+   "product_type": "real_food",
+   "protein_g": "11.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 large",
+   "serving_unit": null,
+   "sodium_mg": "462.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 280,
+   "carbs_g": "56.0",
+   "categories": [
+    "after_run",
+    "before_run"
+   ],
+   "default_during": false,
+   "description": "Plain large bagel. Dense carb source (~56g/bagel).",
+   "display_name": "Bagel (Large)",
+   "display_name_plural": "large bagels",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "1.5",
+   "fluid_ml": "0.0",
+   "id": "0462c89f-3f1a-4ba3-ad67-7db2fbd95af2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 1,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "bagel_large",
+   "product_type": "whole_food",
+   "protein_g": "11.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 large bagel (95g)",
+   "serving_unit": "bagel",
+   "sodium_mg": "460.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 161,
+   "carbs_g": "37.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Potato (baked/boiled)",
+   "display_name_plural": "Potatoes",
+   "excluded_diets": [
+    "keto",
+    "low_carb"
+   ],
+   "fat_g": "0.2",
+   "fluid_ml": "130.0",
+   "id": "1e8835a7-a281-43b0-8c4b-4dfd1f083ee4",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "baked_potato",
+   "product_type": "real_food",
+   "protein_g": "4.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium",
+   "serving_unit": null,
+   "sodium_mg": "17.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 105,
+   "carbs_g": "27.0",
+   "categories": [
+    "before_run",
+    "after_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Banana",
+   "display_name_plural": "Bananas",
+   "excluded_diets": [],
+   "fat_g": "0.4",
+   "fluid_ml": "88.0",
+   "id": "2a376d78-d356-45cc-8619-910d0fe7e02f",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": "1.00",
+   "max_per_hr_low": "0.50",
+   "max_per_hr_moderate": "1.00",
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "banana",
+   "product_type": "real_food",
+   "protein_g": "1.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium",
+   "serving_unit": null,
+   "sodium_mg": "1.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 42,
+   "carbs_g": "10.7",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Blueberries",
+   "display_name_plural": "cups Blueberries",
+   "excluded_diets": [],
+   "fat_g": "0.2",
+   "fluid_ml": "62.0",
+   "id": "43b179ca-f1fc-488d-819f-a36b02b00709",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "blueberries",
+   "product_type": "real_food",
+   "protein_g": "0.6",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bd cup",
+   "serving_unit": null,
+   "sodium_mg": "1.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 48,
+   "carbs_g": "12.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Brown Sugar",
+   "display_name_plural": "tbsp Brown Sugar",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "021071dd-3100-4ee3-81d7-7733e120637a",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "brown_sugar",
+   "product_type": "condiment",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "3.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 36,
+   "carbs_g": "0.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Butter",
+   "display_name_plural": "tsp Butter",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "4.0",
+   "fluid_ml": "0.0",
+   "id": "6d035c90-735c-45a6-844a-e40105bcb8bf",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "butter",
+   "product_type": "condiment",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tsp",
+   "serving_unit": null,
+   "sodium_mg": "32.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling"
+   ],
+   "allergens": [],
+   "calories": 240,
+   "carbs_g": "60.0",
+   "categories": [
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": true,
+   "description": "Moderate-concentration carbohydrate drink mix. One packet provides about 60g carbs in a prepared bottle.",
+   "display_name": "Carb Drink Mix",
+   "display_name_plural": "packets Carb Drink Mix",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "500.0",
+   "id": "48c6f040-0975-486d-aa70-c8e862f177b9",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": "1.00",
+   "max_per_hr_low": "0.00",
+   "max_per_hr_moderate": "1.00",
+   "max_servings_after": 0,
+   "max_servings_before": 0,
+   "max_servings_during": 10,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "carb_drink_mix",
+   "product_type": "drink_mix",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 packet (60g carbs in 16-20 oz water)",
+   "serving_unit": "packet",
+   "sodium_mg": "160.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 100,
+   "carbs_g": "24.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Cereal (low-fiber type)",
+   "display_name_plural": "cups Cereal",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "0f611e49-da7a-4e97-880f-bdf7ab3d09ef",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "cereal",
+   "product_type": "real_food",
+   "protein_g": "2.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup",
+   "serving_unit": null,
+   "sodium_mg": "200.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 113,
+   "carbs_g": "0.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Cheese (slice)",
+   "display_name_plural": "slices Cheese",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "9.0",
+   "fluid_ml": "0.0",
+   "id": "e442c765-d977-411e-8fbe-7547ef10d84a",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "cheese_slice",
+   "product_type": "real_food",
+   "protein_g": "7.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 slice",
+   "serving_unit": null,
+   "sodium_mg": "174.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 140,
+   "carbs_g": "0.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Chicken (cooked)",
+   "display_name_plural": "oz Chicken (cooked)",
+   "excluded_diets": [
+    "vegetarian",
+    "vegan",
+    "pescatarian"
+   ],
+   "fat_g": "3.0",
+   "fluid_ml": "0.0",
+   "id": "73790c5c-6ce3-4eec-8d02-7aed33b16957",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "chicken",
+   "product_type": "real_food",
+   "protein_g": "26.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "3 oz",
+   "serving_unit": null,
+   "sodium_mg": "63.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 190,
+   "carbs_g": "30.0",
+   "categories": [
+    "after_run",
+    "before_run"
+   ],
+   "default_during": false,
+   "description": "Common post-run recovery beverage with carbs, protein, sodium, and fluid.",
+   "display_name": "Chocolate Milk",
+   "display_name_plural": "cups Chocolate Milk",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "5.0",
+   "fluid_ml": "240.0",
+   "id": "bd734ae8-63e5-4069-ad8c-a5139e6e8929",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 1,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "chocolate_milk",
+   "product_type": "beverage",
+   "protein_g": "9.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "160.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 46,
+   "carbs_g": "9.0",
+   "categories": [
+    "before_run",
+    "after_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Coconut Water",
+   "display_name_plural": "cups Coconut Water",
+   "excluded_diets": [],
+   "fat_g": "0.5",
+   "fluid_ml": "240.0",
+   "id": "7b56b1d6-b77c-4feb-81d6-7f3cfc6b3dfb",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 3,
+   "max_servings_during": 6,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "coconut_water",
+   "product_type": "beverage",
+   "protein_g": "1.7",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "252.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 2,
+   "carbs_g": "0.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Coffee (black)",
+   "display_name_plural": "cups Coffee (black)",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "237.0",
+   "id": "bf5cfe4f-6014-4de0-88e8-01b541c9d8dd",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 4,
+   "max_servings_before": 4,
+   "max_servings_during": 4,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "coffee",
+   "product_type": "beverage",
+   "protein_g": "0.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "5.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 220,
+   "carbs_g": "9.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Low-fat cottage cheese. Lower lactose than other dairy, tolerated well after hot workouts. ~25g protein/cup.",
+   "display_name": "Cottage Cheese",
+   "display_name_plural": "cups Cottage Cheese",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "9.0",
+   "fluid_ml": "180.0",
+   "id": "1dcf4775-9f15-42fb-9567-b52b55116051",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "cottage_cheese",
+   "product_type": "whole_food",
+   "protein_g": "25.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (226g)",
+   "serving_unit": "cup",
+   "sodium_mg": "700.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 16,
+   "carbs_g": "2.7",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Crackers",
+   "display_name_plural": "Crackers",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "0.4",
+   "fluid_ml": "0.0",
+   "id": "8a60c7c5-4e8e-4f71-89dc-f24f67e4b629",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "crackers",
+   "product_type": "real_food",
+   "protein_g": "0.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cracker",
+   "serving_unit": null,
+   "sodium_mg": "34.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 51,
+   "carbs_g": "0.8",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Cream Cheese",
+   "display_name_plural": "tbsp Cream Cheese",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "5.1",
+   "fluid_ml": "0.0",
+   "id": "e8678771-683b-4477-8d4d-012ed33554cd",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "cream_cheese",
+   "product_type": "condiment",
+   "protein_g": "0.9",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "47.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 66,
+   "carbs_g": "18.0",
+   "categories": [
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Dates (Medjool)",
+   "display_name_plural": "Pairs of Dates",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "5.0",
+   "id": "88343d31-ca35-4f69-8b33-586a788a8d7f",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "dates",
+   "product_type": "real_food",
+   "protein_g": "0.4",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 date",
+   "serving_unit": null,
+   "sodium_mg": "0.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 90,
+   "carbs_g": "2.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Sliced deli turkey breast. High sodium replenishes electrolyte loss from sweat.",
+   "display_name": "Deli Turkey",
+   "display_name_plural": "oz Deli Turkey",
+   "excluded_diets": [
+    "vegan",
+    "vegetarian"
+   ],
+   "fat_g": "1.5",
+   "fluid_ml": "0.0",
+   "id": "63c83cc0-faa9-457f-ab97-c3e27b8db964",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 4,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "deli_turkey",
+   "product_type": "whole_food",
+   "protein_g": "18.0",
+   "serving_amount": 3,
+   "serving_qualifier": null,
+   "serving_size": "3 oz (85g)",
+   "serving_unit": "oz",
+   "sodium_mg": "700.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 128,
+   "carbs_g": "31.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Dried Mango",
+   "display_name_plural": "cups Dried Mango",
+   "excluded_diets": [],
+   "fat_g": "0.5",
+   "fluid_ml": "2.0",
+   "id": "e563c5b2-7720-4d12-8b5b-93accc976af0",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "dried_mango",
+   "product_type": "real_food",
+   "protein_g": "1.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bc cup",
+   "serving_unit": null,
+   "sodium_mg": "44.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "eggs"
+   ],
+   "calories": 91,
+   "carbs_g": "1.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Egg (boiled/poached)",
+   "display_name_plural": "Eggs",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "6.7",
+   "fluid_ml": "0.0",
+   "id": "b823506e-9822-4583-88df-a8517b4e7698",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "egg",
+   "product_type": "real_food",
+   "protein_g": "6.1",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 large",
+   "serving_unit": null,
+   "sodium_mg": "62.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "egg"
+   ],
+   "calories": 72,
+   "carbs_g": "0.4",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Whole eggs (boiled, scrambled, fried). Complete protein, leucine-rich.",
+   "display_name": "Eggs",
+   "display_name_plural": "eggs",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "5.0",
+   "fluid_ml": "35.0",
+   "id": "fd93edd8-1d08-4c1d-a9c1-cad709bba2d2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 4,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "eggs",
+   "product_type": "whole_food",
+   "protein_g": "6.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 large egg (50g)",
+   "serving_unit": "egg",
+   "sodium_mg": "70.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 0,
+   "carbs_g": "0.0",
+   "categories": [
+    "during_run",
+    "during_bike",
+    "during_swim",
+    "transition",
+    "after_run"
+   ],
+   "default_during": true,
+   "description": "Swallowable electrolyte capsule used by endurance runners when sodium targets are high.",
+   "display_name": "Electrolyte Capsule",
+   "display_name_plural": "Electrolyte Capsules",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "42e95e1c-995f-4c83-8096-a8893cd99ad8",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 8,
+   "max_servings_before": 0,
+   "max_servings_during": 8,
+   "min_increment": "1.00",
+   "min_servings_during": "1.0",
+   "name": "electrolyte_capsule",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 capsule",
+   "serving_unit": null,
+   "sodium_mg": "190.0",
+   "sodium_top_up_eligible": true,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling"
+   ],
+   "allergens": [],
+   "calories": 60,
+   "carbs_g": "15.0",
+   "categories": [
+    "after_run",
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": true,
+   "description": "Electrolyte drink mix (1 scoop in 16-20oz water)",
+   "display_name": "Electrolyte Drink Mix",
+   "display_name_plural": "scoops Electrolyte Drink Mix",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "500.0",
+   "id": "19e70c02-06f2-4d54-8124-ed6efbd0182e",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 0,
+   "max_servings_during": 6,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "electrolyte_drink_mix",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 scoop (in 16-20oz water)",
+   "serving_unit": null,
+   "sodium_mg": "400.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 40,
+   "carbs_g": "11.0",
+   "categories": [
+    "during_run",
+    "during_bike",
+    "during_swim",
+    "transition",
+    "after_run"
+   ],
+   "default_during": true,
+   "description": "Electrolyte drink packet (like Liquid IV) with ~500mg sodium. Mix in 16oz water.",
+   "display_name": "Electrolyte Packet",
+   "display_name_plural": "Electrolyte Packets",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "480.0",
+   "id": "5fe157f6-ac38-4a86-ada4-fe00297999c8",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 0,
+   "max_servings_during": 6,
+   "min_increment": "1.00",
+   "min_servings_during": "0.5",
+   "name": "electrolyte_packet",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 packet (in 16 oz water)",
+   "serving_unit": null,
+   "sodium_mg": "510.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 10,
+   "carbs_g": "2.0",
+   "categories": [
+    "after_run",
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": true,
+   "description": null,
+   "display_name": "Electrolyte Tablet",
+   "display_name_plural": "Electrolyte Tablets",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "475.0",
+   "id": "044b8b29-2d6c-48ff-812f-cdb4c35f9c31",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 6,
+   "max_servings_before": 0,
+   "max_servings_during": 12,
+   "min_increment": "1.00",
+   "min_servings_during": "1.0",
+   "name": "electrolyte_tablet",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tablet (in water)",
+   "serving_unit": null,
+   "sodium_mg": "300.0",
+   "sodium_top_up_eligible": true,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "cycling",
+    "running"
+   ],
+   "allergens": [],
+   "calories": 140,
+   "carbs_g": "35.0",
+   "categories": [
+    "before_run",
+    "during_bike"
+   ],
+   "default_during": true,
+   "description": "Half energy bar for sustained energy during cycling",
+   "display_name": "Energy Bar",
+   "display_name_plural": "Energy Bars",
+   "excluded_diets": [],
+   "fat_g": "2.0",
+   "fluid_ml": "0.0",
+   "id": "64b2c370-263e-4fb4-ba52-a72773439f82",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": "1.00",
+   "max_per_hr_low": "0.50",
+   "max_per_hr_moderate": "1.00",
+   "max_servings_after": 4,
+   "max_servings_before": 4,
+   "max_servings_during": 6,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "energy_bar",
+   "product_type": "bar",
+   "protein_g": "3.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1/2 bar",
+   "serving_unit": null,
+   "sodium_mg": "150.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 100,
+   "carbs_g": "25.0",
+   "categories": [
+    "before_run",
+    "during_run",
+    "transition"
+   ],
+   "default_during": true,
+   "description": null,
+   "display_name": "Energy Chews",
+   "display_name_plural": "packets Energy Chews",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "e7b370d5-0f15-4950-9314-b3ee2246ab51",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": "2.00",
+   "max_per_hr_low": "1.00",
+   "max_per_hr_moderate": "2.00",
+   "max_servings_after": 0,
+   "max_servings_before": 2,
+   "max_servings_during": 10,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "energy_chews",
+   "product_type": "chew",
+   "protein_g": "0.0",
+   "serving_amount": null,
+   "serving_qualifier": null,
+   "serving_size": "1 packet (3-4 chews)",
+   "serving_unit": null,
+   "sodium_mg": "80.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 75,
+   "carbs_g": "18.8",
+   "categories": [
+    "before_run",
+    "during_run",
+    "transition"
+   ],
+   "default_during": true,
+   "description": "Smaller chew unit for finer carb top-ups without adding electrolyte-only items.",
+   "display_name": "Energy Chews (mini pack)",
+   "display_name_plural": "mini packs Energy Chews",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "dc4044ef-64ec-4872-8506-da2e6798ba63",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": "2.00",
+   "max_per_hr_low": "1.00",
+   "max_per_hr_moderate": "2.00",
+   "max_servings_after": 0,
+   "max_servings_before": 2,
+   "max_servings_during": 6,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "energy_chews_mini_pack",
+   "product_type": "chew",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 mini pack (3 chews)",
+   "serving_unit": "mini pack",
+   "sodium_mg": "60.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 100,
+   "carbs_g": "25.0",
+   "categories": [
+    "before_run",
+    "during_run",
+    "transition"
+   ],
+   "default_during": true,
+   "description": null,
+   "display_name": "Energy Gel",
+   "display_name_plural": "Energy Gels",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "20.0",
+   "id": "27f5af16-acbe-4a88-876f-aec17fd12b7c",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": "3.00",
+   "max_per_hr_low": "2.00",
+   "max_per_hr_moderate": "3.00",
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 15,
+   "min_increment": "1.00",
+   "min_servings_during": "0.5",
+   "name": "energy_gel",
+   "product_type": "gel",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 packet",
+   "serving_unit": null,
+   "sodium_mg": "55.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 100,
+   "carbs_g": "19.0",
+   "categories": [
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Fig Bar",
+   "display_name_plural": "Fig Bars",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "3.0",
+   "fluid_ml": "4.0",
+   "id": "811917ac-4a57-4294-81a3-09cbd414de9a",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "fig_bar",
+   "product_type": "bar",
+   "protein_g": "1.5",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bar",
+   "serving_unit": null,
+   "sodium_mg": "60.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 140,
+   "carbs_g": "24.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Flour Tortilla",
+   "display_name_plural": "Flour Tortillas",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "3.5",
+   "fluid_ml": "0.0",
+   "id": "379900dd-9293-479d-835a-2ab866f8b1cb",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "flour_tortilla",
+   "product_type": "real_food",
+   "protein_g": "3.6",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium (~45g)",
+   "serving_unit": null,
+   "sodium_mg": "331.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 118,
+   "carbs_g": "21.5",
+   "categories": [
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Graham Crackers",
+   "display_name_plural": "sheets Graham Crackers",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "2.8",
+   "fluid_ml": "0.0",
+   "id": "f5c3185a-08ed-4742-85d3-c906f66a2c5c",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "graham_crackers",
+   "product_type": "real_food",
+   "protein_g": "2.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "2 sheets",
+   "serving_unit": null,
+   "sodium_mg": "169.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 131,
+   "carbs_g": "17.5",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Granola",
+   "display_name_plural": "cups Granola",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "6.0",
+   "fluid_ml": "0.0",
+   "id": "1c48768d-8775-49c0-8ba1-108129c607f2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "granola",
+   "product_type": "real_food",
+   "protein_g": "3.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bc cup",
+   "serving_unit": null,
+   "sodium_mg": "7.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 190,
+   "carbs_g": "29.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Granola Bar",
+   "display_name_plural": "Granola Bars",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "7.0",
+   "fluid_ml": "0.0",
+   "id": "38de203a-f3ee-4515-82d7-148a97cfc08b",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "granola_bar",
+   "product_type": "bar",
+   "protein_g": "3.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bar",
+   "serving_unit": null,
+   "sodium_mg": "105.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 104,
+   "carbs_g": "27.3",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Grapes",
+   "display_name_plural": "cups Grapes",
+   "excluded_diets": [],
+   "fat_g": "0.2",
+   "fluid_ml": "122.0",
+   "id": "eb425994-943f-4fd1-8695-a475535b6131",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "grapes",
+   "product_type": "real_food",
+   "protein_g": "1.1",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (~30 grapes)",
+   "serving_unit": null,
+   "sodium_mg": "3.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 130,
+   "carbs_g": "9.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Non-fat plain Greek yogurt. High protein (~23g/cup), leucine-rich.",
+   "display_name": "Greek Yogurt",
+   "display_name_plural": "cups Greek Yogurt",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "0.7",
+   "fluid_ml": "200.0",
+   "id": "18ee7499-a2a6-484a-87b3-77291ce448f6",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "greek_yogurt",
+   "product_type": "whole_food",
+   "protein_g": "23.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (245g)",
+   "serving_unit": "cup",
+   "sodium_mg": "65.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling"
+   ],
+   "allergens": [],
+   "calories": 360,
+   "carbs_g": "90.0",
+   "categories": [
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": true,
+   "description": "High-carb drink mix for well-trained guts. One packet provides about 90g carbs in a prepared bottle.",
+   "display_name": "High-Carb Drink Mix",
+   "display_name_plural": "packets High-Carb Drink Mix",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "600.0",
+   "id": "7126d4b7-5d46-4d54-b3a7-12a7f9460cc4",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": "1.00",
+   "max_per_hr_low": "0.00",
+   "max_per_hr_moderate": "0.00",
+   "max_servings_after": 0,
+   "max_servings_before": 0,
+   "max_servings_during": 10,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "high_carb_drink_mix",
+   "product_type": "drink_mix",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 packet (90g carbs in 20-24 oz water)",
+   "serving_unit": "packet",
+   "sodium_mg": "200.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 0,
+   "carbs_g": "0.0",
+   "categories": [
+    "during_run",
+    "during_bike",
+    "during_swim",
+    "transition",
+    "after_run"
+   ],
+   "default_during": true,
+   "description": "Electrolyte mix packet with high sodium for heavy/salty sweaters.",
+   "display_name": "High-Sodium Electrolyte Mix",
+   "display_name_plural": "sticks High-Sodium Electrolyte Mix",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "480.0",
+   "id": "730b6a40-8c90-41a9-912a-a9b7d8e24cba",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 4,
+   "min_increment": "1.00",
+   "min_servings_during": "1.0",
+   "name": "high_sodium_electrolyte_mix",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 stick (mix in 16 oz water)",
+   "serving_unit": null,
+   "sodium_mg": "1000.0",
+   "sodium_top_up_eligible": true,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 64,
+   "carbs_g": "17.3",
+   "categories": [
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Honey",
+   "display_name_plural": "tbsp Honey",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "4.0",
+   "id": "6e86dd85-506c-4157-84a8-4e44b5eeb4d4",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "honey",
+   "product_type": "condiment",
+   "protein_g": "0.1",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "1.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 56,
+   "carbs_g": "13.8",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Jam / Jelly",
+   "display_name_plural": "tbsp Jam",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "6.0",
+   "id": "37b98830-2d22-402f-8254-6cdfc579c89d",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "jam",
+   "product_type": "condiment",
+   "protein_g": "0.1",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": "tbsp",
+   "sodium_mg": "6.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 50,
+   "carbs_g": "12.5",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Mango (fresh)",
+   "display_name_plural": "cups Mango (fresh)",
+   "excluded_diets": [],
+   "fat_g": "0.3",
+   "fluid_ml": "68.0",
+   "id": "e9922d53-184f-4f16-808f-216078078c4f",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "mango_fresh",
+   "product_type": "real_food",
+   "protein_g": "0.7",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bd cup",
+   "serving_unit": null,
+   "sodium_mg": "1.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 52,
+   "carbs_g": "13.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Maple Syrup",
+   "display_name_plural": "tbsp Maple Syrup",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "5.0",
+   "id": "12c892e0-f6e8-47d3-83b4-32e89b7da4c2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "maple_syrup",
+   "product_type": "condiment",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "2.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 149,
+   "carbs_g": "12.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Milk (whole)",
+   "display_name_plural": "cups Milk",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "8.0",
+   "fluid_ml": "220.0",
+   "id": "729254f8-7c67-4814-8d22-c232871d810b",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 3,
+   "max_servings_during": 6,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "milk",
+   "product_type": "real_food",
+   "protein_g": "8.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "105.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 35,
+   "carbs_g": "8.5",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Mixed Berries",
+   "display_name_plural": "cups Mixed Berries",
+   "excluded_diets": [],
+   "fat_g": "0.3",
+   "fluid_ml": "60.0",
+   "id": "05f6647c-646d-434a-8223-67bd51de9b2e",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "mixed_berries",
+   "product_type": "real_food",
+   "protein_g": "0.5",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bd cup",
+   "serving_unit": null,
+   "sodium_mg": "1.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 3,
+   "carbs_g": "0.3",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Mustard",
+   "display_name_plural": "tsp Mustard",
+   "excluded_diets": [],
+   "fat_g": "0.2",
+   "fluid_ml": "4.0",
+   "id": "172daf32-2595-4394-8bd4-ba32bbed9e8e",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "mustard",
+   "product_type": "condiment",
+   "protein_g": "0.2",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tsp",
+   "serving_unit": null,
+   "sodium_mg": "57.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy",
+    "soy",
+    "tree_nuts"
+   ],
+   "calories": 100,
+   "carbs_g": "11.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Nutella",
+   "display_name_plural": "tbsp Nutella",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "6.0",
+   "fluid_ml": "0.0",
+   "id": "23c88349-e2df-485a-8dda-0e4fc96b2ba0",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "nutella",
+   "product_type": "condiment",
+   "protein_g": "1.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "8.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 150,
+   "carbs_g": "27.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Oatmeal (\u00bd cup dry)",
+   "display_name_plural": "cups Oatmeal",
+   "excluded_diets": [
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "2.5",
+   "fluid_ml": "200.0",
+   "id": "b954fa74-4de5-4e76-8ab5-966a1b92d1cb",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "oatmeal",
+   "product_type": "real_food",
+   "protein_g": "5.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bd cup dry (~40g)",
+   "serving_unit": null,
+   "sodium_mg": "0.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 62,
+   "carbs_g": "15.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Orange",
+   "display_name_plural": "Oranges",
+   "excluded_diets": [],
+   "fat_g": "0.2",
+   "fluid_ml": "113.0",
+   "id": "2e65452b-c912-418d-889a-ea5020624160",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "orange",
+   "product_type": "real_food",
+   "protein_g": "1.2",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium",
+   "serving_unit": null,
+   "sodium_mg": "0.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 112,
+   "carbs_g": "26.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Orange Juice",
+   "display_name_plural": "cups Orange Juice",
+   "excluded_diets": [],
+   "fat_g": "0.5",
+   "fluid_ml": "219.0",
+   "id": "8e5ceb2a-c956-4c8d-8798-255eb6c048c3",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "orange_juice",
+   "product_type": "beverage",
+   "protein_g": "1.7",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "2.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten",
+    "eggs",
+    "dairy"
+   ],
+   "calories": 175,
+   "carbs_g": "22.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Pancake (medium 6\")",
+   "display_name_plural": "Pancakes",
+   "excluded_diets": [
+    "vegan",
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "7.0",
+   "fluid_ml": "40.0",
+   "id": "c4ef7542-abfc-41bd-8788-c4c82f3d997d",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "pancake",
+   "product_type": "real_food",
+   "protein_g": "5.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium",
+   "serving_unit": null,
+   "sodium_mg": "226.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 30,
+   "carbs_g": "7.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Peaches (sliced)",
+   "display_name_plural": "cups Peaches",
+   "excluded_diets": [],
+   "fat_g": "0.2",
+   "fluid_ml": "66.0",
+   "id": "815d728a-407b-4f4d-86ac-1fca50cdcf46",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "peaches",
+   "product_type": "real_food",
+   "protein_g": "0.7",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bd cup sliced",
+   "serving_unit": null,
+   "sodium_mg": "0.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "peanuts"
+   ],
+   "calories": 94,
+   "carbs_g": "3.6",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Peanut Butter",
+   "display_name_plural": "tbsp Peanut Butter",
+   "excluded_diets": [],
+   "fat_g": "8.2",
+   "fluid_ml": "0.0",
+   "id": "ca3ef4be-a5a4-4e39-84cb-48a15ddfe413",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "peanut_butter",
+   "product_type": "condiment",
+   "protein_g": "3.6",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "73.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 0,
+   "carbs_g": "0.0",
+   "categories": [
+    "after_run",
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Pickle Juice Shot",
+   "display_name_plural": "shots Pickle Juice",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "70.0",
+   "id": "657b7dd0-244d-464e-a5a8-65fbe838dd0a",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 1,
+   "max_servings_before": 0,
+   "max_servings_during": 3,
+   "min_increment": "1.00",
+   "min_servings_during": "1.0",
+   "name": "pickle_juice_shot",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 shot (2.5 oz)",
+   "serving_unit": null,
+   "sodium_mg": "940.0",
+   "sodium_top_up_eligible": true,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 90,
+   "carbs_g": "13.0",
+   "categories": [
+    "after_run",
+    "before_run"
+   ],
+   "default_during": false,
+   "description": "Generic plant-based milk (oat/almond/soy). Often fortified with calcium.",
+   "display_name": "Plant Milk",
+   "display_name_plural": "cups Plant Milk",
+   "excluded_diets": [],
+   "fat_g": "3.0",
+   "fluid_ml": "220.0",
+   "id": "8801019b-3d72-4152-826d-bbb137140617",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 2,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "plant_milk",
+   "product_type": "beverage",
+   "protein_g": "3.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": "cup",
+   "sodium_mg": "100.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 130,
+   "carbs_g": "5.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Pea + rice protein blend. Complete amino acid profile.",
+   "display_name": "Plant-Based Protein Powder",
+   "display_name_plural": "scoops Plant-Based Protein Powder",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "2.5",
+   "fluid_ml": "0.0",
+   "id": "9256a2fc-49af-4beb-924c-4f1573f6a395",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "plant_protein_powder",
+   "product_type": "supplement",
+   "protein_g": "22.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 scoop (35g)",
+   "serving_unit": "scoop",
+   "sodium_mg": "300.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 180,
+   "carbs_g": "10.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Dairy-free recovery shake with meaningful protein, sodium, and fluid.",
+   "display_name": "Plant Protein Shake (RTD)",
+   "display_name_plural": "bottles Plant Protein Shake",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "6.0",
+   "fluid_ml": "330.0",
+   "id": "9e5c5132-05c1-41cf-84fe-625dc7e4e3fb",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 1,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "plant_protein_shake",
+   "product_type": "beverage",
+   "protein_g": "20.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bottle (11 oz)",
+   "serving_unit": null,
+   "sodium_mg": "320.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "soy"
+   ],
+   "calories": 170,
+   "carbs_g": "11.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Pea+rice plant protein RTD (Orgain, Owyn, Vega). ~20g protein, complete amino acid profile.",
+   "display_name": "Plant Protein Shake (RTD)",
+   "display_name_plural": "bottles Plant Protein Shake",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "4.5",
+   "fluid_ml": "300.0",
+   "id": "9526f953-a7ed-47a4-9a7c-33816d3a0052",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "plant_protein_shake_rtd",
+   "product_type": "beverage",
+   "protein_g": "20.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bottle (11 oz)",
+   "serving_unit": "bottle",
+   "sodium_mg": "280.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten",
+    "soy"
+   ],
+   "calories": 400,
+   "carbs_g": "70.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Pop-Tarts",
+   "display_name_plural": "Pop-Tarts",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "14.0",
+   "fluid_ml": "0.0",
+   "id": "f039fca6-fd00-4a2c-8981-0c50e276fec2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "pop_tarts",
+   "product_type": "real_food",
+   "protein_g": "4.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 packet (2 pastries)",
+   "serving_unit": null,
+   "sodium_mg": "340.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 108,
+   "carbs_g": "23.0",
+   "categories": [
+    "after_run",
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Pretzels",
+   "display_name_plural": "Pretzels",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "1.0",
+   "fluid_ml": "0.0",
+   "id": "8ac09937-f522-44aa-894e-c45482a35993",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 4,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "pretzels",
+   "product_type": "real_food",
+   "protein_g": "2.8",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 oz",
+   "serving_unit": null,
+   "sodium_mg": "385.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "calories": 230,
+   "carbs_g": "24.0",
+   "categories": [
+    "before_run",
+    "after_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Protein Bar",
+   "display_name_plural": "Protein Bars",
+   "excluded_diets": [
+    "gluten_free"
+   ],
+   "fat_g": "8.0",
+   "fluid_ml": "0.0",
+   "id": "f477c518-1d69-4ffc-a289-ed27f966f67b",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 2,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "protein_bar",
+   "product_type": "bar",
+   "protein_g": "20.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bar",
+   "serving_unit": null,
+   "sodium_mg": "200.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 120,
+   "carbs_g": "3.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Protein Powder (whey)",
+   "display_name_plural": "scoops Protein Powder (whey)",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "1.0",
+   "fluid_ml": "0.0",
+   "id": "a036d9e4-6d90-4c9e-89ea-7b810831387f",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "protein_powder",
+   "product_type": "supplement",
+   "protein_g": "24.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 scoop",
+   "serving_unit": "scoop",
+   "sodium_mg": "130.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 150,
+   "carbs_g": "5.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Protein Shake (RTD)",
+   "display_name_plural": "bottles Protein Shake",
+   "excluded_diets": [],
+   "fat_g": "3.0",
+   "fluid_ml": "325.0",
+   "id": "8e7d500e-8796-45ed-8d34-ecb2aa0358d6",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 1,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "protein_shake",
+   "product_type": "beverage",
+   "protein_g": "25.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bottle (11 oz)",
+   "serving_unit": null,
+   "sodium_mg": "200.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 54,
+   "carbs_g": "14.3",
+   "categories": [
+    "before_run",
+    "during_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Raisins",
+   "display_name_plural": "tbsp Raisins",
+   "excluded_diets": [],
+   "fat_g": "0.1",
+   "fluid_ml": "3.0",
+   "id": "57a543db-bdd5-419e-8669-ed2ebad9910e",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 3,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "raisins",
+   "product_type": "real_food",
+   "protein_g": "0.5",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "2 tbsp (~18g)",
+   "serving_unit": null,
+   "sodium_mg": "2.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 35,
+   "carbs_g": "7.3",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Rice Cake (plain)",
+   "display_name_plural": "Rice Cakes",
+   "excluded_diets": [
+    "keto",
+    "low_carb"
+   ],
+   "fat_g": "0.3",
+   "fluid_ml": "0.0",
+   "id": "0c891faf-e07c-4a39-8753-209014090cde",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": "2.00",
+   "max_per_hr_low": "1.00",
+   "max_per_hr_moderate": "1.00",
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "rice_cake",
+   "product_type": "real_food",
+   "protein_g": "0.7",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cake",
+   "serving_unit": null,
+   "sodium_mg": "29.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "cycling"
+   ],
+   "allergens": [],
+   "calories": 180,
+   "carbs_g": "35.0",
+   "categories": [
+    "during_bike"
+   ],
+   "default_during": true,
+   "description": "Homemade rice cake with sticky rice, salt, and optional mix-ins. Pro peloton staple for long rides.",
+   "display_name": "Rice Cake",
+   "display_name_plural": "Rice Cakes",
+   "excluded_diets": [
+    "keto",
+    "low_carb"
+   ],
+   "fat_g": "3.0",
+   "fluid_ml": "0.0",
+   "id": "880efaa1-609b-4c55-b3a5-f88936fc6177",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": "2.00",
+   "max_per_hr_low": "1.00",
+   "max_per_hr_moderate": "1.00",
+   "max_servings_after": 0,
+   "max_servings_before": 0,
+   "max_servings_during": 4,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "rice_cake_during",
+   "product_type": "real_food",
+   "protein_g": "2.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 rice cake",
+   "serving_unit": "rice cake",
+   "sodium_mg": "100.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 0,
+   "carbs_g": "0.0",
+   "categories": [
+    "during_run",
+    "before_run",
+    "after_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Salt",
+   "display_name_plural": "packets Salt",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "fc45bd47-7151-4dcd-8ee5-b6a1aed2ed51",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": true,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 3,
+   "max_servings_during": 3,
+   "min_increment": "1.00",
+   "min_servings_during": "1.0",
+   "name": "salt",
+   "product_type": "supplement",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 packet",
+   "serving_unit": null,
+   "sodium_mg": "390.0",
+   "sodium_top_up_eligible": true,
+   "to_exclude_from_solver": true
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "soy"
+   ],
+   "calories": 9,
+   "carbs_g": "0.9",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Soy Sauce",
+   "display_name_plural": "tbsp Soy Sauce",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "0.0",
+   "fluid_ml": "13.0",
+   "id": "1485e7ff-326f-4adb-8415-9dbcd9dd802f",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "soy_sauce",
+   "product_type": "condiment",
+   "protein_g": "1.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "879.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 60,
+   "carbs_g": "15.0",
+   "categories": [
+    "after_run",
+    "before_run",
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": true,
+   "description": null,
+   "display_name": "Sports Drink",
+   "display_name_plural": "cups Sports Drink",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "240.0",
+   "id": "af14e3c2-ed27-4eea-8052-473fb8dcd23f",
+   "image_address": null,
+   "is_electrolyte": true,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": "3.00",
+   "max_per_hr_low": "2.00",
+   "max_per_hr_moderate": "2.50",
+   "max_servings_after": 6,
+   "max_servings_before": 6,
+   "max_servings_during": 20,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "sports_drink",
+   "product_type": "sports_drink",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "100.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 80,
+   "carbs_g": "21.0",
+   "categories": [
+    "before_run",
+    "transition"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Sports Drink Mix",
+   "display_name_plural": "servings Sports Drink Mix",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "0.0",
+   "id": "982b3fdc-34e1-4a42-8d7f-5e5361a5e16a",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 2,
+   "max_servings_during": 4,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "sports_drink_mix",
+   "product_type": "beverage",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 serving (in water)",
+   "serving_unit": null,
+   "sodium_mg": "160.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 27,
+   "carbs_g": "6.5",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Strawberries (sliced)",
+   "display_name_plural": "cups Strawberries",
+   "excluded_diets": [],
+   "fat_g": "0.3",
+   "fluid_ml": "76.0",
+   "id": "8a59751b-34bc-4622-841c-cc08eda69d30",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "strawberries",
+   "product_type": "real_food",
+   "protein_g": "0.6",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "\u00bd cup sliced",
+   "serving_unit": null,
+   "sodium_mg": "1.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 80,
+   "carbs_g": "1.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Mozzarella string cheese. Portable, no refrigeration for 1-2 hrs in cool weather.",
+   "display_name": "String Cheese",
+   "display_name_plural": "string cheese sticks",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "6.0",
+   "fluid_ml": "0.0",
+   "id": "38010239-d8da-4104-9fc7-20e8be0e7ba9",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 4,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "string_cheese",
+   "product_type": "whole_food",
+   "protein_g": "7.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 stick (28g)",
+   "serving_unit": "stick",
+   "sodium_mg": "200.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "calories": 150,
+   "carbs_g": "22.0",
+   "categories": [
+    "before_run",
+    "during_bike",
+    "during_run"
+   ],
+   "default_during": true,
+   "description": null,
+   "display_name": "Energy Waffle",
+   "display_name_plural": "Stroopwafels",
+   "excluded_diets": [
+    "vegan",
+    "gluten_free"
+   ],
+   "fat_g": "7.0",
+   "fluid_ml": "0.0",
+   "id": "2b29010b-4077-4e6d-b55d-6825b6271991",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": "2.00",
+   "max_per_hr_low": "1.00",
+   "max_per_hr_moderate": "1.00",
+   "max_servings_after": 0,
+   "max_servings_before": 3,
+   "max_servings_during": 8,
+   "min_increment": "1.00",
+   "min_servings_during": "1.0",
+   "name": "stroopwafel",
+   "product_type": "real_food",
+   "protein_g": "2.0",
+   "serving_amount": null,
+   "serving_qualifier": null,
+   "serving_size": "1 waffle",
+   "serving_unit": null,
+   "sodium_mg": "80.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 103,
+   "carbs_g": "24.0",
+   "categories": [
+    "before_run",
+    "after_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Sweet Potato (baked)",
+   "display_name_plural": "Sweet Potatoes (baked)",
+   "excluded_diets": [
+    "keto",
+    "low_carb"
+   ],
+   "fat_g": "0.1",
+   "fluid_ml": "82.0",
+   "id": "a4020770-5940-4461-8d08-8ca865750379",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "sweet_potato",
+   "product_type": "real_food",
+   "protein_g": "2.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 medium",
+   "serving_unit": null,
+   "sodium_mg": "41.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "soy",
+    "gluten"
+   ],
+   "calories": 16,
+   "carbs_g": "2.8",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Teriyaki Sauce",
+   "display_name_plural": "tbsp Teriyaki Sauce",
+   "excluded_diets": [
+    "paleo",
+    "gluten_free"
+   ],
+   "fat_g": "0.0",
+   "fluid_ml": "12.0",
+   "id": "ec7ce88b-c781-4d66-8611-e344fcce2d77",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "teriyaki_sauce",
+   "product_type": "condiment",
+   "protein_g": "1.1",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 tbsp",
+   "serving_unit": null,
+   "sodium_mg": "690.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 66,
+   "carbs_g": "12.7",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Bread / Toast",
+   "display_name_plural": "slices Toast",
+   "excluded_diets": [
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "0.8",
+   "fluid_ml": "0.0",
+   "id": "652dd5d5-ad51-42d5-83cc-5ae4b709e77e",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "toast",
+   "product_type": "real_food",
+   "protein_g": "1.8",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 slice",
+   "serving_unit": "slice",
+   "sodium_mg": "130.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten",
+    "eggs",
+    "dairy"
+   ],
+   "calories": 95,
+   "carbs_g": "15.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Toaster Waffle",
+   "display_name_plural": "Toaster Waffles",
+   "excluded_diets": [
+    "vegan",
+    "paleo",
+    "keto",
+    "low_carb",
+    "gluten_free"
+   ],
+   "fat_g": "3.0",
+   "fluid_ml": "10.0",
+   "id": "65eb3b87-fbe8-4ab6-80ce-0018f3121807",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "toaster_waffle",
+   "product_type": "real_food",
+   "protein_g": "2.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 waffle",
+   "serving_unit": null,
+   "sodium_mg": "212.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "peanuts",
+    "tree_nuts"
+   ],
+   "calories": 175,
+   "carbs_g": "15.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Trail Mix",
+   "display_name_plural": "servings Trail Mix",
+   "excluded_diets": [],
+   "fat_g": "12.0",
+   "fluid_ml": "0.0",
+   "id": "ae783f7a-b919-48a2-8a0e-220bbcd2cfe0",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 3,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "trail_mix",
+   "product_type": "real_food",
+   "protein_g": "5.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1/4 cup",
+   "serving_unit": null,
+   "sodium_mg": "85.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 89,
+   "carbs_g": "2.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Turkey (deli)",
+   "display_name_plural": "oz Turkey (deli)",
+   "excluded_diets": [
+    "vegetarian",
+    "vegan",
+    "pescatarian"
+   ],
+   "fat_g": "1.5",
+   "fluid_ml": "0.0",
+   "id": "cc0b44b0-24cb-418b-898f-d52ed9c2422e",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "turkey_deli",
+   "product_type": "real_food",
+   "protein_g": "15.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "3 oz",
+   "serving_unit": null,
+   "sodium_mg": "744.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 210,
+   "carbs_g": "18.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Plant-based post-workout recovery drink with high protein plus fluid and sodium.",
+   "display_name": "Vegan Recovery Protein Drink",
+   "display_name_plural": "bottles Vegan Recovery Protein Drink",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "6.0",
+   "fluid_ml": "414.0",
+   "id": "8bc36bd4-ffaf-448c-8b53-d771fece2e63",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 3,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "vegan_recovery_protein_drink",
+   "product_type": "beverage",
+   "protein_g": "30.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bottle (14 fl oz)",
+   "serving_unit": null,
+   "sodium_mg": "320.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 0,
+   "carbs_g": "0.0",
+   "categories": [
+    "after_run",
+    "before_run",
+    "during_bike",
+    "during_run",
+    "during_swim",
+    "transition"
+   ],
+   "default_during": true,
+   "description": null,
+   "display_name": "Water",
+   "display_name_plural": "cups Water",
+   "excluded_diets": [],
+   "fat_g": "0.0",
+   "fluid_ml": "240.0",
+   "id": "0519e4ff-f6cf-44d0-898c-ea863c75f017",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": true,
+   "is_indivisible": false,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 10,
+   "max_servings_before": 6,
+   "max_servings_during": 14,
+   "min_increment": "0.50",
+   "min_servings_during": "0.5",
+   "name": "water",
+   "product_type": "beverage",
+   "protein_g": "0.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup (8 oz)",
+   "serving_unit": null,
+   "sodium_mg": "0.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 46,
+   "carbs_g": "11.5",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Watermelon (cubed)",
+   "display_name_plural": "cups Watermelon",
+   "excluded_diets": [],
+   "fat_g": "0.2",
+   "fluid_ml": "139.0",
+   "id": "e47ff518-6abe-454d-81f2-f7d81b409d83",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "watermelon",
+   "product_type": "real_food",
+   "protein_g": "0.9",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup cubed",
+   "serving_unit": null,
+   "sodium_mg": "2.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 120,
+   "carbs_g": "3.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Whey protein isolate/concentrate. ~3g leucine per scoop.",
+   "display_name": "Whey Protein Powder",
+   "display_name_plural": "scoops Whey Protein Powder",
+   "excluded_diets": [
+    "vegan"
+   ],
+   "fat_g": "1.5",
+   "fluid_ml": "0.0",
+   "id": "04bd02a1-baef-4230-a646-079b3f0171ed",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "whey_protein_powder",
+   "product_type": "supplement",
+   "protein_g": "25.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 scoop (30g)",
+   "serving_unit": "scoop",
+   "sodium_mg": "130.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 170,
+   "carbs_g": "9.0",
+   "categories": [
+    "after_run"
+   ],
+   "default_during": false,
+   "description": "Generic 11 oz ready-to-drink whey protein shake (Premier, Muscle Milk, Fairlife, etc.). 30g protein.",
+   "display_name": "Whey Protein Shake (RTD)",
+   "display_name_plural": "bottles Whey Protein Shake",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "2.5",
+   "fluid_ml": "300.0",
+   "id": "038904fa-79b8-4abd-a2e6-797d2e61f57c",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": true,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 0,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "whey_protein_shake_rtd",
+   "product_type": "beverage",
+   "protein_g": "30.0",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 bottle (11 oz)",
+   "serving_unit": "bottle",
+   "sodium_mg": "200.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [],
+   "calories": 206,
+   "carbs_g": "45.0",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "White Rice (cooked)",
+   "display_name_plural": "cups White Rice (cooked)",
+   "excluded_diets": [
+    "keto",
+    "low_carb"
+   ],
+   "fat_g": "0.4",
+   "fluid_ml": "125.0",
+   "id": "12a8462a-d407-4cd9-803f-dd79f9e1825d",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "white_rice",
+   "product_type": "real_food",
+   "protein_g": "4.3",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup",
+   "serving_unit": null,
+   "sodium_mg": "2.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "gluten"
+   ],
+   "calories": 160,
+   "carbs_g": "28.0",
+   "categories": [
+    "after_run",
+    "before_run"
+   ],
+   "default_during": false,
+   "description": "Whole wheat sandwich bread. Solid carb base with fiber.",
+   "display_name": "Whole Wheat Bread",
+   "display_name_plural": "slices Whole Wheat Bread",
+   "excluded_diets": [
+    "paleo"
+   ],
+   "fat_g": "2.0",
+   "fluid_ml": "0.0",
+   "id": "a6e6432d-b9c0-4754-b921-e319b636f152",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": true,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 4,
+   "max_servings_before": 2,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "0.0",
+   "name": "whole_wheat_bread",
+   "product_type": "whole_food",
+   "protein_g": "8.0",
+   "serving_amount": 2,
+   "serving_qualifier": null,
+   "serving_size": "2 slices (60g)",
+   "serving_unit": "slices",
+   "sodium_mg": "280.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  },
+  {
+   "activity_types": [
+    "running",
+    "cycling",
+    "swimming"
+   ],
+   "allergens": [
+    "dairy"
+   ],
+   "calories": 149,
+   "carbs_g": "17.4",
+   "categories": [
+    "before_run"
+   ],
+   "default_during": false,
+   "description": null,
+   "display_name": "Yogurt (plain)",
+   "display_name_plural": "cups Yogurt",
+   "excluded_diets": [
+    "vegan",
+    "paleo"
+   ],
+   "fat_g": "4.7",
+   "fluid_ml": "200.0",
+   "id": "67f7093b-b0ff-4faa-81c5-d474c52818a2",
+   "image_address": null,
+   "is_electrolyte": false,
+   "is_essential": false,
+   "is_indivisible": false,
+   "is_liquid": false,
+   "max_per_hr_high": null,
+   "max_per_hr_low": null,
+   "max_per_hr_moderate": null,
+   "max_servings_after": 2,
+   "max_servings_before": 4,
+   "max_servings_during": 0,
+   "min_increment": "0.50",
+   "min_servings_during": "1.0",
+   "name": "yogurt",
+   "product_type": "real_food",
+   "protein_g": "8.5",
+   "serving_amount": 1,
+   "serving_qualifier": null,
+   "serving_size": "1 cup",
+   "serving_unit": null,
+   "sodium_mg": "172.0",
+   "sodium_top_up_eligible": false,
+   "to_exclude_from_solver": false
+  }
+ ]
+}
