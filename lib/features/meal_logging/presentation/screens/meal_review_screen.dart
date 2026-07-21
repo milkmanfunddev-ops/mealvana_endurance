@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log_source.dart';
@@ -126,6 +127,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           source: source,
           components: _components,
           photoPath: _photoPath,
+          eatenAt: eatenAtForLogDate(_logDate!),
         );
 
     if (!mounted) return;

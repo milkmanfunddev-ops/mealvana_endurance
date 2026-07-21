@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/consumed_totals.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_slot.dart';
 import 'slot_chip_selector.dart';
 
@@ -38,13 +39,14 @@ class QuickLogConfirmResult {
 Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
   BuildContext context, {
   required String title,
+  required String logDate,
   bool showServingsStepper = true,
   double initialServings = 1.0,
   ConsumedTotals Function(double servings)? previewTotals,
   MealSlot? initialSlot,
 }) {
   double servings = initialServings;
-  DateTime eatenAt = DateTime.now();
+  DateTime eatenAt = eatenAtForLogDate(logDate);
   MealSlot? slot = initialSlot;
 
   return showModalBottomSheet<QuickLogConfirmResult>(

@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../features/auth/data/user_repository.dart';
 import '../../domain/consumed_totals.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_auto_name.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
@@ -104,7 +105,10 @@ class DraftMealState {
 class DraftMealController extends _$DraftMealController {
   @override
   DraftMealState build(String logDate) {
-    return DraftMealState(components: const [], eatenAt: DateTime.now());
+    return DraftMealState(
+      components: const [],
+      eatenAt: eatenAtForLogDate(logDate),
+    );
   }
 
   void addComponent(MealComponent component) {
@@ -177,7 +181,10 @@ class DraftMealController extends _$DraftMealController {
 
   /// Discards the current draft (e.g. user taps "Clear").
   void clear() {
-    state = DraftMealState(components: const [], eatenAt: DateTime.now());
+    state = DraftMealState(
+      components: const [],
+      eatenAt: eatenAtForLogDate(logDate),
+    );
   }
 
   /// Persists the draft as a single [MealLog] row via

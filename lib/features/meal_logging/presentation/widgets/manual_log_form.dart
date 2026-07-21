@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
 import 'slot_chip_selector.dart';
@@ -60,8 +61,14 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   final _notesCtrl = TextEditingController();
 
   MealSlot? _slot;
-  DateTime _eatenAt = DateTime.now();
+  late DateTime _eatenAt;
   bool _showExtra = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _eatenAt = eatenAtForLogDate(widget.logDate);
+  }
 
   @override
   void dispose() {
@@ -127,7 +134,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
         _sodiumCtrl.clear();
         _notesCtrl.clear();
         _slot = null;
-        _eatenAt = DateTime.now();
+        _eatenAt = eatenAtForLogDate(widget.logDate);
       });
     } else {
       widget.onLogError();

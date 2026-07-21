@@ -102,6 +102,30 @@ void main() {
       expect(result.nodes[1], isA<WorkoutNode>());
     });
 
+    test('meal eatenAt on the correct calendar day sorts before later activity', () {
+      // Regression: eatenAt was initialized with DateTime.now() instead of the
+      // target logDate, so a meal logged for Jul 19 got eatenAt on Jul 20.
+      // The assembler sorts by full DateTime, so the wrong-day meal appeared
+      // after same-day activities despite an earlier clock time.
+      final jul19 = DateTime(2026, 7, 19);
+
+      // Correct: eatenAt on Jul 19 at 08:30 should sort before activity at 16:00
+      final result = assembler.assemble(
+        selectedDate: jul19,
+        now: DateTime(2026, 7, 19, 20),
+        meals: [
+          meal('breakfast', eatenAt: DateTime(2026, 7, 19, 8, 30)),
+        ],
+        activities: [
+          workout('ride', scheduledAt: DateTime(2026, 7, 19, 16, 0)),
+        ],
+        targets: targets(),
+        consumed: const ConsumedTotals(),
+      );
+
+      expect(result.nodes.map((n) => n.id).toList(), ['breakfast', 'ride']);
+    });
+
     test('events and carb-loading days appear on the timeline', () {
       final event = Event(
         id: 'race1',
