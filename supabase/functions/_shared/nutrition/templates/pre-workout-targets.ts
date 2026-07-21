@@ -33,15 +33,16 @@ const BUDGET_SPLITS = {
 /**
  * Determine which sub-phases are present based on hours before activity.
  *
- * >= 2.5h: meal + snack + top_up (3-4h window = full prep)
- * >= 1.0h: snack + top_up (1-2h window)
- * < 1.0h:  top_up only (quick top-off)
+ * Spec (Notion 31fe3fdb "Pre-Workout Fueling Plan Algorithm"):
+ * >= 1.5h (90 min): meal + snack + top_up
+ * >= 0.5h (30 min): snack + top_up
+ * < 0.5h:           top_up only
  */
 export function getActiveSubPhases(hoursBefore: number): SubPhaseType[] {
-  if (hoursBefore >= 2.5) {
+  if (hoursBefore >= 1.5) {
     return ['meal', 'snack', 'top_up'];
   }
-  if (hoursBefore >= 1.0) {
+  if (hoursBefore >= 0.5) {
     return ['snack', 'top_up'];
   }
   return ['top_up'];
@@ -133,7 +134,7 @@ export function getSubPhaseTimingLabel(
     return `${hoursBefore >= 3 ? '3-4' : '2-3'} hours before`;
   }
   if (subPhase === 'snack') {
-    return hoursBefore >= 2.5 ? '1-2 hours before' : '45-60 min before';
+    return hoursBefore >= 1.5 ? '1-2 hours before' : '45-60 min before';
   }
   return '15-30 min before';
 }

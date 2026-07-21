@@ -248,3 +248,43 @@ describe("trimSodiumOverage (before-sodium 154% regression)", () => {
     assertEquals(state.sodium_delivered, 400);
   });
 });
+
+// ============================================================================
+// Tier thresholds — Notion spec 31fe3fdb (2-hours-before meal bug regression)
+// ============================================================================
+
+import { calculatePreWorkoutTargets, getActiveSubPhases } from "./pre-workout.ts";
+
+describe("Eating-occasion tiers (Notion spec 31fe3fdb)", () => {
+  it(">= 90 min gets all three tiers — the 2h-before meal bug", () => {
+    assertEquals(getActiveSubPhases(2.0), ["meal", "snack", "top_up"]);
+    assertEquals(getActiveSubPhases(1.5), ["meal", "snack", "top_up"]);
+    assertEquals(getActiveSubPhases(4.0), ["meal", "snack", "top_up"]);
+  });
+
+  it("30-89 min gets snack + top-off", () => {
+    assertEquals(getActiveSubPhases(1.49), ["snack", "top_up"]);
+    assertEquals(getActiveSubPhases(1.0), ["snack", "top_up"]);
+    assertEquals(getActiveSubPhases(0.5), ["snack", "top_up"]);
+  });
+
+  it("< 30 min gets top-off only", () => {
+    assertEquals(getActiveSubPhases(0.49), ["top_up"]);
+    assertEquals(getActiveSubPhases(0), ["top_up"]);
+  });
+
+  it("target tiers move with the same boundaries (meal_type)", () => {
+    assertEquals(
+      calculatePreWorkoutTargets(70, 2.0, false, "medium", "mild").meal_type,
+      "full_meal",
+    );
+    assertEquals(
+      calculatePreWorkoutTargets(70, 1.0, false, "medium", "mild").meal_type,
+      "snack",
+    );
+    assertEquals(
+      calculatePreWorkoutTargets(70, 0.25, false, "medium", "mild").meal_type,
+      "top_up",
+    );
+  });
+});

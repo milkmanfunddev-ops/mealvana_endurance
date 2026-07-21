@@ -207,7 +207,11 @@ export function calculatePreWorkoutTargets(
   let hydrationHigh: number;
   let mealType: string;
 
-  if (hoursBefore >= 2.5) {
+  // Tier thresholds per the Notion spec "Pre-Workout Fueling Plan Algorithm"
+  // (31fe3fdb): >= 90 min -> Meal + Snack + Top-off; 30-89 min -> Snack +
+  // Top-off; < 30 min -> Top-off only. These had drifted to 2.5h/1.0h,
+  // which denied a full meal to athletes eating 1.5-2.5h out (bug, 2026-07-21).
+  if (hoursBefore >= 1.5) {
     // Full meal
     protein = Math.round(weightKg * 0.25);
     proteinLow = Math.round(weightKg * 0.15);
@@ -220,7 +224,7 @@ export function calculatePreWorkoutTargets(
     sodiumHigh = 2000;
     hydrationLow = Math.max(200, Math.round(hydration * 0.50));
     hydrationHigh = Math.max(600, Math.round(hydration * 1.50));
-  } else if (hoursBefore >= 1.0) {
+  } else if (hoursBefore >= 0.5) {
     // Snack
     protein = Math.round(weightKg * 0.15);
     proteinLow = 0;
@@ -403,8 +407,10 @@ export function applyPreWorkoutHydrationOverlay(
 // ============================================================================
 
 export function getActiveSubPhases(hoursBefore: number): SubPhaseType[] {
-  if (hoursBefore >= 2.5) return ['meal', 'snack', 'top_up'];
-  if (hoursBefore >= 1.0) return ['snack', 'top_up'];
+  // Spec (Notion 31fe3fdb): >= 90 min -> all three tiers; 30-89 min ->
+  // snack + top-off; < 30 min -> top-off only.
+  if (hoursBefore >= 1.5) return ['meal', 'snack', 'top_up'];
+  if (hoursBefore >= 0.5) return ['snack', 'top_up'];
   return ['top_up'];
 }
 
