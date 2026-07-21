@@ -7,6 +7,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_logging_service.dart';
+import '../../domain/log_date_time.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/slot_chip_selector.dart';
@@ -231,7 +232,12 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
 
     await ref
         .read(mealLogControllerProvider.notifier)
-        .logRecipe(params: params, slot: slot, logDate: _logDate!);
+        .logRecipe(
+          params: params,
+          slot: slot,
+          logDate: _logDate!,
+          eatenAt: eatenAtForLogDate(_logDate!),
+        );
 
     if (!mounted) return;
     final state = ref.read(mealLogControllerProvider);
