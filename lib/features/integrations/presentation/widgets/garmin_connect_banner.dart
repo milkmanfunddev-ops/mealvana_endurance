@@ -101,19 +101,29 @@ class _GarminConnectBannerState extends ConsumerState<GarminConnectBanner> {
               ],
             ),
           ),
-          // Dismiss button
-          GestureDetector(
-            key: const ValueKey('garmin_banner.dismiss'),
-            onTap: () async {
-              await ref.read(preferencesServiceProvider).dismissGarminBanner();
-              if (mounted) setState(() {});
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.sm),
-              child: Icon(
-                Icons.close,
-                size: 18,
-                color: textColor.withValues(alpha: 0.5),
+          // Dismiss button. Semantics(button:) so VoiceOver/TalkBack expose a
+          // tappable "Dismiss" control — a bare GestureDetector+Icon has no
+          // semantics node, leaving screen-reader users unable to dismiss a
+          // banner that never re-appears once shown. Same pattern as
+          // PinToggle (pin_toggle.dart).
+          Semantics(
+            button: true,
+            label: 'Dismiss Garmin banner',
+            child: GestureDetector(
+              key: const ValueKey('garmin_banner.dismiss'),
+              onTap: () async {
+                await ref
+                    .read(preferencesServiceProvider)
+                    .dismissGarminBanner();
+                if (mounted) setState(() {});
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.sm),
+                child: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: textColor.withValues(alpha: 0.5),
+                ),
               ),
             ),
           ),
