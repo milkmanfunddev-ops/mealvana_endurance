@@ -32,11 +32,18 @@ UDID="${1:-$(xcrun simctl list devices booted | grep -Eo '[0-9A-Fa-f]{8}-[0-9A-F
 export IDB_UDID="$UDID"
 
 # Email is the Keychain account label (not secret) — read the metadata, not -w.
+# The trailing `|| true` matters: when the Keychain item is missing, `security`
+# exits 44, and under `set -euo pipefail` a failing pipeline inside an
+# assignment's command substitution kills the script BEFORE the friendly
+# error below can print. Swallow the status here; the [ -n ] guard is the
+# real check.
 EMAIL="$(security find-generic-password -s "$SERVICE" 2>/dev/null \
-          | sed -n 's/.*"acct"<blob>="\(.*\)"$/\1/p')"
+          | sed -n 's/.*"acct"<blob>="\(.*\)"$/\1/p' || true)"
 [ -n "${EMAIL:-}" ] || {
-  echo "✗ No Keychain entry '$SERVICE'. Run step 1 first:"
+  echo "✗ No Keychain entry '$SERVICE'. Create it first (see the header of this"
+  echo "  script — SECURITY MODEL, step 1):"
   echo "    security add-generic-password -U -s $SERVICE -a <your-dev-email> -w"
+  echo "  (-w with no value prompts for the password hidden — nothing echoed.)"
   exit 1
 }
 
