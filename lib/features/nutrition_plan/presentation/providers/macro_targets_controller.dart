@@ -797,7 +797,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           distanceMiles: distanceMiles,
           paceMinutesPerMile:
               60.0 / speedMph, // Convert speed to pace equivalent
-          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+          gutTrainingLevel: user?.gutTraining.name ?? 'moderate',
         );
 
         // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
@@ -1073,7 +1073,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           distanceMiles: distanceMiles,
           paceMinutesPerMile: approximatePaceMinPerMile,
-          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+          gutTrainingLevel: user?.gutTraining.name ?? 'moderate',
         );
 
         // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
@@ -1297,7 +1297,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           distanceMiles: totalDistanceMiles,
           paceMinutesPerMile: 0.0, // Not applicable for brick
-          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+          gutTrainingLevel: user?.gutTraining.name ?? 'moderate',
         );
 
         // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist

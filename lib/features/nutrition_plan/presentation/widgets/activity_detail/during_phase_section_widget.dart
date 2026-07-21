@@ -9,6 +9,7 @@ import '../../../application/macro_explanation_service.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
+import '../macro_shortfall_card.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
 import 'by_hour_view.dart';
@@ -206,6 +207,16 @@ class _DuringPhaseSectionWidgetState
             fluidsOverrideLabel: widget.fluidsOverrideLabel,
           ),
           const SizedBox(height: AppSpacing.md),
+          // Surface macro shortfalls the solver reported for this phase so
+          // missed targets are explained instead of silent (bug 3a3e3fdb).
+          // Mirrors the Before-phase card in before_phase_widget.dart.
+          if (widget.section.shortfalls.isNotEmpty) ...[
+            MacroShortfallCard(
+              shortfalls: widget.section.shortfalls,
+              dietHint: _dietHint,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (_showByHour && widget.section.byHourData != null)
             _buildByHourContent()
           else
@@ -214,6 +225,11 @@ class _DuringPhaseSectionWidgetState
       ),
     );
   }
+
+  /// Optional diet hint passed to MacroShortfallCard for diet-aware
+  /// suggestions. Returns null when no diet context is available — the card
+  /// then uses the generic suggestion list. Mirrors before_phase_widget.
+  String? get _dietHint => null; // Wire user diet here when threaded through
 
   Widget _buildHeader(BuildContext context) {
     return Row(

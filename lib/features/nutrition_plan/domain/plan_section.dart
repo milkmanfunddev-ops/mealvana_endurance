@@ -207,6 +207,7 @@ class PlanSection {
     this.subPhases,
     this.byHourData,
     this.pinDecision,
+    this.shortfalls = const <MacroShortfall>[],
   });
 
   final String id;
@@ -243,6 +244,14 @@ class PlanSection {
   /// one at the section level (Before pins live on each [BeforeSubPhase]).
   /// Used by the activity-detail pin banner (Formula Kit PR 2 substep 9).
   final PinDecision? pinDecision;
+
+  /// Macros the solver could not satisfy for this section. Mirrors
+  /// [BeforeSubPhase.shortfalls] (Before carries them per sub-phase); today
+  /// only the During section ever carries them at the section level, from
+  /// `plan.during.shortfalls` in the V3 response. Empty list means clean
+  /// fit. Bug 3a3e3fdb: these were previously discarded, so during-phase
+  /// plans silently missed carb targets.
+  final List<MacroShortfall> shortfalls;
 
   /// Whether this section uses the template-based sub-phase layout
   bool get hasSubPhases => subPhases != null && subPhases!.isNotEmpty;
@@ -295,6 +304,9 @@ class PlanSection {
       subPhases: subPhases,
       byHourData: byHourData,
       pinDecision: _parsePinDecision(json),
+      shortfalls: ((json['shortfalls'] as List<dynamic>?) ?? const [])
+          .map((e) => MacroShortfall.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -360,6 +372,8 @@ class PlanSection {
         'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
       if (byHourData != null) 'byHourData': byHourData!.toJson(),
       if (pinDecision != null) 'pinDecision': pinDecision!.toJson(),
+      if (shortfalls.isNotEmpty)
+        'shortfalls': shortfalls.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -387,6 +401,7 @@ class PlanSection {
     ByHourData? byHourData,
     bool clearByHourData = false,
     PinDecision? pinDecision,
+    List<MacroShortfall>? shortfalls,
   }) {
     return PlanSection(
       id: id ?? this.id,
@@ -410,6 +425,7 @@ class PlanSection {
       subPhases: subPhases ?? this.subPhases,
       byHourData: clearByHourData ? null : (byHourData ?? this.byHourData),
       pinDecision: pinDecision ?? this.pinDecision,
+      shortfalls: shortfalls ?? this.shortfalls,
     );
   }
 

@@ -98,6 +98,95 @@ class NutritionPlanService {
     return target < low || target > high;
   }
 
+  /// Build the base request payload for the V3 plan generator.
+  ///
+  /// Extracted as a static so the payload contract can be unit tested
+  /// (brick-specific keys are layered on afterwards by the caller).
+  static Map<String, dynamic> buildV2RequestPayload({
+    required MacroTargets macroTargets,
+    required double hoursBefore,
+    required double weightKg,
+    String? userId,
+    String? dietaryPreference,
+    List<String>? allergies,
+    List<String>? likedFoods,
+    List<String>? dislikedFoods,
+    List<String>? willingToTryFoods,
+    int? durationMinutes,
+    String? gutTrainingLevel,
+  }) {
+    return {
+      'device_id': userId ?? '',
+      'activity_type': macroTargets.activityType.name,
+      'hours_before': hoursBefore,
+      'weight_kg': weightKg,
+      // Opt in to the ephemeral default-formula safety net (formula-first
+      // flip). This client keeps ephemeral pin decisions invisible in the
+      // pin banner + pin analytics (see pin_banner_rows_builder /
+      // macro_targets_controller._emitPinEvent), so it's safe to receive
+      // them. Old clients omit this flag and get byte-identical
+      // pre-safety-net telemetry. 2026-07-03.
+      'emit_ephemeral_default_formula': true,
+      'macro_targets': <String, dynamic>{
+        'pre_run': _buildPhaseTargets(
+          carbsG: macroTargets.preRun.carbsG,
+          proteinG: macroTargets.preRun.proteinG,
+          fatG: macroTargets.preRun.fatCapG,
+          sodiumMg: macroTargets.preRun.sodiumMg,
+          waterMl: macroTargets.preRun.fluidsMl,
+          carbsLowG: macroTargets.preRun.carbsLowG,
+          carbsHighG: macroTargets.preRun.carbsHighG,
+          proteinLowG: macroTargets.preRun.proteinLowG,
+          proteinHighG: macroTargets.preRun.proteinHighG,
+          sodiumLowMg: macroTargets.preRun.sodiumLowMg,
+          sodiumHighMg: macroTargets.preRun.sodiumHighMg,
+          waterLowMl: macroTargets.preRun.fluidsLowMl,
+          waterHighMl: macroTargets.preRun.fluidsHighMl,
+        ),
+        'during_run': _buildPhaseTargets(
+          carbsG: macroTargets.duringRun.carbTotalG,
+          sodiumMg: macroTargets.duringRun.sodiumTotalMg,
+          waterMl: macroTargets.duringRun.fluidTotalMl,
+          carbsLowG: macroTargets.duringRun.carbsLowG,
+          carbsHighG: macroTargets.duringRun.carbsHighG,
+          sodiumLowMg: macroTargets.duringRun.sodiumLowMg,
+          sodiumHighMg: macroTargets.duringRun.sodiumHighMg,
+          waterLowMl: macroTargets.duringRun.fluidsLowMl,
+          waterHighMl: macroTargets.duringRun.fluidsHighMl,
+        ),
+        'post_run': _buildPhaseTargets(
+          carbsG: macroTargets.postRun.carbsG,
+          proteinG: macroTargets.postRun.proteinG,
+          sodiumMg: macroTargets.postRun.sodiumMg,
+          waterMl: macroTargets.postRun.fluidsMl,
+          carbsLowG: macroTargets.postRun.carbsLowG,
+          carbsHighG: macroTargets.postRun.carbsHighG,
+          proteinLowG: macroTargets.postRun.proteinLowG,
+          proteinHighG: macroTargets.postRun.proteinHighG,
+          sodiumLowMg: macroTargets.postRun.sodiumLowMg,
+          sodiumHighMg: macroTargets.postRun.sodiumHighMg,
+          waterLowMl: macroTargets.postRun.fluidsLowMl,
+          waterHighMl: macroTargets.postRun.fluidsHighMl,
+        ),
+      },
+      if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
+      if (allergies != null) 'allergies': allergies,
+      if (likedFoods != null) 'liked_foods': likedFoods,
+      if (dislikedFoods != null) 'disliked_foods': dislikedFoods,
+      if (willingToTryFoods != null)
+        'willing_to_try_foods': willingToTryFoods,
+      if (durationMinutes != null) 'duration_minutes': durationMinutes,
+      // Always send a valid gut training level ('low' | 'moderate' | 'high').
+      // A null/absent value makes the V3 edge function skip its formula
+      // engine, producing during-phase plans that miss carb targets
+      // (bug 3a3e3fdb). Defense-in-depth alongside the server-side fix.
+      'gut_training_level': gutTrainingLevel ?? 'moderate',
+      if (macroTargets.preRunSelections != null &&
+          macroTargets.preRunSelections!.isNotEmpty)
+        'pre_run_selections': macroTargets.preRunSelections,
+    };
+  }
+
   /// Generate nutrition plan using template-based V2 edge function.
   ///
   /// Pre-workout phase uses Algorithm C selections from macro generation.
@@ -133,72 +222,19 @@ class NutritionPlanService {
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
       // Build the v2 request payload
-      final requestData = {
-        'device_id': userId ?? '',
-        'activity_type': macroTargets.activityType.name,
-        'hours_before': hoursBefore,
-        'weight_kg': weightKg,
-        // Opt in to the ephemeral default-formula safety net (formula-first
-        // flip). This client keeps ephemeral pin decisions invisible in the
-        // pin banner + pin analytics (see pin_banner_rows_builder /
-        // macro_targets_controller._emitPinEvent), so it's safe to receive
-        // them. Old clients omit this flag and get byte-identical
-        // pre-safety-net telemetry. 2026-07-03.
-        'emit_ephemeral_default_formula': true,
-        'macro_targets': <String, dynamic>{
-          'pre_run': _buildPhaseTargets(
-            carbsG: macroTargets.preRun.carbsG,
-            proteinG: macroTargets.preRun.proteinG,
-            fatG: macroTargets.preRun.fatCapG,
-            sodiumMg: macroTargets.preRun.sodiumMg,
-            waterMl: macroTargets.preRun.fluidsMl,
-            carbsLowG: macroTargets.preRun.carbsLowG,
-            carbsHighG: macroTargets.preRun.carbsHighG,
-            proteinLowG: macroTargets.preRun.proteinLowG,
-            proteinHighG: macroTargets.preRun.proteinHighG,
-            sodiumLowMg: macroTargets.preRun.sodiumLowMg,
-            sodiumHighMg: macroTargets.preRun.sodiumHighMg,
-            waterLowMl: macroTargets.preRun.fluidsLowMl,
-            waterHighMl: macroTargets.preRun.fluidsHighMl,
-          ),
-          'during_run': _buildPhaseTargets(
-            carbsG: macroTargets.duringRun.carbTotalG,
-            sodiumMg: macroTargets.duringRun.sodiumTotalMg,
-            waterMl: macroTargets.duringRun.fluidTotalMl,
-            carbsLowG: macroTargets.duringRun.carbsLowG,
-            carbsHighG: macroTargets.duringRun.carbsHighG,
-            sodiumLowMg: macroTargets.duringRun.sodiumLowMg,
-            sodiumHighMg: macroTargets.duringRun.sodiumHighMg,
-            waterLowMl: macroTargets.duringRun.fluidsLowMl,
-            waterHighMl: macroTargets.duringRun.fluidsHighMl,
-          ),
-          'post_run': _buildPhaseTargets(
-            carbsG: macroTargets.postRun.carbsG,
-            proteinG: macroTargets.postRun.proteinG,
-            sodiumMg: macroTargets.postRun.sodiumMg,
-            waterMl: macroTargets.postRun.fluidsMl,
-            carbsLowG: macroTargets.postRun.carbsLowG,
-            carbsHighG: macroTargets.postRun.carbsHighG,
-            proteinLowG: macroTargets.postRun.proteinLowG,
-            proteinHighG: macroTargets.postRun.proteinHighG,
-            sodiumLowMg: macroTargets.postRun.sodiumLowMg,
-            sodiumHighMg: macroTargets.postRun.sodiumHighMg,
-            waterLowMl: macroTargets.postRun.fluidsLowMl,
-            waterHighMl: macroTargets.postRun.fluidsHighMl,
-          ),
-        },
-        if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
-        if (allergies != null) 'allergies': allergies,
-        if (likedFoods != null) 'liked_foods': likedFoods,
-        if (dislikedFoods != null) 'disliked_foods': dislikedFoods,
-        if (willingToTryFoods != null)
-          'willing_to_try_foods': willingToTryFoods,
-        if (durationMinutes != null) 'duration_minutes': durationMinutes,
-        if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
-        if (macroTargets.preRunSelections != null &&
-            macroTargets.preRunSelections!.isNotEmpty)
-          'pre_run_selections': macroTargets.preRunSelections,
-      };
+      final requestData = buildV2RequestPayload(
+        macroTargets: macroTargets,
+        hoursBefore: hoursBefore,
+        weightKg: weightKg,
+        userId: userId,
+        dietaryPreference: dietaryPreference,
+        allergies: allergies,
+        likedFoods: likedFoods,
+        dislikedFoods: dislikedFoods,
+        willingToTryFoods: willingToTryFoods,
+        durationMinutes: durationMinutes,
+        gutTrainingLevel: gutTrainingLevel,
+      );
 
       // Add brick_segments for brick workouts
       if (macroTargets.activityType == ActivityType.brick &&
