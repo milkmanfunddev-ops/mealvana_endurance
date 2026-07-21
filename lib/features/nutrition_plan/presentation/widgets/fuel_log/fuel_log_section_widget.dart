@@ -139,51 +139,101 @@ class FuelLogSectionWidget extends StatelessWidget {
   Widget _buildSubPhaseItems(BuildContext context) {
     final entries = subPhaseGroups!.entries.toList();
 
-    return Column(
-      children: entries.map((entry) {
-        final subPhaseTitle = _subPhaseDisplayTitle(entry.key);
-        final subItems = entry.value;
+    // Items whose sub-phase is null or doesn't match any rendered group
+    // (e.g. foods added via ADD FOOD during logging). Without this bucket
+    // they would be silently dropped: the write succeeds but the grouped
+    // render never shows them (bug 3a3e3fdb).
+    final ungroupedItems = items
+        .where(
+          (item) =>
+              item.subPhaseType == null ||
+              !subPhaseGroups!.containsKey(item.subPhaseType),
+        )
+        .toList();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Sub-phase header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.xxs,
-              ),
-              child: Text(
-                subPhaseTitle,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+    return Column(
+      children: [
+        ...entries.map((entry) {
+          final subPhaseTitle = _subPhaseDisplayTitle(entry.key);
+          final subItems = entry.value;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sub-phase header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.xxs,
+                ),
+                child: Text(
+                  subPhaseTitle,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            ...subItems.map(
-              (item) => FuelLogFoodRow(
-                item: item,
-                sectionColor: sectionColor,
-                onIncrement: () => onIncrement(item.foodId, sectionId),
-                onDecrement: () => onDecrement(item.foodId, sectionId),
-                isViewOnly: isViewOnly,
+              ...subItems.map(
+                (item) => FuelLogFoodRow(
+                  item: item,
+                  sectionColor: sectionColor,
+                  onIncrement: () => onIncrement(item.foodId, sectionId),
+                  onDecrement: () => onDecrement(item.foodId, sectionId),
+                  isViewOnly: isViewOnly,
+                ),
               ),
-            ),
-            if (entry.key != entries.last.key)
-              Divider(
-                height: 1,
-                indent: AppSpacing.md,
-                endIndent: AppSpacing.md,
-                color: sectionColor.withValues(alpha: 0.1),
+              if (entry.key != entries.last.key || ungroupedItems.isNotEmpty)
+                Divider(
+                  height: 1,
+                  indent: AppSpacing.md,
+                  endIndent: AppSpacing.md,
+                  color: sectionColor.withValues(alpha: 0.1),
+                ),
+            ],
+          );
+        }),
+        if (ungroupedItems.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // "Added" bucket header — mirrors the sub-phase header style
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.xxs,
+                ),
+                child: Text(
+                  _addedBucketTitle,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-          ],
-        );
-      }).toList(),
+              ...ungroupedItems.map(
+                (item) => FuelLogFoodRow(
+                  item: item,
+                  sectionColor: sectionColor,
+                  onIncrement: () => onIncrement(item.foodId, sectionId),
+                  onDecrement: () => onDecrement(item.foodId, sectionId),
+                  isViewOnly: isViewOnly,
+                ),
+              ),
+            ],
+          ),
+      ],
     );
   }
+
+  /// Header for foods added during logging that don't belong to a sub-phase.
+  /// Hardcoded to match sibling labels in this widget (see
+  /// [_subPhaseDisplayTitle] and the 'Added' row label in FuelLogFoodRow).
+  static const String _addedBucketTitle = 'Added';
 
   String _subPhaseDisplayTitle(String subPhaseType) {
     switch (subPhaseType) {

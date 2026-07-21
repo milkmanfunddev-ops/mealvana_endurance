@@ -2371,6 +2371,34 @@ class ActivityDetailController extends _$ActivityDetailController {
     );
   }
 
+  /// Add a raw food (from the swap/add-food flow) to the in-memory fuel log.
+  ///
+  /// Used when ADD FOOD is tapped while fuel logging: the fuel log screen
+  /// renders from state.fuelLogData, so the write must land there — not in
+  /// the nutrition plan (bug 3a3e3fdb). When [category] carries no
+  /// ':subPhase' suffix the item keeps a null subPhaseType; sections with
+  /// sub-phases render those in a trailing "Added" bucket. We deliberately
+  /// do NOT invent a sub-phase, to avoid skewing downstream timing/carb
+  /// analysis.
+  void addFoodToFuelLogFromRawFood(
+    dynamic food,
+    String category, {
+    double? customAmount,
+  }) {
+    final foodItemData = _createFoodItemData(food, customAmount: customAmount);
+    final parts = category.split(':');
+    addFoodToFuelLog(
+      foodItemData,
+      parts[0],
+      subPhaseType: parts.length > 1 ? parts[1] : null,
+    );
+
+    _trackAnalytics('food_added_to_fuel_log', {
+      'food_name': food?.name,
+      'section': category,
+    });
+  }
+
   /// Update feedback fields on the in-memory fuel log.
   void updateFuelLogFeedback({
     int? overallSatisfaction,
