@@ -301,11 +301,11 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
             (k, v) => MapEntry(k, v.cast()),
           ),
           isViewOnly: false,
-          onIncrement: (foodId, secId) {
-            _controller().updateFuelLogItemQuantity(foodId, secId, 0.5);
+          onIncrement: (item) {
+            _controller().updateFuelLogItemQuantity(item, 0.5);
           },
-          onDecrement: (foodId, secId) {
-            _controller().updateFuelLogItemQuantity(foodId, secId, -0.5);
+          onDecrement: (item) {
+            _controller().updateFuelLogItemQuantity(item, -0.5);
           },
           onAddFood: () => _addFood(context, sectionId),
         ),

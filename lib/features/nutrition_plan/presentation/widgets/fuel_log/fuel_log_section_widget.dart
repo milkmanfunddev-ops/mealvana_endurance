@@ -22,8 +22,11 @@ class FuelLogSectionWidget extends StatelessWidget {
   final String title;
   final List<FuelLogItem> items;
   final Color sectionColor;
-  final void Function(String foodId, String sectionId) onIncrement;
-  final void Function(String foodId, String sectionId) onDecrement;
+  // Callbacks take the full item: foodId + sectionId is not unique (the same
+  // food can appear in a sub-phase group and the "Added" bucket), so the
+  // controller needs the item's subPhaseType/isAdded to target one row.
+  final void Function(FuelLogItem item) onIncrement;
+  final void Function(FuelLogItem item) onDecrement;
   final VoidCallback onAddFood;
   final bool isViewOnly;
 
@@ -128,8 +131,8 @@ class FuelLogSectionWidget extends StatelessWidget {
         return FuelLogFoodRow(
           item: item,
           sectionColor: sectionColor,
-          onIncrement: () => onIncrement(item.foodId, sectionId),
-          onDecrement: () => onDecrement(item.foodId, sectionId),
+          onIncrement: () => onIncrement(item),
+          onDecrement: () => onDecrement(item),
           isViewOnly: isViewOnly,
         );
       }).toList(),
@@ -180,8 +183,8 @@ class FuelLogSectionWidget extends StatelessWidget {
                 (item) => FuelLogFoodRow(
                   item: item,
                   sectionColor: sectionColor,
-                  onIncrement: () => onIncrement(item.foodId, sectionId),
-                  onDecrement: () => onDecrement(item.foodId, sectionId),
+                  onIncrement: () => onIncrement(item),
+                  onDecrement: () => onDecrement(item),
                   isViewOnly: isViewOnly,
                 ),
               ),
@@ -219,8 +222,8 @@ class FuelLogSectionWidget extends StatelessWidget {
                 (item) => FuelLogFoodRow(
                   item: item,
                   sectionColor: sectionColor,
-                  onIncrement: () => onIncrement(item.foodId, sectionId),
-                  onDecrement: () => onDecrement(item.foodId, sectionId),
+                  onIncrement: () => onIncrement(item),
+                  onDecrement: () => onDecrement(item),
                   isViewOnly: isViewOnly,
                 ),
               ),

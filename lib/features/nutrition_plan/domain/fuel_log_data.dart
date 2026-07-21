@@ -19,6 +19,7 @@ class FuelLogItem {
     this.isAdded = false,
     this.nutritionalInfo,
     this.servingSize,
+    this.nutritionReferenceQuantity,
   });
 
   final String foodId;
@@ -36,13 +37,22 @@ class FuelLogItem {
   final NutritionalInfo? nutritionalInfo;
   final String? servingSize;
 
+  /// The quantity [nutritionalInfo] was captured at. Null for plan-seeded
+  /// items, whose info corresponds to [plannedQuantity] units. Added items
+  /// have plannedQuantity 0 ("not in the plan"), so they carry the add-time
+  /// quantity here instead — without it their macros could never be scaled
+  /// and they'd contribute zero to carbs/hr and coach reports.
+  final double? nutritionReferenceQuantity;
+
   double get stepSize => isIndivisible ? 1.0 : 0.5;
 
-  /// Compute actual macros by scaling per-serving nutritional info
-  /// by the ratio of actual quantity to planned (or 1 serving).
+  /// Compute actual macros by scaling the stored nutritional info by the
+  /// ratio of actual quantity to the quantity that info corresponds to
+  /// ([nutritionReferenceQuantity], falling back to [plannedQuantity]).
   NutritionalInfo? get actualNutritionalInfo {
-    if (nutritionalInfo == null || plannedQuantity <= 0) return null;
-    final scale = actualQuantity / plannedQuantity;
+    final referenceQuantity = nutritionReferenceQuantity ?? plannedQuantity;
+    if (nutritionalInfo == null || referenceQuantity <= 0) return null;
+    final scale = actualQuantity / referenceQuantity;
     return NutritionalInfo(
       calories: nutritionalInfo!.calories != null
           ? (nutritionalInfo!.calories! * scale).round()
@@ -80,6 +90,7 @@ class FuelLogItem {
     bool? isAdded,
     NutritionalInfo? nutritionalInfo,
     String? servingSize,
+    double? nutritionReferenceQuantity,
   }) {
     return FuelLogItem(
       foodId: foodId ?? this.foodId,
@@ -96,6 +107,8 @@ class FuelLogItem {
       isAdded: isAdded ?? this.isAdded,
       nutritionalInfo: nutritionalInfo ?? this.nutritionalInfo,
       servingSize: servingSize ?? this.servingSize,
+      nutritionReferenceQuantity:
+          nutritionReferenceQuantity ?? this.nutritionReferenceQuantity,
     );
   }
 
@@ -115,6 +128,8 @@ class FuelLogItem {
       'isAdded': isAdded,
       if (nutritionalInfo != null) 'nutritionalInfo': nutritionalInfo!.toJson(),
       if (servingSize != null) 'servingSize': servingSize,
+      if (nutritionReferenceQuantity != null)
+        'nutritionReferenceQuantity': nutritionReferenceQuantity,
     };
   }
 
@@ -136,6 +151,8 @@ class FuelLogItem {
           ? NutritionalInfo.fromJson(json['nutritionalInfo'])
           : null,
       servingSize: json['servingSize'] as String?,
+      nutritionReferenceQuantity:
+          (json['nutritionReferenceQuantity'] as num?)?.toDouble(),
     );
   }
 }

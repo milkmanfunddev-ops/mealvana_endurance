@@ -733,15 +733,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           sectionColor: sectionColor,
           subPhaseGroups: subPhaseGroups?.map((k, v) => MapEntry(k, v.cast())),
           isViewOnly: !state.isFuelLogMode,
-          onIncrement: (foodId, secId) {
+          onIncrement: (item) {
             final controller =
                 _getControllerNotifier() as ActivityDetailController;
-            controller.updateFuelLogItemQuantity(foodId, secId, 0.5);
+            controller.updateFuelLogItemQuantity(item, 0.5);
           },
-          onDecrement: (foodId, secId) {
+          onDecrement: (item) {
             final controller =
                 _getControllerNotifier() as ActivityDetailController;
-            controller.updateFuelLogItemQuantity(foodId, secId, -0.5);
+            controller.updateFuelLogItemQuantity(item, -0.5);
           },
           onAddFood: () => _addFood(context, sectionId),
         ),
