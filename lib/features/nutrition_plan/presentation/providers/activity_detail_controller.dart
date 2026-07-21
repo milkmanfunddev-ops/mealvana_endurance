@@ -2309,17 +2309,21 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Adjust a fuel log item's actual quantity by delta.
-  void updateFuelLogItemQuantity(
-    String foodId,
-    String sectionId,
-    double delta,
-  ) {
+  ///
+  /// Matches on foodId + sectionId + subPhaseType + isAdded. FuelLogItem has
+  /// no unique id, and foodId + sectionId alone is ambiguous: the same food
+  /// can sit in a sub-phase group AND in the "Added" bucket (or in two
+  /// sub-phases), so the looser match updated every copy on one +/- tap.
+  void updateFuelLogItemQuantity(FuelLogItem target, double delta) {
     final currentState = state.value;
     final fuelLog = currentState?.fuelLogData;
     if (fuelLog == null) return;
 
     final updatedItems = fuelLog.items.map((item) {
-      if (item.foodId == foodId && item.sectionId == sectionId) {
+      if (item.foodId == target.foodId &&
+          item.sectionId == target.sectionId &&
+          item.subPhaseType == target.subPhaseType &&
+          item.isAdded == target.isAdded) {
         final step = item.isIndivisible ? 1.0 : 0.5;
         // Use step-aligned delta so indivisible items move by whole units
         final alignedDelta = delta < 0 ? -step : step;
@@ -2355,6 +2359,10 @@ class ActivityDetailController extends _$ActivityDetailController {
       subPhaseType: subPhaseType,
       plannedQuantity: 0, // Not in original plan
       actualQuantity: quantity,
+      // food.nutritionalInfo was built for `quantity` units; without this
+      // reference an added item's macros can never be scaled (planned is 0)
+      // and it contributes nothing to carbs/hr or coach reports.
+      nutritionReferenceQuantity: quantity,
       name: food.name,
       displayName: food.displayName,
       displayNamePlural: food.displayNamePlural,
