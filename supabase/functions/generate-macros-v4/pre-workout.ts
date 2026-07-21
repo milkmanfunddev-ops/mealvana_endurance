@@ -641,15 +641,26 @@ export function pickDrink(
   for (const template of drinkTemplates) {
     for (let srv = template.min_servings; srv <= template.max_servings; srv += 0.5) {
       const servings = snapToHalf(srv);
-      const resultCarbs = carbsDelivered + template.carbs_per_serving * servings;
-      const resultProtein = proteinDelivered + template.protein_per_serving * servings;
       const resultSodium = totalSodiumDelivered + template.sodium_mg * servings;
       const resultFluid = totalFluidDelivered + template.fluid_ml * servings;
 
       // Hard cap: skip any combo that would push fluids past 1.5x target
       if (fluidTarget > 0 && resultFluid > fluidTarget * 1.5) continue;
-      if (resultCarbs > carbsHigh + 1e-6) continue;
-      if (resultProtein > proteinHigh + 1e-6) continue;
+      // Headroom-based caps for ALL non-fluid macros (parity with
+      // pickElectrolyte): reject only candidates whose own delta exceeds the
+      // remaining headroom. When food selection already left the state over
+      // carbs_high or protein_high, a zero-carb/zero-protein drink like
+      // water must stay selectable — the old absolute checks
+      // (`resultCarbs > carbsHigh`, `resultProtein > proteinHigh`) rejected
+      // EVERY drink in that case and produced no-water plans (before-water
+      // 0%, found 2026-07-21 — same bug class as the #22 sodium fix below,
+      // which had only been applied to sodium).
+      const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+      const drinkCarbsAdded = template.carbs_per_serving * servings;
+      if (drinkCarbsAdded > carbsHeadroom + 1e-6) continue;
+      const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+      const drinkProteinAdded = template.protein_per_serving * servings;
+      if (drinkProteinAdded > proteinHeadroom + 1e-6) continue;
       // Sodium cap: reject only if the drink itself would consume more sodium
       // headroom than remains. When state is already over sodium_high
       // (headroom = 0), a zero-sodium drink like water is still selectable
@@ -779,6 +790,77 @@ export function pickElectrolyte(
 
   if (!bestPick) return null;
   return makeSelection(bestPick.template, bestPick.servings);
+}
+
+/**
+ * Pass 1.6: trim a sodium overage left by carb-driven food selection.
+ *
+ * Big carb targets (e.g. a 440g pre-marathon load) accumulate food sodium far
+ * past `sodium_high` — the sodium band is body-independent [300..600]mg while
+ * food sodium scales with servings — and nothing downstream can subtract
+ * (pickDrink / pickElectrolyte only ever add). Trim ADD-ONS only — never
+ * primaries or stacks, which are the meal's identity — removing the
+ * cheapest-carb-loss-per-mg-sodium add-on first, while total carbs stay at or
+ * above `carbsLowG`. Must run BEFORE Pass 2 (pickDrink) so water can backfill
+ * any fluid the removed add-ons carried, sodium-free.
+ *
+ * Deliberately does NOT reset `state.sports_drink_used` when a sports-drink
+ * add-on is trimmed — that would invite a later pass to re-add what was just
+ * removed. Found via before-sodium 154% (Very Heavy Marathon), 2026-07-21.
+ *
+ * Exported for unit testing.
+ */
+export function trimSodiumOverage(
+  results: PreWorkoutPhaseResult[],
+  state: PlanState,
+  carbsLowG: number,
+): void {
+  if (state.sodium_delivered <= state.sodium_high + 1e-6) return;
+  console.log(
+    `[ALGO-C] Sodium trim: delivered=${state.sodium_delivered.toFixed(0)}mg > ` +
+      `high=${state.sodium_high}mg — trimming add-ons`,
+  );
+
+  while (state.sodium_delivered > state.sodium_high + 1e-6) {
+    let best:
+      | { phaseIdx: number; addOnIdx: number; costPerMg: number }
+      | null = null;
+    for (let pi = 0; pi < results.length; pi++) {
+      const addOns = results[pi].add_ons ?? [];
+      for (let ai = 0; ai < addOns.length; ai++) {
+        const a = addOns[ai];
+        if (a.sodium_mg <= 0) continue;
+        // Removing must keep total carbs at/above the low band.
+        if (state.carbs_delivered - a.carbs_g < carbsLowG - 1e-6) continue;
+        const costPerMg = a.carbs_g / a.sodium_mg;
+        if (!best || costPerMg < best.costPerMg) {
+          best = { phaseIdx: pi, addOnIdx: ai, costPerMg };
+        }
+      }
+    }
+    if (!best) {
+      console.log(
+        `[ALGO-C] Sodium trim: still ${
+          (state.sodium_delivered - state.sodium_high).toFixed(0)
+        }mg over high — no more trimmable add-ons (primaries are never trimmed)`,
+      );
+      return;
+    }
+
+    const phase = results[best.phaseIdx];
+    const [removed] = phase.add_ons.splice(best.addOnIdx, 1);
+    phase.total_carbs_g = Math.round((phase.total_carbs_g - removed.carbs_g) * 10) / 10;
+    phase.total_sodium_mg = Math.round((phase.total_sodium_mg - removed.sodium_mg) * 10) / 10;
+    phase.total_fluid_ml = Math.round((phase.total_fluid_ml - removed.fluid_ml) * 10) / 10;
+    state.carbs_delivered -= removed.carbs_g;
+    state.sodium_delivered -= removed.sodium_mg;
+    state.fluid_delivered -= removed.fluid_ml;
+    console.log(
+      `[ALGO-C] Sodium trim: removed ${removed.type} from ${phase.phase} ` +
+        `(-${removed.sodium_mg}mg sodium, -${removed.carbs_g}g carbs, ` +
+        `now ${state.sodium_delivered.toFixed(0)}mg)`,
+    );
+  }
 }
 
 // ============================================================================
@@ -1214,6 +1296,9 @@ export function selectPreWorkoutFoods(
       }
     }
   }
+
+  // ── Pass 1.6: Sodium overage trim (before drink selection) ─────────
+  trimSodiumOverage(results, state, targets.carbs_low_g);
 
   // ── Pass 2: Add standalone drink to top-up phase ──────────────────
   const topUpIdx = results.findIndex((p) => p.phase === 'top_up');
