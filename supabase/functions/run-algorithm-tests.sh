@@ -45,7 +45,6 @@ cd "$SCRIPT_DIR"
 # so the debt stays visible. Format: "relative/path|one-line reason".
 # Fix the test, then delete its entry.
 QUARANTINE=(
-  "generate-macros-v4/pre-workout-matrix.test.ts|4 top-up-window carb-ceiling asserts fail (e.g. 55g > 39g max): algorithm drifted since matrix was pulled 2026-05-05 — needs domain review (stale expectations vs real over-delivery). Type drift already fixed 2026-07-21."
 )
 
 # ─── Local tests that genuinely need --allow-net ────────────────────────────

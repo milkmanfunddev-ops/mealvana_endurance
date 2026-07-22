@@ -147,7 +147,11 @@ export interface PreWorkoutShortfall {
   delivered: number;
   target: number;
   unit: 'g' | 'mg' | 'ml';
-  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+  reason:
+    | 'all_disliked'
+    | 'no_diet_match'
+    | 'all_templates_filtered'
+    | 'template_constraint';
 }
 
 export interface PreWorkoutPhaseResult {

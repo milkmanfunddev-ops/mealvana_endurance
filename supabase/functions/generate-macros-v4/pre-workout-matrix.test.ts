@@ -495,14 +495,18 @@ function hasDislikedFood(results: PreWorkoutPhaseResult[], disliked: string[]): 
   return null;
 }
 
+// TemplateSelection no longer carries `allergens` (it's a slim output shape),
+// so map selections back to their source templates by id to check allergens.
+const ALLERGENS_BY_TEMPLATE_ID = new Map<string, string[]>(
+  [...ALL_FOOD, ...ALL_DRINKS, ...ALL_ELECTROLYTES].map(t => [t.id, t.allergens ?? []]),
+);
+
 function hasAllergen(results: PreWorkoutPhaseResult[], allergens: string[]): string | null {
   const allergenSet = new Set(allergens.map(a => a.toLowerCase()));
   for (const phase of results) {
-    for (const templateAllergen of (phase.primary?.allergens ?? [])) {
-      if (allergenSet.has(templateAllergen.toLowerCase())) return templateAllergen;
-    }
-    if (phase.stack) {
-      for (const templateAllergen of (phase.stack.allergens ?? [])) {
+    for (const selection of [phase.primary, phase.stack]) {
+      if (!selection) continue;
+      for (const templateAllergen of (ALLERGENS_BY_TEMPLATE_ID.get(selection.id) ?? [])) {
         if (allergenSet.has(templateAllergen.toLowerCase())) return templateAllergen;
       }
     }
@@ -769,4 +773,143 @@ describe('Pre-Workout Matrix', () => {
       }
     }
   });
+});
+
+// ============================================================================
+// Pin-State Matrix — formula-kit pins × athletes × time windows
+// ============================================================================
+// Sprint Task 3a4e3fdb-815c: cover pinned / partially pinned / unpinned kit
+// states for every athlete × window combination, asserting the PRIMARY
+// invariant — the produced fueling solution hits the carb target (or
+// documents why not). Pin semantics under test (locked policy 2026-05-21):
+// an in-scope pin (template.time_window === phase window) is honored
+// unconditionally — diet/allergen/dislike filters and the serving clamp are
+// bypassed — and the plan still converges on the carb band because pinned
+// servings scale to the phase budget.
+
+const WINDOW_FOR_PHASE: Record<string, string> = {
+  meal: '1.5-3 hours',
+  snack: '30-90 min',
+  top_up: '< 30 min',
+};
+
+// One deterministic pin per window, drawn from the production catalog above.
+const PIN_FOR_WINDOW: Record<string, PreWorkoutTemplate> = {
+  '1.5-3 hours': OATMEAL,
+  '30-90 min': TOAST_JAM_SNACK,
+  '< 30 min': ENERGY_GEL,
+};
+
+type PinState = 'unpinned' | 'partial' | 'full';
+const PIN_STATES: PinState[] = ['unpinned', 'partial', 'full'];
+
+function pinsFor(state: PinState, hoursBefore: number): Set<string> | undefined {
+  const windows = getActiveSubPhases(hoursBefore).map((p) => WINDOW_FOR_PHASE[p]);
+  switch (state) {
+    case 'unpinned':
+      return undefined;
+    case 'partial':
+      return new Set([PIN_FOR_WINDOW[windows[0]].id]);
+    case 'full':
+      return new Set(windows.map((w) => PIN_FOR_WINDOW[w].id));
+  }
+}
+
+describe('Pin-State Matrix', () => {
+  for (const athlete of ATHLETES) {
+    describe(`Athlete: ${athlete.name}`, () => {
+      for (const scenario of TIME_WINDOWS) {
+        if (scenario.isFasted) continue; // fasted plans are empty; pins moot
+
+        for (const pinState of PIN_STATES) {
+          describe(`${scenario.name} / ${pinState}`, () => {
+            const targets = calculatePreWorkoutTargets(
+              athlete.weightKg,
+              scenario.hoursBefore,
+              scenario.isFasted,
+              athlete.sweatSodium,
+              athlete.envLabel,
+            );
+            const pins = pinsFor(pinState, scenario.hoursBefore);
+            const results = selectPreWorkoutFoods(
+              targets,
+              scenario.hoursBefore,
+              athlete.diet,
+              ALL_FOOD,
+              ALL_DRINKS,
+              ALL_ELECTROLYTES,
+              athlete.likedFoods,
+              athlete.dislikedFoods,
+              athlete.allergies,
+              pins,
+            );
+
+            // ── The primary invariant (Xuan): carb target hit, or the gap
+            //    documented. Same contract as the base matrix.
+            it('should hit the carb target or document the shortfall', () => {
+              const carbs = totalCarbs(results);
+              const carbShortfallDocumented = results.some(
+                (r) => (r.shortfalls ?? []).some((s) => s.macro === 'carbs'),
+              );
+              assert(
+                carbs >= targets.carbs_low_g || carbShortfallDocumented,
+                `[${athlete.name} / ${scenario.name} / ${pinState}] Carbs ` +
+                `${carbs.toFixed(1)}g below minimum ${targets.carbs_low_g}g ` +
+                `and no carb shortfall was documented`,
+              );
+              assert(
+                carbs <= targets.carbs_high_g * 1.1,
+                `[${athlete.name} / ${scenario.name} / ${pinState}] Carbs ` +
+                `${carbs.toFixed(1)}g exceeds maximum ${targets.carbs_high_g}g`,
+              );
+            });
+
+            // ── Pin honoring per state ─────────────────────────────────
+            if (pinState === 'unpinned') {
+              it('should omit pin_decision entirely (no-pin parity contract)', () => {
+                for (const r of results) {
+                  assertEquals(
+                    r.pin_decision, undefined,
+                    `[${athlete.name} / ${scenario.name}] phase ${r.phase} ` +
+                    `carries pin_decision without pins`,
+                  );
+                }
+              });
+            } else {
+              it('should honor every in-scope pin unconditionally', () => {
+                for (const r of results) {
+                  const window = WINDOW_FOR_PHASE[r.phase];
+                  const pinnedHere = pins!.has(PIN_FOR_WINDOW[window].id);
+                  if (pinnedHere) {
+                    assertEquals(
+                      r.pin_decision?.used_pin, true,
+                      `[${athlete.name} / ${scenario.name} / ${pinState}] ` +
+                      `phase ${r.phase} did not honor its in-scope pin`,
+                    );
+                    assertEquals(
+                      r.pin_decision?.pinned_template_id,
+                      PIN_FOR_WINDOW[window].id,
+                      `[${athlete.name} / ${scenario.name} / ${pinState}] ` +
+                      `phase ${r.phase} honored the wrong pin`,
+                    );
+                  } else {
+                    assertEquals(
+                      r.pin_decision?.used_pin, false,
+                      `[${athlete.name} / ${scenario.name} / ${pinState}] ` +
+                      `unpinned phase ${r.phase} claims a pin`,
+                    );
+                    assertEquals(
+                      r.pin_decision?.fallthrough_reason, 'no_pin_for_scope',
+                      `[${athlete.name} / ${scenario.name} / ${pinState}] ` +
+                      `unpinned phase ${r.phase} has wrong fallthrough reason`,
+                    );
+                  }
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+  }
 });
