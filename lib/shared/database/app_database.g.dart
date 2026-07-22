@@ -10520,6 +10520,21 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isFastedMeta = const VerificationMeta(
+    'isFasted',
+  );
+  @override
+  late final GeneratedColumn<bool> isFasted = GeneratedColumn<bool>(
+    'is_fasted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_fasted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _intensityZ1Z2PctMeta = const VerificationMeta(
     'intensityZ1Z2Pct',
   );
@@ -10964,6 +10979,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     swimmingWaterTempC,
     intensityTarget,
     timeBeforeMinutes,
+    isFasted,
     intensityZ1Z2Pct,
     intensityZ3Z4Pct,
     intensityZ5Pct,
@@ -11185,6 +11201,12 @@ class $ActivitiesTableTable extends ActivitiesTable
           data['time_before_minutes']!,
           _timeBeforeMinutesMeta,
         ),
+      );
+    }
+    if (data.containsKey('is_fasted')) {
+      context.handle(
+        _isFastedMeta,
+        isFasted.isAcceptableOrUnknown(data['is_fasted']!, _isFastedMeta),
       );
     }
     if (data.containsKey('intensity_z1_z2_pct')) {
@@ -11595,6 +11617,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.int,
         data['${effectivePrefix}time_before_minutes'],
       ),
+      isFasted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_fasted'],
+      )!,
       intensityZ1Z2Pct: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}intensity_z1_z2_pct'],
@@ -11773,6 +11799,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   final double? swimmingWaterTempC;
   final String? intensityTarget;
   final int? timeBeforeMinutes;
+  final bool isFasted;
   final int? intensityZ1Z2Pct;
   final int? intensityZ3Z4Pct;
   final int? intensityZ5Pct;
@@ -11831,6 +11858,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.swimmingWaterTempC,
     this.intensityTarget,
     this.timeBeforeMinutes,
+    required this.isFasted,
     this.intensityZ1Z2Pct,
     this.intensityZ3Z4Pct,
     this.intensityZ5Pct,
@@ -11926,6 +11954,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || timeBeforeMinutes != null) {
       map['time_before_minutes'] = Variable<int>(timeBeforeMinutes);
     }
+    map['is_fasted'] = Variable<bool>(isFasted);
     if (!nullToAbsent || intensityZ1Z2Pct != null) {
       map['intensity_z1_z2_pct'] = Variable<int>(intensityZ1Z2Pct);
     }
@@ -12085,6 +12114,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       timeBeforeMinutes: timeBeforeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(timeBeforeMinutes),
+      isFasted: Value(isFasted),
       intensityZ1Z2Pct: intensityZ1Z2Pct == null && nullToAbsent
           ? const Value.absent()
           : Value(intensityZ1Z2Pct),
@@ -12229,6 +12259,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       ),
       intensityTarget: serializer.fromJson<String?>(json['intensityTarget']),
       timeBeforeMinutes: serializer.fromJson<int?>(json['timeBeforeMinutes']),
+      isFasted: serializer.fromJson<bool>(json['isFasted']),
       intensityZ1Z2Pct: serializer.fromJson<int?>(json['intensityZ1Z2Pct']),
       intensityZ3Z4Pct: serializer.fromJson<int?>(json['intensityZ3Z4Pct']),
       intensityZ5Pct: serializer.fromJson<int?>(json['intensityZ5Pct']),
@@ -12324,6 +12355,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'swimmingWaterTempC': serializer.toJson<double?>(swimmingWaterTempC),
       'intensityTarget': serializer.toJson<String?>(intensityTarget),
       'timeBeforeMinutes': serializer.toJson<int?>(timeBeforeMinutes),
+      'isFasted': serializer.toJson<bool>(isFasted),
       'intensityZ1Z2Pct': serializer.toJson<int?>(intensityZ1Z2Pct),
       'intensityZ3Z4Pct': serializer.toJson<int?>(intensityZ3Z4Pct),
       'intensityZ5Pct': serializer.toJson<int?>(intensityZ5Pct),
@@ -12389,6 +12421,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<double?> swimmingWaterTempC = const Value.absent(),
     Value<String?> intensityTarget = const Value.absent(),
     Value<int?> timeBeforeMinutes = const Value.absent(),
+    bool? isFasted,
     Value<int?> intensityZ1Z2Pct = const Value.absent(),
     Value<int?> intensityZ3Z4Pct = const Value.absent(),
     Value<int?> intensityZ5Pct = const Value.absent(),
@@ -12475,6 +12508,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     timeBeforeMinutes: timeBeforeMinutes.present
         ? timeBeforeMinutes.value
         : this.timeBeforeMinutes,
+    isFasted: isFasted ?? this.isFasted,
     intensityZ1Z2Pct: intensityZ1Z2Pct.present
         ? intensityZ1Z2Pct.value
         : this.intensityZ1Z2Pct,
@@ -12615,6 +12649,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       timeBeforeMinutes: data.timeBeforeMinutes.present
           ? data.timeBeforeMinutes.value
           : this.timeBeforeMinutes,
+      isFasted: data.isFasted.present ? data.isFasted.value : this.isFasted,
       intensityZ1Z2Pct: data.intensityZ1Z2Pct.present
           ? data.intensityZ1Z2Pct.value
           : this.intensityZ1Z2Pct,
@@ -12740,6 +12775,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
           ..write('intensityTarget: $intensityTarget, ')
           ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('isFasted: $isFasted, ')
           ..write('intensityZ1Z2Pct: $intensityZ1Z2Pct, ')
           ..write('intensityZ3Z4Pct: $intensityZ3Z4Pct, ')
           ..write('intensityZ5Pct: $intensityZ5Pct, ')
@@ -12803,6 +12839,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     swimmingWaterTempC,
     intensityTarget,
     timeBeforeMinutes,
+    isFasted,
     intensityZ1Z2Pct,
     intensityZ3Z4Pct,
     intensityZ5Pct,
@@ -12865,6 +12902,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.swimmingWaterTempC == this.swimmingWaterTempC &&
           other.intensityTarget == this.intensityTarget &&
           other.timeBeforeMinutes == this.timeBeforeMinutes &&
+          other.isFasted == this.isFasted &&
           other.intensityZ1Z2Pct == this.intensityZ1Z2Pct &&
           other.intensityZ3Z4Pct == this.intensityZ3Z4Pct &&
           other.intensityZ5Pct == this.intensityZ5Pct &&
@@ -12925,6 +12963,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<double?> swimmingWaterTempC;
   final Value<String?> intensityTarget;
   final Value<int?> timeBeforeMinutes;
+  final Value<bool> isFasted;
   final Value<int?> intensityZ1Z2Pct;
   final Value<int?> intensityZ3Z4Pct;
   final Value<int?> intensityZ5Pct;
@@ -12984,6 +13023,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.swimmingWaterTempC = const Value.absent(),
     this.intensityTarget = const Value.absent(),
     this.timeBeforeMinutes = const Value.absent(),
+    this.isFasted = const Value.absent(),
     this.intensityZ1Z2Pct = const Value.absent(),
     this.intensityZ3Z4Pct = const Value.absent(),
     this.intensityZ5Pct = const Value.absent(),
@@ -13044,6 +13084,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.swimmingWaterTempC = const Value.absent(),
     this.intensityTarget = const Value.absent(),
     this.timeBeforeMinutes = const Value.absent(),
+    this.isFasted = const Value.absent(),
     this.intensityZ1Z2Pct = const Value.absent(),
     this.intensityZ3Z4Pct = const Value.absent(),
     this.intensityZ5Pct = const Value.absent(),
@@ -13109,6 +13150,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<double>? swimmingWaterTempC,
     Expression<String>? intensityTarget,
     Expression<int>? timeBeforeMinutes,
+    Expression<bool>? isFasted,
     Expression<int>? intensityZ1Z2Pct,
     Expression<int>? intensityZ3Z4Pct,
     Expression<int>? intensityZ5Pct,
@@ -13176,6 +13218,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         'swimming_water_temp_c': swimmingWaterTempC,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (timeBeforeMinutes != null) 'time_before_minutes': timeBeforeMinutes,
+      if (isFasted != null) 'is_fasted': isFasted,
       if (intensityZ1Z2Pct != null) 'intensity_z1_z2_pct': intensityZ1Z2Pct,
       if (intensityZ3Z4Pct != null) 'intensity_z3_z4_pct': intensityZ3Z4Pct,
       if (intensityZ5Pct != null) 'intensity_z5_pct': intensityZ5Pct,
@@ -13247,6 +13290,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<double?>? swimmingWaterTempC,
     Value<String?>? intensityTarget,
     Value<int?>? timeBeforeMinutes,
+    Value<bool>? isFasted,
     Value<int?>? intensityZ1Z2Pct,
     Value<int?>? intensityZ3Z4Pct,
     Value<int?>? intensityZ5Pct,
@@ -13311,6 +13355,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       swimmingWaterTempC: swimmingWaterTempC ?? this.swimmingWaterTempC,
       intensityTarget: intensityTarget ?? this.intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
+      isFasted: isFasted ?? this.isFasted,
       intensityZ1Z2Pct: intensityZ1Z2Pct ?? this.intensityZ1Z2Pct,
       intensityZ3Z4Pct: intensityZ3Z4Pct ?? this.intensityZ3Z4Pct,
       intensityZ5Pct: intensityZ5Pct ?? this.intensityZ5Pct,
@@ -13428,6 +13473,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (timeBeforeMinutes.present) {
       map['time_before_minutes'] = Variable<int>(timeBeforeMinutes.value);
+    }
+    if (isFasted.present) {
+      map['is_fasted'] = Variable<bool>(isFasted.value);
     }
     if (intensityZ1Z2Pct.present) {
       map['intensity_z1_z2_pct'] = Variable<int>(intensityZ1Z2Pct.value);
@@ -13581,6 +13629,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
           ..write('intensityTarget: $intensityTarget, ')
           ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('isFasted: $isFasted, ')
           ..write('intensityZ1Z2Pct: $intensityZ1Z2Pct, ')
           ..write('intensityZ3Z4Pct: $intensityZ3Z4Pct, ')
           ..write('intensityZ5Pct: $intensityZ5Pct, ')
@@ -45184,6 +45233,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<double?> swimmingWaterTempC,
       Value<String?> intensityTarget,
       Value<int?> timeBeforeMinutes,
+      Value<bool> isFasted,
       Value<int?> intensityZ1Z2Pct,
       Value<int?> intensityZ3Z4Pct,
       Value<int?> intensityZ5Pct,
@@ -45245,6 +45295,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<double?> swimmingWaterTempC,
       Value<String?> intensityTarget,
       Value<int?> timeBeforeMinutes,
+      Value<bool> isFasted,
       Value<int?> intensityZ1Z2Pct,
       Value<int?> intensityZ3Z4Pct,
       Value<int?> intensityZ5Pct,
@@ -45391,6 +45442,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<int> get timeBeforeMinutes => $composableBuilder(
     column: $table.timeBeforeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFasted => $composableBuilder(
+    column: $table.isFasted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -45689,6 +45745,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFasted => $composableBuilder(
+    column: $table.isFasted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get intensityZ1Z2Pct => $composableBuilder(
     column: $table.intensityZ1Z2Pct,
     builder: (column) => ColumnOrderings(column),
@@ -45976,6 +46037,9 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isFasted =>
+      $composableBuilder(column: $table.isFasted, builder: (column) => column);
+
   GeneratedColumn<int> get intensityZ1Z2Pct => $composableBuilder(
     column: $table.intensityZ1Z2Pct,
     builder: (column) => column,
@@ -46203,6 +46267,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> swimmingWaterTempC = const Value.absent(),
                 Value<String?> intensityTarget = const Value.absent(),
                 Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<bool> isFasted = const Value.absent(),
                 Value<int?> intensityZ1Z2Pct = const Value.absent(),
                 Value<int?> intensityZ3Z4Pct = const Value.absent(),
                 Value<int?> intensityZ5Pct = const Value.absent(),
@@ -46262,6 +46327,7 @@ class $$ActivitiesTableTableTableManager
                 swimmingWaterTempC: swimmingWaterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                isFasted: isFasted,
                 intensityZ1Z2Pct: intensityZ1Z2Pct,
                 intensityZ3Z4Pct: intensityZ3Z4Pct,
                 intensityZ5Pct: intensityZ5Pct,
@@ -46323,6 +46389,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> swimmingWaterTempC = const Value.absent(),
                 Value<String?> intensityTarget = const Value.absent(),
                 Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<bool> isFasted = const Value.absent(),
                 Value<int?> intensityZ1Z2Pct = const Value.absent(),
                 Value<int?> intensityZ3Z4Pct = const Value.absent(),
                 Value<int?> intensityZ5Pct = const Value.absent(),
@@ -46382,6 +46449,7 @@ class $$ActivitiesTableTableTableManager
                 swimmingWaterTempC: swimmingWaterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                isFasted: isFasted,
                 intensityZ1Z2Pct: intensityZ1Z2Pct,
                 intensityZ3Z4Pct: intensityZ3Z4Pct,
                 intensityZ5Pct: intensityZ5Pct,
