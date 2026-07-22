@@ -1,7 +1,8 @@
-# App Store screenshots — Mealvana Endurance
+# App Store submission bundle — Mealvana Endurance
 
-**Status: FINAL — ready to submit** (prepared 2026-07-21)
-The designed 6-panel App Store screenshot set. Upload these at the next App Store submission.
+**Status: FINAL — ready to submit** (prepared 2026-07-21; icon added 2026-07-22)
+The full listing bundle for the next submission: the **6-panel screenshot set**, the **metadata copy**
+(`LISTING_COPY.md`), and the **refreshed app icon** (`app-icon-1024.png`). Apply all three together.
 
 ## The set (upload in this order)
 The **first 3 show inside search results**, so order matters — lead with the hook, the core value, and the differentiator.
@@ -14,6 +15,14 @@ The **first 3 show inside search results**, so order matters — lead with the h
 | 4 | `4_train-your-gut.png` | "Train your gut" | carbs/hr trend — "In Baseline, highest intake yet" |
 | 5 | `5_log-any-product.png` | "Log any product, fast" | 60k+ searchable/scannable products |
 | 6 | `6_ace-your-race.png` | "Ace your race" | race event · carb-loading · race-day checklist |
+
+## App icon (proposed) — `app-icon-1024.png`
+The refreshed icon: a **bolder cream mark on the orange→plum gradient**, replacing the thin line-art
+that was illegible at search-thumbnail size (a prime suspect in the low search tap-through).
+- ⚠️ **Not a metadata upload.** Unlike the screenshots/copy, the icon ships **inside the app binary** —
+  add `app-icon-1024.png` to the app's asset catalog (`AppIcon`) and build. 1024×1024, full-bleed.
+- **Confirm it reads at 60px** before shipping — that small-size legibility is the entire point.
+- Strong first **Product Page Optimization (A/B)** candidate once live: new icon vs. current.
 
 ## Specs — ⚠️ verify before upload
 - **Dimensions: 1284 × 2778** (portrait). That's the **6.5"** iPhone size.
