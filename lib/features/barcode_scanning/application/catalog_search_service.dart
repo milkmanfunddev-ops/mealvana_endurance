@@ -119,6 +119,19 @@ class CatalogSearchResult {
     return title;
   }
 
+  /// Brand-led title for result tiles ("Clif Builder's Protein Bar").
+  ///
+  /// Variant-only matches (e.g. searching "oreo") must still identify the
+  /// product, so the title line always carries brand + product title and the
+  /// variant is left to secondary text. Skips the brand when the title
+  /// already contains it, so we never render "Clif Clif Bar".
+  String get brandedTitle {
+    final b = brand;
+    if (b == null || b.isEmpty) return title;
+    if (title.toLowerCase().contains(b.toLowerCase())) return title;
+    return '$b $title';
+  }
+
   /// Formatted price string (e.g., "$3.49")
   String? get formattedPrice {
     if (priceCents == null) return null;

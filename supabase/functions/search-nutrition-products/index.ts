@@ -44,6 +44,15 @@ import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { searchUsda, type NutritionProductLike } from '../_shared/food_sources/usda_search.ts';
 import { searchOpenFoodFacts } from '../_shared/food_sources/off_search.ts';
 import { bg } from '../_shared/food_sources/runtime.ts';
+// Pure matching rules (tokenize / score / threshold / dedupe) live in the
+// shared module so index.test.ts imports the REAL implementation instead of a
+// mirror that could silently drift. See that file for the full semantics.
+import {
+  tokenize,
+  scoreResult,
+  passesThreshold,
+  dedupeByBarcode,
+} from '../_shared/food_sources/search_matching.ts';
 
 initSentry();
 
@@ -54,60 +63,6 @@ initSentry();
  * only 1,000 req/hour PER IP and every user shares this function's IP.
  */
 const FEW_CACHE_HITS = 5;
-
-/**
- * Tokenize a query. Mirrors search_catalog_ranked's SQL tokenizer and the Dart
- * `tokenizeSearchQuery`, so client and both edge functions agree.
- */
-export function tokenize(q: string): string[] {
-  return q
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter((t) => t.length > 0);
-}
-
-/**
- * Relevance score: 2x brand-token hits + 1x name-token hits.
- * Same rule as search_catalog_ranked — see that migration for why.
- */
-export function scoreResult(r: NutritionProductLike, tokens: string[]): number {
-  const brand = (r.brand_name ?? '').toLowerCase();
-  const name = (r.product_name ?? '').toLowerCase();
-  const hits = (hay: string) => tokens.filter((t) => hay.includes(t)).length;
-  return 2 * hits(brand) + hits(name);
-}
-
-/** At least half the tokens must appear in brand||name. */
-export function passesThreshold(r: NutritionProductLike, tokens: string[]): boolean {
-  if (tokens.length === 0) return true;
-  const hay = `${r.brand_name ?? ''} ${r.product_name ?? ''}`.toLowerCase();
-  const matched = tokens.filter((t) => hay.includes(t)).length;
-  return matched > 0 && matched >= Math.ceil(tokens.length / 2);
-}
-
-/**
- * Merge sources, preferring the higher-quality row per barcode.
- *
- * USDA wins ties: its data is CC0 (resale-safe) and lab/label-derived, whereas
- * OFF is crowd-sourced and ODbL. The barcode path makes the same call.
- */
-export function dedupeByBarcode(rows: NutritionProductLike[]): NutritionProductLike[] {
-  const byCode = new Map<string, NutritionProductLike>();
-  for (const r of rows) {
-    if (!r.barcode) continue;
-    const existing = byCode.get(r.barcode);
-    if (!existing) {
-      byCode.set(r.barcode, r);
-      continue;
-    }
-    const rank = (x: NutritionProductLike) =>
-      x.source === 'usda_fdc' || x.source === 'usda_bulk' ? 2 : 1;
-    if (rank(r) > rank(existing)) byCode.set(r.barcode, r);
-  }
-  return [...byCode.values()];
-}
 
 Deno.serve(withSentry(async (req) => {
   const corsResponse = handleCors(req);
