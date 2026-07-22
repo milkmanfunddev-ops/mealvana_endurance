@@ -269,10 +269,22 @@ class AppConfig {
       ),
       aiCreditsEnabled:
           dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
+      // AI surfaces default ON for dev builds (2026-07-22, Lee): dev is the
+      // proving ground for Describe/Photo meal logging and formula coach
+      // insights. An explicit env value still wins in either direction, and
+      // prod keeps the OFF fallback until the release-gating decision flips.
       describeMealEnabled:
-          dotenv.get('DESCRIBE_MEAL_ENABLED', fallback: 'false') == 'true',
+          dotenv.get(
+            'DESCRIBE_MEAL_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
       coachInsightsEnabled:
-          dotenv.get('COACH_INSIGHTS_ENABLED', fallback: 'false') == 'true',
+          dotenv.get(
+            'COACH_INSIGHTS_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -533,18 +545,16 @@ class AppConfig {
             defaultValue: 'false',
           ) ==
           'true',
+      // Same dev-default-ON rule as fromEnv: an explicit define wins, an
+      // absent one falls back to the flavor (dev shows the AI surfaces).
       describeMealEnabled:
-          const String.fromEnvironment(
-            'DESCRIBE_MEAL_ENABLED',
-            defaultValue: 'false',
-          ) ==
-          'true',
+          const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') != ''
+          ? const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') == 'true'
+          : isDevMode,
       coachInsightsEnabled:
-          const String.fromEnvironment(
-            'COACH_INSIGHTS_ENABLED',
-            defaultValue: 'false',
-          ) ==
-          'true',
+          const String.fromEnvironment('COACH_INSIGHTS_ENABLED') != ''
+          ? const String.fromEnvironment('COACH_INSIGHTS_ENABLED') == 'true'
+          : isDevMode,
 
       // Debug settings
       enableDebugLogging: kDebugMode,
