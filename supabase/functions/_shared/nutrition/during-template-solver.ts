@@ -866,10 +866,14 @@ export function collectShortfalls(
   const out: MacroShortfall[] = [];
   const SHORTFALL_THRESHOLD = 0.9;
   const hasDislikedCause = !!dislikedFoods && dislikedFoods.size > 0;
-  if (
-    targets.sodium_mg > 0 &&
-    totals.sodium_mg < targets.sodium_mg * SHORTFALL_THRESHOLD
-  ) {
+  // The flag floor is the RANGE LOW when the targets carry one — delivery
+  // anywhere inside the acceptable range is not a gap, even when it misses
+  // the point target (reported 2026-07-22: sodium inside its range was
+  // flagged as a "sodium gap"). The 90%-of-target floor remains only as the
+  // fallback for callers that pass no range.
+  const sodiumFloor = targets.sodium_low_mg ??
+    targets.sodium_mg * SHORTFALL_THRESHOLD;
+  if (targets.sodium_mg > 0 && totals.sodium_mg < sodiumFloor) {
     out.push({
       macro: "sodium",
       delivered: Math.round(totals.sodium_mg),
@@ -878,10 +882,9 @@ export function collectShortfalls(
       reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
-  if (
-    targets.carbs_g > 0 &&
-    totals.carbs_g < targets.carbs_g * SHORTFALL_THRESHOLD
-  ) {
+  const carbFloor = targets.carbs_low_g ??
+    targets.carbs_g * SHORTFALL_THRESHOLD;
+  if (targets.carbs_g > 0 && totals.carbs_g < carbFloor) {
     out.push({
       macro: "carbs",
       delivered: Math.round(totals.carbs_g),
@@ -890,10 +893,9 @@ export function collectShortfalls(
       reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
-  if (
-    targets.water_ml > 0 &&
-    totals.water_ml < targets.water_ml * SHORTFALL_THRESHOLD
-  ) {
+  const fluidFloor = targets.water_low_ml ??
+    targets.water_ml * SHORTFALL_THRESHOLD;
+  if (targets.water_ml > 0 && totals.water_ml < fluidFloor) {
     out.push({
       macro: "fluid",
       delivered: Math.round(totals.water_ml),

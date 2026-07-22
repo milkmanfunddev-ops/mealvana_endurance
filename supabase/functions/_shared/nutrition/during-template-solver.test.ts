@@ -22,6 +22,7 @@ import {
 } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 
 import {
+  collectShortfalls,
   type DuringWorkoutTemplate,
   type FoodWithConstraints,
   generateDuringPhaseTemplate,
@@ -2015,5 +2016,66 @@ describe("Edge Cases", () => {
     assertEquals(result.template_number, 5);
     assertEquals(result.template_name, "Sports Drink Only");
     assertEquals(result.template_formula, "SD formula");
+  });
+});
+
+// ============================================================================
+// collectShortfalls — the flag floor is the range low, not the point target
+// ============================================================================
+// Regression (2026-07-22, reported by Xuan): sodium delivered INSIDE its
+// acceptable range but below the point target was flagged as a "sodium gap"
+// in the app. Delivery anywhere at/above the range low is not a gap; the
+// 90%-of-target floor applies only when the targets carry no range.
+
+describe("collectShortfalls range-low floor", () => {
+  const totals = { carbs_g: 100, sodium_mg: 380, water_ml: 500 };
+
+  it("sodium inside its range but below target emits NO shortfall", () => {
+    const targets: MacroTargets = {
+      carbs_g: 100,
+      sodium_mg: 450,
+      sodium_low_mg: 300,
+      sodium_high_mg: 900,
+      water_ml: 500,
+    };
+    // 380 < 450×0.9 = 405, but 380 >= range low 300 → in range, no gap.
+    const shortfalls = collectShortfalls(totals, targets);
+    assertEquals(shortfalls.filter((s) => s.macro === "sodium").length, 0);
+  });
+
+  it("sodium below the range low still emits a shortfall", () => {
+    const targets: MacroTargets = {
+      carbs_g: 100,
+      sodium_mg: 450,
+      sodium_low_mg: 400,
+      sodium_high_mg: 900,
+      water_ml: 500,
+    };
+    const shortfalls = collectShortfalls(totals, targets);
+    assertEquals(shortfalls.filter((s) => s.macro === "sodium").length, 1);
+  });
+
+  it("falls back to the 90%-of-target floor when no range is provided", () => {
+    const targets: MacroTargets = {
+      carbs_g: 100,
+      sodium_mg: 450,
+      water_ml: 500,
+    };
+    // 380 < 405 and no sodium_low_mg → legacy behavior, shortfall emitted.
+    const shortfalls = collectShortfalls(totals, targets);
+    assertEquals(shortfalls.filter((s) => s.macro === "sodium").length, 1);
+  });
+
+  it("carbs and fluid use their range lows the same way", () => {
+    const targets: MacroTargets = {
+      carbs_g: 115,
+      carbs_low_g: 95,
+      sodium_mg: 0,
+      water_ml: 600,
+      water_low_ml: 450,
+    };
+    // carbs 100 < 115×0.9 = 103.5 but >= low 95; fluid 500 < 540 but >= 450.
+    const shortfalls = collectShortfalls(totals, targets);
+    assertEquals(shortfalls.length, 0);
   });
 });
