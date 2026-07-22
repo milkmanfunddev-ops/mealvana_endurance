@@ -153,6 +153,63 @@ void assertMacroInRange(
   );
 }
 
+/// Shortfall lists from the v3 plan response. The engine's honest-shortfall
+/// contract: when the food pool cannot reach a macro target it MUST declare
+/// `{macro, delivered, target, unit, reason}` (during: `plan.during.shortfalls`,
+/// after: `plan.after_shortfalls`).
+List<dynamic> getDuringShortfalls(Map<String, dynamic> plan) {
+  final during = plan['during'] as Map<String, dynamic>?;
+  return (during?['shortfalls'] as List?) ?? const [];
+}
+
+List<dynamic> getAfterShortfalls(Map<String, dynamic> plan) {
+  return (plan['after_shortfalls'] as List?) ?? const [];
+}
+
+/// Enforces the honest-shortfall contract instead of a blind macro floor:
+/// - No declared carb shortfall -> delivered must be within [90%, 110%] of
+///   target (the old strict assertion).
+/// - Declared carb shortfall -> the declaration must be honest: delivered in
+///   the response body must match the declared `delivered` (within 5% or 1g),
+///   and must never exceed 110% of target.
+/// A plan that silently under-delivers (no declaration) still fails — that is
+/// a real engine bug, not an acceptable shortfall.
+void assertCarbsMeetTargetOrDeclaredShortfall(
+  double actual,
+  double target,
+  List<dynamic> shortfalls,
+  String label,
+) {
+  if (target <= 0) return;
+  Map<String, dynamic>? carbShortfall;
+  for (final s in shortfalls) {
+    if (s is Map<String, dynamic> && s['macro'] == 'carbs') {
+      carbShortfall = s;
+      break;
+    }
+  }
+  if (carbShortfall == null) {
+    assertMacroInRange(actual, target, 0.9, 1.1, label);
+    return;
+  }
+  final declared = (carbShortfall['delivered'] as num).toDouble();
+  final tolerance = declared * 0.05 < 1.0 ? 1.0 : declared * 0.05;
+  expect(
+    actual,
+    closeTo(declared, tolerance),
+    reason:
+        '$label: response foods sum to ${actual.toStringAsFixed(1)}g but the '
+        'declared shortfall says delivered=${declared.toStringAsFixed(1)}g — '
+        'the shortfall declaration is dishonest',
+  );
+  expect(
+    actual,
+    lessThanOrEqualTo(target * 1.1),
+    reason:
+        '$label: ${actual.toStringAsFixed(1)} exceeds 110% of target $target',
+  );
+}
+
 /// Extract before-phase foods from plan response
 List<dynamic> getBeforeFoods(Map<String, dynamic> plan) {
   final foods = <dynamic>[];
@@ -307,6 +364,9 @@ void main() {
         'run_pace_unit': 'min_per_mile',
         'gut_training': 'moderate',
         'activity_type': 'running',
+        // v4 rejects requests without the pre-workout window fields.
+        'hours_before': 2.0,
+        'is_fasted': false,
       };
 
       logTestSetup(requestData);
@@ -314,7 +374,7 @@ void main() {
       logSection('Calling generate-macros edge function');
 
       final response = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: requestData,
       );
 
@@ -368,6 +428,9 @@ void main() {
         'run_pace_unit': 'min_per_mile',
         'gut_training': 'high',
         'activity_type': 'running',
+        // v4 rejects requests without the pre-workout window fields.
+        'hours_before': 2.0,
+        'is_fasted': false,
       };
 
       logTestSetup({
@@ -378,7 +441,7 @@ void main() {
       });
 
       final response = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: requestData,
       );
 
@@ -428,7 +491,7 @@ void main() {
 
       // Test low gut training
       final lowResponse = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: {...baseRequest, 'gut_training': 'low'},
       );
       final lowData = jsonDecode(lowResponse.body) as Map<String, dynamic>;
@@ -437,7 +500,7 @@ void main() {
 
       // Test high gut training
       final highResponse = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: {...baseRequest, 'gut_training': 'high'},
       );
       final highData = jsonDecode(highResponse.body) as Map<String, dynamic>;
@@ -620,7 +683,7 @@ void main() {
         final stopwatch = Stopwatch()..start();
 
         final response = await client.invokeFunction(
-          'generate-nutrition-plan',
+          'generate-nutrition-plan-v3',
           body: requestData,
         );
 
@@ -918,11 +981,10 @@ void main() {
             'during_carbs_actual',
             sums['carbs']!.toStringAsFixed(1),
           );
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['during_total_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getDuringShortfalls(plan),
             'During carbs',
           );
           assertMacroInRange(
@@ -949,11 +1011,10 @@ void main() {
             'after_carbs_actual',
             sums['carbs']!.toStringAsFixed(1),
           );
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getAfterShortfalls(plan),
             'After carbs',
           );
           assertMacroInRange(
@@ -1062,11 +1123,10 @@ void main() {
         final duringFoods = getDuringFoods(plan);
         if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
           final sums = sumFoodMacros(duringFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['during_total_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getDuringShortfalls(plan),
             'During carbs',
           );
           assertMacroInRange(
@@ -1081,11 +1141,10 @@ void main() {
         final afterFoods = getAfterFoods(plan);
         if (afterFoods.isNotEmpty) {
           final sums = sumFoodMacros(afterFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getAfterShortfalls(plan),
             'After carbs',
           );
           assertMacroInRange(
@@ -1169,11 +1228,10 @@ void main() {
         final duringFoods = getDuringFoods(plan);
         if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
           final sums = sumFoodMacros(duringFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['during_total_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getDuringShortfalls(plan),
             'During carbs',
           );
         }
@@ -1181,11 +1239,10 @@ void main() {
         final afterFoods = getAfterFoods(plan);
         if (afterFoods.isNotEmpty) {
           final sums = sumFoodMacros(afterFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getAfterShortfalls(plan),
             'After carbs',
           );
         }
@@ -1262,11 +1319,10 @@ void main() {
         final duringFoods = getDuringFoods(plan);
         if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
           final sums = sumFoodMacros(duringFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['during_total_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getDuringShortfalls(plan),
             'During carbs',
           );
         }
@@ -1274,11 +1330,10 @@ void main() {
         final afterFoods = getAfterFoods(plan);
         if (afterFoods.isNotEmpty) {
           final sums = sumFoodMacros(afterFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getAfterShortfalls(plan),
             'After carbs',
           );
         }
@@ -1356,11 +1411,10 @@ void main() {
         final duringFoods = getDuringFoods(plan);
         if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
           final sums = sumFoodMacros(duringFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['during_total_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getDuringShortfalls(plan),
             'During carbs',
           );
         }
@@ -1368,11 +1422,10 @@ void main() {
         final afterFoods = getAfterFoods(plan);
         if (afterFoods.isNotEmpty) {
           final sums = sumFoodMacros(afterFoods);
-          assertMacroInRange(
+          assertCarbsMeetTargetOrDeclaredShortfall(
             sums['carbs']!,
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
-            0.9,
-            1.1,
+            getAfterShortfalls(plan),
             'After carbs',
           );
         }
@@ -1389,10 +1442,10 @@ void main() {
 
       final functions = [
         'get-foods',
-        'generate-macros',
+        'generate-macros-v4',
         'search-public-events',
         'get-weather-forecast',
-        'generate-nutrition-plan',
+        'generate-nutrition-plan-v3',
       ];
 
       final results = <String, int>{};

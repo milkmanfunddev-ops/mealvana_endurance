@@ -16,28 +16,31 @@ import 'package:test/test.dart';
 
 void main() {
   group('activities.is_fasted (v14 fold-in)', () {
-    test('onCreate produces is_fasted as NOT NULL with default false', () async {
-      final db = AppDatabase.memory();
-      addTearDown(db.close);
+    test(
+      'onCreate produces is_fasted as NOT NULL with default false',
+      () async {
+        final db = AppDatabase.memory();
+        addTearDown(db.close);
 
-      final columns = await db
-          .customSelect('PRAGMA table_info(activities)')
-          .get();
-      final isFasted = columns
-          .where((r) => r.read<String>('name') == 'is_fasted')
-          .toList();
+        final columns = await db
+            .customSelect('PRAGMA table_info(activities)')
+            .get();
+        final isFasted = columns
+            .where((r) => r.read<String>('name') == 'is_fasted')
+            .toList();
 
-      expect(
-        isFasted,
-        hasLength(1),
-        reason: 'activities table must have an is_fasted column',
-      );
-      expect(
-        isFasted.single.read<int>('notnull'),
-        1,
-        reason: 'is_fasted must be NOT NULL',
-      );
-    });
+        expect(
+          isFasted,
+          hasLength(1),
+          reason: 'activities table must have an is_fasted column',
+        );
+        expect(
+          isFasted.single.read<int>('notnull'),
+          1,
+          reason: 'is_fasted must be NOT NULL',
+        );
+      },
+    );
 
     test('rows inserted without is_fasted default to false', () async {
       final db = AppDatabase.memory();
@@ -110,10 +113,7 @@ void main() {
         final after = await db
             .customSelect('PRAGMA table_info(activities)')
             .get();
-        expect(
-          after.any((r) => r.read<String>('name') == 'is_fasted'),
-          isTrue,
-        );
+        expect(after.any((r) => r.read<String>('name') == 'is_fasted'), isTrue);
       },
     );
   });

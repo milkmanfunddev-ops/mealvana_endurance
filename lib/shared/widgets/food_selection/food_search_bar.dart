@@ -19,6 +19,7 @@ class FoodSearchBar extends StatelessWidget {
     this.showClearButton = false,
     this.onClear,
     this.onTapOutside,
+    this.fieldKey,
   });
 
   final TextEditingController controller;
@@ -37,6 +38,10 @@ class FoodSearchBar extends StatelessWidget {
   /// elsewhere on screen). Defaults to null (unchanged legacy behavior).
   final void Function(PointerDownEvent)? onTapOutside;
 
+  /// Optional key applied to the inner [TextField] so integration tests can
+  /// target the input directly (e.g. ValueKey('add_food.search_field')).
+  final Key? fieldKey;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -45,6 +50,7 @@ class FoodSearchBar extends StatelessWidget {
         SizedBox(
           height: AppSizes.inputHeight,
           child: TextField(
+            key: fieldKey,
             controller: controller,
             onTapOutside: onTapOutside,
             onChanged: (value) {

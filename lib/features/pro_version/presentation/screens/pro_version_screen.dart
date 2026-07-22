@@ -13,11 +13,13 @@ class ProVersionScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      key: const ValueKey('pro_version.screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          key: const ValueKey('pro_version.close_button'),
           icon: Icon(
             Icons.close,
             color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -65,6 +67,7 @@ class ProVersionScreen extends ConsumerWidget {
 
                   // Title
                   Text(
+                    key: const ValueKey('pro_version.title'),
                     'Mealvana Pro',
                     style: AppTextStyles.h1.copyWith(
                       color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -166,6 +169,7 @@ class ProVersionScreen extends ConsumerWidget {
 
               // Pricing Section
               BaseCard(
+                key: const ValueKey('pro_version.pricing_card'),
                 backgroundColor: isDark
                     ? AppColors.blackberryLight.withValues(alpha: 0.5)
                     : AppColors.surfaceLight,

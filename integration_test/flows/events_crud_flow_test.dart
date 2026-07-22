@@ -21,10 +21,11 @@
 ///   the row is actually gone. (Tracked as a minor UX bug; see notes.)
 ///
 /// Auth:
-///   Reuses an existing session if the app launches straight to the calendar.
-///   Otherwise logs in with INTEGRATION_TEST_EMAIL / INTEGRATION_TEST_PASSWORD.
-///   On a clean iOS install (no session, no creds) the test self-skips with a
-///   clear message rather than failing.
+///   Boots via the shared launcher (helpers/flow_launcher.dart, flavor-aware)
+///   and reuses an existing session if the app launches straight to the
+///   calendar; otherwise ensureAuthenticated logs in with the flavor-matched
+///   TestConfig.loginEmail/loginPassword. On a clean iOS install (no session,
+///   no creds) the test self-skips with a clear message rather than failing.
 ///
 /// Run:
 ///   patrol test --target integration_test/flows/events_crud_flow_test.dart \
@@ -37,32 +38,21 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
-import 'package:mealvana_endurance/main_dev.dart' as app;
 
-const _loginEmail = String.fromEnvironment('INTEGRATION_TEST_EMAIL');
-const _loginPassword = String.fromEnvironment('INTEGRATION_TEST_PASSWORD');
+import '../helpers/flow_launcher.dart';
 
 void main() {
   patrolTest(
     'create, edit, then delete an event end-to-end',
     ($) async {
-      await app.main();
-      // Bounded first-frame settle — a never-settling tree caps at 2 min
-      // instead of hanging pumpAndSettle's 10-minute default.
-      await $.tester.pumpAndSettle(
-        const Duration(milliseconds: 100),
-        EnginePhase.sendSemanticsUpdate,
-        const Duration(minutes: 2),
-      );
+      await launchApp();
+      // Do NOT pumpAndSettle: startup may show a persistent spinner.
+      // ensureAuthenticated polls with plain pumps instead.
+      await $.pump(const Duration(milliseconds: 500));
 
       // ---- 0. Ensure we're authenticated on the calendar ----------------
-      final onCalendar = await _ensureAuthenticated($);
-      if (!onCalendar) {
-        markTestSkipped(
-          'Could not reach the calendar: no existing session and no '
-          'INTEGRATION_TEST_EMAIL/PASSWORD provided. Pass '
-          '--dart-define-from-file=secrets/integration_test.env to run.',
-        );
+      if (!await ensureAuthenticated($)) {
+        markTestSkipped(noAuthSkipMessage());
         return;
       }
 
@@ -86,9 +76,9 @@ void main() {
       await _submitEventForm($);
 
       // ---- 3. READ — landed on Event Details with our name --------------
-      await $(const ValueKey('event_details.event_name')).waitUntilVisible(
-        timeout: const Duration(seconds: 20),
-      );
+      await $(
+        const ValueKey('event_details.event_name'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 20));
       expect(
         $(createName),
         findsWidgets,
@@ -103,9 +93,9 @@ void main() {
       await $(const ValueKey('event_create.name_field')).enterText(editedName);
       await _submitEventForm($);
 
-      await $(const ValueKey('event_details.event_name')).waitUntilVisible(
-        timeout: const Duration(seconds: 20),
-      );
+      await $(
+        const ValueKey('event_details.event_name'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 20));
       expect(
         $(editedName),
         findsWidgets,
@@ -119,15 +109,15 @@ void main() {
 
       // The detail screen does NOT auto-pop after delete (see header note),
       // so navigate to the list explicitly via the footer link.
-      await $(const ValueKey('event_details.view_events_link')).waitUntilVisible(
-        timeout: const Duration(seconds: 20),
-      );
+      await $(
+        const ValueKey('event_details.view_events_link'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(const ValueKey('event_details.view_events_link')).tap();
 
       // ---- 6. Assert the event is gone from the list --------------------
-      await $(const ValueKey('my_events.title')).waitUntilVisible(
-        timeout: const Duration(seconds: 20),
-      );
+      await $(
+        const ValueKey('my_events.title'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 20));
       expect(
         $(editedName),
         findsNothing,
@@ -145,27 +135,4 @@ Future<void> _submitEventForm(PatrolIntegrationTester $) async {
   FocusManager.instance.primaryFocus?.unfocus();
   await $.pump(const Duration(milliseconds: 400));
   await $(const ValueKey('event_create.create_button')).scrollTo().tap();
-}
-
-/// Returns true once the calendar is reachable (authenticated), false if we
-/// can't get there (clean install + no credentials).
-Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('bottom_nav.timeline_tab');
-
-  // Already authenticated (warm sim / persisted session).
-  if ($(fab).exists) return true;
-
-  // Need to log in — bail if no creds were injected.
-  if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
-
-  // Welcome → Login options → email login.
-  await $(const ValueKey('welcome.log_in_button')).tap();
-  await $(const ValueKey('login_options.email_button')).tap();
-  await $(const ValueKey('login.email_field')).enterText(_loginEmail);
-  await $(const ValueKey('login.password_field')).enterText(_loginPassword);
-  await $(const ValueKey('login.log_in_button')).tap();
-
-  // Allow the Supabase round-trip + redirect to the calendar.
-  await $(fab).waitUntilVisible(timeout: const Duration(seconds: 40));
-  return $(fab).exists;
 }

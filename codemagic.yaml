@@ -1281,6 +1281,66 @@ workflows:
     artifacts:
       - test-results/**
 
+  # ============================================================
+  # PROD INTEGRATION TESTS — the same Patrol suite driven against the
+  # PRODUCTION backend (prod flavor + .env.prod.local). The flows boot
+  # main_prod via integration_test/helpers/flow_launcher.dart and log in with
+  # the prod tester account (INTEGRATION_TEST_PROD_EMAIL/PASSWORD inside the
+  # INTEGRATION_TEST_ENV secure var, present in BOTH the mealvana_dev and
+  # mealvana_prod groups). CRUD flows create uniquely-named rows under that
+  # tester account and delete them on the way out — they touch no other
+  # prod user's data.
+  #
+  # Triggered on push to release/* (the release-verification point) and
+  # startable manually before an App Store submit.
+  # ============================================================
+  integration-tests-prod:
+    name: Integration Tests (PROD backend)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_prod
+      vars:
+        FLUTTER_ENV: prod
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'release/*'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *write_dotenv_files
+      - *write_integration_creds
+      - *flutter_pub_get
+      - *run_build_runner
+      - *install_patrol_cli
+      - *boot_ios_simulator
+
+      - name: Run Patrol integration tests against prod
+        script: |
+          mkdir -p test-results
+          patrol test \
+            --target integration_test \
+            --flavor prod \
+            --dart-define-from-file=.env.prod.local \
+            --dart-define-from-file=secrets/integration_test.env \
+            --device "$TEST_DEVICE" \
+            2>&1 | tee test-results/integration-tests-prod.log
+        test_report: test-results/integration-tests-prod.log
+
+      - *shutdown_ios_simulator
+
+    artifacts:
+      - test-results/**
+
   integration-test-quick:
     name: Quick Integration Test
     instance_type: mac_mini_m2
@@ -1341,10 +1401,14 @@ workflows:
     triggering:
       events:
         - pull_request
+        # Push runs the same quality gate on every develop push (Lee,
+        # 2026-07-21: tests must run on develop, not only at release time) and
+        # on pushes to release/* branches themselves.
+        - push
       branch_patterns:
-        # Full quality gate (analyze + format + unit + algorithm) runs on
-        # release/* PRs only — not on develop.
         - pattern: 'release/*'
+          include: true
+        - pattern: 'develop'
           include: true
       cancel_previous_builds: true
 

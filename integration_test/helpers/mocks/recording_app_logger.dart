@@ -26,28 +26,28 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    debugLogs.add(LogEntry(
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-      timestamp: DateTime.now(),
-    ));
+    debugLogs.add(
+      LogEntry(
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
-  void info(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-  }) {
-    infoLogs.add(LogEntry(
-      message: message,
-      context: context,
-      data: data,
-      timestamp: DateTime.now(),
-    ));
+  void info(String message, {String? context, Map<String, dynamic>? data}) {
+    infoLogs.add(
+      LogEntry(
+        message: message,
+        context: context,
+        data: data,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -58,14 +58,16 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    warningLogs.add(LogEntry(
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-      timestamp: DateTime.now(),
-    ));
+    warningLogs.add(
+      LogEntry(
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -76,14 +78,16 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    errorLogs.add(LogEntry(
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-      timestamp: DateTime.now(),
-    ));
+    errorLogs.add(
+      LogEntry(
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -94,14 +98,16 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    fatalLogs.add(LogEntry(
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-      timestamp: DateTime.now(),
-    ));
+    fatalLogs.add(
+      LogEntry(
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -114,16 +120,18 @@ class RecordingAppLogger implements AppLogger {
     Duration? duration,
     dynamic error,
   }) {
-    apiLogs.add(ApiLog(
-      message: message,
-      endpoint: endpoint,
-      statusCode: statusCode,
-      requestData: requestData,
-      responseData: responseData,
-      duration: duration,
-      error: error,
-      timestamp: DateTime.now(),
-    ));
+    apiLogs.add(
+      ApiLog(
+        message: message,
+        endpoint: endpoint,
+        statusCode: statusCode,
+        requestData: requestData,
+        responseData: responseData,
+        duration: duration,
+        error: error,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -135,15 +143,17 @@ class RecordingAppLogger implements AppLogger {
     Duration? duration,
     dynamic error,
   }) {
-    databaseLogs.add(DatabaseLog(
-      message: message,
-      operation: operation,
-      table: table,
-      data: data,
-      duration: duration,
-      error: error,
-      timestamp: DateTime.now(),
-    ));
+    databaseLogs.add(
+      DatabaseLog(
+        message: message,
+        operation: operation,
+        table: table,
+        data: data,
+        duration: duration,
+        error: error,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -153,13 +163,15 @@ class RecordingAppLogger implements AppLogger {
     String? to,
     Map<String, dynamic>? parameters,
   }) {
-    navigationLogs.add(NavigationLog(
-      message: message,
-      from: from,
-      to: to,
-      parameters: parameters,
-      timestamp: DateTime.now(),
-    ));
+    navigationLogs.add(
+      NavigationLog(
+        message: message,
+        from: from,
+        to: to,
+        parameters: parameters,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -169,13 +181,15 @@ class RecordingAppLogger implements AppLogger {
     String? screen,
     Map<String, dynamic>? data,
   }) {
-    userActionLogs.add(UserActionLog(
-      message: message,
-      action: action,
-      screen: screen,
-      data: data,
-      timestamp: DateTime.now(),
-    ));
+    userActionLogs.add(
+      UserActionLog(
+        message: message,
+        action: action,
+        screen: screen,
+        data: data,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -186,14 +200,16 @@ class RecordingAppLogger implements AppLogger {
     Map<String, dynamic>? data,
     dynamic error,
   }) {
-    nutritionPlanLogs.add(NutritionPlanLog(
-      message: message,
-      planId: planId,
-      phase: phase,
-      data: data,
-      error: error,
-      timestamp: DateTime.now(),
-    ));
+    nutritionPlanLogs.add(
+      NutritionPlanLog(
+        message: message,
+        planId: planId,
+        phase: phase,
+        data: data,
+        error: error,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -202,12 +218,14 @@ class RecordingAppLogger implements AppLogger {
     String? event,
     Map<String, dynamic>? properties,
   }) {
-    analyticsLogs.add(AnalyticsLog(
-      message: message,
-      event: event,
-      properties: properties,
-      timestamp: DateTime.now(),
-    ));
+    analyticsLogs.add(
+      AnalyticsLog(
+        message: message,
+        event: event,
+        properties: properties,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   // Helper methods for test assertions

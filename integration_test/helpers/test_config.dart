@@ -6,9 +6,31 @@ library;
 
 /// Configuration for integration tests
 class TestConfig {
-  /// Test account credentials for email/password login tests
-  static const testEmail = 'test@test.com';
-  static const testPassword = 'test';
+  /// Login credentials, flavor-aware. Dev and prod are different Supabase
+  /// projects with different passwords for the same account, so the right
+  /// pair is chosen from [isProd] (which follows the SUPABASE_URL passed via
+  /// --dart-define-from-file). Flows must use these instead of reading
+  /// INTEGRATION_TEST_EMAIL/PASSWORD via String.fromEnvironment themselves —
+  /// otherwise a --flavor prod run logs in with the dev password and every
+  /// credentialed flow dies at the login screen.
+  static const _devEmail = String.fromEnvironment('INTEGRATION_TEST_EMAIL');
+  static const _devPassword = String.fromEnvironment(
+    'INTEGRATION_TEST_PASSWORD',
+  );
+  static const _prodEmail = String.fromEnvironment(
+    'INTEGRATION_TEST_PROD_EMAIL',
+  );
+  static const _prodPassword = String.fromEnvironment(
+    'INTEGRATION_TEST_PROD_PASSWORD',
+  );
+
+  static String get loginEmail => isProd ? _prodEmail : _devEmail;
+  static String get loginPassword => isProd ? _prodPassword : _devPassword;
+
+  /// True when login credentials for the current flavor are available.
+  /// Credentialed flows should self-skip (with a clear message) when false.
+  static bool get hasLoginCredentials =>
+      loginEmail.isNotEmpty && loginPassword.isNotEmpty;
 
   /// Supabase project the DB-verification helpers query.
   ///

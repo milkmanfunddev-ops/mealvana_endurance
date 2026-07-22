@@ -117,6 +117,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     );
 
     return Scaffold(
+      key: const ValueKey('jade.chat_screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: _buildAppBar(context, jadeName, isDark),
       body: SafeArea(
@@ -226,7 +227,11 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
         final msg = state.messages[index];
         final isLastAndStreaming =
             state.isStreaming && index == state.messages.length - 1;
-        return _MessageBubble(message: msg, isStreaming: isLastAndStreaming);
+        return _MessageBubble(
+          key: ValueKey('jade.message_${msg.role.name}_$index'),
+          message: msg,
+          isStreaming: isLastAndStreaming,
+        );
       },
     );
   }
@@ -370,6 +375,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 140),
               child: TextField(
+                key: const ValueKey('jade.input_field'),
                 controller: _textController,
                 enabled: !isStreaming,
                 maxLines: null,
@@ -447,7 +453,11 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
 // ---------------------------------------------------------------------------
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isStreaming});
+  const _MessageBubble({
+    super.key,
+    required this.message,
+    required this.isStreaming,
+  });
 
   final JadeMessage message;
   final bool isStreaming;

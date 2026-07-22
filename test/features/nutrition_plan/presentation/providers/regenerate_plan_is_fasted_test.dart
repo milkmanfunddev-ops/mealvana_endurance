@@ -100,9 +100,7 @@ void main() {
     final user = UserFixtures.completedUser(id: _userId);
     when(() => authService.getCurrentUser()).thenAnswer((_) async => user);
     when(() => authService.getLikedFoods(any())).thenAnswer((_) async => []);
-    when(
-      () => authService.getDislikedFoods(any()),
-    ).thenAnswer((_) async => []);
+    when(() => authService.getDislikedFoods(any())).thenAnswer((_) async => []);
     when(
       () => authService.getWillingToTryFoods(any()),
     ).thenAnswer((_) async => []);

@@ -63,7 +63,10 @@ extension PumpHelpers on WidgetTester {
 
   /// Pumps a specific number of frames
   /// Useful for animations or waiting for multiple rebuilds
-  Future<void> pumpFrames(int count, {Duration interval = const Duration(milliseconds: 16)}) async {
+  Future<void> pumpFrames(
+    int count, {
+    Duration interval = const Duration(milliseconds: 16),
+  }) async {
     for (var i = 0; i < count; i++) {
       await pump(interval);
     }

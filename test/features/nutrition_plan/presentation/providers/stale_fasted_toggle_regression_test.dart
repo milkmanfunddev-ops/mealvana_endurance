@@ -144,9 +144,9 @@ void main() {
         final container = await pumpShell(tester, showScreen);
 
         // A previous workout in this session left the fasted toggle ON.
-        container.read(runningInputControllerProvider.notifier).updateFasted(
-              true,
-            );
+        container
+            .read(runningInputControllerProvider.notifier)
+            .updateFasted(true);
         expect(container.read(runningInputControllerProvider).isFasted, isTrue);
 
         // User opens the New Activity screen again (create or adjust flow).
@@ -175,9 +175,9 @@ void main() {
 
         // The user explicitly marks THIS workout as fasted after the screen
         // is up — that choice must stick until they leave the screen.
-        container.read(runningInputControllerProvider.notifier).updateFasted(
-              true,
-            );
+        container
+            .read(runningInputControllerProvider.notifier)
+            .updateFasted(true);
         await tester.pump(const Duration(milliseconds: 100));
 
         expect(container.read(runningInputControllerProvider).isFasted, isTrue);

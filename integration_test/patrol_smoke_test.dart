@@ -7,20 +7,22 @@
 ///
 /// Run with:
 ///   patrol test --target integration_test/patrol_smoke_test.dart \
-///     --flavor dev -t lib/main_dev.dart \
-///     -d "iPhone 15 Pro Max"
+///     --flavor dev \
+///     --dart-define-from-file=.env.dev.local \
+///     -d "iPhone 17 Pro"
 library;
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
-import 'package:mealvana_endurance/main_dev.dart' as app;
+
+import 'helpers/flow_launcher.dart';
 
 void main() {
   patrolTest(
     'app launches and renders at least one widget',
     ($) async {
-      await app.main();
+      // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
+      await launchApp();
       await $.pump(const Duration(seconds: 5));
 
       // Assert *some* widget rendered. NOTE: `find.byType(Widget)` is wrong —

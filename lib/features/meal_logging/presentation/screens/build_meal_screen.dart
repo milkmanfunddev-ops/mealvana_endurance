@@ -248,7 +248,11 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            KylePrimaryButton(text: '+ Add food', onPressed: _openAddFood),
+            KylePrimaryButton(
+              key: const ValueKey('build_meal.add_food_button'),
+              text: '+ Add food',
+              onPressed: _openAddFood,
+            ),
             const SizedBox(height: AppSpacing.sm),
             TextButton(
               onPressed: _openStartFromPicker,
@@ -425,6 +429,7 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
               title: const Text('Also save as a favorite'),
             ),
             KylePrimaryButton(
+              key: const ValueKey('build_meal.log_meal_button'),
               text: 'Log meal',
               isLoading: _isSaving,
               onPressed: _isSaving ? null : _logMeal,
@@ -927,6 +932,7 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
               children: [
                 FoodSearchBar(
                   controller: _searchCtrl,
+                  fieldKey: const ValueKey('add_food.search_field'),
                   hintText: 'Search foods to add...',
                   onChanged: _onSearchChanged,
                   // No manual-search action — USDA/OFF auto-fire on the

@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 // Screens under test
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mealvana_endurance/features/settings/presentation/screens/settings_menu_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/preferences_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sweat_profile_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sport_settings_screen.dart';
@@ -28,6 +29,9 @@ import 'package:mealvana_endurance/features/settings/presentation/screens/coach_
 import 'package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/help_feedback_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/debug_screen.dart';
+import 'package:mealvana_endurance/features/personal_templates/presentation/screens/personal_templates_screen.dart';
+import 'package:mealvana_endurance/features/personal_templates/presentation/providers/personal_templates_controller.dart';
+import 'package:mealvana_endurance/features/personal_templates/domain/personal_template.dart';
 
 // Providers / domain objects needed for seeded overrides
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
@@ -80,6 +84,11 @@ class _SeededSweatProfileController extends SweatProfileController {
 class _SeededConnectTrainingController extends ConnectTrainingController {
   @override
   FutureOr<ConnectTrainingState> build() => const ConnectTrainingState();
+}
+
+class _SeededPersonalTemplatesController extends PersonalTemplatesController {
+  @override
+  FutureOr<List<PersonalTemplate>> build() => const <PersonalTemplate>[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -319,6 +328,33 @@ void main() {
     // pumps in ScreenUtilInit via wrapForTest(), so .sp/.h/.w resolve correctly.
     testWidgets('DebugScreen builds without crash', (tester) async {
       await smokeScreen(tester, const DebugScreen());
+    });
+
+    // ── 15. SettingsMenuScreen ────────────────────────────────────────────
+    //
+    // Pure-UI ConsumerWidget: watches only appConfigProvider (provided by the
+    // harness default). All navigation (context.push) is tap-only. Settles
+    // cleanly with no per-screen overrides.
+    testWidgets('SettingsMenuScreen builds without overflow', (tester) async {
+      await smokeScreen(tester, const SettingsMenuScreen());
+    });
+
+    // ── 16. PersonalTemplatesScreen ───────────────────────────────────────
+    //
+    // Watches personalTemplatesControllerProvider (async — the real build()
+    // awaits userIdProvider + Drift). Seeded with an empty template list so
+    // the deterministic empty-state branch renders ("No Routines Yet").
+    // Dialogs/bottom-sheets are tap-only and not exercised here.
+    testWidgets('PersonalTemplatesScreen builds (empty state)', (tester) async {
+      await smokeScreen(
+        tester,
+        const PersonalTemplatesScreen(),
+        overrides: [
+          personalTemplatesControllerProvider.overrideWith(
+            _SeededPersonalTemplatesController.new,
+          ),
+        ],
+      );
     });
 
     // NOTE: WeatherDetailScreen (settings/presentation/screens/) was deleted —

@@ -80,6 +80,7 @@ class EventActionButtonsCard extends ConsumerWidget {
 
           // Create or Edit Carb Loading Plan Button
           KyleSecondaryButton(
+            key: const ValueKey('event_details.carb_loading_button'),
             onPressed: () => _handleCarbLoadingPlanAction(
               context,
               ref,
@@ -99,6 +100,7 @@ class EventActionButtonsCard extends ConsumerWidget {
 
           // Race Day Checklist Button
           KyleSecondaryButton(
+            key: const ValueKey('event_details.checklist_button'),
             onPressed: () {
               context.push('/events/$eventId/checklist');
             },

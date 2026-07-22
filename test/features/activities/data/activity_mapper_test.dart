@@ -133,8 +133,10 @@ void main() {
     });
 
     test('Drift row -> domain preserves isFasted', () {
-      expect(mapper.fromDriftRow(buildDriftRow(isFasted: true)).isFasted,
-          isTrue);
+      expect(
+        mapper.fromDriftRow(buildDriftRow(isFasted: true)).isFasted,
+        isTrue,
+      );
       expect(mapper.fromDriftRow(buildDriftRow()).isFasted, isFalse);
     });
 
@@ -182,8 +184,10 @@ void main() {
       // Rows written before the column existed have no key at all.
       expect(mapper.fromJson(baseJson).isFasted, isFalse);
       // Explicit null (SELECT * against a row predating a backfill).
-      expect(mapper.fromJson({...baseJson, 'is_fasted': null}).isFasted,
-          isFalse);
+      expect(
+        mapper.fromJson({...baseJson, 'is_fasted': null}).isFasted,
+        isFalse,
+      );
     });
 
     test('full round-trip domain -> Supabase payload -> domain preserves '
