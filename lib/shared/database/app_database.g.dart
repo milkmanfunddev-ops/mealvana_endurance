@@ -21429,7 +21429,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String id;
   final String userId;
 
-  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot', 'runna'
   final String provider;
   final String accessToken;
   final String? refreshToken;

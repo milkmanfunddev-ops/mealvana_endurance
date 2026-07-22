@@ -468,11 +468,11 @@ class AppDatabase extends _$AppDatabase {
         if (!details.wasCreated) {
           // Repair the integrations.provider CHECK in place before validating.
           // CHECK constraints are baked into the table at CREATE time, so
-          // adding 'vdot' to the Dart definition doesn't update tables that
-          // already exist on-device. We deliberately do NOT bump schemaVersion
-          // for this CHECK fix, so this idempotent in-place repair (not a
-          // version bump) is what fixes existing installs that reject
-          // `provider = 'vdot'` inserts.
+          // adding a provider (first 'vdot', later 'runna') to the Dart
+          // definition doesn't update tables that already exist on-device. We
+          // deliberately do NOT bump schemaVersion for this CHECK fix, so this
+          // idempotent in-place repair (not a version bump) is what fixes
+          // existing installs that reject inserts for the new provider.
           await PerformanceTelemetry.measure(
             'database.ensure_integrations_constraint',
             _ensureIntegrationsProviderCheck,
@@ -573,27 +573,34 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Ensure the `integrations.provider` CHECK constraint allows 'vdot'.
+  /// Ensure the `integrations.provider` CHECK constraint allows every
+  /// provider the app can write ('vdot' was added first, 'runna' later).
   ///
   /// SQLite stores CHECK constraints as part of the table's CREATE statement,
-  /// so editing the Dart table definition (which now lists 'vdot') does NOT
-  /// alter tables that were created before 'vdot' was added — those keep
-  /// rejecting `provider = 'vdot'` inserts with a CHECK failure (code 275).
-  /// Bumping schemaVersion would trigger a delete-and-resync, but we're
-  /// deliberately staying on v9, so instead we repair the constraint in place:
-  /// detect a stale CHECK and, if found, rebuild the table preserving its rows.
-  /// Idempotent — once the CHECK includes 'vdot' this is a no-op on open.
+  /// so editing the Dart table definition does NOT alter tables that already
+  /// exist on-device — those keep rejecting inserts for the new provider with
+  /// a CHECK failure (code 275). Bumping schemaVersion would trigger a
+  /// delete-and-resync, so instead we repair the constraint in place: detect
+  /// a stale CHECK and, if found, rebuild the table preserving its rows.
+  /// Idempotent — once the CHECK includes all required providers this is a
+  /// no-op on open.
   Future<void> _ensureIntegrationsProviderCheck() async {
     final rows = await customSelect(
       "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'integrations'",
     ).get();
     if (rows.isEmpty) return; // missing table is handled by schema validation
     final createSql = rows.first.read<String?>('sql') ?? '';
-    if (createSql.contains("'vdot'")) return; // already up to date
+    // Providers added after the table first shipped — extend this list when a
+    // new provider value is added to the CHECK in integrations_table.dart.
+    const requiredProviders = ["'vdot'", "'runna'"];
+    if (requiredProviders.every(createSql.contains)) {
+      return; // already up to date
+    }
 
     if (kDebugMode) {
       print(
-        '🔧 Rebuilding integrations table to add \'vdot\' to provider CHECK',
+        '🔧 Rebuilding integrations table to refresh the provider CHECK '
+        '(needs: $requiredProviders)',
       );
     }
 

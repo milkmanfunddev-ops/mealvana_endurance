@@ -14,6 +14,9 @@ import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
 import '../../application/garmin_oauth_service.dart';
+import '../../application/runna_ics_parser.dart';
+import '../../application/runna_sync_service.dart';
+import '../../application/runna_transformer.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/training_peaks_transformer.dart';
@@ -22,6 +25,7 @@ import '../../application/vdot_sync_service.dart';
 import '../../application/vdot_transformer.dart';
 import '../../data/final_surge_api_client.dart';
 import '../../data/integrations_repository.dart';
+import '../../data/runna_ics_client.dart';
 import '../../data/training_peaks_api_client.dart';
 import '../../data/vdot_api_client.dart';
 import '../../domain/integration.dart';
@@ -501,4 +505,55 @@ VdotSyncService vdotSyncService(Ref ref) {
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
   );
+}
+
+// =============================================================================
+// RUNNA (ICS FEED) PROVIDERS
+// =============================================================================
+
+/// Provider for the Runna ICS feed HTTP client. No OAuth — the calendar
+/// subscription URL itself carries the token.
+@Riverpod(keepAlive: true)
+RunnaIcsClient runnaIcsClient(Ref ref) => RunnaIcsClient();
+
+/// Provider for the Runna ICS parser (pure RFC 5545 subset).
+@Riverpod(keepAlive: true)
+RunnaIcsParser runnaIcsParser(Ref ref) => const RunnaIcsParser();
+
+/// Provider for the Runna transformer (ICS event → Activity).
+@Riverpod(keepAlive: true)
+RunnaTransformer runnaTransformer(Ref ref) => const RunnaTransformer();
+
+/// Provider for the Runna sync service.
+@Riverpod(keepAlive: true)
+RunnaSyncService runnaSyncService(Ref ref) {
+  final icsClient = ref.watch(runnaIcsClientProvider);
+  final parser = ref.watch(runnaIcsParserProvider);
+  final integrationsRepository = ref.watch(integrationsRepositoryProvider);
+  final activitiesRepository = ref.watch(activitiesRepositoryProvider);
+  final transformer = ref.watch(runnaTransformerProvider);
+  final changeDetectionService = ref.watch(changeDetectionServiceProvider);
+  return RunnaSyncService(
+    icsClient: icsClient,
+    parser: parser,
+    integrationsRepository: integrationsRepository,
+    activitiesRepository: activitiesRepository,
+    transformer: transformer,
+    changeDetectionService: changeDetectionService,
+    analytics: ref.watch(analyticsTrackerProvider),
+  );
+}
+
+/// Provider to get the Runna integration for a user.
+@riverpod
+Future<IntegrationModel?> runnaIntegration(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  return repository.getIntegration(userId, 'runna');
+}
+
+/// Provider to check whether Runna is connected for a user.
+@riverpod
+Future<bool> isRunnaConnected(Ref ref, String userId) async {
+  final integration = await ref.watch(runnaIntegrationProvider(userId).future);
+  return integration?.isActive ?? false;
 }

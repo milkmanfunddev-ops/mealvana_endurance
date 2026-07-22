@@ -22,10 +22,13 @@ import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/garmin_oauth_service.dart';
 import '../../application/integration_sync_coordinator.dart';
+import '../../application/runna_sync_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
+import '../../data/runna_ics_client.dart';
+import '../../domain/integration.dart';
 import 'integrations_providers.dart';
 
 part 'connect_training_controller.g.dart';
@@ -60,6 +63,8 @@ class ConnectTrainingState {
     this.isVdotConnected = false,
     this.vdotAthleteName,
     this.vdotLastSyncAt,
+    this.isRunnaConnected = false,
+    this.runnaLastSyncAt,
     this.isConnecting = false,
     this.connectingProvider,
     this.importedWorkoutsCount = 0,
@@ -85,6 +90,8 @@ class ConnectTrainingState {
   final bool isVdotConnected;
   final String? vdotAthleteName;
   final DateTime? vdotLastSyncAt;
+  final bool isRunnaConnected;
+  final DateTime? runnaLastSyncAt;
   final bool isConnecting;
   final String? connectingProvider;
   final int importedWorkoutsCount;
@@ -125,6 +132,8 @@ class ConnectTrainingState {
     String? vdotAthleteName,
     bool clearVdotAthleteName = false,
     DateTime? vdotLastSyncAt,
+    bool? isRunnaConnected,
+    DateTime? runnaLastSyncAt,
     bool? isConnecting,
     String? connectingProvider,
     bool clearConnectingProvider = false,
@@ -162,6 +171,8 @@ class ConnectTrainingState {
           ? null
           : (vdotAthleteName ?? this.vdotAthleteName),
       vdotLastSyncAt: vdotLastSyncAt ?? this.vdotLastSyncAt,
+      isRunnaConnected: isRunnaConnected ?? this.isRunnaConnected,
+      runnaLastSyncAt: runnaLastSyncAt ?? this.runnaLastSyncAt,
       isConnecting: isConnecting ?? this.isConnecting,
       connectingProvider: clearConnectingProvider
           ? null
@@ -200,6 +211,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   GarminOAuthService get _garminOAuth => ref.read(garminOAuthServiceProvider);
   VdotOAuthService get _vdotOAuth => ref.read(vdotOAuthServiceProvider);
   VdotSyncService get _vdotSync => ref.read(vdotSyncServiceProvider);
+  RunnaSyncService get _runnaSync => ref.read(runnaSyncServiceProvider);
   ActivitiesRepository get _activitiesRepo =>
       ref.read(activitiesRepositoryProvider);
   static const _uuid = Uuid();
@@ -375,6 +387,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId!,
       'vdot',
     );
+    final runnaIntegration = await integrationsRepo.getIntegration(
+      _currentUserId!,
+      'runna',
+    );
 
     final isGarminActive = garminIntegration?.isActive ?? false;
 
@@ -408,6 +424,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isVdotConnected: vdotIntegration?.isActive ?? false,
       vdotAthleteName: vdotIntegration?.providerAthleteName,
       vdotLastSyncAt: vdotIntegration?.lastSyncAt,
+      isRunnaConnected: runnaIntegration?.isActive ?? false,
+      runnaLastSyncAt: runnaIntegration?.lastSyncAt,
     );
   }
 
@@ -781,8 +799,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     const retryDelay = Duration(minutes: 30);
     if (retryDelay >= _garminBackfillCooldown) return;
     final prefs = ref.read(sharedPreferencesProvider);
-    final retryAt =
-        DateTime.now().subtract(_garminBackfillCooldown - retryDelay);
+    final retryAt = DateTime.now().subtract(
+      _garminBackfillCooldown - retryDelay,
+    );
     await prefs.setInt(
       '$_garminBackfillLastAtKeyPrefix$userId',
       retryAt.millisecondsSinceEpoch,
@@ -916,8 +935,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       var uploadFailed = false;
       if (!_isUsingTempUserId) {
         try {
-          final uploadResult =
-              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+            _currentUserId!,
+          );
           // success covers both a real upload and "nothing to upload" (count 0).
           uploadFailed = !uploadResult.success;
           if (kDebugMode) {
@@ -972,7 +992,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           // the retry above will pick them up.
           errorMessage: uploadFailed
               ? 'Workouts saved, but syncing to your account didn\'t finish. '
-                  'We\'ll retry automatically.'
+                    'We\'ll retry automatically.'
               : null,
           clearErrorMessage: !uploadFailed,
           vdotLastSyncAt: DateTime.now(),
@@ -995,10 +1015,289 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
-      _trackIntegrationSyncFailed('vdot', 'exception', errorMessage: e.toString());
+      _trackIntegrationSyncFailed(
+        'vdot',
+        'exception',
+        errorMessage: e.toString(),
+      );
       return VdotSyncResult.error(e.toString());
     } finally {
       _syncingProviders.remove('vdot');
+    }
+  }
+
+  /// Connect Runna via its calendar-subscription (.ics) URL.
+  ///
+  /// No OAuth — the user pastes the link from Runna app → Settings →
+  /// Calendar sync. URL-shape validation is deliberately permissive; the real
+  /// validation is an initial fetch+parse of the feed ([RunnaSyncService.probeFeed]).
+  ///
+  /// Integration-row storage choice (documented here, at the creation site):
+  /// the feed URL is stored in the row's `accessToken` field — it IS the
+  /// credential (the token is embedded in the URL), it's the closest existing
+  /// slot, and it gets the same Supabase backup treatment as every other
+  /// provider secret. `providerAthleteId` (required text, but Runna's feed
+  /// carries no athlete identity) is 'runna-' + a short stable hash of the
+  /// URL.
+  Future<bool> connectRunna(String feedUrl) async {
+    if (_currentUserId == null) {
+      if (kDebugMode) {
+        print('❌ connectRunna: No current user ID');
+      }
+      return false;
+    }
+
+    state = AsyncData(
+      state.value!.copyWith(
+        isConnecting: true,
+        connectingProvider: 'runna',
+        clearErrorMessage: true,
+      ),
+    );
+
+    try {
+      _trackIntegrationConnectStarted('runna');
+
+      final normalized = RunnaIcsClient.normalizeFeedUrl(feedUrl);
+      final uri = Uri.tryParse(normalized);
+      final looksLikeFeed =
+          uri != null &&
+          uri.host.isNotEmpty &&
+          (uri.isScheme('https') || uri.isScheme('http'));
+      if (!looksLikeFeed) {
+        throw const FormatException(
+          'That doesn\'t look like a calendar link. In the Runna app, go to '
+          'Settings → Calendar sync and copy the subscription link.',
+        );
+      }
+
+      // Real validation: the URL must actually serve parseable ICS. Zero
+      // events is fine (a fresh plan may be empty); non-ICS content throws.
+      await _runnaSync.probeFeed(normalized);
+
+      final integrationsRepo = ref.read(integrationsRepositoryProvider);
+      await integrationsRepo.upsertIntegration(
+        IntegrationModel(
+          userId: _currentUserId!,
+          provider: 'runna',
+          // Feed URL in accessToken — see method docs.
+          accessToken: normalized,
+          providerAthleteId:
+              'runna-${RunnaSyncService.stableFeedFingerprint(normalized)}',
+          isActive: true,
+        ),
+      );
+
+      if (!ref.mounted) return true;
+
+      state = AsyncData(
+        state.value!.copyWith(
+          isConnecting: false,
+          clearConnectingProvider: true,
+          isRunnaConnected: true,
+        ),
+      );
+      _trackIntegrationConnectSuccess('runna');
+      return true;
+    } on FormatException catch (e) {
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isConnecting: false,
+            clearConnectingProvider: true,
+            errorMessage: e.message,
+          ),
+        );
+      }
+      _trackIntegrationConnectFailed(
+        'runna',
+        'invalid_url',
+        errorMessage: e.message,
+      );
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ connectRunna: $e');
+      }
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isConnecting: false,
+            clearConnectingProvider: true,
+            errorMessage: e.toString(),
+          ),
+        );
+      }
+      _trackIntegrationConnectFailed(
+        'runna',
+        'feed_validation_error',
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<void> disconnectRunna() async {
+    await _disconnectProvider(
+      providerId: 'runna',
+      // Delete (not just deactivate) so the stored feed URL is removed both
+      // locally and from Supabase — a reconnect always starts from a freshly
+      // pasted link.
+      disconnect: () => ref
+          .read(integrationsRepositoryProvider)
+          .deleteIntegration(_currentUserId!, 'runna'),
+      updateState: () => state.value!.copyWith(isRunnaConnected: false),
+    );
+  }
+
+  /// Sync workouts from the Runna calendar feed into the local activities
+  /// table. Mirrors [importVdotWorkouts]: local-first writes during sync, then
+  /// an immediate uploadDirtyRecords push (result CHECKED — it swallows
+  /// failures into UploadResult.failed) to avoid the duplicate-on-relogin
+  /// trap.
+  Future<RunnaSyncResult> importRunnaWorkouts() async {
+    if (_currentUserId == null) {
+      return RunnaSyncResult.error('Missing user ID');
+    }
+    if (_syncingProviders.contains('runna')) {
+      if (kDebugMode) {
+        print('⚠️ runna sync already in progress, skipping');
+      }
+      return const RunnaSyncResult(success: true);
+    }
+    _syncingProviders.add('runna');
+
+    state = AsyncData(
+      state.value!.copyWith(
+        isImporting: true,
+        syncingProvider: 'runna',
+        importProgress: 0.0,
+        clearErrorMessage: true,
+        isNetworkError: false,
+      ),
+    );
+
+    try {
+      _trackIntegrationConnectStarted('runna');
+      final result = await _runnaSync.syncWorkouts(_currentUserId!);
+
+      if (!ref.mounted) return result;
+
+      if (!result.success) {
+        if (result.isNetworkError) {
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              isNetworkError: true,
+              errorMessage: result.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'runna',
+            'network_error',
+            errorMessage: result.error,
+          );
+          return result;
+        }
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: result.error ?? 'Failed to import workouts',
+          ),
+        );
+        _trackIntegrationSyncFailed(
+          'runna',
+          result.errorType.name,
+          errorMessage: result.error,
+        );
+        return result;
+      }
+
+      // Upload dirty activities to Supabase immediately so duplicates don't
+      // appear after logout/relogin/resync. Always attempt for a real user —
+      // uploadDirtyRecords doubles as the retry path for rows a previous sync
+      // left dirty. (Same reasoning as the VDOT path; see importVdotWorkouts.)
+      var uploadFailed = false;
+      if (!_isUsingTempUserId) {
+        try {
+          final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+            _currentUserId!,
+          );
+          uploadFailed = !uploadResult.success;
+          if (kDebugMode) {
+            if (uploadResult.success) {
+              print(
+                '☁️ Uploaded ${uploadResult.count} synced Runna activities',
+              );
+            } else {
+              print('⚠️ Runna activity upload failed: ${uploadResult.error}');
+            }
+          }
+        } catch (e) {
+          uploadFailed = true;
+          if (kDebugMode) {
+            print('⚠️ Failed to upload synced Runna activities: $e');
+          }
+        }
+      }
+
+      // Stamp the coordinator's staleness clock BEFORE invalidating providers
+      // so the rebuild doesn't kick a duplicate sync — but only when the
+      // upload succeeded, so a failed upload retries promptly. (Same pattern
+      // as VDOT; see importVdotWorkouts for the full reasoning.)
+      if (!uploadFailed && ref.mounted) {
+        await ref
+            .read(integrationSyncCoordinatorProvider.notifier)
+            .markProviderSynced('runna');
+      }
+
+      if (!ref.mounted) return result;
+
+      state = AsyncData(state.value!.copyWith(importProgress: 0.8));
+      _invalidateCalendar();
+
+      state = AsyncData(
+        state.value!.copyWith(
+          isImporting: false,
+          clearSyncingProvider: true,
+          importProgress: 1.0,
+          importedWorkoutsCount: result.newWorkouts,
+          isNetworkError: false,
+          errorMessage: uploadFailed
+              ? 'Workouts saved, but syncing to your account didn\'t finish. '
+                    'We\'ll retry automatically.'
+              : null,
+          clearErrorMessage: !uploadFailed,
+          runnaLastSyncAt: DateTime.now(),
+        ),
+      );
+
+      _trackIntegrationSyncSuccess(
+        'runna',
+        result.newWorkouts,
+        skippedCount: result.skipped,
+      );
+      return result;
+    } catch (e) {
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: 'Failed to import workouts: $e',
+          ),
+        );
+      }
+      _trackIntegrationSyncFailed(
+        'runna',
+        'exception',
+        errorMessage: e.toString(),
+      );
+      return RunnaSyncResult.error(e.toString());
+    } finally {
+      _syncingProviders.remove('runna');
     }
   }
 
@@ -1509,6 +1808,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
     if (state.value?.isVdotConnected == true) {
       final result = await importVdotWorkouts();
+      return result.newWorkouts;
+    }
+    if (state.value?.isRunnaConnected == true) {
+      final result = await importRunnaWorkouts();
       return result.newWorkouts;
     }
     return 0;

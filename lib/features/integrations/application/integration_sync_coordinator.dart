@@ -190,6 +190,10 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           final service = ref.read(vdotSyncServiceProvider);
           await service.syncWorkouts(userId);
           break;
+        case 'runna':
+          final service = ref.read(runnaSyncServiceProvider);
+          await service.syncWorkouts(userId);
+          break;
         case 'garmin':
           // Garmin is push-only — no client-side sync needed.
           // Activities arrive via server-side push when the user syncs
@@ -215,7 +219,8 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       // and writes nothing locally.
       if (provider == 'final_surge' ||
           provider == 'training_peaks' ||
-          provider == 'vdot') {
+          provider == 'vdot' ||
+          provider == 'runna') {
         try {
           final uploadResult = await ref
               .read(activitiesRepositoryProvider)

@@ -8,7 +8,7 @@ class IntegrationsTable extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
   TextColumn get userId => text().named('user_id')(); // FOREIGN KEY to user_profiles.id
 
-  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot', 'runna'
   TextColumn get provider => text()();
 
   // OAuth tokens (encrypted at rest in Supabase)
@@ -54,7 +54,7 @@ class IntegrationsTable extends Table {
 
   @override
   List<String> get customConstraints => [
-    "CHECK (provider IN ('final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'))",
+    "CHECK (provider IN ('final_surge', 'training_peaks', 'strava', 'garmin', 'vdot', 'runna'))",
     "CHECK (last_sync_status IS NULL OR last_sync_status IN ('success', 'error', 'pending', 'requires_reauth'))",
     'UNIQUE(user_id, provider)',
   ];
