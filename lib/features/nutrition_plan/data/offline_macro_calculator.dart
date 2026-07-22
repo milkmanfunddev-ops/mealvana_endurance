@@ -72,10 +72,20 @@ class OfflineMacroCalculator {
     final sportCeiling = getSportCarbCeiling(activityType);
     final finalRate = math.min(carbRate, sportCeiling.toDouble());
 
+    // Mirror the edge fn: the band obeys the sport ceiling like the rate
+    // does (otherwise the target can sit below its own displayed range), and
+    // a fully-bound band widens its low end by the ±12.5% phase convention
+    // instead of collapsing to a knife-edge point.
+    var bandLow = math.min(scaledLow, sportCeiling.toDouble());
+    final bandHigh = math.min(scaledHigh, sportCeiling.toDouble());
+    if (bandLow >= bandHigh && bandHigh > 0) {
+      bandLow = bandHigh * 0.875;
+    }
+
     return {
       'rate_gph': (finalRate * 10).round() / 10.0,
-      'band_low': scaledLow.round(),
-      'band_high': scaledHigh.round(),
+      'band_low': bandLow.round(),
+      'band_high': bandHigh.round(),
       'raw_band_low': baseLow.round(),
       'raw_band_high': baseHigh.round(),
       'gut_multiplier': gutMult,

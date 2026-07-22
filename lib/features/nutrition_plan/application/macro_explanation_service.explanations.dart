@@ -130,13 +130,19 @@ extension _$ExplanationsExt on MacroExplanationService {
     final sportName = _sportLabel(sport);
     final ceiling = _sportCarbCeiling(sport);
 
-    // Duration band from the stored abs_clamp_range
-    final bandLow = during.absClampRangeGPerH.isNotEmpty
-        ? during.absClampRangeGPerH[0].round()
-        : 0;
-    final bandHigh = during.absClampRangeGPerH.length > 1
-        ? during.absClampRangeGPerH[1].round()
-        : 60;
+    // Step 1 shows the raw duration band (pre gut-scaling, pre ceiling).
+    // The stored abs_clamp_range is the final gut-scaled, ceiling-clamped
+    // band — using it here mislabeled scaled numbers as the duration band.
+    final bandLow =
+        during.rawBandLowGPerH?.round() ??
+        (during.absClampRangeGPerH.isNotEmpty
+            ? during.absClampRangeGPerH[0].round()
+            : 0);
+    final bandHigh =
+        during.rawBandHighGPerH?.round() ??
+        (during.absClampRangeGPerH.length > 1
+            ? during.absClampRangeGPerH[1].round()
+            : 60);
 
     final explanations = <MacroExplanation>[];
 
@@ -185,7 +191,7 @@ extension _$ExplanationsExt on MacroExplanationService {
           ? '\n4. Brick fatigue penalty: ${(penalty * 100).round()}% '
                 '(running after cycling)\n'
           : '';
-      final ceilingNote2 = segRate > segCeiling
+      final ceilingNote2 = segRate >= segCeiling - 0.05
           ? '\nSport ceiling ($segSport): $segCeiling g/hr — rate capped.'
           : '';
 
@@ -201,7 +207,9 @@ extension _$ExplanationsExt on MacroExplanationService {
           '${segRate.round()} g/hr  x  ${segDurationH.toStringAsFixed(1)}h  =  ${carbValue}g\n\n'
           'Segment: $segSport (${segDurationMin}min)';
     } else {
-      final ceilingNote = during.carbRateGPerH > ceiling
+      // The stored rate is already capped, so it can never EXCEED the
+      // ceiling — sitting AT the ceiling is what "capped" looks like.
+      final ceilingNote = during.carbRateGPerH >= ceiling - 0.05
           ? '\nSport ceiling ($sportName): $ceiling g/hr — rate capped.'
           : '';
       carbFormula =

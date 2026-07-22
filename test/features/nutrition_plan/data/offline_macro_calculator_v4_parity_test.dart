@@ -121,6 +121,50 @@ void main() {
       expect(result['rate_gph'], 70.0);
       expect(result['sport_ceiling'], 70);
     });
+
+    // Regression (2026-07-22): the band must obey the ceiling like the rate
+    // does. Unclamped, a high-gut runner got band 72-108 g/h with the rate
+    // capped at 70 — the target sat below its own displayed range and the
+    // plan's adherence UI rendered red at 196g vs "202-302g".
+    test('band is ceiling-clamped; fully-bound band widens low by 12.5%', () {
+      // 168 min running → raw band [60,90], ×1.2 = [72,108]; both ends above
+      // the 70 ceiling → clamp to [70,70], then low widens to 70×0.875 = 61.
+      final result = OfflineMacroCalculator.calculateDuringWorkoutCarbRate(
+        durationMin: 168,
+        activityType: 'running',
+        gutTraining: 'high',
+      );
+      expect(result['band_low'], 61);
+      expect(result['band_high'], 70);
+      final rate = result['rate_gph'] as double;
+      expect(rate, 70.0);
+      expect(rate >= (result['band_low'] as int), isTrue);
+      expect(rate <= (result['band_high'] as int), isTrue);
+    });
+
+    test('partially-bound band keeps its real low, clamps only the high', () {
+      // 168 min running, moderate gut → scaled band [60,90]; ceiling 70 binds
+      // only the top → [60,70]; rate = min(75, 70) = 70, inside the band.
+      final result = OfflineMacroCalculator.calculateDuringWorkoutCarbRate(
+        durationMin: 168,
+        activityType: 'running',
+        gutTraining: 'moderate',
+      );
+      expect(result['band_low'], 60);
+      expect(result['band_high'], 70);
+      expect(result['rate_gph'], 70.0);
+    });
+
+    test('swimming band collapses to [0,0], no widening below zero', () {
+      final result = OfflineMacroCalculator.calculateDuringWorkoutCarbRate(
+        durationMin: 168,
+        activityType: 'swimming',
+        gutTraining: 'high',
+      );
+      expect(result['band_low'], 0);
+      expect(result['band_high'], 0);
+      expect(result['rate_gph'], 0.0);
+    });
   });
 
   // =========================================================================

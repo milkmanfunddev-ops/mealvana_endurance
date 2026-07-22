@@ -15,16 +15,16 @@
  */
 
 import {
-  assertEquals,
   assert,
+  assertEquals,
 } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 
 import {
+  calculateDuringWorkoutCarbRate,
   getDurationCarbBand,
   getGutTrainingMultiplier,
   getSportCarbCeiling,
-  calculateDuringWorkoutCarbRate,
 } from "./single-sport.ts";
 
 // ============================================================================
@@ -143,7 +143,10 @@ describe("Composite: final during carb rate", () => {
     // Test that the ceiling is respected even if we somehow got there via calculateDuringWorkoutCarbRate.
     // Use 4h high-gut cycling to get the highest possible rate:
     const result = calculateDuringWorkoutCarbRate(
-      240, "cycling", "high", DUMMY_INTENSITY,
+      240,
+      "cycling",
+      "high",
+      DUMMY_INTENSITY,
     );
     // band [80,100], mid=90, ×1.2=108 → min(108, 120) = 108
     assertEquals(result.rate_gph, 108);
@@ -156,7 +159,10 @@ describe("Composite: final during carb rate", () => {
   it("swimming always returns 0 regardless of duration or gut training", () => {
     // Swimming ceiling = 0, so rate is always 0
     const result = calculateDuringWorkoutCarbRate(
-      240, "swimming", "high", DUMMY_INTENSITY,
+      240,
+      "swimming",
+      "high",
+      DUMMY_INTENSITY,
     );
     assertEquals(result.rate_gph, 0);
     assertEquals(result.sport_ceiling, 0);
@@ -165,7 +171,10 @@ describe("Composite: final during carb rate", () => {
   it("running long+high-gut: rate capped at 70 g/h ceiling", () => {
     // 240 min → band [80,100], mid=90; ×1.2=108 → capped at 70 (running ceiling)
     const result = calculateDuringWorkoutCarbRate(
-      240, "running", "high", DUMMY_INTENSITY,
+      240,
+      "running",
+      "high",
+      DUMMY_INTENSITY,
     );
     assertEquals(result.rate_gph, 70);
     assertEquals(result.sport_ceiling, 70);
@@ -174,7 +183,10 @@ describe("Composite: final during carb rate", () => {
   it("running 60-89 min moderate-gut: rate fits inside ceiling (no cap)", () => {
     // 75 min → band [30,60], mid=45; ×1.0=45 → min(45, 70) = 45
     const result = calculateDuringWorkoutCarbRate(
-      75, "running", "moderate", DUMMY_INTENSITY,
+      75,
+      "running",
+      "moderate",
+      DUMMY_INTENSITY,
     );
     assertEquals(result.rate_gph, 45);
     assert(result.rate_gph <= 70, "Should be under running ceiling");
@@ -183,7 +195,10 @@ describe("Composite: final during carb rate", () => {
   it("running <60 min low-gut: band [0,30] × 0.7 → 10.5 → rounds to 10.5", () => {
     // band [0,30], mid=15; ×0.7=10.5
     const result = calculateDuringWorkoutCarbRate(
-      45, "running", "low", DUMMY_INTENSITY,
+      45,
+      "running",
+      "low",
+      DUMMY_INTENSITY,
     );
     assertEquals(result.rate_gph, 10.5);
     assert(result.rate_gph >= 0, "Rate must not be negative");
@@ -192,7 +207,24 @@ describe("Composite: final during carb rate", () => {
   // --- Invariant sweep: rate never exceeds sport ceiling, never goes negative ---
 
   it("invariant sweep: rate never exceeds sport ceiling and never goes negative", () => {
-    const durations = [0, 30, 45, 59, 60, 75, 89, 90, 120, 149, 150, 180, 239, 240, 300, 360];
+    const durations = [
+      0,
+      30,
+      45,
+      59,
+      60,
+      75,
+      89,
+      90,
+      120,
+      149,
+      150,
+      180,
+      239,
+      240,
+      300,
+      360,
+    ];
     const sports = ["running", "cycling", "swimming"];
     const guts = ["low", "moderate", "high"];
     let checkedCount = 0;
@@ -200,7 +232,12 @@ describe("Composite: final during carb rate", () => {
     for (const dur of durations) {
       for (const sport of sports) {
         for (const gut of guts) {
-          const result = calculateDuringWorkoutCarbRate(dur, sport, gut, DUMMY_INTENSITY);
+          const result = calculateDuringWorkoutCarbRate(
+            dur,
+            sport,
+            gut,
+            DUMMY_INTENSITY,
+          );
           const ceiling = getSportCarbCeiling(sport);
 
           assert(
@@ -217,6 +254,19 @@ describe("Composite: final during carb rate", () => {
             ceiling,
             `sport_ceiling mismatch for sport=${sport}`,
           );
+          // Regression (2026-07-22): the band must obey the ceiling like the
+          // rate does, and the rate must sit inside its own band — unclamped
+          // bands put the target BELOW its displayed range (196g vs 202-302g)
+          // and the adherence UI rendered permanently red.
+          assert(
+            result.band_high <= ceiling,
+            `band_high ${result.band_high} exceeds ceiling ${ceiling} for dur=${dur} sport=${sport} gut=${gut}`,
+          );
+          assert(
+            result.rate_gph >= result.band_low - 0.5 &&
+              result.rate_gph <= result.band_high + 0.5,
+            `rate ${result.rate_gph} outside its own band [${result.band_low}, ${result.band_high}] for dur=${dur} sport=${sport} gut=${gut}`,
+          );
           checkedCount++;
         }
       }
@@ -224,6 +274,50 @@ describe("Composite: final during carb rate", () => {
 
     // Confirm we actually ran the full matrix (16 durations × 3 sports × 3 guts = 144)
     assertEquals(checkedCount, 144, "Expected to check 144 combinations");
+  });
+
+  // --- Band clamping regression (2026-07-22) ---
+
+  it("high-gut runner: fully-bound band clamps to ceiling and widens low by 12.5%", () => {
+    // 168 min running → raw band [60,90], ×1.2 = [72,108]; both ends above the
+    // 70 ceiling → clamp to [70,70], low widened to 70×0.875 = 61.25 → 61.
+    // This is the exact reported case: target 70×2.8h = 196g displayed against
+    // an unclamped range of 202-302g.
+    const result = calculateDuringWorkoutCarbRate(
+      168,
+      "running",
+      "high",
+      DUMMY_INTENSITY,
+    );
+    assertEquals(result.band_low, 61);
+    assertEquals(result.band_high, 70);
+    assertEquals(result.rate_gph, 70);
+  });
+
+  it("moderate-gut runner: partially-bound band keeps its low, clamps its high", () => {
+    // 168 min running moderate → scaled band [60,90]; ceiling 70 binds only
+    // the top → [60,70]; rate = min(75, 70) = 70.
+    const result = calculateDuringWorkoutCarbRate(
+      168,
+      "running",
+      "moderate",
+      DUMMY_INTENSITY,
+    );
+    assertEquals(result.band_low, 60);
+    assertEquals(result.band_high, 70);
+    assertEquals(result.rate_gph, 70);
+  });
+
+  it("swimming: band collapses to [0,0] with no widening below zero", () => {
+    const result = calculateDuringWorkoutCarbRate(
+      168,
+      "swimming",
+      "high",
+      DUMMY_INTENSITY,
+    );
+    assertEquals(result.band_low, 0);
+    assertEquals(result.band_high, 0);
+    assertEquals(result.rate_gph, 0);
   });
 
   // --- Band mid values are consistent with helper output ---
@@ -238,7 +332,12 @@ describe("Composite: final during carb rate", () => {
     ];
 
     for (const [dur, expectedBand] of cases) {
-      const result = calculateDuringWorkoutCarbRate(dur, "cycling", "moderate", DUMMY_INTENSITY);
+      const result = calculateDuringWorkoutCarbRate(
+        dur,
+        "cycling",
+        "moderate",
+        DUMMY_INTENSITY,
+      );
       assertEquals(
         result.raw_band_low,
         expectedBand[0],
