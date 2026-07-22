@@ -197,15 +197,23 @@ serve(withSentry(async (req) => {
       );
     }
 
+    // Fetch Formula Kit pins for this user (all scopes). When the user
+    // has no pins (or no row for this device), all Sets are empty and
+    // behavior is byte-identical to pre-pin v3. Errors inside the fetcher
+    // already degrade to empty sets, so plan generation is never blocked
+    // by a pins-query failure. Formula Kit PR 2 substep 5b; plumbed through
+    // the brick handler 2026-07-21 (was deferred in v1 — triathletes' pins
+    // were silently ignored).
+    const userPins = await timeAsync(
+      "fetch_user_pins",
+      () => fetchUserPinnedTemplateIds(supabase, input.device_id),
+    );
+
     // Brick workouts: route to dedicated handler.
-    // NOTE: Formula Kit pins are NOT plumbed through the brick handler in
-    // v1 (substep 5b). Single-activity workouts are the main pin use case;
-    // brick pin support is deferred. Brick plans run with byte-identical
-    // pre-pin behavior.
     if (activityType === "brick") {
       const response = await timeAsync(
         "brick_total",
-        () => handleBrickPlan(supabase, input, planId),
+        () => handleBrickPlan(supabase, input, planId, userPins),
       );
       console.log(
         `[PLAN-V3-TIMING] request_total completed in ${
@@ -214,16 +222,6 @@ serve(withSentry(async (req) => {
       );
       return response;
     }
-
-    // Fetch Formula Kit pins for this user (Before + During). When the user
-    // has no pins (or no row for this device), both Sets are empty and
-    // behavior is byte-identical to pre-pin v3. Errors inside the fetcher
-    // already degrade to empty sets, so plan generation is never blocked
-    // by a pins-query failure. Formula Kit PR 2 substep 5b.
-    const userPins = await timeAsync(
-      "fetch_user_pins",
-      () => fetchUserPinnedTemplateIds(supabase, input.device_id),
-    );
 
     // Generate all phases
     const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise
