@@ -101,6 +101,7 @@ Replaces the write-timestamp proxies (which swung 3–4x).
   the top data-integrity blocker).
 - Funnel note: `nutrition_plan_created` > `plan_generated` (non-monotonic), so
   the funnel events aren't a strict sequence — read step-conversions loosely.
+<<<<<<< HEAD:docs/features/analytics/legacy_README.md
 ## AI Analyze and Coach Insights metering
 
 The mobile client emits these Mixpanel events for the AI surfaces:
@@ -124,6 +125,8 @@ user ID, so its spend reports can be reconciled against Mixpanel funnels.
 > **Note (2026-07-22):** the counts in the AI events above are subject to the
 > same dev/test pollution caveat as CORRECTION 2 — filter internal traffic
 > before reading `cost_usd` or funnel volume from them.
+=======
+>>>>>>> b7875224 (docs(analytics): correct 2026-07-08 findings for dev/test pollution):docs/analytics/README.md
 
 ## 1. Internal-account exclusion (`users.is_internal`)
 
