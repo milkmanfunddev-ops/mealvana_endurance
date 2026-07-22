@@ -666,6 +666,20 @@ workflows:
           else
             echo "Play latest build for $PACKAGE_NAME: $LATEST"
           fi
+          # A run that builds the Shorebird release but dies at Play publishing
+          # leaves a zombie release Play never saw; the next run then collides
+          # with exit 70 at `shorebird release android` (hit 2026-07-22 — the
+          # same failure class the iOS resolver already guards against). Take
+          # the max of Play and Shorebird, exactly like the iOS resolvers.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using Play number only"
+          fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
           echo "Next Android build number: $NEXT"
@@ -895,6 +909,20 @@ workflows:
             echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          # A run that builds the Shorebird release but dies at Play publishing
+          # leaves a zombie release Play never saw; the next run then collides
+          # with exit 70 at `shorebird release android` (hit 2026-07-22 — the
+          # same failure class the iOS resolver already guards against). Take
+          # the max of Play and Shorebird, exactly like the iOS resolvers.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using Play number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
@@ -1605,6 +1633,20 @@ workflows:
             echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          # A run that builds the Shorebird release but dies at Play publishing
+          # leaves a zombie release Play never saw; the next run then collides
+          # with exit 70 at `shorebird release android` (hit 2026-07-22 — the
+          # same failure class the iOS resolver already guards against). Take
+          # the max of Play and Shorebird, exactly like the iOS resolvers.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using Play number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
