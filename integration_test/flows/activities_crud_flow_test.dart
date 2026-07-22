@@ -61,8 +61,14 @@ void main() {
       final stamp = DateTime.now().millisecondsSinceEpoch;
       final workoutName = 'Patrol Run $stamp';
 
-      // ---- 1. New activity FAB → running create form --------------------
-      await $(const ValueKey('calendar.create_activity_fab')).tap();
+      // ---- 1. New activity → running create form ------------------------
+      // There is no calendar FAB: the app's entry point to /distancepacegut is
+      // the Fuel Timeline's add-activity button, so hop to that tab first.
+      await $(const ValueKey('bottom_nav.timeline_tab')).tap();
+      await $(const ValueKey('fuel_timeline.add_activity')).waitUntilVisible(
+        timeout: const Duration(seconds: 20),
+      );
+      await $(const ValueKey('fuel_timeline.add_activity')).tap();
       await $(const ValueKey('activity_create.tab_running')).waitUntilVisible(
         timeout: const Duration(seconds: 20),
       );
@@ -148,7 +154,7 @@ void main() {
 /// Unwind the create-flow stack back to the calendar by tapping whichever
 /// screen's back button is currently present, until the calendar FAB shows.
 Future<void> _returnToCalendar(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+  const fab = ValueKey('bottom_nav.timeline_tab');
   const backButtons = [
     ValueKey('plan_detail.back_button'),
     ValueKey('adjust_macros.back_button'),
@@ -187,7 +193,7 @@ Future<void> _fillField(
 
 /// Returns true once the calendar is reachable (authenticated).
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+  const fab = ValueKey('bottom_nav.timeline_tab');
   if ($(fab).exists) return true;
   if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
 

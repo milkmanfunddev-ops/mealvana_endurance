@@ -817,6 +817,8 @@ void main() {
           'run_pace_unit': 'min_per_km',
           'gut_training': 'low',
           'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
         };
 
         logTestSetup(profileData);
@@ -848,6 +850,10 @@ void main() {
             'device_id': 'test-strict-e2e',
             'activity_type': 'running',
             'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
             'liked_foods': <String>[],
             'willing_to_try_foods': <String>[],
             'disliked_foods': <String>[],
@@ -859,7 +865,8 @@ void main() {
 
         final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
         expect(planData['success'], isTrue);
-        final plan = planData['foods'] as Map<String, dynamic>;
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
         // 4. Validate before phase
         logSection('Step 3: Validate Macros');
@@ -992,6 +999,8 @@ void main() {
           'run_pace_unit': 'min_per_mile',
           'gut_training': 'moderate',
           'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
         };
 
         logTestSetup(profileData);
@@ -1015,6 +1024,10 @@ void main() {
             'device_id': 'test-strict-e2e',
             'activity_type': 'running',
             'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
             'liked_foods': <String>[],
             'willing_to_try_foods': <String>[],
             'disliked_foods': <String>[],
@@ -1023,7 +1036,8 @@ void main() {
         expect(v3Response.statusCode, equals(200));
         final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
         expect(planData['success'], isTrue);
-        final plan = planData['foods'] as Map<String, dynamic>;
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
         // 4-6. Validate all phases
         final beforeFoods = getBeforeFoods(plan);
@@ -1103,6 +1117,8 @@ void main() {
           'run_pace_unit': 'min_per_mile',
           'gut_training': 'high',
           'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
         };
 
         logTestSetup(profileData);
@@ -1123,6 +1139,10 @@ void main() {
             'device_id': 'test-strict-e2e',
             'activity_type': 'running',
             'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
             'liked_foods': <String>[],
             'willing_to_try_foods': <String>[],
             'disliked_foods': <String>[],
@@ -1131,7 +1151,8 @@ void main() {
         expect(v3Response.statusCode, equals(200));
         final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
         expect(planData['success'], isTrue);
-        final plan = planData['foods'] as Map<String, dynamic>;
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
         final beforeFoods = getBeforeFoods(plan);
         if (beforeFoods.isNotEmpty) {
@@ -1189,6 +1210,8 @@ void main() {
           'run_pace_unit': 'min_per_mile',
           'gut_training': 'high',
           'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
         };
 
         logTestSetup(profileData);
@@ -1209,6 +1232,10 @@ void main() {
             'device_id': 'test-strict-e2e',
             'activity_type': 'running',
             'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
             'liked_foods': <String>[],
             'willing_to_try_foods': <String>[],
             'disliked_foods': <String>[],
@@ -1217,7 +1244,8 @@ void main() {
         expect(v3Response.statusCode, equals(200));
         final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
         expect(planData['success'], isTrue);
-        final plan = planData['foods'] as Map<String, dynamic>;
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
         final beforeFoods = getBeforeFoods(plan);
         if (beforeFoods.isNotEmpty) {
@@ -1269,12 +1297,15 @@ void main() {
           'device_id': 'test-strict-e2e',
           'weight': 80.0,
           'weight_unit': 'kg',
-          'ride_distance': 60.0,
-          'ride_distance_unit': 'mi',
-          'ride_pace': 18.0,
-          'ride_pace_unit': 'mph',
+          // The cycling branch of generate-macros-v4 validates distance_miles /
+          // speed_mph — the ride_distance / ride_pace names this test used are
+          // not part of the contract and always failed validation.
+          'distance_miles': 60.0,
+          'speed_mph': 18.0,
           'gut_training': 'moderate',
           'activity_type': 'cycling',
+          'hours_before': 2.0,
+          'is_fasted': false,
         };
 
         logTestSetup(profileData);
@@ -1295,6 +1326,10 @@ void main() {
             'device_id': 'test-strict-e2e',
             'activity_type': 'cycling',
             'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
             'liked_foods': <String>[],
             'willing_to_try_foods': <String>[],
             'disliked_foods': <String>[],
@@ -1303,7 +1338,8 @@ void main() {
         expect(v3Response.statusCode, equals(200));
         final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
         expect(planData['success'], isTrue);
-        final plan = planData['foods'] as Map<String, dynamic>;
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
         final beforeFoods = getBeforeFoods(plan);
         if (beforeFoods.isNotEmpty) {

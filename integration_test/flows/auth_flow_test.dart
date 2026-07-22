@@ -47,13 +47,17 @@ void main() {
       // If the app launches already logged in (re-run on a hot
       // simulator), the calendar will be present and the welcome
       // keys absent. Skip the login walk in that case.
+      // `bottom_nav.timeline_tab` is the landed-marker: it lives in the
+      // always-on FloatingActionButtonsBar of the post-login tabs shell.
+      // (`calendar.settings_button` is not usable here — the tabs screen hides
+      // it on tab 0, which is where login can land.)
       final calendarPresent = find.byKey(
-        const ValueKey('calendar.create_activity_fab'),
+        const ValueKey('bottom_nav.timeline_tab'),
       ).evaluate().isNotEmpty;
 
       if (calendarPresent) {
-        // Already on calendar — nothing to assert beyond presence.
-        expect(find.byKey(const ValueKey('calendar.create_activity_fab')),
+        // Already logged in — nothing to assert beyond presence.
+        expect(find.byKey(const ValueKey('bottom_nav.timeline_tab')),
             findsOneWidget);
         return;
       }
@@ -87,11 +91,11 @@ void main() {
 
       // Verify we landed on the calendar.
       expect(
-        find.byKey(const ValueKey('calendar.create_activity_fab')),
+        find.byKey(const ValueKey('bottom_nav.timeline_tab')),
         findsOneWidget,
         reason:
-            'Expected calendar FAB after login. If this fails, dump the '
-            'tree with `debugDumpApp()` and check what screen we landed on.',
+            'Expected the tabs shell nav bar after login. If this fails, dump '
+            'the tree with `debugDumpApp()` and check what screen we landed on.',
       );
     },
     timeout: const Timeout(Duration(minutes: 3)),

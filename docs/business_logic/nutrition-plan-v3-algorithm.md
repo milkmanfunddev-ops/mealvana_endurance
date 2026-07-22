@@ -21,6 +21,12 @@ The plan generator consumes:
 - user foods and Formula Kit pins; and
 - brick segments and transition targets, when applicable.
 
+## Rendered overview
+
+The image below works in ordinary Markdown previews without Mermaid support. You can also [open the full-size SVG](./nutrition-plan-v3-flowchart.svg) directly in any web browser or use the [print-ready A3 PDF](../../output/pdf/generate-nutrition-plan-v3-flowchart.pdf).
+
+![Generate Nutrition Plan V3 algorithm flowchart](./nutrition-plan-v3-flowchart.png)
+
 ## Main flowchart
 
 ```mermaid

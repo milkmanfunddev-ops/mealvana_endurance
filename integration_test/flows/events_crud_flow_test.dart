@@ -150,7 +150,7 @@ Future<void> _submitEventForm(PatrolIntegrationTester $) async {
 /// Returns true once the calendar is reachable (authenticated), false if we
 /// can't get there (clean install + no credentials).
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+  const fab = ValueKey('bottom_nav.timeline_tab');
 
   // Already authenticated (warm sim / persisted session).
   if ($(fab).exists) return true;

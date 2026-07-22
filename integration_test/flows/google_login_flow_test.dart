@@ -57,10 +57,10 @@ void main() {
 
       // If already authed (calendar present), nothing to do.
       if (find
-          .byKey(const ValueKey('calendar.create_activity_fab'))
+          .byKey(const ValueKey('bottom_nav.timeline_tab'))
           .evaluate()
           .isNotEmpty) {
-        expect(find.byKey(const ValueKey('calendar.create_activity_fab')),
+        expect(find.byKey(const ValueKey('bottom_nav.timeline_tab')),
             findsOneWidget);
         return;
       }
@@ -99,7 +99,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 30));
 
       final landed = await tester.waitForWidget(
-        find.byKey(const ValueKey('calendar.create_activity_fab')),
+        find.byKey(const ValueKey('bottom_nav.timeline_tab')),
         timeout: const Duration(seconds: 20),
       );
       expect(

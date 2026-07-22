@@ -54,7 +54,7 @@ void main() {
           'session. Reinstall the app for a clean onboarding run.',
         );
         expect(
-          $(const ValueKey('calendar.create_activity_fab')),
+          $(const ValueKey('bottom_nav.timeline_tab')),
           findsOneWidget,
           reason: 'Not on welcome AND not on calendar — unexpected state.',
         );
@@ -120,11 +120,11 @@ void main() {
       await $(const ValueKey('signup_email.create_account_button')).tap();
 
       // ---- 10. Assert we landed on the calendar -------------------------
-      await $(const ValueKey('calendar.create_activity_fab')).waitUntilVisible(
+      await $(const ValueKey('bottom_nav.timeline_tab')).waitUntilVisible(
         timeout: const Duration(seconds: 40),
       );
       expect(
-        $(const ValueKey('calendar.create_activity_fab')),
+        $(const ValueKey('bottom_nav.timeline_tab')),
         findsOneWidget,
         reason:
             'Expected the calendar FAB after signup. If this fails, the signup '

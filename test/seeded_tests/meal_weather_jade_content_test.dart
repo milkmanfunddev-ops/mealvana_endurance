@@ -44,6 +44,7 @@ import 'package:mealvana_endurance/features/weather/presentation/screens/weather
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart'
     show UnitSystem;
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 import '../helpers/widget_test_harness.dart';
@@ -77,6 +78,10 @@ Future<void> _pumpWithExtra(
       overrides: [
         mockAppExternalDeps(),
         inMemoryDatabaseOverride(),
+        // EditMealLogScreen reads appConfigProvider, which throws unless it is
+        // overridden the way main_*.dart does after loading .env. Listed before
+        // [overrides] so callers can still substitute their own config.
+        appConfigProvider.overrideWithValue(AppConfig.forTesting()),
         ...overrides,
       ],
       child: MaterialApp.router(routerConfig: router),

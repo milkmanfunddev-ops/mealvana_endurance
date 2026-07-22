@@ -93,9 +93,20 @@ Helpers live in `helpers/` (`test_config.dart`, `test_helpers.dart`,
 
 ## Legacy
 
-`run_tests.sh` predates the Patrol migration (it shells out to `flutter test`
-against renamed files) and is kept only for reference — prefer `patrol test`
-above.
+The pre-Patrol flow tests (`flows/_legacy/`) and their `run_tests.sh` runner
+were deleted on 2026-07-21. They had been dead for some time — their
+`../helpers/...` imports pointed at a directory that does not exist, so they
+could not compile, and `analysis_options.yaml` excluded them from the analyzer
+to hide that. The Patrol CLI does **not** read `analysis_options.yaml`: it globs
+every `.dart` file under `integration_test/` into the generated
+`test_bundle.dart`, so those seven files broke `patrol test --target
+integration_test` for the whole suite (xcodebuild exit 65) while a
+single-file `--target` still built fine. Retrieve them from git history if ever
+needed.
+
+**Keep this directory compiling.** Anything added under `integration_test/`
+enters the bundle whether or not it is a Patrol test, and one bad import takes
+down every flow.
 
 ## References
 

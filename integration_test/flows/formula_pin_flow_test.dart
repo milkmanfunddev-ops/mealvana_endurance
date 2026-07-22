@@ -133,7 +133,7 @@ void main() {
 
 /// Returns true once the calendar is reachable (authenticated).
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+  const fab = ValueKey('bottom_nav.timeline_tab');
   if ($(fab).exists) return true;
   if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
 
