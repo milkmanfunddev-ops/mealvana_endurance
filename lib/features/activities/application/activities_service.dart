@@ -612,6 +612,8 @@ class ActivitiesService {
     // Shared parameters
     String? intensityTarget,
     int? timeBeforeMinutes,
+    // Fasted state the nutrition plan was generated with
+    bool isFasted = false,
     // Nutrition plan data (embedded JSON)
     Map<String, dynamic>? nutritionPlanData,
     // Brick-specific parameters
@@ -676,6 +678,7 @@ class ActivitiesService {
         // Shared fields
         intensityTarget: intensityTarget,
         timeBeforeMinutes: timeBeforeMinutes,
+        isFasted: isFasted,
         // Nutrition plan data (embedded JSON)
         nutritionPlanData: nutritionPlanData,
         // Brick-specific fields

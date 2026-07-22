@@ -35,6 +35,9 @@ class Activity {
     this.intensityDistribution,
     this.timeBeforeMinutes,
 
+    // Fasted state the nutrition plan was generated with
+    this.isFasted = false,
+
     // Completion data
     this.completedAt,
     this.completionRating,
@@ -119,6 +122,10 @@ class Activity {
   final IntensityDistribution?
   intensityDistribution; // Three-zone percentage distribution
   final int? timeBeforeMinutes; // Pre-activity timing window
+
+  // Fasted state the nutrition plan was generated with. Persisted so
+  // regeneration keeps fasted macros instead of defaulting to non-fasted.
+  final bool isFasted;
 
   // Completion data
   final DateTime? completedAt;
@@ -217,6 +224,7 @@ class Activity {
       'intensityTarget': intensityTarget,
       'intensityDistribution': intensityDistribution?.toJson(),
       'timeBeforeMinutes': timeBeforeMinutes,
+      'isFasted': isFasted,
       'completedAt': completedAt?.toIso8601String(),
       'completionRating': completionRating,
       'nutritionRating': nutritionRating,
@@ -273,6 +281,7 @@ class Activity {
     String? intensityTarget,
     IntensityDistribution? intensityDistribution,
     int? timeBeforeMinutes,
+    bool? isFasted,
     DateTime? completedAt,
     int? completionRating,
     int? nutritionRating,
@@ -334,6 +343,7 @@ class Activity {
       intensityDistribution:
           intensityDistribution ?? this.intensityDistribution,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
+      isFasted: isFasted ?? this.isFasted,
       completedAt: completedAt ?? this.completedAt,
       completionRating: completionRating ?? this.completionRating,
       nutritionRating: nutritionRating ?? this.nutritionRating,
@@ -399,6 +409,7 @@ class Activity {
         other.intensityTarget == intensityTarget &&
         other.intensityDistribution == intensityDistribution &&
         other.timeBeforeMinutes == timeBeforeMinutes &&
+        other.isFasted == isFasted &&
         other.completedAt == completedAt &&
         other.completionRating == completionRating &&
         other.nutritionRating == nutritionRating &&
@@ -454,6 +465,7 @@ class Activity {
         ) ^
         Object.hash(
           timeBeforeMinutes,
+          isFasted,
           completedAt,
           completionRating,
           nutritionRating,

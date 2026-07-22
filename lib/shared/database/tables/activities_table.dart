@@ -62,6 +62,12 @@ class ActivitiesTable extends Table {
   IntColumn get timeBeforeMinutes =>
       integer().nullable().named('time_before_minutes')();
 
+  // Fasted state the nutrition plan was generated with. Persisted so
+  // regeneration (e.g. after a sweat-profile edit) keeps the fasted macros
+  // instead of silently falling back to non-fasted.
+  BoolColumn get isFasted =>
+      boolean().withDefault(const Constant(false)).named('is_fasted')();
+
   // Intensity distribution (percentage-based zones for new intensity widget)
   IntColumn get intensityZ1Z2Pct => integer().nullable().named(
     'intensity_z1_z2_pct',
