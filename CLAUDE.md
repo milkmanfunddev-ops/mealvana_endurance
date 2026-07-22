@@ -77,6 +77,7 @@ and `idb`. See the script header for details.
 - FOA and UI/controller boundaries: `/docs/technical/foa-architecture.md`
 - App initialization flow: `/docs/technical/andrea/andrea_initialization.txt`
 - Sync architecture and staleness model: `/docs/technical/sync-architecture.md`
+- Training-integration API reference (Garmin/TrainingPeaks/FinalSurge/VDOT: endpoints, fields, example payloads): `/docs/integration/api-exploration/README.md`
 - Write consistency policy (offline-first vs remote-ack): `/docs/technical/write-consistency-policy.md`
 - Content management system: `/docs/technical/content-management.md`
 - Database architecture and schema docs: `/docs/database/README.md`
