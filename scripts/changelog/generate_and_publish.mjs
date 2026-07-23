@@ -7,10 +7,11 @@
 // .github/workflows/changelog-on-main.yml).
 //
 // Env:
-//   ANTHROPIC_API_KEY    (required) — generation
-//   ANTHROPIC_BASE_URL   (optional, default https://api.anthropic.com) — e.g. an
-//                         AI-Gateway-compatible endpoint
-//   CHANGELOG_MODEL      (default claude-sonnet-4-6)
+//   AI_GATEWAY_API_KEY   (required) — generation via the Vercel AI Gateway
+//                         (OpenAI-compatible; the same key the app's edge
+//                         functions use to call Claude). No raw Anthropic key.
+//   AI_GATEWAY_BASE_URL  (optional, default https://ai-gateway.vercel.sh/v1)
+//   CHANGELOG_MODEL      (default anthropic/claude-sonnet-4.6)
 //   SANITY_WRITE_TOKEN   (required) — publish
 //   SANITY_PROJECT_ID    (default sigrvh1t)
 //   SANITY_DATASET       (default production)
@@ -25,8 +26,8 @@ import { readFileSync } from "node:fs";
 
 const PROJECT_ID = process.env.SANITY_PROJECT_ID || "sigrvh1t";
 const DATASET = process.env.SANITY_DATASET || "production";
-const MODEL = process.env.CHANGELOG_MODEL || "claude-sonnet-4-6";
-const ANTHROPIC_BASE = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/$/, "");
+const MODEL = process.env.CHANGELOG_MODEL || "anthropic/claude-sonnet-4.6";
+const GATEWAY_BASE = (process.env.AI_GATEWAY_BASE_URL || "https://ai-gateway.vercel.sh/v1").replace(/\/$/, "");
 
 function appVersion() {
   const m = readFileSync("pubspec.yaml", "utf8").match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)/m);
@@ -51,23 +52,25 @@ async function generateNotes(version, commits) {
     "ticket IDs. Write a single-sentence `title` summarizing the release and pick a " +
     "`label` from exactly: Major Update, New Feature, Bug Fix, Latest. Respond with " +
     'STRICT JSON only: {"title":"","label":"","whatsNew":[],"improvements":[],"bugFixes":[]}';
-  const res = await fetch(`${ANTHROPIC_BASE}/v1/messages`, {
+  // Vercel AI Gateway, OpenAI-compatible endpoint (Bearer auth, chat/completions).
+  const res = await fetch(`${GATEWAY_BASE}/chat/completions`, {
     method: "POST",
     headers: {
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
+      authorization: `Bearer ${process.env.AI_GATEWAY_API_KEY}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1500,
-      system,
-      messages: [{ role: "user", content: `Version ${version}.\nCommit subjects:\n${commits}` }],
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `Version ${version}.\nCommit subjects:\n${commits}` },
+      ],
     }),
   });
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`AI Gateway ${res.status}: ${await res.text()}`);
   const data = await res.json();
-  const text = (data.content || []).map((c) => c.text || "").join("");
+  const text = data.choices?.[0]?.message?.content || "";
   return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
 }
 
@@ -83,7 +86,11 @@ function blocks(items, prefix) {
 }
 
 async function publish(version, notes) {
-  const baseId = `changelog-v${version}`;
+  // The dataset's anonymous read grant is `_id in path("*")`, which matches
+  // only dot-free single-segment ids. A semver like "1.22.0" contains dots, so
+  // an id such as `changelog-v1.22.0` is permission-omitted for the public
+  // site. Use dashes in the id; the `version` field keeps the dotted value.
+  const baseId = `changelog-v${version.replace(/\./g, "-")}`;
   const doc = {
     _id: process.env.DRAFT ? `drafts.${baseId}` : baseId,
     _type: "changelog",
@@ -117,6 +124,10 @@ const commits = commitSubjects();
 if (!commits) {
   console.log("No non-merge commits in range; nothing to publish.");
   process.exit(0);
+}
+if (!process.env.AI_GATEWAY_API_KEY) throw new Error("AI_GATEWAY_API_KEY is required");
+if (!process.env.SANITY_WRITE_TOKEN && !process.env.DRY_RUN) {
+  throw new Error("SANITY_WRITE_TOKEN is required");
 }
 const notes = await generateNotes(version, commits);
 await publish(version, notes);

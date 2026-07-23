@@ -3,7 +3,9 @@
 # page renders. See scripts/changelog/generate_and_publish.mjs.
 #
 # Requires repo secrets (Settings → Secrets and variables → Actions):
-#   ANTHROPIC_API_KEY    — for note generation
+#   AI_GATEWAY_API_KEY   — Vercel AI Gateway key (same one the app's edge
+#                          functions use); note generation runs through it, so
+#                          no separate Anthropic key is needed
 #   SANITY_WRITE_TOKEN   — Sanity token with write access to project sigrvh1t
 #   VERCEL_DEPLOY_HOOK   — (optional) deploy-hook URL to rebuild the landing page
 #
@@ -38,7 +40,7 @@ jobs:
           node-version: "20"
       - name: Generate + publish changelog
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
           SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
           FROM_REF: ${{ github.event.before }}
