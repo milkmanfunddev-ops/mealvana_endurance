@@ -48,9 +48,7 @@ class CoachDirectoryController extends _$CoachDirectoryController {
       final coaches = await _coachService.getAvailableCoaches();
       return CoachDirectoryState(coaches: coaches);
     } catch (e) {
-      return CoachDirectoryState(
-        error: 'Failed to load coaches: $e',
-      );
+      return CoachDirectoryState(error: 'Failed to load coaches: $e');
     }
   }
 
@@ -74,17 +72,21 @@ class CoachDirectoryController extends _$CoachDirectoryController {
         state = AsyncData(currentState.copyWith(isLoading: false));
         return true;
       } else {
-        state = AsyncData(currentState.copyWith(
-          isLoading: false,
-          error: 'Failed to send coach request',
-        ));
+        state = AsyncData(
+          currentState.copyWith(
+            isLoading: false,
+            error: 'Failed to send coach request',
+          ),
+        );
         return false;
       }
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to send coach request: $e',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to send coach request: $e',
+        ),
+      );
       return false;
     }
   }

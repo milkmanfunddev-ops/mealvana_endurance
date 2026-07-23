@@ -61,7 +61,6 @@ enum ExplanationPhase { before, during, after, transition1, transition2 }
 /// Pure Dart class - no Riverpod, no async. Takes macro targets and user data
 /// and returns structured explanation data derived from algorithm-v4.md.
 
-
 class MacroExplanationService {
   const MacroExplanationService();
   String getSheetTitle(ExplanationPhase phase, String? sportLabel) {

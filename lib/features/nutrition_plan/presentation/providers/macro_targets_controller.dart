@@ -637,6 +637,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             paceTargetMinutesPerMile: paceMinutes,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
+            isFasted: isFasted,
             notes: 'Draft activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
@@ -663,6 +664,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
+                isFasted: isFasted,
                 notes: 'Draft activity - nutrition plan being generated',
               ),
             );
@@ -857,6 +859,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityTarget: intensityTarget,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
+            isFasted: isFasted,
             notes: 'Draft cycling activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
@@ -887,6 +890,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 cyclingSessionGoal: sessionGoal,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                isFasted: isFasted,
                 notes:
                     'Draft cycling activity - nutrition plan being generated',
               ),
@@ -1370,6 +1374,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
             timeBeforeMinutes: preActivityMinutes,
+            isFasted: isFasted,
             notes: 'Draft brick activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
@@ -1407,6 +1412,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 brickMetadata: brickMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
+                isFasted: isFasted,
                 notes: 'Draft brick activity - nutrition plan being generated',
               ),
             );

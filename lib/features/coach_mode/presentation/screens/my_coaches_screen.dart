@@ -29,7 +29,8 @@ class MyCoachesScreen extends ConsumerWidget {
       body: ContentArea(
         child: coachesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => _buildErrorView(context, error.toString(), ref),
+          error: (error, stack) =>
+              _buildErrorView(context, error.toString(), ref),
           data: (state) => _buildContent(context, state, ref),
         ),
       ),
@@ -98,11 +99,7 @@ class MyCoachesScreen extends ConsumerWidget {
           ],
 
           // Active coaches section
-          _buildSectionHeader(
-            context,
-            'Active Coaches',
-            Icons.verified_user,
-          ),
+          _buildSectionHeader(context, 'Active Coaches', Icons.verified_user),
           if (state.activeCoaches.isEmpty)
             _buildNoCoachesCard(context)
           else
@@ -146,7 +143,8 @@ class MyCoachesScreen extends ConsumerWidget {
 
     // Format display name: "Coach FirstName" instead of "Coach 607f9dd5..."
     String displayName;
-    if (request.coachDisplayName != null && request.coachDisplayName!.isNotEmpty) {
+    if (request.coachDisplayName != null &&
+        request.coachDisplayName!.isNotEmpty) {
       displayName = 'Coach ${request.coachDisplayName}';
     } else {
       displayName = 'Coach ${request.coachUserId.substring(0, 8)}...';
@@ -230,7 +228,8 @@ class MyCoachesScreen extends ConsumerWidget {
 
     // Format display name: "Coach FirstName" instead of "Coach 607f9dd5..."
     String displayName;
-    if (relationship.coachDisplayName != null && relationship.coachDisplayName!.isNotEmpty) {
+    if (relationship.coachDisplayName != null &&
+        relationship.coachDisplayName!.isNotEmpty) {
       displayName = 'Coach ${relationship.coachDisplayName}';
     } else {
       displayName = 'Coach ${relationship.coachUserId.substring(0, 8)}...';
@@ -305,10 +304,7 @@ class MyCoachesScreen extends ConsumerWidget {
               color: theme.colorScheme.outline,
             ),
             const SizedBox(height: 16),
-            Text(
-              'No coaches connected',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('No coaches connected', style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             Text(
               'Browse our directory to find and connect with a coach.',

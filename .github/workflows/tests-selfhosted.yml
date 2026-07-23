@@ -103,7 +103,10 @@ jobs:
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
       - name: Install patrol_cli
-        run: dart pub global activate patrol_cli
+        # MUST match the `patrol` package (pubspec.lock: 4.6.1 pairs with CLI
+        # 4.4.0). An unpinned activate pulls 4.5.x, which prints "Version
+        # incompatibility detected!" and refuses to run.
+        run: dart pub global activate patrol_cli 4.4.0
       - name: Boot iOS simulator
         run: |
           DEVICE="iPhone 15 Pro Max"
@@ -114,5 +117,6 @@ jobs:
           export PATH="$HOME/.pub-cache/bin:$PATH"
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
-            --flavor dev -t lib/main_dev.dart \
+            --flavor dev \
+            --dart-define-from-file=.env.dev.local \
             -d "iPhone 15 Pro Max"

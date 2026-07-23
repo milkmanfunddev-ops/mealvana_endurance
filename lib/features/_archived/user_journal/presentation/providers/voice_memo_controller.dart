@@ -47,15 +47,16 @@ class VoiceMemoState {
 @riverpod
 class VoiceMemoController extends _$VoiceMemoController {
   late stt.SpeechToText _speech;
-  Future<WorkoutNotesRepository> get _notesRepository => ref.read(workoutNotesRepositoryProvider.future);
-  
+  Future<WorkoutNotesRepository> get _notesRepository =>
+      ref.read(workoutNotesRepositoryProvider.future);
+
   /// Cache for notes list
   List<WorkoutNote> _cachedNotes = [];
 
   @override
   FutureOr<VoiceMemoState> build() async {
     _speech = stt.SpeechToText();
-    
+
     // Initialize speech recognition
     try {
       final available = await _speech.initialize(
@@ -63,19 +64,20 @@ class VoiceMemoController extends _$VoiceMemoController {
           if (kDebugMode) {
             DebugLogger.debug('Speech recognition error: $error');
           }
-          state = AsyncData(state.value?.copyWith(
-            error: error.errorMsg,
-            isListening: false,
-          ) ?? VoiceMemoState(error: error.errorMsg));
+          state = AsyncData(
+            state.value?.copyWith(error: error.errorMsg, isListening: false) ??
+                VoiceMemoState(error: error.errorMsg),
+          );
         },
         onStatus: (status) {
           if (kDebugMode) {
             DebugLogger.debug('Speech recognition status: $status');
           }
           final isListening = status == stt.SpeechToText.listeningStatus;
-          state = AsyncData(state.value?.copyWith(
-            isListening: isListening,
-          ) ?? VoiceMemoState(isListening: isListening));
+          state = AsyncData(
+            state.value?.copyWith(isListening: isListening) ??
+                VoiceMemoState(isListening: isListening),
+          );
         },
       );
 
@@ -88,11 +90,8 @@ class VoiceMemoController extends _$VoiceMemoController {
 
       // Check permissions
       final hasPermission = await _speech.hasPermission;
-      
-      return VoiceMemoState(
-        hasPermission: hasPermission,
-        isInitialized: true,
-      );
+
+      return VoiceMemoState(hasPermission: hasPermission, isInitialized: true);
     } catch (error) {
       if (kDebugMode) {
         DebugLogger.error('Failed to initialize speech recognition: $error');
@@ -107,7 +106,9 @@ class VoiceMemoController extends _$VoiceMemoController {
   /// Start listening for speech input
   Future<void> startListening(Function(String) onResult) async {
     final currentState = state.value;
-    if (currentState == null || !currentState.isInitialized || currentState.isListening) {
+    if (currentState == null ||
+        !currentState.isInitialized ||
+        currentState.isListening) {
       return;
     }
 
@@ -116,9 +117,11 @@ class VoiceMemoController extends _$VoiceMemoController {
       if (!currentState.hasPermission) {
         final hasPermission = await _speech.hasPermission;
         if (!hasPermission) {
-          state = AsyncData(currentState.copyWith(
-            error: 'Microphone permission required for voice input',
-          ));
+          state = AsyncData(
+            currentState.copyWith(
+              error: 'Microphone permission required for voice input',
+            ),
+          );
           return;
         }
         state = AsyncData(currentState.copyWith(hasPermission: true));
@@ -131,24 +134,23 @@ class VoiceMemoController extends _$VoiceMemoController {
           }
         },
         listenFor: const Duration(seconds: 30), // Max 30 seconds
-        pauseFor: const Duration(seconds: 3),   // Stop after 3 seconds of silence
+        pauseFor: const Duration(seconds: 3), // Stop after 3 seconds of silence
         partialResults: false, // Only final results
         cancelOnError: true,
         listenMode: stt.ListenMode.confirmation,
       );
 
-      state = AsyncData(currentState.copyWith(
-        isListening: true,
-        error: null,
-      ));
+      state = AsyncData(currentState.copyWith(isListening: true, error: null));
     } catch (error) {
       if (kDebugMode) {
         DebugLogger.error('Failed to start listening: $error');
       }
-      state = AsyncData(currentState.copyWith(
-        error: 'Failed to start speech recognition: $error',
-        isListening: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          error: 'Failed to start speech recognition: $error',
+          isListening: false,
+        ),
+      );
     }
   }
 
@@ -166,10 +168,12 @@ class VoiceMemoController extends _$VoiceMemoController {
       if (kDebugMode) {
         DebugLogger.error('Failed to stop listening: $error');
       }
-      state = AsyncData(currentState.copyWith(
-        error: 'Failed to stop speech recognition: $error',
-        isListening: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          error: 'Failed to stop speech recognition: $error',
+          isListening: false,
+        ),
+      );
     }
   }
 
@@ -189,22 +193,21 @@ class VoiceMemoController extends _$VoiceMemoController {
 
       _cachedNotes = [savedNote, ..._cachedNotes];
 
-      state = AsyncData(currentState.copyWith(
-        isSaving: false,
-        error: null,
-      ));
+      state = AsyncData(currentState.copyWith(isSaving: false, error: null));
     } catch (error) {
       if (kDebugMode) {
         DebugLogger.error('Failed to save notes: $error');
       }
-      state = AsyncData(currentState.copyWith(
-        isSaving: false,
-        error: 'Failed to save notes: $error',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isSaving: false,
+          error: 'Failed to save notes: $error',
+        ),
+      );
       rethrow;
     }
   }
-  
+
   /// Get all workout notes for the current user
   Future<List<WorkoutNote>> getNotes() async {
     try {
@@ -219,7 +222,7 @@ class VoiceMemoController extends _$VoiceMemoController {
       return [];
     }
   }
-  
+
   /// Get cached notes (for immediate UI updates)
   List<WorkoutNote> getCachedNotes() {
     return _cachedNotes;

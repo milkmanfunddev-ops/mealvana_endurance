@@ -124,7 +124,8 @@ void main() {
     expect(
       controller.eatenAtWasPassed,
       isTrue,
-      reason: 'recipe picker must seed eatenAt from logDate — a null eatenAt '
+      reason:
+          'recipe picker must seed eatenAt from logDate — a null eatenAt '
           'falls back to createdAt (now) and breaks timeline ordering',
     );
     expect(controller.capturedEatenAt!.year, 2026);

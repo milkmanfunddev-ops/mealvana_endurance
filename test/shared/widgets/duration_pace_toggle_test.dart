@@ -22,8 +22,9 @@ void main() {
       expect(find.text('By Pace'), findsOneWidget);
     });
 
-    testWidgets('shows "By Duration" as selected when value is byDuration',
-        (tester) async {
+    testWidgets('shows "By Duration" as selected when value is byDuration', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -45,8 +46,9 @@ void main() {
       expect(_labelFontWeight(tester, 'By Duration'), FontWeight.w700);
     });
 
-    testWidgets('shows "By Pace" as selected when value is byPace',
-        (tester) async {
+    testWidgets('shows "By Pace" as selected when value is byPace', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -68,8 +70,9 @@ void main() {
       expect(_labelFontWeight(tester, 'By Pace'), FontWeight.w700);
     });
 
-    testWidgets('calls onChanged when tapping unselected option',
-        (tester) async {
+    testWidgets('calls onChanged when tapping unselected option', (
+      tester,
+    ) async {
       DurationPaceMode? changedValue;
 
       await tester.pumpWidget(
@@ -90,8 +93,9 @@ void main() {
       expect(changedValue, DurationPaceMode.byPace);
     });
 
-    testWidgets('does not call onChanged when tapping selected option',
-        (tester) async {
+    testWidgets('does not call onChanged when tapping selected option', (
+      tester,
+    ) async {
       var callCount = 0;
 
       await tester.pumpWidget(
@@ -237,7 +241,8 @@ Finder _orangeThumbFinder() {
   return find.byWidgetPredicate((widget) {
     if (widget is DecoratedBox) {
       final decoration = widget.decoration;
-      return decoration is BoxDecoration && decoration.color == AppColors.orange;
+      return decoration is BoxDecoration &&
+          decoration.color == AppColors.orange;
     }
     return false;
   });

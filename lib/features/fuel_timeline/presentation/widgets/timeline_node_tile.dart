@@ -120,10 +120,17 @@ class TimelineNodeTile extends ConsumerWidget {
                     onSurface,
                     useMetric,
                   ),
-                  EventNode(:final event) =>
-                    _eventCard(context, event, onSurface),
-                  CarbLoadingNode(:final day, :final totalDays) =>
-                    _carbCard(context, day, totalDays, onSurface),
+                  EventNode(:final event) => _eventCard(
+                    context,
+                    event,
+                    onSurface,
+                  ),
+                  CarbLoadingNode(:final day, :final totalDays) => _carbCard(
+                    context,
+                    day,
+                    totalDays,
+                    onSurface,
+                  ),
                 },
               ),
             ),
@@ -261,12 +268,16 @@ class TimelineNodeTile extends ConsumerWidget {
             ? [
                 Icon(icon, color: AppColors.cream, size: 20),
                 const SizedBox(width: 8),
-                Text(label,
-                    style: FtType.itemName.copyWith(color: AppColors.cream)),
+                Text(
+                  label,
+                  style: FtType.itemName.copyWith(color: AppColors.cream),
+                ),
               ]
             : [
-                Text(label,
-                    style: FtType.itemName.copyWith(color: AppColors.cream)),
+                Text(
+                  label,
+                  style: FtType.itemName.copyWith(color: AppColors.cream),
+                ),
                 const SizedBox(width: 8),
                 Icon(icon, color: AppColors.cream, size: 20),
               ],
@@ -456,14 +467,14 @@ class TimelineNodeTile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      style: FtType.itemName.copyWith(color: onSurface)),
+                  Text(name, style: FtType.itemName.copyWith(color: onSurface)),
                   Text(
                     subtitle != null && subtitle.isNotEmpty
                         ? 'Event · $subtitle'
                         : 'Event',
-                    style: FtType.macroLine
-                        .copyWith(color: onSurface.withValues(alpha: 0.6)),
+                    style: FtType.macroLine.copyWith(
+                      color: onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
                 ],
               ),
@@ -507,12 +518,15 @@ class TimelineNodeTile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: FtType.itemName.copyWith(color: onSurface)),
+                  Text(
+                    label,
+                    style: FtType.itemName.copyWith(color: onSurface),
+                  ),
                   Text(
                     'Target ${target}g carbs',
-                    style: FtType.macroLine
-                        .copyWith(color: onSurface.withValues(alpha: 0.6)),
+                    style: FtType.macroLine.copyWith(
+                      color: onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
                 ],
               ),

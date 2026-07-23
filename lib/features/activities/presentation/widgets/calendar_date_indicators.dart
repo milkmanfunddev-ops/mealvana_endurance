@@ -20,7 +20,9 @@ class CalendarDateIndicators extends StatelessWidget {
 
   static const Color _eventColor = Color(0xFFE91E63); // Pink for events
   static const Color _activityColor = Color(0xFF2196F3); // Blue for activities
-  static const Color _carbDayColor = Color(0xFFFF9800); // Orange for carb loading
+  static const Color _carbDayColor = Color(
+    0xFFFF9800,
+  ); // Orange for carb loading
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +59,9 @@ class CalendarDateIndicators extends StatelessWidget {
   }
 
   bool _hasActivityOnDate() {
-    return activities.any((activity) => _isSameDay(activity.scheduledDateTime, date));
+    return activities.any(
+      (activity) => _isSameDay(activity.scheduledDateTime, date),
+    );
   }
 
   bool _hasCarbDayOnDate() {
@@ -73,10 +77,7 @@ class CalendarDateIndicators extends StatelessWidget {
       width: 5,
       height: 5,
       margin: const EdgeInsets.symmetric(horizontal: 1),
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

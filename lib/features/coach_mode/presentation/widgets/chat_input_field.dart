@@ -28,7 +28,9 @@ class ChatInputField extends StatelessWidget {
         color: isDark ? AppColors.blackberry : AppColors.surfaceLight,
         border: Border(
           top: BorderSide(
-            color: isDark ? AppColors.blackberryLight : AppColors.borderLightSecondary,
+            color: isDark
+                ? AppColors.blackberryLight
+                : AppColors.borderLightSecondary,
           ),
         ),
       ),

@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:functions_client/functions_client.dart';
 import 'package:mealvana_endurance/features/weather/application/weather_service.dart';
 import 'package:mealvana_endurance/features/weather/data/weather_repository.dart';
-import 'package:mealvana_endurance/features/weather/domain/location.dart' as domain;
+import 'package:mealvana_endurance/features/weather/domain/location.dart'
+    as domain;
 import 'package:mealvana_endurance/features/weather/domain/weather_forecast.dart';
 import 'package:mealvana_endurance/shared/services/location_service.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
@@ -14,9 +15,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // ---------------------------------------------------------------------------
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
+
 class MockFunctionsClient extends Mock implements FunctionsClient {}
+
 class MockWeatherRepository extends Mock implements WeatherRepository {}
+
 class MockLocationService extends Mock implements LocationService {}
+
 class MockAppLogger extends Mock implements AppLogger {}
 
 // ---------------------------------------------------------------------------
@@ -90,7 +95,11 @@ void _stubLogger(MockAppLogger logger) {
     ),
   ).thenReturn(null);
   when(
-    () => logger.info(any(), context: any(named: 'context'), data: any(named: 'data')),
+    () => logger.info(
+      any(),
+      context: any(named: 'context'),
+      data: any(named: 'data'),
+    ),
   ).thenReturn(null);
   when(
     () => logger.warning(
@@ -129,39 +138,38 @@ void _stubLogger(MockAppLogger logger) {
 
 /// Stub [mockFunctions] to return a successful API response for
 /// 'get-weather-forecast'.
-void _stubApiSuccess(MockFunctionsClient mockFunctions, Map<String, dynamic> data) {
+void _stubApiSuccess(
+  MockFunctionsClient mockFunctions,
+  Map<String, dynamic> data,
+) {
   when(
-    () => mockFunctions.invoke(
-      'get-weather-forecast',
-      body: any(named: 'body'),
-    ),
-  ).thenAnswer((_) async => FunctionResponse(
-        data: {'success': true, 'data': data},
-        status: 200,
-      ));
+    () =>
+        mockFunctions.invoke('get-weather-forecast', body: any(named: 'body')),
+  ).thenAnswer(
+    (_) async =>
+        FunctionResponse(data: {'success': true, 'data': data}, status: 200),
+  );
 }
 
 /// Stub [mockFunctions] to throw for any 'get-weather-forecast' call.
 void _stubApiThrow(MockFunctionsClient mockFunctions, Object error) {
   when(
-    () => mockFunctions.invoke(
-      'get-weather-forecast',
-      body: any(named: 'body'),
-    ),
+    () =>
+        mockFunctions.invoke('get-weather-forecast', body: any(named: 'body')),
   ).thenThrow(error);
 }
 
 /// Stub [mockFunctions] to return a non-success body.
 void _stubApiFailBody(MockFunctionsClient mockFunctions, {int status = 200}) {
   when(
-    () => mockFunctions.invoke(
-      'get-weather-forecast',
-      body: any(named: 'body'),
+    () =>
+        mockFunctions.invoke('get-weather-forecast', body: any(named: 'body')),
+  ).thenAnswer(
+    (_) async => FunctionResponse(
+      data: status == 200 ? {'success': false, 'data': null} : null,
+      status: status,
     ),
-  ).thenAnswer((_) async => FunctionResponse(
-        data: status == 200 ? {'success': false, 'data': null} : null,
-        status: status,
-      ));
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -173,9 +181,7 @@ void main() {
 
   // Register fallback values for types used as matchers in mock stubs.
   setUpAll(() {
-    registerFallbackValue(
-      WeatherForecast.defaultForecast(DateTime(2026)),
-    );
+    registerFallbackValue(WeatherForecast.defaultForecast(DateTime(2026)));
     registerFallbackValue(HttpMethod.post);
   });
 
@@ -256,7 +262,9 @@ void main() {
 
     test('isFresh returns false when fetched over 1 hour ago', () {
       final f = _makeForecast(
-        fetchedAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 1)),
+        fetchedAt: DateTime.now().subtract(
+          const Duration(hours: 1, minutes: 1),
+        ),
       );
       expect(f.isFresh(), isFalse);
     });
@@ -375,52 +383,57 @@ void main() {
   // WeatherService: memory cache hit
   // -------------------------------------------------------------------------
   group('WeatherService — memory cache hit', () {
-    test('second call returns memory-cached forecast without querying repository again', () async {
-      final freshForecast = _makeForecast();
+    test(
+      'second call returns memory-cached forecast without querying repository again',
+      () async {
+        final freshForecast = _makeForecast();
 
-      when(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).thenAnswer((_) async => null);
+        when(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).thenAnswer((_) async => null);
 
-      _stubApiSuccess(mockFunctions, freshForecast.toJson());
+        _stubApiSuccess(mockFunctions, freshForecast.toJson());
 
-      when(
-        () => mockRepository.cacheForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecast: any(named: 'forecast'),
-        ),
-      ).thenAnswer((_) async {});
+        when(
+          () => mockRepository.cacheForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecast: any(named: 'forecast'),
+          ),
+        ).thenAnswer((_) async {});
 
-      when(() => mockRepository.clearExpiredForecasts()).thenAnswer((_) async {});
+        when(
+          () => mockRepository.clearExpiredForecasts(),
+        ).thenAnswer((_) async {});
 
-      // First call — populates memory cache.
-      final first = await service.getWeatherForecast(
-        location: _location,
-        activityDate: _futureDate,
-      );
-      expect(first.source, WeatherSource.forecast);
+        // First call — populates memory cache.
+        final first = await service.getWeatherForecast(
+          location: _location,
+          activityDate: _futureDate,
+        );
+        expect(first.source, WeatherSource.forecast);
 
-      // Second call — should be served from in-memory cache.
-      final second = await service.getWeatherForecast(
-        location: _location,
-        activityDate: _futureDate,
-      );
-      expect(second.temperatureC, first.temperatureC);
+        // Second call — should be served from in-memory cache.
+        final second = await service.getWeatherForecast(
+          location: _location,
+          activityDate: _futureDate,
+        );
+        expect(second.temperatureC, first.temperatureC);
 
-      // Repository was called only once (for the first miss).
-      verify(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).called(1);
-    });
+        // Repository was called only once (for the first miss).
+        verify(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).called(1);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -428,7 +441,10 @@ void main() {
   // -------------------------------------------------------------------------
   group('WeatherService — DB cache hit', () {
     test('returns DB-cached forecast without calling the API', () async {
-      final dbForecast = _makeForecast(tempC: 18.0, source: WeatherSource.forecast);
+      final dbForecast = _makeForecast(
+        tempC: 18.0,
+        source: WeatherSource.forecast,
+      );
 
       when(
         () => mockRepository.getCachedForecast(
@@ -473,7 +489,9 @@ void main() {
           forecast: any(named: 'forecast'),
         ),
       ).thenAnswer((_) async {});
-      when(() => mockRepository.clearExpiredForecasts()).thenAnswer((_) async {});
+      when(
+        () => mockRepository.clearExpiredForecasts(),
+      ).thenAnswer((_) async {});
     });
 
     test('returns parsed forecast when API responds 200 success', () async {
@@ -587,25 +605,31 @@ void main() {
   // WeatherService: no location available
   // -------------------------------------------------------------------------
   group('WeatherService — no location available', () {
-    test('returns defaultForecast when location is null and GPS unavailable', () async {
-      when(() => mockLocationService.getCurrentLocation())
-          .thenAnswer((_) async => null);
-      when(() => mockLocationService.getLastFailureReason())
-          .thenReturn(LocationFailureReason.permissionDenied);
+    test(
+      'returns defaultForecast when location is null and GPS unavailable',
+      () async {
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockLocationService.getLastFailureReason(),
+        ).thenReturn(LocationFailureReason.permissionDenied);
 
-      final result = await service.getWeatherForecast(
-        location: null,
-        activityDate: _futureDate,
-      );
+        final result = await service.getWeatherForecast(
+          location: null,
+          activityDate: _futureDate,
+        );
 
-      expect(result.source, WeatherSource.defaultValue);
-      expect(result.temperatureC, 20.0);
-      expect(result.humidityPct, 60);
-    });
+        expect(result.source, WeatherSource.defaultValue);
+        expect(result.temperatureC, 20.0);
+        expect(result.humidityPct, 60);
+      },
+    );
 
     test('uses GPS location when no explicit location is provided', () async {
-      when(() => mockLocationService.getCurrentLocation())
-          .thenAnswer((_) async => _location);
+      when(
+        () => mockLocationService.getCurrentLocation(),
+      ).thenAnswer((_) async => _location);
       when(
         () => mockRepository.getCachedForecast(
           latitude: any(named: 'latitude'),
@@ -628,73 +652,81 @@ void main() {
   // WeatherService: historical cache bypass for same-day/future
   // -------------------------------------------------------------------------
   group('WeatherService — historical cache bypass', () {
-    test('bypasses historical DB cache and fetches fresh data for today', () async {
-      // A historical entry in DB for today must be ignored — service should
-      // go to API and return fresh forecast data.
-      final historicalForecast = _makeForecast(
-        source: WeatherSource.historical,
-        forecastDate: DateTime.now(),
-      );
+    test(
+      'bypasses historical DB cache and fetches fresh data for today',
+      () async {
+        // A historical entry in DB for today must be ignored — service should
+        // go to API and return fresh forecast data.
+        final historicalForecast = _makeForecast(
+          source: WeatherSource.historical,
+          forecastDate: DateTime.now(),
+        );
 
-      when(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).thenAnswer((_) async => historicalForecast);
+        when(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).thenAnswer((_) async => historicalForecast);
 
-      when(
-        () => mockRepository.cacheForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecast: any(named: 'forecast'),
-        ),
-      ).thenAnswer((_) async {});
-      when(() => mockRepository.clearExpiredForecasts()).thenAnswer((_) async {});
-      _stubApiSuccess(mockFunctions, _apiJson(tempC: 28.0));
+        when(
+          () => mockRepository.cacheForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecast: any(named: 'forecast'),
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockRepository.clearExpiredForecasts(),
+        ).thenAnswer((_) async {});
+        _stubApiSuccess(mockFunctions, _apiJson(tempC: 28.0));
 
-      final result = await service.getWeatherForecast(
-        location: _location,
-        activityDate: DateTime.now(),
-      );
+        final result = await service.getWeatherForecast(
+          location: _location,
+          activityDate: DateTime.now(),
+        );
 
-      // Fresh API data wins over historical cache.
-      expect(result.source, WeatherSource.forecast);
-      expect(result.temperatureC, 28.0);
-    });
+        // Fresh API data wins over historical cache.
+        expect(result.source, WeatherSource.forecast);
+        expect(result.temperatureC, 28.0);
+      },
+    );
 
-    test('uses historical DB cache for past-date requests (no API call)', () async {
-      final pastDate = DateTime.now().subtract(const Duration(days: 5));
-      final historicalForecast = _makeForecast(
-        source: WeatherSource.historical,
-        forecastDate: pastDate,
-        tempC: 10.0,
-      );
+    test(
+      'uses historical DB cache for past-date requests (no API call)',
+      () async {
+        final pastDate = DateTime.now().subtract(const Duration(days: 5));
+        final historicalForecast = _makeForecast(
+          source: WeatherSource.historical,
+          forecastDate: pastDate,
+          tempC: 10.0,
+        );
 
-      when(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).thenAnswer((_) async => historicalForecast);
+        when(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).thenAnswer((_) async => historicalForecast);
 
-      final result = await service.getWeatherForecast(
-        location: _location,
-        activityDate: pastDate,
-      );
+        final result = await service.getWeatherForecast(
+          location: _location,
+          activityDate: pastDate,
+        );
 
-      expect(result.temperatureC, 10.0);
-      expect(result.source, WeatherSource.historical);
-      // API must NOT be called for past dates with valid historical cache.
-      verifyNever(
-        () => mockFunctions.invoke(
-          'get-weather-forecast',
-          body: any(named: 'body'),
-        ),
-      );
-    });
+        expect(result.temperatureC, 10.0);
+        expect(result.source, WeatherSource.historical);
+        // API must NOT be called for past dates with valid historical cache.
+        verifyNever(
+          () => mockFunctions.invoke(
+            'get-weather-forecast',
+            body: any(named: 'body'),
+          ),
+        );
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -716,51 +748,65 @@ void main() {
           forecast: any(named: 'forecast'),
         ),
       ).thenAnswer((_) async {});
-      when(() => mockRepository.clearExpiredForecasts()).thenAnswer((_) async {});
+      when(
+        () => mockRepository.clearExpiredForecasts(),
+      ).thenAnswer((_) async {});
       _stubApiSuccess(mockFunctions, _apiJson());
     });
 
-    test('two requests within the same hour share one memory cache entry', () async {
-      final base = DateTime(2026, 7, 1, 10, 0);
-      final sameHour = DateTime(2026, 7, 1, 10, 45);
+    test(
+      'two requests within the same hour share one memory cache entry',
+      () async {
+        final base = DateTime(2026, 7, 1, 10, 0);
+        final sameHour = DateTime(2026, 7, 1, 10, 45);
 
-      await service.getWeatherForecast(location: _location, activityDate: base);
-      await service.getWeatherForecast(location: _location, activityDate: sameHour);
+        await service.getWeatherForecast(
+          location: _location,
+          activityDate: base,
+        );
+        await service.getWeatherForecast(
+          location: _location,
+          activityDate: sameHour,
+        );
 
-      // Repository should only be queried once — the second call is a memory hit.
-      verify(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).called(1);
-    });
+        // Repository should only be queried once — the second call is a memory hit.
+        verify(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).called(1);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
   // WeatherService: temperature/humidity pass-through for hydration calcs
   // -------------------------------------------------------------------------
   group('WeatherService — temperature and humidity for hydration inputs', () {
-    test('high temperature (35°C) and high humidity (85%) pass through unchanged', () async {
-      when(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).thenAnswer((_) async => _makeForecast(tempC: 35.0, humidityPct: 85));
+    test(
+      'high temperature (35°C) and high humidity (85%) pass through unchanged',
+      () async {
+        when(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).thenAnswer((_) async => _makeForecast(tempC: 35.0, humidityPct: 85));
 
-      final result = await service.getWeatherForecast(
-        location: _location,
-        activityDate: _futureDate,
-      );
+        final result = await service.getWeatherForecast(
+          location: _location,
+          activityDate: _futureDate,
+        );
 
-      // Callers scale hydration from temperatureC and humidityPct —
-      // neither must be truncated or rounded by the service.
-      expect(result.temperatureC, 35.0);
-      expect(result.humidityPct, 85);
-    });
+        // Callers scale hydration from temperatureC and humidityPct —
+        // neither must be truncated or rounded by the service.
+        expect(result.temperatureC, 35.0);
+        expect(result.humidityPct, 85);
+      },
+    );
 
     test('0°C cold temperature round-trips without sign loss', () async {
       when(
@@ -799,24 +845,27 @@ void main() {
       expect(result.temperatureF, closeTo(14.0, 0.1));
     });
 
-    test('default forecast 20°C/60% provides a consistent hydration baseline on error', () async {
-      when(
-        () => mockRepository.getCachedForecast(
-          latitude: any(named: 'latitude'),
-          longitude: any(named: 'longitude'),
-          forecastDate: any(named: 'forecastDate'),
-        ),
-      ).thenAnswer((_) async => null);
-      _stubApiThrow(mockFunctions, Exception('Offline'));
+    test(
+      'default forecast 20°C/60% provides a consistent hydration baseline on error',
+      () async {
+        when(
+          () => mockRepository.getCachedForecast(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            forecastDate: any(named: 'forecastDate'),
+          ),
+        ).thenAnswer((_) async => null);
+        _stubApiThrow(mockFunctions, Exception('Offline'));
 
-      final result = await service.getWeatherForecast(
-        location: _location,
-        activityDate: _futureDate,
-      );
+        final result = await service.getWeatherForecast(
+          location: _location,
+          activityDate: _futureDate,
+        );
 
-      expect(result.temperatureC, 20.0);
-      expect(result.humidityPct, 60);
-    });
+        expect(result.temperatureC, 20.0);
+        expect(result.humidityPct, 60);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -824,8 +873,9 @@ void main() {
   // -------------------------------------------------------------------------
   group('WeatherService — location service delegation', () {
     test('hasLocationPermission delegates to LocationService', () async {
-      when(() => mockLocationService.hasLocationPermission())
-          .thenAnswer((_) async => true);
+      when(
+        () => mockLocationService.hasLocationPermission(),
+      ).thenAnswer((_) async => true);
 
       final result = await service.hasLocationPermission();
       expect(result, isTrue);
@@ -833,8 +883,9 @@ void main() {
     });
 
     test('requestLocationPermission delegates to LocationService', () async {
-      when(() => mockLocationService.requestLocationPermission())
-          .thenAnswer((_) async => false);
+      when(
+        () => mockLocationService.requestLocationPermission(),
+      ).thenAnswer((_) async => false);
 
       final result = await service.requestLocationPermission();
       expect(result, isFalse);
@@ -842,10 +893,14 @@ void main() {
     });
 
     test('getLastLocationFailureReason delegates to LocationService', () {
-      when(() => mockLocationService.getLastFailureReason())
-          .thenReturn(LocationFailureReason.timeout);
+      when(
+        () => mockLocationService.getLastFailureReason(),
+      ).thenReturn(LocationFailureReason.timeout);
 
-      expect(service.getLastLocationFailureReason(), LocationFailureReason.timeout);
+      expect(
+        service.getLastLocationFailureReason(),
+        LocationFailureReason.timeout,
+      );
     });
   });
 }

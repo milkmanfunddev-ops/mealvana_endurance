@@ -61,20 +61,21 @@ class SurveyState {
   }
 
   bool get isPage1Complete => confidenceLevel != null && reuseIntent != null;
-  
+
   bool get isPage2Complete {
     if (reuseIntent == ReuseIntent.yes) {
       // Always allow completion - user can choose no reminder or set reminder
       return true;
     } else {
-      return missedReason != null && 
-             (missedReason != MissedReason.other || (missedOther?.trim().isNotEmpty ?? false));
+      return missedReason != null &&
+          (missedReason != MissedReason.other ||
+              (missedOther?.trim().isNotEmpty ?? false));
     }
   }
 
   SurveyResponse toSurveyResponse({String? deviceId, String? planName}) {
     NotificationPreference? finalReminderPreference;
-    
+
     if (!noReminderNeeded && reuseIntent == ReuseIntent.yes) {
       if (customReminderDate != null) {
         finalReminderPreference = NotificationPreference.custom(
@@ -83,10 +84,12 @@ class SurveyState {
         );
       } else {
         // Default to Thursday at 5:00 PM if no custom date is set
-        finalReminderPreference = NotificationPreference.defaultThursday(isRecurring: isRecurring);
+        finalReminderPreference = NotificationPreference.defaultThursday(
+          isRecurring: isRecurring,
+        );
       }
     }
-    
+
     return SurveyResponse(
       confidenceLevel: confidenceLevel!,
       reuseIntent: reuseIntent!,
@@ -124,15 +127,17 @@ class SurveyController extends _$SurveyController {
     final currentState = state.value;
     if (currentState != null) {
       // Clear page 2 data when reuse intent changes
-      state = AsyncValue.data(currentState.copyWith(
-        reuseIntent: intent,
-        reminderPreference: null,
-        customReminderDate: null,
-        isRecurring: false,
-        noReminderNeeded: false,
-        missedReason: null,
-        missedOther: null,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(
+          reuseIntent: intent,
+          reminderPreference: null,
+          customReminderDate: null,
+          isRecurring: false,
+          noReminderNeeded: false,
+          missedReason: null,
+          missedOther: null,
+        ),
+      );
     }
   }
 
@@ -146,10 +151,12 @@ class SurveyController extends _$SurveyController {
   void setCustomReminderDate(DateTime dateTime) {
     final currentState = state.value;
     if (currentState != null) {
-      state = AsyncValue.data(currentState.copyWith(
-        customReminderDate: dateTime,
-        noReminderNeeded: false,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(
+          customReminderDate: dateTime,
+          noReminderNeeded: false,
+        ),
+      );
     }
   }
 
@@ -157,10 +164,12 @@ class SurveyController extends _$SurveyController {
   void setIsRecurring(bool isRecurring) {
     final currentState = state.value;
     if (currentState != null) {
-      state = AsyncValue.data(currentState.copyWith(
-        isRecurring: isRecurring,
-        noReminderNeeded: false,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(
+          isRecurring: isRecurring,
+          noReminderNeeded: false,
+        ),
+      );
     }
   }
 
@@ -168,11 +177,13 @@ class SurveyController extends _$SurveyController {
   void setNoReminderNeeded(bool noReminder) {
     final currentState = state.value;
     if (currentState != null) {
-      state = AsyncValue.data(currentState.copyWith(
-        noReminderNeeded: noReminder,
-        customReminderDate: null,
-        isRecurring: false,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(
+          noReminderNeeded: noReminder,
+          customReminderDate: null,
+          isRecurring: false,
+        ),
+      );
     }
   }
 
@@ -183,10 +194,12 @@ class SurveyController extends _$SurveyController {
     } else {
       final currentState = state.value;
       if (currentState != null) {
-        state = AsyncValue.data(currentState.copyWith(
-          reminderPreference: preference,
-          noReminderNeeded: false,
-        ));
+        state = AsyncValue.data(
+          currentState.copyWith(
+            reminderPreference: preference,
+            noReminderNeeded: false,
+          ),
+        );
       }
     }
   }
@@ -195,10 +208,14 @@ class SurveyController extends _$SurveyController {
   void setMissedReason(MissedReason? reason) {
     final currentState = state.value;
     if (currentState != null) {
-      state = AsyncValue.data(currentState.copyWith(
-        missedReason: reason,
-        missedOther: reason == MissedReason.other ? currentState.missedOther : null,
-      ));
+      state = AsyncValue.data(
+        currentState.copyWith(
+          missedReason: reason,
+          missedOther: reason == MissedReason.other
+              ? currentState.missedOther
+              : null,
+        ),
+      );
     }
   }
 
@@ -213,7 +230,9 @@ class SurveyController extends _$SurveyController {
   /// Submit the survey response
   Future<bool> submitSurvey({String? planName}) async {
     final currentState = state.value;
-    if (currentState == null || !currentState.isPage1Complete || !currentState.isPage2Complete) {
+    if (currentState == null ||
+        !currentState.isPage1Complete ||
+        !currentState.isPage2Complete) {
       return false;
     }
 
@@ -223,8 +242,11 @@ class SurveyController extends _$SurveyController {
       // Get current user profile to get device ID
       final user = await _database.userDao.getCurrentUserProfile();
       final deviceId = user?.id ?? 'anonymous';
-      final response = currentState.toSurveyResponse(deviceId: deviceId, planName: planName);
-      
+      final response = currentState.toSurveyResponse(
+        deviceId: deviceId,
+        planName: planName,
+      );
+
       final success = await _feedbackService.submitSurveyResponse(
         response: response,
         deviceId: deviceId,
@@ -237,7 +259,7 @@ class SurveyController extends _$SurveyController {
       } else {
         state = AsyncValue.data(currentState.copyWith(isSubmitting: false));
       }
-      
+
       return success;
     } catch (error, stackTrace) {
       if (kDebugMode) {
@@ -268,12 +290,13 @@ class SurveyController extends _$SurveyController {
 
       // Schedule test notification for 5 seconds from now
       final testTime = DateTime.now().add(const Duration(seconds: 5));
-      
+
       await NotificationService.scheduleReminder(
         scheduledDate: testTime,
         recurring: false,
         title: 'Test Notification 📱',
-        body: 'This is a test notification from your nutrition app. Tap to open the app!',
+        body:
+            'This is a test notification from your nutrition app. Tap to open the app!',
       );
 
       if (kDebugMode) {
@@ -294,24 +317,36 @@ class SurveyController extends _$SurveyController {
     final content = _contentService.getActiveContent();
     final uiText = content?.content['ui_text'] as Map<String, dynamic>? ?? {};
     final surveyText = uiText['survey'] as Map<String, dynamic>? ?? {};
-    
+
     if (pageNumber == 1) {
       return {
-        'title': surveyText['page1_title'] as String? ?? 'How confident are you?',
-        'subtitle': surveyText['page1_subtitle'] as String? ?? 'How confident are you that this plan will meet your needs?',
-        'reuse_question': surveyText['reuse_question'] as String? ?? 'Would you use this app again?',
+        'title':
+            surveyText['page1_title'] as String? ?? 'How confident are you?',
+        'subtitle':
+            surveyText['page1_subtitle'] as String? ??
+            'How confident are you that this plan will meet your needs?',
+        'reuse_question':
+            surveyText['reuse_question'] as String? ??
+            'Would you use this app again?',
       };
     } else {
       final currentState = state.value;
       if (currentState?.reuseIntent == ReuseIntent.yes) {
         return {
-          'title': surveyText['page2_reminder_title'] as String? ?? 'Set a reminder',
-          'subtitle': surveyText['page2_reminder_subtitle'] as String? ?? 'When would you like to be reminded to try the app again?',
+          'title':
+              surveyText['page2_reminder_title'] as String? ?? 'Set a reminder',
+          'subtitle':
+              surveyText['page2_reminder_subtitle'] as String? ??
+              'When would you like to be reminded to try the app again?',
         };
       } else {
         return {
-          'title': surveyText['page2_feedback_title'] as String? ?? 'Help us improve',
-          'subtitle': surveyText['page2_feedback_subtitle'] as String? ?? 'What could we do better to meet your expectations?',
+          'title':
+              surveyText['page2_feedback_title'] as String? ??
+              'Help us improve',
+          'subtitle':
+              surveyText['page2_feedback_subtitle'] as String? ??
+              'What could we do better to meet your expectations?',
         };
       }
     }

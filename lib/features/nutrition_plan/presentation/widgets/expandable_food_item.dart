@@ -40,7 +40,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    
+
     if (_isExpanded) {
       _controller.value = 1.0;
     }
@@ -70,9 +70,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
       decoration: BoxDecoration(
         color: Color(0xFFD6E0FF), // Correct light blue from Alex's design
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppTheme.primary900,
-        ),
+        border: Border.all(color: AppTheme.primary900),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primary600.withValues(alpha: 0.1),
@@ -93,17 +91,16 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                 child: Row(
                   children: [
                     // Food Icon
-                    FoodIcon(
-                      imageUrl: widget.foodItem.imageUrl,
-                      size: 40.w,
-                    ),
-                    
+                    FoodIcon(imageUrl: widget.foodItem.imageUrl, size: 40.w),
+
                     SizedBox(width: 12.w),
-                    
+
                     // Food Info
                     Expanded(
                       child: Text(
-                        widget.foodItem.quantity, // Now contains full description like "1 cup cooked oatmeal"
+                        widget
+                            .foodItem
+                            .quantity, // Now contains full description like "1 cup cooked oatmeal"
                         style: AppTheme.textStyle.copyWith(
                           color: AppTheme.primary900,
                           fontSize: 16.sp,
@@ -111,7 +108,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                         ),
                       ),
                     ),
-                    
+
                     // Expand/Collapse Icon
                     AnimatedRotation(
                       turns: _isExpanded ? 0.5 : 0.0,
@@ -126,7 +123,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                 ),
               ),
             ),
-            
+
             // Expandable Details
             SizeTransition(
               sizeFactor: _expandAnimation,
@@ -144,7 +141,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                         color: AppTheme.baseGrey.withValues(alpha: 0.2),
                         margin: EdgeInsets.only(bottom: 16.h),
                       ),
-                      
+
                       // Description
                       if (widget.foodItem.description != null) ...[
                         Text(
@@ -156,7 +153,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                         ),
                         SizedBox(height: 12.h),
                       ],
-                      
+
                       // Instructions
                       if (widget.foodItem.instructions != null) ...[
                         Container(
@@ -188,7 +185,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                         ),
                         SizedBox(height: 12.h),
                       ],
-                      
+
                       // Nutritional Info
                       if (widget.foodItem.nutritionalInfo != null)
                         _buildNutritionInfo(),
@@ -205,15 +202,13 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
 
   Widget _buildNutritionInfo() {
     final nutrition = widget.foodItem.nutritionalInfo!;
-    
+
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: AppTheme.baseWhite,
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: AppTheme.baseGrey.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +222,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
             ),
           ),
           SizedBox(height: 8.h),
-          
+
           Row(
             children: [
               if (nutrition.calories != null)
@@ -236,21 +231,21 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
                   '${nutrition.calories}',
                   AppTheme.caloriesColor,
                 ),
-              
+
               if (nutrition.carbs != null)
                 _buildNutritionItem(
                   'Carbs',
                   '${nutrition.carbs}g',
                   AppTheme.carbsColor,
                 ),
-              
+
               if (nutrition.protein != null)
                 _buildNutritionItem(
                   'Protein',
                   '${nutrition.protein}g',
                   AppTheme.proteinColor,
                 ),
-              
+
               if (nutrition.fat != null)
                 _buildNutritionItem(
                   'Fat',
@@ -272,9 +267,7 @@ class _ExpandableFoodItemState extends State<ExpandableFoodItem>
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6.r),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [

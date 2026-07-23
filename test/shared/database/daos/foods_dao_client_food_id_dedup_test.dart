@@ -47,8 +47,7 @@ void main() {
     );
   }
 
-  test(
-      'getUserFoods returns one row when the same client_food_id is saved via '
+  test('getUserFoods returns one row when the same client_food_id is saved via '
       'two paths with different device_id values', () async {
     // Path 1 (AddFoodScreen, pre-fix): device_id == user_id.
     await saveGel(id: id1, deviceId: userId, userId: userId);
@@ -57,27 +56,32 @@ void main() {
 
     final foods = await database.foodsDao.getUserFoods(userId);
 
-    final gels =
-        foods.where((f) => f.clientFoodId == clientFoodId).toList();
-    expect(gels, hasLength(1),
-        reason: 'duplicate catalog food should be collapsed to one entry');
-  });
-
-  test('getUserFoods keeps distinct foods and null-clientFoodId rows', () async {
-    await saveGel(id: id1, deviceId: userId, userId: userId);
-    // A different catalog food.
-    await database.foodsDao.saveUserFood(
-      deviceId: userId,
-      userId: userId,
-      id: idOther,
-      clientFoodId: 'maurten-gel-100',
-      name: 'Maurten Gel 100',
-      categories: const ['during_run'],
+    final gels = foods.where((f) => f.clientFoodId == clientFoodId).toList();
+    expect(
+      gels,
+      hasLength(1),
+      reason: 'duplicate catalog food should be collapsed to one entry',
     );
-
-    final foods = await database.foodsDao.getUserFoods(userId);
-    expect(foods, hasLength(2));
   });
+
+  test(
+    'getUserFoods keeps distinct foods and null-clientFoodId rows',
+    () async {
+      await saveGel(id: id1, deviceId: userId, userId: userId);
+      // A different catalog food.
+      await database.foodsDao.saveUserFood(
+        deviceId: userId,
+        userId: userId,
+        id: idOther,
+        clientFoodId: 'maurten-gel-100',
+        name: 'Maurten Gel 100',
+        categories: const ['during_run'],
+      );
+
+      final foods = await database.foodsDao.getUserFoods(userId);
+      expect(foods, hasLength(2));
+    },
+  );
 
   test('hasUserFoodWithClientFoodId detects an existing food saved via the '
       'legacy device_id path', () async {
@@ -85,17 +89,23 @@ void main() {
 
     // The Add Food screen now checks by user_id, even though the existing row
     // was persisted with a different device_id.
-    final hasDuplicate =
-        await database.foodsDao.hasUserFoodWithClientFoodId(userId, clientFoodId);
+    final hasDuplicate = await database.foodsDao.hasUserFoodWithClientFoodId(
+      userId,
+      clientFoodId,
+    );
     expect(hasDuplicate, isTrue);
   });
 
-  test('hasUserFoodWithClientFoodId returns false for an unknown food',
-      () async {
-    await saveGel(id: id1, deviceId: userId, userId: userId);
+  test(
+    'hasUserFoodWithClientFoodId returns false for an unknown food',
+    () async {
+      await saveGel(id: id1, deviceId: userId, userId: userId);
 
-    final hasDuplicate = await database.foodsDao
-        .hasUserFoodWithClientFoodId(userId, 'never-saved-food');
-    expect(hasDuplicate, isFalse);
-  });
+      final hasDuplicate = await database.foodsDao.hasUserFoodWithClientFoodId(
+        userId,
+        'never-saved-food',
+      );
+      expect(hasDuplicate, isFalse);
+    },
+  );
 }

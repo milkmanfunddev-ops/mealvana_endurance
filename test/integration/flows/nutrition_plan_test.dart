@@ -66,7 +66,9 @@ void main() {
       final deviceId = 'device-plan-123';
 
       // Create user first
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -97,7 +99,9 @@ void main() {
       final scheduledDate = DateTime.now().add(const Duration(days: 7));
 
       // Insert activity
-      await database.into(database.activitiesTable).insert(
+      await database
+          .into(database.activitiesTable)
+          .insert(
             ActivitiesTableCompanion.insert(
               userId: userId,
               activityType: 'running',
@@ -114,14 +118,17 @@ void main() {
 
       logSection('Verifying activity in database');
 
-      final activities = await (database.select(database.activitiesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final activities = await (database.select(
+        database.activitiesTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       logTestResult('activity_count', activities.length);
       logTestResult('activity_type', activities.first.activityType);
       logTestResult('distance_miles', activities.first.distanceMiles);
-      logTestResult('pace_min_per_mile', activities.first.paceTargetMinutesPerMile);
+      logTestResult(
+        'pace_min_per_mile',
+        activities.first.paceTargetMinutesPerMile,
+      );
       logTestResult('intensity', activities.first.intensityLevel);
 
       logAssertion(
@@ -203,7 +210,9 @@ void main() {
       final deviceId = 'device-plan-storage-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -251,7 +260,9 @@ void main() {
       final scheduledDate = DateTime.now().add(const Duration(days: 3));
 
       // Insert activity with nutrition plan data
-      await database.into(database.activitiesTable).insert(
+      await database
+          .into(database.activitiesTable)
+          .insert(
             ActivitiesTableCompanion.insert(
               userId: userId,
               activityType: 'running',
@@ -269,9 +280,9 @@ void main() {
 
       logSection('Verifying nutrition plan data');
 
-      final activities = await (database.select(database.activitiesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final activities = await (database.select(
+        database.activitiesTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       final activity = activities.first;
       final storedPlanData = activity.nutritionPlanData != null
@@ -280,7 +291,10 @@ void main() {
 
       logTestResult('has_nutrition_plan', storedPlanData != null);
       logTestResult('pre_run_carbs', storedPlanData?['pre_run']?['carbs_g']);
-      logTestResult('during_run_carbs', storedPlanData?['during_run']?['carbs_g']);
+      logTestResult(
+        'during_run_carbs',
+        storedPlanData?['during_run']?['carbs_g'],
+      );
       logTestResult('post_run_carbs', storedPlanData?['post_run']?['carbs_g']);
 
       logAssertion(
@@ -316,7 +330,9 @@ void main() {
       final deviceId = 'device-pref-filter-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -374,9 +390,9 @@ void main() {
 
       logSection('Retrieving food preferences');
 
-      final preferences = await (database.select(database.foodPreferencesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final preferences = await (database.select(
+        database.foodPreferencesTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       final dislikedFoods = preferences
           .where((p) => p.preference == 'dislike')
@@ -416,7 +432,9 @@ void main() {
       final deviceId = 'device-date-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -479,20 +497,29 @@ void main() {
       logSection('Querying activities for target date');
 
       // Query activities for target date (using day-based filtering)
-      final targetDateStart = DateTime(targetDate.year, targetDate.month, targetDate.day);
+      final targetDateStart = DateTime(
+        targetDate.year,
+        targetDate.month,
+        targetDate.day,
+      );
       final targetDateEnd = targetDateStart.add(const Duration(days: 1));
 
-      final activitiesOnTargetDate = await (database.select(database.activitiesTable)
-            ..where((t) =>
-                t.userId.equals(userId) &
-                t.scheduledDateTime.isBiggerOrEqualValue(targetDateStart) &
-                t.scheduledDateTime.isSmallerThanValue(targetDateEnd)))
-          .get();
+      final activitiesOnTargetDate =
+          await (database.select(database.activitiesTable)..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.scheduledDateTime.isBiggerOrEqualValue(targetDateStart) &
+                    t.scheduledDateTime.isSmallerThanValue(targetDateEnd),
+              ))
+              .get();
 
       logTestResult('activities_on_target_date', activitiesOnTargetDate.length);
       if (activitiesOnTargetDate.isNotEmpty) {
         logTestResult('activity_title', activitiesOnTargetDate.first.title);
-        logTestResult('distance_miles', activitiesOnTargetDate.first.distanceMiles);
+        logTestResult(
+          'distance_miles',
+          activitiesOnTargetDate.first.distanceMiles,
+        );
       }
 
       logAssertion(

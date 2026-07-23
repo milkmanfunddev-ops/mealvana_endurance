@@ -58,13 +58,13 @@ Widget _host({
               onPressed: () async {
                 final r = await Navigator.of(context)
                     .push<ScannedFoodLogRequest>(
-                  MaterialPageRoute(
-                    builder: (_) => LogScannedFoodScreen(
-                      food: _gel,
-                      initialSlot: initialSlot,
-                    ),
-                  ),
-                );
+                      MaterialPageRoute(
+                        builder: (_) => LogScannedFoodScreen(
+                          food: _gel,
+                          initialSlot: initialSlot,
+                        ),
+                      ),
+                    );
                 onResult(r);
               },
               child: const Text('open'),
@@ -77,8 +77,9 @@ Widget _host({
 }
 
 void main() {
-  testWidgets('renders the scanned product name and per-serving nutrition',
-      (tester) async {
+  testWidgets('renders the scanned product name and per-serving nutrition', (
+    tester,
+  ) async {
     await _open(tester);
 
     expect(find.text('Log Food'), findsWidgets); // app bar + button
@@ -113,8 +114,9 @@ void main() {
     expect(result!.slot, MealSlot.snack);
   });
 
-  testWidgets('choosing a different meal slot is returned in the request',
-      (tester) async {
+  testWidgets('choosing a different meal slot is returned in the request', (
+    tester,
+  ) async {
     ScannedFoodLogRequest? result;
     await _open(tester, onResult: (r) => result = r);
 
@@ -139,17 +141,23 @@ void main() {
     final IconButton minusButton = tester.widget(
       find.ancestor(of: minus, matching: find.byType(IconButton)),
     );
-    expect(minusButton.onPressed, isNull,
-        reason: 'decrement disabled at the 0.5 floor');
+    expect(
+      minusButton.onPressed,
+      isNull,
+      reason: 'decrement disabled at the 0.5 floor',
+    );
   });
 
   testWidgets('backing out returns null (no log request)', (tester) async {
     ScannedFoodLogRequest? result;
     bool called = false;
-    await _open(tester, onResult: (r) {
-      result = r;
-      called = true;
-    });
+    await _open(
+      tester,
+      onResult: (r) {
+        result = r;
+        called = true;
+      },
+    );
 
     // Pop the route without confirming (simulates the back button).
     final NavigatorState nav = tester.state(find.byType(Navigator));

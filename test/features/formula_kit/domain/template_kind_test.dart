@@ -12,10 +12,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 void main() {
   group('TemplateKind.fromWireValue', () {
     test('returns enum for pre_system', () {
-      expect(
-        TemplateKind.fromWireValue('pre_system'),
-        TemplateKind.preSystem,
-      );
+      expect(TemplateKind.fromWireValue('pre_system'), TemplateKind.preSystem);
     });
 
     test('returns enum for during_system', () {

@@ -134,7 +134,8 @@ class ActivityDetailAppBar extends ConsumerWidget
                   isNewActivity: isNewActivity,
                 ),
               );
-        final (String? eventName, String? activityTitle) = asyncState.whenOrNull(
+        final (String? eventName, String? activityTitle) =
+            asyncState.whenOrNull(
               data: (data) {
                 if (data is ActivityDetailState) {
                   return (data.eventName, data.activity?.title);
@@ -143,7 +144,8 @@ class ActivityDetailAppBar extends ConsumerWidget
               },
             ) ??
             (null, null);
-        final title = eventName ??
+        final title =
+            eventName ??
             activityTitle ??
             (isNewActivity ? 'New Activity' : 'Activity Details');
         return Text(

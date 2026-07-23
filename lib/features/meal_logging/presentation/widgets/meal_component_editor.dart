@@ -79,7 +79,10 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
       const SizedBox(width: 8),
       Text(
         label,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     ];
     return Container(
@@ -132,8 +135,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                     'C ${item.carbG!.toStringAsFixed(0)}g',
                   if (item.proteinG != null)
                     'P ${item.proteinG!.toStringAsFixed(0)}g',
-                  if (item.fatG != null)
-                    'F ${item.fatG!.toStringAsFixed(0)}g',
+                  if (item.fatG != null) 'F ${item.fatG!.toStringAsFixed(0)}g',
                 ].join('  ·  '),
                 style: theme.textTheme.bodySmall,
               ),
@@ -184,8 +186,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
         }),
         const SizedBox(height: 8),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
@@ -201,8 +202,9 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                   'C ${_totalCarbG.toStringAsFixed(0)}g  '
                   'P ${_totalProteinG.toStringAsFixed(0)}g  '
                   'F ${_totalFatG.toStringAsFixed(0)}g',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -261,13 +263,16 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     _nameCtrl = TextEditingController(text: item.name);
     _portionCtrl = TextEditingController(text: item.portion);
     _calCtrl = TextEditingController(text: item.calories?.toString() ?? '');
-    _carbCtrl =
-        TextEditingController(text: item.carbG?.toStringAsFixed(1) ?? '');
-    _protCtrl =
-        TextEditingController(text: item.proteinG?.toStringAsFixed(1) ?? '');
+    _carbCtrl = TextEditingController(
+      text: item.carbG?.toStringAsFixed(1) ?? '',
+    );
+    _protCtrl = TextEditingController(
+      text: item.proteinG?.toStringAsFixed(1) ?? '',
+    );
     _fatCtrl = TextEditingController(text: item.fatG?.toStringAsFixed(1) ?? '');
-    _sodiumCtrl =
-        TextEditingController(text: item.sodiumMg?.toStringAsFixed(0) ?? '');
+    _sodiumCtrl = TextEditingController(
+      text: item.sodiumMg?.toStringAsFixed(0) ?? '',
+    );
 
     _baseQty = parseLeadingQuantity(item.portion) ?? 1.0;
     _baseCal = item.calories;
@@ -356,8 +361,11 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
             const SizedBox(height: 8),
             _field('Portion', _portionCtrl),
             const SizedBox(height: 8),
-            _numField('Quantity', _qtyCtrl,
-                helperText: 'Scales the nutrients below'),
+            _numField(
+              'Quantity',
+              _qtyCtrl,
+              helperText: 'Scales the nutrients below',
+            ),
             const SizedBox(height: 8),
             _numField('Calories', _calCtrl),
             const SizedBox(height: 8),
@@ -376,10 +384,7 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        TextButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }
@@ -390,14 +395,16 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
 
-  Widget _numField(String label, TextEditingController ctrl,
-      {String? helperText}) {
+  Widget _numField(
+    String label,
+    TextEditingController ctrl, {
+    String? helperText,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -408,10 +415,8 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
         labelText: label,
         helperText: helperText,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
-
 }

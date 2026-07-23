@@ -4,11 +4,7 @@ class AuthException implements Exception {
   final String? code;
   final dynamic originalException;
 
-  const AuthException(
-    this.message, {
-    this.code,
-    this.originalException,
-  });
+  const AuthException(this.message, {this.code, this.originalException});
 
   @override
   String toString() {

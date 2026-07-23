@@ -22,10 +22,7 @@ class WeatherRepository {
   final AppDatabase database;
   final AppLogger logger;
 
-  WeatherRepository({
-    required this.database,
-    required this.logger,
-  });
+  WeatherRepository({required this.database, required this.logger});
 
   /// Normalize a datetime to the top of the hour for cache bucketing.
   DateTime _normalizeToHour(DateTime date) {
@@ -48,11 +45,13 @@ class WeatherRepository {
 
       // Query for cached forecast matching the same hour bucket
       final query = database.select(database.weatherForecastsTable)
-        ..where((tbl) =>
-            tbl.latitude.equals(latitude) &
-            tbl.longitude.equals(longitude) &
-            tbl.forecastDate.equals(forecastHour) &
-            tbl.expiresAt.isBiggerThanValue(now))
+        ..where(
+          (tbl) =>
+              tbl.latitude.equals(latitude) &
+              tbl.longitude.equals(longitude) &
+              tbl.forecastDate.equals(forecastHour) &
+              tbl.expiresAt.isBiggerThanValue(now),
+        )
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.fetchedAt)])
         ..limit(1);
 
@@ -73,7 +72,11 @@ class WeatherRepository {
         precipitationMm: cached.precipitationMm,
       );
     } catch (e, stackTrace) {
-      logger.error('Error getting cached forecast', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error getting cached forecast',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -95,27 +98,29 @@ class WeatherRepository {
 
       // Variable expiry: Historical data lasts longer
       final expiryDuration = forecast.source == WeatherSource.historical
-          ? const Duration(hours: 24)  // Historical: 24 hours
-          : const Duration(hours: 1);   // Forecast: 1 hour
+          ? const Duration(hours: 24) // Historical: 24 hours
+          : const Duration(hours: 1); // Forecast: 1 hour
 
       final expiresAt = now.add(expiryDuration);
 
-      await database.into(database.weatherForecastsTable).insert(
-        WeatherForecastsTableCompanion.insert(
-          latitude: latitude,
-          longitude: longitude,
-          forecastDate: forecastHour, // Store hour bucket
-          temperatureC: forecast.temperatureC,
-          humidityPct: forecast.humidityPct,
-          forecastAvailable: Value(forecast.forecastAvailable),
-          source: forecast.source.value,
-          conditions: Value(forecast.conditions),
-          windSpeedKmh: Value(forecast.windSpeedKmh),
-          precipitationMm: Value(forecast.precipitationMm),
-          expiresAt: expiresAt,
-        ),
-        mode: InsertMode.insertOrReplace,
-      );
+      await database
+          .into(database.weatherForecastsTable)
+          .insert(
+            WeatherForecastsTableCompanion.insert(
+              latitude: latitude,
+              longitude: longitude,
+              forecastDate: forecastHour, // Store hour bucket
+              temperatureC: forecast.temperatureC,
+              humidityPct: forecast.humidityPct,
+              forecastAvailable: Value(forecast.forecastAvailable),
+              source: forecast.source.value,
+              conditions: Value(forecast.conditions),
+              windSpeedKmh: Value(forecast.windSpeedKmh),
+              precipitationMm: Value(forecast.precipitationMm),
+              expiresAt: expiresAt,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
     } catch (e, stackTrace) {
       logger.error('Error caching forecast', error: e, stackTrace: stackTrace);
     }
@@ -126,13 +131,17 @@ class WeatherRepository {
     try {
       final now = DateTime.now();
 
-      final deleted = await (database.delete(database.weatherForecastsTable)
-            ..where((tbl) => tbl.expiresAt.isSmallerThanValue(now)))
-          .go();
+      final deleted = await (database.delete(
+        database.weatherForecastsTable,
+      )..where((tbl) => tbl.expiresAt.isSmallerThanValue(now))).go();
 
-      if (deleted > 0) {      }
+      if (deleted > 0) {}
     } catch (e, stackTrace) {
-      logger.error('Error clearing expired forecasts', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error clearing expired forecasts',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -141,20 +150,28 @@ class WeatherRepository {
     try {
       await database.delete(database.weatherForecastsTable).go();
     } catch (e, stackTrace) {
-      logger.error('Error clearing all forecasts', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error clearing all forecasts',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
   /// Clear default weather forecasts from cache (stale fallback values)
   Future<void> clearDefaultForecasts() async {
     try {
-      final deleted = await (database.delete(database.weatherForecastsTable)
-            ..where((tbl) => tbl.source.equals('default')))
-          .go();
+      final deleted = await (database.delete(
+        database.weatherForecastsTable,
+      )..where((tbl) => tbl.source.equals('default'))).go();
 
-      if (deleted > 0) {      }
+      if (deleted > 0) {}
     } catch (e, stackTrace) {
-      logger.error('Error clearing default forecasts', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error clearing default forecasts',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 }

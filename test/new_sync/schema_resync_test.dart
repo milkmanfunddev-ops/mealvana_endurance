@@ -150,14 +150,23 @@ void main() {
           schemaVersion: 3,
           userId: 'test-user-123',
           dirtyRecords: {
-            'activities': [{'id': '1'}],
-            'events': [{'id': '1'}],
-            'foods': [{'id': '1'}],
+            'activities': [
+              {'id': '1'},
+            ],
+            'events': [
+              {'id': '1'},
+            ],
+            'foods': [
+              {'id': '1'},
+            ],
           },
           uploadErrors: [],
         );
 
-        expect(backup.dirtyRecords.keys, containsAll(['activities', 'events', 'foods']));
+        expect(
+          backup.dirtyRecords.keys,
+          containsAll(['activities', 'events', 'foods']),
+        );
       });
 
       test('hasDirtyRecords returns true when records exist', () {
@@ -167,7 +176,9 @@ void main() {
           schemaVersion: 3,
           userId: 'test-user-123',
           dirtyRecords: {
-            'activities': [{'id': '1'}],
+            'activities': [
+              {'id': '1'},
+            ],
           },
           uploadErrors: [],
         );
@@ -242,9 +253,14 @@ void main() {
 
     test('repositories with records should be processed', () {
       final dirtyRecords = <String, List<Map<String, dynamic>>>{
-        'activities': [{'id': '1'}],
-        'events': [],  // Empty - should be filtered out
-        'foods': [{'id': '1'}, {'id': '2'}],
+        'activities': [
+          {'id': '1'},
+        ],
+        'events': [], // Empty - should be filtered out
+        'foods': [
+          {'id': '1'},
+          {'id': '2'},
+        ],
       };
 
       final nonEmptyRepos = dirtyRecords.entries

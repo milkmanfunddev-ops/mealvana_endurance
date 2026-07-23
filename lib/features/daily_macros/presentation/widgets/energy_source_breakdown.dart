@@ -36,20 +36,19 @@ class EnergySourceBreakdown extends ConsumerWidget {
     final profile = ref.watch(currentUserProvider).asData?.value;
     final garmin = profile == null
         ? null
-        : ref
-              .watch(garminLastBodyCompProvider(profile.id))
-              .asData
-              ?.value;
+        : ref.watch(garminLastBodyCompProvider(profile.id)).asData?.value;
 
     final resolvedWeightKg =
-        macros.weightKg ?? (profile?.weightPounds != null
+        macros.weightKg ??
+        (profile?.weightPounds != null
             ? profile!.weightPounds * 0.453592
             : null);
     final resolvedBodyFatPct = macros.bodyFatPct ?? profile?.bodyFatPct;
 
     // Source flag: trust the fresh calc when we have it, otherwise derive
     // from the same authoritative check the rest of the app uses.
-    final weightFromGarmin = sources?.weightFromGarmin ??
+    final weightFromGarmin =
+        sources?.weightFromGarmin ??
         isGarminAuthoritativeForWeight(
           garmin: garmin,
           userWeightKg: profile != null
@@ -57,7 +56,8 @@ class EnergySourceBreakdown extends ConsumerWidget {
               : null,
           userUpdatedAt: profile?.weightPoundsUpdatedAt,
         );
-    final bodyFatFromGarmin = sources?.bodyFatFromGarmin ??
+    final bodyFatFromGarmin =
+        sources?.bodyFatFromGarmin ??
         isGarminAuthoritativeForBodyFat(
           garmin: garmin,
           userBodyFatPct: profile?.bodyFatPct,

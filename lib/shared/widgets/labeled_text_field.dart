@@ -74,7 +74,7 @@ class _LabeledTextFieldState extends State<LabeledTextField> {
           ),
         ),
         SizedBox(height: 8.h),
-        
+
         // Text Field
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),

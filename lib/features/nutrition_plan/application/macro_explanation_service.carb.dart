@@ -861,8 +861,7 @@ extension _$CarbExt on MacroExplanationService {
           '**${durationMult.toStringAsFixed(1)} g of carbs per kg of body weight**. '
           'Eat within the first hour for the best recovery.',
       tldrLines: tldrLines,
-      tldrTip:
-          '**${targetG}g** target ($rangeLow\u2013${rangeHigh}g range).',
+      tldrTip: '**${targetG}g** target ($rangeLow\u2013${rangeHigh}g range).',
       storySections: storySections,
       targetGrams: targetG.toDouble(),
       rangeLow: rangeLow.toDouble(),
@@ -874,5 +873,4 @@ extension _$CarbExt on MacroExplanationService {
   // ---------------------------------------------------------------------------
   // HELPERS
   // ---------------------------------------------------------------------------
-
 }

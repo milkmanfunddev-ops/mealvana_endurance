@@ -115,11 +115,7 @@ class EventDetailsCard extends ConsumerWidget {
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: AppIconSizes.sm,
-          color: AppColors.electrolyte,
-        ),
+        Icon(icon, size: AppIconSizes.sm, color: AppColors.electrolyte),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(

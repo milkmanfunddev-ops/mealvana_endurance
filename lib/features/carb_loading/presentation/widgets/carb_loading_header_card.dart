@@ -99,11 +99,7 @@ class CarbLoadingHeaderCard extends StatelessWidget {
                     color: Colors.green,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 16),
                 ),
                 const SizedBox(width: 8),
                 Text(

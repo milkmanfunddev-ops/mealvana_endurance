@@ -59,8 +59,9 @@ class JadeChatState {
     bool clearConversationId = false,
   }) {
     return JadeChatState(
-      conversationId:
-          clearConversationId ? null : (conversationId ?? this.conversationId),
+      conversationId: clearConversationId
+          ? null
+          : (conversationId ?? this.conversationId),
       messages: messages ?? this.messages,
       isStreaming: isStreaming ?? this.isStreaming,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -138,11 +139,13 @@ class JadeChatController extends _$JadeChatController {
       createdAt: DateTime.now(),
     );
 
-    state = AsyncData(currentState.copyWith(
-      messages: [...currentState.messages, userMsg, streamingMsg],
-      isStreaming: true,
-      clearError: true,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        messages: [...currentState.messages, userMsg, streamingMsg],
+        isStreaming: true,
+        clearError: true,
+      ),
+    );
 
     // ── Timezone ─────────────────────────────────────────────────────────────
     final timezone = _resolveTimezone();
@@ -157,10 +160,9 @@ class JadeChatController extends _$JadeChatController {
       );
 
       // Update conversation id if this was a new conversation.
-      String resolvedConversationId =
-          result.conversationId.isNotEmpty
-              ? result.conversationId
-              : (currentState.conversationId ?? '');
+      String resolvedConversationId = result.conversationId.isNotEmpty
+          ? result.conversationId
+          : (currentState.conversationId ?? '');
 
       String accumulated = '';
       final accumulatedUiParts = <JadeUiPart>[];
@@ -177,29 +179,33 @@ class JadeChatController extends _$JadeChatController {
 
           final updatedMessages = List<JadeMessage>.from(current.messages);
           if (updatedMessages.isNotEmpty) {
-            updatedMessages[updatedMessages.length - 1] =
-                updatedMessages.last.copyWithContent(accumulated);
+            updatedMessages[updatedMessages.length - 1] = updatedMessages.last
+                .copyWithContent(accumulated);
           }
 
-          state = AsyncData(current.copyWith(
-            conversationId: resolvedConversationId,
-            messages: updatedMessages,
-            isStreaming: true,
-          ));
+          state = AsyncData(
+            current.copyWith(
+              conversationId: resolvedConversationId,
+              messages: updatedMessages,
+              isStreaming: true,
+            ),
+          );
         } else if (event is JadeUiPartEvent) {
           accumulatedUiParts.add(event.part);
 
           final updatedMessages = List<JadeMessage>.from(current.messages);
           if (updatedMessages.isNotEmpty) {
-            updatedMessages[updatedMessages.length - 1] =
-                updatedMessages.last.copyWithUiPart(event.part);
+            updatedMessages[updatedMessages.length - 1] = updatedMessages.last
+                .copyWithUiPart(event.part);
           }
 
-          state = AsyncData(current.copyWith(
-            conversationId: resolvedConversationId,
-            messages: updatedMessages,
-            isStreaming: true,
-          ));
+          state = AsyncData(
+            current.copyWith(
+              conversationId: resolvedConversationId,
+              messages: updatedMessages,
+              isStreaming: true,
+            ),
+          );
         } else if (event is JadeStreamErrorEvent) {
           _logger.error(
             'JadeChatController: server stream error: ${event.message}',
@@ -215,10 +221,12 @@ class JadeChatController extends _$JadeChatController {
       if (!ref.mounted) return;
       final finalState = state.value;
       if (finalState != null) {
-        state = AsyncData(finalState.copyWith(
-          conversationId: resolvedConversationId,
-          isStreaming: false,
-        ));
+        state = AsyncData(
+          finalState.copyWith(
+            conversationId: resolvedConversationId,
+            isStreaming: false,
+          ),
+        );
       }
 
       _logger.info(
@@ -227,14 +235,14 @@ class JadeChatController extends _$JadeChatController {
       );
     } on JadeChatOfflineError catch (e) {
       if (!ref.mounted) return;
-      _logger.error(
-        'JadeChatController.send offline',
-        error: e,
+      _logger.error('JadeChatController.send offline', error: e);
+      _handleSendError(
+        currentState,
+        _contentService.getValue(
+          'jade.error_offline',
+          defaultValue: 'No connection. Check your network and try again.',
+        ),
       );
-      _handleSendError(currentState, _contentService.getValue(
-        'jade.error_offline',
-        defaultValue: 'No connection. Check your network and try again.',
-      ));
     } on InsufficientCreditsException catch (e) {
       if (!ref.mounted) return;
       _logger.error('JadeChatController.send out of AI credits', error: e);
@@ -245,10 +253,7 @@ class JadeChatController extends _$JadeChatController {
       );
     } on JadeChatServerError catch (e) {
       if (!ref.mounted) return;
-      _logger.error(
-        'JadeChatController.send server error',
-        error: e,
-      );
+      _logger.error('JadeChatController.send server error', error: e);
       final msg = e.statusCode == 401
           ? _contentService.getValue(
               'jade.error_unauthorized',
@@ -261,7 +266,11 @@ class JadeChatController extends _$JadeChatController {
       _handleSendError(currentState, msg);
     } catch (e, st) {
       if (!ref.mounted) return;
-      _logger.error('JadeChatController.send unexpected', error: e, stackTrace: st);
+      _logger.error(
+        'JadeChatController.send unexpected',
+        error: e,
+        stackTrace: st,
+      );
       _handleSendError(
         currentState,
         _contentService.getValue(
@@ -277,12 +286,14 @@ class JadeChatController extends _$JadeChatController {
     // Remove the optimistic streaming message (the last one) and the
     // optimistic user message (second-to-last), rolling back to pre-send state.
     final msgs = List<JadeMessage>.from(preErrorState.messages);
-    state = AsyncData(JadeChatState(
-      conversationId: preErrorState.conversationId,
-      messages: msgs,
-      isStreaming: false,
-      errorMessage: errorMessage,
-    ));
+    state = AsyncData(
+      JadeChatState(
+        conversationId: preErrorState.conversationId,
+        messages: msgs,
+        isStreaming: false,
+        errorMessage: errorMessage,
+      ),
+    );
   }
 
   // ── Proactive opener ────────────────────────────────────────────────────────
@@ -306,11 +317,13 @@ class JadeChatController extends _$JadeChatController {
       createdAt: DateTime.now(),
     );
 
-    state = AsyncData(currentState.copyWith(
-      messages: [streamingMsg],
-      isStreaming: true,
-      clearError: true,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        messages: [streamingMsg],
+        isStreaming: true,
+        clearError: true,
+      ),
+    );
 
     try {
       final result = await _repository.requestOpener(
@@ -331,13 +344,17 @@ class JadeChatController extends _$JadeChatController {
           if (msgs.isNotEmpty) {
             msgs[msgs.length - 1] = msgs.last.copyWithContent(accumulated);
           }
-          state = AsyncData(current.copyWith(messages: msgs, isStreaming: true));
+          state = AsyncData(
+            current.copyWith(messages: msgs, isStreaming: true),
+          );
         } else if (event is JadeUiPartEvent) {
           final msgs = List<JadeMessage>.from(current.messages);
           if (msgs.isNotEmpty) {
             msgs[msgs.length - 1] = msgs.last.copyWithUiPart(event.part);
           }
-          state = AsyncData(current.copyWith(messages: msgs, isStreaming: true));
+          state = AsyncData(
+            current.copyWith(messages: msgs, isStreaming: true),
+          );
         } else if (event is JadeDoneEvent) {
           break;
         }
@@ -350,20 +367,26 @@ class JadeChatController extends _$JadeChatController {
       if (finalState != null) {
         // If the opener produced no content, drop the placeholder so the
         // static empty state shows instead of an empty bubble.
-        final last =
-            finalState.messages.isNotEmpty ? finalState.messages.last : null;
+        final last = finalState.messages.isNotEmpty
+            ? finalState.messages.last
+            : null;
         final emptyOpener =
             last != null && last.content.isEmpty && last.uiParts.isEmpty;
-        state = AsyncData(finalState.copyWith(
-          messages: emptyOpener ? const [] : finalState.messages,
-          isStreaming: false,
-        ));
+        state = AsyncData(
+          finalState.copyWith(
+            messages: emptyOpener ? const [] : finalState.messages,
+            isStreaming: false,
+          ),
+        );
       }
     } catch (e) {
       // Opener is optional; if the provider is gone there's nothing to restore
       // and nothing safe to log against a disposed ref.
       if (!ref.mounted) return;
-      _logger.error('JadeChatController.loadOpener failed (non-fatal)', error: e);
+      _logger.error(
+        'JadeChatController.loadOpener failed (non-fatal)',
+        error: e,
+      );
       state = const AsyncData(JadeChatState());
     }
   }

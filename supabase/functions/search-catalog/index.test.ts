@@ -23,6 +23,10 @@ import {
   assert,
 } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { describe, it } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
+// The REAL tokenizer shared with search-nutrition-products. The SQL RPC's
+// tokenizer (regexp_replace + string_to_array) mirrors this exact function —
+// asserting against the TS implementation pins the contract both must satisfy.
+import { tokenize } from '../_shared/food_sources/search_matching.ts';
 
 // ============================================================================
 // Pure copies of logic from index.ts
@@ -398,10 +402,8 @@ describe('search-catalog filter intent', () => {
 // rules are executable and can't silently drift. Every expectation below was
 // measured against the live prod catalog on 2026-07-16.
 
-/** Mirrors the RPC's tokenizer and lib/shared/utils/search_token_matcher.dart */
-function tokenize(q: string): string[] {
-  return q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter((t) => t.length > 0);
-}
+// `tokenize` is imported from _shared/food_sources/search_matching.ts (top of
+// file) — the real implementation, which the RPC's SQL tokenizer mirrors.
 
 /** Mirrors the RPC: 2x brand-token hits + 1x title-token hits. */
 function score(brand: string, title: string, tokens: string[]): number {
@@ -430,6 +432,10 @@ describe('search-catalog tokenization', () => {
     assertEquals(tokenize('coca-cola'), ['coca', 'cola']);
   });
 
+  it('hyphens and spaces tokenize identically', () => {
+    assertEquals(tokenize('coca cola'), tokenize('coca-cola'));
+  });
+
   it('single-word query yields one token', () => {
     assertEquals(tokenize('gel'), ['gel']);
   });
@@ -439,6 +445,24 @@ describe('search-catalog scoring — regression for the multi-word bug', () => {
   it('"rx bar" reaches RXBAR (the original bug: whole-phrase ilike → 0)', () => {
     assert(passesThreshold('RXBAR', 'RXBAR Protein Bar', tokenize('rx bar')));
     assertEquals(score('RXBAR', 'RXBAR Protein Bar', tokenize('rx bar')), 6);
+  });
+
+  it('"rx bar" is a SPACING difference — substring matching is what fixes it', () => {
+    // Tokenization alone (word-boundary matching) would not: no word of
+    // "RXBAR Protein Bar" equals "rx". The RPC matches each token with
+    // ilike '%tok%', so 'rx' and 'bar' both hit inside 'rxbar' — no
+    // concatenated-token fallback is needed.
+    assert(passesThreshold('RXBAR', 'Protein Bar', tokenize('rx bar')));
+  });
+
+  it('"coca cola" reaches the comma-inverted "COCA-COLA, COLA" shape', () => {
+    // USDA Branded style: all-caps, comma-inverted. Whole-phrase ilike can
+    // never match it; tokenized substring matching does.
+    assert(passesThreshold('COCA-COLA', 'COCA-COLA, COLA', tokenize('coca cola')));
+  });
+
+  it('"breast chicken" matches "Chicken Breast" — order-independent', () => {
+    assert(passesThreshold('', 'Chicken Breast', tokenize('breast chicken')));
   });
 
   it('brand weighting ranks RXBAR above an incidental "bar" match', () => {

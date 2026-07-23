@@ -112,11 +112,13 @@ class ClientFoodPoolService {
       // Score
       final score = _scoreFood(tf.name, tf.isEssential, likedSet, willingSet);
 
-      result.add(SolverFood.fromTemplateFoodEntry(
-        tf,
-        phase: phase,
-        preferenceScore: score,
-      ));
+      result.add(
+        SolverFood.fromTemplateFoodEntry(
+          tf,
+          phase: phase,
+          preferenceScore: score,
+        ),
+      );
     }
 
     // Process user foods
@@ -146,10 +148,9 @@ class ClientFoodPoolService {
       }
 
       // User foods always get the highest preference score
-      result.add(SolverFood.fromUserFood(
-        uf,
-        preferenceScore: kPrefScoreUserFood,
-      ));
+      result.add(
+        SolverFood.fromUserFood(uf, preferenceScore: kPrefScoreUserFood),
+      );
     }
 
     _logger.info(
@@ -251,9 +252,11 @@ class ClientFoodPoolService {
       servingUnit: json['serving_unit'] as String?,
       servingQualifier: json['serving_qualifier'] as String?,
       isLiquid: json['is_liquid'] as bool? ?? false,
-      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ??
           DateTime.now(),
     );
   }

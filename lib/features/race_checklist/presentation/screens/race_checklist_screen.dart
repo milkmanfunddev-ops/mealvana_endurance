@@ -636,10 +636,7 @@ class RaceChecklistScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          'Could not load event details: $e',
-        );
+        MealvanaSnackbar.showError(context, 'Could not load event details: $e');
       }
     }
   }

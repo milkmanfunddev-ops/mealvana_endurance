@@ -50,9 +50,27 @@ class SectionSubtitleWidget extends StatelessWidget {
       final sodiumTarget = macroTargets!.preRun.sodiumMg.round();
 
       badges = [
-        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
-        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+        _buildMacroBadge(
+          'Carbs',
+          carbs,
+          carbsTarget,
+          'g',
+          _getColorForProgress(carbs, carbsTarget),
+        ),
+        _buildMacroBadge(
+          'Fluids',
+          fluids,
+          fluidsTarget,
+          fluidUnit,
+          _getColorForProgress(fluids, fluidsTarget),
+        ),
+        _buildMacroBadge(
+          'Sodium',
+          sodium,
+          sodiumTarget,
+          'mg',
+          _getColorForProgress(sodium, sodiumTarget),
+        ),
       ];
     } else if (section.id.contains('during')) {
       final carbsTarget = macroTargets!.duringRun.carbTotalG.round();
@@ -60,9 +78,27 @@ class SectionSubtitleWidget extends StatelessWidget {
       final sodiumTarget = macroTargets!.duringRun.sodiumTotalMg.round();
 
       badges = [
-        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
-        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+        _buildMacroBadge(
+          'Carbs',
+          carbs,
+          carbsTarget,
+          'g',
+          _getColorForProgress(carbs, carbsTarget),
+        ),
+        _buildMacroBadge(
+          'Fluids',
+          fluids,
+          fluidsTarget,
+          fluidUnit,
+          _getColorForProgress(fluids, fluidsTarget),
+        ),
+        _buildMacroBadge(
+          'Sodium',
+          sodium,
+          sodiumTarget,
+          'mg',
+          _getColorForProgress(sodium, sodiumTarget),
+        ),
       ];
     } else if (section.id.contains('after')) {
       final carbsTarget = macroTargets!.postRun.carbsG.round();
@@ -70,9 +106,27 @@ class SectionSubtitleWidget extends StatelessWidget {
       final fluidsTarget = macroTargets!.postRun.fluidsMl.round();
 
       badges = [
-        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
-        _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
+        _buildMacroBadge(
+          'Carbs',
+          carbs,
+          carbsTarget,
+          'g',
+          _getColorForProgress(carbs, carbsTarget),
+        ),
+        _buildMacroBadge(
+          'Fluids',
+          fluids,
+          fluidsTarget,
+          fluidUnit,
+          _getColorForProgress(fluids, fluidsTarget),
+        ),
+        _buildMacroBadge(
+          'Protein',
+          protein,
+          proteinTarget,
+          'g',
+          _getColorForProgress(protein, proteinTarget),
+        ),
       ];
     } else {
       return Text(
@@ -85,15 +139,17 @@ class SectionSubtitleWidget extends StatelessWidget {
       );
     }
 
-    return Wrap(
-      spacing: 8.w,
-      runSpacing: 4.h,
-      children: badges,
-    );
+    return Wrap(spacing: 8.w, runSpacing: 4.h, children: badges);
   }
 
   /// Build individual macro badge
-  Widget _buildMacroBadge(String label, int current, int target, String unit, Color color) {
+  Widget _buildMacroBadge(
+    String label,
+    int current,
+    int target,
+    String unit,
+    Color color,
+  ) {
     final ratioWithUnit = '$current/$target$unit';
 
     return Container(
@@ -101,10 +157,7 @@ class SectionSubtitleWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -132,7 +185,12 @@ class SectionSubtitleWidget extends StatelessWidget {
   }
 
   /// Legacy fallback for when MacroTargets is not provided
-  Widget _buildLegacyBadgeSubtitle(int carbs, int protein, int fluids, int sodium) {
+  Widget _buildLegacyBadgeSubtitle(
+    int carbs,
+    int protein,
+    int fluids,
+    int sodium,
+  ) {
     List<Widget> badges = [];
 
     final fluidUnit = UnitFormatter.fluidUnitLabel(useMetric: useMetric);
@@ -144,9 +202,27 @@ class SectionSubtitleWidget extends StatelessWidget {
       final sodiumTarget = plan.sections[0].sodiumTarget?.toInt() ?? 0;
 
       badges = [
-        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
-        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+        _buildMacroBadge(
+          'Carbs',
+          carbs,
+          carbsTarget,
+          'g',
+          _getColorForProgress(carbs, carbsTarget),
+        ),
+        _buildMacroBadge(
+          'Fluids',
+          fluids,
+          fluidsTarget,
+          fluidUnit,
+          _getColorForProgress(fluids, fluidsTarget),
+        ),
+        _buildMacroBadge(
+          'Sodium',
+          sodium,
+          sodiumTarget,
+          'mg',
+          _getColorForProgress(sodium, sodiumTarget),
+        ),
       ];
     } else if (section.id.contains('during')) {
       final carbsTarget = plan.sections[1].carbsTarget?.toInt() ?? 0;
@@ -154,9 +230,27 @@ class SectionSubtitleWidget extends StatelessWidget {
       final sodiumTarget = plan.sections[1].sodiumTarget?.toInt() ?? 0;
 
       badges = [
-        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
-        _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
+        _buildMacroBadge(
+          'Carbs',
+          carbs,
+          carbsTarget,
+          'g',
+          _getColorForProgress(carbs, carbsTarget),
+        ),
+        _buildMacroBadge(
+          'Fluids',
+          fluids,
+          fluidsTarget,
+          fluidUnit,
+          _getColorForProgress(fluids, fluidsTarget),
+        ),
+        _buildMacroBadge(
+          'Sodium',
+          sodium,
+          sodiumTarget,
+          'mg',
+          _getColorForProgress(sodium, sodiumTarget),
+        ),
       ];
     } else if (section.id.contains('after')) {
       final carbsTarget = plan.sections[2].carbsTarget?.toInt() ?? 0;
@@ -164,9 +258,27 @@ class SectionSubtitleWidget extends StatelessWidget {
       final fluidsTarget = plan.sections[2].fluidsTarget?.toInt() ?? 0;
 
       badges = [
-        _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
-        _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
+        _buildMacroBadge(
+          'Carbs',
+          carbs,
+          carbsTarget,
+          'g',
+          _getColorForProgress(carbs, carbsTarget),
+        ),
+        _buildMacroBadge(
+          'Fluids',
+          fluids,
+          fluidsTarget,
+          fluidUnit,
+          _getColorForProgress(fluids, fluidsTarget),
+        ),
+        _buildMacroBadge(
+          'Protein',
+          protein,
+          proteinTarget,
+          'g',
+          _getColorForProgress(protein, proteinTarget),
+        ),
       ];
     } else {
       return Text(
@@ -179,11 +291,7 @@ class SectionSubtitleWidget extends StatelessWidget {
       );
     }
 
-    return Wrap(
-      spacing: 8.w,
-      runSpacing: 4.h,
-      children: badges,
-    );
+    return Wrap(spacing: 8.w, runSpacing: 4.h, children: badges);
   }
 
   /// Get color based on progress towards target

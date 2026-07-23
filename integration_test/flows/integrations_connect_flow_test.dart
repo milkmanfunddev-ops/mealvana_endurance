@@ -34,13 +34,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
-import 'package:mealvana_endurance/main_dev.dart' as app;
 
+import '../helpers/flow_launcher.dart';
+import '../helpers/test_config.dart';
 import '../helpers/test_helpers.dart';
-
-/// Credentials injected via --dart-define-from-file=secrets/integration_test.env
-const _email = String.fromEnvironment('INTEGRATION_TEST_EMAIL');
-const _password = String.fromEnvironment('INTEGRATION_TEST_PASSWORD');
 
 /// The providers whose connect entry points we exercise from the onboarding
 /// "Connect Training" screen (reachable without completing signup).
@@ -56,7 +53,8 @@ void main() {
       'connect ${provider.name}: tapping Connect launches OAuth without crashing',
       ($) async {
         final tester = $.tester;
-        await app.main();
+        // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
+        await launchApp();
         await tester.pumpAndSettle(
           const Duration(milliseconds: 100),
           EnginePhase.sendSemanticsUpdate,
@@ -68,7 +66,10 @@ void main() {
           const ValueKey('welcome.get_started_button'),
         );
         if (getStarted.evaluate().isNotEmpty) {
-          await tester.mustTap(getStarted, reason: 'welcome.get_started_button');
+          await tester.mustTap(
+            getStarted,
+            reason: 'welcome.get_started_button',
+          );
         } else {
           // Already past welcome (hot sim). If we can't see the connect button,
           // skip — this test's entry point is the onboarding connect screen.
@@ -101,19 +102,20 @@ void main() {
         }
 
         // Credential entry — only meaningful where the web form is automatable
-        // (NOT iOS ASWebAuthenticationSession). Guarded on creds being present.
-        if (_email.isNotEmpty && _password.isNotEmpty) {
+        // (NOT iOS ASWebAuthenticationSession). Guarded on the flavor-matched
+        // TestConfig credentials being present.
+        if (TestConfig.hasLoginCredentials) {
           // Best-effort native automation of the provider login form. On iOS
           // this will no-op/throw (secure session) and we swallow it; on
           // Android (Custom Tabs) it can drive the form.
           try {
             await $.native.enterText(
               Selector(textContains: 'mail'),
-              text: _email,
+              text: TestConfig.loginEmail,
             );
             await $.native.enterText(
               Selector(textContains: 'assword'),
-              text: _password,
+              text: TestConfig.loginPassword,
             );
             await $.native.tap(Selector(textContains: 'Sign'));
             await tester.pump(const Duration(seconds: 5));

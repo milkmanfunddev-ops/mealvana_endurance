@@ -60,7 +60,10 @@ void main() {
         expect(affected, contains(monday.add(Duration(days: i))));
       }
       // Wed's neighbours (Tue/Thu) already sit inside the week.
-      expect(affected, isNot(contains(monday.subtract(const Duration(days: 1)))));
+      expect(
+        affected,
+        isNot(contains(monday.subtract(const Duration(days: 1)))),
+      );
       expect(affected, isNot(contains(sunday.add(const Duration(days: 1)))));
     });
 
@@ -188,43 +191,40 @@ void main() {
       expect(dates, isEmpty);
     });
 
-    test(
-      'a sync that only restamps bookkeeping timestamps changes nothing',
-      () {
-        // REGRESSION: `Activity.operator==` includes updatedAt / lastSyncedAt /
-        // needsUpload, and background sync restamps them on rows nobody edited.
-        // Comparing whole objects therefore reported "modified" on every launch,
-        // and each false positive expanded to a full week — 28 cached days wiped
-        // across four unrelated weeks, forcing a blocking edge-function call to
-        // rebuild the day the dashboard was about to paint.
-        final before = activityOn(
-          wednesday,
-          durationMinutes: 60,
-          updatedAt: epoch,
-          lastSyncedAt: null,
-          needsUpload: true,
-        );
-        final afterSync = activityOn(
-          wednesday,
-          durationMinutes: 60, // identical training content
-          updatedAt: DateTime(2026, 7, 18, 9, 1),
-          lastSyncedAt: DateTime(2026, 7, 18, 9, 1),
-          needsUpload: false,
-        );
+    test('a sync that only restamps bookkeeping timestamps changes nothing', () {
+      // REGRESSION: `Activity.operator==` includes updatedAt / lastSyncedAt /
+      // needsUpload, and background sync restamps them on rows nobody edited.
+      // Comparing whole objects therefore reported "modified" on every launch,
+      // and each false positive expanded to a full week — 28 cached days wiped
+      // across four unrelated weeks, forcing a blocking edge-function call to
+      // rebuild the day the dashboard was about to paint.
+      final before = activityOn(
+        wednesday,
+        durationMinutes: 60,
+        updatedAt: epoch,
+        lastSyncedAt: null,
+        needsUpload: true,
+      );
+      final afterSync = activityOn(
+        wednesday,
+        durationMinutes: 60, // identical training content
+        updatedAt: DateTime(2026, 7, 18, 9, 1),
+        lastSyncedAt: DateTime(2026, 7, 18, 9, 1),
+        needsUpload: false,
+      );
 
-        expect(
-          before == afterSync,
-          isFalse,
-          reason: 'precondition: whole-object equality still sees these differ',
-        );
-        expect(
-          changedActivityDates([before], [afterSync]),
-          isEmpty,
-          reason: 'but no macro input moved, so nothing may be invalidated',
-        );
-        expect(macroDatesToInvalidate([before], [afterSync]), isEmpty);
-      },
-    );
+      expect(
+        before == afterSync,
+        isFalse,
+        reason: 'precondition: whole-object equality still sees these differ',
+      );
+      expect(
+        changedActivityDates([before], [afterSync]),
+        isEmpty,
+        reason: 'but no macro input moved, so nothing may be invalidated',
+      );
+      expect(macroDatesToInvalidate([before], [afterSync]), isEmpty);
+    });
 
     test('reordering the list changes nothing', () {
       final a = activityOn(wednesday, id: 'a');
@@ -256,23 +256,26 @@ void main() {
       expect(stale, isNot(contains(DateTime(2026, 7, 12))));
     });
 
-    test('a reschedule across weeks invalidates both weeks, and only those', () {
-      final nextWeekThursday = DateTime(2026, 7, 23);
-      final stale = macroDatesToInvalidate(
-        [activityOn(wednesday)],
-        [activityOn(nextWeekThursday)],
-      );
+    test(
+      'a reschedule across weeks invalidates both weeks, and only those',
+      () {
+        final nextWeekThursday = DateTime(2026, 7, 23);
+        final stale = macroDatesToInvalidate(
+          [activityOn(wednesday)],
+          [activityOn(nextWeekThursday)],
+        );
 
-      // Jul 13–19 (the week it left) and Jul 20–26 (the week it landed in).
-      expect(stale, contains(monday));
-      expect(stale, contains(sunday));
-      expect(stale, contains(DateTime(2026, 7, 20)));
-      expect(stale, contains(DateTime(2026, 7, 26)));
-      expect(stale, hasLength(14));
+        // Jul 13–19 (the week it left) and Jul 20–26 (the week it landed in).
+        expect(stale, contains(monday));
+        expect(stale, contains(sunday));
+        expect(stale, contains(DateTime(2026, 7, 20)));
+        expect(stale, contains(DateTime(2026, 7, 26)));
+        expect(stale, hasLength(14));
 
-      // Weeks on either side are untouched.
-      expect(stale, isNot(contains(DateTime(2026, 7, 12))));
-      expect(stale, isNot(contains(DateTime(2026, 7, 27))));
-    });
+        // Weeks on either side are untouched.
+        expect(stale, isNot(contains(DateTime(2026, 7, 12))));
+        expect(stale, isNot(contains(DateTime(2026, 7, 27))));
+      },
+    );
   });
 }

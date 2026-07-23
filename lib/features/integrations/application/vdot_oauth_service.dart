@@ -24,13 +24,13 @@ class VdotOAuthService {
     required String redirectUri,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
     String scope = 'read:workouts',
-  })  : _apiClient = apiClient,
-        _repository = repository,
-        _clientId = clientId,
-        _authBaseUrl = authBaseUrl,
-        _redirectUri = redirectUri,
-        _callbackUrlScheme = callbackUrlScheme,
-        _scope = scope;
+  }) : _apiClient = apiClient,
+       _repository = repository,
+       _clientId = clientId,
+       _authBaseUrl = authBaseUrl,
+       _redirectUri = redirectUri,
+       _callbackUrlScheme = callbackUrlScheme,
+       _scope = scope;
 
   final VdotApiClient _apiClient;
   final IntegrationsRepository _repository;

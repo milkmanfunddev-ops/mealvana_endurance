@@ -27,15 +27,14 @@ Map<String, dynamic> _contentJson({
   Map<String, dynamic>? content,
   String? lastUpdated,
   bool isActive = true,
-}) =>
-    {
-      'version': version,
-      'environment': environment,
-      'locale': locale,
-      'content': content ?? <String, dynamic>{},
-      'last_updated': lastUpdated ?? DateTime(2025, 1, 1).toIso8601String(),
-      'is_active': isActive,
-    };
+}) => {
+  'version': version,
+  'environment': environment,
+  'locale': locale,
+  'content': content ?? <String, dynamic>{},
+  'last_updated': lastUpdated ?? DateTime(2025, 1, 1).toIso8601String(),
+  'is_active': isActive,
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -53,10 +52,8 @@ void main() {
     prefs = await SharedPreferences.getInstance();
   });
 
-  ContentRepository _makeRepo() => ContentRepository(
-        supabase: mockSupabase,
-        sharedPreferences: prefs,
-      );
+  ContentRepository _makeRepo() =>
+      ContentRepository(supabase: mockSupabase, sharedPreferences: prefs);
 
   // ---------------------------------------------------------------------------
   // isCacheStale
@@ -70,33 +67,48 @@ void main() {
 
     test('returns false when cache is fresh (within maxAge)', () async {
       final fresh = _contentJson(
-        lastUpdated: DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+        lastUpdated: DateTime.now()
+            .subtract(const Duration(hours: 1))
+            .toIso8601String(),
       );
       await prefs.setString('app_content_cache', json.encode(fresh));
 
       final repo = _makeRepo();
-      expect(await repo.isCacheStale(maxAge: const Duration(hours: 24)), isFalse);
+      expect(
+        await repo.isCacheStale(maxAge: const Duration(hours: 24)),
+        isFalse,
+      );
     });
 
     test('returns true when cache is older than maxAge', () async {
       final stale = _contentJson(
-        lastUpdated: DateTime.now().subtract(const Duration(hours: 25)).toIso8601String(),
+        lastUpdated: DateTime.now()
+            .subtract(const Duration(hours: 25))
+            .toIso8601String(),
       );
       await prefs.setString('app_content_cache', json.encode(stale));
 
       final repo = _makeRepo();
-      expect(await repo.isCacheStale(maxAge: const Duration(hours: 24)), isTrue);
+      expect(
+        await repo.isCacheStale(maxAge: const Duration(hours: 24)),
+        isTrue,
+      );
     });
 
     test('respects custom maxAge boundary exactly', () async {
       // 30 minutes old — should NOT be stale under 1-hour maxAge
       final cached = _contentJson(
-        lastUpdated: DateTime.now().subtract(const Duration(minutes: 30)).toIso8601String(),
+        lastUpdated: DateTime.now()
+            .subtract(const Duration(minutes: 30))
+            .toIso8601String(),
       );
       await prefs.setString('app_content_cache', json.encode(cached));
 
       final repo = _makeRepo();
-      expect(await repo.isCacheStale(maxAge: const Duration(hours: 1)), isFalse);
+      expect(
+        await repo.isCacheStale(maxAge: const Duration(hours: 1)),
+        isFalse,
+      );
     });
   });
 
@@ -106,8 +118,7 @@ void main() {
 
   group('ContentRepository.clearCache', () {
     test('removes cached content from SharedPreferences', () async {
-      await prefs.setString(
-          'app_content_cache', json.encode(_contentJson()));
+      await prefs.setString('app_content_cache', json.encode(_contentJson()));
 
       final repo = _makeRepo();
       await repo.clearCache();
@@ -129,8 +140,7 @@ void main() {
         content: {'key': 'from_cache'},
         isActive: true,
       );
-      await prefs.setString(
-          'app_content_cache', json.encode(cachedData));
+      await prefs.setString('app_content_cache', json.encode(cachedData));
 
       final repo = _makeRepo();
       final result = await repo.getActiveContent();
@@ -146,8 +156,7 @@ void main() {
     test('bypasses cache when environment does not match', () async {
       // Cache has staging; request is for production
       final cachedData = _contentJson(environment: 'staging', isActive: true);
-      await prefs.setString(
-          'app_content_cache', json.encode(cachedData));
+      await prefs.setString('app_content_cache', json.encode(cachedData));
 
       // Supabase will throw (simulating unavailable) → falls through to asset default
       when(() => mockSupabase.from(any())).thenThrow(Exception('no network'));
@@ -163,8 +172,7 @@ void main() {
 
     test('bypasses cache when isActive is false', () async {
       final cachedData = _contentJson(isActive: false);
-      await prefs.setString(
-          'app_content_cache', json.encode(cachedData));
+      await prefs.setString('app_content_cache', json.encode(cachedData));
 
       when(() => mockSupabase.from(any())).thenThrow(Exception('no network'));
 
@@ -199,26 +207,30 @@ void main() {
   group('ContentRepository.getContentValue', () {
     test('resolves dot-notation key from cached content', () async {
       final cachedData = _contentJson(
-        content: {'main_screen': <String, dynamic>{'title': 'Cached Title'}},
+        content: {
+          'main_screen': <String, dynamic>{'title': 'Cached Title'},
+        },
       );
-      await prefs.setString(
-          'app_content_cache', json.encode(cachedData));
+      await prefs.setString('app_content_cache', json.encode(cachedData));
 
       final repo = _makeRepo();
-      final value =
-          await repo.getContentValue('main_screen.title', defaultValue: 'fallback');
+      final value = await repo.getContentValue(
+        'main_screen.title',
+        defaultValue: 'fallback',
+      );
 
       expect(value, 'Cached Title');
     });
 
     test('returns defaultValue when key path not found', () async {
       final cachedData = _contentJson(content: {});
-      await prefs.setString(
-          'app_content_cache', json.encode(cachedData));
+      await prefs.setString('app_content_cache', json.encode(cachedData));
 
       final repo = _makeRepo();
-      final value =
-          await repo.getContentValue('nonexistent.key', defaultValue: 'my-default');
+      final value = await repo.getContentValue(
+        'nonexistent.key',
+        defaultValue: 'my-default',
+      );
 
       expect(value, 'my-default');
     });
@@ -231,8 +243,7 @@ void main() {
   group('ContentRepository.refreshContent', () {
     test('removes cache key before re-fetching', () async {
       final cachedData = _contentJson(version: 1);
-      await prefs.setString(
-          'app_content_cache', json.encode(cachedData));
+      await prefs.setString('app_content_cache', json.encode(cachedData));
 
       // Supabase throws → falls through to empty default
       when(() => mockSupabase.from(any())).thenThrow(Exception('no network'));
@@ -247,7 +258,10 @@ void main() {
       // What matters: the old v1 value is not blindly used — version may still
       // be 1 from the fallback, but the important thing is refreshContent didn't throw.
       // We verify the cache was at least cleared at some point in the call.
-      expect(remaining, isNull); // fallback (asset load fails in test) leaves no cache
+      expect(
+        remaining,
+        isNull,
+      ); // fallback (asset load fails in test) leaves no cache
     });
   });
 }

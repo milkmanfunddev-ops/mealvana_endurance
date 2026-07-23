@@ -131,11 +131,7 @@ class FormulaPinController extends _$FormulaPinController {
           kind: kind,
         );
       } else {
-        await pinsRepo.pin(
-          userId: userId,
-          templateId: templateId,
-          kind: kind,
-        );
+        await pinsRepo.pin(userId: userId, templateId: templateId, kind: kind);
       }
     } catch (e, st) {
       // Revert optimistic state on failure.

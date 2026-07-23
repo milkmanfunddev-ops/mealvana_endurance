@@ -54,9 +54,9 @@ class BrickMetadata {
     final totalDurationMinutesRaw =
         json['total_duration_minutes'] ?? json['totalDurationMinutes'];
 
-    final parsedSegments = _asMapList(segmentsRaw)
-        .map(BrickSegment.fromJson)
-        .toList();
+    final parsedSegments = _asMapList(
+      segmentsRaw,
+    ).map(BrickSegment.fromJson).toList();
 
     return BrickMetadata(
       segmentOrder: _asStringList(segmentOrderRaw),
@@ -65,7 +65,8 @@ class BrickMetadata {
           ? _asStringList(originalActivityIdsRaw)
           : null,
       createdFromExisting: _asBool(createdFromExistingRaw) ?? false,
-      totalDurationMinutes: _asInt(totalDurationMinutesRaw) ??
+      totalDurationMinutes:
+          _asInt(totalDurationMinutesRaw) ??
           parsedSegments.fold<int>(
             0,
             (sum, segment) => sum + segment.durationMinutes,
@@ -196,7 +197,8 @@ class BrickSegment {
       'duration_minutes': durationMinutes,
       'intensity': intensity,
       if (distanceMeters != null) 'distance_meters': distanceMeters,
-      if (pacePer100mSeconds != null) 'pace_per_100m_seconds': pacePer100mSeconds,
+      if (pacePer100mSeconds != null)
+        'pace_per_100m_seconds': pacePer100mSeconds,
       if (poolOrOpenWater != null) 'pool_or_open_water': poolOrOpenWater,
       if (waterTempC != null) 'water_temp_c': waterTempC,
       if (distanceMiles != null) 'distance_miles': distanceMiles,
@@ -204,7 +206,8 @@ class BrickSegment {
       if (terrain != null) 'terrain': terrain,
       if (indoorOutdoor != null) 'indoor_outdoor': indoorOutdoor,
       if (elevationGainFt != null) 'elevation_gain_ft': elevationGainFt,
-      if (paceMinutesPerMile != null) 'pace_minutes_per_mile': paceMinutesPerMile,
+      if (paceMinutesPerMile != null)
+        'pace_minutes_per_mile': paceMinutesPerMile,
     };
   }
 
@@ -218,8 +221,9 @@ class BrickSegment {
         'duration_minutes',
       ),
       intensity: _requireString(json['intensity'], 'intensity'),
-      distanceMeters:
-          _asDouble(json['distance_meters'] ?? json['distanceMeters']),
+      distanceMeters: _asDouble(
+        json['distance_meters'] ?? json['distanceMeters'],
+      ),
       pacePer100mSeconds: _asInt(
         json['pace_per_100m_seconds'] ?? json['pacePer100mSeconds'],
       ),
@@ -230,8 +234,7 @@ class BrickSegment {
       distanceMiles: _asDouble(json['distance_miles'] ?? json['distanceMiles']),
       speedMph: _asDouble(json['speed_mph'] ?? json['speedMph']),
       terrain: _asString(json['terrain']),
-      indoorOutdoor:
-          _asString(json['indoor_outdoor'] ?? json['indoorOutdoor']),
+      indoorOutdoor: _asString(json['indoor_outdoor'] ?? json['indoorOutdoor']),
       elevationGainFt: _asInt(
         json['elevation_gain_ft'] ?? json['elevationGainFt'],
       ),
@@ -298,22 +301,23 @@ class BrickSegment {
   @override
   int get hashCode {
     return Object.hash(
-      sport,
-      order,
-      durationMinutes,
-      intensity,
-      distanceMeters,
-      pacePer100mSeconds,
-      poolOrOpenWater,
-      waterTempC,
-      distanceMiles,
-      speedMph,
-    ) ^ Object.hash(
-      terrain,
-      indoorOutdoor,
-      elevationGainFt,
-      paceMinutesPerMile,
-    );
+          sport,
+          order,
+          durationMinutes,
+          intensity,
+          distanceMeters,
+          pacePer100mSeconds,
+          poolOrOpenWater,
+          waterTempC,
+          distanceMiles,
+          speedMph,
+        ) ^
+        Object.hash(
+          terrain,
+          indoorOutdoor,
+          elevationGainFt,
+          paceMinutesPerMile,
+        );
   }
 
   @override

@@ -6,16 +6,13 @@ part 'education_service.g.dart';
 
 @riverpod
 EducationService educationService(Ref ref) {
-  return EducationService(
-    repository: ref.read(educationRepositoryProvider),
-  );
+  return EducationService(repository: ref.read(educationRepositoryProvider));
 }
 
 /// Service for education content business logic
 class EducationService {
-  const EducationService({
-    required EducationRepository repository,
-  }) : _repository = repository;
+  const EducationService({required EducationRepository repository})
+    : _repository = repository;
 
   final EducationRepository _repository;
 

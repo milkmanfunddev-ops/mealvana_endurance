@@ -11,8 +11,8 @@ extension _$SodiumExt on MacroExplanationService {
     final during = macroTargets.duringRun;
     final durationMin = macroTargets.metrics.durationMin.round();
     final isTested = during.isTested;
-    final shortWorkoutGate = durationMin < 60 &&
-        (during.tempC == null || (during.tempC ?? 25) < 30);
+    final shortWorkoutGate =
+        durationMin < 60 && (during.tempC == null || (during.tempC ?? 25) < 30);
 
     final map = <Scenario, NutrientTransparencyData>{};
 
@@ -22,8 +22,9 @@ extension _$SodiumExt on MacroExplanationService {
     );
 
     if (shortWorkoutGate) {
-      map[Scenario.shortWorkout] =
-          _shortWorkoutSodiumTransparency(macroTargets: macroTargets);
+      map[Scenario.shortWorkout] = _shortWorkoutSodiumTransparency(
+        macroTargets: macroTargets,
+      );
     }
 
     if (isTested) {
@@ -96,8 +97,9 @@ extension _$SodiumExt on MacroExplanationService {
     final sodiumConc =
         forBrickSegment?.sodiumConcMgPerL ?? during.sodiumConcMgPerL;
     final fluidRateMlH = durationH > 0 ? (waterMl / durationH).round() : 0;
-    final sodiumRateMgH =
-        durationH > 0 ? (sodiumTotalMg / durationH).round() : 0;
+    final sodiumRateMgH = durationH > 0
+        ? (sodiumTotalMg / durationH).round()
+        : 0;
     final sodiumLow = forBrickSegment?.sodiumLowMg ?? during.sodiumLowMg;
     final sodiumHigh = forBrickSegment?.sodiumHighMg ?? during.sodiumHighMg;
 
@@ -143,7 +145,8 @@ extension _$SodiumExt on MacroExplanationService {
       primaryUnit: 'mg/hr',
       phase: 'during',
       isTested: true,
-      tldrBody: 'Your sodium target uses your **personal tested concentration** '
+      tldrBody:
+          'Your sodium target uses your **personal tested concentration** '
           '\u2014 the most accurate input available. This number was entered from '
           'your sweat test and overrides the Low/Average/High category lookup.',
       tldrLines: tldrLines,
@@ -194,7 +197,8 @@ extension _$SodiumExt on MacroExplanationService {
       primaryUnit: 'mg/hr',
       phase: 'during',
       isTested: during.isTested,
-      tldrBody: 'This workout is short and mild \u2014 no structured sodium plan '
+      tldrBody:
+          'This workout is short and mild \u2014 no structured sodium plan '
           'needed. A sports drink or salted snack is plenty. The number shown '
           'is a conservative maximum, not a target.',
       tldrLines: [
@@ -324,8 +328,7 @@ extension _$SodiumExt on MacroExplanationService {
     final pre = macroTargets.preRun;
     final sodiumMg = pre.sodiumMg.round();
     final rangeLowMg = pre.sodiumLowMg?.round() ?? (sodiumMg * 0.8).round();
-    final rangeHighMg =
-        pre.sodiumHighMg?.round() ?? (sodiumMg * 1.2).round();
+    final rangeHighMg = pre.sodiumHighMg?.round() ?? (sodiumMg * 1.2).round();
 
     // Mirror the gate detection from the fluid card: short + mild workout.
     final durationMin = macroTargets.metrics.durationMin;
@@ -334,8 +337,7 @@ extension _$SodiumExt on MacroExplanationService {
 
     // Determine the time-window label for the formula line (no tier labels).
     final isFullProtocol = sodiumMg >= 300;
-    final windowLabel =
-        isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
+    final windowLabel = isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
 
     final String tldrBody;
     final List<FormulaLine> tldrLines;
@@ -358,23 +360,14 @@ extension _$SodiumExt on MacroExplanationService {
       // Spec transparency_pre_sodium.md §Formula — multi-line TL;DR with
       // time-window midpoint, floor/ceiling, and range label.
       tldrLines = [
-        FormulaLine(
-          [
-            fAccent('$windowLabel '),
-            fOp('→ '),
-            fResult('$sodiumMg mg'),
-            fOp(' (midpoint)'),
-          ],
-          stepNumber: '①',
-        ),
         FormulaLine([
-          fOp('↓ floor = '),
-          fDim('$rangeLowMg mg'),
-        ]),
-        FormulaLine([
-          fOp('↑ ceiling = '),
-          fDim('$rangeHighMg mg'),
-        ]),
+          fAccent('$windowLabel '),
+          fOp('→ '),
+          fResult('$sodiumMg mg'),
+          fOp(' (midpoint)'),
+        ], stepNumber: '①'),
+        FormulaLine([fOp('↓ floor = '), fDim('$rangeLowMg mg')]),
+        FormulaLine([fOp('↑ ceiling = '), fDim('$rangeHighMg mg')]),
         FormulaLine([
           fOp('range '),
           fOp('→ '),
@@ -407,7 +400,8 @@ extension _$SodiumExt on MacroExplanationService {
               'as urine within 30–60 minutes. Adding sodium keeps plasma osmolality '
               'near baseline, so the fluid stays in circulation — ready to support '
               'sweat and blood volume once exercise starts.',
-          citation: 'Sawka et al. (2007) — ACSM Position Stand on Exercise and Fluid Replacement',
+          citation:
+              'Sawka et al. (2007) — ACSM Position Stand on Exercise and Fluid Replacement',
           confidence: ConfidenceLevel.high,
         ),
         StorySection(
@@ -426,7 +420,8 @@ extension _$SodiumExt on MacroExplanationService {
           confidence: ConfidenceLevel.high,
         ),
         StorySection(
-          question: 'Why isn\'t sodium scaled to body weight like the fluid target?',
+          question:
+              'Why isn\'t sodium scaled to body weight like the fluid target?',
           answer:
               'Fluid pre-loading is proportional to body mass because larger athletes '
               'have larger blood and extracellular volumes. Sodium, by contrast, is '
@@ -449,7 +444,8 @@ extension _$SodiumExt on MacroExplanationService {
               'typically involves 20–30 mg sodium per kg body weight consumed '
               'with fluid 1–2 hours before exercise — 2–3× the amount in the '
               'everyday pre-workout protocol. Use only for heat or endurance events.',
-          citation: 'Sims et al. (2007) — Journal of Science and Medicine in Sport',
+          citation:
+              'Sims et al. (2007) — Journal of Science and Medicine in Sport',
           confidence: ConfidenceLevel.high,
         ),
       ],
@@ -556,7 +552,8 @@ extension _$SodiumExt on MacroExplanationService {
             '(200\u20132000 mg/L), largely driven by genetics and heat adaptation. '
             'Replacing sodium in proportion to your actual losses is the core of '
             'preventing both hyponatremia and cramping.',
-        citation: 'Baker (2016) \u2014 Sports Medicine, n=506; mean 826 \u00b1 239 mg/L',
+        citation:
+            'Baker (2016) \u2014 Sports Medicine, n=506; mean 826 \u00b1 239 mg/L',
         dataChips: [
           'Low \u00b7 650 mg/L \u00b7 25th pct',
           'Average \u00b7 825 mg/L \u00b7 50th pct',
@@ -583,13 +580,13 @@ extension _$SodiumExt on MacroExplanationService {
         question: 'What\'s my sweat sodium concentration?',
         answer: isTested
             ? 'Your sodium target uses your **personal tested concentration** '
-                '\u2014 the most accurate input. Individual sodium concentration '
-                'varies widely (200\u20132000 mg/L). White salt stains on '
-                'clothing and salty-tasting sweat are qualitative signals of '
-                'higher losses.'
+                  '\u2014 the most accurate input. Individual sodium concentration '
+                  'varies widely (200\u20132000 mg/L). White salt stains on '
+                  'clothing and salty-tasting sweat are qualitative signals of '
+                  'higher losses.'
             : 'Sodium concentration is estimated from your sweat sodium category. '
-                'For a precise number, consider a lab patch test (Gatorade Gx, '
-                'LEVELEN, or PF&H sweat test). You can enter your result below.',
+                  'For a precise number, consider a lab patch test (Gatorade Gx, '
+                  'LEVELEN, or PF&H sweat test). You can enter your result below.',
         citation:
             'Baker (2016) \u2014 Sports Medicine, n=506; mean 826 \u00b1 239 mg/L',
         inlineEditType: InlineEditType.knownSodiumConcentration,
@@ -629,7 +626,8 @@ extension _$SodiumExt on MacroExplanationService {
             'comes from the 2% BW floor \u00d7 your sodium concentration; the '
             'ceiling comes from the GI cap \u00d7 your sodium concentration. '
             'Sodium automatically follows whatever fluid rate the plan uses.',
-        citation: 'Tiller et al. (2019) \u2014 ISSN ultra guidelines; Mosler (2020) \u2014 DGE',
+        citation:
+            'Tiller et al. (2019) \u2014 ISSN ultra guidelines; Mosler (2020) \u2014 DGE',
         dataChips: [
           'Floor \u00b7 fluid floor \u00d7 Na conc',
           'Ceiling \u00b7 fluid ceiling \u00d7 Na conc',

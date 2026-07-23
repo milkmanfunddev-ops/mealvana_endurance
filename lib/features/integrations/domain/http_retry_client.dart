@@ -75,7 +75,9 @@ class HttpRetryClient {
           );
         }
         if (kDebugMode) {
-          print('⚠️ [$provider] Network error, retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})');
+          print(
+            '⚠️ [$provider] Network error, retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})',
+          );
         }
         await Future.delayed(Duration(milliseconds: delayMs));
         delayMs = _nextDelay(delayMs, config);
@@ -88,7 +90,9 @@ class HttpRetryClient {
           );
         }
         if (kDebugMode) {
-          print('⚠️ [$provider] Timeout, retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})');
+          print(
+            '⚠️ [$provider] Timeout, retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})',
+          );
         }
         await Future.delayed(Duration(milliseconds: delayMs));
         delayMs = _nextDelay(delayMs, config);
@@ -102,7 +106,9 @@ class HttpRetryClient {
             : delayMs;
 
         if (kDebugMode) {
-          print('⚠️ [$provider] Rate limited, retrying in ${waitMs}ms (attempt $attempt/${config.maxRetries})');
+          print(
+            '⚠️ [$provider] Rate limited, retrying in ${waitMs}ms (attempt $attempt/${config.maxRetries})',
+          );
         }
         await Future.delayed(Duration(milliseconds: waitMs));
         delayMs = _nextDelay(delayMs, config);
@@ -112,7 +118,9 @@ class HttpRetryClient {
         if (attempt >= config.maxRetries) rethrow;
 
         if (kDebugMode) {
-          print('⚠️ [$provider] Server error (${e.statusCode}), retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})');
+          print(
+            '⚠️ [$provider] Server error (${e.statusCode}), retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})',
+          );
         }
         await Future.delayed(Duration(milliseconds: delayMs));
         delayMs = _nextDelay(delayMs, config);
@@ -166,7 +174,9 @@ class HttpRetryClient {
       case 429:
         // Extract retry-after header if present
         final retryAfter = response.headers['retry-after'];
-        final retrySeconds = retryAfter != null ? int.tryParse(retryAfter) : null;
+        final retrySeconds = retryAfter != null
+            ? int.tryParse(retryAfter)
+            : null;
         return RateLimitException(
           'Rate limit exceeded',
           retryAfterSeconds: retrySeconds,
@@ -237,10 +247,7 @@ class HttpRetryClient {
         provider: provider,
       );
     } on TimeoutException catch (_) {
-      throw NetworkException(
-        'Connection timed out',
-        provider: provider,
-      );
+      throw NetworkException('Connection timed out', provider: provider);
     }
   }
 }

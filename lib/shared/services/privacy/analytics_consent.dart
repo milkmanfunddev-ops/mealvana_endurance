@@ -80,8 +80,7 @@ class AnalyticsConsent {
   /// affirmative act, and MHMDA specifically forbids inferring consent from
   /// acceptance of the ToS. Everyone else is covered by disclosure + opt-out
   /// and is never shown the screen.
-  bool get needsPrompt =>
-      status == ConsentStatus.unknown && regime.isStrict;
+  bool get needsPrompt => status == ConsentStatus.unknown && regime.isStrict;
 }
 
 /// Resolve the full consent position from persisted state.
@@ -126,8 +125,8 @@ AnalyticsConsent resolveConsentFromPrefs(SharedPreferences prefs) {
 /// product metrics in SQL keep working for 100% of users regardless.
 final analyticsConsentProvider =
     NotifierProvider<AnalyticsConsentNotifier, AnalyticsConsent>(
-  AnalyticsConsentNotifier.new,
-);
+      AnalyticsConsentNotifier.new,
+    );
 
 class AnalyticsConsentNotifier extends Notifier<AnalyticsConsent> {
   @override

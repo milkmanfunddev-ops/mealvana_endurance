@@ -75,12 +75,20 @@ class Recipe {
       prepTimeMinutes: json['prepTimeMinutes'] as int,
       servings: json['servings'] as int,
       type: RecipeType.fromWire(json['type'] as String? ?? ''),
-      nutrition: RecipeNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
+      nutrition: RecipeNutrition.fromJson(
+        json['nutrition'] as Map<String, dynamic>,
+      ),
       imageUrl: json['imageUrl'] as String?,
-      tags: json['tags'] != null ? List<String>.from(json['tags'] as List) : null,
+      tags: json['tags'] != null
+          ? List<String>.from(json['tags'] as List)
+          : null,
       isFavorite: json['isFavorite'] as bool? ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
     );
   }
 
@@ -171,7 +179,8 @@ class RecipeNutrition {
   }
 
   @override
-  String toString() => 'RecipeNutrition(calories: $calories, carbs: ${carbohydratesGrams}g)';
+  String toString() =>
+      'RecipeNutrition(calories: $calories, carbs: ${carbohydratesGrams}g)';
 }
 
 enum RecipeType {

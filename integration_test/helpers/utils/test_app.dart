@@ -25,10 +25,7 @@ Widget createTestApp({
   if (child != null) {
     return ProviderScope(
       overrides: overrides.cast(),
-      child: MaterialApp(
-        home: child,
-        debugShowCheckedModeBanner: false,
-      ),
+      child: MaterialApp(home: child, debugShowCheckedModeBanner: false),
     );
   }
 
@@ -38,11 +35,7 @@ Widget createTestApp({
     child: MaterialApp(
       initialRoute: initialRoute ?? '/',
       debugShowCheckedModeBanner: false,
-      home: const Scaffold(
-        body: Center(
-          child: Text('Test App'),
-        ),
-      ),
+      home: const Scaffold(body: Center(child: Text('Test App'))),
     ),
   );
 }
@@ -66,10 +59,6 @@ Widget createSimpleTestApp({
 
 /// Creates a test ProviderContainer for unit testing providers
 /// without widget context
-ProviderContainer createTestContainer({
-  List overrides = const [],
-}) {
-  return ProviderContainer(
-    overrides: overrides.cast(),
-  );
+ProviderContainer createTestContainer({List overrides = const []}) {
+  return ProviderContainer(overrides: overrides.cast());
 }

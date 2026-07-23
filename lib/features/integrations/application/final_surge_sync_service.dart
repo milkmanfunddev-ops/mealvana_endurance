@@ -53,11 +53,8 @@ class FinalSurgeSyncService {
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
 
-  void _trackSyncedWorkoutPlanned(Activity activity) => trackSyncedWorkoutPlanned(
-        _analytics,
-        activity,
-        provider: 'final_surge',
-      );
+  void _trackSyncedWorkoutPlanned(Activity activity) =>
+      trackSyncedWorkoutPlanned(_analytics, activity, provider: 'final_surge');
 
   /// Buffer time before token expiration to trigger proactive refresh (5 min)
   static const _tokenExpirationBuffer = Duration(minutes: 5);

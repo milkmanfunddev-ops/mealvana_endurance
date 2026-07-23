@@ -84,12 +84,12 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
   }) async {
     // Convert arrays to PostgreSQL array format for consistency with Supabase
     // Format: {value1,value2,value3} or null if empty
-    final categoriesJson =
-        categories.isNotEmpty ? '{${categories.join(',')}}' : null;
-    final activityTypesJson =
-        activityTypes != null && activityTypes.isNotEmpty
-            ? '{${activityTypes.join(',')}}'
-            : null;
+    final categoriesJson = categories.isNotEmpty
+        ? '{${categories.join(',')}}'
+        : null;
+    final activityTypesJson = activityTypes != null && activityTypes.isNotEmpty
+        ? '{${activityTypes.join(',')}}'
+        : null;
 
     // Insert the user food with category and activity type arrays
     await into(userFoodsTable).insert(
@@ -152,29 +152,36 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
     // Build update companion with only provided fields
     final companion = UserFoodsTableCompanion(
       name: name != null ? Value(name) : const Value.absent(),
-      displayName:
-          displayName != null ? Value(displayName) : const Value.absent(),
+      displayName: displayName != null
+          ? Value(displayName)
+          : const Value.absent(),
       displayNamePlural: displayNamePlural != null
           ? Value(displayNamePlural)
           : const Value.absent(),
-      description:
-          description != null ? Value(description) : const Value.absent(),
-      servingAmount:
-          servingAmount != null ? Value(servingAmount) : const Value.absent(),
-      servingUnit:
-          servingUnit != null ? Value(servingUnit) : const Value.absent(),
-      servingSize:
-          servingSize != null ? Value(servingSize) : const Value.absent(),
+      description: description != null
+          ? Value(description)
+          : const Value.absent(),
+      servingAmount: servingAmount != null
+          ? Value(servingAmount)
+          : const Value.absent(),
+      servingUnit: servingUnit != null
+          ? Value(servingUnit)
+          : const Value.absent(),
+      servingSize: servingSize != null
+          ? Value(servingSize)
+          : const Value.absent(),
       caloriesPerServing: caloriesPerServing != null
           ? Value(caloriesPerServing)
           : const Value.absent(),
-      carbsPerServing:
-          carbsPerServing != null ? Value(carbsPerServing) : const Value.absent(),
+      carbsPerServing: carbsPerServing != null
+          ? Value(carbsPerServing)
+          : const Value.absent(),
       proteinPerServing: proteinPerServing != null
           ? Value(proteinPerServing)
           : const Value.absent(),
-      fatPerServing:
-          fatPerServing != null ? Value(fatPerServing) : const Value.absent(),
+      fatPerServing: fatPerServing != null
+          ? Value(fatPerServing)
+          : const Value.absent(),
       sodiumMg: sodiumMg != null ? Value(sodiumMg) : const Value.absent(),
       fluidMlPerServing: fluidMlPerServing != null
           ? Value(fluidMlPerServing)
@@ -189,9 +196,9 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
       clientUpdatedAt: Value(DateTime.now()),
     );
 
-    final updatedRows =
-        await (update(userFoodsTable)..where((f) => f.id.equals(id)))
-            .write(companion);
+    final updatedRows = await (update(
+      userFoodsTable,
+    )..where((f) => f.id.equals(id))).write(companion);
 
     // Mark as dirty for sync
     final nowMillis = DateTime.now().millisecondsSinceEpoch;
@@ -281,9 +288,9 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
   /// Delete user food (soft delete for offline sync durability)
   Future<bool> deleteUserFood(String userFoodId) async {
     // Soft delete: mark is_deleted for offline sync durability
-    final updatedRows = await (update(userFoodsTable)
-          ..where((f) => f.id.equals(userFoodId)))
-        .write(const UserFoodsTableCompanion(isDeleted: Value(true)));
+    final updatedRows =
+        await (update(userFoodsTable)..where((f) => f.id.equals(userFoodId)))
+            .write(const UserFoodsTableCompanion(isDeleted: Value(true)));
 
     // Update sync tracking columns - use Unix timestamp for Drift compatibility
     final nowMillis = DateTime.now().millisecondsSinceEpoch;
@@ -301,8 +308,9 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
     List<Map<String, dynamic>> remoteFoods,
   ) async {
     await db.transaction(() async {
-      await (delete(userFoodsTable)..where((tbl) => tbl.userId.equals(userId)))
-          .go();
+      await (delete(
+        userFoodsTable,
+      )..where((tbl) => tbl.userId.equals(userId))).go();
 
       for (final food in remoteFoods) {
         try {
@@ -321,20 +329,25 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
               displayNamePlural: Value(food['display_name_plural'] as String?),
               description: Value(food['description'] as String?),
               imageAddress: Value(food['image_address'] as String?),
-              servingAmount:
-                  Value((food['serving_amount'] as num?)?.toDouble()),
+              servingAmount: Value(
+                (food['serving_amount'] as num?)?.toDouble(),
+              ),
               servingUnit: Value(food['serving_unit'] as String?),
               servingSize: Value(food['serving_size'] as String?),
               caloriesPerServing: Value(food['calories_per_serving'] as int?),
-              carbsPerServing:
-                  Value((food['carbs_per_serving'] as num?)?.toDouble()),
-              proteinPerServing:
-                  Value((food['protein_per_serving'] as num?)?.toDouble()),
-              fatPerServing:
-                  Value((food['fat_per_serving'] as num?)?.toDouble()),
+              carbsPerServing: Value(
+                (food['carbs_per_serving'] as num?)?.toDouble(),
+              ),
+              proteinPerServing: Value(
+                (food['protein_per_serving'] as num?)?.toDouble(),
+              ),
+              fatPerServing: Value(
+                (food['fat_per_serving'] as num?)?.toDouble(),
+              ),
               sodiumMg: Value(food['sodium_mg'] as int?),
-              fluidMlPerServing:
-                  Value((food['fluid_ml_per_serving'] as num?)?.toDouble()),
+              fluidMlPerServing: Value(
+                (food['fluid_ml_per_serving'] as num?)?.toDouble(),
+              ),
               productTypeId: Value(
                 (food['product_type'] ?? food['product_type_id']) as String?,
               ),
@@ -349,12 +362,16 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
                     : activityTypesJson as String?,
               ),
               isElectrolyte: Value(_asBool(food['is_electrolyte'])),
-              toExcludeFromSolver: Value(_asBool(food['to_exclude_from_solver'])),
+              toExcludeFromSolver: Value(
+                _asBool(food['to_exclude_from_solver']),
+              ),
               isDeleted: Value(_asBool(food['is_deleted'])),
-              createdAt:
-                  Value(_parseDate(food['created_at']) ?? DateTime.now()),
-              updatedAt:
-                  Value(_parseDate(food['updated_at']) ?? DateTime.now()),
+              createdAt: Value(
+                _parseDate(food['created_at']) ?? DateTime.now(),
+              ),
+              updatedAt: Value(
+                _parseDate(food['updated_at']) ?? DateTime.now(),
+              ),
               clientUpdatedAt: Value(_parseDate(food['client_updated_at'])),
               needsUpload: const Value(false),
             ),

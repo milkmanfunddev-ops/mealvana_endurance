@@ -33,7 +33,9 @@ Future<void> skipOnboarding(WidgetTester tester) async {
   // Check if we're on the profile screen
   final yourProfile = find.text('Your Profile');
   if (yourProfile.evaluate().isNotEmpty) {
-    debugPrint('  [Onboarding] On Your Profile screen - filling required fields');
+    debugPrint(
+      '  [Onboarding] On Your Profile screen - filling required fields',
+    );
 
     // Select Gender (MALE is default, but tap to ensure it's selected)
     final maleOption = find.text('MALE');
@@ -187,7 +189,8 @@ Future<void> skipOnboarding(WidgetTester tester) async {
   final signInTitle = find.text('Sign In');
   final welcomeBack = find.text('Welcome Back');
 
-  final isOnAuthScreen = createAccount.evaluate().isNotEmpty ||
+  final isOnAuthScreen =
+      createAccount.evaluate().isNotEmpty ||
       createAccountAlt.evaluate().isNotEmpty ||
       signInTitle.evaluate().isNotEmpty ||
       welcomeBack.evaluate().isNotEmpty;
@@ -216,7 +219,9 @@ Future<void> skipOnboarding(WidgetTester tester) async {
     }
   } else {
     // The user might already be authenticated (anonymous) and go directly to main app
-    debugPrint('  [Onboarding] Auth screen not found - user may already be authenticated');
+    debugPrint(
+      '  [Onboarding] Auth screen not found - user may already be authenticated',
+    );
   }
 
   // Final wait for navigation to complete

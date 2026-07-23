@@ -19,8 +19,10 @@ class CarbLoadingDayMeal {
   final String id;
   final String carbLoadingDayId; // FK to carb_loading_days
   final MealType mealType;
-  final String? carbLoadingFoodId; // FK to carb_loading_foods (null if user food)
-  final String? carbLoadingUserFoodId; // FK to carb_loading_user_foods (null if default food)
+  final String?
+  carbLoadingFoodId; // FK to carb_loading_foods (null if user food)
+  final String?
+  carbLoadingUserFoodId; // FK to carb_loading_user_foods (null if default food)
   final String? foodDisplayName; // Cached for display
   final int quantity; // Number of servings
   final double carbsConsumed; // Calculated: quantity * carbs_per_serving
@@ -41,7 +43,8 @@ class CarbLoadingDayMeal {
       quantity > 0 ? carbsConsumed / quantity : carbsConsumed;
 
   /// Format quantity for display
-  String get quantityDisplay => quantity == 1 ? '1 serving' : '$quantity servings';
+  String get quantityDisplay =>
+      quantity == 1 ? '1 serving' : '$quantity servings';
 
   /// Format carbs for display
   String get carbsDisplay => '${carbsConsumed.toInt()}g carbs';

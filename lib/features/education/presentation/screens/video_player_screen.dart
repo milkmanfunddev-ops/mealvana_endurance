@@ -60,7 +60,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _trackWatchCompleted() {
     final duration = _videoController?.value.duration;
-    if (_analytics == null || duration == null || duration.inMilliseconds <= 0) {
+    if (_analytics == null ||
+        duration == null ||
+        duration.inMilliseconds <= 0) {
       return;
     }
 

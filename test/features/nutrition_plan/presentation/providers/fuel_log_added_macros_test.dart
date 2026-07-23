@@ -55,11 +55,7 @@ NutritionPlan _planWithEmptyDuringSection() {
     id: 'plan-1',
     name: 'Long Run Nutrition Plan',
     sections: [
-      PlanSection(
-        id: 'during_run',
-        title: 'During Run',
-        foodItems: [],
-      ),
+      PlanSection(id: 'during_run', title: 'During Run', foodItems: []),
     ],
   );
 }
@@ -130,8 +126,7 @@ void main() {
 
       // Act: the real user path (fuel-log mode ADD FOOD → addFood →
       // addFoodToFuelLogFromRawFood). 2 gels × 21 g carbs = 42 g.
-      await swapNotifier.addFood(params, _gel(), 'during_run',
-          customAmount: 2);
+      await swapNotifier.addFood(params, _gel(), 'during_run', customAmount: 2);
 
       final detailProvider = activityDetailControllerProvider(
         activityId: _activityId,
@@ -140,8 +135,11 @@ void main() {
       final fuelLog = container.read(detailProvider).value!.fuelLogData!;
       final added = fuelLog.items.singleWhere((i) => i.isAdded);
       expect(added.actualQuantity, 2.0);
-      expect(added.plannedQuantity, 0.0,
-          reason: 'Added items are legitimately unplanned.');
+      expect(
+        added.plannedQuantity,
+        0.0,
+        reason: 'Added items are legitimately unplanned.',
+      );
 
       // THE regression: the item's macros were captured for 2 units but
       // actualNutritionalInfo gated on plannedQuantity (> 0), so the
@@ -158,10 +156,7 @@ void main() {
       final notifier = container.read(detailProvider.notifier);
       notifier.updateFuelLogItemQuantity(added, 0.5);
       final adjustedLog = container.read(detailProvider).value!.fuelLogData!;
-      expect(
-        const CarbsPerHourService().duringCarbsG(adjustedLog),
-        53,
-      );
+      expect(const CarbsPerHourService().duringCarbsG(adjustedLog), 53);
 
       // The reference quantity must survive a JSON round-trip, or the
       // macros vanish again once the log is persisted and re-read

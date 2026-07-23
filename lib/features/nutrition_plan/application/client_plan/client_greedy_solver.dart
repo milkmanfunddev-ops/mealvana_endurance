@@ -63,8 +63,10 @@ class ClientGreedySolver {
       );
 
       // Apply limits
-      neededServings = min(neededServings.toDouble(),
-          min(config.maxServingsPerFood.toDouble(), food.maxServings.toDouble()));
+      neededServings = min(
+        neededServings.toDouble(),
+        min(config.maxServingsPerFood.toDouble(), food.maxServings.toDouble()),
+      );
 
       // Round: indivisible → whole numbers, divisible → nearest 0.5
       neededServings = food.isIndivisible
@@ -73,28 +75,30 @@ class ClientGreedySolver {
 
       if (neededServings <= 0) continue;
 
-      selections.add(SolverSelection(
-        foodId: food.id,
-        foodName: food.name,
-        quantity: neededServings,
-        carbsG: food.carbsG * neededServings,
-        proteinG: food.proteinG * neededServings,
-        fatG: food.fatG * neededServings,
-        sodiumMg: food.sodiumMg * neededServings,
-        fluidMl: food.fluidMl * neededServings,
-        calories: (food.calories * neededServings).round(),
-        displayName: food.displayName,
-        displayNamePlural: food.displayNamePlural,
-        description: food.description,
-        imageAddress: food.imageAddress,
-        servingSize: food.servingSize,
-        servingUnit: food.servingUnit,
-        isDrink: food.isLiquid,
-        isIndivisible: food.isIndivisible,
-        isLiquid: food.isLiquid,
-        isElectrolyte: food.isElectrolyte,
-        productType: food.productType,
-      ));
+      selections.add(
+        SolverSelection(
+          foodId: food.id,
+          foodName: food.name,
+          quantity: neededServings,
+          carbsG: food.carbsG * neededServings,
+          proteinG: food.proteinG * neededServings,
+          fatG: food.fatG * neededServings,
+          sodiumMg: food.sodiumMg * neededServings,
+          fluidMl: food.fluidMl * neededServings,
+          calories: (food.calories * neededServings).round(),
+          displayName: food.displayName,
+          displayNamePlural: food.displayNamePlural,
+          description: food.description,
+          imageAddress: food.imageAddress,
+          servingSize: food.servingSize,
+          servingUnit: food.servingUnit,
+          isDrink: food.isLiquid,
+          isIndivisible: food.isIndivisible,
+          isLiquid: food.isLiquid,
+          isElectrolyte: food.isElectrolyte,
+          productType: food.productType,
+        ),
+      );
 
       totals.carbsG += food.carbsG * neededServings;
       totals.proteinG += food.proteinG * neededServings;
@@ -106,8 +110,7 @@ class ClientGreedySolver {
       final carbsMet = carbsTarget <= 0 || totals.carbsG >= carbsTarget * 0.9;
       final proteinMet =
           proteinTarget <= 0 || totals.proteinG >= proteinTarget * 0.7;
-      final waterMet =
-          waterTarget <= 0 || totals.fluidMl >= waterTarget * 0.7;
+      final waterMet = waterTarget <= 0 || totals.fluidMl >= waterTarget * 0.7;
       if (carbsMet && proteinMet && waterMet) break;
     }
 
@@ -139,13 +142,15 @@ class ClientGreedySolver {
     final sodiumTarget = targets.sodiumMg;
     final waterTarget = targets.fluidMl;
 
-    final wouldOvershootCarbs = carbsTarget > 0 &&
-        totals.carbsG + food.carbsG > carbsTarget * 1.3;
-    final wouldOvershootSodium = sodiumTarget > 0 &&
+    final wouldOvershootCarbs =
+        carbsTarget > 0 && totals.carbsG + food.carbsG > carbsTarget * 1.3;
+    final wouldOvershootSodium =
+        sodiumTarget > 0 &&
         totals.sodiumMg + food.sodiumMg > sodiumTarget * 1.3;
-    final wouldOvershootWater = waterTarget > 0 &&
-        totals.fluidMl + food.fluidMl > waterTarget * 1.3;
-    final wouldOvershootProtein = proteinTarget > 0 &&
+    final wouldOvershootWater =
+        waterTarget > 0 && totals.fluidMl + food.fluidMl > waterTarget * 1.3;
+    final wouldOvershootProtein =
+        proteinTarget > 0 &&
         totals.proteinG + food.proteinG > proteinTarget * 1.3;
 
     // Exception: when protein is critically unmet in after phase, allow
@@ -211,7 +216,8 @@ class ClientGreedySolver {
 
     // Cap by carbs
     if (targets.carbsG > 0 && food.carbsG > 0) {
-      final proteinCriticallyUnmet = phase == 'after' &&
+      final proteinCriticallyUnmet =
+          phase == 'after' &&
           targets.proteinG > 0 &&
           totals.proteinG < targets.proteinG * 0.7;
       final carbMultiplier = proteinCriticallyUnmet ? 1.5 : 1.2;

@@ -159,7 +159,8 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         sportLabel: widget.sportLabel,
                         useImperial: widget.useImperial,
                         planId: widget.planId,
-                        foods: widget.section.subPhases
+                        foods:
+                            widget.section.subPhases
                                 ?.expand((sp) => sp.foodItems)
                                 .toList() ??
                             widget.section.foodItems,
@@ -341,7 +342,8 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     final foodIndex = entry.key;
                     final food = entry.value;
                     // Use sub-phase-specific category to target the correct sub-phase
-                    final subCategory = '${widget.categoryPrefix}:${subPhase.subPhaseType}';
+                    final subCategory =
+                        '${widget.categoryPrefix}:${subPhase.subPhaseType}';
                     return Padding(
                       padding: EdgeInsets.only(
                         bottom: foodIndex < subPhase.foodItems.length - 1
@@ -355,8 +357,12 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                             widget.onSwapFood(food.id, food.name, subCategory),
                         onDelete: () =>
                             widget.onDeleteFood(food.id, subCategory),
-                        onQuantityChange: (newQuantity) => widget
-                            .onUpdateQuantity(food.id, subCategory, newQuantity),
+                        onQuantityChange: (newQuantity) =>
+                            widget.onUpdateQuantity(
+                              food.id,
+                              subCategory,
+                              newQuantity,
+                            ),
                         showSwipeHint:
                             widget.showSwipeHint &&
                             index == 0 &&
@@ -375,7 +381,9 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                   ],
                   KyleAddFoodButton(
                     text: 'ADD FOOD',
-                    onPressed: () => widget.onAddFood('${widget.categoryPrefix}:${subPhase.subPhaseType}'),
+                    onPressed: () => widget.onAddFood(
+                      '${widget.categoryPrefix}:${subPhase.subPhaseType}',
+                    ),
                   ),
                 ],
               ),

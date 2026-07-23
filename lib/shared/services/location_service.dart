@@ -36,10 +36,7 @@ class LocationService {
   static LocationFailureReason? _lastFailureReason;
   final String _instanceId = DateTime.now().microsecondsSinceEpoch.toString();
 
-  LocationService({
-    required this.logger,
-    required this.locationRepository,
-  });
+  LocationService({required this.logger, required this.locationRepository});
 
   LocationFailureReason? getLastFailureReason() => _lastFailureReason;
 
@@ -61,7 +58,11 @@ class LocationService {
         longitude: lastKnown.longitude,
       );
     } catch (e, stackTrace) {
-      logger.error('Error getting last known location', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error getting last known location',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -82,11 +83,17 @@ class LocationService {
       if (_isInFailureCooldown()) {
         final lastKnown = await _getLastKnownLocation();
         if (lastKnown != null) {
-          logger.info('Using last known location during cooldown', context: 'LocationService');
+          logger.info(
+            'Using last known location during cooldown',
+            context: 'LocationService',
+          );
           _lastFailureReason = null;
           return lastKnown;
         }
-        logger.warning('Skipping location fetch due to recent failure', context: 'LocationService');
+        logger.warning(
+          'Skipping location fetch due to recent failure',
+          context: 'LocationService',
+        );
         _lastFailureReason = LocationFailureReason.recentFailure;
         return null;
       }
@@ -99,7 +106,10 @@ class LocationService {
         data: {'enabled': serviceEnabled},
       );
       if (!serviceEnabled) {
-        logger.warning('Location services are disabled', context: 'LocationService');
+        logger.warning(
+          'Location services are disabled',
+          context: 'LocationService',
+        );
         _lastFailureReason = LocationFailureReason.servicesDisabled;
         return null;
       }
@@ -152,16 +162,26 @@ class LocationService {
       );
     } catch (e, stackTrace) {
       if (e is TimeoutException) {
-        logger.warning('Location request timed out', context: 'LocationService');
+        logger.warning(
+          'Location request timed out',
+          context: 'LocationService',
+        );
         _lastFailureReason = LocationFailureReason.timeout;
       } else {
-        logger.error('Error getting current location', error: e, stackTrace: stackTrace);
+        logger.error(
+          'Error getting current location',
+          error: e,
+          stackTrace: stackTrace,
+        );
         _lastFailureReason = LocationFailureReason.unknown;
       }
 
       final lastKnown = await _getLastKnownLocation();
       if (lastKnown != null) {
-        logger.warning('Using last known location after failure', context: 'LocationService');
+        logger.warning(
+          'Using last known location after failure',
+          context: 'LocationService',
+        );
         return lastKnown;
       }
 
@@ -175,7 +195,7 @@ class LocationService {
     try {
       final permission = await Geolocator.checkPermission();
       return permission == LocationPermission.always ||
-             permission == LocationPermission.whileInUse;
+          permission == LocationPermission.whileInUse;
     } catch (e) {
       logger.error('Error checking location permission', error: e);
       return false;
@@ -187,7 +207,7 @@ class LocationService {
     try {
       final permission = await Geolocator.requestPermission();
       return permission == LocationPermission.always ||
-             permission == LocationPermission.whileInUse;
+          permission == LocationPermission.whileInUse;
     } catch (e) {
       logger.error('Error requesting location permission', error: e);
       return false;
@@ -225,11 +245,18 @@ class LocationService {
   /// ```dart
   /// final results = await service.searchLocations('Boston Marathon');
   /// ```
-  Future<List<LocationIQAutocompleteResult>> searchLocations(String query, {int limit = 5}) async {
+  Future<List<LocationIQAutocompleteResult>> searchLocations(
+    String query, {
+    int limit = 5,
+  }) async {
     try {
       return await locationRepository.searchLocations(query, limit: limit);
     } catch (e, stackTrace) {
-      logger.error('Error searching locations', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error searching locations',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
@@ -259,7 +286,11 @@ class LocationService {
         longitude: longitude,
       );
     } catch (e, stackTrace) {
-      logger.error('Error reverse geocoding coordinates', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error reverse geocoding coordinates',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }

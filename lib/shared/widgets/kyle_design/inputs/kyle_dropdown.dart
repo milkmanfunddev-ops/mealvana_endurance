@@ -44,7 +44,9 @@ class KyleDropdown extends StatelessWidget {
             vertical: 4,
           ),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.blackberry.withValues(alpha: 0.3) : AppColors.cream,
+            color: isDark
+                ? AppColors.blackberry.withValues(alpha: 0.3)
+                : AppColors.cream,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: isDark ? AppColors.cream : AppColors.blackberry,

@@ -70,8 +70,7 @@ extension _$FluidExt on MacroExplanationService {
     // (e.g. 47.6 kg → 286 ml) as Tier 2; the explicit tier avoids that.
     final tier = pre.hydrationTier;
     final isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
-    final isTier2 =
-        tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
+    final isTier2 = tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
 
     // When fluidsMl == 0, determine whether the gate fired (short + mild
     // workout → no plan needed) or whether it's a too-late scenario
@@ -81,40 +80,38 @@ extension _$FluidExt on MacroExplanationService {
     // in the during-workout card.
     final durationMin = macroTargets.metrics.durationMin;
     final tempC = macroTargets.duringRun.tempC ?? 22.0;
-    final isGateFired = isTier3 &&
-        durationMin < 60 &&
-        tempC < 30;
+    final isGateFired = isTier3 && durationMin < 60 && tempC < 30;
 
     final String blurb;
     final List<FormulaLine> tldrLines;
 
     if (isGateFired) {
-      blurb = 'No structured pre-hydration needed — this workout is short and '
+      blurb =
+          'No structured pre-hydration needed — this workout is short and '
           'mild. **Drink to thirst** in the hours before. If you want a number, '
           'keep it under ${_fmtMlAmount(500, useImperial)} total.';
       tldrLines = const [];
     } else if (isTier3) {
-      blurb = 'Too late for structured pre-hydration. A few small sips are fine '
+      blurb =
+          'Too late for structured pre-hydration. A few small sips are fine '
           'for comfort, but fluid taken now won\'t absorb before exercise begins. '
           'Focus on the during-workout plan instead.';
       tldrLines = const [];
     } else if (isTier2) {
-      blurb = 'Not enough time for the full protocol. '
+      blurb =
+          'Not enough time for the full protocol. '
           '${_fmtMlAmount(fluidsMl, useImperial)} is all that can '
           'meaningfully absorb before exercise begins. Sip it steadily — '
           'don\'t chug it just before you start.';
       // Spec transparency_pre_hydration.md §Formula — multi-line TL;DR
       // showing fixed amount and total range label.
       tldrLines = [
-        FormulaLine(
-          [
-            fAccent('10–120 min window '),
-            fOp('→ '),
-            fResult(_fmtMlAmount(fluidsMl, useImperial)),
-            fOp(' (fixed)'),
-          ],
-          stepNumber: '①',
-        ),
+        FormulaLine([
+          fAccent('10–120 min window '),
+          fOp('→ '),
+          fResult(_fmtMlAmount(fluidsMl, useImperial)),
+          fOp(' (fixed)'),
+        ], stepNumber: '①'),
         FormulaLine([
           fOp('range '),
           fOp('→ '),
@@ -137,7 +134,8 @@ extension _$FluidExt on MacroExplanationService {
       final hoursLabel = derivedHours == derivedHours.truncateToDouble()
           ? '${derivedHours.toInt()} hours'
           : '${derivedHours.toStringAsFixed(1)} hours';
-      blurb = 'The goal before a workout is to start **euhydrated** — at your '
+      blurb =
+          'The goal before a workout is to start **euhydrated** — at your '
           'normal baseline, not loaded or depleted. With $hoursLabel available, '
           'you have time for the full protocol: sip ${_fmtMlAmount(fluidsMl, useImperial)} '
           'gradually, let it absorb, and aim for pale yellow urine before you head out.';
@@ -156,16 +154,13 @@ extension _$FluidExt on MacroExplanationService {
       final floorMl = (bodyWeightKg * 5).round();
       final ceilMl = (bodyWeightKg * 7).round();
       tldrLines = [
-        FormulaLine(
-          [
-            fAccent('${bodyWeightKg.toStringAsFixed(0)} kg '),
-            fOp('× '),
-            fAccent('$mlPerKg ml/kg '),
-            fOp('= '),
-            fResult(_fmtMlAmount(fluidsMl, useImperial)),
-          ],
-          stepNumber: '①',
-        ),
+        FormulaLine([
+          fAccent('${bodyWeightKg.toStringAsFixed(0)} kg '),
+          fOp('× '),
+          fAccent('$mlPerKg ml/kg '),
+          fOp('= '),
+          fResult(_fmtMlAmount(fluidsMl, useImperial)),
+        ], stepNumber: '①'),
         FormulaLine([
           fOp('↓ floor = '),
           fDim(_fmtMlAmount(floorMl, useImperial)),
@@ -190,8 +185,8 @@ extension _$FluidExt on MacroExplanationService {
     // and too-late cards get no tip (no time for urine colour to respond).
     final String? tldrTip = (!isTier3 && !isTier2)
         ? 'If your urine is still dark at 2 hours before your workout, '
-            'the ACSM recommends an additional **3–5 ml/kg**. Aim for pale '
-            'yellow — straw coloured — before you start.'
+              'the ACSM recommends an additional **3–5 ml/kg**. Aim for pale '
+              'yellow — straw coloured — before you start.'
         : null;
 
     return NutrientTransparencyData(
@@ -220,9 +215,7 @@ extension _$FluidExt on MacroExplanationService {
     );
   }
 
-  List<StorySection> _preWorkoutFluidStorySections({
-    required bool isTier3,
-  }) {
+  List<StorySection> _preWorkoutFluidStorySections({required bool isTier3}) {
     return [
       const StorySection(
         question: 'What is euhydration and why does it matter?',
@@ -307,8 +300,8 @@ extension _$FluidExt on MacroExplanationService {
     final during = macroTargets.duringRun;
     final durationMin = macroTargets.metrics.durationMin.round();
     final isTested = during.isTested;
-    final shortWorkoutGate = durationMin < 60 &&
-        (during.tempC == null || (during.tempC ?? 25) < 30);
+    final shortWorkoutGate =
+        durationMin < 60 && (during.tempC == null || (during.tempC ?? 25) < 30);
 
     final map = <Scenario, NutrientTransparencyData>{};
 
@@ -402,32 +395,33 @@ extension _$FluidExt on MacroExplanationService {
     final durationH = macroTargets.metrics.durationH;
     final fluidRateMlH = forBrickSegment != null
         ? (forBrickSegment.durationMinutes > 0
-            ? (forBrickSegment.waterMl /
-                    (forBrickSegment.durationMinutes / 60.0))
-                .round()
-            : 0)
+              ? (forBrickSegment.waterMl /
+                        (forBrickSegment.durationMinutes / 60.0))
+                    .round()
+              : 0)
         : during.fluidRateMlPerH.round();
     final fluidTotalMl = forBrickSegment != null
         ? forBrickSegment.waterMl.round()
         : during.fluidTotalMl.round();
     final effectiveSweatRate =
-        forBrickSegment?.effectiveSweatRateLPerH ?? during.effectiveSweatRateLPerH;
+        forBrickSegment?.effectiveSweatRateLPerH ??
+        during.effectiveSweatRateLPerH;
     final replacementPct =
         forBrickSegment?.replacementPercent ?? during.replacementPercent;
     final floorMlH = forBrickSegment?.floorMlPerH ?? during.floorMlPerH;
     final ceilingMlH = forBrickSegment?.ceilingMlPerH ?? during.ceilingMlPerH;
-    final fluidsLowMl =
-        forBrickSegment?.waterLowMl ?? during.fluidsLowMl;
-    final fluidsHighMl =
-        forBrickSegment?.waterHighMl ?? during.fluidsHighMl;
+    final fluidsLowMl = forBrickSegment?.waterLowMl ?? during.fluidsLowMl;
+    final fluidsHighMl = forBrickSegment?.waterHighMl ?? during.fluidsHighMl;
 
     final List<FormulaLine> tldrLines;
     if (effectiveSweatRate != null && replacementPct != null) {
       final replacePctPct = (replacementPct * 100).round();
-      final ceilNote =
-          ceilingMlH != null ? _fmtMlRate(ceilingMlH, useImperial) : 'GI ceiling';
-      final floorNote =
-          floorMlH != null ? _fmtMlRate(floorMlH, useImperial) : '2% BW floor';
+      final ceilNote = ceilingMlH != null
+          ? _fmtMlRate(ceilingMlH, useImperial)
+          : 'GI ceiling';
+      final floorNote = floorMlH != null
+          ? _fmtMlRate(floorMlH, useImperial)
+          : '2% BW floor';
       tldrLines = [
         FormulaLine([
           fAccent('TESTED rate '),
@@ -454,7 +448,9 @@ extension _$FluidExt on MacroExplanationService {
           [
             fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
             fOp('\u00d7 '),
-            fAccent('${_formatDuration(forBrickSegment != null ? forBrickSegment.durationMinutes / 60.0 : durationH)} hr '),
+            fAccent(
+              '${_formatDuration(forBrickSegment != null ? forBrickSegment.durationMinutes / 60.0 : durationH)} hr ',
+            ),
             fOp('= '),
             fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
           ],
@@ -467,7 +463,9 @@ extension _$FluidExt on MacroExplanationService {
         FormulaLine([
           fAccent('TESTED ${_fmtMlRate(fluidRateMlH, useImperial)} '),
           fOp('\u00d7 '),
-          fAccent('${_formatDuration(forBrickSegment != null ? forBrickSegment.durationMinutes / 60.0 : durationH)} hr '),
+          fAccent(
+            '${_formatDuration(forBrickSegment != null ? forBrickSegment.durationMinutes / 60.0 : durationH)} hr ',
+          ),
           fOp('= '),
           fResult(_fmtMlAmount(fluidTotalMl, useImperial)),
         ], isResultLine: true),
@@ -488,7 +486,8 @@ extension _$FluidExt on MacroExplanationService {
       primaryUnit: useImperial ? 'oz/hr' : 'mL/hr',
       phase: 'during',
       isTested: true,
-      tldrBody: 'Your fluid target is based on your **personal sweat test** result. '
+      tldrBody:
+          'Your fluid target is based on your **personal sweat test** result. '
           'The tested rate overrode the category lookup (Light/Medium/Heavy) — '
           'this is the most accurate input available. Floor and ceiling limits '
           'still apply to keep you in a safe range.',
@@ -505,7 +504,8 @@ extension _$FluidExt on MacroExplanationService {
               'your personal tested rate was used as the base input to the effective '
               'sweat rate calculation. Environmental multipliers (temperature, humidity, '
               'indoor) were still applied on top of your tested rate.',
-          citation: 'Precision Fuel & Hydration / TrainingPeaks \u2014 standard at-home sweat test protocol',
+          citation:
+              'Precision Fuel & Hydration / TrainingPeaks \u2014 standard at-home sweat test protocol',
           dataChips: ['TESTED \u2713 \u00b7 personal sweat test'],
         ),
         const StorySection(
@@ -525,7 +525,10 @@ extension _$FluidExt on MacroExplanationService {
               'the environmental multipliers partially adjust. For the most accuracy, '
               'run a test under similar conditions to your target event.',
           citation: 'Barnes & Baker (2019) \u2014 sweat rate variability',
-          dataChips: ['Temp coefficient \u00b7 4%/\u00b0C', 'Humidity \u00b7 +2% above 50%'],
+          dataChips: [
+            'Temp coefficient \u00b7 4%/\u00b0C',
+            'Humidity \u00b7 +2% above 50%',
+          ],
         ),
       ],
       videoTitle: 'Watch: Hydration During Exercise',
@@ -559,11 +562,11 @@ extension _$FluidExt on MacroExplanationService {
       isTested: during.isTested,
       tldrBody: useImperial
           ? 'This workout is short and conditions are mild \u2014 no structured '
-              'hydration plan needed. **Drink to thirst.** If you want a number, '
-              'aim for no more than 10 oz. Don\'t exceed 20 oz.'
+                'hydration plan needed. **Drink to thirst.** If you want a number, '
+                'aim for no more than 10 oz. Don\'t exceed 20 oz.'
           : 'This workout is short and conditions are mild \u2014 no structured '
-              'hydration plan needed. **Drink to thirst.** If you want a number, '
-              'aim for no more than 300 mL. Don\'t exceed 600 mL.',
+                'hydration plan needed. **Drink to thirst.** If you want a number, '
+                'aim for no more than 300 mL. Don\'t exceed 600 mL.',
       tldrLines: [
         FormulaLine([
           fAccent('short gate '),
@@ -640,8 +643,12 @@ extension _$FluidExt on MacroExplanationService {
               'so you have a reference if you prefer structure. **Do not exceed 20 oz '
               '(600 mL).** Over-drinking during short workouts is a real risk of '
               'exercise-associated hyponatremia.',
-          citation: 'Hew-Butler et al. (2015) \u2014 Clinical Journal of Sport Medicine',
-          dataChips: ['Max \u00b7 20 oz / 600 mL', 'Replacement \u00b7 30% (soft, gated)'],
+          citation:
+              'Hew-Butler et al. (2015) \u2014 Clinical Journal of Sport Medicine',
+          dataChips: [
+            'Max \u00b7 20 oz / 600 mL',
+            'Replacement \u00b7 30% (soft, gated)',
+          ],
         ),
       ],
       videoTitle: 'Watch: Hydration During Exercise',
@@ -667,8 +674,7 @@ extension _$FluidExt on MacroExplanationService {
     final waterMl = segment.waterMl.round();
     final effectiveSweatRate = segment.effectiveSweatRateLPerH;
     final replacementPct = segment.replacementPercent;
-    final fluidRateMlH =
-        durationH > 0 ? (waterMl / durationH).round() : 0;
+    final fluidRateMlH = durationH > 0 ? (waterMl / durationH).round() : 0;
     final ceilingMlH = segment.ceilingMlPerH;
     final fluidsLowMl = segment.waterLowMl;
     final fluidsHighMl = segment.waterHighMl;
@@ -715,13 +721,17 @@ extension _$FluidExt on MacroExplanationService {
           fAccent('redistribution '),
           fDim('run shortfall \u2192 bike'),
         ]),
-        FormulaLine([
-          fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
-          fOp('\u00d7 '),
-          fAccent('${_formatDuration(durationH)} hr '),
-          fOp('= '),
-          fResult(_fmtMlAmount(waterMl, useImperial)),
-        ], isResultLine: true, showDividerBefore: true),
+        FormulaLine(
+          [
+            fAccent('${_fmtMlRate(fluidRateMlH, useImperial)} '),
+            fOp('\u00d7 '),
+            fAccent('${_formatDuration(durationH)} hr '),
+            fOp('= '),
+            fResult(_fmtMlAmount(waterMl, useImperial)),
+          ],
+          isResultLine: true,
+          showDividerBefore: true,
+        ),
       ];
     }
 
@@ -756,7 +766,8 @@ extension _$FluidExt on MacroExplanationService {
               'ceiling, the unabsorbable portion is redistributed to the bike leg '
               '(which can handle up to 1200 mL/hr). This maximises fluid delivery '
               'across the full event while respecting each sport\'s absorption limit.',
-          citation: 'Pfeiffer et al. (2012) \u2014 GI Problems in Endurance Sports',
+          citation:
+              'Pfeiffer et al. (2012) \u2014 GI Problems in Endurance Sports',
           dataChips: [
             'Run GI ceiling \u00b7 800 mL/hr',
             'Bike GI ceiling \u00b7 1200 mL/hr',
@@ -770,7 +781,10 @@ extension _$FluidExt on MacroExplanationService {
               'vertical impact dramatically reduces gut motility. Exceeding 800 mL/hr '
               'during running leads to bloating, nausea, and slowed pace far more '
               'reliably than it leads to better hydration.',
-          dataChips: ['Run \u00b7 max 800 mL/hr (GI limit)', 'Bike \u00b7 max 1200 mL/hr'],
+          dataChips: [
+            'Run \u00b7 max 800 mL/hr (GI limit)',
+            'Bike \u00b7 max 1200 mL/hr',
+          ],
         ),
       ],
       videoTitle: 'Watch: Hydration During Exercise',
@@ -810,8 +824,8 @@ extension _$FluidExt on MacroExplanationService {
     final safetyFlags = during.safetyFlags;
     final isTested = during.isTested;
 
-    final shortWorkoutGate = durationMin < 60 &&
-        (during.tempC == null || (during.tempC ?? 25) < 30);
+    final shortWorkoutGate =
+        durationMin < 60 && (during.tempC == null || (during.tempC ?? 25) < 30);
 
     final List<FormulaLine> tldrLines;
     final String blurb;
@@ -820,11 +834,11 @@ extension _$FluidExt on MacroExplanationService {
       // Short-workout gate
       blurb = useImperial
           ? 'This workout is short and conditions are mild \u2014 no structured '
-              'hydration plan needed. **Drink to thirst.** If you want a number, '
-              'aim for no more than 10 oz. Don\'t exceed 20 oz.'
+                'hydration plan needed. **Drink to thirst.** If you want a number, '
+                'aim for no more than 10 oz. Don\'t exceed 20 oz.'
           : 'This workout is short and conditions are mild \u2014 no structured '
-              'hydration plan needed. **Drink to thirst.** If you want a number, '
-              'aim for no more than 300 mL. Don\'t exceed 600 mL.';
+                'hydration plan needed. **Drink to thirst.** If you want a number, '
+                'aim for no more than 300 mL. Don\'t exceed 600 mL.';
       tldrLines = [
         FormulaLine([
           fAccent('short gate '),
@@ -847,8 +861,9 @@ extension _$FluidExt on MacroExplanationService {
       final ceilNote = ceilingMlH != null
           ? _fmtMlRate(ceilingMlH, useImperial)
           : 'GI ceiling';
-      final floorNote =
-          floorMlH != null ? _fmtMlRate(floorMlH, useImperial) : '2% BW floor';
+      final floorNote = floorMlH != null
+          ? _fmtMlRate(floorMlH, useImperial)
+          : '2% BW floor';
 
       tldrLines = [
         FormulaLine([
@@ -970,7 +985,8 @@ extension _$FluidExt on MacroExplanationService {
             '**hyponatremia** (dangerously low blood sodium) by diluting the '
             'sodium remaining in your blood. Research shows 50\u201380% replacement '
             'is optimal, scaled up with event duration.',
-        citation: 'Baker (2017) \u2014 Journal of the International Society of Sports Nutrition',
+        citation:
+            'Baker (2017) \u2014 Journal of the International Society of Sports Nutrition',
         dataChips: [
           '<60 min \u00b7 30%',
           '60\u201390 min \u00b7 50%',
@@ -987,7 +1003,10 @@ extension _$FluidExt on MacroExplanationService {
             'to stay within that safety boundary, **even if the replacement % alone '
             'would leave you too depleted.**',
         citation: 'Sawka et al. (2007) \u2014 ACSM Position Stand',
-        dataChips: ['>2% BW deficit \u00b7 performance impact', '>3% BW deficit \u00b7 significant risk'],
+        dataChips: [
+          '>2% BW deficit \u00b7 performance impact',
+          '>3% BW deficit \u00b7 significant risk',
+        ],
       ),
       const StorySection(
         question: 'What is the GI ceiling?',
@@ -995,23 +1014,21 @@ extension _$FluidExt on MacroExplanationService {
             'Your gut can only absorb so much fluid per hour. Drinking above '
             'the ceiling causes GI distress without improving hydration. '
             'Running\'s mechanical impact restricts absorption more than cycling.',
-        citation: 'Pfeiffer et al. (2012) \u2014 GI Problems in Endurance Sports',
-        dataChips: [
-          'Run \u00b7 max 800 mL/hr',
-          'Bike \u00b7 max 1200 mL/hr',
-        ],
+        citation:
+            'Pfeiffer et al. (2012) \u2014 GI Problems in Endurance Sports',
+        dataChips: ['Run \u00b7 max 800 mL/hr', 'Bike \u00b7 max 1200 mL/hr'],
       ),
       StorySection(
         question: 'What\'s my actual sweat rate?',
         answer: isTested
             ? 'Your sweat rate is from a **personal sweat test** \u2014 the most '
-                'accurate input available. This rate already accounts for your '
-                'individual physiology. If conditions differ significantly from your '
-                'test conditions, consider retesting.'
+                  'accurate input available. This rate already accounts for your '
+                  'individual physiology. If conditions differ significantly from your '
+                  'test conditions, consider retesting.'
             : 'Your sweat rate is estimated from your sweat profile category and '
-                'adjusted for temperature, humidity, and indoor conditions. '
-                'For a more accurate number, weigh yourself nude before and after '
-                'a known-duration workout and enter the result below.',
+                  'adjusted for temperature, humidity, and indoor conditions. '
+                  'For a more accurate number, weigh yourself nude before and after '
+                  'a known-duration workout and enter the result below.',
         citation: isTested
             ? null
             : 'Precision Fuel & Hydration / TrainingPeaks \u2014 standard at-home sweat test protocol',
@@ -1142,9 +1159,7 @@ extension _$FluidExt on MacroExplanationService {
     final isTested = segment.isTested;
 
     // Rate from segment totals
-    final fluidRateMlH = durationH > 0
-        ? (waterMl / durationH).round()
-        : 0;
+    final fluidRateMlH = durationH > 0 ? (waterMl / durationH).round() : 0;
 
     final List<FormulaLine> tldrLines;
     final String blurb =
@@ -1275,12 +1290,14 @@ extension _$FluidExt on MacroExplanationService {
               '(~0.4\u00d7 land sports) due to water cooling the skin. '
               'The fluid deficit from the swim is fully accounted for in the '
               'T1 transition and subsequent bike segment targets.',
-          citation: 'Maughan & Shirreffs (2004) \u2014 swimming thermoregulation',
+          citation:
+              'Maughan & Shirreffs (2004) \u2014 swimming thermoregulation',
           dataChips: ['Swim sweat modifier \u00b7 0.4\u00d7 land sports'],
         ),
       ],
       isSwimZero: true,
-      swimCallout: 'Fluid deficit covered by: T1 transition \u00b7 Bike segment',
+      swimCallout:
+          'Fluid deficit covered by: T1 transition \u00b7 Bike segment',
       targetGrams: 0,
       rangeLow: 0,
       rangeHigh: 0,
@@ -1343,7 +1360,8 @@ extension _$FluidExt on MacroExplanationService {
               'target. 300 mL is a conservative bolus sized to what most athletes can '
               'comfortably consume and absorb during a 2\u20135 minute stop without '
               'causing GI distress when movement resumes.',
-          citation: 'Consensus recommendation \u2014 USA Triathlon / ITU nutrition guidelines',
+          citation:
+              'Consensus recommendation \u2014 USA Triathlon / ITU nutrition guidelines',
           dataChips: ['T1/T2 fixed \u00b7 300 mL', 'Confidence \u00b7 LOW'],
         ),
       ],

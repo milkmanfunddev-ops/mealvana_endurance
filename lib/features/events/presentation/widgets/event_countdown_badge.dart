@@ -5,17 +5,18 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 class EventCountdownBadge extends StatelessWidget {
   final DateTime eventDate;
 
-  const EventCountdownBadge({
-    super.key,
-    required this.eventDate,
-  });
+  const EventCountdownBadge({super.key, required this.eventDate});
 
   @override
   Widget build(BuildContext context) {
     // Compare dates at day level only, ignoring time components
     final now = DateTime.now();
     final todayDateOnly = DateTime(now.year, now.month, now.day);
-    final eventDateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
+    final eventDateOnly = DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+    );
     final daysDifference = eventDateOnly.difference(todayDateOnly).inDays;
 
     String countdownText;

@@ -37,10 +37,7 @@ class VdotTransformer {
   ///
   /// Returns null when the workout cannot be represented (e.g., missing
   /// eventId, unsupported status, or unmapped cross-training type).
-  VdotTransformResult? transform(
-    Map<String, dynamic> workout,
-    String userId,
-  ) {
+  VdotTransformResult? transform(Map<String, dynamic> workout, String userId) {
     final eventId = workout['eventId'] as String?;
     if (eventId == null || eventId.isEmpty) {
       if (kDebugMode) {
@@ -65,10 +62,14 @@ class VdotTransformer {
       return null;
     }
 
-    final scheduledDateTime = _parseLocalDateTime(workout['eventDate'] as String?);
+    final scheduledDateTime = _parseLocalDateTime(
+      workout['eventDate'] as String?,
+    );
     if (scheduledDateTime == null) {
       if (kDebugMode) {
-        print('⚠️ [vdot] Skipping workout with unparseable eventDate: ${workout['eventDate']}');
+        print(
+          '⚠️ [vdot] Skipping workout with unparseable eventDate: ${workout['eventDate']}',
+        );
       }
       return null;
     }

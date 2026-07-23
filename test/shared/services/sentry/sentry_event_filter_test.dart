@@ -27,14 +27,18 @@ void main() {
     // --- Transient TLS / connection resets ---
     test('drops HandshakeException', () {
       final event = SentryEvent(
-        throwable: Exception('HandshakeException: Connection terminated during handshake'),
+        throwable: Exception(
+          'HandshakeException: Connection terminated during handshake',
+        ),
       );
       expect(isSentryNoise(event), isTrue);
     });
 
     test('drops TimeoutException', () {
       final event = SentryEvent(
-        throwable: Exception('TimeoutException after 0:00:30.000000: Future not completed'),
+        throwable: Exception(
+          'TimeoutException after 0:00:30.000000: Future not completed',
+        ),
       );
       expect(isSentryNoise(event), isTrue);
     });
@@ -62,7 +66,9 @@ void main() {
       final event = SentryEvent(
         throwable: http.ClientException(
           'Bad file descriptor',
-          Uri.parse('https://vlmtsdzpnjnavdgytcmi.supabase.co/auth/v1/token?grant_type=refresh_token'),
+          Uri.parse(
+            'https://vlmtsdzpnjnavdgytcmi.supabase.co/auth/v1/token?grant_type=refresh_token',
+          ),
         ),
       );
       expect(isSentryNoise(event), isTrue);
@@ -71,21 +77,29 @@ void main() {
     // --- 2026-07-11 audit: DEV-5N ---
     // HttpException phrases a body-phase connection drop differently than the
     // header-phase "Connection closed before full header" needle.
-    test('drops HttpException: Connection closed while receiving data (DEV-5N)', () {
-      final event = SentryEvent(
-        throwable: const HttpException(
-          'Connection closed while receiving data, uri = https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/object/public/recipe-images/foo.jpg',
-        ),
-      );
-      expect(isSentryNoise(event), isTrue);
-    });
+    test(
+      'drops HttpException: Connection closed while receiving data (DEV-5N)',
+      () {
+        final event = SentryEvent(
+          throwable: const HttpException(
+            'Connection closed while receiving data, uri = https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/object/public/recipe-images/foo.jpg',
+          ),
+        );
+        expect(isSentryNoise(event), isTrue);
+      },
+    );
 
-    test('still drops the original "Connection closed before full header" phrasing', () {
-      final event = SentryEvent(
-        throwable: Exception('Connection closed before full header was received'),
-      );
-      expect(isSentryNoise(event), isTrue);
-    });
+    test(
+      'still drops the original "Connection closed before full header" phrasing',
+      () {
+        final event = SentryEvent(
+          throwable: Exception(
+            'Connection closed before full header was received',
+          ),
+        );
+        expect(isSentryNoise(event), isTrue);
+      },
+    );
 
     // --- 2026-07-11 audit: DEV-5Q ---
     // A mistyped password is a user mistake, not an app bug.
@@ -129,51 +143,68 @@ void main() {
     // --- Debug-only Flutter assertions / web DOM races / test-runner leakage ---
     test('drops ink splashes debug assertion', () {
       final event = SentryEvent(
-        message: SentryMessage("Debug mode: 'ink splashes may be invisible' assertion"),
+        message: SentryMessage(
+          "Debug mode: 'ink splashes may be invisible' assertion",
+        ),
       );
       expect(isSentryNoise(event), isTrue);
     });
 
     test('drops TestFailure leakage from Patrol runs', () {
       final event = SentryEvent(
-        throwable: Exception('TestFailure: Expected: exactly one matching candidate'),
+        throwable: Exception(
+          'TestFailure: Expected: exactly one matching candidate',
+        ),
       );
       expect(isSentryNoise(event), isTrue);
     });
 
     // --- Negative cases: real, actionable errors must NOT be filtered ---
-    test('does NOT drop a PostgrestException FK-constraint violation (23503)', () {
-      final event = SentryEvent(
-        throwable: const PostgrestException(
-          message:
-              'insert or update on table "logged_meals" violates foreign key constraint "logged_meals_user_id_fkey"',
-          code: '23503',
-          details: 'Key (user_id)=(...) is not present in table "users".',
-        ),
-      );
-      expect(isSentryNoise(event), isFalse);
-    });
+    test(
+      'does NOT drop a PostgrestException FK-constraint violation (23503)',
+      () {
+        final event = SentryEvent(
+          throwable: const PostgrestException(
+            message:
+                'insert or update on table "logged_meals" violates foreign key constraint "logged_meals_user_id_fkey"',
+            code: '23503',
+            details: 'Key (user_id)=(...) is not present in table "users".',
+          ),
+        );
+        expect(isSentryNoise(event), isFalse);
+      },
+    );
 
-    test('does NOT drop an unrelated ClientException (e.g. 500 from an edge function)', () {
-      final event = SentryEvent(
-        throwable: http.ClientException(
-          'Internal Server Error',
-          Uri.parse('https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/generate-nutrition-plan-v3'),
-        ),
-      );
-      expect(isSentryNoise(event), isFalse);
-    });
+    test(
+      'does NOT drop an unrelated ClientException (e.g. 500 from an edge function)',
+      () {
+        final event = SentryEvent(
+          throwable: http.ClientException(
+            'Internal Server Error',
+            Uri.parse(
+              'https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/generate-nutrition-plan-v3',
+            ),
+          ),
+        );
+        expect(isSentryNoise(event), isFalse);
+      },
+    );
 
     test('does NOT drop a generic unrelated exception', () {
       final event = SentryEvent(
-        throwable: StateError('Nutrition plan solver produced a negative carb target'),
+        throwable: StateError(
+          'Nutrition plan solver produced a negative carb target',
+        ),
       );
       expect(isSentryNoise(event), isFalse);
     });
 
-    test('returns false for an event with no throwable, message, or exceptions', () {
-      final event = SentryEvent();
-      expect(isSentryNoise(event), isFalse);
-    });
+    test(
+      'returns false for an event with no throwable, message, or exceptions',
+      () {
+        final event = SentryEvent();
+        expect(isSentryNoise(event), isFalse);
+      },
+    );
   });
 }

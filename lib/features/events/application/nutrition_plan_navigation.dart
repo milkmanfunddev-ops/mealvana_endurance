@@ -93,8 +93,5 @@ String _getActivityTypeForNavigation(Event event) {
 /// Look up the EventSubtype for this event (if available).
 EventSubtype? _getEventSubtype(Event event) {
   if (event.eventSubtype == null) return null;
-  return EventSubtype.findByName(
-    event.eventType.dbValue,
-    event.eventSubtype!,
-  );
+  return EventSubtype.findByName(event.eventType.dbValue, event.eventSubtype!);
 }

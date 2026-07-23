@@ -25,7 +25,9 @@ void main() {
     MealComponent(name: 'Eggs', portion: '2 eggs', calories: 140),
   ];
 
-  testWidgets('tapping the food row body opens the edit dialog', (tester) async {
+  testWidgets('tapping the food row body opens the edit dialog', (
+    tester,
+  ) async {
     await tester.pumpWidget(harness(components));
 
     // Tap the row body via its title text, not the trailing edit icon.

@@ -24,24 +24,24 @@ void main() {
 
   group('parseCategoryList', () {
     test('parses PostgreSQL array literal (locally-created user foods)', () {
-      expect(
-        service.parseCategoryList('{before_run,during_run}'),
-        ['before_run', 'during_run'],
-      );
+      expect(service.parseCategoryList('{before_run,during_run}'), [
+        'before_run',
+        'during_run',
+      ]);
     });
 
     test('parses JSON array (Supabase-synced user foods)', () {
-      expect(
-        service.parseCategoryList('["before_run","during_run"]'),
-        ['before_run', 'during_run'],
-      );
+      expect(service.parseCategoryList('["before_run","during_run"]'), [
+        'before_run',
+        'during_run',
+      ]);
     });
 
     test('tolerates whitespace and quotes in the pg literal', () {
-      expect(
-        service.parseCategoryList('{ "after_run" , during_run }'),
-        ['after_run', 'during_run'],
-      );
+      expect(service.parseCategoryList('{ "after_run" , during_run }'), [
+        'after_run',
+        'during_run',
+      ]);
     });
 
     test('empty / null / empty-collection variants return []', () {

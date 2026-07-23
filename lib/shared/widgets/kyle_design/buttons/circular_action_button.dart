@@ -43,16 +43,13 @@ class CircularActionButton extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final defaultBg = backgroundColor ?? Colors.transparent;
-    final defaultIconColor = iconColor ??
-        (isDark ? AppColors.cream : AppColors.blackberry);
+    final defaultIconColor =
+        iconColor ?? (isDark ? AppColors.cream : AppColors.blackberry);
 
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: defaultBg,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: defaultBg, shape: BoxShape.circle),
       child: IconButton(
         icon: Icon(icon),
         iconSize: iconSize,

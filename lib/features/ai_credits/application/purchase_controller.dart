@@ -112,7 +112,9 @@ class PurchaseController extends _$PurchaseController {
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('[PurchaseController] poll attempt ${attempt + 1} error: $e');
+          debugPrint(
+            '[PurchaseController] poll attempt ${attempt + 1} error: $e',
+          );
         }
       }
     }

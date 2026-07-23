@@ -15,11 +15,7 @@ class CalendarService {
   final AppLogger _logger;
   final ActivitiesService _activitiesService;
 
-  CalendarService(
-    this._database,
-    this._logger,
-    this._activitiesService,
-  );
+  CalendarService(this._database, this._logger, this._activitiesService);
 
   /// Get activities for a specific date range - delegates to ActivitiesService
   Future<List<domain.Activity>> getActivitiesForDateRange(
@@ -27,11 +23,18 @@ class CalendarService {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    return _activitiesService.getActivitiesForDateRange(userId, startDate, endDate);
+    return _activitiesService.getActivitiesForDateRange(
+      userId,
+      startDate,
+      endDate,
+    );
   }
 
   /// Get activities for a specific week - delegates to ActivitiesService
-  Future<List<domain.Activity>> getActivitiesForWeek(String userId, DateTime weekStart) async {
+  Future<List<domain.Activity>> getActivitiesForWeek(
+    String userId,
+    DateTime weekStart,
+  ) async {
     return _activitiesService.getActivitiesForWeek(userId, weekStart);
   }
 
@@ -41,7 +44,10 @@ class CalendarService {
   }
 
   /// Get a specific activity by ID - delegates to ActivitiesService
-  Future<domain.Activity?> getActivityById(String userId, String activityId) async {
+  Future<domain.Activity?> getActivityById(
+    String userId,
+    String activityId,
+  ) async {
     return _activitiesService.getActivityById(userId, activityId);
   }
 
@@ -61,32 +67,35 @@ class CalendarService {
 
         if (carbLoadingPlan != null) {
           // Get all carb loading day IDs for this plan
-          final carbLoadingDays = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(carbLoadingPlan.id)))
-              .get();
+          final carbLoadingDays =
+              await (_database.select(_database.carbLoadingDaysTable)..where(
+                    (tbl) => tbl.carbLoadingPlanId.equals(carbLoadingPlan.id),
+                  ))
+                  .get();
 
           // Delete all meals for each carb loading day
           for (final day in carbLoadingDays) {
-            await (_database.delete(_database.carbLoadingDayMealsTable)
-              ..where((tbl) => tbl.carbLoadingDayId.equals(day.id)))
-                .go();
+            await (_database.delete(
+              _database.carbLoadingDayMealsTable,
+            )..where((tbl) => tbl.carbLoadingDayId.equals(day.id))).go();
           }
 
           // Delete all carb loading days for this plan
-          await (_database.delete(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(carbLoadingPlan.id)))
+          await (_database.delete(_database.carbLoadingDaysTable)..where(
+                (tbl) => tbl.carbLoadingPlanId.equals(carbLoadingPlan.id),
+              ))
               .go();
 
           // Delete the carb loading plan
-          await (_database.delete(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.id.equals(carbLoadingPlan.id)))
-              .go();
+          await (_database.delete(
+            _database.carbLoadingPlansTable,
+          )..where((tbl) => tbl.id.equals(carbLoadingPlan.id))).go();
         }
 
         // Delete the event
-        await (_database.delete(_database.eventsTable)
-          ..where((tbl) => tbl.id.equals(event.id)))
-            .go();
+        await (_database.delete(
+          _database.eventsTable,
+        )..where((tbl) => tbl.id.equals(event.id))).go();
       }
 
       // Finally, delegate activity deletion to ActivitiesService
@@ -94,7 +103,6 @@ class CalendarService {
         deviceId: deviceId,
         activityId: activityId,
       );
-
     } catch (e) {
       _logger.error('Error deleting activity: $activityId', error: e);
       rethrow;
@@ -105,7 +113,7 @@ class CalendarService {
   Future<domain.Event?> getEventForActivity(String activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
-            ..where((tbl) => tbl.activityId.equals(activityId));
+        ..where((tbl) => tbl.activityId.equals(activityId));
 
       final event = await query.getSingleOrNull();
 
@@ -124,7 +132,7 @@ class CalendarService {
   Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(eventId));
+        ..where((tbl) => tbl.id.equals(eventId));
 
       final event = await query.getSingleOrNull();
 
@@ -141,7 +149,7 @@ class CalendarService {
       // Note: Events table doesn't have userId column, but we'll keep the parameter
       // for future compatibility and to match the API signature
       final query = _database.select(_database.eventsTable)
-            ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
 
       final events = await query.get();
 
@@ -153,9 +161,14 @@ class CalendarService {
   }
 
   /// Get events for a specific week
-  Future<List<domain.Event>> getEventsForWeek(String userId, DateTime weekStart) async {
+  Future<List<domain.Event>> getEventsForWeek(
+    String userId,
+    DateTime weekStart,
+  ) async {
     try {
-      final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+      final weekEnd = weekStart.add(
+        const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+      );
 
       // Get all events
       final allEvents = await getAllEvents(userId);
@@ -184,7 +197,8 @@ class CalendarService {
   Future<domain.Event> createEvent({
     required String userId,
     String? activityId, // Now nullable - events can exist without activities
-    required ActivityType eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
+    required ActivityType
+    eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     String? eventSubtype,
     String? eventName,
     String? location,
@@ -209,7 +223,9 @@ class CalendarService {
 
       final companion = EventsTableCompanion.insert(
         userId: userId,
-        activityId: activityId != null ? Value(activityId) : const Value.absent(),
+        activityId: activityId != null
+            ? Value(activityId)
+            : const Value.absent(),
         eventType: eventType.dbValue,
         eventSubtype: Value(eventSubtype),
         eventName: Value(eventName),
@@ -231,7 +247,9 @@ class CalendarService {
       );
 
       // Insert and get the full row back (including generated ID)
-      final insertedEvent = await _database.into(_database.eventsTable).insertReturning(companion);
+      final insertedEvent = await _database
+          .into(_database.eventsTable)
+          .insertReturning(companion);
 
       // Get the created event by ID
       final createdEvent = await getEventById(userId, insertedEvent.id);
@@ -262,17 +280,18 @@ class CalendarService {
         hasCarbLoading: Value(event.hasCarbLoading),
         carbLoadingDays: Value(event.carbLoadingDays),
         carbLoadingStartDate: Value(event.carbLoadingStartDate),
-        hasNutritionPlan: Value(event.hasNutritionPlan), // OBSOLETE: kept for backward compatibility
+        hasNutritionPlan: Value(
+          event.hasNutritionPlan,
+        ), // OBSOLETE: kept for backward compatibility
         bibNumber: Value(event.bibNumber),
         waveStartTime: Value(event.waveStartTime),
         packetPickupInfo: Value(event.packetPickupInfo),
         updatedAt: Value(DateTime.now()),
       );
 
-      await (_database.update(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(event.id)))
-          .write(companion);
-
+      await (_database.update(
+        _database.eventsTable,
+      )..where((tbl) => tbl.id.equals(event.id))).write(companion);
     } catch (e) {
       _logger.error('Error updating event', error: e);
       rethrow;
@@ -322,7 +341,9 @@ class CalendarService {
       );
 
       // Insert and get the full row back (including generated ID)
-      final insertedPlan = await _database.into(_database.carbLoadingPlansTable).insertReturning(planCompanion);
+      final insertedPlan = await _database
+          .into(_database.carbLoadingPlansTable)
+          .insertReturning(planCompanion);
       final planId = insertedPlan.id;
 
       // Generate carb loading day records
@@ -348,18 +369,23 @@ class CalendarService {
           carbProtocolGPerKg: Value(carbProtocolGPerKg),
         );
 
-        await _database.into(_database.carbLoadingDaysTable).insert(carbDayCompanion);
+        await _database
+            .into(_database.carbLoadingDaysTable)
+            .insert(carbDayCompanion);
       }
 
       // Update event with carb loading info (only if eventId is provided)
       if (eventId != null) {
-        await (_database.update(_database.eventsTable)..where((tbl) => tbl.id.equals(eventId)))
-            .write(EventsTableCompanion(
-              hasCarbLoading: const Value(true),
-              carbLoadingDays: Value(protocolDays),
-              carbLoadingStartDate: Value(startDate),
-              updatedAt: Value(DateTime.now()),
-            ));
+        await (_database.update(
+          _database.eventsTable,
+        )..where((tbl) => tbl.id.equals(eventId))).write(
+          EventsTableCompanion(
+            hasCarbLoading: const Value(true),
+            carbLoadingDays: Value(protocolDays),
+            carbLoadingStartDate: Value(startDate),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
       }
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
@@ -397,13 +423,11 @@ class CalendarService {
   }
 
   /// Delete carb loading plan and associated day records
-  Future<void> deleteCarbLoadingPlan({
-    required String eventId,
-  }) async {
+  Future<void> deleteCarbLoadingPlan({required String eventId}) async {
     try {
       // Get the carb loading plan
       final planQuery = _database.select(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.eventId.equals(eventId));
+        ..where((tbl) => tbl.eventId.equals(eventId));
       final plan = await planQuery.getSingleOrNull();
 
       if (plan == null) {
@@ -412,35 +436,37 @@ class CalendarService {
       }
 
       // Get all carb loading days
-      final carbLoadingDays = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id)))
-          .get();
+      final carbLoadingDays = await (_database.select(
+        _database.carbLoadingDaysTable,
+      )..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id))).get();
 
       // Delete all meals for each day
       for (final day in carbLoadingDays) {
-        await (_database.delete(_database.carbLoadingDayMealsTable)
-              ..where((tbl) => tbl.carbLoadingDayId.equals(day.id)))
-            .go();
+        await (_database.delete(
+          _database.carbLoadingDayMealsTable,
+        )..where((tbl) => tbl.carbLoadingDayId.equals(day.id))).go();
       }
 
       // Delete carb loading day records
-      await (_database.delete(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id)))
-          .go();
+      await (_database.delete(
+        _database.carbLoadingDaysTable,
+      )..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id))).go();
 
       // Delete carb loading plan
-      await (_database.delete(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.id.equals(plan.id)))
-          .go();
+      await (_database.delete(
+        _database.carbLoadingPlansTable,
+      )..where((tbl) => tbl.id.equals(plan.id))).go();
 
       // Update event
-      await (_database.update(_database.eventsTable)..where((tbl) => tbl.id.equals(eventId)))
-          .write(const EventsTableCompanion(
-            hasCarbLoading: Value(false),
-            carbLoadingDays: Value.absent(),
-            carbLoadingStartDate: Value.absent(),
-          ));
-
+      await (_database.update(
+        _database.eventsTable,
+      )..where((tbl) => tbl.id.equals(eventId))).write(
+        const EventsTableCompanion(
+          hasCarbLoading: Value(false),
+          carbLoadingDays: Value.absent(),
+          carbLoadingStartDate: Value.absent(),
+        ),
+      );
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);
       rethrow;
@@ -451,17 +477,19 @@ class CalendarService {
   Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
     try {
       // Delete all meals for this day
-      await (_database.delete(_database.carbLoadingDayMealsTable)
-            ..where((tbl) => tbl.carbLoadingDayId.equals(carbLoadingDayId)))
-          .go();
+      await (_database.delete(
+        _database.carbLoadingDayMealsTable,
+      )..where((tbl) => tbl.carbLoadingDayId.equals(carbLoadingDayId))).go();
 
       // Delete the carb loading day
-      await (_database.delete(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.id.equals(carbLoadingDayId)))
-          .go();
-
+      await (_database.delete(
+        _database.carbLoadingDaysTable,
+      )..where((tbl) => tbl.id.equals(carbLoadingDayId))).go();
     } catch (e) {
-      _logger.error('Error deleting carb loading day: $carbLoadingDayId', error: e);
+      _logger.error(
+        'Error deleting carb loading day: $carbLoadingDayId',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -486,7 +514,6 @@ class CalendarService {
         raceDate: raceDate,
         bodyWeightPounds: bodyWeightPounds,
       );
-
     } catch (e) {
       _logger.error('Error updating carb loading protocol', error: e);
       rethrow;
@@ -497,11 +524,14 @@ class CalendarService {
   Future<CarbLoadingPlan?> getCarbLoadingPlan(String eventId) async {
     try {
       final query = _database.select(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.eventId.equals(eventId));
+        ..where((tbl) => tbl.eventId.equals(eventId));
 
       return await query.getSingleOrNull();
     } catch (e) {
-      _logger.error('Error getting carb loading plan for event: $eventId', error: e);
+      _logger.error(
+        'Error getting carb loading plan for event: $eventId',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -510,12 +540,15 @@ class CalendarService {
   Future<List<CarbLoadingDay>> getCarbLoadingDays(String planId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]);
+        ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
+        ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]);
 
       return await query.get();
     } catch (e) {
-      _logger.error('Error getting carb loading days for plan: $planId', error: e);
+      _logger.error(
+        'Error getting carb loading days for plan: $planId',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -531,19 +564,27 @@ class CalendarService {
   }) async {
     try {
       // Join carb_loading_days with carb_loading_plans to filter by user_id
-      final query = _database.select(_database.carbLoadingDaysTable).join([
-        innerJoin(
-          _database.carbLoadingPlansTable,
-          _database.carbLoadingPlansTable.id
-              .equalsExp(_database.carbLoadingDaysTable.carbLoadingPlanId),
-        ),
-      ])
-        ..where(_database.carbLoadingPlansTable.userId.equals(userId) &
-            _database.carbLoadingDaysTable.planDate
-                .isBiggerOrEqualValue(startDate) &
-            _database.carbLoadingDaysTable.planDate
-                .isSmallerOrEqualValue(endDate))
-        ..orderBy([OrderingTerm.asc(_database.carbLoadingDaysTable.planDate)]);
+      final query =
+          _database.select(_database.carbLoadingDaysTable).join([
+              innerJoin(
+                _database.carbLoadingPlansTable,
+                _database.carbLoadingPlansTable.id.equalsExp(
+                  _database.carbLoadingDaysTable.carbLoadingPlanId,
+                ),
+              ),
+            ])
+            ..where(
+              _database.carbLoadingPlansTable.userId.equals(userId) &
+                  _database.carbLoadingDaysTable.planDate.isBiggerOrEqualValue(
+                    startDate,
+                  ) &
+                  _database.carbLoadingDaysTable.planDate.isSmallerOrEqualValue(
+                    endDate,
+                  ),
+            )
+            ..orderBy([
+              OrderingTerm.asc(_database.carbLoadingDaysTable.planDate),
+            ]);
 
       final results = await query.get();
       return results
@@ -554,7 +595,6 @@ class CalendarService {
       rethrow;
     }
   }
-
 
   /// Map database Event to domain Event
   domain.Event _mapToEventDomain(Event event) {

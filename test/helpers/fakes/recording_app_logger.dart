@@ -70,28 +70,23 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    records.add(LogRecord(
-      level: 'debug',
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-    ));
+    records.add(
+      LogRecord(
+        level: 'debug',
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
-  void info(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-  }) {
-    records.add(LogRecord(
-      level: 'info',
-      message: message,
-      context: context,
-      data: data,
-    ));
+  void info(String message, {String? context, Map<String, dynamic>? data}) {
+    records.add(
+      LogRecord(level: 'info', message: message, context: context, data: data),
+    );
   }
 
   @override
@@ -102,14 +97,16 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    records.add(LogRecord(
-      level: 'warning',
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-    ));
+    records.add(
+      LogRecord(
+        level: 'warning',
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -120,14 +117,16 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    records.add(LogRecord(
-      level: 'error',
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-    ));
+    records.add(
+      LogRecord(
+        level: 'error',
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -138,14 +137,16 @@ class RecordingAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    records.add(LogRecord(
-      level: 'fatal',
-      message: message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-    ));
+    records.add(
+      LogRecord(
+        level: 'fatal',
+        message: message,
+        context: context,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -158,16 +159,18 @@ class RecordingAppLogger implements AppLogger {
     Duration? duration,
     dynamic error,
   }) {
-    records.add(LogRecord(
-      level: 'api',
-      message: message,
-      endpoint: endpoint,
-      statusCode: statusCode,
-      requestData: requestData,
-      responseData: responseData,
-      duration: duration,
-      error: error,
-    ));
+    records.add(
+      LogRecord(
+        level: 'api',
+        message: message,
+        endpoint: endpoint,
+        statusCode: statusCode,
+        requestData: requestData,
+        responseData: responseData,
+        duration: duration,
+        error: error,
+      ),
+    );
   }
 
   @override
@@ -179,15 +182,17 @@ class RecordingAppLogger implements AppLogger {
     Duration? duration,
     dynamic error,
   }) {
-    records.add(LogRecord(
-      level: 'database',
-      message: message,
-      operation: operation,
-      table: table,
-      data: data,
-      duration: duration,
-      error: error,
-    ));
+    records.add(
+      LogRecord(
+        level: 'database',
+        message: message,
+        operation: operation,
+        table: table,
+        data: data,
+        duration: duration,
+        error: error,
+      ),
+    );
   }
 
   @override
@@ -197,13 +202,15 @@ class RecordingAppLogger implements AppLogger {
     String? to,
     Map<String, dynamic>? parameters,
   }) {
-    records.add(LogRecord(
-      level: 'navigation',
-      message: message,
-      from: from,
-      to: to,
-      parameters: parameters,
-    ));
+    records.add(
+      LogRecord(
+        level: 'navigation',
+        message: message,
+        from: from,
+        to: to,
+        parameters: parameters,
+      ),
+    );
   }
 
   @override
@@ -213,13 +220,15 @@ class RecordingAppLogger implements AppLogger {
     String? screen,
     Map<String, dynamic>? data,
   }) {
-    records.add(LogRecord(
-      level: 'user_action',
-      message: message,
-      action: action,
-      screen: screen,
-      data: data,
-    ));
+    records.add(
+      LogRecord(
+        level: 'user_action',
+        message: message,
+        action: action,
+        screen: screen,
+        data: data,
+      ),
+    );
   }
 
   @override
@@ -230,14 +239,16 @@ class RecordingAppLogger implements AppLogger {
     Map<String, dynamic>? data,
     dynamic error,
   }) {
-    records.add(LogRecord(
-      level: 'nutrition_plan',
-      message: message,
-      planId: planId,
-      phase: phase,
-      data: data,
-      error: error,
-    ));
+    records.add(
+      LogRecord(
+        level: 'nutrition_plan',
+        message: message,
+        planId: planId,
+        phase: phase,
+        data: data,
+        error: error,
+      ),
+    );
   }
 
   @override
@@ -246,12 +257,14 @@ class RecordingAppLogger implements AppLogger {
     String? event,
     Map<String, dynamic>? properties,
   }) {
-    records.add(LogRecord(
-      level: 'analytics',
-      message: message,
-      event: event,
-      properties: properties,
-    ));
+    records.add(
+      LogRecord(
+        level: 'analytics',
+        message: message,
+        event: event,
+        properties: properties,
+      ),
+    );
   }
 
   // Test helpers
@@ -268,7 +281,8 @@ class RecordingAppLogger implements AppLogger {
   }
 
   /// Check if any error was logged
-  bool get hasErrors => records.any((r) => r.level == 'error' || r.level == 'fatal');
+  bool get hasErrors =>
+      records.any((r) => r.level == 'error' || r.level == 'fatal');
 
   /// Get all error messages
   List<String> get errorMessages => records

@@ -170,9 +170,8 @@ class NutritionPlanMapper {
                 final shortfalls = shortfallsJson
                     .whereType<Map>()
                     .map(
-                      (e) => MacroShortfall.fromJson(
-                        Map<String, dynamic>.from(e),
-                      ),
+                      (e) =>
+                          MacroShortfall.fromJson(Map<String, dynamic>.from(e)),
                     )
                     .toList();
                 if (shortfalls.isNotEmpty) {

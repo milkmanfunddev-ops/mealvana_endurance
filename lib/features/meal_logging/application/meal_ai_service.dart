@@ -57,10 +57,7 @@ class MealAiException implements Exception {
 /// Combines the analysis result with the uploaded storage path so the caller
 /// can reference the photo in the meal log record.
 class MealPhotoAnalysis {
-  const MealPhotoAnalysis({
-    required this.result,
-    required this.storagePath,
-  });
+  const MealPhotoAnalysis({required this.result, required this.storagePath});
 
   final MealAnalysisResult result;
 
@@ -74,9 +71,7 @@ class MealPhotoAnalysis {
 
 @riverpod
 MealAiService mealAiService(Ref ref) {
-  return MealAiService(
-    supabase: ref.watch(supabaseClientProvider),
-  );
+  return MealAiService(supabase: ref.watch(supabaseClientProvider));
 }
 
 // ---------------------------------------------------------------------------
@@ -124,11 +119,7 @@ class MealAiService {
     String extension = 'jpg',
   }) async {
     final userId = _requireUserId();
-    return _analyzeBytes(
-      userId: userId,
-      bytes: bytes,
-      extension: extension,
-    );
+    return _analyzeBytes(userId: userId, bytes: bytes, extension: extension);
   }
 
   /// Call the `describe-meal` edge function with a free-text [description].
@@ -151,13 +142,15 @@ class MealAiService {
     } on SocketException catch (e) {
       throw MealAiException(
         kind: MealAiFailureKind.offline,
-        userMessage: 'No internet connection. Please check your network and try again.',
+        userMessage:
+            'No internet connection. Please check your network and try again.',
         debugMessage: e.toString(),
       );
     } on FunctionException catch (e) {
       throw _mapFunctionException(e, functionName: 'describe-meal');
     } catch (e) {
-      if (kDebugMode) debugPrint('[MealAiService] describe-meal unexpected error: $e');
+      if (kDebugMode)
+        debugPrint('[MealAiService] describe-meal unexpected error: $e');
       throw MealAiException(
         kind: MealAiFailureKind.serverError,
         userMessage: 'Something went wrong. Please try again.',
@@ -179,7 +172,9 @@ class MealAiService {
     final photoPath = '$userId/${_uuid.v4()}.$extension';
 
     try {
-      await _supabase.storage.from('meal-photos').uploadBinary(
+      await _supabase.storage
+          .from('meal-photos')
+          .uploadBinary(
             photoPath,
             bytes,
             fileOptions: FileOptions(
@@ -190,7 +185,8 @@ class MealAiService {
     } on SocketException catch (e) {
       throw MealAiException(
         kind: MealAiFailureKind.offline,
-        userMessage: 'No internet connection. Please check your network and try again.',
+        userMessage:
+            'No internet connection. Please check your network and try again.',
         debugMessage: e.toString(),
       );
     } on StorageException catch (e) {
@@ -222,13 +218,15 @@ class MealAiService {
     } on SocketException catch (e) {
       throw MealAiException(
         kind: MealAiFailureKind.offline,
-        userMessage: 'No internet connection. Please check your network and try again.',
+        userMessage:
+            'No internet connection. Please check your network and try again.',
         debugMessage: e.toString(),
       );
     } on FunctionException catch (e) {
       throw _mapFunctionException(e, functionName: 'analyze-meal-photo');
     } catch (e) {
-      if (kDebugMode) debugPrint('[MealAiService] analyze-meal-photo unexpected error: $e');
+      if (kDebugMode)
+        debugPrint('[MealAiService] analyze-meal-photo unexpected error: $e');
       throw MealAiException(
         kind: MealAiFailureKind.serverError,
         userMessage: 'Something went wrong. Please try again.',
@@ -246,7 +244,8 @@ class MealAiService {
     required String functionName,
   }) {
     if (response.status == 422) {
-      final message = _extractErrorMessage(response.data) ??
+      final message =
+          _extractErrorMessage(response.data) ??
           "The photo doesn't appear to contain food. Please try a different image.";
       throw MealAiException(
         kind: MealAiFailureKind.notFood,
@@ -264,11 +263,14 @@ class MealAiService {
     if (response.status != 200) {
       final message = _extractErrorMessage(response.data);
       if (kDebugMode) {
-        debugPrint('[MealAiService] $functionName status ${response.status}: ${response.data}');
+        debugPrint(
+          '[MealAiService] $functionName status ${response.status}: ${response.data}',
+        );
       }
       throw MealAiException(
         kind: MealAiFailureKind.serverError,
-        userMessage: message ?? 'The AI service returned an error. Please try again.',
+        userMessage:
+            message ?? 'The AI service returned an error. Please try again.',
         debugMessage: '$functionName returned status ${response.status}',
       );
     }
@@ -277,7 +279,8 @@ class MealAiService {
       final data = response.data as Map<String, dynamic>;
       return MealAnalysisResult.fromJson(data);
     } catch (e) {
-      if (kDebugMode) debugPrint('[MealAiService] $functionName parse error: $e');
+      if (kDebugMode)
+        debugPrint('[MealAiService] $functionName parse error: $e');
       throw MealAiException(
         kind: MealAiFailureKind.serverError,
         userMessage: 'Received an unexpected response. Please try again.',
@@ -291,7 +294,8 @@ class MealAiService {
     FunctionException e, {
     required String functionName,
   }) {
-    if (kDebugMode) debugPrint('[MealAiService] FunctionException from $functionName: $e');
+    if (kDebugMode)
+      debugPrint('[MealAiService] FunctionException from $functionName: $e');
 
     // 402 → out of AI credits. Throw the typed exception (this method's callers
     // `throw` its result, so throwing here propagates identically).

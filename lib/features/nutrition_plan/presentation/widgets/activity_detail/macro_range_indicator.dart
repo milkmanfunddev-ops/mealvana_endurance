@@ -30,7 +30,8 @@ class MacroRangeIndicator extends StatelessWidget {
           min: min,
           max: max,
           markerColor: color,
-          trackColor: trackColor ??
+          trackColor:
+              trackColor ??
               Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
         ),
         size: const Size(double.infinity, 12),

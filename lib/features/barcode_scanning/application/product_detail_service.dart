@@ -26,9 +26,12 @@ class ProductDetailService {
 
     DebugLogger.debug('🔄 ProductDetailService - Looking up product with:');
     if (barcode != null) DebugLogger.debug('  Barcode: $barcode');
-    if (openFoodFactsId != null) DebugLogger.debug('  Open Food Facts ID: $openFoodFactsId');
+    if (openFoodFactsId != null)
+      DebugLogger.debug('  Open Food Facts ID: $openFoodFactsId');
 
-    DebugLogger.debug('🚀 ProductDetailService - CALLING EDGE FUNCTION: lookup-product');
+    DebugLogger.debug(
+      '🚀 ProductDetailService - CALLING EDGE FUNCTION: lookup-product',
+    );
     final requestBody = {
       if (barcode != null) 'barcode': barcode,
       if (openFoodFactsId != null) 'open_food_facts_id': openFoodFactsId,
@@ -41,11 +44,18 @@ class ProductDetailService {
         body: requestBody,
       );
 
-      DebugLogger.debug('📡 ProductDetailService - Edge function response status: ${response.status}');
-      DebugLogger.debug('📄 ProductDetailService - Edge function response data: ${response.data}');
+      DebugLogger.debug(
+        '📡 ProductDetailService - Edge function response status: ${response.status}',
+      );
+      DebugLogger.debug(
+        '📄 ProductDetailService - Edge function response data: ${response.data}',
+      );
 
       if (response.status != 200) {
-        DebugLogger.error('❌ ProductDetailService - API error', error: response.status);
+        DebugLogger.error(
+          '❌ ProductDetailService - API error',
+          error: response.status,
+        );
         final errorData = response.data;
         if (errorData != null && errorData['message'] != null) {
           throw ProductDetailException(errorData['message'] as String);
@@ -56,7 +66,9 @@ class ProductDetailService {
       final data = response.data;
       if (data == null || !data['success']) {
         final errorMessage = data?['message'] ?? 'Product not found';
-        DebugLogger.warning('❌ ProductDetailService - Product not found: $errorMessage');
+        DebugLogger.warning(
+          '❌ ProductDetailService - Product not found: $errorMessage',
+        );
         throw ProductDetailException(errorMessage);
       }
 
@@ -65,18 +77,25 @@ class ProductDetailService {
         throw ProductDetailException('No product data returned');
       }
 
-      DebugLogger.info('✅ ProductDetailService - Product found via ${data['source']}');
+      DebugLogger.info(
+        '✅ ProductDetailService - Product found via ${data['source']}',
+      );
 
       // Convert to ApiFoodProduct using the existing factory method
       return ApiFoodProduct.fromEdgeFunctionResponse(
-        Map<String, dynamic>.from(productData)
+        Map<String, dynamic>.from(productData),
       );
-
     } on ProductDetailException {
       rethrow; // Re-throw our custom exceptions
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ ProductDetailService - Unexpected error', error: e, stackTrace: stackTrace);
-      throw ProductDetailException('Unable to connect to product lookup service');
+      DebugLogger.error(
+        '❌ ProductDetailService - Unexpected error',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      throw ProductDetailException(
+        'Unable to connect to product lookup service',
+      );
     }
   }
 

@@ -5,15 +5,19 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    hide AuthUser, AuthException;
 // Explicitly import AuthException and LaunchMode to use in catch blocks and web OAuth
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    as supabase
+    show AuthException;
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/utils/platform_io.dart' if (dart.library.html) '../../../shared/utils/platform_web.dart';
+import '../../../shared/utils/platform_io.dart'
+    if (dart.library.html) '../../../shared/utils/platform_web.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../domain/auth_exceptions.dart';
@@ -29,7 +33,8 @@ part 'oauth_service.g.dart';
 @riverpod
 class OAuthService extends _$OAuthService {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
-  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
+  SupabaseClient get _supabase =>
+      ref.read(appExternalDepsProvider).supabaseClient;
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
 
   // Google Sign-In instance (lazy initialized)
@@ -53,21 +58,27 @@ class OAuthService extends _$OAuthService {
 
     // Web platforms use Supabase's web OAuth flow, not native Google Sign-In
     if (kIsWeb) {
-      throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
+      throw UnsupportedError(
+        'Native Google Sign-In not supported on web. Use Supabase web OAuth flow.',
+      );
     }
 
     // Web Client ID - used as serverClientId to get ID token for Supabase
-    const webClientId = '171527646530-d1hr8a9ja4ucqk28cipcfnlo288qhccn.apps.googleusercontent.com';
+    const webClientId =
+        '171527646530-d1hr8a9ja4ucqk28cipcfnlo288qhccn.apps.googleusercontent.com';
 
     // Android Client ID for prod flavor (Mealvana Android Release)
     // Prod flavor always signs with the release keystore (see build.gradle.kts),
     // so one OAuth client covers both debug and release builds.
     // SHA-1: AB:86:C5:24:4D:DE:3E:75:40:65:B4:1D:7F:FC:61:CB:10:05:7A:0D
-    const androidClientId = '171527646530-5sjjs6che5nsl7nom9l8cfh64087aitb.apps.googleusercontent.com';
+    const androidClientId =
+        '171527646530-5sjjs6che5nsl7nom9l8cfh64087aitb.apps.googleusercontent.com';
 
-    _logger.info('Initializing Google Sign-In', context: 'OAUTH_NATIVE', data: {
-      'platform': PlatformInfo.operatingSystem,
-    });
+    _logger.info(
+      'Initializing Google Sign-In',
+      context: 'OAUTH_NATIVE',
+      data: {'platform': PlatformInfo.operatingSystem},
+    );
 
     _googleSignIn = GoogleSignIn(
       clientId: PlatformInfo.isIOS ? null : androidClientId,
@@ -89,12 +100,16 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting native Apple Sign-In flow', context: 'OAUTH_NATIVE');
+      _logger.info(
+        'Starting native Apple Sign-In flow',
+        context: 'OAUTH_NATIVE',
+      );
 
       // Track analytics
-      await _analytics.track('auth_apple_native_started', properties: {
-        'platform': PlatformInfo.operatingSystem,
-      });
+      await _analytics.track(
+        'auth_apple_native_started',
+        properties: {'platform': PlatformInfo.operatingSystem},
+      );
 
       // Get current user before linking
       final currentUser = _supabase.auth.currentUser;
@@ -105,10 +120,14 @@ class OAuthService extends _$OAuthService {
       final anonymousUserId = currentUser.id;
       final wasAnonymous = currentUser.isAnonymous;
 
-      _logger.info('Linking Apple account to user', context: 'OAUTH_NATIVE', data: {
-        'current_user_id': anonymousUserId,
-        'is_anonymous': wasAnonymous,
-      });
+      _logger.info(
+        'Linking Apple account to user',
+        context: 'OAUTH_NATIVE',
+        data: {
+          'current_user_id': anonymousUserId,
+          'is_anonymous': wasAnonymous,
+        },
+      );
 
       // Generate nonce for security
       final rawNonce = _supabase.auth.generateRawNonce();
@@ -123,10 +142,14 @@ class OAuthService extends _$OAuthService {
         nonce: hashedNonce,
       );
 
-      _logger.info('Apple Sign-In credential received', context: 'OAUTH_NATIVE', data: {
-        'has_identity_token': credential.identityToken != null,
-        'email': credential.email,
-      });
+      _logger.info(
+        'Apple Sign-In credential received',
+        context: 'OAUTH_NATIVE',
+        data: {
+          'has_identity_token': credential.identityToken != null,
+          'email': credential.email,
+        },
+      );
 
       try {
         // Link Apple identity to current user (preserves user ID)
@@ -149,8 +172,12 @@ class OAuthService extends _$OAuthService {
           throw Exception('User ID changed unexpectedly during linking');
         }
       } on supabase.AuthException catch (e) {
-        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
-          _logger.warning('Apple account already linked to another user', context: 'OAUTH_NATIVE');
+        if (e.message.contains('already linked') ||
+            e.message.contains('Identity is already linked')) {
+          _logger.warning(
+            'Apple account already linked to another user',
+            context: 'OAUTH_NATIVE',
+          );
           throw AccountAlreadyExistsException(
             'This Apple account is already linked to another user.',
             email: credential.email,
@@ -160,7 +187,9 @@ class OAuthService extends _$OAuthService {
       }
 
       // Complete authentication (unified flow for all providers)
-      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
+      final authMigrationService = await ref.read(
+        authMigrationServiceProvider.future,
+      );
       await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: wasAnonymous,
@@ -169,15 +198,20 @@ class OAuthService extends _$OAuthService {
         preservedUserId: true, // ID was preserved during linking
       );
 
-      _logger.info('Apple account linked successfully', context: 'OAUTH_NATIVE', data: {
-        'user_id': anonymousUserId,
-      });
+      _logger.info(
+        'Apple account linked successfully',
+        context: 'OAUTH_NATIVE',
+        data: {'user_id': anonymousUserId},
+      );
 
       // Track successful linking
-      await _analytics.track('auth_apple_native_linked', properties: {
-        'user_id': anonymousUserId,
-        'platform': PlatformInfo.operatingSystem,
-      });
+      await _analytics.track(
+        'auth_apple_native_linked',
+        properties: {
+          'user_id': anonymousUserId,
+          'platform': PlatformInfo.operatingSystem,
+        },
+      );
     });
 
     // Handle errors
@@ -187,17 +221,24 @@ class OAuthService extends _$OAuthService {
       if (error is AccountAlreadyExistsException) {
         throw error;
       }
-      
-      _logger.error('Apple Sign-In failed', context: 'OAUTH_NATIVE', error: error);
+
+      _logger.error(
+        'Apple Sign-In failed',
+        context: 'OAUTH_NATIVE',
+        error: error,
+      );
 
       // Distinguish user cancellation from errors
       final errorMessage = error.toString();
-      final wasCancelled = errorMessage.contains("The operation couldn't be completed") ||
+      final wasCancelled =
+          errorMessage.contains("The operation couldn't be completed") ||
           errorMessage.contains('CANCELED') ||
           errorMessage.contains('1001'); // ASAuthorizationError.canceled
 
       await _analytics.track(
-        wasCancelled ? 'auth_apple_native_cancelled' : 'auth_apple_native_failed',
+        wasCancelled
+            ? 'auth_apple_native_cancelled'
+            : 'auth_apple_native_failed',
         properties: {
           'error': errorMessage,
           'platform': PlatformInfo.operatingSystem,
@@ -219,12 +260,16 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting native Google Sign-In flow', context: 'OAUTH_NATIVE');
+      _logger.info(
+        'Starting native Google Sign-In flow',
+        context: 'OAUTH_NATIVE',
+      );
 
       // Track analytics
-      await _analytics.track('auth_google_native_started', properties: {
-        'platform': PlatformInfo.operatingSystem,
-      });
+      await _analytics.track(
+        'auth_google_native_started',
+        properties: {'platform': PlatformInfo.operatingSystem},
+      );
 
       // Get current user before linking
       final currentUser = _supabase.auth.currentUser;
@@ -235,10 +280,14 @@ class OAuthService extends _$OAuthService {
       final anonymousUserId = currentUser.id;
       final wasAnonymous = currentUser.isAnonymous;
 
-      _logger.info('Linking Google account to user', context: 'OAUTH_NATIVE', data: {
-        'current_user_id': anonymousUserId,
-        'is_anonymous': wasAnonymous,
-      });
+      _logger.info(
+        'Linking Google account to user',
+        context: 'OAUTH_NATIVE',
+        data: {
+          'current_user_id': anonymousUserId,
+          'is_anonymous': wasAnonymous,
+        },
+      );
 
       // Initialize Google Sign-In
       final googleSignIn = _getGoogleSignIn();
@@ -251,16 +300,22 @@ class OAuthService extends _$OAuthService {
 
       // User cancelled sign-in
       if (account == null) {
-        _logger.info('Google Sign-In cancelled by user', context: 'OAUTH_NATIVE');
-        await _analytics.track('auth_google_native_cancelled', properties: {
-          'platform': PlatformInfo.operatingSystem,
-        });
+        _logger.info(
+          'Google Sign-In cancelled by user',
+          context: 'OAUTH_NATIVE',
+        );
+        await _analytics.track(
+          'auth_google_native_cancelled',
+          properties: {'platform': PlatformInfo.operatingSystem},
+        );
         throw Exception('Google Sign-In was cancelled');
       }
 
-      _logger.info('Google Sign-In account selected', context: 'OAUTH_NATIVE', data: {
-        'email': account.email,
-      });
+      _logger.info(
+        'Google Sign-In account selected',
+        context: 'OAUTH_NATIVE',
+        data: {'email': account.email},
+      );
 
       // Get authentication tokens
       final GoogleSignInAuthentication auth = await account.authentication;
@@ -269,10 +324,14 @@ class OAuthService extends _$OAuthService {
         throw Exception('Google Sign-In failed: no ID token received');
       }
 
-      _logger.info('Google authentication tokens received', context: 'OAUTH_NATIVE', data: {
-        'has_id_token': auth.idToken != null,
-        'has_access_token': auth.accessToken != null,
-      });
+      _logger.info(
+        'Google authentication tokens received',
+        context: 'OAUTH_NATIVE',
+        data: {
+          'has_id_token': auth.idToken != null,
+          'has_access_token': auth.accessToken != null,
+        },
+      );
 
       try {
         // Link Google identity to current user (preserves user ID)
@@ -295,8 +354,12 @@ class OAuthService extends _$OAuthService {
           throw Exception('User ID changed unexpectedly during linking');
         }
       } on supabase.AuthException catch (e) {
-        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
-          _logger.warning('Google account already linked to another user', context: 'OAUTH_NATIVE');
+        if (e.message.contains('already linked') ||
+            e.message.contains('Identity is already linked')) {
+          _logger.warning(
+            'Google account already linked to another user',
+            context: 'OAUTH_NATIVE',
+          );
           throw AccountAlreadyExistsException(
             'This Google account is already linked to another user.',
             email: account.email,
@@ -306,7 +369,9 @@ class OAuthService extends _$OAuthService {
       }
 
       // Complete authentication (unified flow for all providers)
-      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
+      final authMigrationService = await ref.read(
+        authMigrationServiceProvider.future,
+      );
       await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: wasAnonymous,
@@ -315,17 +380,21 @@ class OAuthService extends _$OAuthService {
         preservedUserId: true, // ID was preserved during linking
       );
 
-      _logger.info('Google account linked successfully', context: 'OAUTH_NATIVE', data: {
-        'user_id': anonymousUserId,
-        'email': account.email,
-      });
+      _logger.info(
+        'Google account linked successfully',
+        context: 'OAUTH_NATIVE',
+        data: {'user_id': anonymousUserId, 'email': account.email},
+      );
 
       // Track successful linking
-      await _analytics.track('auth_google_native_linked', properties: {
-        'user_id': anonymousUserId,
-        'email': account.email,
-        'platform': PlatformInfo.operatingSystem,
-      });
+      await _analytics.track(
+        'auth_google_native_linked',
+        properties: {
+          'user_id': anonymousUserId,
+          'email': account.email,
+          'platform': PlatformInfo.operatingSystem,
+        },
+      );
     });
 
     // Handle errors
@@ -336,16 +405,23 @@ class OAuthService extends _$OAuthService {
         throw error;
       }
 
-      _logger.error('Google Sign-In failed', context: 'OAUTH_NATIVE', error: error);
+      _logger.error(
+        'Google Sign-In failed',
+        context: 'OAUTH_NATIVE',
+        error: error,
+      );
 
       // Map Google Sign-In error codes
       final errorMessage = error.toString();
-      final wasCancelled = errorMessage.contains('sign_in_canceled') ||
+      final wasCancelled =
+          errorMessage.contains('sign_in_canceled') ||
           errorMessage.contains('SIGN_IN_CANCELLED') ||
           errorMessage.contains('12501'); // Google Sign-In error code
 
       await _analytics.track(
-        wasCancelled ? 'auth_google_native_cancelled' : 'auth_google_native_failed',
+        wasCancelled
+            ? 'auth_google_native_cancelled'
+            : 'auth_google_native_failed',
         properties: {
           'error': errorMessage,
           'platform': PlatformInfo.operatingSystem,
@@ -368,11 +444,15 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting native Apple Sign-In (Sign In mode)', context: 'OAUTH_NATIVE');
+      _logger.info(
+        'Starting native Apple Sign-In (Sign In mode)',
+        context: 'OAUTH_NATIVE',
+      );
 
-      await _analytics.track('auth_apple_signin_started', properties: {
-        'platform': PlatformInfo.operatingSystem,
-      });
+      await _analytics.track(
+        'auth_apple_signin_started',
+        properties: {'platform': PlatformInfo.operatingSystem},
+      );
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
       // This allows us to migrate their data after the session switch
@@ -387,11 +467,15 @@ class OAuthService extends _$OAuthService {
         wasAnonymous = true;
       }
 
-      _logger.info('Capturing anonymous user before sign-in', context: 'OAUTH_NATIVE', data: {
-        'anonymous_user_id': anonymousUserId,
-        'was_anonymous': wasAnonymous,
-        'had_temp_user_id': tempUserId != null,
-      });
+      _logger.info(
+        'Capturing anonymous user before sign-in',
+        context: 'OAUTH_NATIVE',
+        data: {
+          'anonymous_user_id': anonymousUserId,
+          'was_anonymous': wasAnonymous,
+          'had_temp_user_id': tempUserId != null,
+        },
+      );
 
       // Generate nonce
       final rawNonce = _supabase.auth.generateRawNonce();
@@ -415,19 +499,27 @@ class OAuthService extends _$OAuthService {
 
       final oauthUserId = response.user?.id;
 
-      _logger.info('Apple Sign-In successful (session switched)', context: 'OAUTH_NATIVE', data: {
-        'user_id': oauthUserId,
-      });
+      _logger.info(
+        'Apple Sign-In successful (session switched)',
+        context: 'OAUTH_NATIVE',
+        data: {'user_id': oauthUserId},
+      );
 
       // CRITICAL: Complete authentication (migration + profile update)
       if (oauthUserId != null) {
-        _logger.info('Completing authentication', context: 'OAUTH_NATIVE', data: {
-          'previous_user_id': anonymousUserId,
-          'new_user_id': oauthUserId,
-          'was_anonymous': wasAnonymous,
-        });
+        _logger.info(
+          'Completing authentication',
+          context: 'OAUTH_NATIVE',
+          data: {
+            'previous_user_id': anonymousUserId,
+            'new_user_id': oauthUserId,
+            'was_anonymous': wasAnonymous,
+          },
+        );
 
-        final authMigrationService = await ref.read(authMigrationServiceProvider.future);
+        final authMigrationService = await ref.read(
+          authMigrationServiceProvider.future,
+        );
         final dataMigrated = await authMigrationService.completeAuthentication(
           previousUserId: anonymousUserId,
           wasAnonymous: wasAnonymous,
@@ -436,28 +528,39 @@ class OAuthService extends _$OAuthService {
           preservedUserId: false, // ID changed during sign-in
         );
 
-        _logger.info('Authentication completed', context: 'OAUTH_NATIVE', data: {
-          'data_migrated': dataMigrated,
-        });
+        _logger.info(
+          'Authentication completed',
+          context: 'OAUTH_NATIVE',
+          data: {'data_migrated': dataMigrated},
+        );
 
         // Clear temp user ID after successful migration
         if (tempUserId != null) {
           await prefs.remove('onboarding_temp_user_id');
-          _logger.info('Cleared onboarding temp user ID after Apple sign-in', context: 'OAUTH_NATIVE');
+          _logger.info(
+            'Cleared onboarding temp user ID after Apple sign-in',
+            context: 'OAUTH_NATIVE',
+          );
         }
       }
 
-      await _analytics.track('auth_apple_signin_completed', properties: {
-        'user_id': oauthUserId,
-        'platform': PlatformInfo.operatingSystem,
-        'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
-      });
+      await _analytics.track(
+        'auth_apple_signin_completed',
+        properties: {
+          'user_id': oauthUserId,
+          'platform': PlatformInfo.operatingSystem,
+          'migrated_data':
+              anonymousUserId != null && anonymousUserId != oauthUserId,
+        },
+      );
 
       // CRITICAL: Explicitly trigger full sync after sign-in
       if (oauthUserId != null) {
-        _logger.info('Triggering post-sign-in sync', context: 'OAUTH_NATIVE', data: {
-          'user_id': oauthUserId,
-        });
+        _logger.info(
+          'Triggering post-sign-in sync',
+          context: 'OAUTH_NATIVE',
+          data: {'user_id': oauthUserId},
+        );
 
         try {
           // Clear sync timestamp to force full sync (not incremental)
@@ -465,11 +568,13 @@ class OAuthService extends _$OAuthService {
           await prefs.remove('last_sync_timestamp_$oauthUserId');
 
           // Trigger sync using SyncCoordinator (provides sync lock and logging)
-          await ref.read(syncCoordinatorProvider.notifier).sync(
-            userId: oauthUserId,
-            trigger: SyncTrigger.oauthSignIn,
-            skipInvalidation: true,
-          );
+          await ref
+              .read(syncCoordinatorProvider.notifier)
+              .sync(
+                userId: oauthUserId,
+                trigger: SyncTrigger.oauthSignIn,
+                skipInvalidation: true,
+              );
 
           // Invalidate providers so UI reflects synced data
           ref.invalidate(userIdProvider);
@@ -477,16 +582,27 @@ class OAuthService extends _$OAuthService {
           ref.invalidate(allEventsProvider);
           ref.invalidate(nextUpcomingEventProvider);
 
-          _logger.info('Post-sign-in sync completed - providers invalidated', context: 'OAUTH_NATIVE');
+          _logger.info(
+            'Post-sign-in sync completed - providers invalidated',
+            context: 'OAUTH_NATIVE',
+          );
         } catch (e) {
-          _logger.error('Post-sign-in sync failed', context: 'OAUTH_NATIVE', error: e);
+          _logger.error(
+            'Post-sign-in sync failed',
+            context: 'OAUTH_NATIVE',
+            error: e,
+          );
           // Don't rethrow - sign-in was successful, sync can be retried
         }
       }
     });
 
     if (state.hasError) {
-      _logger.error('Apple Sign-In failed', context: 'OAUTH_NATIVE', error: state.error);
+      _logger.error(
+        'Apple Sign-In failed',
+        context: 'OAUTH_NATIVE',
+        error: state.error,
+      );
       throw state.error!;
     }
   }
@@ -503,11 +619,15 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting native Google Sign-In (Sign In mode)', context: 'OAUTH_NATIVE');
+      _logger.info(
+        'Starting native Google Sign-In (Sign In mode)',
+        context: 'OAUTH_NATIVE',
+      );
 
-      await _analytics.track('auth_google_signin_started', properties: {
-        'platform': PlatformInfo.operatingSystem,
-      });
+      await _analytics.track(
+        'auth_google_signin_started',
+        properties: {'platform': PlatformInfo.operatingSystem},
+      );
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
       // This allows us to migrate their data after the session switch
@@ -522,11 +642,15 @@ class OAuthService extends _$OAuthService {
         wasAnonymous = true;
       }
 
-      _logger.info('Capturing anonymous user before sign-in', context: 'OAUTH_NATIVE', data: {
-        'anonymous_user_id': anonymousUserId,
-        'was_anonymous': wasAnonymous,
-        'had_temp_user_id': tempUserId != null,
-      });
+      _logger.info(
+        'Capturing anonymous user before sign-in',
+        context: 'OAUTH_NATIVE',
+        data: {
+          'anonymous_user_id': anonymousUserId,
+          'was_anonymous': wasAnonymous,
+          'had_temp_user_id': tempUserId != null,
+        },
+      );
 
       final googleSignIn = _getGoogleSignIn();
       await googleSignIn.signOut(); // Force picker
@@ -552,9 +676,11 @@ class OAuthService extends _$OAuthService {
 
       final oauthUserId = response.user?.id;
 
-      _logger.info('Google Sign-In successful (session switched)', context: 'OAUTH_NATIVE', data: {
-        'user_id': oauthUserId,
-      });
+      _logger.info(
+        'Google Sign-In successful (session switched)',
+        context: 'OAUTH_NATIVE',
+        data: {'user_id': oauthUserId},
+      );
 
       // CRITICAL: Only migrate data if:
       // 1. We had an anonymous user before sign-in
@@ -567,13 +693,19 @@ class OAuthService extends _$OAuthService {
       //
       // This prevents the bug where signing back in deletes all user data
       if (oauthUserId != null) {
-        _logger.info('Completing authentication', context: 'OAUTH_NATIVE', data: {
-          'previous_user_id': anonymousUserId,
-          'new_user_id': oauthUserId,
-          'was_anonymous': wasAnonymous,
-        });
+        _logger.info(
+          'Completing authentication',
+          context: 'OAUTH_NATIVE',
+          data: {
+            'previous_user_id': anonymousUserId,
+            'new_user_id': oauthUserId,
+            'was_anonymous': wasAnonymous,
+          },
+        );
 
-        final authMigrationService = await ref.read(authMigrationServiceProvider.future);
+        final authMigrationService = await ref.read(
+          authMigrationServiceProvider.future,
+        );
         final dataMigrated = await authMigrationService.completeAuthentication(
           previousUserId: anonymousUserId,
           wasAnonymous: wasAnonymous,
@@ -582,30 +714,41 @@ class OAuthService extends _$OAuthService {
           preservedUserId: false, // ID changed during sign-in
         );
 
-        _logger.info('Authentication completed', context: 'OAUTH_NATIVE', data: {
-          'data_migrated': dataMigrated,
-        });
+        _logger.info(
+          'Authentication completed',
+          context: 'OAUTH_NATIVE',
+          data: {'data_migrated': dataMigrated},
+        );
 
         // Clear temp user ID after successful migration
         if (tempUserId != null) {
           await prefs.remove('onboarding_temp_user_id');
-          _logger.info('Cleared onboarding temp user ID after Google sign-in', context: 'OAUTH_NATIVE');
+          _logger.info(
+            'Cleared onboarding temp user ID after Google sign-in',
+            context: 'OAUTH_NATIVE',
+          );
         }
       }
 
-      await _analytics.track('auth_google_signin_completed', properties: {
-        'user_id': oauthUserId,
-        'platform': PlatformInfo.operatingSystem,
-        'migrated_data': anonymousUserId != null && anonymousUserId != oauthUserId,
-      });
+      await _analytics.track(
+        'auth_google_signin_completed',
+        properties: {
+          'user_id': oauthUserId,
+          'platform': PlatformInfo.operatingSystem,
+          'migrated_data':
+              anonymousUserId != null && anonymousUserId != oauthUserId,
+        },
+      );
 
       // CRITICAL: Explicitly trigger full sync after sign-in
       // The auth state listener may not fire reliably, so we trigger sync directly
       // Clear any stale sync timestamp first to force a FULL sync
       if (oauthUserId != null) {
-        _logger.info('Triggering post-sign-in sync', context: 'OAUTH_NATIVE', data: {
-          'user_id': oauthUserId,
-        });
+        _logger.info(
+          'Triggering post-sign-in sync',
+          context: 'OAUTH_NATIVE',
+          data: {'user_id': oauthUserId},
+        );
 
         try {
           // Clear sync timestamp to force full sync (not incremental)
@@ -615,11 +758,13 @@ class OAuthService extends _$OAuthService {
           // Trigger sync using SyncCoordinator (provides sync lock and logging)
           // Note: We pass skipInvalidation=true and handle invalidation ourselves
           // to maintain the exact same timing as the original inline code
-          await ref.read(syncCoordinatorProvider.notifier).sync(
-            userId: oauthUserId,
-            trigger: SyncTrigger.oauthSignIn,
-            skipInvalidation: true,
-          );
+          await ref
+              .read(syncCoordinatorProvider.notifier)
+              .sync(
+                userId: oauthUserId,
+                trigger: SyncTrigger.oauthSignIn,
+                skipInvalidation: true,
+              );
 
           // Invalidate providers so UI reflects synced data
           // Done inline here (not in SyncCoordinator) to maintain original timing
@@ -628,16 +773,27 @@ class OAuthService extends _$OAuthService {
           ref.invalidate(allEventsProvider);
           ref.invalidate(nextUpcomingEventProvider);
 
-          _logger.info('Post-sign-in sync completed - providers invalidated', context: 'OAUTH_NATIVE');
+          _logger.info(
+            'Post-sign-in sync completed - providers invalidated',
+            context: 'OAUTH_NATIVE',
+          );
         } catch (e) {
-          _logger.error('Post-sign-in sync failed', context: 'OAUTH_NATIVE', error: e);
+          _logger.error(
+            'Post-sign-in sync failed',
+            context: 'OAUTH_NATIVE',
+            error: e,
+          );
           // Don't rethrow - sign-in was successful, sync can be retried
         }
       }
     });
 
     if (state.hasError) {
-      _logger.error('Google Sign-In failed', context: 'OAUTH_NATIVE', error: state.error);
+      _logger.error(
+        'Google Sign-In failed',
+        context: 'OAUTH_NATIVE',
+        error: state.error,
+      );
       throw state.error!;
     }
   }
@@ -661,12 +817,15 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting web Apple OAuth flow (linking)', context: 'OAUTH_WEB');
+      _logger.info(
+        'Starting web Apple OAuth flow (linking)',
+        context: 'OAUTH_WEB',
+      );
 
-      await _analytics.track('auth_apple_web_started', properties: {
-        'platform': 'web',
-        'mode': 'link',
-      });
+      await _analytics.track(
+        'auth_apple_web_started',
+        properties: {'platform': 'web', 'mode': 'link'},
+      );
 
       final currentUser = _supabase.auth.currentUser;
       if (currentUser == null) {
@@ -676,25 +835,34 @@ class OAuthService extends _$OAuthService {
       final anonymousUserId = currentUser.id;
       final wasAnonymous = currentUser.isAnonymous;
 
-      _logger.info('Linking Apple account to user (web)', context: 'OAUTH_WEB', data: {
-        'current_user_id': anonymousUserId,
-        'is_anonymous': wasAnonymous,
-      });
+      _logger.info(
+        'Linking Apple account to user (web)',
+        context: 'OAUTH_WEB',
+        data: {
+          'current_user_id': anonymousUserId,
+          'is_anonymous': wasAnonymous,
+        },
+      );
 
       try {
         // Use Supabase's linkIdentity for web OAuth linking
         await _supabase.auth.linkIdentity(
           OAuthProvider.apple,
           redirectTo: _getWebRedirectUrl(),
-          authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
+          authScreenLaunchMode:
+              LaunchMode.platformDefault, // Use platform default for web
         );
 
         // Note: The OAuth flow will redirect the browser, so we won't reach this
         // point immediately. The auth state change listener will handle the result.
         _logger.info('Apple OAuth redirect initiated', context: 'OAUTH_WEB');
       } on supabase.AuthException catch (e) {
-        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
-          _logger.warning('Apple account already linked to another user (web)', context: 'OAUTH_WEB');
+        if (e.message.contains('already linked') ||
+            e.message.contains('Identity is already linked')) {
+          _logger.warning(
+            'Apple account already linked to another user (web)',
+            context: 'OAUTH_WEB',
+          );
           throw AccountAlreadyExistsException(
             'This Apple account is already linked to another user.',
             email: null,
@@ -709,7 +877,11 @@ class OAuthService extends _$OAuthService {
       if (error is AccountAlreadyExistsException) {
         throw error;
       }
-      _logger.error('Apple web OAuth failed', context: 'OAUTH_WEB', error: error);
+      _logger.error(
+        'Apple web OAuth failed',
+        context: 'OAUTH_WEB',
+        error: error,
+      );
       throw state.error!;
     }
   }
@@ -719,12 +891,15 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting web Google OAuth flow (linking)', context: 'OAUTH_WEB');
+      _logger.info(
+        'Starting web Google OAuth flow (linking)',
+        context: 'OAUTH_WEB',
+      );
 
-      await _analytics.track('auth_google_web_started', properties: {
-        'platform': 'web',
-        'mode': 'link',
-      });
+      await _analytics.track(
+        'auth_google_web_started',
+        properties: {'platform': 'web', 'mode': 'link'},
+      );
 
       final currentUser = _supabase.auth.currentUser;
       if (currentUser == null) {
@@ -734,25 +909,34 @@ class OAuthService extends _$OAuthService {
       final anonymousUserId = currentUser.id;
       final wasAnonymous = currentUser.isAnonymous;
 
-      _logger.info('Linking Google account to user (web)', context: 'OAUTH_WEB', data: {
-        'current_user_id': anonymousUserId,
-        'is_anonymous': wasAnonymous,
-      });
+      _logger.info(
+        'Linking Google account to user (web)',
+        context: 'OAUTH_WEB',
+        data: {
+          'current_user_id': anonymousUserId,
+          'is_anonymous': wasAnonymous,
+        },
+      );
 
       try {
         // Use Supabase's linkIdentity for web OAuth linking
         await _supabase.auth.linkIdentity(
           OAuthProvider.google,
           redirectTo: _getWebRedirectUrl(),
-          authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
+          authScreenLaunchMode:
+              LaunchMode.platformDefault, // Use platform default for web
         );
 
         // Note: The OAuth flow will redirect the browser, so we won't reach this
         // point immediately. The auth state change listener will handle the result.
         _logger.info('Google OAuth redirect initiated', context: 'OAUTH_WEB');
       } on supabase.AuthException catch (e) {
-        if (e.message.contains('already linked') || e.message.contains('Identity is already linked')) {
-          _logger.warning('Google account already linked to another user (web)', context: 'OAUTH_WEB');
+        if (e.message.contains('already linked') ||
+            e.message.contains('Identity is already linked')) {
+          _logger.warning(
+            'Google account already linked to another user (web)',
+            context: 'OAUTH_WEB',
+          );
           throw AccountAlreadyExistsException(
             'This Google account is already linked to another user.',
             email: null,
@@ -767,7 +951,11 @@ class OAuthService extends _$OAuthService {
       if (error is AccountAlreadyExistsException) {
         throw error;
       }
-      _logger.error('Google web OAuth failed', context: 'OAUTH_WEB', error: error);
+      _logger.error(
+        'Google web OAuth failed',
+        context: 'OAUTH_WEB',
+        error: error,
+      );
       throw state.error!;
     }
   }
@@ -777,35 +965,51 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting web Apple OAuth flow (sign-in)', context: 'OAUTH_WEB');
+      _logger.info(
+        'Starting web Apple OAuth flow (sign-in)',
+        context: 'OAUTH_WEB',
+      );
 
-      await _analytics.track('auth_apple_web_signin_started', properties: {
-        'platform': 'web',
-      });
+      await _analytics.track(
+        'auth_apple_web_signin_started',
+        properties: {'platform': 'web'},
+      );
 
       // Capture current user ID for potential data migration
       final anonymousUserId = _supabase.auth.currentUser?.id;
       final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
 
-      _logger.info('Capturing anonymous user before web sign-in', context: 'OAUTH_WEB', data: {
-        'anonymous_user_id': anonymousUserId,
-        'was_anonymous': wasAnonymous,
-      });
+      _logger.info(
+        'Capturing anonymous user before web sign-in',
+        context: 'OAUTH_WEB',
+        data: {
+          'anonymous_user_id': anonymousUserId,
+          'was_anonymous': wasAnonymous,
+        },
+      );
 
       // Use Supabase's signInWithOAuth for web sign-in
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: _getWebRedirectUrl(),
-        authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
+        authScreenLaunchMode:
+            LaunchMode.platformDefault, // Use platform default for web
       );
 
       // Note: The OAuth flow will redirect the browser, so we won't reach this
       // point immediately. The auth state change listener will handle the result.
-      _logger.info('Apple OAuth sign-in redirect initiated', context: 'OAUTH_WEB');
+      _logger.info(
+        'Apple OAuth sign-in redirect initiated',
+        context: 'OAUTH_WEB',
+      );
     });
 
     if (state.hasError) {
-      _logger.error('Apple web OAuth sign-in failed', context: 'OAUTH_WEB', error: state.error);
+      _logger.error(
+        'Apple web OAuth sign-in failed',
+        context: 'OAUTH_WEB',
+        error: state.error,
+      );
       throw state.error!;
     }
   }
@@ -815,35 +1019,51 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Starting web Google OAuth flow (sign-in)', context: 'OAUTH_WEB');
+      _logger.info(
+        'Starting web Google OAuth flow (sign-in)',
+        context: 'OAUTH_WEB',
+      );
 
-      await _analytics.track('auth_google_web_signin_started', properties: {
-        'platform': 'web',
-      });
+      await _analytics.track(
+        'auth_google_web_signin_started',
+        properties: {'platform': 'web'},
+      );
 
       // Capture current user ID for potential data migration
       final anonymousUserId = _supabase.auth.currentUser?.id;
       final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
 
-      _logger.info('Capturing anonymous user before web sign-in', context: 'OAUTH_WEB', data: {
-        'anonymous_user_id': anonymousUserId,
-        'was_anonymous': wasAnonymous,
-      });
+      _logger.info(
+        'Capturing anonymous user before web sign-in',
+        context: 'OAUTH_WEB',
+        data: {
+          'anonymous_user_id': anonymousUserId,
+          'was_anonymous': wasAnonymous,
+        },
+      );
 
       // Use Supabase's signInWithOAuth for web sign-in
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: _getWebRedirectUrl(),
-        authScreenLaunchMode: LaunchMode.platformDefault, // Use platform default for web
+        authScreenLaunchMode:
+            LaunchMode.platformDefault, // Use platform default for web
       );
 
       // Note: The OAuth flow will redirect the browser, so we won't reach this
       // point immediately. The auth state change listener will handle the result.
-      _logger.info('Google OAuth sign-in redirect initiated', context: 'OAUTH_WEB');
+      _logger.info(
+        'Google OAuth sign-in redirect initiated',
+        context: 'OAUTH_WEB',
+      );
     });
 
     if (state.hasError) {
-      _logger.error('Google web OAuth sign-in failed', context: 'OAUTH_WEB', error: state.error);
+      _logger.error(
+        'Google web OAuth sign-in failed',
+        context: 'OAUTH_WEB',
+        error: state.error,
+      );
       throw state.error!;
     }
   }

@@ -21,7 +21,9 @@ class ConsumedProgressWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final labelColor = isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+    final labelColor = isDark
+        ? Colors.white70
+        : theme.colorScheme.onSurfaceVariant;
 
     final targetCalories = targets?.totalCalories.round();
     final caloriesRatio = (targetCalories != null && targetCalories > 0)
@@ -121,8 +123,8 @@ class _MacroRow extends StatelessWidget {
 
     final targetStr = target != null
         ? (unit == 'kcal'
-            ? '/ ${target!.round()} $unit'
-            : '/ ${target!.toStringAsFixed(0)} $unit')
+              ? '/ ${target!.round()} $unit'
+              : '/ ${target!.toStringAsFixed(0)} $unit')
         : null;
 
     return Column(
@@ -134,7 +136,9 @@ class _MacroRow extends StatelessWidget {
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                color: isDark
+                    ? Colors.white70
+                    : theme.colorScheme.onSurfaceVariant,
               ),
             ),
             Text(

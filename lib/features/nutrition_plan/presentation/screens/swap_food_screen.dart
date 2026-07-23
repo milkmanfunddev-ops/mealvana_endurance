@@ -799,8 +799,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   triggerSearchOnKeyboardSubmit: false,
                   enableAutoSearch: false,
                   hintText: 'Search for food...',
-                  useDarkStyle:
-                      Theme.of(context).brightness == Brightness.dark,
+                  useDarkStyle: Theme.of(context).brightness == Brightness.dark,
                   fieldKey: const ValueKey('swap_food.search_field'),
                 ),
 
@@ -894,8 +893,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                           isMyFoodsExpanded: state.isMyFoodsExpanded,
                           onMyFoodsSectionToggle: () {
                             ref
-                                .read(swapFoodControllerProvider(_params)
-                                    .notifier)
+                                .read(
+                                  swapFoodControllerProvider(_params).notifier,
+                                )
                                 .toggleMyFoodsExpanded();
                           },
                           emptyQueryContent: _buildDefaultView(state),

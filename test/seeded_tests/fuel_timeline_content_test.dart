@@ -58,41 +58,39 @@ MealLog _meal({
   double carbsG = 58,
   double proteinG = 30,
   double fatG = 25,
-}) =>
-    MealLog(
-      id: id,
-      userId: 'u1',
-      logDate: '2026-06-17',
-      slot: slot,
-      name: name,
-      source: MealLogSource.manual,
-      components: const [],
-      calories: calories,
-      carbsG: carbsG,
-      proteinG: proteinG,
-      fatG: fatG,
-      eatenAt: eatenAt ?? DateTime(2026, 6, 17, 7, 30),
-      createdAt: _date,
-      updatedAt: _date,
-    );
+}) => MealLog(
+  id: id,
+  userId: 'u1',
+  logDate: '2026-06-17',
+  slot: slot,
+  name: name,
+  source: MealLogSource.manual,
+  components: const [],
+  calories: calories,
+  carbsG: carbsG,
+  proteinG: proteinG,
+  fatG: fatG,
+  eatenAt: eatenAt ?? DateTime(2026, 6, 17, 7, 30),
+  createdAt: _date,
+  updatedAt: _date,
+);
 
 Activity _ride({
   String id = 'a1',
   String title = '25 mi Ride',
   DateTime? scheduledAt,
-}) =>
-    Activity(
-      id: id,
-      userId: 'u1',
-      activityType: ActivityType.cycling,
-      title: title,
-      scheduledDateTime: scheduledAt ?? DateTime(2026, 6, 17, 16, 15),
-      distanceMiles: 25,
-      cyclingSpeedMph: 15,
-      durationMinutes: 100,
-      createdAt: _date,
-      updatedAt: _date,
-    );
+}) => Activity(
+  id: id,
+  userId: 'u1',
+  activityType: ActivityType.cycling,
+  title: title,
+  scheduledDateTime: scheduledAt ?? DateTime(2026, 6, 17, 16, 15),
+  distanceMiles: 25,
+  cyclingSpeedMph: 15,
+  durationMinutes: 100,
+  createdAt: _date,
+  updatedAt: _date,
+);
 
 DailyMacroTargets _targets() => DailyMacroTargets(
   id: 't1',
@@ -114,15 +112,14 @@ DayTimelineResult _assemble({
   List<MealLog> meals = const [],
   List<Activity> activities = const [],
   ConsumedTotals consumed = const ConsumedTotals(),
-}) =>
-    const DayTimelineAssembler().assemble(
-      selectedDate: _date,
-      now: _now,
-      meals: meals,
-      activities: activities,
-      targets: _targets(),
-      consumed: consumed,
-    );
+}) => const DayTimelineAssembler().assemble(
+  selectedDate: _date,
+  now: _now,
+  meals: meals,
+  activities: activities,
+  targets: _targets(),
+  consumed: consumed,
+);
 
 // ---------------------------------------------------------------------------
 // Seeded daily macros controller (avoids DB / network in build())
@@ -291,10 +288,7 @@ void main() {
   // -------------------------------------------------------------------------
   group('filter switching', () {
     testWidgets('All filter shows both meal + ride', (tester) async {
-      final result = _assemble(
-        meals: [_meal()],
-        activities: [_ride()],
-      );
+      final result = _assemble(meals: [_meal()], activities: [_ride()]);
       await _pump(tester, result: result);
 
       expect(find.text('EVERYTHING BAGEL'), findsOneWidget);
@@ -304,10 +298,7 @@ void main() {
     testWidgets('Meals filter hides the ride and the Add Activity button', (
       tester,
     ) async {
-      final result = _assemble(
-        meals: [_meal()],
-        activities: [_ride()],
-      );
+      final result = _assemble(meals: [_meal()], activities: [_ride()]);
       await _pump(tester, result: result);
 
       await tester.tap(find.text('Meals'));
@@ -337,10 +328,7 @@ void main() {
     testWidgets('Workout filter hides the meal and the Add Food button', (
       tester,
     ) async {
-      final result = _assemble(
-        meals: [_meal()],
-        activities: [_ride()],
-      );
+      final result = _assemble(meals: [_meal()], activities: [_ride()]);
       await _pump(tester, result: result);
 
       await tester.tap(find.text('Workout'));
@@ -366,10 +354,7 @@ void main() {
     });
 
     testWidgets('switching back to All restores both nodes', (tester) async {
-      final result = _assemble(
-        meals: [_meal()],
-        activities: [_ride()],
-      );
+      final result = _assemble(meals: [_meal()], activities: [_ride()]);
       await _pump(tester, result: result);
 
       await tester.tap(find.text('Workout'));
@@ -390,78 +375,75 @@ void main() {
   // 4. Tracking toggle — hides dashboard AND macro line
   // -------------------------------------------------------------------------
   group('tracking toggle', () {
-    testWidgets(
-      'tracking ON: dashboard visible + meal macro line shows kcal',
-      (tester) async {
-        final result = _assemble(
-          meals: [_meal()],
-          activities: [_ride()],
-          consumed: const ConsumedTotals(calories: 574),
-        );
-        await _pump(tester, result: result);
+    testWidgets('tracking ON: dashboard visible + meal macro line shows kcal', (
+      tester,
+    ) async {
+      final result = _assemble(
+        meals: [_meal()],
+        activities: [_ride()],
+        consumed: const ConsumedTotals(calories: 574),
+      );
+      await _pump(tester, result: result);
 
-        expect(find.text('INTAKE'), findsOneWidget);
-        expect(find.textContaining('574 kcal'), findsOneWidget);
-      },
-    );
+      expect(find.text('INTAKE'), findsOneWidget);
+      expect(find.textContaining('574 kcal'), findsOneWidget);
+    });
 
-    testWidgets(
-      'tracking OFF: dashboard hidden + meal macro line hidden',
-      (tester) async {
-        final result = _assemble(
-          meals: [_meal()],
-          activities: [_ride()],
-          consumed: const ConsumedTotals(calories: 574),
-        );
-        // Seed SharedPreferences with tracking=false before pumping.
-        await _pump(tester, result: result, fuelTrackingEnabled: false);
+    testWidgets('tracking OFF: dashboard hidden + meal macro line hidden', (
+      tester,
+    ) async {
+      final result = _assemble(
+        meals: [_meal()],
+        activities: [_ride()],
+        consumed: const ConsumedTotals(calories: 574),
+      );
+      // Seed SharedPreferences with tracking=false before pumping.
+      await _pump(tester, result: result, fuelTrackingEnabled: false);
 
-        // BUG CANDIDATE: if tracking flag isn't read from prefs at build time,
-        // the dashboard would be shown even though the user disabled it.
-        expect(
-          find.text('INTAKE'),
-          findsNothing,
-          reason: 'Dashboard must be hidden when tracking is off',
-        );
-        expect(
-          find.textContaining('574 kcal'),
-          findsNothing,
-          reason: 'Macro line must be hidden when tracking is off',
-        );
-        // The meal title must still be visible.
-        expect(find.text('EVERYTHING BAGEL'), findsOneWidget);
-      },
-    );
+      // BUG CANDIDATE: if tracking flag isn't read from prefs at build time,
+      // the dashboard would be shown even though the user disabled it.
+      expect(
+        find.text('INTAKE'),
+        findsNothing,
+        reason: 'Dashboard must be hidden when tracking is off',
+      );
+      expect(
+        find.textContaining('574 kcal'),
+        findsNothing,
+        reason: 'Macro line must be hidden when tracking is off',
+      );
+      // The meal title must still be visible.
+      expect(find.text('EVERYTHING BAGEL'), findsOneWidget);
+    });
 
-    testWidgets(
-      'tapping tracking icon toggles dashboard visibility',
-      (tester) async {
-        final result = _assemble(meals: [_meal()], activities: [_ride()]);
-        await _pump(tester, result: result);
+    testWidgets('tapping tracking icon toggles dashboard visibility', (
+      tester,
+    ) async {
+      final result = _assemble(meals: [_meal()], activities: [_ride()]);
+      await _pump(tester, result: result);
 
-        expect(find.text('INTAKE'), findsOneWidget);
+      expect(find.text('INTAKE'), findsOneWidget);
 
-        await tester.tap(find.byIcon(Icons.show_chart));
-        await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.show_chart));
+      await tester.pumpAndSettle();
 
-        // After one tap tracking is OFF.
-        expect(
-          find.text('INTAKE'),
-          findsNothing,
-          reason: 'Tapping the tracking icon must hide the dashboard',
-        );
+      // After one tap tracking is OFF.
+      expect(
+        find.text('INTAKE'),
+        findsNothing,
+        reason: 'Tapping the tracking icon must hide the dashboard',
+      );
 
-        await tester.tap(find.byIcon(Icons.show_chart));
-        await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.show_chart));
+      await tester.pumpAndSettle();
 
-        // After a second tap tracking is ON again.
-        expect(
-          find.text('INTAKE'),
-          findsOneWidget,
-          reason: 'Second tap must restore the dashboard',
-        );
-      },
-    );
+      // After a second tap tracking is ON again.
+      expect(
+        find.text('INTAKE'),
+        findsOneWidget,
+        reason: 'Second tap must restore the dashboard',
+      );
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -488,7 +470,8 @@ void main() {
       expect(
         find.text('7:30 AM'),
         findsNothing,
-        reason: 'Time label must be hidden when the timeline rail is toggled off',
+        reason:
+            'Time label must be hidden when the timeline rail is toggled off',
       );
     });
   });
@@ -565,19 +548,18 @@ void main() {
   // 8. Meal card expand / collapse (inline Swap + Remove actions)
   // -------------------------------------------------------------------------
   group('meal card actions (swipe)', () {
-    testWidgets(
-      'meal tiles expose no inline expand actions or overflow icon',
-      (tester) async {
-        final result = _assemble(meals: [_meal()]);
-        await _pump(tester, result: result);
+    testWidgets('meal tiles expose no inline expand actions or overflow icon', (
+      tester,
+    ) async {
+      final result = _assemble(meals: [_meal()]);
+      await _pump(tester, result: result);
 
-        // The inline Swap/Remove expand row and the "…" overflow icon were
-        // replaced by swipe-to-delete / swipe-to-swap. At rest none render.
-        expect(find.text('Swap food'), findsNothing);
-        expect(find.text('Remove'), findsNothing);
-        expect(find.byIcon(Icons.more_horiz), findsNothing);
-      },
-    );
+      // The inline Swap/Remove expand row and the "…" overflow icon were
+      // replaced by swipe-to-delete / swipe-to-swap. At rest none render.
+      expect(find.text('Swap food'), findsNothing);
+      expect(find.text('Remove'), findsNothing);
+      expect(find.byIcon(Icons.more_horiz), findsNothing);
+    });
 
     testWidgets(
       'each meal tile is wrapped in a Dismissible for swipe actions',
@@ -585,9 +567,10 @@ void main() {
         final result = _assemble(
           meals: [
             _meal(
-                id: 'm1',
-                name: 'Breakfast Bowl',
-                eatenAt: DateTime(2026, 6, 17, 7)),
+              id: 'm1',
+              name: 'Breakfast Bowl',
+              eatenAt: DateTime(2026, 6, 17, 7),
+            ),
             _meal(
               id: 'm2',
               name: 'Lunch Wrap',

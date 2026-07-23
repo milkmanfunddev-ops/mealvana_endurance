@@ -36,8 +36,9 @@ class NutrientCalculationSection extends ConsumerWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryText = isDark ? AppColors.textDark : AppColors.textLight;
-    final secondaryText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
     final dimColor = isDark
         ? Colors.white.withValues(alpha: 0.4)
         : Colors.black.withValues(alpha: 0.4);
@@ -103,14 +104,16 @@ class NutrientCalculationSection extends ConsumerWidget {
               nutrient: data.nutrientLabel,
               phase: data.phase,
               onVote: (vote) {
-                ref.read(analyticsTrackerProvider).track(
-                  'transparency_calc_feedback',
-                  properties: {
-                    'nutrient': data.nutrientLabel,
-                    'phase': data.phase,
-                    'vote': vote,
-                  },
-                );
+                ref
+                    .read(analyticsTrackerProvider)
+                    .track(
+                      'transparency_calc_feedback',
+                      properties: {
+                        'nutrient': data.nutrientLabel,
+                        'phase': data.phase,
+                        'vote': vote,
+                      },
+                    );
               },
             ),
           ],
@@ -220,9 +223,7 @@ class NutrientCalculationSection extends ConsumerWidget {
           else
             const SizedBox(width: 20),
           Expanded(
-            child: RichText(
-              text: TextSpan(children: spans),
-            ),
+            child: RichText(text: TextSpan(children: spans)),
           ),
         ],
       ),

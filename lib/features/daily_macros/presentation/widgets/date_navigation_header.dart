@@ -14,21 +14,24 @@ class DateNavigationHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(calendarSelectedDateProvider);
     final today = DateTime.now();
-    final isToday = selectedDate.year == today.year &&
+    final isToday =
+        selectedDate.year == today.year &&
         selectedDate.month == today.month &&
         selectedDate.day == today.day;
 
     final dateFormat = DateFormat('EEE, MMM d');
-    final dateString = isToday ? 'Today, ${DateFormat('MMM d').format(selectedDate)}' : dateFormat.format(selectedDate);
+    final dateString = isToday
+        ? 'Today, ${DateFormat('MMM d').format(selectedDate)}'
+        : dateFormat.format(selectedDate);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
           onPressed: () {
-            ref.read(calendarSelectedDateProvider.notifier).setDate(
-              selectedDate.subtract(const Duration(days: 1)),
-            );
+            ref
+                .read(calendarSelectedDateProvider.notifier)
+                .setDate(selectedDate.subtract(const Duration(days: 1)));
           },
           icon: FaIcon(
             FontAwesomeIcons.chevronLeft,
@@ -39,9 +42,9 @@ class DateNavigationHeader extends ConsumerWidget {
         GestureDetector(
           onTap: () {
             // Tapping date label goes back to today
-            ref.read(calendarSelectedDateProvider.notifier).setDate(
-              DateTime.now(),
-            );
+            ref
+                .read(calendarSelectedDateProvider.notifier)
+                .setDate(DateTime.now());
           },
           child: Text(
             dateString,
@@ -52,9 +55,9 @@ class DateNavigationHeader extends ConsumerWidget {
         ),
         IconButton(
           onPressed: () {
-            ref.read(calendarSelectedDateProvider.notifier).setDate(
-              selectedDate.add(const Duration(days: 1)),
-            );
+            ref
+                .read(calendarSelectedDateProvider.notifier)
+                .setDate(selectedDate.add(const Duration(days: 1)));
           },
           icon: FaIcon(
             FontAwesomeIcons.chevronRight,

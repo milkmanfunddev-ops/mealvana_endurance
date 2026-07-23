@@ -38,10 +38,7 @@ void main() {
 
     test('legacy UUIDs normalize then classify', () {
       // gel UUID (fuel) and real_food UUID (general) from product_type_mapper.
-      expect(
-        isFuelProductType('8a847f4f-8c26-41ef-a1e2-132b404be95e'),
-        isTrue,
-      );
+      expect(isFuelProductType('8a847f4f-8c26-41ef-a1e2-132b404be95e'), isTrue);
       expect(
         isFuelProductType('76c16c67-1746-47d7-adea-e5fc9dcd1f4d'),
         isFalse,

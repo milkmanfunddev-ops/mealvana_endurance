@@ -31,14 +31,10 @@ class TestConfig {
   }) {
     final overrides = [
       // Override AppConfig with test configuration
-      appConfigProvider.overrideWithValue(
-        config ?? AppConfig.forTesting(),
-      ),
+      appConfigProvider.overrideWithValue(config ?? AppConfig.forTesting()),
 
       // Override database with in-memory database
-      appDatabaseProvider.overrideWithValue(
-        database ?? AppDatabase.memory(),
-      ),
+      appDatabaseProvider.overrideWithValue(database ?? AppDatabase.memory()),
 
       // Override analytics with recording tracker
       analyticsTrackerProvider.overrideWithValue(
@@ -51,16 +47,12 @@ class TestConfig {
       ),
 
       // Override logger with recording logger
-      appLoggerProvider.overrideWithValue(
-        logger ?? RecordingAppLogger(),
-      ),
+      appLoggerProvider.overrideWithValue(logger ?? RecordingAppLogger()),
     ];
 
     // Add Supabase client override if provided
     if (supabaseClient != null) {
-      overrides.add(
-        supabaseClientProvider.overrideWithValue(supabaseClient),
-      );
+      overrides.add(supabaseClientProvider.overrideWithValue(supabaseClient));
     }
 
     // Add any additional overrides
@@ -68,9 +60,7 @@ class TestConfig {
       overrides.addAll(additionalOverrides.cast());
     }
 
-    return ProviderContainer(
-      overrides: overrides.cast(),
-    );
+    return ProviderContainer(overrides: overrides.cast());
   }
 
   /// Creates mock external dependencies for testing
@@ -134,27 +124,19 @@ class TestConfig {
     SupabaseClient? supabaseClient,
   }) {
     final overrides = [
-      appConfigProvider.overrideWithValue(
-        config ?? AppConfig.forTesting(),
-      ),
-      appDatabaseProvider.overrideWithValue(
-        database ?? AppDatabase.memory(),
-      ),
+      appConfigProvider.overrideWithValue(config ?? AppConfig.forTesting()),
+      appDatabaseProvider.overrideWithValue(database ?? AppDatabase.memory()),
       analyticsTrackerProvider.overrideWithValue(
         analytics ?? RecordingAnalyticsTracker(),
       ),
       sentryReporterProvider.overrideWithValue(
         sentry ?? RecordingSentryReporter(),
       ),
-      appLoggerProvider.overrideWithValue(
-        logger ?? RecordingAppLogger(),
-      ),
+      appLoggerProvider.overrideWithValue(logger ?? RecordingAppLogger()),
     ];
 
     if (supabaseClient != null) {
-      overrides.add(
-        supabaseClientProvider.overrideWithValue(supabaseClient),
-      );
+      overrides.add(supabaseClientProvider.overrideWithValue(supabaseClient));
     }
 
     return overrides;

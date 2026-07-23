@@ -30,16 +30,14 @@ class TransparencyVideoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TransparencyAccordion(
-      title: title,
-      child: _buildContent(context),
-    );
+    return TransparencyAccordion(title: title, child: _buildContent(context));
   }
 
   Widget _buildContent(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dimText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final dimText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
 
     if (comingSoon || videoUrl == null || videoUrl!.isEmpty) {
       // Spec-style thumbnail placeholder: shows the Watch title and
@@ -93,8 +91,7 @@ class TransparencyVideoSection extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: dimText.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(4),
@@ -134,12 +131,8 @@ class TransparencyVideoSection extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              isDark
-                  ? const Color(0xFF1a0f2e)
-                  : Colors.grey.shade100,
-              isDark
-                  ? const Color(0xFF0e0818)
-                  : Colors.grey.shade200,
+              isDark ? const Color(0xFF1a0f2e) : Colors.grey.shade100,
+              isDark ? const Color(0xFF0e0818) : Colors.grey.shade200,
             ],
           ),
           borderRadius: BorderRadius.circular(10),
@@ -168,10 +161,7 @@ class TransparencyVideoSection extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '~2 min \u00b7 Mealvana Education',
-              style: TextStyle(
-                fontSize: 11,
-                color: dimText,
-              ),
+              style: TextStyle(fontSize: 11, color: dimText),
             ),
           ],
         ),

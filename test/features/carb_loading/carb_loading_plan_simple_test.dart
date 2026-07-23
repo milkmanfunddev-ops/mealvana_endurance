@@ -8,27 +8,53 @@ void main() {
 
   group('CarbLoadingPlan.getRaceDistanceMultiplier', () {
     test('halfMarathon → 0.8', () {
-      expect(CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.halfMarathon), 0.8);
+      expect(
+        CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.halfMarathon),
+        0.8,
+      );
     });
 
     test('marathon → 1.0', () {
-      expect(CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.marathon), 1.0);
+      expect(
+        CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.marathon),
+        1.0,
+      );
     });
 
     test('50k → 1.1', () {
-      expect(CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.ultramarathon50k), 1.1);
+      expect(
+        CarbLoadingPlan.getRaceDistanceMultiplier(
+          RaceDistance.ultramarathon50k,
+        ),
+        1.1,
+      );
     });
 
     test('100k → 1.1', () {
-      expect(CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.ultramarathon100k), 1.1);
+      expect(
+        CarbLoadingPlan.getRaceDistanceMultiplier(
+          RaceDistance.ultramarathon100k,
+        ),
+        1.1,
+      );
     });
 
     test('50 mile → 1.2', () {
-      expect(CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.ultramarathon50mile), 1.2);
+      expect(
+        CarbLoadingPlan.getRaceDistanceMultiplier(
+          RaceDistance.ultramarathon50mile,
+        ),
+        1.2,
+      );
     });
 
     test('100 mile → 1.2', () {
-      expect(CarbLoadingPlan.getRaceDistanceMultiplier(RaceDistance.ultramarathon100mile), 1.2);
+      expect(
+        CarbLoadingPlan.getRaceDistanceMultiplier(
+          RaceDistance.ultramarathon100mile,
+        ),
+        1.2,
+      );
     });
   });
 
@@ -38,15 +64,24 @@ void main() {
 
   group('CarbLoadingPlan.getTrainingVolumeMultiplier', () {
     test('low → 0.9', () {
-      expect(CarbLoadingPlan.getTrainingVolumeMultiplier(TrainingVolume.low), 0.9);
+      expect(
+        CarbLoadingPlan.getTrainingVolumeMultiplier(TrainingVolume.low),
+        0.9,
+      );
     });
 
     test('moderate → 1.0', () {
-      expect(CarbLoadingPlan.getTrainingVolumeMultiplier(TrainingVolume.moderate), 1.0);
+      expect(
+        CarbLoadingPlan.getTrainingVolumeMultiplier(TrainingVolume.moderate),
+        1.0,
+      );
     });
 
     test('high → 1.1', () {
-      expect(CarbLoadingPlan.getTrainingVolumeMultiplier(TrainingVolume.high), 1.1);
+      expect(
+        CarbLoadingPlan.getTrainingVolumeMultiplier(TrainingVolume.high),
+        1.1,
+      );
     });
   });
 
@@ -70,18 +105,21 @@ void main() {
       expect(plan.carbsPerKgTarget, closeTo(8.0, 0.001));
     });
 
-    test('halfMarathon + low + 60kg → 8*0.8*0.9*60 = 345.6 → rounds to 346', () {
-      final plan = CarbLoadingPlan.createDefault(
-        userId: 'user-1',
-        raceDate: raceDate,
-        raceDistance: RaceDistance.halfMarathon,
-        trainingVolume: TrainingVolume.low,
-        bodyWeightKg: 60.0,
-      );
-      // 8 * 0.8 * 0.9 = 5.76; 5.76 * 60 = 345.6 → round → 346
-      expect(plan.dailyCarbTargetG, 346);
-      expect(plan.carbsPerKgTarget, closeTo(5.76, 0.001));
-    });
+    test(
+      'halfMarathon + low + 60kg → 8*0.8*0.9*60 = 345.6 → rounds to 346',
+      () {
+        final plan = CarbLoadingPlan.createDefault(
+          userId: 'user-1',
+          raceDate: raceDate,
+          raceDistance: RaceDistance.halfMarathon,
+          trainingVolume: TrainingVolume.low,
+          bodyWeightKg: 60.0,
+        );
+        // 8 * 0.8 * 0.9 = 5.76; 5.76 * 60 = 345.6 → round → 346
+        expect(plan.dailyCarbTargetG, 346);
+        expect(plan.carbsPerKgTarget, closeTo(5.76, 0.001));
+      },
+    );
 
     test('100mile + high + 80kg → 8*1.2*1.1*80 = 844.8 → rounds to 845', () {
       final plan = CarbLoadingPlan.createDefault(
@@ -129,7 +167,10 @@ void main() {
         bodyWeightKg: 70.0,
       );
       for (final day in plan.daySelections.values) {
-        expect(day.meals.keys, containsAll(['breakfast', 'lunch', 'snack1', 'dinner', 'snack2']));
+        expect(
+          day.meals.keys,
+          containsAll(['breakfast', 'lunch', 'snack1', 'dinner', 'snack2']),
+        );
         expect(day.totalCarbs, 0);
       }
     });
@@ -149,8 +190,10 @@ void main() {
     test('totalCarbs sums across all meals', () {
       // MealFoods.totalCarbs = each food contributes qty * 50g
       final meal1 = MealFoods(selectedFoods: {'pasta': 2}); // 100g
-      final meal2 = MealFoods(selectedFoods: {'rice': 3});  // 150g
-      final day = DayFoodSelections(meals: {'breakfast': meal1, 'lunch': meal2});
+      final meal2 = MealFoods(selectedFoods: {'rice': 3}); // 150g
+      final day = DayFoodSelections(
+        meals: {'breakfast': meal1, 'lunch': meal2},
+      );
       expect(day.totalCarbs, 250);
     });
 
@@ -162,13 +205,18 @@ void main() {
 
     test('updateMeal replaces the meal and recalculates totalCarbs', () {
       final day = DayFoodSelections.empty();
-      final updatedDay = day.updateMeal('breakfast', MealFoods(selectedFoods: {'oats': 1}));
+      final updatedDay = day.updateMeal(
+        'breakfast',
+        MealFoods(selectedFoods: {'oats': 1}),
+      );
       expect(updatedDay.totalCarbs, 50);
     });
 
     test('copyWith returns new instance with replaced meals', () {
       final day = DayFoodSelections.empty();
-      final newMeals = {'breakfast': MealFoods(selectedFoods: {'bagel': 2})};
+      final newMeals = {
+        'breakfast': MealFoods(selectedFoods: {'bagel': 2}),
+      };
       final copy = day.copyWith(meals: newMeals);
       expect(copy.totalCarbs, 100);
       expect(day.totalCarbs, 0); // original unchanged
@@ -273,17 +321,24 @@ void main() {
         dailyServingsTarget: 11,
         bodyWeightKg: 70.0,
         carbsPerKgTarget: 8.0,
-        daySelections: {-2: DayFoodSelections.empty(), -1: DayFoodSelections.empty(), 0: DayFoodSelections.empty()},
+        daySelections: {
+          -2: DayFoodSelections.empty(),
+          -1: DayFoodSelections.empty(),
+          0: DayFoodSelections.empty(),
+        },
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
     }
 
-    test('isCarbLoadingActive is false when race is in the far future (>2 days away)', () {
-      // Use a date far in the future so now < raceDate - 2
-      final raceDate = DateTime.now().add(const Duration(days: 365));
-      expect(_plan(raceDate).isCarbLoadingActive, isFalse);
-    });
+    test(
+      'isCarbLoadingActive is false when race is in the far future (>2 days away)',
+      () {
+        // Use a date far in the future so now < raceDate - 2
+        final raceDate = DateTime.now().add(const Duration(days: 365));
+        expect(_plan(raceDate).isCarbLoadingActive, isFalse);
+      },
+    );
 
     test('isCarbLoadingActive is false when race has already passed', () {
       final raceDate = DateTime.now().subtract(const Duration(days: 3));
@@ -293,18 +348,26 @@ void main() {
     // BUG CHECK NOTE: isCarbLoadingActive always uses carbLoadingStartDate = raceDate - 2 days
     // even when the protocol is 3 days. The 3-day protocol window (day -3) would NOT
     // show as active until the day -2 threshold is crossed. This is a potential bug.
-    test('BUG-CHECK: isCarbLoadingActive uses hardcoded 2-day window, not actual protocol length', () {
-      // raceDate = now + 2.5 days, so carb loading started 0.5 days ago
-      final raceDate = DateTime.now().add(const Duration(hours: 60)); // ~2.5 days
-      // If this were a 3-day protocol, day -3 would have started yesterday.
-      // But isCarbLoadingActive only checks raceDate - 2.
-      // With raceDate at now+60h, carbLoadingStartDate = now+60h-48h = now+12h
-      // Since now.isAfter(now+12h) is FALSE, the method returns false even
-      // though a 3-day protocol SHOULD show as active.
-      final plan = _plan(raceDate);
-      // Confirming the hardcoded-2-day behaviour:
-      expect(plan.isCarbLoadingActive, isFalse); // BUG: should be true for 3-day protocol
-    });
+    test(
+      'BUG-CHECK: isCarbLoadingActive uses hardcoded 2-day window, not actual protocol length',
+      () {
+        // raceDate = now + 2.5 days, so carb loading started 0.5 days ago
+        final raceDate = DateTime.now().add(
+          const Duration(hours: 60),
+        ); // ~2.5 days
+        // If this were a 3-day protocol, day -3 would have started yesterday.
+        // But isCarbLoadingActive only checks raceDate - 2.
+        // With raceDate at now+60h, carbLoadingStartDate = now+60h-48h = now+12h
+        // Since now.isAfter(now+12h) is FALSE, the method returns false even
+        // though a 3-day protocol SHOULD show as active.
+        final plan = _plan(raceDate);
+        // Confirming the hardcoded-2-day behaviour:
+        expect(
+          plan.isCarbLoadingActive,
+          isFalse,
+        ); // BUG: should be true for 3-day protocol
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -333,7 +396,10 @@ void main() {
       expect(restored.dailyCarbTargetG, original.dailyCarbTargetG);
       expect(restored.dailyServingsTarget, original.dailyServingsTarget);
       expect(restored.bodyWeightKg, closeTo(original.bodyWeightKg, 0.001));
-      expect(restored.carbsPerKgTarget, closeTo(original.carbsPerKgTarget, 0.001));
+      expect(
+        restored.carbsPerKgTarget,
+        closeTo(original.carbsPerKgTarget, 0.001),
+      );
       expect(restored.isActive, original.isActive);
     });
 

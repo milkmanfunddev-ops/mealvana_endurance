@@ -77,7 +77,11 @@ void main() {
       activities: [ride],
       targets: targets,
       consumed: const ConsumedTotals(
-          calories: 574, carbsG: 58, proteinG: 30, fatG: 25),
+        calories: 574,
+        carbsG: 58,
+        proteinG: 30,
+        fatG: 25,
+      ),
     );
   }
 
@@ -101,8 +105,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('switching to Meals shows macro budget + hides the ride',
-      (tester) async {
+  testWidgets('switching to Meals shows macro budget + hides the ride', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     // Default All filter: ride visible, Intake/Burned dashboard.
@@ -117,8 +122,9 @@ void main() {
     expect(find.text('+ Add Activity'), findsNothing); // gated by filter
   });
 
-  testWidgets('switching to Workout shows Active Energy + hides meals',
-      (tester) async {
+  testWidgets('switching to Workout shows Active Energy + hides meals', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     await tester.tap(find.text('Workout'));
@@ -129,8 +135,9 @@ void main() {
     expect(find.text('+ Add Food'), findsNothing);
   });
 
-  testWidgets('tracking toggle hides the dashboard and macro line',
-      (tester) async {
+  testWidgets('tracking toggle hides the dashboard and macro line', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     expect(find.text('INTAKE'), findsOneWidget);
@@ -141,7 +148,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('INTAKE'), findsNothing); // dashboard hidden
-    expect(find.textContaining('574 kcal'), findsNothing); // macro line stripped
+    expect(
+      find.textContaining('574 kcal'),
+      findsNothing,
+    ); // macro line stripped
     expect(find.text('EVERYTHING BAGEL'), findsOneWidget); // meal still shown
   });
 

@@ -207,7 +207,11 @@ export function calculatePreWorkoutTargets(
   let hydrationHigh: number;
   let mealType: string;
 
-  if (hoursBefore >= 2.5) {
+  // Tier thresholds per the Notion spec "Pre-Workout Fueling Plan Algorithm"
+  // (31fe3fdb): >= 90 min -> Meal + Snack + Top-off; 30-89 min -> Snack +
+  // Top-off; < 30 min -> Top-off only. These had drifted to 2.5h/1.0h,
+  // which denied a full meal to athletes eating 1.5-2.5h out (bug, 2026-07-21).
+  if (hoursBefore >= 1.5) {
     // Full meal
     protein = Math.round(weightKg * 0.25);
     proteinLow = Math.round(weightKg * 0.15);
@@ -220,7 +224,7 @@ export function calculatePreWorkoutTargets(
     sodiumHigh = 2000;
     hydrationLow = Math.max(200, Math.round(hydration * 0.50));
     hydrationHigh = Math.max(600, Math.round(hydration * 1.50));
-  } else if (hoursBefore >= 1.0) {
+  } else if (hoursBefore >= 0.5) {
     // Snack
     protein = Math.round(weightKg * 0.15);
     proteinLow = 0;
@@ -403,8 +407,10 @@ export function applyPreWorkoutHydrationOverlay(
 // ============================================================================
 
 export function getActiveSubPhases(hoursBefore: number): SubPhaseType[] {
-  if (hoursBefore >= 2.5) return ['meal', 'snack', 'top_up'];
-  if (hoursBefore >= 1.0) return ['snack', 'top_up'];
+  // Spec (Notion 31fe3fdb): >= 90 min -> all three tiers; 30-89 min ->
+  // snack + top-off; < 30 min -> top-off only.
+  if (hoursBefore >= 1.5) return ['meal', 'snack', 'top_up'];
+  if (hoursBefore >= 0.5) return ['snack', 'top_up'];
   return ['top_up'];
 }
 
@@ -913,8 +919,23 @@ export function selectPreWorkoutFoods(
   // If a phase has zero eligible food templates (e.g. all top-off foods
   // disliked), redistribute its carb/protein/fat budget proportionally
   // to the surviving phases so the targets aren't silently dropped.
+  // A phase with an in-scope pin is NOT empty: the pin override below
+  // bypasses the preference filters, so the pinned template WILL deliver
+  // there. Classifying it empty hands its budget to the other phases and
+  // then the pin delivers on top — a guaranteed cross-phase overshoot
+  // (picky athlete + fully-pinned 30-min window: 52.5g vs a 42g high).
+  const hasPinInScope = (p: SubPhaseType): boolean =>
+    pinnedTemplateIds !== undefined &&
+    pinnedTemplateIds.size > 0 &&
+    foodTemplates.some(
+      (t) =>
+        pinnedTemplateIds.has(t.id) &&
+        t.time_window === getTimeWindowForPhase(p),
+    );
   const emptyPhases = phases.filter(
-    (p) => getEligibleTemplates(foodTemplates, p, diet, dislikedFoods, allergies).length === 0,
+    (p) =>
+      !hasPinInScope(p) &&
+      getEligibleTemplates(foodTemplates, p, diet, dislikedFoods, allergies).length === 0,
   );
   if (emptyPhases.length > 0 && emptyPhases.length < phases.length) {
     const activePhases = phases.filter((p) => !emptyPhases.includes(p));
@@ -1068,6 +1089,65 @@ export function selectPreWorkoutFoods(
         }),
       });
       continue;
+    }
+
+    // Cross-phase carb ceiling: a later phase whose SMALLEST eligible pick
+    // would blow past carbs_high_g must not select at all — over-delivering
+    // this close to the workout is a GI risk, not a bonus. Concrete case: in
+    // the 30-min window the snack phase delivers 30g of a 31-39g band, then
+    // the top-up's smallest template (25g chews) lands the total at 55g.
+    // Skip the phase instead; if we are still under carbs_low_g, document
+    // the gap as a template_constraint shortfall (serving granularity, not
+    // preferences). The fill passes below are already headroom-guarded, and
+    // Pass 2 can still attach a drink to the phase — fluid is the top-up's
+    // real job this close to a start. Pins bypass this per the locked
+    // Formula Kit policy (in-scope pins are honored unconditionally).
+    if (!pinOverrideActive && state.carbs_delivered > 0) {
+      const carbHeadroom = targets.carbs_high_g - state.carbs_delivered;
+      const minCandidateCarbs = Math.min(
+        ...candidates.map((t) => templateCarbs(t, t.min_servings ?? 1)),
+      );
+      if (minCandidateCarbs > carbHeadroom + 1e-6) {
+        const shortfalls: PreWorkoutShortfall[] = [];
+        if (
+          state.carbs_delivered < targets.carbs_low_g &&
+          (pTargets?.carbs_g ?? 0) > 0
+        ) {
+          shortfalls.push({
+            macro: 'carbs',
+            delivered: 0,
+            target: Math.round(pTargets!.carbs_g),
+            unit: 'g',
+            reason: 'template_constraint',
+          });
+        }
+        console.log(
+          `[ALGO-C] Skipping ${phase} phase: smallest eligible pick ` +
+            `(${minCandidateCarbs.toFixed(1)}g) exceeds remaining carb ` +
+            `headroom (${carbHeadroom.toFixed(1)}g of ${targets.carbs_high_g}g high)`,
+        );
+        results.push({
+          phase,
+          primary: null,
+          add_ons: [],
+          total_carbs_g: 0,
+          total_protein_g: 0,
+          total_fat_g: 0,
+          total_sodium_mg: 0,
+          total_fluid_ml: 0,
+          ...(shortfalls.length > 0 && { shortfalls }),
+          ...(pinsActive && {
+            pin_decision: {
+              used_pin: false,
+              pinned_template_id: null,
+              pinned_template_name: null,
+              fallthrough_reason: 'no_pin_for_scope' as const,
+              pin_set_size: pinnedForPhase.length,
+            },
+          }),
+        });
+        continue;
+      }
     }
 
     // Score every candidate (with liked-food boost). When the pin override is
@@ -1360,6 +1440,24 @@ export function selectPreWorkoutFoods(
       state.protein_delivered += electrolyte.protein_g;
       state.sodium_delivered += electrolyte.sodium_mg;
       state.fluid_delivered += electrolyte.fluid_ml;
+    }
+  }
+
+  // A template_constraint carb shortfall is recorded at phase-skip time,
+  // before the fill passes run. If those passes closed the gap (total is
+  // back at/above carbs_low_g), the shortfall is resolved — drop it so the
+  // UI doesn't warn about a target the plan actually hits. Preference-driven
+  // shortfalls (all_disliked etc.) are left untouched: issue #15 wants those
+  // surfaced even when other phases compensate.
+  const finalCarbs = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+  if (finalCarbs >= targets.carbs_low_g) {
+    for (const phase of results) {
+      if (!phase.shortfalls) continue;
+      const kept = phase.shortfalls.filter(
+        (s) => !(s.macro === 'carbs' && s.reason === 'template_constraint'),
+      );
+      if (kept.length === 0) delete phase.shortfalls;
+      else phase.shortfalls = kept;
     }
   }
 

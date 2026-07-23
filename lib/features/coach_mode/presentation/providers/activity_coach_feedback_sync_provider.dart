@@ -15,10 +15,7 @@ part 'activity_coach_feedback_sync_provider.g.dart';
 /// 2. Sets up a Realtime subscription for new activity comments
 /// 3. Invalidates the feedback provider whenever new data arrives
 @riverpod
-Future<void> activityCoachFeedbackSync(
-  Ref ref,
-  String activityId,
-) async {
+Future<void> activityCoachFeedbackSync(Ref ref, String activityId) async {
   final syncService = ref.read(dataSyncServiceProvider);
   final logger = ref.read(appLoggerProvider);
 

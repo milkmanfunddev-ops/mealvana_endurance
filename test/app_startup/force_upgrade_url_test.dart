@@ -19,13 +19,12 @@ void main() {
     bool isWeb = false,
     bool isIOS = false,
     bool isAndroid = false,
-  }) =>
-      ForceUpgradeScreen.storeUrlFor(
-        isDevFlavor: isDevFlavor,
-        isWeb: isWeb,
-        isIOS: isIOS,
-        isAndroid: isAndroid,
-      );
+  }) => ForceUpgradeScreen.storeUrlFor(
+    isDevFlavor: isDevFlavor,
+    isWeb: isWeb,
+    isIOS: isIOS,
+    isAndroid: isAndroid,
+  );
 
   group('iOS', () {
     test('prod → the real App Store listing', () {
@@ -70,8 +69,10 @@ void main() {
           url(isDevFlavor: dev, isAndroid: true),
           isNot(contains('com.mealvana.endurance')),
         );
-        expect(url(isDevFlavor: dev, isAndroid: true),
-            contains('com.milkman.mealvanaendurance'));
+        expect(
+          url(isDevFlavor: dev, isAndroid: true),
+          contains('com.milkman.mealvanaendurance'),
+        );
       }
     });
   });

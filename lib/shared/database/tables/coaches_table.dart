@@ -23,8 +23,9 @@ class CoachesTable extends Table {
   TextColumn get bio => text().nullable()();
 
   /// Application status: pending, approved, rejected
-  TextColumn get applicationStatus =>
-      text().withDefault(const Constant('pending')).named('application_status')();
+  TextColumn get applicationStatus => text()
+      .withDefault(const Constant('pending'))
+      .named('application_status')();
 
   /// Admin who reviewed the application
   TextColumn get reviewedBy => text().nullable().named('reviewed_by')();
@@ -33,7 +34,8 @@ class CoachesTable extends Table {
   DateTimeColumn get reviewedAt => dateTime().nullable().named('reviewed_at')();
 
   /// Reason for rejection (if status = rejected)
-  TextColumn get rejectionReason => text().nullable().named('rejection_reason')();
+  TextColumn get rejectionReason =>
+      text().nullable().named('rejection_reason')();
 
   /// When the record was created
   DateTimeColumn get createdAt =>
@@ -51,10 +53,10 @@ class CoachesTable extends Table {
 
   @override
   List<String> get customConstraints => [
-        'UNIQUE(user_id)',
-        "CHECK (application_status IN ('pending', 'approved', 'rejected'))",
-        // Use length() for SQLite (char_length() is PostgreSQL only)
-        'CHECK (length(trim(first_name)) >= 1)',
-        'CHECK (length(trim(last_name)) >= 1)',
-      ];
+    'UNIQUE(user_id)',
+    "CHECK (application_status IN ('pending', 'approved', 'rejected'))",
+    // Use length() for SQLite (char_length() is PostgreSQL only)
+    'CHECK (length(trim(first_name)) >= 1)',
+    'CHECK (length(trim(last_name)) >= 1)',
+  ];
 }

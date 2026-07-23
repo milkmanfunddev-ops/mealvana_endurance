@@ -84,7 +84,8 @@ class MacroSummaryStrip extends ConsumerWidget {
                       tintColor: AppColors.orange,
                       bigText: fmt.format(consumed.calories.round()),
                       label: 'kcal',
-                      planCaption: 'plan ${fmt.format(macros.totalCalories.round())}',
+                      planCaption:
+                          'plan ${fmt.format(macros.totalCalories.round())}',
                     ),
                   ),
                   const SizedBox(width: 6),

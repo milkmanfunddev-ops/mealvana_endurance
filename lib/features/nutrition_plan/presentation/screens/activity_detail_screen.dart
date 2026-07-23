@@ -562,11 +562,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         state.hasFuelLog &&
         state.fuelLogViewMode == FuelLogViewMode.actual &&
         !state.isFuelLogMode) {
-      return _buildFuelLogSections(
-        context,
-        state,
-        showCarbsPerHourCard: true,
-      );
+      return _buildFuelLogSections(context, state, showCarbsPerHourCard: true);
     }
 
     // During animation: crossfade and zoom between normal and fuel log

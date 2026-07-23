@@ -11,8 +11,9 @@ import '../helpers/widget_test_harness.dart';
 
 void main() {
   group('Privacy screen smoke tests', () {
-    testWidgets('PrivacyConsentScreen renders without overflow',
-        (tester) async {
+    testWidgets('PrivacyConsentScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(tester, const PrivacyConsentScreen());
 
       // The disclosure has to actually disclose: name the processor and offer
@@ -35,8 +36,9 @@ void main() {
       );
     });
 
-    testWidgets('PrivacySettingsScreen renders without overflow',
-        (tester) async {
+    testWidgets('PrivacySettingsScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(tester, const PrivacySettingsScreen());
 
       // The withdrawal toggle is above the fold — Apple requires it be easily
@@ -47,8 +49,9 @@ void main() {
       );
     });
 
-    testWidgets('PrivacySettingsScreen exposes the policy + terms links',
-        (tester) async {
+    testWidgets('PrivacySettingsScreen exposes the policy + terms links', (
+      tester,
+    ) async {
       await smokeScreen(tester, const PrivacySettingsScreen());
 
       // These sit below the fold on a small phone, and the ListView builds

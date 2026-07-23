@@ -14,14 +14,11 @@ import 'dart:convert';
 
 /// Top-level container for all athlete zone configurations
 class AthleteZones {
-  const AthleteZones({
-    this.heartRateZones,
-    this.speedZones,
-    this.powerZones,
-  });
+  const AthleteZones({this.heartRateZones, this.speedZones, this.powerZones});
 
   final HeartRateZoneConfig? heartRateZones;
-  final Map<String, SpeedZoneConfig>? speedZones; // keyed by sport: Default, Run, Swim
+  final Map<String, SpeedZoneConfig>?
+  speedZones; // keyed by sport: Default, Run, Swim
   final PowerZoneConfig? powerZones;
 
   /// Parse from Training Peaks /v1/athlete/profile/zones response
@@ -43,8 +40,9 @@ class AthleteZones {
       speedZones = {};
       for (final entry in speedData.entries) {
         if (entry.value is Map<String, dynamic>) {
-          speedZones[entry.key] =
-              SpeedZoneConfig.fromJson(entry.value as Map<String, dynamic>);
+          speedZones[entry.key] = SpeedZoneConfig.fromJson(
+            entry.value as Map<String, dynamic>,
+          );
         }
       }
     }
@@ -70,21 +68,27 @@ class AthleteZones {
   factory AthleteZones.fromJson(Map<String, dynamic> json) {
     HeartRateZoneConfig? hrZones;
     if (json['heartRateZones'] != null) {
-      hrZones =
-          HeartRateZoneConfig.fromJson(json['heartRateZones'] as Map<String, dynamic>);
+      hrZones = HeartRateZoneConfig.fromJson(
+        json['heartRateZones'] as Map<String, dynamic>,
+      );
     }
 
     Map<String, SpeedZoneConfig>? speedZones;
     if (json['speedZones'] != null) {
       final speedMap = json['speedZones'] as Map<String, dynamic>;
       speedZones = speedMap.map(
-        (key, value) => MapEntry(key, SpeedZoneConfig.fromJson(value as Map<String, dynamic>)),
+        (key, value) => MapEntry(
+          key,
+          SpeedZoneConfig.fromJson(value as Map<String, dynamic>),
+        ),
       );
     }
 
     PowerZoneConfig? powerZones;
     if (json['powerZones'] != null) {
-      powerZones = PowerZoneConfig.fromJson(json['powerZones'] as Map<String, dynamic>);
+      powerZones = PowerZoneConfig.fromJson(
+        json['powerZones'] as Map<String, dynamic>,
+      );
     }
 
     return AthleteZones(
@@ -98,7 +102,9 @@ class AthleteZones {
     return {
       if (heartRateZones != null) 'heartRateZones': heartRateZones!.toJson(),
       if (speedZones != null)
-        'speedZones': speedZones!.map((key, value) => MapEntry(key, value.toJson())),
+        'speedZones': speedZones!.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
       if (powerZones != null) 'powerZones': powerZones!.toJson(),
     };
   }
@@ -221,9 +227,11 @@ class AthleteZones {
   @override
   String toString() {
     final parts = <String>[];
-    if (heartRateZones != null) parts.add('HR: ${heartRateZones!.zones.length} zones');
+    if (heartRateZones != null)
+      parts.add('HR: ${heartRateZones!.zones.length} zones');
     if (speedZones != null) parts.add('Speed: ${speedZones!.length} configs');
-    if (powerZones != null) parts.add('Power: ${powerZones!.zones.length} zones');
+    if (powerZones != null)
+      parts.add('Power: ${powerZones!.zones.length} zones');
     return 'AthleteZones(${parts.join(', ')})';
   }
 }
@@ -247,25 +255,25 @@ class HeartRateZoneConfig {
     return HeartRateZoneConfig(
       threshold: (json['Threshold'] ?? json['threshold']) as int?,
       maxHeartRate: (json['MaxHeartRate'] ?? json['maxHeartRate']) as int?,
-      restingHeartRate: (json['RestingHeartRate'] ?? json['restingHeartRate']) as int?,
-      zones: zonesJson.map((z) => Zone.fromJson(z as Map<String, dynamic>)).toList(),
+      restingHeartRate:
+          (json['RestingHeartRate'] ?? json['restingHeartRate']) as int?,
+      zones: zonesJson
+          .map((z) => Zone.fromJson(z as Map<String, dynamic>))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        if (threshold != null) 'threshold': threshold,
-        if (maxHeartRate != null) 'maxHeartRate': maxHeartRate,
-        if (restingHeartRate != null) 'restingHeartRate': restingHeartRate,
-        'zones': zones.map((z) => z.toJson()).toList(),
-      };
+    if (threshold != null) 'threshold': threshold,
+    if (maxHeartRate != null) 'maxHeartRate': maxHeartRate,
+    if (restingHeartRate != null) 'restingHeartRate': restingHeartRate,
+    'zones': zones.map((z) => z.toJson()).toList(),
+  };
 }
 
 /// Speed zone configuration (per-sport: Default, Run, Swim)
 class SpeedZoneConfig {
-  const SpeedZoneConfig({
-    this.threshold,
-    required this.zones,
-  });
+  const SpeedZoneConfig({this.threshold, required this.zones});
 
   /// Threshold speed in m/s
   final double? threshold;
@@ -274,24 +282,24 @@ class SpeedZoneConfig {
   factory SpeedZoneConfig.fromJson(Map<String, dynamic> json) {
     final zonesJson = json['Zones'] as List? ?? json['zones'] as List? ?? [];
     return SpeedZoneConfig(
-      threshold: (json['Threshold'] as num?)?.toDouble() ??
+      threshold:
+          (json['Threshold'] as num?)?.toDouble() ??
           (json['threshold'] as num?)?.toDouble(),
-      zones: zonesJson.map((z) => Zone.fromJson(z as Map<String, dynamic>)).toList(),
+      zones: zonesJson
+          .map((z) => Zone.fromJson(z as Map<String, dynamic>))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        if (threshold != null) 'threshold': threshold,
-        'zones': zones.map((z) => z.toJson()).toList(),
-      };
+    if (threshold != null) 'threshold': threshold,
+    'zones': zones.map((z) => z.toJson()).toList(),
+  };
 }
 
 /// Power zone configuration
 class PowerZoneConfig {
-  const PowerZoneConfig({
-    this.threshold,
-    required this.zones,
-  });
+  const PowerZoneConfig({this.threshold, required this.zones});
 
   /// FTP (Functional Threshold Power) in watts
   final int? threshold;
@@ -301,14 +309,16 @@ class PowerZoneConfig {
     final zonesJson = json['Zones'] as List? ?? json['zones'] as List? ?? [];
     return PowerZoneConfig(
       threshold: (json['Threshold'] ?? json['threshold']) as int?,
-      zones: zonesJson.map((z) => Zone.fromJson(z as Map<String, dynamic>)).toList(),
+      zones: zonesJson
+          .map((z) => Zone.fromJson(z as Map<String, dynamic>))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        if (threshold != null) 'threshold': threshold,
-        'zones': zones.map((z) => z.toJson()).toList(),
-      };
+    if (threshold != null) 'threshold': threshold,
+    'zones': zones.map((z) => z.toJson()).toList(),
+  };
 }
 
 /// A single training zone with label and min/max bounds
@@ -326,18 +336,20 @@ class Zone {
   factory Zone.fromJson(Map<String, dynamic> json) {
     return Zone(
       label: (json['Label'] ?? json['label'] ?? '') as String,
-      minimum: (json['Minimum'] as num?)?.toDouble() ??
+      minimum:
+          (json['Minimum'] as num?)?.toDouble() ??
           (json['minimum'] as num?)?.toDouble() ??
           0,
-      maximum: (json['Maximum'] as num?)?.toDouble() ??
+      maximum:
+          (json['Maximum'] as num?)?.toDouble() ??
           (json['maximum'] as num?)?.toDouble() ??
           0,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'label': label,
-        'minimum': minimum,
-        'maximum': maximum,
-      };
+    'label': label,
+    'minimum': minimum,
+    'maximum': maximum,
+  };
 }

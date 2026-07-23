@@ -28,8 +28,7 @@ class CreditBalanceChip extends ConsumerWidget {
         duration: const Duration(milliseconds: 200),
         child: walletAsync.when(
           loading: () => _Chip(label: '...', key: const ValueKey('loading')),
-          error: (_, __) =>
-              _Chip(label: '?', key: const ValueKey('error')),
+          error: (_, __) => _Chip(label: '?', key: const ValueKey('error')),
           data: (wallet) => _Chip(
             key: ValueKey(wallet.balance),
             label: '${wallet.balance.clamp(0, double.maxFinite).toInt()}',

@@ -53,7 +53,8 @@ class Location {
 
   /// Get short display name (city only if available)
   String get shortDisplayName {
-    return city ?? '${latitude.toStringAsFixed(2)}, ${longitude.toStringAsFixed(2)}';
+    return city ??
+        '${latitude.toStringAsFixed(2)}, ${longitude.toStringAsFixed(2)}';
   }
 
   Location copyWith({

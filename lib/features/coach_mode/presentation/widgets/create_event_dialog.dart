@@ -98,8 +98,11 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildField('Event Name', _nameController,
-                  hint: 'e.g., Boston Marathon'),
+              _buildField(
+                'Event Name',
+                _nameController,
+                hint: 'e.g., Boston Marathon',
+              ),
               const SizedBox(height: 12),
               _buildEventTypeDropdown(),
               const SizedBox(height: 12),
@@ -109,11 +112,18 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
               ],
               _buildDatePicker(),
               const SizedBox(height: 12),
-              _buildField('Location', _locationController,
-                  hint: 'e.g., Boston, MA'),
+              _buildField(
+                'Location',
+                _locationController,
+                hint: 'e.g., Boston, MA',
+              ),
               const SizedBox(height: 12),
-              _buildField('Goal Time (min)', _goalTimeController,
-                  keyboardType: TextInputType.number, hint: 'e.g., 240'),
+              _buildField(
+                'Goal Time (min)',
+                _goalTimeController,
+                keyboardType: TextInputType.number,
+                hint: 'e.g., 240',
+              ),
             ],
           ),
         ),
@@ -121,8 +131,10 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: AppColors.textDarkSecondary)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textDarkSecondary),
+          ),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -150,8 +162,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
-        hintStyle:
-            TextStyle(color: AppColors.textDarkSecondary.withValues(alpha: 0.5)),
+        hintStyle: TextStyle(
+          color: AppColors.textDarkSecondary.withValues(alpha: 0.5),
+        ),
         filled: true,
         fillColor: AppColors.blackberryDark,
         border: OutlineInputBorder(
@@ -186,10 +199,12 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
           style: const TextStyle(color: AppColors.cream, fontSize: 14),
           items: ActivityType.values
               .where((t) => t != ActivityType.brick)
-              .map((t) => DropdownMenuItem(
-                    value: t.dbValue,
-                    child: Text(t.displayName),
-                  ))
+              .map(
+                (t) => DropdownMenuItem(
+                  value: t.dbValue,
+                  child: Text(t.displayName),
+                ),
+              )
               .toList(),
           onChanged: (val) {
             if (val != null) {
@@ -217,14 +232,16 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
           value: _eventSubtype,
           isExpanded: true,
           dropdownColor: AppColors.blackberry,
-          hint: const Text('Distance',
-              style: TextStyle(color: AppColors.textDarkSecondary)),
+          hint: const Text(
+            'Distance',
+            style: TextStyle(color: AppColors.textDarkSecondary),
+          ),
           style: const TextStyle(color: AppColors.cream, fontSize: 14),
           items: _runningSubtypes
-              .map((s) => DropdownMenuItem(
-                    value: s,
-                    child: Text(_formatSubtype(s)),
-                  ))
+              .map(
+                (s) =>
+                    DropdownMenuItem(value: s, child: Text(_formatSubtype(s))),
+              )
               .toList(),
           onChanged: (val) => setState(() => _eventSubtype = val),
         ),
@@ -274,15 +291,17 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    Navigator.of(context).pop(CreateEventResult(
-      eventName: name,
-      eventType: _eventType,
-      eventSubtype: _eventSubtype,
-      eventDate: _eventDate,
-      location: _locationController.text.trim().isNotEmpty
-          ? _locationController.text.trim()
-          : null,
-      goalTimeMinutes: int.tryParse(_goalTimeController.text),
-    ));
+    Navigator.of(context).pop(
+      CreateEventResult(
+        eventName: name,
+        eventType: _eventType,
+        eventSubtype: _eventSubtype,
+        eventDate: _eventDate,
+        location: _locationController.text.trim().isNotEmpty
+            ? _locationController.text.trim()
+            : null,
+        goalTimeMinutes: int.tryParse(_goalTimeController.text),
+      ),
+    );
   }
 }

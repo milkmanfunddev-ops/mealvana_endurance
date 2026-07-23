@@ -132,10 +132,10 @@ void main() {
           userIdProvider.overrideWith((ref) async => _testUserId),
           // currentUserProvider is a StreamProvider<AuthUser?>, so the override
           // must yield a stream — not a bare null.
-          currentUserProvider.overrideWith((ref) => Stream<AuthUser?>.value(null)),
-          syncCoordinatorProvider.overrideWith(
-            () => _FakeSyncCoordinator(),
+          currentUserProvider.overrideWith(
+            (ref) => Stream<AuthUser?>.value(null),
           ),
+          syncCoordinatorProvider.overrideWith(() => _FakeSyncCoordinator()),
           integrationSyncCoordinatorProvider.overrideWith(
             () => _FakeIntegrationSyncCoordinator(),
           ),
@@ -177,9 +177,7 @@ void main() {
 
       // Wait for build to complete (returns empty list)
       await container.read(activitiesControllerProvider.future);
-      final controller = container.read(
-        activitiesControllerProvider.notifier,
-      );
+      final controller = container.read(activitiesControllerProvider.notifier);
 
       // First create: list was empty, should fire first_activity_added
       await controller.createActivity(
@@ -194,55 +192,60 @@ void main() {
       expect(events.first.properties?['activity_id'], 'activity-1');
     });
 
-    test('does NOT fire first_activity_added when list was non-empty', () async {
-      // Return a non-empty list from build
-      when(
-        () => mockService.getAllActivities(any()),
-      ).thenAnswer((_) async => [_makeActivity(id: 'existing-1')]);
+    test(
+      'does NOT fire first_activity_added when list was non-empty',
+      () async {
+        // Return a non-empty list from build
+        when(
+          () => mockService.getAllActivities(any()),
+        ).thenAnswer((_) async => [_makeActivity(id: 'existing-1')]);
 
-      final newActivity = _makeActivity(id: 'activity-2');
-      when(
-        () => mockService.createActivity(
-          deviceId: any(named: 'deviceId'),
-          userId: any(named: 'userId'),
-          forUserId: any(named: 'forUserId'),
-          activityType: any(named: 'activityType'),
-          title: any(named: 'title'),
-          scheduledDateTime: any(named: 'scheduledDateTime'),
-          distanceMiles: any(named: 'distanceMiles'),
-          durationMinutes: any(named: 'durationMinutes'),
-          paceTargetMinutesPerMile: any(named: 'paceTargetMinutesPerMile'),
-          intensityLevel: any(named: 'intensityLevel'),
-          notes: any(named: 'notes'),
-          cyclingSpeedMph: any(named: 'cyclingSpeedMph'),
-          cyclingTerrain: any(named: 'cyclingTerrain'),
-          cyclingIndoorOutdoor: any(named: 'cyclingIndoorOutdoor'),
-          cyclingElevationGainFt: any(named: 'cyclingElevationGainFt'),
-          cyclingSessionGoal: any(named: 'cyclingSessionGoal'),
-          swimmingPacePer100mSeconds: any(named: 'swimmingPacePer100mSeconds'),
-          swimmingPoolOrOpenWater: any(named: 'swimmingPoolOrOpenWater'),
-          swimmingWaterTempC: any(named: 'swimmingWaterTempC'),
-          intensityTarget: any(named: 'intensityTarget'),
-          timeBeforeMinutes: any(named: 'timeBeforeMinutes'),
-          nutritionPlanData: any(named: 'nutritionPlanData'),
-          brickMetadata: any(named: 'brickMetadata'),
-          brickId: any(named: 'brickId'),
-        ),
-      ).thenAnswer((_) async => newActivity);
+        final newActivity = _makeActivity(id: 'activity-2');
+        when(
+          () => mockService.createActivity(
+            deviceId: any(named: 'deviceId'),
+            userId: any(named: 'userId'),
+            forUserId: any(named: 'forUserId'),
+            activityType: any(named: 'activityType'),
+            title: any(named: 'title'),
+            scheduledDateTime: any(named: 'scheduledDateTime'),
+            distanceMiles: any(named: 'distanceMiles'),
+            durationMinutes: any(named: 'durationMinutes'),
+            paceTargetMinutesPerMile: any(named: 'paceTargetMinutesPerMile'),
+            intensityLevel: any(named: 'intensityLevel'),
+            notes: any(named: 'notes'),
+            cyclingSpeedMph: any(named: 'cyclingSpeedMph'),
+            cyclingTerrain: any(named: 'cyclingTerrain'),
+            cyclingIndoorOutdoor: any(named: 'cyclingIndoorOutdoor'),
+            cyclingElevationGainFt: any(named: 'cyclingElevationGainFt'),
+            cyclingSessionGoal: any(named: 'cyclingSessionGoal'),
+            swimmingPacePer100mSeconds: any(
+              named: 'swimmingPacePer100mSeconds',
+            ),
+            swimmingPoolOrOpenWater: any(named: 'swimmingPoolOrOpenWater'),
+            swimmingWaterTempC: any(named: 'swimmingWaterTempC'),
+            intensityTarget: any(named: 'intensityTarget'),
+            timeBeforeMinutes: any(named: 'timeBeforeMinutes'),
+            nutritionPlanData: any(named: 'nutritionPlanData'),
+            brickMetadata: any(named: 'brickMetadata'),
+            brickId: any(named: 'brickId'),
+          ),
+        ).thenAnswer((_) async => newActivity);
 
-      await container.read(activitiesControllerProvider.future);
-      final controller = container.read(
-        activitiesControllerProvider.notifier,
-      );
+        await container.read(activitiesControllerProvider.future);
+        final controller = container.read(
+          activitiesControllerProvider.notifier,
+        );
 
-      await controller.createActivity(
-        title: 'Second Run',
-        scheduledDateTime: DateTime(2026, 7, 11),
-        activityType: ActivityType.running,
-      );
+        await controller.createActivity(
+          title: 'Second Run',
+          scheduledDateTime: DateTime(2026, 7, 11),
+          activityType: ActivityType.running,
+        );
 
-      expect(analytics.hasEvent('first_activity_added'), isFalse);
-    });
+        expect(analytics.hasEvent('first_activity_added'), isFalse);
+      },
+    );
 
     // `workout_planned` is the "used the core function" activation signal —
     // unlike `first_activity_added` it must fire on EVERY manual create, not
@@ -255,9 +258,7 @@ void main() {
       _stubCreateActivity(mockService, _makeActivity(id: 'activity-2'));
 
       await container.read(activitiesControllerProvider.future);
-      final controller = container.read(
-        activitiesControllerProvider.notifier,
-      );
+      final controller = container.read(activitiesControllerProvider.notifier);
 
       await controller.createActivity(
         title: 'Second Run',
@@ -281,9 +282,7 @@ void main() {
       _stubCreateActivity(mockService, _makeActivity());
 
       await container.read(activitiesControllerProvider.future);
-      final controller = container.read(
-        activitiesControllerProvider.notifier,
-      );
+      final controller = container.read(activitiesControllerProvider.notifier);
 
       await controller.createActivity(
         title: 'Athlete Run',

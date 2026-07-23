@@ -27,10 +27,12 @@ class FeedbackController extends _$FeedbackController {
     state = await AsyncValue.guard(() async {
       final feedbackService = FeedbackService(ref);
       final success = await feedbackService.submitFeedback(feedback);
-      
+
       if (!success) {
-        final errorMsg = _contentService.getValue(ContentKeys.errorGeneric, 
-            defaultValue: 'Failed to submit feedback');
+        final errorMsg = _contentService.getValue(
+          ContentKeys.errorGeneric,
+          defaultValue: 'Failed to submit feedback',
+        );
         throw Exception(errorMsg);
       }
     });
@@ -41,25 +43,29 @@ class FeedbackController extends _$FeedbackController {
   /// Test feedback connection
   Future<bool> testConnection() async {
     state = const AsyncLoading();
-    
+
     state = await AsyncValue.guard(() async {
       final feedbackService = FeedbackService(ref);
       final success = await feedbackService.testFormConnection();
-      
+
       if (!success) {
-        final errorMsg = _contentService.getValue(ContentKeys.errorGeneric, 
-            defaultValue: 'Connection test failed');
+        final errorMsg = _contentService.getValue(
+          ContentKeys.errorGeneric,
+          defaultValue: 'Connection test failed',
+        );
         throw Exception(errorMsg);
       }
     });
 
     return !state.hasError;
   }
-  
+
   /// Get content-driven error message
   String getErrorMessage(String? error) {
-    return _contentService.getValue(ContentKeys.errorGeneric, 
-        defaultValue: error ?? 'Something went wrong. Please try again.');
+    return _contentService.getValue(
+      ContentKeys.errorGeneric,
+      defaultValue: error ?? 'Something went wrong. Please try again.',
+    );
   }
 }
 

@@ -5,10 +5,7 @@ import 'package:flutter/material.dart';
 /// Prevents pages from being disposed when scrolling far away,
 /// ensuring form state persists throughout the onboarding flow.
 class PageKeepAliveWrapper extends StatefulWidget {
-  const PageKeepAliveWrapper({
-    super.key,
-    required this.child,
-  });
+  const PageKeepAliveWrapper({super.key, required this.child});
 
   final Widget child;
 

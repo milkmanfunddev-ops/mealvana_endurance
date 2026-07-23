@@ -178,7 +178,8 @@ class UserRepository with SyncableRepository {
       // Sweat profile fields
       sweatSodium: SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
       knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
-      knownSodiumConcentrationMgPerLiter: dbUser.knownSodiumConcentrationMgPerLiter,
+      knownSodiumConcentrationMgPerLiter:
+          dbUser.knownSodiumConcentrationMgPerLiter,
       sweatTestDate: dbUser.sweatTestDate,
       sweatTestSource: dbUser.sweatTestSource,
       // Garmin precedence timestamps
@@ -528,8 +529,7 @@ class UserRepository with SyncableRepository {
   /// to one network round-trip per [_prefsReconcileTtl] per user.
   Future<void> _reconcileFoodPreferencesIfStale(String userId) async {
     final last = _prefsReconciledAt[userId];
-    if (last != null &&
-        DateTime.now().difference(last) < _prefsReconcileTtl) {
+    if (last != null && DateTime.now().difference(last) < _prefsReconcileTtl) {
       return;
     }
     // Stamp first so concurrent/sequential reads in the same plan generation
@@ -839,7 +839,8 @@ class UserRepository with SyncableRepository {
         userId,
         preferences,
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
-        mergeMode: false, // Replace local cache with the authoritative server set
+        mergeMode:
+            false, // Replace local cache with the authoritative server set
       );
       return preferences;
     } catch (e, stackTrace) {

@@ -45,10 +45,12 @@ Future<DayTimelineResult> fuelTimelineDay(Ref ref) async {
 
   // Events + carb-loading days on the selected day. Both are cheap local reads.
   final allEvents = await ref.watch(allEventsProvider.future);
-  final dayEvents = allEvents.where((e) {
-    final date = e.eventDate;
-    return date != null && onSelectedDay(date);
-  }).toList(growable: false);
+  final dayEvents = allEvents
+      .where((e) {
+        final date = e.eventDate;
+        return date != null && onSelectedDay(date);
+      })
+      .toList(growable: false);
 
   // Query a 1-week window around the day (covers any protocol length) and keep
   // the days that fall on the selected date. Counting days per plan in the

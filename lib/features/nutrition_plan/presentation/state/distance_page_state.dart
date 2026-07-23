@@ -89,9 +89,12 @@ class MacroTargetsState {
 
   // Shared fields
   final String? errorMessage;
-  final int? activityId; // Calendar activity ID (links nutrition plan to activity)
-  final int? eventId; // Calendar event ID (for provider invalidation after plan creation)
-  final PendingActivityData? pendingActivityData; // Activity data (not yet created)
+  final int?
+  activityId; // Calendar activity ID (links nutrition plan to activity)
+  final int?
+  eventId; // Calendar event ID (for provider invalidation after plan creation)
+  final PendingActivityData?
+  pendingActivityData; // Activity data (not yet created)
 
   MacroTargetsState copyWith({
     // Distance page fields
@@ -142,10 +145,14 @@ class MacroTargetsState {
       gutTrainingLabel: gutTrainingLabel ?? this.gutTrainingLabel,
       generateButtonText: generateButtonText ?? this.generateButtonText,
       tipsText: tipsText ?? this.tipsText,
-      distanceValidationRequired: distanceValidationRequired ?? this.distanceValidationRequired,
-      distanceValidationNumber: distanceValidationNumber ?? this.distanceValidationNumber,
-      distanceValidationRange: distanceValidationRange ?? this.distanceValidationRange,
-      paceValidationRequired: paceValidationRequired ?? this.paceValidationRequired,
+      distanceValidationRequired:
+          distanceValidationRequired ?? this.distanceValidationRequired,
+      distanceValidationNumber:
+          distanceValidationNumber ?? this.distanceValidationNumber,
+      distanceValidationRange:
+          distanceValidationRange ?? this.distanceValidationRange,
+      paceValidationRequired:
+          paceValidationRequired ?? this.paceValidationRequired,
       paceValidationFormat: paceValidationFormat ?? this.paceValidationFormat,
       errorGeneric: errorGeneric ?? this.errorGeneric,
       isGenerating: isGenerating ?? this.isGenerating,
@@ -154,7 +161,8 @@ class MacroTargetsState {
       shortRunBanner: shortRunBanner ?? this.shortRunBanner,
       longRunBanner: longRunBanner ?? this.longRunBanner,
       preRunSectionTitle: preRunSectionTitle ?? this.preRunSectionTitle,
-      duringRunSectionTitle: duringRunSectionTitle ?? this.duringRunSectionTitle,
+      duringRunSectionTitle:
+          duringRunSectionTitle ?? this.duringRunSectionTitle,
       postRunSectionTitle: postRunSectionTitle ?? this.postRunSectionTitle,
       createPlanButton: createPlanButton ?? this.createPlanButton,
       resetAllButton: resetAllButton ?? this.resetAllButton,

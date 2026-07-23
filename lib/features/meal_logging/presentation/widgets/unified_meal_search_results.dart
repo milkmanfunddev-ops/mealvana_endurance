@@ -75,7 +75,8 @@ class UnifiedMealSearchResults extends ConsumerWidget {
   /// whole "More Results" block when this is null, so omitting it silently
   /// discards results the controller has already fetched and paid for — the
   /// user sees "No foods found" for a food we hold. This was the bug.
-  final void Function(NutritionProductSearchResult)? onNutritionProductResultTap;
+  final void Function(NutritionProductSearchResult)?
+  onNutritionProductResultTap;
 
   /// Forwarded to [UnifiedFoodSearchResults]. `LogMealScreen` sets this to
   /// false — USDA/Open Food Facts already auto-fire on the catalog debounce,
@@ -90,15 +91,15 @@ class UnifiedMealSearchResults extends ConsumerWidget {
     final matchingFavorites = onAddFavorite == null
         ? const <SavedMeal>[]
         : (ref.watch(savedMealsProvider).asData?.value ?? const <SavedMeal>[])
-            .where((m) => matchesSearchTokens(m.name, queryTokens))
-            .take(8)
-            .toList();
+              .where((m) => matchesSearchTokens(m.name, queryTokens))
+              .take(8)
+              .toList();
     final matchingRecents = onAddRecent == null
         ? const <MealLog>[]
         : (ref.watch(recentMealsProvider).asData?.value ?? const <MealLog>[])
-            .where((l) => matchesSearchTokens(l.name, queryTokens))
-            .take(8)
-            .toList();
+              .where((l) => matchesSearchTokens(l.name, queryTokens))
+              .take(8)
+              .toList();
     final matchingRecipes = recipes
         .where((r) => matchesSearchTokens(r.name, queryTokens))
         .take(8)
@@ -108,7 +109,8 @@ class UnifiedMealSearchResults extends ConsumerWidget {
         .take(8)
         .toList();
 
-    final hasQuickMatches = matchingFavorites.isNotEmpty ||
+    final hasQuickMatches =
+        matchingFavorites.isNotEmpty ||
         matchingRecents.isNotEmpty ||
         matchingRecipes.isNotEmpty ||
         matchingIngredients.isNotEmpty;
@@ -172,14 +174,17 @@ class UnifiedMealSearchResults extends ConsumerWidget {
             // unaffected (they don't pass this).
             showSectionHeaders: false,
             userFoodItemBuilder: (food) => _FoodResultTile(
+              key: ValueKey('meal_search.food_tile_${food.id}'),
               food: food,
               onTap: () => onFoodTap(food),
             ),
             templateFoodItemBuilder: (food) => _FoodResultTile(
+              key: ValueKey('meal_search.food_tile_${food.id}'),
               food: food,
               onTap: () => onFoodTap(food),
             ),
             catalogItemBuilder: (result) => _CatalogResultTile(
+              key: ValueKey('meal_search.catalog_tile_${result.id}'),
               result: result,
               onTap: () => onCatalogTap(result),
             ),
@@ -265,7 +270,7 @@ class _QuickMatchCard extends StatelessWidget {
 /// (kept local so this file doesn't reach into nutrition_plan's swap-food
 /// card widgets, which are styled for a different surface).
 class _FoodResultTile extends StatelessWidget {
-  const _FoodResultTile({required this.food, required this.onTap});
+  const _FoodResultTile({super.key, required this.food, required this.onTap});
 
   final Food food;
   final VoidCallback onTap;
@@ -290,7 +295,11 @@ class _FoodResultTile extends StatelessWidget {
 }
 
 class _CatalogResultTile extends StatelessWidget {
-  const _CatalogResultTile({required this.result, required this.onTap});
+  const _CatalogResultTile({
+    super.key,
+    required this.result,
+    required this.onTap,
+  });
 
   final CatalogSearchResult result;
   final VoidCallback onTap;
@@ -301,8 +310,10 @@ class _CatalogResultTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 3),
       child: ListTile(
         dense: true,
+        // Brand-led title: variant-only matches (searching "oreo") must still
+        // say what product this is — the variant stays in the subtitle.
         title: Text(
-          result.title,
+          result.brandedTitle,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(

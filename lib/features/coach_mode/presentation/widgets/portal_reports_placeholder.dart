@@ -59,7 +59,10 @@ class PortalReportsPlaceholder extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildFeatureRow(Icons.trending_up, 'Athlete progress tracking'),
+                    _buildFeatureRow(
+                      Icons.trending_up,
+                      'Athlete progress tracking',
+                    ),
                     const SizedBox(height: 12),
                     _buildFeatureRow(Icons.restaurant, 'Nutrition compliance'),
                     const SizedBox(height: 12),
@@ -81,10 +84,7 @@ class PortalReportsPlaceholder extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           text,
-          style: const TextStyle(
-            color: AppColors.cream,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppColors.cream, fontSize: 14),
         ),
       ],
     );

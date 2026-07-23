@@ -47,10 +47,7 @@ class _FakeUserAttributes extends Fake implements UserAttributes {}
 class _FakeAuthResponse extends Fake implements AuthResponse {}
 
 // A GoTrueClient that returns a signed-in user and session.
-GoTrueClient _signedInGoTrue({
-  required User user,
-  Session? session,
-}) {
+GoTrueClient _signedInGoTrue({required User user, Session? session}) {
   final auth = MockGoTrueClient();
   when(() => auth.currentUser).thenReturn(user);
   when(() => auth.currentSession).thenReturn(session);
@@ -416,8 +413,9 @@ void main() {
         final goTrue = MockGoTrueClient();
         when(() => goTrue.currentUser).thenReturn(null);
         when(() => goTrue.currentSession).thenReturn(null);
-        when(() => goTrue.onAuthStateChange)
-            .thenAnswer((_) => const Stream.empty());
+        when(
+          () => goTrue.onAuthStateChange,
+        ).thenAnswer((_) => const Stream.empty());
         when(
           () => goTrue.verifyOTP(
             email: 'user@x.com',
@@ -442,8 +440,9 @@ void main() {
         final goTrue = MockGoTrueClient();
         when(() => goTrue.currentUser).thenReturn(null);
         when(() => goTrue.currentSession).thenReturn(null);
-        when(() => goTrue.onAuthStateChange)
-            .thenAnswer((_) => const Stream.empty());
+        when(
+          () => goTrue.onAuthStateChange,
+        ).thenAnswer((_) => const Stream.empty());
         when(
           () => goTrue.verifyOTP(
             email: 'x@y.com',
@@ -520,9 +519,9 @@ void main() {
         final goTrue = MockGoTrueClient();
         when(() => goTrue.currentUser).thenReturn(null);
         when(() => goTrue.currentSession).thenReturn(null);
-        when(() => goTrue.onAuthStateChange).thenAnswer(
-          (_) => Stream.value(authState),
-        );
+        when(
+          () => goTrue.onAuthStateChange,
+        ).thenAnswer((_) => Stream.value(authState));
 
         final service = SupabaseAuthService(_clientWithAuth(goTrue));
 
@@ -627,7 +626,8 @@ class _EmailValidationHarness {
   String? validateEmail(String email) {
     if (email.isEmpty) return 'Email is required';
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    if (!emailRegex.hasMatch(email)) return 'Please enter a valid email address';
+    if (!emailRegex.hasMatch(email))
+      return 'Please enter a valid email address';
     return null;
   }
 

@@ -30,6 +30,7 @@ import 'package:mealvana_endurance/features/race_checklist/presentation/screens/
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/build_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_log_method_sheet.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/manual_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/photo_capture_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/describe_meal_screen.dart';
@@ -281,6 +282,40 @@ void main() {
     // first frame, so settle:true is safe here.
     testWidgets('BuildMealScreen builds (empty draft state)', (tester) async {
       await smokeScreen(tester, const BuildMealScreen(logDate: '2026-07-04'));
+    });
+
+    // MealLogMethodSheet is a modal bottom-sheet body (re-exported from
+    // today_log_section.dart). It watches only appConfigProvider
+    // (describeMealEnabled). Wrapped in a Scaffold because its _MethodTile
+    // rows use InkWell, which needs a Material ancestor. Method callbacks are
+    // tap-only.
+    testWidgets('MealLogMethodSheet renders without overflow', (tester) async {
+      await smokeScreen(
+        tester,
+        Scaffold(
+          body: MealLogMethodSheet(
+            logDate: '2026-07-04',
+            onMethodSelected: (_) {},
+          ),
+        ),
+      );
+    });
+
+    // With the describe-meal release flag off, the AI entry tiles are hidden;
+    // the sheet must still render its manual entries.
+    testWidgets('MealLogMethodSheet renders with describeMeal flag off', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        Scaffold(
+          body: MealLogMethodSheet(
+            logDate: '2026-07-04',
+            onMethodSelected: (_) {},
+          ),
+        ),
+        appConfig: AppConfig.forTesting(describeMealEnabled: false),
+      );
     });
   });
 }

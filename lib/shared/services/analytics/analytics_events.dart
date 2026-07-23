@@ -5,25 +5,29 @@ import 'analytics_tracker.dart';
 extension AnalyticsEvents on AnalyticsTracker {
   // 1. User Lifecycle Events
 
-  Future<void> trackUserRegistered({
-    required String deviceId,
-  }) {
-    return track('user_registered', properties: {
-      'device_id': deviceId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'registration_source': 'onboarding',
-    });
+  Future<void> trackUserRegistered({required String deviceId}) {
+    return track(
+      'user_registered',
+      properties: {
+        'device_id': deviceId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'registration_source': 'onboarding',
+      },
+    );
   }
 
   Future<void> trackAppOpened({
     required String deviceId,
     required String sessionId,
   }) {
-    return track('app_opened', properties: {
-      'device_id': deviceId,
-      'session_id': sessionId,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'app_opened',
+      properties: {
+        'device_id': deviceId,
+        'session_id': sessionId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   // 2. Plan Creation & Saving Events
@@ -35,14 +39,17 @@ extension AnalyticsEvents on AnalyticsTracker {
     required double paceMinutesPerMile,
     required String gutTrainingLevel,
   }) {
-    return track('plan_generation_started', properties: {
-      'device_id': deviceId,
-      if (activityId != null) 'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'distance_miles': distanceMiles,
-      'pace_minutes_per_mile': paceMinutesPerMile,
-      'gut_training_level': gutTrainingLevel,
-    });
+    return track(
+      'plan_generation_started',
+      properties: {
+        'device_id': deviceId,
+        if (activityId != null) 'activity_id': activityId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'distance_miles': distanceMiles,
+        'pace_minutes_per_mile': paceMinutesPerMile,
+        'gut_training_level': gutTrainingLevel,
+      },
+    );
   }
 
   Future<void> trackPlanGenerationFailed({
@@ -52,14 +59,17 @@ extension AnalyticsEvents on AnalyticsTracker {
     required double paceMinutesPerMile,
     required String errorMessage,
   }) {
-    return track('plan_generation_failed', properties: {
-      'device_id': deviceId,
-      if (activityId != null) 'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'distance_miles': distanceMiles,
-      'pace_minutes_per_mile': paceMinutesPerMile,
-      'error_message': errorMessage,
-    });
+    return track(
+      'plan_generation_failed',
+      properties: {
+        'device_id': deviceId,
+        if (activityId != null) 'activity_id': activityId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'distance_miles': distanceMiles,
+        'pace_minutes_per_mile': paceMinutesPerMile,
+        'error_message': errorMessage,
+      },
+    );
   }
 
   Future<void> trackPlanGenerated({
@@ -75,20 +85,23 @@ extension AnalyticsEvents on AnalyticsTracker {
     required int afterRunItems,
     required bool isFirstPlan,
   }) {
-    return track('plan_generated', properties: {
-      'device_id': deviceId,
-      if (activityId != null) 'activity_id': activityId,
-      'activity_type': activityType,
-      'timestamp': DateTime.now().toIso8601String(),
-      'distance_miles': distanceMiles,
-      'pace_minutes_per_mile': paceMinutesPerMile,
-      'total_calories': totalCalories,
-      'total_carbs': totalCarbs,
-      'before_run_items': beforeRunItems,
-      'during_run_items': duringRunItems,
-      'after_run_items': afterRunItems,
-      'is_first_plan': isFirstPlan,
-    });
+    return track(
+      'plan_generated',
+      properties: {
+        'device_id': deviceId,
+        if (activityId != null) 'activity_id': activityId,
+        'activity_type': activityType,
+        'timestamp': DateTime.now().toIso8601String(),
+        'distance_miles': distanceMiles,
+        'pace_minutes_per_mile': paceMinutesPerMile,
+        'total_calories': totalCalories,
+        'total_carbs': totalCarbs,
+        'before_run_items': beforeRunItems,
+        'during_run_items': duringRunItems,
+        'after_run_items': afterRunItems,
+        'is_first_plan': isFirstPlan,
+      },
+    );
   }
 
   // 2b. Activity Navigation Events
@@ -108,24 +121,28 @@ extension AnalyticsEvents on AnalyticsTracker {
     String? provider,
     bool? isCoachCreated,
   }) {
-    return track('workout_planned', properties: {
-      'sport': sport,
-      'duration_min': durationMinutes,
-      'source': source,
-      'timestamp': DateTime.now().toIso8601String(),
-      if (activityId != null) 'activity_id': activityId,
-      if (provider != null) 'provider': provider,
-      if (isCoachCreated != null) 'is_coach_created': isCoachCreated,
-    });
+    return track(
+      'workout_planned',
+      properties: {
+        'sport': sport,
+        'duration_min': durationMinutes,
+        'source': source,
+        'timestamp': DateTime.now().toIso8601String(),
+        if (activityId != null) 'activity_id': activityId,
+        if (provider != null) 'provider': provider,
+        if (isCoachCreated != null) 'is_coach_created': isCoachCreated,
+      },
+    );
   }
 
-  Future<void> trackActivityButtonPressed({
-    required DateTime selectedDate,
-  }) {
-    return track('activity_button_pressed', properties: {
-      'timestamp': DateTime.now().toIso8601String(),
-      'selected_date': selectedDate.toIso8601String(),
-    });
+  Future<void> trackActivityButtonPressed({required DateTime selectedDate}) {
+    return track(
+      'activity_button_pressed',
+      properties: {
+        'timestamp': DateTime.now().toIso8601String(),
+        'selected_date': selectedDate.toIso8601String(),
+      },
+    );
   }
 
   // 3. Plan Modification Events — removed 2026-07. The trackPlanSaved,
@@ -140,12 +157,15 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String activityId,
     required DateTime reminderTime,
   }) {
-    return track('reminder_set', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'reminder_time': reminderTime.toIso8601String(),
-    });
+    return track(
+      'reminder_set',
+      properties: {
+        'device_id': deviceId,
+        'activity_id': activityId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'reminder_time': reminderTime.toIso8601String(),
+      },
+    );
   }
 
   Future<void> trackReminderScheduled({
@@ -153,23 +173,30 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String activityId,
     required DateTime reminderTime,
   }) {
-    return track('reminder_scheduled', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': reminderTime.toIso8601String(), // When reminder will fire
-      'scheduled_at': DateTime.now().toIso8601String(), // When scheduling occurred
-    });
+    return track(
+      'reminder_scheduled',
+      properties: {
+        'device_id': deviceId,
+        'activity_id': activityId,
+        'timestamp': reminderTime.toIso8601String(), // When reminder will fire
+        'scheduled_at': DateTime.now()
+            .toIso8601String(), // When scheduling occurred
+      },
+    );
   }
 
   Future<void> trackReminderClicked({
     required String deviceId,
     required String activityId,
   }) {
-    return track('reminder_clicked', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'reminder_clicked',
+      properties: {
+        'device_id': deviceId,
+        'activity_id': activityId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   // 5. Feedback & Survey Events
@@ -180,13 +207,16 @@ extension AnalyticsEvents on AnalyticsTracker {
     required bool reminderRequested,
     String? missedReason,
   }) {
-    return track('survey_completed', properties: {
-      'confidence_level': confidenceLevel,
-      'reuse_intent': reuseIntent,
-      'reminder_requested': reminderRequested,
-      if (missedReason != null) 'missed_reason': missedReason,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'survey_completed',
+      properties: {
+        'confidence_level': confidenceLevel,
+        'reuse_intent': reuseIntent,
+        'reminder_requested': reminderRequested,
+        if (missedReason != null) 'missed_reason': missedReason,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   Future<void> trackFeedbackSubmitted({
@@ -196,14 +226,17 @@ extension AnalyticsEvents on AnalyticsTracker {
     required bool reminderRequested,
     String? message,
   }) {
-    return track('feedback_submitted', properties: {
-      if (activityId != null) 'activity_id': activityId,
-      'confidence_level': confidenceLevel,
-      'reuse_intent': reuseIntent,
-      'reminder_requested': reminderRequested,
-      if (message != null && message.isNotEmpty) 'message': message,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'feedback_submitted',
+      properties: {
+        if (activityId != null) 'activity_id': activityId,
+        'confidence_level': confidenceLevel,
+        'reuse_intent': reuseIntent,
+        'reminder_requested': reminderRequested,
+        if (message != null && message.isNotEmpty) 'message': message,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   // 6. Feature Survey Events
@@ -215,11 +248,14 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String provider,
     required String deviceId,
   }) {
-    return track('integration_connect_started', properties: {
-      'provider': provider,
-      'device_id': deviceId,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'integration_connect_started',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// Track successful integration connection
@@ -229,12 +265,15 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String deviceId,
     String? athleteName,
   }) {
-    return track('integration_connect_success', properties: {
-      'provider': provider,
-      'device_id': deviceId,
-      if (athleteName != null) 'athlete_name': athleteName,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'integration_connect_success',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        if (athleteName != null) 'athlete_name': athleteName,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// Track failed integration connection
@@ -245,13 +284,16 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String errorType,
     String? errorMessage,
   }) {
-    return track('integration_connect_failed', properties: {
-      'provider': provider,
-      'device_id': deviceId,
-      'error_type': errorType,
-      if (errorMessage != null) 'error_message': errorMessage,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'integration_connect_failed',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        'error_type': errorType,
+        if (errorMessage != null) 'error_message': errorMessage,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// Track when user disconnects from a training provider
@@ -261,12 +303,15 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String deviceId,
     String? reason,
   }) {
-    return track('integration_disconnected', properties: {
-      'provider': provider,
-      'device_id': deviceId,
-      if (reason != null) 'reason': reason,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'integration_disconnected',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        if (reason != null) 'reason': reason,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// Track successful workout sync from a training provider
@@ -278,14 +323,17 @@ extension AnalyticsEvents on AnalyticsTracker {
     int? skippedCount,
     int? eventsCount,
   }) {
-    return track('integration_sync_success', properties: {
-      'provider': provider,
-      'device_id': deviceId,
-      'workouts_synced': workoutsSynced,
-      if (skippedCount != null) 'skipped_count': skippedCount,
-      if (eventsCount != null) 'events_count': eventsCount,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'integration_sync_success',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        'workouts_synced': workoutsSynced,
+        if (skippedCount != null) 'skipped_count': skippedCount,
+        if (eventsCount != null) 'events_count': eventsCount,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// Track failed workout sync from a training provider
@@ -296,13 +344,16 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String errorType,
     String? errorMessage,
   }) {
-    return track('integration_sync_failed', properties: {
-      'provider': provider,
-      'device_id': deviceId,
-      'error_type': errorType,
-      if (errorMessage != null) 'error_message': errorMessage,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'integration_sync_failed',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        'error_type': errorType,
+        if (errorMessage != null) 'error_message': errorMessage,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   // 8. Formula Kit (pin) plan-outcome events
@@ -323,16 +374,19 @@ extension AnalyticsEvents on AnalyticsTracker {
     String? subPhase, // 'meal' | 'snack' | 'top_up' (Before only)
     required int pinSetSize,
   }) {
-    return track('plan_used_pin', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'template_id': templateId,
-      'template_name': templateName,
-      'phase': phase,
-      if (subPhase != null) 'sub_phase': subPhase,
-      'pin_set_size': pinSetSize,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'plan_used_pin',
+      properties: {
+        'device_id': deviceId,
+        'activity_id': activityId,
+        'template_id': templateId,
+        'template_name': templateName,
+        'phase': phase,
+        if (subPhase != null) 'sub_phase': subPhase,
+        'pin_set_size': pinSetSize,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// Fired when pins were supplied but no in-scope pin matched the phase.
@@ -347,15 +401,18 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String reason,
     required int pinSetSize,
   }) {
-    return track('plan_pin_fallthrough', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'phase': phase,
-      if (subPhase != null) 'sub_phase': subPhase,
-      'reason': reason,
-      'pin_set_size': pinSetSize,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'plan_pin_fallthrough',
+      properties: {
+        'device_id': deviceId,
+        'activity_id': activityId,
+        'phase': phase,
+        if (subPhase != null) 'sub_phase': subPhase,
+        'reason': reason,
+        'pin_set_size': pinSetSize,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   // 9. Activity Viewing Events
@@ -371,15 +428,19 @@ extension AnalyticsEvents on AnalyticsTracker {
     String? syncedFromProvider,
     String? providerWorkoutId,
   }) {
-    return track('activity_viewed', properties: {
-      'device_id': deviceId,
-      'activity_id': activityId,
-      'activity_type': activityType,
-      'has_nutrition_plan': hasNutritionPlan,
-      'is_synced_workout': isSyncedWorkout,
-      if (syncedFromProvider != null) 'synced_from_provider': syncedFromProvider,
-      if (providerWorkoutId != null) 'provider_workout_id': providerWorkoutId,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    return track(
+      'activity_viewed',
+      properties: {
+        'device_id': deviceId,
+        'activity_id': activityId,
+        'activity_type': activityType,
+        'has_nutrition_plan': hasNutritionPlan,
+        'is_synced_workout': isSyncedWorkout,
+        if (syncedFromProvider != null)
+          'synced_from_provider': syncedFromProvider,
+        if (providerWorkoutId != null) 'provider_workout_id': providerWorkoutId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 }

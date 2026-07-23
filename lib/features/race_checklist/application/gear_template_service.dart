@@ -69,9 +69,7 @@ class GearTemplateService {
 
     // Add distance-specific items for longer races
     if (_isLongDistanceRun(eventSubtype)) {
-      gear.addAll([
-        'Band-aids/blister protection',
-      ]);
+      gear.addAll(['Band-aids/blister protection']);
     }
 
     // Ultra-specific items

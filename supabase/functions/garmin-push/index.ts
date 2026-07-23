@@ -192,7 +192,8 @@ async function mirrorGarminBodyCompToUser(
   const ageDays = (Date.now() / 1000 - measurementSec) / 86400;
   if (ageDays > GARMIN_BODY_COMP_MAX_AGE_DAYS || ageDays < 0) return;
 
-  const hasWeight = bodyComp.weightInGrams != null && bodyComp.weightInGrams > 0;
+  const hasWeight = bodyComp.weightInGrams != null &&
+    bodyComp.weightInGrams > 0;
   const hasBodyFat = bodyComp.percentFat != null && bodyComp.percentFat > 0;
   if (!hasWeight && !hasBodyFat) return;
 
@@ -1017,7 +1018,61 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
     }
 
     console.log("[garmin-push] Processing complete:", JSON.stringify(results));
+
+    await stampIntegrationSyncHealth(supabase, body);
   } catch (err) {
     console.error("[garmin-push] Fatal error:", err);
+  }
+}
+
+/// Garmin is push-based, so nothing ever ran a "sync" that could update
+/// `integrations.last_sync_status` the way the pull providers (TP/FS/VDOT)
+/// do client-side — every Garmin row sat at 'pending' forever even though
+/// data was flowing. Stamp success whenever Garmin delivers data for a
+/// mapped user: for a push provider, delivery IS the sync.
+async function stampIntegrationSyncHealth(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  body: GarminPushNotification,
+): Promise<void> {
+  const dataSummaries = [
+    body.activities,
+    body.activityDetails,
+    body.manuallyUpdatedActivities,
+    body.dailies,
+    body.epochs,
+    body.sleeps,
+    body.bodyComps,
+    body.stressDetails,
+    body.userMetrics,
+  ];
+  const garminUserIds = [
+    ...new Set(
+      dataSummaries.flatMap((entries) =>
+        (entries ?? []).map((e) => e.userId).filter(Boolean)
+      ),
+    ),
+  ];
+  if (garminUserIds.length === 0) return;
+
+  const { data: mappings, error: mapErr } = await supabase
+    .from("garmin_user_mappings")
+    .select("user_id")
+    .in("garmin_user_id", garminUserIds);
+  if (mapErr || !mappings || mappings.length === 0) return;
+
+  const userIds = [
+    ...new Set(mappings.map((m: { user_id: string }) => m.user_id)),
+  ];
+  const { error } = await supabase
+    .from("integrations")
+    .update({
+      last_sync_status: "success",
+      last_sync_at: new Date().toISOString(),
+    })
+    .eq("provider", "garmin")
+    .in("user_id", userIds);
+  if (error) {
+    console.error("[garmin-push] Sync-health stamp failed:", error);
   }
 }

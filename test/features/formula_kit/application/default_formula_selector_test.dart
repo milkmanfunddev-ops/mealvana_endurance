@@ -37,36 +37,27 @@ void main() {
     });
 
     test('picks the highest selection_priority', () {
-      final result = DefaultFormulaSelector.pickBest(
-        [
-          _c(id: 'low', templateNumber: 1, selectionPriority: 2),
-          _c(id: 'high', templateNumber: 2, selectionPriority: 9),
-          _c(id: 'mid', templateNumber: 3, selectionPriority: 5),
-        ],
-        activityType: 'running',
-      );
+      final result = DefaultFormulaSelector.pickBest([
+        _c(id: 'low', templateNumber: 1, selectionPriority: 2),
+        _c(id: 'high', templateNumber: 2, selectionPriority: 9),
+        _c(id: 'mid', templateNumber: 3, selectionPriority: 5),
+      ], activityType: 'running');
       expect(result, 'high');
     });
 
     test('ties on priority broken by lower template_number', () {
-      final result = DefaultFormulaSelector.pickBest(
-        [
-          _c(id: 'a', templateNumber: 8, selectionPriority: 7),
-          _c(id: 'b', templateNumber: 2, selectionPriority: 7),
-        ],
-        activityType: 'running',
-      );
+      final result = DefaultFormulaSelector.pickBest([
+        _c(id: 'a', templateNumber: 8, selectionPriority: 7),
+        _c(id: 'b', templateNumber: 2, selectionPriority: 7),
+      ], activityType: 'running');
       expect(result, 'b');
     });
 
     test('filters by activity (case-insensitive)', () {
-      final result = DefaultFormulaSelector.pickBest(
-        [
-          _c(id: 'swim', activityTypes: ['swimming'], selectionPriority: 9),
-          _c(id: 'run', activityTypes: ['Running'], selectionPriority: 1),
-        ],
-        activityType: 'running',
-      );
+      final result = DefaultFormulaSelector.pickBest([
+        _c(id: 'swim', activityTypes: ['swimming'], selectionPriority: 9),
+        _c(id: 'run', activityTypes: ['Running'], selectionPriority: 1),
+      ], activityType: 'running');
       expect(result, 'run');
     });
 
@@ -96,7 +87,9 @@ void main() {
 
     test('returns null when every candidate is filtered out', () {
       final result = DefaultFormulaSelector.pickBest(
-        [_c(id: 'nutty', allergens: ['peanut'])],
+        [
+          _c(id: 'nutty', allergens: ['peanut']),
+        ],
         activityType: 'running',
         allergies: ['peanut'],
       );
@@ -104,29 +97,24 @@ void main() {
     });
 
     test('skips inactive templates', () {
-      final result = DefaultFormulaSelector.pickBest(
-        [
-          _c(id: 'off', selectionPriority: 9, isActive: false),
-          _c(id: 'on', selectionPriority: 1),
-        ],
-        activityType: 'running',
-      );
+      final result = DefaultFormulaSelector.pickBest([
+        _c(id: 'off', selectionPriority: 9, isActive: false),
+        _c(id: 'on', selectionPriority: 1),
+      ], activityType: 'running');
       expect(result, 'on');
     });
 
     test('post universal (empty activity_types) matches any activity', () {
-      final result = DefaultFormulaSelector.pickBest(
-        [_c(id: 'univ', activityTypes: const [], universal: true)],
-        activityType: 'swimming',
-      );
+      final result = DefaultFormulaSelector.pickBest([
+        _c(id: 'univ', activityTypes: const [], universal: true),
+      ], activityType: 'swimming');
       expect(result, 'univ');
     });
 
     test('during (non-universal) empty activity_types matches nothing', () {
-      final result = DefaultFormulaSelector.pickBest(
-        [_c(id: 'none', activityTypes: const [], universal: false)],
-        activityType: 'running',
-      );
+      final result = DefaultFormulaSelector.pickBest([
+        _c(id: 'none', activityTypes: const [], universal: false),
+      ], activityType: 'running');
       expect(result, isNull);
     });
   });
@@ -134,8 +122,11 @@ void main() {
   group('OnboardingFormulaPinService.primarySport', () {
     test('prefers running when present', () {
       expect(
-        OnboardingFormulaPinService.primarySport(
-            {'swimming', 'running', 'cycling'}),
+        OnboardingFormulaPinService.primarySport({
+          'swimming',
+          'running',
+          'cycling',
+        }),
         'running',
       );
     });
@@ -148,10 +139,7 @@ void main() {
     });
 
     test('defaults to running for an empty set', () {
-      expect(
-        OnboardingFormulaPinService.primarySport(<String>{}),
-        'running',
-      );
+      expect(OnboardingFormulaPinService.primarySport(<String>{}), 'running');
     });
   });
 }

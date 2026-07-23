@@ -101,7 +101,7 @@ class _PortalAthleteProfileFormState
     try {
       final useMetric =
           (ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
-              UnitSystem.metric;
+          UnitSystem.metric;
 
       // Always persist canonical lbs/ft/in — convert from the metric
       // fields (if that's what the coach edited) back to canonical units.
@@ -168,7 +168,7 @@ class _PortalAthleteProfileFormState
     // Canonical storage stays lbs/ft/in regardless of display unit.
     final useMetric =
         (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
-            UnitSystem.metric;
+        UnitSystem.metric;
 
     return ListView(
       padding: const EdgeInsets.all(16),

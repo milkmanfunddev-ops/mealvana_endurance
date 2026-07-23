@@ -26,7 +26,8 @@ class RevenueCatService {
   final AppConfig _config;
   bool _configured = false;
 
-  bool get _canUse => _config.aiCreditsEnabled && _config.revenueCatApiKey.isNotEmpty;
+  bool get _canUse =>
+      _config.aiCreditsEnabled && _config.revenueCatApiKey.isNotEmpty;
 
   /// The API-key prefix the native RevenueCat SDK requires for the current
   /// platform. Passing a key with any other prefix (e.g. a Google `goog_` or a
@@ -65,9 +66,11 @@ class RevenueCatService {
     // which would crash the app rather than throw a catchable Dart error.
     if (!_isKeyValidForPlatform(_config.revenueCatApiKey)) {
       if (kDebugMode) {
-        debugPrint('[RevenueCatService] skipping configure: API key does not '
-            'match required prefix "$_requiredKeyPrefix" for this platform. '
-            'RevenueCat is disabled for this session.');
+        debugPrint(
+          '[RevenueCatService] skipping configure: API key does not '
+          'match required prefix "$_requiredKeyPrefix" for this platform. '
+          'RevenueCat is disabled for this session.',
+        );
       }
       return;
     }
@@ -78,11 +81,10 @@ class RevenueCatService {
       );
       _configured = true;
       if (kDebugMode) {
-        debugPrint('[RevenueCatService] configured (key suffix: '
-            '...${_config.revenueCatApiKey.substring(
-          (_config.revenueCatApiKey.length - 4).clamp(0, _config.revenueCatApiKey.length),
-          _config.revenueCatApiKey.length,
-        )})');
+        debugPrint(
+          '[RevenueCatService] configured (key suffix: '
+          '...${_config.revenueCatApiKey.substring((_config.revenueCatApiKey.length - 4).clamp(0, _config.revenueCatApiKey.length), _config.revenueCatApiKey.length)})',
+        );
       }
     } catch (e) {
       if (kDebugMode) {

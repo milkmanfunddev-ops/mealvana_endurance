@@ -79,7 +79,9 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
-        backgroundColor: isDark ? AppColors.blackberryDark : AppColors.surfaceLight,
+        backgroundColor: isDark
+            ? AppColors.blackberryDark
+            : AppColors.surfaceLight,
         foregroundColor: isDark ? AppColors.cream : AppColors.blackberry,
         title: chatAsync.when(
           data: (state) => Column(
@@ -134,7 +136,8 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
       ),
       body: chatAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString(), isDark),
+        error: (error, stack) =>
+            _buildErrorView(context, error.toString(), isDark),
         data: (state) => _buildChatBody(context, state, isDark),
       ),
     );
@@ -196,7 +199,11 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
   }
 
-  Widget _buildChatBody(BuildContext context, CoachChatState state, bool isDark) {
+  Widget _buildChatBody(
+    BuildContext context,
+    CoachChatState state,
+    bool isDark,
+  ) {
     return Column(
       children: [
         // Messages list
@@ -219,7 +226,11 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
   }
 
-  Widget _buildMessagesList(BuildContext context, CoachChatState state, bool isDark) {
+  Widget _buildMessagesList(
+    BuildContext context,
+    CoachChatState state,
+    bool isDark,
+  ) {
     final messages = state.allMessages;
 
     return ListView.builder(
@@ -314,7 +325,11 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     }
   }
 
-  Widget _buildEmptyView(BuildContext context, CoachChatState state, bool isDark) {
+  Widget _buildEmptyView(
+    BuildContext context,
+    CoachChatState state,
+    bool isDark,
+  ) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),

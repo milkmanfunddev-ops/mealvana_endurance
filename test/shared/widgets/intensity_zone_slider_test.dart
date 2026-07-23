@@ -91,7 +91,10 @@ void main() {
       // Verify onChanged was called
       expect(changeCallCount, greaterThan(0));
       expect(lastChangedValue, isNot(-1));
-      expect(lastChangedValue, isNot(50)); // Should have changed from initial value
+      expect(
+        lastChangedValue,
+        isNot(50),
+      ); // Should have changed from initial value
     });
 
     testWidgets('text field shows correct value', (tester) async {
@@ -167,7 +170,9 @@ void main() {
       expect(lastChangedValue, isNot(150));
     });
 
-    testWidgets('text field reverts to current value on invalid submit', (tester) async {
+    testWidgets('text field reverts to current value on invalid submit', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestWidget(value: 50));
 
       final textFieldFinder = find.byType(TextField);
@@ -224,7 +229,9 @@ void main() {
     });
 
     testWidgets('disabled state shows dimmed colors', (tester) async {
-      await tester.pumpWidget(createTestWidget(enabled: false, color: Colors.blue));
+      await tester.pumpWidget(
+        createTestWidget(enabled: false, color: Colors.blue),
+      );
 
       // Find the colored dot container
       final container = tester.widget<Container>(

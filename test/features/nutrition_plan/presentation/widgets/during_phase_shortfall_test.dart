@@ -34,8 +34,9 @@ Widget _buildDuringSection(PlanSection section) {
 }
 
 void main() {
-  testWidgets('During section renders shortfall card when shortfalls present',
-      (tester) async {
+  testWidgets('During section renders shortfall card when shortfalls present', (
+    tester,
+  ) async {
     const section = PlanSection(
       id: 'during_run',
       title: 'During Run',
@@ -58,8 +59,9 @@ void main() {
     expect(find.text('Carbs gap: ~15g short'), findsOneWidget);
   });
 
-  testWidgets('During section hides shortfall card when no shortfalls',
-      (tester) async {
+  testWidgets('During section hides shortfall card when no shortfalls', (
+    tester,
+  ) async {
     const section = PlanSection(
       id: 'during_run',
       title: 'During Run',

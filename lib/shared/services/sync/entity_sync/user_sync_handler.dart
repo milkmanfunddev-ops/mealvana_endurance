@@ -25,9 +25,9 @@ class UserSyncHandler {
     required AppDatabase database,
     required AppLogger logger,
     required SupabaseClient supabase,
-  })  : _database = database,
-        _logger = logger,
-        _supabase = supabase;
+  }) : _database = database,
+       _logger = logger,
+       _supabase = supabase;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -50,7 +50,8 @@ class UserSyncHandler {
 
       // SIGN-BACK-IN FIX: Check if local user ID matches the auth user ID
       // After sign-out, local DB has anonymous user, but we're syncing as OAuth user
-      final needsRemoteFetch = localUser == null ||
+      final needsRemoteFetch =
+          localUser == null ||
           localUser.id.toLowerCase() != userId.toLowerCase();
 
       if (needsRemoteFetch) {
@@ -115,10 +116,12 @@ class UserSyncHandler {
       };
 
       // Upsert user profile to Supabase
-      await _supabase.from('users').upsert(
-        userData,
-        onConflict: 'id', // Resolve on primary key
-      );
+      await _supabase
+          .from('users')
+          .upsert(
+            userData,
+            onConflict: 'id', // Resolve on primary key
+          );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to sync user profile - this may cause FK violations',
@@ -144,30 +147,49 @@ class UserSyncHandler {
         isAnonymous: const Value(false), // OAuth user = not anonymous
         authProvider: Value(remoteUser['auth_provider'] as String? ?? 'google'),
         gender: Value(EnumParsers.parseGender(remoteUser['gender'] as String?)),
-        birthday: Value(DateTime.tryParse(remoteUser['birthday'] as String? ?? '') ??
-            DateTime(1990, 1, 1)),
+        birthday: Value(
+          DateTime.tryParse(remoteUser['birthday'] as String? ?? '') ??
+              DateTime(1990, 1, 1),
+        ),
         heightFeet: Value(remoteUser['height_feet'] as int? ?? 5),
         heightInches: Value(remoteUser['height_inches'] as int? ?? 8),
-        weightPounds: Value((remoteUser['weight_pounds'] as num?)?.toDouble() ?? 150.0),
-        runsWithWaterBottle: Value(remoteUser['runs_with_water_bottle'] as bool? ?? true),
+        weightPounds: Value(
+          (remoteUser['weight_pounds'] as num?)?.toDouble() ?? 150.0,
+        ),
+        runsWithWaterBottle: Value(
+          remoteUser['runs_with_water_bottle'] as bool? ?? true,
+        ),
         preferredPaceUnit: const Value('minPerMile'),
         preferredDistanceUnit: const Value('miles'),
-        gutTrainingLevel: Value(EnumParsers.parseGutTrainingLevel(
-            remoteUser['gut_training_level'] as String?)),
-        onboardingCompleted: Value(remoteUser['onboarding_completed'] as bool? ?? false),
+        gutTrainingLevel: Value(
+          EnumParsers.parseGutTrainingLevel(
+            remoteUser['gut_training_level'] as String?,
+          ),
+        ),
+        onboardingCompleted: Value(
+          remoteUser['onboarding_completed'] as bool? ?? false,
+        ),
         appVersion: Value(remoteUser['app_version'] as String?),
-        createdAt: Value(DateTime.tryParse(remoteUser['created_at'] as String? ?? '') ??
-            DateTime.now()),
-        updatedAt: Value(DateTime.tryParse(remoteUser['updated_at'] as String? ?? '') ??
-            DateTime.now()),
+        createdAt: Value(
+          DateTime.tryParse(remoteUser['created_at'] as String? ?? '') ??
+              DateTime.now(),
+        ),
+        updatedAt: Value(
+          DateTime.tryParse(remoteUser['updated_at'] as String? ?? '') ??
+              DateTime.now(),
+        ),
         firstName: Value(remoteUser['first_name'] as String?),
         lastName: Value(remoteUser['last_name'] as String?),
         email: Value(remoteUser['email'] as String?),
         // Daily macro calculation fields
         bodyFatPct: Value((remoteUser['body_fat_pct'] as num?)?.toDouble()),
         lifestyle: Value(remoteUser['lifestyle'] as String? ?? 'mixed'),
-        typicalWeeklyHours: Value((remoteUser['typical_weekly_hours'] as num?)?.toDouble()),
-        carbCycleOptIn: Value(remoteUser['carb_cycle_opt_in'] as bool? ?? false),
+        typicalWeeklyHours: Value(
+          (remoteUser['typical_weekly_hours'] as num?)?.toDouble(),
+        ),
+        carbCycleOptIn: Value(
+          remoteUser['carb_cycle_opt_in'] as bool? ?? false,
+        ),
         trainingPhase: Value(remoteUser['training_phase'] as String? ?? 'base'),
       );
 
@@ -206,8 +228,9 @@ class UserSyncHandler {
         'onboarding_completed': profile.onboardingCompleted,
         'app_version': profile.appVersion,
         // Convert 'none' to null since Supabase dietary_preference_enum doesn't include 'none'
-        'dietary_preference':
-            profile.dietaryPreference == 'none' ? null : profile.dietaryPreference,
+        'dietary_preference': profile.dietaryPreference == 'none'
+            ? null
+            : profile.dietaryPreference,
         // Drift stores allergies as a PG-literal string ("{dairy,gluten}");
         // Supabase column is `allergy_enum[]` and PostgREST cannot cast that
         // string into an enum array, so we parse + re-emit as a JSON array.
@@ -224,10 +247,7 @@ class UserSyncHandler {
       };
 
       // Upsert to Supabase using primary key (id) for conflict resolution
-      await _supabase.from('users').upsert(
-        userData,
-        onConflict: 'id',
-      );
+      await _supabase.from('users').upsert(userData, onConflict: 'id');
 
       // Mark as synced in local database
       await (_database.update(_database.userProfilesTable)
@@ -250,7 +270,8 @@ class UserSyncHandler {
   Future<void> uploadFoodPreferences(String userId) async {
     try {
       // Get all food preference entries from local database
-      final entries = await _database.foodPreferencesDao.getAllFoodPreferenceEntries(userId);
+      final entries = await _database.foodPreferencesDao
+          .getAllFoodPreferenceEntries(userId);
 
       if (entries.isEmpty) {
         return;
@@ -258,22 +279,26 @@ class UserSyncHandler {
 
       // Convert to Supabase format
       final rows = entries
-          .map((entry) => {
-                'id': entry.id,
-                'user_id': entry.userId,
-                'food_name': entry.foodName,
-                'preference': entry.preference,
-                'preference_level': entry.preferenceLevel,
-                'created_at': entry.createdAt.toIso8601String(),
-                'updated_at': entry.updatedAt.toIso8601String(),
-              })
+          .map(
+            (entry) => {
+              'id': entry.id,
+              'user_id': entry.userId,
+              'food_name': entry.foodName,
+              'preference': entry.preference,
+              'preference_level': entry.preferenceLevel,
+              'created_at': entry.createdAt.toIso8601String(),
+              'updated_at': entry.updatedAt.toIso8601String(),
+            },
+          )
           .toList();
 
       // Upsert to Supabase food_preferences table
-      await _supabase.from('food_preferences').upsert(
-        rows,
-        onConflict: 'user_id,food_name', // Use composite unique key
-      );
+      await _supabase
+          .from('food_preferences')
+          .upsert(
+            rows,
+            onConflict: 'user_id,food_name', // Use composite unique key
+          );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to upload food preferences',

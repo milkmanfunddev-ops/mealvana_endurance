@@ -92,11 +92,11 @@ class ChecklistController extends _$ChecklistController {
 
       // Check if nutrition plan exists for this event
       if (event.activityId != null) {
-        final nutritionPlanRepo = await ref.read(nutritionPlanRepositoryProvider.future);
-        final nutritionPlan = await nutritionPlanRepo.getNutritionPlanByActivityId(
-          userId,
-          event.activityId!,
+        final nutritionPlanRepo = await ref.read(
+          nutritionPlanRepositoryProvider.future,
         );
+        final nutritionPlan = await nutritionPlanRepo
+            .getNutritionPlanByActivityId(userId, event.activityId!);
 
         if (nutritionPlan != null) {
           // Extract and aggregate nutrition items from the plan
@@ -163,11 +163,11 @@ class ChecklistController extends _$ChecklistController {
 
       // Check if nutrition plan exists for this event
       if (event.activityId != null) {
-        final nutritionPlanRepo = await ref.read(nutritionPlanRepositoryProvider.future);
-        final nutritionPlan = await nutritionPlanRepo.getNutritionPlanByActivityId(
-          userId,
-          event.activityId!,
+        final nutritionPlanRepo = await ref.read(
+          nutritionPlanRepositoryProvider.future,
         );
+        final nutritionPlan = await nutritionPlanRepo
+            .getNutritionPlanByActivityId(userId, event.activityId!);
 
         if (nutritionPlan != null) {
           // Extract and aggregate nutrition items from the plan
@@ -219,19 +219,11 @@ class ChecklistController extends _$ChecklistController {
       if (section.subPhases != null && section.subPhases.isNotEmpty) {
         // Extract from sub-phases (meal, snack, top_up)
         for (final subPhase in section.subPhases) {
-          _extractFoodItems(
-            subPhase.foodItems,
-            foodQuantities,
-            foodUnits,
-          );
+          _extractFoodItems(subPhase.foodItems, foodQuantities, foodUnits);
         }
       } else {
         // Extract from section's direct food items
-        _extractFoodItems(
-          section.foodItems,
-          foodQuantities,
-          foodUnits,
-        );
+        _extractFoodItems(section.foodItems, foodQuantities, foodUnits);
       }
     }
 
@@ -312,7 +304,10 @@ class ChecklistController extends _$ChecklistController {
   }
 
   /// Add a custom item to the checklist
-  Future<void> addCustomItem(String itemName, [String category = 'gear']) async {
+  Future<void> addCustomItem(
+    String itemName, [
+    String category = 'gear',
+  ]) async {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -394,8 +389,18 @@ ChecklistProgress checklistProgress(Ref ref, String eventId) {
         isComplete: total > 0 && checked == total,
       );
     },
-    loading: () => const ChecklistProgress(total: 0, checked: 0, progress: 0.0, isComplete: false),
-    error: (_, __) => const ChecklistProgress(total: 0, checked: 0, progress: 0.0, isComplete: false),
+    loading: () => const ChecklistProgress(
+      total: 0,
+      checked: 0,
+      progress: 0.0,
+      isComplete: false,
+    ),
+    error: (_, __) => const ChecklistProgress(
+      total: 0,
+      checked: 0,
+      progress: 0.0,
+      isComplete: false,
+    ),
   );
 }
 

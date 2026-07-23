@@ -43,11 +43,7 @@ class SectionMacroTargetsWidget extends StatelessWidget {
             ),
           ),
           SizedBox(height: 6.h),
-          Wrap(
-            spacing: 12.w,
-            runSpacing: 4.h,
-            children: _buildTargetChips(),
-          ),
+          Wrap(spacing: 12.w, runSpacing: 4.h, children: _buildTargetChips()),
         ],
       ),
     );
@@ -64,43 +60,53 @@ class SectionMacroTargetsWidget extends StatelessWidget {
     final List<Widget> chips = [];
 
     if (section.carbsTarget != null && section.carbsTarget! > 0) {
-      chips.add(_buildTargetChip(
-        'Carbs',
-        '${section.carbsTarget!.toInt()}g',
-        AppTheme.carbsColor,
-      ));
+      chips.add(
+        _buildTargetChip(
+          'Carbs',
+          '${section.carbsTarget!.toInt()}g',
+          AppTheme.carbsColor,
+        ),
+      );
     }
 
     if (section.proteinTarget != null && section.proteinTarget! > 0) {
-      chips.add(_buildTargetChip(
-        'Protein',
-        '${section.proteinTarget!.toInt()}g',
-        AppTheme.proteinColor,
-      ));
+      chips.add(
+        _buildTargetChip(
+          'Protein',
+          '${section.proteinTarget!.toInt()}g',
+          AppTheme.proteinColor,
+        ),
+      );
     }
 
     if (section.fatTarget != null && section.fatTarget! > 0) {
-      chips.add(_buildTargetChip(
-        'Fat',
-        '${section.fatTarget!.toInt()}g',
-        AppTheme.fatsColor,
-      ));
+      chips.add(
+        _buildTargetChip(
+          'Fat',
+          '${section.fatTarget!.toInt()}g',
+          AppTheme.fatsColor,
+        ),
+      );
     }
 
     if (section.sodiumTarget != null && section.sodiumTarget! > 0) {
-      chips.add(_buildTargetChip(
-        'Sodium',
-        '${section.sodiumTarget!.toInt()}mg',
-        AppTheme.sodiumColor,
-      ));
+      chips.add(
+        _buildTargetChip(
+          'Sodium',
+          '${section.sodiumTarget!.toInt()}mg',
+          AppTheme.sodiumColor,
+        ),
+      );
     }
 
     if (section.fluidsTarget != null && section.fluidsTarget! > 0) {
-      chips.add(_buildTargetChip(
-        'Fluids',
-        '${(section.fluidsTarget! / 1000).toStringAsFixed(1)}L',
-        AppTheme.fluidsColor,
-      ));
+      chips.add(
+        _buildTargetChip(
+          'Fluids',
+          '${(section.fluidsTarget! / 1000).toStringAsFixed(1)}L',
+          AppTheme.fluidsColor,
+        ),
+      );
     }
 
     return chips;

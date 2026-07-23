@@ -50,19 +50,21 @@ void main() {
       expect(rate, kReplayOff);
     });
 
-    test('assigns no cohort when unconsented, so a later grant rolls fairly',
-        () async {
-      final prefs = await _prefs();
+    test(
+      'assigns no cohort when unconsented, so a later grant rolls fairly',
+      () async {
+        final prefs = await _prefs();
 
-      await resolveReplayOnErrorSampleRate(
-        prefs,
-        analyticsConsented: false,
-        random: _FixedRandom(0.0),
-      );
+        await resolveReplayOnErrorSampleRate(
+          prefs,
+          analyticsConsented: false,
+          random: _FixedRandom(0.0),
+        );
 
-      // Burning the roll here would permanently bias a user we must not record.
-      expect(prefs.getBool('sentry_replay_cohort_armed_v1'), isNull);
-    });
+        // Burning the roll here would permanently bias a user we must not record.
+        expect(prefs.getBool('sentry_replay_cohort_armed_v1'), isNull);
+      },
+    );
 
     test('arms when the roll lands inside the cohort', () async {
       final prefs = await _prefs();
@@ -103,27 +105,29 @@ void main() {
       expect(rate, kReplayOff);
     });
 
-    test('an armed install stays armed across launches, ignoring later rolls',
-        () async {
-      final prefs = await _prefs();
+    test(
+      'an armed install stays armed across launches, ignoring later rolls',
+      () async {
+        final prefs = await _prefs();
 
-      final first = await resolveReplayOnErrorSampleRate(
-        prefs,
-        analyticsConsented: true,
-        armedFraction: 0.1,
-        random: _FixedRandom(0.05), // armed
-      );
-      // A per-session roll would flip this one to off; a cohort must not.
-      final second = await resolveReplayOnErrorSampleRate(
-        prefs,
-        analyticsConsented: true,
-        armedFraction: 0.1,
-        random: _FixedRandom(0.99),
-      );
+        final first = await resolveReplayOnErrorSampleRate(
+          prefs,
+          analyticsConsented: true,
+          armedFraction: 0.1,
+          random: _FixedRandom(0.05), // armed
+        );
+        // A per-session roll would flip this one to off; a cohort must not.
+        final second = await resolveReplayOnErrorSampleRate(
+          prefs,
+          analyticsConsented: true,
+          armedFraction: 0.1,
+          random: _FixedRandom(0.99),
+        );
 
-      expect(first, kReplayArmed);
-      expect(second, kReplayArmed);
-    });
+        expect(first, kReplayArmed);
+        expect(second, kReplayArmed);
+      },
+    );
 
     test('an unarmed install stays unarmed across launches', () async {
       final prefs = await _prefs();
@@ -171,25 +175,29 @@ void main() {
       expect(rate, kReplayArmed);
     });
 
-    test('only ever returns exactly 1.0 or 0.0 — never a fractional rate',
-        () async {
-      // The whole point of the fix: a fractional rate is the worst case.
-      for (final roll in [0.0, 0.05, 0.1, 0.5, 0.99]) {
-        final prefs = await _prefs();
-        final rate = await resolveReplayOnErrorSampleRate(
-          prefs,
-          analyticsConsented: true,
-          armedFraction: 0.1,
-          random: _FixedRandom(roll),
-        );
-        expect(rate, anyOf(equals(1.0), equals(0.0)), reason: 'roll=$roll');
-      }
-    });
+    test(
+      'only ever returns exactly 1.0 or 0.0 — never a fractional rate',
+      () async {
+        // The whole point of the fix: a fractional rate is the worst case.
+        for (final roll in [0.0, 0.05, 0.1, 0.5, 0.99]) {
+          final prefs = await _prefs();
+          final rate = await resolveReplayOnErrorSampleRate(
+            prefs,
+            analyticsConsented: true,
+            armedFraction: 0.1,
+            random: _FixedRandom(roll),
+          );
+          expect(rate, anyOf(equals(1.0), equals(0.0)), reason: 'roll=$roll');
+        }
+      },
+    );
 
-    test('default cohort fraction stays a documented, deliberate value',
-        () async {
-      // A silent bump here is a silent battery regression across the fleet.
-      expect(kReplayArmedCohortFraction, 0.1);
-    });
+    test(
+      'default cohort fraction stays a documented, deliberate value',
+      () async {
+        // A silent bump here is a silent battery regression across the fleet.
+        expect(kReplayArmedCohortFraction, 0.1);
+      },
+    );
   });
 }

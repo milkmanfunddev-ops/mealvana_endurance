@@ -58,41 +58,51 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Permissive logger stubs — production logs are fire-and-forget noise here.
-    when(() => mockLogger.info(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.debug(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
 
     // pin()/unpin() fire-and-forget the upload to Supabase. The mock client
     // throws on any unstubbed method call, which surfaces as a rejected
     // future inside the unawaited lambda — caught by the repo's try/catch.
     // Stub the sentry callback so that catch path doesn't blow up.
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
 
     repository = FormulaPinsRepository(
       supabase: mockSupabase,
@@ -132,12 +142,13 @@ void main() {
   }
 
   group('upsertRemotePinsPreservingDirty — dirty-preserve', () {
-    test(
-        'skips remote overwrite when local row has needs_upload=true '
+    test('skips remote overwrite when local row has needs_upload=true '
         '(local-dirty wins until upload)', () async {
       // Seed a locally-dirty row (e.g. user just tapped pin while offline).
       final localCreated = DateTime.utc(2026, 5, 21, 10);
-      await database.into(database.formulaPinsTable).insert(
+      await database
+          .into(database.formulaPinsTable)
+          .insert(
             FormulaPinsTableCompanion.insert(
               id: const Value('pin-1'),
               userId: testUserId,
@@ -163,22 +174,35 @@ void main() {
         ),
       ]);
 
-      expect(upsertedCount, 0, reason: 'dirty row should not count as upserted');
+      expect(
+        upsertedCount,
+        0,
+        reason: 'dirty row should not count as upserted',
+      );
 
       // Local row is untouched — still active, still dirty.
-      final localRows =
-          await (database.select(database.formulaPinsTable)).get();
+      final localRows = await (database.select(
+        database.formulaPinsTable,
+      )).get();
       expect(localRows, hasLength(1));
       expect(localRows.single.id, 'pin-1');
-      expect(localRows.single.isDeleted, isFalse,
-          reason: 'local-dirty row must survive the conflicting remote tombstone');
-      expect(localRows.single.needsUpload, isTrue,
-          reason: 'still dirty — upload pass hasn\'t run yet');
+      expect(
+        localRows.single.isDeleted,
+        isFalse,
+        reason: 'local-dirty row must survive the conflicting remote tombstone',
+      );
+      expect(
+        localRows.single.needsUpload,
+        isTrue,
+        reason: 'still dirty — upload pass hasn\'t run yet',
+      );
     });
 
     test('applies remote rows that are NOT locally dirty', () async {
       // Seed a CLEAN local row (already in sync with server).
-      await database.into(database.formulaPinsTable).insert(
+      await database
+          .into(database.formulaPinsTable)
+          .insert(
             FormulaPinsTableCompanion.insert(
               id: const Value('pin-clean'),
               userId: testUserId,
@@ -209,8 +233,9 @@ void main() {
 
       expect(upsertedCount, 2);
 
-      final localRows =
-          await (database.select(database.formulaPinsTable)).get();
+      final localRows = await (database.select(
+        database.formulaPinsTable,
+      )).get();
       expect(localRows, hasLength(2));
       // Clean row was overwritten with the newer remote updated_at.
       // Drift round-trips DateTime as local — compare instants, not wall times.
@@ -223,11 +248,12 @@ void main() {
   });
 
   group('upsertRemotePinsPreservingDirty — tombstone propagation', () {
-    test(
-        'remote tombstone applied to clean local row makes it invisible to '
+    test('remote tombstone applied to clean local row makes it invisible to '
         'read paths but keeps the row physically present', () async {
       // Device A pinned & synced this row. Device B (us) starts from clean.
-      await database.into(database.formulaPinsTable).insert(
+      await database
+          .into(database.formulaPinsTable)
+          .insert(
             FormulaPinsTableCompanion.insert(
               id: const Value('pin-shared'),
               userId: testUserId,
@@ -277,33 +303,45 @@ void main() {
   });
 
   group('unpin() — soft delete', () {
-    test('flips is_deleted=true and dirties the row instead of DELETE-ing',
-        () async {
-      final pinned = await repository.pin(
-        userId: testUserId,
-        templateId: testTemplateId,
-        kind: TemplateKind.preSystem,
-      );
+    test(
+      'flips is_deleted=true and dirties the row instead of DELETE-ing',
+      () async {
+        final pinned = await repository.pin(
+          userId: testUserId,
+          templateId: testTemplateId,
+          kind: TemplateKind.preSystem,
+        );
 
-      await repository.unpin(
-        userId: testUserId,
-        templateId: testTemplateId,
-        kind: TemplateKind.preSystem,
-      );
+        await repository.unpin(
+          userId: testUserId,
+          templateId: testTemplateId,
+          kind: TemplateKind.preSystem,
+        );
 
-      // Same physical row, now tombstoned.
-      final allRows = await (database.select(database.formulaPinsTable)).get();
-      expect(allRows, hasLength(1),
-          reason: 'unpin must not physically delete — tombstone needs to sync');
-      expect(allRows.single.id, pinned.id);
-      expect(allRows.single.isDeleted, isTrue);
-      expect(allRows.single.needsUpload, isTrue,
-          reason: 'tombstone needs to upload so other devices learn about it');
-    });
+        // Same physical row, now tombstoned.
+        final allRows = await (database.select(
+          database.formulaPinsTable,
+        )).get();
+        expect(
+          allRows,
+          hasLength(1),
+          reason: 'unpin must not physically delete — tombstone needs to sync',
+        );
+        expect(allRows.single.id, pinned.id);
+        expect(allRows.single.isDeleted, isTrue);
+        expect(
+          allRows.single.needsUpload,
+          isTrue,
+          reason: 'tombstone needs to upload so other devices learn about it',
+        );
+      },
+    );
 
     test('no-op when no active pin exists', () async {
       // Seed only a tombstone — unpin() should find no active row and exit.
-      await database.into(database.formulaPinsTable).insert(
+      await database
+          .into(database.formulaPinsTable)
+          .insert(
             FormulaPinsTableCompanion.insert(
               id: const Value('pin-ghost'),
               userId: testUserId,
@@ -324,14 +362,16 @@ void main() {
 
       final allRows = await (database.select(database.formulaPinsTable)).get();
       expect(allRows, hasLength(1));
-      expect(allRows.single.needsUpload, isFalse,
-          reason: 'no-op unpin must not re-dirty an already-tombstoned row');
+      expect(
+        allRows.single.needsUpload,
+        isFalse,
+        reason: 'no-op unpin must not re-dirty an already-tombstoned row',
+      );
     });
   });
 
   group('pin() — idempotency', () {
-    test(
-        'second pin() for same (user,template,kind) returns existing row '
+    test('second pin() for same (user,template,kind) returns existing row '
         'and does not insert a duplicate', () async {
       final first = await repository.pin(
         userId: testUserId,
@@ -349,30 +389,36 @@ void main() {
       expect(allRows, hasLength(1));
     });
 
-    test('different (user,template,kind) tuples produce separate rows',
-        () async {
-      await repository.pin(
-        userId: testUserId,
-        templateId: testTemplateId,
-        kind: TemplateKind.preSystem,
-      );
-      await repository.pin(
-        userId: testUserId,
-        templateId: testTemplateId,
-        kind: TemplateKind.duringSystem,
-      );
-      await repository.pin(
-        userId: otherUserId,
-        templateId: testTemplateId,
-        kind: TemplateKind.preSystem,
-      );
+    test(
+      'different (user,template,kind) tuples produce separate rows',
+      () async {
+        await repository.pin(
+          userId: testUserId,
+          templateId: testTemplateId,
+          kind: TemplateKind.preSystem,
+        );
+        await repository.pin(
+          userId: testUserId,
+          templateId: testTemplateId,
+          kind: TemplateKind.duringSystem,
+        );
+        await repository.pin(
+          userId: otherUserId,
+          templateId: testTemplateId,
+          kind: TemplateKind.preSystem,
+        );
 
-      final allRows = await (database.select(database.formulaPinsTable)).get();
-      expect(allRows, hasLength(3));
+        final allRows = await (database.select(
+          database.formulaPinsTable,
+        )).get();
+        expect(allRows, hasLength(3));
 
-      final mineBeforeOnly =
-          await repository.getActivePinsForUser(testUserId, kind: TemplateKind.preSystem);
-      expect(mineBeforeOnly, hasLength(1));
-    });
+        final mineBeforeOnly = await repository.getActivePinsForUser(
+          testUserId,
+          kind: TemplateKind.preSystem,
+        );
+        expect(mineBeforeOnly, hasLength(1));
+      },
+    );
   });
 }

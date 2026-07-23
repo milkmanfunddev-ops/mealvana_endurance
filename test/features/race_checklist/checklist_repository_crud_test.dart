@@ -297,40 +297,49 @@ void main() {
       expect(result[2].isChecked, isFalse);
     });
 
-    test('toggle persists across separate getChecklistForEvent calls', () async {
-      final repo = _makeRepo(db);
-      await repo.createChecklistItems(
-        eventId: 'event-1',
-        userId: 'user-1',
-        gearItems: ['Shoes'],
-      );
-      final itemId = (await repo.getChecklistForEvent('event-1')).first.id;
+    test(
+      'toggle persists across separate getChecklistForEvent calls',
+      () async {
+        final repo = _makeRepo(db);
+        await repo.createChecklistItems(
+          eventId: 'event-1',
+          userId: 'user-1',
+          gearItems: ['Shoes'],
+        );
+        final itemId = (await repo.getChecklistForEvent('event-1')).first.id;
 
-      await repo.toggleItemChecked(itemId, true);
+        await repo.toggleItemChecked(itemId, true);
 
-      // Fresh read.
-      final freshItems = await repo.getChecklistForEvent('event-1');
-      expect(freshItems.first.isChecked, isTrue,
-          reason: 'toggle must persist to database');
-    });
+        // Fresh read.
+        final freshItems = await repo.getChecklistForEvent('event-1');
+        expect(
+          freshItems.first.isChecked,
+          isTrue,
+          reason: 'toggle must persist to database',
+        );
+      },
+    );
 
-    test('multiple toggles are idempotent — end state matches last call', () async {
-      final repo = _makeRepo(db);
-      await repo.createChecklistItems(
-        eventId: 'event-1',
-        userId: 'user-1',
-        gearItems: ['Shoes'],
-      );
-      final itemId = (await repo.getChecklistForEvent('event-1')).first.id;
+    test(
+      'multiple toggles are idempotent — end state matches last call',
+      () async {
+        final repo = _makeRepo(db);
+        await repo.createChecklistItems(
+          eventId: 'event-1',
+          userId: 'user-1',
+          gearItems: ['Shoes'],
+        );
+        final itemId = (await repo.getChecklistForEvent('event-1')).first.id;
 
-      await repo.toggleItemChecked(itemId, true);
-      await repo.toggleItemChecked(itemId, true); // idempotent
-      await repo.toggleItemChecked(itemId, false);
-      await repo.toggleItemChecked(itemId, false); // idempotent
+        await repo.toggleItemChecked(itemId, true);
+        await repo.toggleItemChecked(itemId, true); // idempotent
+        await repo.toggleItemChecked(itemId, false);
+        await repo.toggleItemChecked(itemId, false); // idempotent
 
-      final result = await repo.getChecklistForEvent('event-1');
-      expect(result.first.isChecked, isFalse);
-    });
+        final result = await repo.getChecklistForEvent('event-1');
+        expect(result.first.isChecked, isFalse);
+      },
+    );
   });
 
   // =========================================================================
@@ -338,25 +347,28 @@ void main() {
   // =========================================================================
 
   group('addCustomItem', () {
-    test('custom item appears in checklist with isTemplateItem=false', () async {
-      final repo = _makeRepo(db);
-      await repo.createChecklistItems(
-        eventId: 'event-1',
-        userId: 'user-1',
-        gearItems: ['Shoes'],
-      );
+    test(
+      'custom item appears in checklist with isTemplateItem=false',
+      () async {
+        final repo = _makeRepo(db);
+        await repo.createChecklistItems(
+          eventId: 'event-1',
+          userId: 'user-1',
+          gearItems: ['Shoes'],
+        );
 
-      await repo.addCustomItem(
-        eventId: 'event-1',
-        userId: 'user-1',
-        itemName: 'My Lucky Socks',
-      );
+        await repo.addCustomItem(
+          eventId: 'event-1',
+          userId: 'user-1',
+          itemName: 'My Lucky Socks',
+        );
 
-      final items = await repo.getChecklistForEvent('event-1');
-      final custom = items.firstWhere((i) => i.itemName == 'My Lucky Socks');
-      expect(custom.isTemplateItem, isFalse);
-      expect(custom.userId, equals('user-1'));
-    });
+        final items = await repo.getChecklistForEvent('event-1');
+        final custom = items.firstWhere((i) => i.itemName == 'My Lucky Socks');
+        expect(custom.isTemplateItem, isFalse);
+        expect(custom.userId, equals('user-1'));
+      },
+    );
 
     test('custom item gets sortOrder after last existing item', () async {
       final repo = _makeRepo(db);
@@ -557,8 +569,11 @@ void main() {
       await repo.toggleItemChecked(aItems.first.id, true);
 
       final bItems = await repo.getChecklistForEvent('event-B');
-      expect(bItems.first.isChecked, isFalse,
-          reason: "Checking event-A's item must not affect event-B's item");
+      expect(
+        bItems.first.isChecked,
+        isFalse,
+        reason: "Checking event-A's item must not affect event-B's item",
+      );
     });
   });
 

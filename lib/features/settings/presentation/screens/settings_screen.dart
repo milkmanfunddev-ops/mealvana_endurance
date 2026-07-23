@@ -854,38 +854,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
 
-          // PRIVACY ROW — HIDDEN 2026-07-14, pending a rethink of the privacy UX.
-          //
-          // ⚠️ DO NOT SHIP THIS STATE TO PROD without restoring the row (or an
-          // equivalent surface). It is the app's only consent-withdrawal path,
-          // and hiding it breaks two things that the current analytics design
-          // explicitly leans on:
-          //
-          //  1. Apple 5.1.1(ii) requires an "easily accessible and
-          //     understandable way to withdraw consent". With this row gone
-          //     there is none, for anyone.
-          //  2. Outside the EEA/UK and Washington we do not show a consent
-          //     screen at all — analytics defaults ON via an implied grant
-          //     (see AnalyticsConsent.allowsAnalytics). The ENTIRE legal basis
-          //     for that is "disclosure + an accessible opt-out". Remove the
-          //     opt-out and it is just silent collection with no way out.
-          //
-          // The route (`/settings/privacy`) and PrivacySettingsScreen are left
-          // intact, so restoring this is a one-block revert.
-          //
-          // const SizedBox(height: AppSpacing.sm),
-          // _buildQuickLink(
-          //   context: context,
-          //   rowKey: const ValueKey('settings.privacy_row'),
-          //   icon: FontAwesomeIcons.shieldHalved.data,
-          //   title: 'Privacy',
-          //   subtitle: 'Usage data, privacy policy and terms',
-          //   onTap: () {
-          //     final analytics = ref.read(appExternalDepsProvider);
-          //     analytics.analytics.track('settings_privacy_tapped');
-          //     context.push('/settings/privacy');
-          //   },
-          // ),
+          // Privacy — the app's only consent-withdrawal path (Apple 5.1.1(ii));
+          // outside the EEA/UK/WA analytics defaults ON, and the legal basis for
+          // that implied grant is "disclosure + an accessible opt-out".
+          const SizedBox(height: AppSpacing.sm),
+          _buildQuickLink(
+            context: context,
+            rowKey: const ValueKey('settings.privacy_row'),
+            icon: FontAwesomeIcons.shieldHalved.data,
+            title: 'Privacy',
+            subtitle: 'Usage data, privacy policy and terms',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_privacy_tapped');
+              context.push('/settings/privacy');
+            },
+          ),
           const SizedBox(height: AppSpacing.sm),
 
           // Help & Feedback

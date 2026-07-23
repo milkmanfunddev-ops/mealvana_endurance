@@ -56,15 +56,21 @@ class HourBucketWidget extends StatefulWidget {
   final String? selectedFoodId;
 
   /// Called when a food is placed from tray (tap or drop).
-  final void Function(String foodId, TimeSlot slot, double qty,
-      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFromTray;
+  final void Function(
+    String foodId,
+    TimeSlot slot,
+    double qty,
+    TimingCategory? timingCategory,
+    bool isSipThroughout,
+  )?
+  onPlaceFromTray;
 
   /// Called when a food is removed from a slot.
   final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
 
   /// Called to adjust a placed food's slot quantity by delta.
   final void Function(String foodId, TimeSlot slot, double delta)?
-      onAdjustSlotQuantity;
+  onAdjustSlotQuantity;
 
   @override
   State<HourBucketWidget> createState() => _HourBucketWidgetState();

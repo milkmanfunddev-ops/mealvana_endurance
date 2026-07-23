@@ -28,7 +28,8 @@ class CoachDirectoryScreen extends ConsumerWidget {
       ),
       body: directoryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString(), ref),
+        error: (error, stack) =>
+            _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildContent(context, state, ref),
       ),
     );

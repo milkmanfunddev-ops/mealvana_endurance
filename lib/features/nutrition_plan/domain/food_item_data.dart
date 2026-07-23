@@ -222,14 +222,13 @@ class FoodItemData {
         final unitPlural = pluralTrimmed
             .substring(0, pluralTrimmed.length - nameClean.length)
             .trim();
-        final foodName =
-            pluralTrimmed.substring(unitPlural.length).trim();
+        final foodName = pluralTrimmed.substring(unitPlural.length).trim();
         final numQty = double.tryParse(rawQty) ?? 1;
 
         if ((numQty - 1.0).abs() < 0.01) {
           // Singularise: "packets" → "packet", "bottles" → "bottle"
-          final unitSingular = unitPlural.endsWith('s') &&
-                  !unitPlural.endsWith('ss')
+          final unitSingular =
+              unitPlural.endsWith('s') && !unitPlural.endsWith('ss')
               ? unitPlural.substring(0, unitPlural.length - 1)
               : unitPlural;
           return '$rawQty $unitSingular $foodName';

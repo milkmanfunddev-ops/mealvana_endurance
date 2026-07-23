@@ -141,8 +141,9 @@ class FormulaLibraryState {
     // ("dairy", "gluten"). The DB will be normalized in a follow-up migration;
     // the controller stays defensive in the meantime.
     final allergensLower = allergens.map((a) => a.toLowerCase()).toSet();
-    final excludedDietsLower =
-        excludedDiets.map((d) => d.toLowerCase()).toSet();
+    final excludedDietsLower = excludedDiets
+        .map((d) => d.toLowerCase())
+        .toSet();
 
     for (final d in filter.activeDietFilters) {
       if (excludedDietsLower.contains(d.dbValue.toLowerCase())) return false;
@@ -256,11 +257,13 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       for (final tf in templateFoods) tf.name.toLowerCase(): tf,
     };
 
-    final beforeViews =
-        beforeEntries.map((e) => _mapBefore(e, templateFoodsByName)).toList();
+    final beforeViews = beforeEntries
+        .map((e) => _mapBefore(e, templateFoodsByName))
+        .toList();
     final duringViews = duringEntries.map(_mapDuring).toList();
-    final afterViews =
-        afterEntries.map((e) => _mapAfter(e, templateFoodsByName)).toList();
+    final afterViews = afterEntries
+        .map((e) => _mapAfter(e, templateFoodsByName))
+        .toList();
 
     final userDiets = user?.dietaryPreference == null
         ? const <DietaryPreference>[]
@@ -274,8 +277,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     return FormulaLibraryState(
       filter: FormulaFilterState(
         activeAllergyFilters: userAllergies.toSet(),
-        activeDietFilters:
-            userDiets.where((d) => d != DietaryPreference.none).toSet(),
+        activeDietFilters: userDiets
+            .where((d) => d != DietaryPreference.none)
+            .toSet(),
       ),
       beforeFormulas: beforeViews,
       duringFormulas: duringViews,
@@ -413,10 +417,12 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     state = AsyncData(
       current.copyWith(
         filter: filter.copyWith(
-          beforeDigestionSpeed:
-              filter.phase == FormulaPhase.before ? () => null : null,
-          duringGutLevel:
-              filter.phase == FormulaPhase.during ? () => null : null,
+          beforeDigestionSpeed: filter.phase == FormulaPhase.before
+              ? () => null
+              : null,
+          duringGutLevel: filter.phase == FormulaPhase.during
+              ? () => null
+              : null,
           activeAllergyFilters: profileAllergies,
           activeDietFilters: profileDiets,
         ),
@@ -435,11 +441,18 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     state = AsyncData(
       current.copyWith(
         filter: filter.copyWith(
-          beforeSubPhase: filter.phase == FormulaPhase.before ? () => null : null,
-          duringActivity: filter.phase == FormulaPhase.during ? () => null : null,
-          duringDuration: filter.phase == FormulaPhase.during ? () => null : null,
-          afterTravelFriendliness:
-              filter.phase == FormulaPhase.after ? () => null : null,
+          beforeSubPhase: filter.phase == FormulaPhase.before
+              ? () => null
+              : null,
+          duringActivity: filter.phase == FormulaPhase.during
+              ? () => null
+              : null,
+          duringDuration: filter.phase == FormulaPhase.during
+              ? () => null
+              : null,
+          afterTravelFriendliness: filter.phase == FormulaPhase.after
+              ? () => null
+              : null,
         ),
       ),
     );
@@ -452,10 +465,10 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   Future<void> toggleAfterTravelFriendliness(TravelFriendliness value) async {
     final current = state.value;
     if (current == null) return;
-    final next =
-        current.filter.afterTravelFriendliness == value ? null : value;
-    final nextFilter =
-        current.filter.copyWith(afterTravelFriendliness: () => next);
+    final next = current.filter.afterTravelFriendliness == value ? null : value;
+    final nextFilter = current.filter.copyWith(
+      afterTravelFriendliness: () => next,
+    );
     state = AsyncData(current.copyWith(filter: nextFilter));
     if (next != null) {
       await _trackFilterApplied(
@@ -482,11 +495,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     }
     final nextFilter = current.filter.copyWith(activeAllergyFilters: next);
     state = AsyncData(current.copyWith(filter: nextFilter));
-    await _trackFilterApplied(
-      'allergen',
-      value.dbValue,
-      nextFilter,
-    );
+    await _trackFilterApplied('allergen', value.dbValue, nextFilter);
   }
 
   /// Toggle whether a specific dietary preference is being filtered against.
@@ -503,11 +512,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     }
     final nextFilter = current.filter.copyWith(activeDietFilters: next);
     state = AsyncData(current.copyWith(filter: nextFilter));
-    await _trackFilterApplied(
-      'diet',
-      value.dbValue,
-      nextFilter,
-    );
+    await _trackFilterApplied('diet', value.dbValue, nextFilter);
   }
 
   /// Toggle the "pinned only" view in the AppBar. Stacks with the existing
@@ -587,10 +592,10 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   }
 
   TemplateKind _systemKindFor(FormulaPhase phase) => switch (phase) {
-        FormulaPhase.before => TemplateKind.preSystem,
-        FormulaPhase.during => TemplateKind.duringSystem,
-        FormulaPhase.after => TemplateKind.postSystem,
-      };
+    FormulaPhase.before => TemplateKind.preSystem,
+    FormulaPhase.during => TemplateKind.duringSystem,
+    FormulaPhase.after => TemplateKind.postSystem,
+  };
 
   // ── Fork support ───────────────────────────────────────────────────────
 
@@ -603,8 +608,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     String formulaId,
     FormulaPhase phase,
   ) async {
-    final templateFoods =
-        await ref.read(templateFoodsRepositoryProvider).getAllTemplateFoods();
+    final templateFoods = await ref
+        .read(templateFoodsRepositoryProvider)
+        .getAllTemplateFoods();
     final byName = <String, TemplateFoodEntry>{
       for (final tf in templateFoods) tf.name.toLowerCase(): tf,
     };
@@ -614,25 +620,28 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
     switch (phase) {
       case FormulaPhase.before:
-        final entries =
-            await ref.read(preWorkoutTemplatesRepositoryProvider).getAll();
+        final entries = await ref
+            .read(preWorkoutTemplatesRepositoryProvider)
+            .getAll();
         final e = _firstById(entries, formulaId, (x) => x.id);
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);
         quantities = _decodeQuantityMap(e.componentQuantities);
       case FormulaPhase.during:
-        final entries =
-            await ref.read(duringWorkoutTemplatesRepositoryProvider).getAll();
+        final entries = await ref
+            .read(duringWorkoutTemplatesRepositoryProvider)
+            .getAll();
         final e = _firstById(entries, formulaId, (x) => x.id);
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);
-        // During templates carry carb ratios, not serving counts — default to
-        // one serving per component. During formulas are intentionally
-        // quantity-less in the editor (the solver derives amounts), so this
-        // default is never user-visible.
+      // During templates carry carb ratios, not serving counts — default to
+      // one serving per component. During formulas are intentionally
+      // quantity-less in the editor (the solver derives amounts), so this
+      // default is never user-visible.
       case FormulaPhase.after:
-        final entries =
-            await ref.read(postWorkoutTemplatesRepositoryProvider).getAll();
+        final entries = await ref
+            .read(postWorkoutTemplatesRepositoryProvider)
+            .getAll();
         final e = _firstById(entries, formulaId, (x) => x.id);
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);

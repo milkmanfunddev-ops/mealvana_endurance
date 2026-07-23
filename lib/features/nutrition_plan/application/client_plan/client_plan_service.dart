@@ -145,11 +145,36 @@ class ClientPlanService {
     );
 
     // Build macro summary
-    final totalCarbs = _sumNutrient(beforeItems, duringItems, afterItems, (n) => n.carbs ?? 0);
-    final totalProtein = _sumNutrient(beforeItems, duringItems, afterItems, (n) => n.protein ?? 0);
-    final totalFat = _sumNutrient(beforeItems, duringItems, afterItems, (n) => n.fat ?? 0);
-    final totalSodium = _sumNutrient(beforeItems, duringItems, afterItems, (n) => n.sodium ?? 0);
-    final totalFluids = _sumNutrientDouble(beforeItems, duringItems, afterItems, (n) => n.fluids ?? 0);
+    final totalCarbs = _sumNutrient(
+      beforeItems,
+      duringItems,
+      afterItems,
+      (n) => n.carbs ?? 0,
+    );
+    final totalProtein = _sumNutrient(
+      beforeItems,
+      duringItems,
+      afterItems,
+      (n) => n.protein ?? 0,
+    );
+    final totalFat = _sumNutrient(
+      beforeItems,
+      duringItems,
+      afterItems,
+      (n) => n.fat ?? 0,
+    );
+    final totalSodium = _sumNutrient(
+      beforeItems,
+      duringItems,
+      afterItems,
+      (n) => n.sodium ?? 0,
+    );
+    final totalFluids = _sumNutrientDouble(
+      beforeItems,
+      duringItems,
+      afterItems,
+      (n) => n.fluids ?? 0,
+    );
 
     final macroSummary = PlanMacroSummary(
       calories: totalCarbs * 4 + totalProtein * 4 + totalFat * 9,
@@ -170,7 +195,8 @@ class ClientPlanService {
       name: 'Nutrition Plan',
       sections: [preSection, duringSection, postSection],
       macroTargets: macroSummary,
-      notes: 'Generated offline with your food preferences. Will refresh when online.',
+      notes:
+          'Generated offline with your food preferences. Will refresh when online.',
       activityId: activityId,
       createdAt: now,
       updatedAt: now,
@@ -498,8 +524,9 @@ class ClientPlanService {
     for (final c in formula.components) {
       final authoredQty = FormulaMacros.quantityOf(c);
       if (authoredQty <= 0) continue;
-      final qty =
-          k == 1.0 ? authoredQty : FormulaMacros.scaledQuantity(authoredQty, k);
+      final qty = k == 1.0
+          ? authoredQty
+          : FormulaMacros.scaledQuantity(authoredQty, k);
       scaled.add(_ScaledComponent(c, qty));
     }
     return scaled;
@@ -507,7 +534,10 @@ class ClientPlanService {
 
   /// Render one scaled component into a section food item, using the
   /// per-serving macros snapshotted on the component (no food lookup needed).
-  FoodItemData _componentToFoodItem(PersonalFormula formula, _ScaledComponent s) {
+  FoodItemData _componentToFoodItem(
+    PersonalFormula formula,
+    _ScaledComponent s,
+  ) {
     double n(Object? v) => v is num ? v.toDouble() : 0.0;
     final c = s.component;
     final qty = s.quantity;
@@ -567,18 +597,16 @@ class ClientPlanService {
     const sodiumEpsilonMg = 20.0;
     const sodiumCapRatio = 1.1;
     double n(Object? v) => v is num ? v.toDouble() : 0.0;
-    double perServingOf(_ScaledComponent s, String key) =>
-        n(s.component[key]);
-    double totalOf(String key) => scaled.fold(
-          0.0,
-          (sum, s) => sum + perServingOf(s, key) * s.quantity,
-        );
+    double perServingOf(_ScaledComponent s, String key) => n(s.component[key]);
+    double totalOf(String key) =>
+        scaled.fold(0.0, (sum, s) => sum + perServingOf(s, key) * s.quantity);
     double ceilHalf(double v) => (v * 2).ceilToDouble() / 2;
 
     var sodiumTotal = totalOf(FormulaMacros.kSodiumMg);
     var fluidTotal = totalOf(FormulaMacros.kFluidMlPerServing);
-    final sodiumDeficit =
-        sodiumMgTarget > 0 ? max(0.0, sodiumMgTarget - sodiumTotal) : 0.0;
+    final sodiumDeficit = sodiumMgTarget > 0
+        ? max(0.0, sodiumMgTarget - sodiumTotal)
+        : 0.0;
     final fluidShort =
         waterMlTarget > 0 && waterMlTarget - fluidTotal > fluidEpsilonMl;
     if (sodiumDeficit <= sodiumEpsilonMg && !fluidShort) return const [];
@@ -619,23 +647,23 @@ class ClientPlanService {
       if (best != null) {
         final sodiumPer = perServingOf(best, FormulaMacros.kSodiumMg);
         final wanted = (sodiumDeficit / sodiumPer).ceilToDouble();
-        final maxForCap =
-            ((sodiumCap - sodiumTotal) / sodiumPer).floorToDouble();
+        final maxForCap = ((sodiumCap - sodiumTotal) / sodiumPer)
+            .floorToDouble();
         final additional = min(wanted, max(0.0, maxForCap));
         if (additional > 0) best.quantity += additional;
       } else {
-        final salt = essentials
-            .where((f) => f.sodiumMg > 0 && f.carbsG <= 0)
-            .toList()
-          ..sort(
-            (a, b) => (b.sodiumMg / max(1.0, b.fluidMl))
-                .compareTo(a.sodiumMg / max(1.0, a.fluidMl)),
-          );
+        final salt =
+            essentials.where((f) => f.sodiumMg > 0 && f.carbsG <= 0).toList()
+              ..sort(
+                (a, b) => (b.sodiumMg / max(1.0, b.fluidMl)).compareTo(
+                  a.sodiumMg / max(1.0, a.fluidMl),
+                ),
+              );
         if (salt.isNotEmpty) {
           final f = salt.first;
           final wanted = (sodiumDeficit / f.sodiumMg).ceilToDouble();
-          final maxForCap =
-              ((sodiumCap - sodiumTotal) / f.sodiumMg).floorToDouble();
+          final maxForCap = ((sodiumCap - sodiumTotal) / f.sodiumMg)
+              .floorToDouble();
           final servings = min(
             min(wanted, max(0.0, maxForCap)),
             f.maxServings.toDouble(),
@@ -647,10 +675,12 @@ class ClientPlanService {
 
     // ---- 2. Fluid (after sodium, so fluid carried by step 1 counts) ----
     sodiumTotal = totalOf(FormulaMacros.kSodiumMg);
-    fluidTotal = totalOf(FormulaMacros.kFluidMlPerServing) +
+    fluidTotal =
+        totalOf(FormulaMacros.kFluidMlPerServing) +
         extras.fold(0.0, (sum, e) => sum + (e.nutritionalInfo?.fluids ?? 0));
-    final fluidDeficit =
-        waterMlTarget > 0 ? max(0.0, waterMlTarget - fluidTotal) : 0.0;
+    final fluidDeficit = waterMlTarget > 0
+        ? max(0.0, waterMlTarget - fluidTotal)
+        : 0.0;
     if (fluidDeficit > fluidEpsilonMl) {
       // Prefer the formula's own plain-water component.
       _ScaledComponent? water;
@@ -668,14 +698,14 @@ class ClientPlanService {
         // Round UP — never leave the plan under the fluid target because a
         // quantity rounded down (e.g. 4 cups where 5 are needed).
         water.quantity += ceilHalf(
-          fluidDeficit /
-              perServingOf(water, FormulaMacros.kFluidMlPerServing),
+          fluidDeficit / perServingOf(water, FormulaMacros.kFluidMlPerServing),
         );
       } else {
-        final poolWater = essentials
-            .where((f) => f.fluidMl > 0 && f.carbsG <= 0 && f.sodiumMg <= 0)
-            .toList()
-          ..sort((a, b) => b.fluidMl.compareTo(a.fluidMl));
+        final poolWater =
+            essentials
+                .where((f) => f.fluidMl > 0 && f.carbsG <= 0 && f.sodiumMg <= 0)
+                .toList()
+              ..sort((a, b) => b.fluidMl.compareTo(a.fluidMl));
         if (poolWater.isNotEmpty) {
           final f = poolWater.first;
           final servings = min(
@@ -766,8 +796,8 @@ class ClientPlanService {
     final targetMealType = hoursBefore >= 2
         ? 'full_meal'
         : hoursBefore >= 1
-            ? 'snack'
-            : 'top_up';
+        ? 'snack'
+        : 'top_up';
 
     // Get user profile for allergen/dietary filtering
     final user = await _ref.read(authServiceProvider).getCurrentUser();
@@ -776,8 +806,7 @@ class ClientPlanService {
     final dietaryPref = user?.dietaryPreference;
 
     // Get disliked foods for filtering
-    final prefsRepo =
-        await _ref.read(foodPreferencesRepositoryProvider.future);
+    final prefsRepo = await _ref.read(foodPreferencesRepositoryProvider.future);
     final preferences = await prefsRepo.getFoodPreferences(userId);
     final dislikedFoodNames = preferences.entries
         .where((e) => e.value == FoodPreference.dislike)
@@ -827,18 +856,19 @@ class ClientPlanService {
     // Score by carb proximity to target (prefer templates where scale 0.5-2.0x)
     final carbTarget = macroTargets.preRun.carbsG;
     candidates.sort((a, b) {
-      final scaleA =
-          a.totalCarbsG > 0 ? (carbTarget / a.totalCarbsG).abs() : 999.0;
-      final scaleB =
-          b.totalCarbsG > 0 ? (carbTarget / b.totalCarbsG).abs() : 999.0;
+      final scaleA = a.totalCarbsG > 0
+          ? (carbTarget / a.totalCarbsG).abs()
+          : 999.0;
+      final scaleB = b.totalCarbsG > 0
+          ? (carbTarget / b.totalCarbsG).abs()
+          : 999.0;
       // Prefer scale closest to 1.0
       return (scaleA - 1.0).abs().compareTo((scaleB - 1.0).abs());
     });
 
     // Use best template
     final best = candidates.first;
-    final scale =
-        best.totalCarbsG > 0 ? carbTarget / best.totalCarbsG : 1.0;
+    final scale = best.totalCarbsG > 0 ? carbTarget / best.totalCarbsG : 1.0;
     final clampedScale = scale.clamp(0.5, 2.0);
 
     // Parse the foods JSON array and convert to FoodItemData
@@ -853,7 +883,8 @@ class ClientPlanService {
     for (final foodJson in foodsList) {
       if (foodJson is! Map<String, dynamic>) continue;
 
-      final foodName = foodJson['food_name'] as String? ??
+      final foodName =
+          foodJson['food_name'] as String? ??
           foodJson['display_name'] as String? ??
           'Unknown';
       final defaultServings =
@@ -868,10 +899,8 @@ class ClientPlanService {
       final proteinPerServing =
           (foodJson['protein_g'] as num?)?.toDouble() ?? 0;
       final fatPerServing = (foodJson['fat_g'] as num?)?.toDouble() ?? 0;
-      final sodiumPerServing =
-          (foodJson['sodium_mg'] as num?)?.toDouble() ?? 0;
-      final fluidPerServing =
-          (foodJson['fluid_ml'] as num?)?.toDouble() ?? 0;
+      final sodiumPerServing = (foodJson['sodium_mg'] as num?)?.toDouble() ?? 0;
+      final fluidPerServing = (foodJson['fluid_ml'] as num?)?.toDouble() ?? 0;
       final caloriesPerServing =
           (foodJson['calories'] as num?)?.toInt() ??
           (carbsPerServing * 4 + proteinPerServing * 4 + fatPerServing * 9)
@@ -889,25 +918,27 @@ class ClientPlanService {
         displayNamePlural: displayNamePlural,
       );
 
-      result.add(FoodItemData(
-        id: foodJson['food_id'] as String? ?? foodName,
-        name: displayName,
-        quantity: quantityStr,
-        imageAddress: foodJson['image_address'] as String?,
-        nutritionalInfo: NutritionalInfo(
-          calories: (caloriesPerServing * quantity).round(),
-          carbs: (carbsPerServing * quantity).round(),
-          protein: (proteinPerServing * quantity).round(),
-          fat: (fatPerServing * quantity).round(),
-          sodium: (sodiumPerServing * quantity).round(),
-          fluids: fluidPerServing * quantity,
+      result.add(
+        FoodItemData(
+          id: foodJson['food_id'] as String? ?? foodName,
+          name: displayName,
+          quantity: quantityStr,
+          imageAddress: foodJson['image_address'] as String?,
+          nutritionalInfo: NutritionalInfo(
+            calories: (caloriesPerServing * quantity).round(),
+            carbs: (carbsPerServing * quantity).round(),
+            protein: (proteinPerServing * quantity).round(),
+            fat: (fatPerServing * quantity).round(),
+            sodium: (sodiumPerServing * quantity).round(),
+            fluids: fluidPerServing * quantity,
+          ),
+          displayName: displayName,
+          displayNamePlural: displayNamePlural,
+          servingSize: foodJson['serving_size'] as String?,
+          templateId: best.id,
+          scaleMultiplier: clampedScale,
         ),
-        displayName: displayName,
-        displayNamePlural: displayNamePlural,
-        servingSize: foodJson['serving_size'] as String?,
-        templateId: best.id,
-        scaleMultiplier: clampedScale,
-      ));
+      );
     }
 
     return result.isEmpty ? null : result;

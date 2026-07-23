@@ -34,14 +34,17 @@ class _CarbLoadingDayDetailPageState
     // change (each food added, each target edit), which would report one "day
     // viewed" per interaction instead of one per visit.
     try {
-      ref.read(appExternalDepsProvider).analytics.track(
-        'carb_loading_day_viewed',
-        properties: {
-          'day_id': widget.carbLoadingDay.id,
-          'day_number': widget.carbLoadingDay.dayNumber,
-          'carb_target_grams': widget.carbLoadingDay.carbTargetGrams,
-        },
-      );
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'carb_loading_day_viewed',
+            properties: {
+              'day_id': widget.carbLoadingDay.id,
+              'day_number': widget.carbLoadingDay.dayNumber,
+              'carb_target_grams': widget.carbLoadingDay.carbTargetGrams,
+            },
+          );
     } catch (_) {}
   }
 
@@ -88,7 +91,9 @@ class _CarbLoadingDayDetailPageState
               ),
               Text(
                 key: const ValueKey('carb_plan_day.date_label'),
-                DateFormat('EEEE, MMM d').format(widget.carbLoadingDay.planDate),
+                DateFormat(
+                  'EEEE, MMM d',
+                ).format(widget.carbLoadingDay.planDate),
                 style: AppTextStyles.smallLabel.copyWith(
                   color: isDark
                       ? AppColors.cream.withValues(alpha: 0.7)

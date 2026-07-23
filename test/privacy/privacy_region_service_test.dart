@@ -25,27 +25,25 @@ void main() {
   PrivacyRegionService serviceWith(
     SharedPreferences prefs,
     http.Client client,
-  ) =>
-      PrivacyRegionService(prefs: prefs, client: client);
+  ) => PrivacyRegionService(prefs: prefs, client: client);
 
   group('successful lookup', () {
-    test('caches country + region and marks the source authoritative',
-        () async {
-      final prefs = await prefsWith({});
-      final client = MockClient(
-        (_) async => http.Response('{"country":"US","region":"WA"}', 200),
-      );
+    test(
+      'caches country + region and marks the source authoritative',
+      () async {
+        final prefs = await prefsWith({});
+        final client = MockClient(
+          (_) async => http.Response('{"country":"US","region":"WA"}', 200),
+        );
 
-      await serviceWith(prefs, client).ensureResolved();
+        await serviceWith(prefs, client).ensureResolved();
 
-      expect(prefs.getString(kGeoCountryKey), 'US');
-      expect(prefs.getString(kGeoRegionKey), 'WA');
-      expect(prefs.getString(kRegionSourceKey), 'geo');
-      expect(
-        PrivacyRegion.resolveWithPrefs(prefs).source,
-        RegionSource.geo,
-      );
-    });
+        expect(prefs.getString(kGeoCountryKey), 'US');
+        expect(prefs.getString(kGeoRegionKey), 'WA');
+        expect(prefs.getString(kRegionSourceKey), 'geo');
+        expect(PrivacyRegion.resolveWithPrefs(prefs).source, RegionSource.geo);
+      },
+    );
 
     // A US answer with no subdivision must not leave a previously-cached "WA"
     // sitting there, or a user who moved would keep being treated as strict on
@@ -70,10 +68,7 @@ void main() {
 
   group('failure degrades to the device fallback, never to a throw', () {
     for (final (name, client) in <(String, http.Client)>[
-      (
-        'non-200',
-        MockClient((_) async => http.Response('nope', 500)),
-      ),
+      ('non-200', MockClient((_) async => http.Response('nope', 500))),
       (
         'malformed body',
         MockClient((_) async => http.Response('not json', 200)),
@@ -111,8 +106,10 @@ void main() {
         return http.Response('{"country":"US"}', 200);
       });
 
-      await serviceWith(prefs, client)
-          .ensureResolved(timeout: const Duration(milliseconds: 50));
+      await serviceWith(
+        prefs,
+        client,
+      ).ensureResolved(timeout: const Duration(milliseconds: 50));
 
       expect(prefs.getString(kRegionSourceKey), 'device');
     });
@@ -150,9 +147,10 @@ void main() {
     // Never completes. If ensureResolved awaited it, this test would time out.
     final client = MockClient((_) async => Completer<http.Response>().future);
 
-    await serviceWith(prefs, client)
-        .ensureResolved()
-        .timeout(const Duration(seconds: 1));
+    await serviceWith(
+      prefs,
+      client,
+    ).ensureResolved().timeout(const Duration(seconds: 1));
 
     expect(prefs.getString(kGeoCountryKey), 'US');
   });

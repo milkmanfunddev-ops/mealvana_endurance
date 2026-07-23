@@ -150,8 +150,7 @@ void main() {
   });
 
   group('Bug 391e3fdb…9647 — enterFuelLogMode must restore saved edits', () {
-    test(
-        'enterFuelLogMode() loads the previously-saved actualQuantity, not '
+    test('enterFuelLogMode() loads the previously-saved actualQuantity, not '
         'the reset planned quantity', () async {
       final mockActivitiesService = MockActivitiesService();
       final mockAuthService = MockAuthService();
@@ -208,7 +207,8 @@ void main() {
       expect(
         fuelLog!.items.single.actualQuantity,
         5,
-        reason: 'Reopening the fuel log must restore the saved actual '
+        reason:
+            'Reopening the fuel log must restore the saved actual '
             'quantity (5), not reset it to the planned quantity (3).',
       );
       expect(fuelLog.items.single.plannedQuantity, 3);
@@ -216,125 +216,128 @@ void main() {
     });
   });
 
-  group(
-      'Bug 391e3fdb…f591 — saveFuelLogAndComplete must not revert the '
+  group('Bug 391e3fdb…f591 — saveFuelLogAndComplete must not revert the '
       'dashboard number', () {
     test(
-        'the state returned immediately after Save carries the just-saved '
-        'activity (with the edited fuelLogData), not the pre-edit activity',
-        () async {
-      final mockActivitiesService = MockActivitiesService();
-      final mockAuthService = MockAuthService();
+      'the state returned immediately after Save carries the just-saved '
+      'activity (with the edited fuelLogData), not the pre-edit activity',
+      () async {
+        final mockActivitiesService = MockActivitiesService();
+        final mockAuthService = MockAuthService();
 
-      when(() => mockAuthService.getCurrentUser())
-          .thenAnswer((_) async => UserFixtures.completedUser(id: _userId));
+        when(
+          () => mockAuthService.getCurrentUser(),
+        ).thenAnswer((_) async => UserFixtures.completedUser(id: _userId));
 
-      // updateActivity echoes back whatever activity it was asked to save,
-      // exactly like the real repository would once the write succeeds.
-      when(
-        () => mockActivitiesService.updateActivity(
-          deviceId: any(named: 'deviceId'),
-          activity: any(named: 'activity'),
-        ),
-      ).thenAnswer(
-        (invocation) async =>
-            invocation.namedArguments[#activity] as Activity,
-      );
+        // updateActivity echoes back whatever activity it was asked to save,
+        // exactly like the real repository would once the write succeeds.
+        when(
+          () => mockActivitiesService.updateActivity(
+            deviceId: any(named: 'deviceId'),
+            activity: any(named: 'activity'),
+          ),
+        ).thenAnswer(
+          (invocation) async =>
+              invocation.namedArguments[#activity] as Activity,
+        );
 
-      // Pre-edit activity has no saved fuel log at all yet.
-      final preEditActivity = _activity(fuelLogData: null);
+        // Pre-edit activity has no saved fuel log at all yet.
+        final preEditActivity = _activity(fuelLogData: null);
 
-      // In-memory fuel log data as it stands right before Save: the user
-      // bumped actualQuantity from 3 (planned) to 5.
-      final editedFuelLog = _savedEditedLog();
+        // In-memory fuel log data as it stands right before Save: the user
+        // bumped actualQuantity from 3 (planned) to 5.
+        final editedFuelLog = _savedEditedLog();
 
-      final seed = ActivityDetailState(
-        activity: preEditActivity,
-        nutritionPlan: _plan(),
-        scheduledDateTime: preEditActivity.scheduledDateTime,
-        isFuelLogMode: true,
-        fuelLogData: editedFuelLog,
-      );
+        final seed = ActivityDetailState(
+          activity: preEditActivity,
+          nutritionPlan: _plan(),
+          scheduledDateTime: preEditActivity.scheduledDateTime,
+          isFuelLogMode: true,
+          fuelLogData: editedFuelLog,
+        );
 
-      final container = _containerWithSeed(
-        seed,
-        activitiesService: mockActivitiesService,
-        authService: mockAuthService,
-      );
+        final container = _containerWithSeed(
+          seed,
+          activitiesService: mockActivitiesService,
+          authService: mockAuthService,
+        );
 
-      final provider = activityDetailControllerProvider(
-        activityId: _activityId,
-        isNewActivity: false,
-      );
+        final provider = activityDetailControllerProvider(
+          activityId: _activityId,
+          isNewActivity: false,
+        );
 
-      // Capture every state emission (via a listener, like the real
-      // `ActivityDetailScreen`/`FuelLogFeedbackSection` widgets do via
-      // `ref.watch`), rather than reading the provider again after the
-      // `await` below. A bare re-read after `saveFuelLogAndComplete()`
-      // resolves is unreliable in this test harness because the seeded
-      // controller's `build()` override is *synchronous*, so
-      // `ref.invalidateSelf()` (called inside the method, purely to trigger
-      // a background reload in production, where `build()` is async and
-      // slow) can resolve its rebuild before a subsequent `container.read`
-      // — clobbering the very state under test with the pristine seed. In
-      // production `build()` awaits real DB/service calls, so it can't
-      // resolve synchronously; the widget tree observes exactly the
-      // transient value captured here before any reload completes. This
-      // listener-capture approach observes what widgets actually see,
-      // immune to that test-only timing artifact.
-      final states = <AsyncValue<ActivityDetailState>>[];
-      container.listen<AsyncValue<ActivityDetailState>>(
-        provider,
-        (previous, next) => states.add(next),
-        fireImmediately: true,
-      );
+        // Capture every state emission (via a listener, like the real
+        // `ActivityDetailScreen`/`FuelLogFeedbackSection` widgets do via
+        // `ref.watch`), rather than reading the provider again after the
+        // `await` below. A bare re-read after `saveFuelLogAndComplete()`
+        // resolves is unreliable in this test harness because the seeded
+        // controller's `build()` override is *synchronous*, so
+        // `ref.invalidateSelf()` (called inside the method, purely to trigger
+        // a background reload in production, where `build()` is async and
+        // slow) can resolve its rebuild before a subsequent `container.read`
+        // — clobbering the very state under test with the pristine seed. In
+        // production `build()` awaits real DB/service calls, so it can't
+        // resolve synchronously; the widget tree observes exactly the
+        // transient value captured here before any reload completes. This
+        // listener-capture approach observes what widgets actually see,
+        // immune to that test-only timing artifact.
+        final states = <AsyncValue<ActivityDetailState>>[];
+        container.listen<AsyncValue<ActivityDetailState>>(
+          provider,
+          (previous, next) => states.add(next),
+          fireImmediately: true,
+        );
 
-      await container
-          .read(provider.notifier)
-          .saveFuelLogAndComplete(overallSatisfaction: 5);
+        await container
+            .read(provider.notifier)
+            .saveFuelLogAndComplete(overallSatisfaction: 5);
 
-      // The state immediately following the save (i.e. the value the guard
-      // block assigned, before any later invalidateSelf-triggered rebuild)
-      // must carry the just-saved activity forward, with isCompleting back
-      // to false and fuel-log mode exited.
-      final postSave = states.lastWhere(
-        (s) => s.hasValue && s.value!.isCompleting == false,
-        orElse: () => throw StateError(
-          'No post-save (isCompleting == false) state was ever emitted; '
-          'captured states: $states',
-        ),
-      );
+        // The state immediately following the save (i.e. the value the guard
+        // block assigned, before any later invalidateSelf-triggered rebuild)
+        // must carry the just-saved activity forward, with isCompleting back
+        // to false and fuel-log mode exited.
+        final postSave = states.lastWhere(
+          (s) => s.hasValue && s.value!.isCompleting == false,
+          orElse: () => throw StateError(
+            'No post-save (isCompleting == false) state was ever emitted; '
+            'captured states: $states',
+          ),
+        );
 
-      final savedActivity = postSave.value!.activity;
-      expect(
-        savedActivity,
-        isNotNull,
-        reason: 'saveFuelLogAndComplete must carry the just-saved activity '
-            'forward in its returned state.',
-      );
+        final savedActivity = postSave.value!.activity;
+        expect(
+          savedActivity,
+          isNotNull,
+          reason:
+              'saveFuelLogAndComplete must carry the just-saved activity '
+              'forward in its returned state.',
+        );
 
-      // Pre-fix, `currentState.copyWith(isCompleting: false, ...)` was called
-      // WITHOUT `activity: completedActivity`, so the state emitted right
-      // after save would still carry `preEditActivity` here — whose
-      // `fuelLogData` is null — instead of the value just written. Any
-      // display that reads the dashboard number from `activity.fuelLogData`
-      // (e.g. the carbs/hr card fallback) would therefore show reverted /
-      // planned data for the window before the background reload resolves.
-      expect(savedActivity!.fuelLogData, isNotNull);
-      final persisted = FuelLogData.fromJson(savedActivity.fuelLogData!);
-      expect(
-        persisted.items.single.actualQuantity,
-        5,
-        reason: 'The activity carried forward in state must reflect the '
-            'just-edited actualQuantity (5), not the pre-edit value.',
-      );
+        // Pre-fix, `currentState.copyWith(isCompleting: false, ...)` was called
+        // WITHOUT `activity: completedActivity`, so the state emitted right
+        // after save would still carry `preEditActivity` here — whose
+        // `fuelLogData` is null — instead of the value just written. Any
+        // display that reads the dashboard number from `activity.fuelLogData`
+        // (e.g. the carbs/hr card fallback) would therefore show reverted /
+        // planned data for the window before the background reload resolves.
+        expect(savedActivity!.fuelLogData, isNotNull);
+        final persisted = FuelLogData.fromJson(savedActivity.fuelLogData!);
+        expect(
+          persisted.items.single.actualQuantity,
+          5,
+          reason:
+              'The activity carried forward in state must reflect the '
+              'just-edited actualQuantity (5), not the pre-edit value.',
+        );
 
-      // fuelLogData (in-memory) is intentionally cleared on exit — this is
-      // correct in both pre- and post-fix behavior, and is exactly why the
-      // display must fall back to `activity.fuelLogData` rather than reading
-      // stale in-memory data.
-      expect(postSave.value!.fuelLogData, isNull);
-      expect(postSave.value!.isFuelLogMode, isFalse);
-    });
+        // fuelLogData (in-memory) is intentionally cleared on exit — this is
+        // correct in both pre- and post-fix behavior, and is exactly why the
+        // display must fall back to `activity.fuelLogData` rather than reading
+        // stale in-memory data.
+        expect(postSave.value!.fuelLogData, isNull);
+        expect(postSave.value!.isFuelLogMode, isFalse);
+      },
+    );
   });
 }

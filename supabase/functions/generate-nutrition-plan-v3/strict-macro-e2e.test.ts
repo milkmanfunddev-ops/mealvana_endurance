@@ -1393,6 +1393,7 @@ describe("Strict E2E — Screenshot Regressions", () => {
       macroTargets.pre_run.carbs_g,
       RANGES.before.carbs,
       "run_0_48_9_36 before carbs",
+      0.15, // Algorithm C rounding tolerance (parity with athlete suites)
     );
     strictAssertAbsoluteOrReportedDuring(
       during.carbs,
@@ -1494,6 +1495,7 @@ describe("Strict E2E — Screenshot Regressions", () => {
       macroTargets.pre_run.carbs_g,
       RANGES.before.carbs,
       "swim_1.2_40_32_11 before carbs",
+      0.15, // Algorithm C rounding tolerance (parity with athlete suites)
     );
     afterTriggerDesignCheck(
       after.carbs,

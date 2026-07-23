@@ -145,8 +145,11 @@ void main() {
       final updated = t.copyWith(calories: 2500);
 
       expect(updated.calories, 2500);
-      expect(updated.carbsGrams, t.carbsGrams,
-          reason: 'sibling field must not change');
+      expect(
+        updated.carbsGrams,
+        t.carbsGrams,
+        reason: 'sibling field must not change',
+      );
     });
 
     // BUG HUNT: ensure every field participates in copyWith.
@@ -175,10 +178,7 @@ void main() {
     });
 
     test('differing sodiumMg breaks equality', () {
-      expect(
-        _targets(sodiumMg: 1000),
-        isNot(equals(_targets(sodiumMg: 2000))),
-      );
+      expect(_targets(sodiumMg: 1000), isNot(equals(_targets(sodiumMg: 2000))));
     });
 
     test('self equality holds', () {
@@ -232,15 +232,30 @@ void main() {
       final original = NutritionData(
         beforeRunFoods: [
           _foodWithNutrition(
-              id: 'b1', calories: 100, carbs: 25.0, protein: 3.0, fat: 1.0),
+            id: 'b1',
+            calories: 100,
+            carbs: 25.0,
+            protein: 3.0,
+            fat: 1.0,
+          ),
         ],
         duringRunFoods: [
           _foodWithNutrition(
-              id: 'd1', calories: 50, carbs: 12.0, protein: 0.0, fat: 0.0),
+            id: 'd1',
+            calories: 50,
+            carbs: 12.0,
+            protein: 0.0,
+            fat: 0.0,
+          ),
         ],
         afterRunFoods: [
           _foodWithNutrition(
-              id: 'a1', calories: 200, carbs: 30.0, protein: 20.0, fat: 5.0),
+            id: 'a1',
+            calories: 200,
+            carbs: 30.0,
+            protein: 20.0,
+            fat: 5.0,
+          ),
         ],
         macroTargets: _targets(),
       );
@@ -295,12 +310,17 @@ void main() {
     });
 
     test('concatenates foods across all three phases in order', () {
-      final before =
-          _foodWithNutrition(id: 'b1', name: 'Before', quantity: '1');
-      final during =
-          _foodWithNutrition(id: 'd1', name: 'During', quantity: '1');
-      final after =
-          _foodWithNutrition(id: 'a1', name: 'After', quantity: '1');
+      final before = _foodWithNutrition(
+        id: 'b1',
+        name: 'Before',
+        quantity: '1',
+      );
+      final during = _foodWithNutrition(
+        id: 'd1',
+        name: 'During',
+        quantity: '1',
+      );
+      final after = _foodWithNutrition(id: 'a1', name: 'After', quantity: '1');
 
       final data = NutritionData(
         beforeRunFoods: [before],
@@ -459,16 +479,22 @@ void main() {
       final newFood = _foodWithNutrition(id: 'f2', calories: 200);
       final updated = baseData.copyWith(beforeRunFoods: [newFood]);
       expect(updated.beforeRunFoods, [newFood]);
-      expect(updated.macroTargets, baseData.macroTargets,
-          reason: 'macroTargets should not change');
+      expect(
+        updated.macroTargets,
+        baseData.macroTargets,
+        reason: 'macroTargets should not change',
+      );
     });
 
     test('can replace macroTargets only', () {
       final newTargets = _targets(calories: 3000);
       final updated = baseData.copyWith(macroTargets: newTargets);
       expect(updated.macroTargets.calories, 3000);
-      expect(updated.beforeRunFoods, baseData.beforeRunFoods,
-          reason: 'beforeRunFoods should not change');
+      expect(
+        updated.beforeRunFoods,
+        baseData.beforeRunFoods,
+        reason: 'beforeRunFoods should not change',
+      );
     });
 
     // BUG HUNT: all four fields must be present in the copyWith body.
@@ -478,16 +504,26 @@ void main() {
       final f4 = _foodWithNutrition(id: 'f4');
       final newTargets = _targets(calories: 9999);
 
-      expect(baseData.copyWith(beforeRunFoods: [f2]).beforeRunFoods, [f2],
-          reason: 'beforeRunFoods override');
-      expect(baseData.copyWith(duringRunFoods: [f3]).duringRunFoods, [f3],
-          reason: 'duringRunFoods override');
-      expect(baseData.copyWith(afterRunFoods: [f4]).afterRunFoods, [f4],
-          reason: 'afterRunFoods override');
       expect(
-          baseData.copyWith(macroTargets: newTargets).macroTargets.calories,
-          9999,
-          reason: 'macroTargets override');
+        baseData.copyWith(beforeRunFoods: [f2]).beforeRunFoods,
+        [f2],
+        reason: 'beforeRunFoods override',
+      );
+      expect(
+        baseData.copyWith(duringRunFoods: [f3]).duringRunFoods,
+        [f3],
+        reason: 'duringRunFoods override',
+      );
+      expect(
+        baseData.copyWith(afterRunFoods: [f4]).afterRunFoods,
+        [f4],
+        reason: 'afterRunFoods override',
+      );
+      expect(
+        baseData.copyWith(macroTargets: newTargets).macroTargets.calories,
+        9999,
+        reason: 'macroTargets override',
+      );
     });
   });
 

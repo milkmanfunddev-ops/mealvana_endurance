@@ -40,8 +40,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       _result = extra?['result'] as MealAnalysisResult?;
       _source = extra?['source'] as String?;
       _logDate = extra?['logDate'] as String?;
@@ -120,7 +119,9 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
     final source = MealLogSource.fromWireValue(_source) ?? MealLogSource.photo;
 
-    await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
           name: name,
           slot: _slot,
           logDate: _logDate!,
@@ -135,7 +136,10 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     if (state is AsyncData) {
       context.go('/main');
     } else if (state is AsyncError) {
-      MealvanaSnackbar.showError(context, 'Failed to log meal. Please try again.');
+      MealvanaSnackbar.showError(
+        context,
+        'Failed to log meal. Please try again.',
+      );
     }
   }
 
@@ -182,10 +186,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
             const SizedBox(height: AppSpacing.md),
 
             // Slot selector (optional — build-a-meal redesign)
-            Text(
-              'Meal type',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text('Meal type', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 6),
             OptionalSlotChipSelector(
               selectedSlot: _slot,
@@ -209,7 +210,9 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  color: isDark
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -278,10 +281,10 @@ class _ConfidenceBadge extends StatelessWidget {
         Flexible(
           child: Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: color, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),

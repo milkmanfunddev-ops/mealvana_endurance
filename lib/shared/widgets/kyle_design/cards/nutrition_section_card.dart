@@ -31,7 +31,10 @@ class NutritionSectionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       child: Material(
         color: backgroundColor ?? Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.cardRadius,
@@ -48,18 +51,16 @@ class NutritionSectionCard extends ConsumerWidget {
             children: [
               // Header with title and macro summary
               _buildHeader(context),
-              
+
               // Food items list
               if (isExpanded) ...[
                 const SizedBox(height: AppSpacing.md),
                 ...foodItems.map((food) => _buildFoodItem(context, food)),
-                
+
                 // Add food button
                 if (onAddFood != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  KyleAddFoodButton(
-                    onPressed: onAddFood!,
-                  ),
+                  KyleAddFoodButton(onPressed: onAddFood!),
                 ],
               ],
             ],
@@ -93,7 +94,9 @@ class NutritionSectionCard extends ConsumerWidget {
                   ),
                 ),
                 Icon(
-                  isExpanded ? FontAwesomeIcons.chevronUp.data : FontAwesomeIcons.chevronDown.data,
+                  isExpanded
+                      ? FontAwesomeIcons.chevronUp.data
+                      : FontAwesomeIcons.chevronDown.data,
                   size: AppIconSizes.controlIcon,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -127,7 +130,7 @@ class NutritionSectionCard extends ConsumerWidget {
               target: '${macroTargets.carbsTarget}g',
             ),
           ),
-          
+
           // Protein
           Expanded(
             child: _MacroItem(
@@ -136,12 +139,12 @@ class NutritionSectionCard extends ConsumerWidget {
               target: '${macroTargets.proteinTarget}g',
             ),
           ),
-          
+
           // Fat or Fluids
           Expanded(
             child: _MacroItem(
               label: macroTargets.isFluids ? 'FLUIDS' : 'FAT',
-              value: macroTargets.isFluids 
+              value: macroTargets.isFluids
                   ? '${macroTargets.fluids}mL'
                   : '${macroTargets.fat}g',
               target: macroTargets.isFluids
@@ -210,7 +213,7 @@ class NutritionSectionCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // Action buttons
                 Row(
                   mainAxisSize: MainAxisSize.min,

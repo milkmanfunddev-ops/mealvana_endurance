@@ -348,9 +348,7 @@ Future<IntegrationModel?> garminIntegration(Ref ref, String userId) async {
 /// Provider to check if Garmin Connect is connected
 @riverpod
 Future<bool> isGarminConnected(Ref ref, String userId) async {
-  final integration = await ref.watch(
-    garminIntegrationProvider(userId).future,
-  );
+  final integration = await ref.watch(garminIntegrationProvider(userId).future);
   return integration?.isActive ?? false;
 }
 
@@ -360,10 +358,7 @@ Future<bool> isGarminConnected(Ref ref, String userId) async {
 /// reads are gated by RLS on the authenticated user's JWT). Returns null when
 /// Garmin is not connected, or no body-comp data has been received yet.
 @riverpod
-Future<GarminBodyCompData?> garminLastBodyComp(
-  Ref ref,
-  String userId,
-) async {
+Future<GarminBodyCompData?> garminLastBodyComp(Ref ref, String userId) async {
   final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
   // First confirm Garmin is actually connected for this user.
@@ -398,8 +393,8 @@ Future<GarminBodyCompData?> garminLastBodyComp(
     final data = response['data'] as Map<String, dynamic>?;
     if (data == null) return null;
 
-    final measurementTimeSec =
-        (data['measurement_time_seconds'] as num?)?.toInt();
+    final measurementTimeSec = (data['measurement_time_seconds'] as num?)
+        ?.toInt();
     if (measurementTimeSec == null) return null;
 
     final measurementTime = DateTime.fromMillisecondsSinceEpoch(
@@ -442,10 +437,12 @@ VdotApiClient vdotApiClient(Ref ref) {
     // stale asset even when the Dart code is current). `client_secret len 0`
     // here is the smoking gun → `flutter clean` + rebuild. Lengths only — never
     // log the secret value.
-    print('🔑 [vdot] AppConfig creds at client build: '
-        'client_id="${config.vdotClientId}" (len ${config.vdotClientId.length}), '
-        'client_secret len ${config.vdotClientSecret.length}, '
-        'authBase=${config.vdotAuthBaseUrl}');
+    print(
+      '🔑 [vdot] AppConfig creds at client build: '
+      'client_id="${config.vdotClientId}" (len ${config.vdotClientId.length}), '
+      'client_secret len ${config.vdotClientSecret.length}, '
+      'authBase=${config.vdotAuthBaseUrl}',
+    );
   }
   return VdotApiClient(
     clientId: config.vdotClientId,

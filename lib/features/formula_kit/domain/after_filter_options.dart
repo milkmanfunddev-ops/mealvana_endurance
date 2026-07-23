@@ -12,16 +12,16 @@ enum TravelFriendliness {
   homeOnly;
 
   String get storageValue => switch (this) {
-        TravelFriendliness.inBag => 'in_bag',
-        TravelFriendliness.coolerFriendly => 'cooler_friendly',
-        TravelFriendliness.homeOnly => 'home_only',
-      };
+    TravelFriendliness.inBag => 'in_bag',
+    TravelFriendliness.coolerFriendly => 'cooler_friendly',
+    TravelFriendliness.homeOnly => 'home_only',
+  };
 
   String get displayLabel => switch (this) {
-        TravelFriendliness.inBag => 'In bag',
-        TravelFriendliness.coolerFriendly => 'Cooler-friendly',
-        TravelFriendliness.homeOnly => 'Home only',
-      };
+    TravelFriendliness.inBag => 'In bag',
+    TravelFriendliness.coolerFriendly => 'Cooler-friendly',
+    TravelFriendliness.homeOnly => 'Home only',
+  };
 
   static TravelFriendliness? fromStorageValue(String? value) {
     if (value == null) return null;

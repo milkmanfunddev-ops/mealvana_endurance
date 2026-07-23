@@ -48,6 +48,7 @@ class MacroSummaryRow extends StatelessWidget {
   final bool proteinOverridden;
   final bool sodiumOverridden;
   final bool fluidsOverridden;
+
   /// Optional display labels for overrides (e.g., "120g/hr" for during carbs).
   final String? carbsOverrideLabel;
   final String? proteinOverrideLabel;
@@ -175,6 +176,7 @@ class MacroSummaryItem extends StatelessWidget {
   final int? low;
   final int? high;
   final bool isOverridden;
+
   /// Display label for the override value (e.g., "120g/hr").
   /// When null, falls back to showing "$target$unit".
   final String? overrideLabel;
@@ -315,11 +317,7 @@ class MacroSummaryItem extends StatelessWidget {
       onTap: () => _showOverrideSheet(context),
       child: Padding(
         padding: const EdgeInsets.only(left: 2, top: 1),
-        child: Icon(
-          Icons.info_outline_rounded,
-          size: 14,
-          color: iconColor,
-        ),
+        child: Icon(Icons.info_outline_rounded, size: 14, color: iconColor),
       ),
     );
   }

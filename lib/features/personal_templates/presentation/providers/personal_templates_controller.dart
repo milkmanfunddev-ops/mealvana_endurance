@@ -60,8 +60,9 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
       }
 
       // Determine activity type string
-      final activityType =
-          activity.isBrick ? 'brick' : activity.activityType.dbValue;
+      final activityType = activity.isBrick
+          ? 'brick'
+          : activity.activityType.dbValue;
 
       final template = PersonalTemplate(
         id: const Uuid().v4(),
@@ -105,7 +106,8 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
 
   /// Get templates for a specific sport type
   Future<List<PersonalTemplate>> getTemplatesForSport(
-      String activityType) async {
+    String activityType,
+  ) async {
     final userId = await ref.read(userIdProvider.future);
     if (!ref.mounted) return [];
     return _repository.getTemplatesForSport(userId, activityType);
@@ -113,7 +115,8 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
 
   /// Get brick templates matching a specific segment order
   Future<List<PersonalTemplate>> getTemplatesForBrick(
-      List<String> segmentOrder) async {
+    List<String> segmentOrder,
+  ) async {
     final userId = await ref.read(userIdProvider.future);
     if (!ref.mounted) return [];
     return _repository.getTemplatesForBrick(userId, segmentOrder);

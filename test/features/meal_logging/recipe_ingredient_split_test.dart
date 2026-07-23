@@ -55,14 +55,19 @@ void main() {
       final components = explodeRecipeComponents(recipe, 1.0);
 
       final totalCal = components.fold<int>(0, (a, c) => a + (c.calories ?? 0));
-      final totalCarb =
-          components.fold<double>(0, (a, c) => a + (c.carbG ?? 0));
-      final totalProt =
-          components.fold<double>(0, (a, c) => a + (c.proteinG ?? 0));
-      final totalFat =
-          components.fold<double>(0, (a, c) => a + (c.fatG ?? 0));
-      final totalSodium =
-          components.fold<double>(0, (a, c) => a + (c.sodiumMg ?? 0));
+      final totalCarb = components.fold<double>(
+        0,
+        (a, c) => a + (c.carbG ?? 0),
+      );
+      final totalProt = components.fold<double>(
+        0,
+        (a, c) => a + (c.proteinG ?? 0),
+      );
+      final totalFat = components.fold<double>(0, (a, c) => a + (c.fatG ?? 0));
+      final totalSodium = components.fold<double>(
+        0,
+        (a, c) => a + (c.sodiumMg ?? 0),
+      );
 
       expect(totalCal, 300);
       expect(totalCarb, closeTo(40, 0.001));

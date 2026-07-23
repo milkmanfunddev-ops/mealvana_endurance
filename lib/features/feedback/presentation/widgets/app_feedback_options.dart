@@ -26,7 +26,7 @@ class AppFeedbackOptions extends StatelessWidget {
             children: [
               _buildRadioOption(option),
               // Show text field for "has potential" option
-              if (option == AppFeedbackOption.hasPotential && 
+              if (option == AppFeedbackOption.hasPotential &&
                   selectedOption == AppFeedbackOption.hasPotential)
                 Padding(
                   padding: EdgeInsets.only(left: 32.w, top: 8.h),
@@ -65,13 +65,18 @@ class AppFeedbackOptions extends StatelessWidget {
 
   Widget _buildRadioOption(AppFeedbackOption option) {
     final isSelected = selectedOption == option;
-    
+
     return GestureDetector(
       onTap: () => onOptionChanged(option),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w), // Added padding for taller appearance
+        padding: EdgeInsets.symmetric(
+          vertical: 12.h,
+          horizontal: 16.w,
+        ), // Added padding for taller appearance
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary50.withValues(alpha: 0.3) : Colors.transparent,
+          color: isSelected
+              ? AppTheme.primary50.withValues(alpha: 0.3)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Row(
@@ -81,18 +86,11 @@ class AppFeedbackOptions extends StatelessWidget {
               height: 24.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.primary900,
-                  width: 2.0,
-                ),
+                border: Border.all(color: AppTheme.primary900, width: 2.0),
                 color: isSelected ? AppTheme.primary900 : Colors.transparent,
               ),
               child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      color: AppTheme.baseWhite,
-                      size: 16.sp,
-                    )
+                  ? Icon(Icons.check, color: AppTheme.baseWhite, size: 16.sp)
                   : null,
             ),
             SizedBox(width: 12.w),

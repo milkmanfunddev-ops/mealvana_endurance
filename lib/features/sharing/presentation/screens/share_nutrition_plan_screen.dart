@@ -11,18 +11,17 @@ import '../../../nutrition_plan/domain/nutrition_plan.dart';
 import '../providers/share_form_controller.dart';
 
 class ShareNutritionPlanScreen extends ConsumerStatefulWidget {
-  const ShareNutritionPlanScreen({
-    super.key,
-    required this.nutritionPlan,
-  });
+  const ShareNutritionPlanScreen({super.key, required this.nutritionPlan});
 
   final NutritionPlan nutritionPlan;
 
   @override
-  ConsumerState<ShareNutritionPlanScreen> createState() => _ShareNutritionPlanScreenState();
+  ConsumerState<ShareNutritionPlanScreen> createState() =>
+      _ShareNutritionPlanScreenState();
 }
 
-class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScreen> {
+class _ShareNutritionPlanScreenState
+    extends ConsumerState<ShareNutritionPlanScreen> {
   final _formKey = GlobalKey<FormState>();
   final _recipientEmailController = TextEditingController();
   final _senderNameController = TextEditingController();
@@ -43,7 +42,9 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
       return;
     }
 
-    final controller = ref.read(shareFormControllerProvider(widget.nutritionPlan).notifier);
+    final controller = ref.read(
+      shareFormControllerProvider(widget.nutritionPlan).notifier,
+    );
 
     final result = await controller.sendPlan(widget.nutritionPlan);
 
@@ -73,7 +74,9 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
   @override
   Widget build(BuildContext context) {
     final content = ref.watch(contentServiceProvider);
-    final controllerState = ref.watch(shareFormControllerProvider(widget.nutritionPlan));
+    final controllerState = ref.watch(
+      shareFormControllerProvider(widget.nutritionPlan),
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
@@ -81,11 +84,12 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
         backgroundColor: AppTheme.baseCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () => context.pop(),
-        ),
+        leading: CustomAppBarBackButton(onPressed: () => context.pop()),
         title: Text(
-          content.getValue('sharing.screen_title', defaultValue: 'Share Nutrition Plan'),
+          content.getValue(
+            'sharing.screen_title',
+            defaultValue: 'Share Nutrition Plan',
+          ),
           style: AppTheme.titleStyle.copyWith(
             color: AppTheme.baseBlack,
             fontSize: 18.sp,
@@ -94,7 +98,8 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
       ),
       body: controllerState.when(
         data: (state) {
-          if (_senderNameController.text.isEmpty && state.senderName.isNotEmpty) {
+          if (_senderNameController.text.isEmpty &&
+              state.senderName.isNotEmpty) {
             _senderNameController.text = state.senderName;
           }
           if (_subjectController.text.isEmpty && state.subject.isNotEmpty) {
@@ -113,7 +118,10 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      content.getValue('sharing.recipient_email_label', defaultValue: 'Recipient Email'),
+                      content.getValue(
+                        'sharing.recipient_email_label',
+                        defaultValue: 'Recipient Email',
+                      ),
                       style: AppTheme.textStyle.copyWith(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -129,7 +137,10 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         color: AppTheme.primary900,
                       ),
                       decoration: InputDecoration(
-                        hintText: content.getValue('sharing.recipient_email_hint', defaultValue: 'coach@example.com'),
+                        hintText: content.getValue(
+                          'sharing.recipient_email_hint',
+                          defaultValue: 'coach@example.com',
+                        ),
                         hintStyle: AppTheme.textStyle.copyWith(
                           fontSize: 16.sp,
                           color: AppTheme.baseGrey,
@@ -138,39 +149,68 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.primary600, width: 2),
+                          borderSide: BorderSide(
+                            color: AppTheme.primary600,
+                            width: 2,
+                          ),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
                           borderSide: const BorderSide(color: Colors.red),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return content.getValue('sharing.recipient_email_required', defaultValue: 'Email address is required');
+                          return content.getValue(
+                            'sharing.recipient_email_required',
+                            defaultValue: 'Email address is required',
+                          );
                         }
-                        final controller = ref.read(shareFormControllerProvider(widget.nutritionPlan).notifier);
+                        final controller = ref.read(
+                          shareFormControllerProvider(
+                            widget.nutritionPlan,
+                          ).notifier,
+                        );
                         if (!controller.isValidEmail(value)) {
-                          return content.getValue('sharing.recipient_email_invalid', defaultValue: 'Please enter a valid email address');
+                          return content.getValue(
+                            'sharing.recipient_email_invalid',
+                            defaultValue: 'Please enter a valid email address',
+                          );
                         }
                         return null;
                       },
                       onChanged: (value) {
-                        ref.read(shareFormControllerProvider(widget.nutritionPlan).notifier).updateRecipientEmail(value);
+                        ref
+                            .read(
+                              shareFormControllerProvider(
+                                widget.nutritionPlan,
+                              ).notifier,
+                            )
+                            .updateRecipientEmail(value);
                       },
                     ),
                     SizedBox(height: 24.h),
                     Text(
-                      content.getValue('sharing.sender_name_label', defaultValue: 'Your Name'),
+                      content.getValue(
+                        'sharing.sender_name_label',
+                        defaultValue: 'Your Name',
+                      ),
                       style: AppTheme.textStyle.copyWith(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -185,7 +225,10 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         color: AppTheme.primary900,
                       ),
                       decoration: InputDecoration(
-                        hintText: content.getValue('sharing.sender_name_hint', defaultValue: 'Optional'),
+                        hintText: content.getValue(
+                          'sharing.sender_name_hint',
+                          defaultValue: 'Optional',
+                        ),
                         hintStyle: AppTheme.textStyle.copyWith(
                           fontSize: 16.sp,
                           color: AppTheme.baseGrey,
@@ -194,25 +237,44 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.primary600, width: 2),
+                          borderSide: BorderSide(
+                            color: AppTheme.primary600,
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                       ),
                       onChanged: (value) {
-                        ref.read(shareFormControllerProvider(widget.nutritionPlan).notifier).updateSenderName(value);
+                        ref
+                            .read(
+                              shareFormControllerProvider(
+                                widget.nutritionPlan,
+                              ).notifier,
+                            )
+                            .updateSenderName(value);
                       },
                     ),
                     SizedBox(height: 24.h),
                     Text(
-                      content.getValue('sharing.subject_label', defaultValue: 'Subject'),
+                      content.getValue(
+                        'sharing.subject_label',
+                        defaultValue: 'Subject',
+                      ),
                       style: AppTheme.textStyle.copyWith(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -231,25 +293,44 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.primary600, width: 2),
+                          borderSide: BorderSide(
+                            color: AppTheme.primary600,
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                       ),
                       onChanged: (value) {
-                        ref.read(shareFormControllerProvider(widget.nutritionPlan).notifier).updateSubject(value);
+                        ref
+                            .read(
+                              shareFormControllerProvider(
+                                widget.nutritionPlan,
+                              ).notifier,
+                            )
+                            .updateSubject(value);
                       },
                     ),
                     SizedBox(height: 24.h),
                     Text(
-                      content.getValue('sharing.comments_label', defaultValue: 'Additional Comments'),
+                      content.getValue(
+                        'sharing.comments_label',
+                        defaultValue: 'Additional Comments',
+                      ),
                       style: AppTheme.textStyle.copyWith(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -265,7 +346,11 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         color: AppTheme.primary900,
                       ),
                       decoration: InputDecoration(
-                        hintText: content.getValue('sharing.comments_hint', defaultValue: 'Optional message to include with your plan'),
+                        hintText: content.getValue(
+                          'sharing.comments_hint',
+                          defaultValue:
+                              'Optional message to include with your plan',
+                        ),
                         hintStyle: AppTheme.textStyle.copyWith(
                           fontSize: 16.sp,
                           color: AppTheme.baseGrey,
@@ -274,28 +359,50 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+                          borderSide: BorderSide(
+                            color: AppTheme.baseGrey.withValues(alpha: 0.3),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: AppTheme.primary600, width: 2),
+                          borderSide: BorderSide(
+                            color: AppTheme.primary600,
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                       ),
                       onChanged: (value) {
-                        ref.read(shareFormControllerProvider(widget.nutritionPlan).notifier).updateComments(value);
+                        ref
+                            .read(
+                              shareFormControllerProvider(
+                                widget.nutritionPlan,
+                              ).notifier,
+                            )
+                            .updateComments(value);
                       },
                     ),
                     SizedBox(height: 32.h),
                     Center(
                       child: PrimaryButton(
                         text: state.isSending
-                          ? content.getValue('sharing.sending_button', defaultValue: 'Sending...')
-                          : content.getValue('sharing.send_button', defaultValue: 'Send'),
+                            ? content.getValue(
+                                'sharing.sending_button',
+                                defaultValue: 'Sending...',
+                              )
+                            : content.getValue(
+                                'sharing.send_button',
+                                defaultValue: 'Send',
+                              ),
                         onPressed: state.isSending ? null : _handleSend,
                       ),
                     ),
@@ -306,9 +413,7 @@ class _ShareNutritionPlanScreenState extends ConsumerState<ShareNutritionPlanScr
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Error: $error'),
-        ),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
     );
   }

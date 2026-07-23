@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 // Screens under test
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mealvana_endurance/features/settings/presentation/screens/settings_menu_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/preferences_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sweat_profile_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sport_settings_screen.dart';
@@ -28,6 +29,9 @@ import 'package:mealvana_endurance/features/settings/presentation/screens/coach_
 import 'package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/help_feedback_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/debug_screen.dart';
+import 'package:mealvana_endurance/features/personal_templates/presentation/screens/personal_templates_screen.dart';
+import 'package:mealvana_endurance/features/personal_templates/presentation/providers/personal_templates_controller.dart';
+import 'package:mealvana_endurance/features/personal_templates/domain/personal_template.dart';
 
 // Providers / domain objects needed for seeded overrides
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
@@ -82,6 +86,11 @@ class _SeededConnectTrainingController extends ConnectTrainingController {
   FutureOr<ConnectTrainingState> build() => const ConnectTrainingState();
 }
 
+class _SeededPersonalTemplatesController extends PersonalTemplatesController {
+  @override
+  FutureOr<List<PersonalTemplate>> build() => const <PersonalTemplate>[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 void main() {
@@ -97,7 +106,9 @@ void main() {
         tester,
         const SettingsScreen(),
         overrides: [
-          settingsControllerProvider.overrideWith(_SeededSettingsController.new),
+          settingsControllerProvider.overrideWith(
+            _SeededSettingsController.new,
+          ),
         ],
       );
     });
@@ -112,7 +123,9 @@ void main() {
         tester,
         const PreferencesScreen(),
         overrides: [
-          settingsControllerProvider.overrideWith(_SeededSettingsController.new),
+          settingsControllerProvider.overrideWith(
+            _SeededSettingsController.new,
+          ),
         ],
       );
     });
@@ -149,32 +162,27 @@ void main() {
     //
     // Bug #16: _withScreenUtil() workaround removed — harness now wraps all
     // pumps in ScreenUtilInit via wrapForTest(), so .sp/.h/.w resolve correctly.
-    testWidgets(
-      'SportSettingsScreen builds without crash',
-      (tester) async {
-        await smokeScreen(
-          tester,
-          const SportSettingsScreen(),
-          overrides: [
-            settingsControllerProvider.overrideWith(
-              _SeededSettingsController.new,
-            ),
-          ],
-        );
-      },
-    );
+    testWidgets('SportSettingsScreen builds without crash', (tester) async {
+      await smokeScreen(
+        tester,
+        const SportSettingsScreen(),
+        overrides: [
+          settingsControllerProvider.overrideWith(
+            _SeededSettingsController.new,
+          ),
+        ],
+      );
+    });
 
     // ── 5. NutritionProfileScreen ──────────────────────────────────────────
     //
     // Heavy initState: _loadCurrentValues() awaits userRepositoryProvider.future
     // + garminLastBodyCompProvider — both require real Drift/Supabase and never
     // complete in-test. Screen stays in loading state indefinitely. settle:false.
-    testWidgets('NutritionProfileScreen builds (loading state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const NutritionProfileScreen(),
-        settle: false,
-      );
+    testWidgets('NutritionProfileScreen builds (loading state)', (
+      tester,
+    ) async {
+      await smokeScreen(tester, const NutritionProfileScreen(), settle: false);
     });
 
     // ── 6. NutritionTargetsScreen ──────────────────────────────────────────
@@ -182,12 +190,16 @@ void main() {
     // Reads settingsControllerProvider synchronously via addPostFrameCallback.
     // The form renders immediately; the seeded state supplies default values
     // for all fields. Settles cleanly.
-    testWidgets('NutritionTargetsScreen builds without overflow', (tester) async {
+    testWidgets('NutritionTargetsScreen builds without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const NutritionTargetsScreen(),
         overrides: [
-          settingsControllerProvider.overrideWith(_SeededSettingsController.new),
+          settingsControllerProvider.overrideWith(
+            _SeededSettingsController.new,
+          ),
         ],
       );
     });
@@ -196,20 +208,19 @@ void main() {
     //
     // ConsumerWidget. Watches settingsControllerProvider. Hub with dietary /
     // allergy / formula-library tiles. Renders data state immediately.
-    testWidgets(
-      'FoodPreferencesHubScreen builds without overflow',
-      (tester) async {
-        await smokeScreen(
-          tester,
-          const FoodPreferencesHubScreen(),
-          overrides: [
-            settingsControllerProvider.overrideWith(
-              _SeededSettingsController.new,
-            ),
-          ],
-        );
-      },
-    );
+    testWidgets('FoodPreferencesHubScreen builds without overflow', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const FoodPreferencesHubScreen(),
+        overrides: [
+          settingsControllerProvider.overrideWith(
+            _SeededSettingsController.new,
+          ),
+        ],
+      );
+    });
 
     // ── 8. FoodPreferencesScreen ───────────────────────────────────────────
     //
@@ -220,52 +231,43 @@ void main() {
     // in-test. Screen shows CircularProgressIndicator indefinitely. settle:false.
     // This logic belongs in a controller, not in UI initState.
     // Severity: FOA violation (business logic in presentation layer).
-    testWidgets(
-      'FoodPreferencesScreen builds (loading state)',
-      (tester) async {
-        await smokeScreen(
-          tester,
-          const FoodPreferencesScreen(),
-          settle: false,
-        );
-      },
-    );
+    testWidgets('FoodPreferencesScreen builds (loading state)', (tester) async {
+      await smokeScreen(tester, const FoodPreferencesScreen(), settle: false);
+    });
 
     // ── 9. FoodSettingsConsolidatedScreen ─────────────────────────────────
     //
     // initState calls authService.getCurrentUser() which awaits
     // userRepositoryProvider.future (Drift). Never resolves in-test.
     // Shows CircularProgressIndicator. settle:false.
-    testWidgets(
-      'FoodSettingsConsolidatedScreen builds (loading state)',
-      (tester) async {
-        await smokeScreen(
-          tester,
-          const FoodSettingsConsolidatedScreen(),
-          settle: false,
-        );
-      },
-    );
+    testWidgets('FoodSettingsConsolidatedScreen builds (loading state)', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const FoodSettingsConsolidatedScreen(),
+        settle: false,
+      );
+    });
 
     // ── 10. SportPreferencesHubScreen ─────────────────────────────────────
     //
     // ConsumerWidget. Watches settingsControllerProvider. Sport hub tiles
     // (running / cycling / swimming / triathlon). Renders data state
     // immediately when seeded.
-    testWidgets(
-      'SportPreferencesHubScreen builds without overflow',
-      (tester) async {
-        await smokeScreen(
-          tester,
-          const SportPreferencesHubScreen(),
-          overrides: [
-            settingsControllerProvider.overrideWith(
-              _SeededSettingsController.new,
-            ),
-          ],
-        );
-      },
-    );
+    testWidgets('SportPreferencesHubScreen builds without overflow', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const SportPreferencesHubScreen(),
+        overrides: [
+          settingsControllerProvider.overrideWith(
+            _SeededSettingsController.new,
+          ),
+        ],
+      );
+    });
 
     // ── 11. CoachConnectionScreen ──────────────────────────────────────────
     //
@@ -274,11 +276,7 @@ void main() {
     // in loading state (_isLoading = true renders a CircularProgressIndicator).
     // settle:false.
     testWidgets('CoachConnectionScreen builds (loading state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const CoachConnectionScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const CoachConnectionScreen(), settle: false);
     });
 
     // ── 12. ConnectedAppsScreen ────────────────────────────────────────────
@@ -293,23 +291,22 @@ void main() {
     // ref.invalidate(connectTrainingControllerProvider) in a postFrameCallback,
     // which re-triggers the seeded provider. settle:false to avoid waiting on
     // the re-triggered build path.
-    testWidgets(
-      'ConnectedAppsScreen (settings mode) builds without crash',
-      (tester) async {
-        // sharedPreferencesProvider is now provided by smokeScreen defaults
-        // (mockSharedPreferences()), so no explicit override needed here.
-        await smokeScreen(
-          tester,
-          const ConnectedAppsScreen(),
-          overrides: [
-            connectTrainingControllerProvider.overrideWith(
-              _SeededConnectTrainingController.new,
-            ),
-          ],
-          settle: false,
-        );
-      },
-    );
+    testWidgets('ConnectedAppsScreen (settings mode) builds without crash', (
+      tester,
+    ) async {
+      // sharedPreferencesProvider is now provided by smokeScreen defaults
+      // (mockSharedPreferences()), so no explicit override needed here.
+      await smokeScreen(
+        tester,
+        const ConnectedAppsScreen(),
+        overrides: [
+          connectTrainingControllerProvider.overrideWith(
+            _SeededConnectTrainingController.new,
+          ),
+        ],
+        settle: false,
+      );
+    });
 
     // ── 13. HelpFeedbackScreen ────────────────────────────────────────────
     //
@@ -330,9 +327,33 @@ void main() {
     // Bug #16: _withScreenUtil() workaround removed — harness now wraps all
     // pumps in ScreenUtilInit via wrapForTest(), so .sp/.h/.w resolve correctly.
     testWidgets('DebugScreen builds without crash', (tester) async {
+      await smokeScreen(tester, const DebugScreen());
+    });
+
+    // ── 15. SettingsMenuScreen ────────────────────────────────────────────
+    //
+    // Pure-UI ConsumerWidget: watches only appConfigProvider (provided by the
+    // harness default). All navigation (context.push) is tap-only. Settles
+    // cleanly with no per-screen overrides.
+    testWidgets('SettingsMenuScreen builds without overflow', (tester) async {
+      await smokeScreen(tester, const SettingsMenuScreen());
+    });
+
+    // ── 16. PersonalTemplatesScreen ───────────────────────────────────────
+    //
+    // Watches personalTemplatesControllerProvider (async — the real build()
+    // awaits userIdProvider + Drift). Seeded with an empty template list so
+    // the deterministic empty-state branch renders ("No Routines Yet").
+    // Dialogs/bottom-sheets are tap-only and not exercised here.
+    testWidgets('PersonalTemplatesScreen builds (empty state)', (tester) async {
       await smokeScreen(
         tester,
-        const DebugScreen(),
+        const PersonalTemplatesScreen(),
+        overrides: [
+          personalTemplatesControllerProvider.overrideWith(
+            _SeededPersonalTemplatesController.new,
+          ),
+        ],
       );
     });
 

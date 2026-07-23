@@ -22,32 +22,29 @@ import '../../helpers/widget_test_harness.dart';
 const _buttonKey = ValueKey('test.coming_soon_notify_button');
 
 Widget _card() => Scaffold(
-      body: ComingSoonSectionWidget(
-        notifyButtonKey: _buttonKey,
-        icon: FontAwesomeIcons.crown,
-        iconColor: AppColors.orange,
-        title: 'Premium Video Library',
-        description: 'Expert-led deep dives.',
-      ),
-    );
+  body: ComingSoonSectionWidget(
+    notifyButtonKey: _buttonKey,
+    icon: FontAwesomeIcons.crown,
+    iconColor: AppColors.orange,
+    title: 'Premium Video Library',
+    description: 'Expert-led deep dives.',
+  ),
+);
 
 void main() {
-  testWidgets(
-    'Notify Me renders the de-emphasized coming-soon pattern, '
-    'not a primary CTA',
-    (tester) async {
-      await smokeScreen(tester, _card(), withAppDeps: false);
+  testWidgets('Notify Me renders the de-emphasized coming-soon pattern, '
+      'not a primary CTA', (tester) async {
+    await smokeScreen(tester, _card(), withAppDeps: false);
 
-      // The existing pattern (_NotifyButton in integration_provider_card.dart):
-      // light-variant secondary button — NOT a solid primary button.
-      final secondary = tester.widget<KyleSecondaryButtonSmall>(
-        find.byKey(_buttonKey),
-      );
-      expect(secondary.variant, SecondaryButtonVariant.light);
-      expect(find.byType(KylePrimaryButton), findsNothing);
-      expect(find.text('Notify Me'), findsOneWidget);
-    },
-  );
+    // The existing pattern (_NotifyButton in integration_provider_card.dart):
+    // light-variant secondary button — NOT a solid primary button.
+    final secondary = tester.widget<KyleSecondaryButtonSmall>(
+      find.byKey(_buttonKey),
+    );
+    expect(secondary.variant, SecondaryButtonVariant.light);
+    expect(find.byType(KylePrimaryButton), findsNothing);
+    expect(find.text('Notify Me'), findsOneWidget);
+  });
 
   testWidgets('Notify Me is disabled — tapping fires nothing', (tester) async {
     await smokeScreen(tester, _card(), withAppDeps: false);

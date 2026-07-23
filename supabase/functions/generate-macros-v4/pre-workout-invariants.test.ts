@@ -471,13 +471,18 @@ describe('Pre-Workout V4 Integration Tests', () => {
       assertEquals(targets.meal_type, 'full_meal');
     });
 
-    it('should return snack type for 1.0-2.5 hours', () => {
+    it('should return full_meal type from 1.5 hours (Notion spec 31fe3fdb)', () => {
       const targets = calculatePreWorkoutTargets(73, 1.5, false, 'medium', 'moderate');
+      assertEquals(targets.meal_type, 'full_meal');
+    });
+
+    it('should return snack type for 0.5-1.5 hours', () => {
+      const targets = calculatePreWorkoutTargets(73, 1.0, false, 'medium', 'moderate');
       assertEquals(targets.meal_type, 'snack');
     });
 
-    it('should return top_up type for < 1.0 hours', () => {
-      const targets = calculatePreWorkoutTargets(73, 0.5, false, 'medium', 'moderate');
+    it('should return top_up type for < 0.5 hours', () => {
+      const targets = calculatePreWorkoutTargets(73, 0.25, false, 'medium', 'moderate');
       assertEquals(targets.meal_type, 'top_up');
     });
   });
@@ -530,14 +535,20 @@ describe('Pre-Workout V4 Integration Tests', () => {
       assertEquals(phases, ['meal', 'snack', 'top_up']);
     });
 
-    it('should have 2 phases for 1.0-2.5 hours', () => {
+    it('should have 3 phases from 1.5 hours (Notion spec 31fe3fdb)', () => {
       const phases = getActiveSubPhases(1.5);
+      assertEquals(phases.length, 3);
+      assertEquals(phases, ['meal', 'snack', 'top_up']);
+    });
+
+    it('should have 2 phases for 0.5-1.5 hours', () => {
+      const phases = getActiveSubPhases(1.0);
       assertEquals(phases.length, 2);
       assertEquals(phases, ['snack', 'top_up']);
     });
 
-    it('should have 1 phase for < 1.0 hours', () => {
-      const phases = getActiveSubPhases(0.5);
+    it('should have 1 phase for < 0.5 hours', () => {
+      const phases = getActiveSubPhases(0.25);
       assertEquals(phases.length, 1);
       assertEquals(phases, ['top_up']);
     });

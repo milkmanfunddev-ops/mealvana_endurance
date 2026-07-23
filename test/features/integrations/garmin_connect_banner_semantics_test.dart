@@ -25,22 +25,22 @@ const _userId = 'garmin-banner-a11y-user-001';
 const _dismissKey = ValueKey('garmin_banner.dismiss');
 
 UserProfile _profileFixture() => UserProfile(
-      id: _userId,
-      deviceId: 'dev-001',
-      authUserId: 'aa000000-0000-0000-0000-000000000002',
-      authProvider: 'email',
-      isAnonymous: false,
-      gender: Gender.male,
-      birthday: DateTime(1985, 3, 20),
-      heightFeet: 6,
-      heightInches: 0,
-      weightPounds: 180.0,
-      runsWithWaterBottle: false,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
-      onboardingCompleted: true,
-      appVersion: '1.0',
-    );
+  id: _userId,
+  deviceId: 'dev-001',
+  authUserId: 'aa000000-0000-0000-0000-000000000002',
+  authProvider: 'email',
+  isAnonymous: false,
+  gender: Gender.male,
+  birthday: DateTime(1985, 3, 20),
+  heightFeet: 6,
+  heightInches: 0,
+  weightPounds: 180.0,
+  runsWithWaterBottle: false,
+  createdAt: DateTime(2024),
+  updatedAt: DateTime(2024),
+  onboardingCompleted: true,
+  appVersion: '1.0',
+);
 
 void main() {
   late PreferencesService prefs;
@@ -52,10 +52,10 @@ void main() {
   });
 
   List<Override> overrides() => [
-        preferencesServiceProvider.overrideWithValue(prefs),
-        currentUserProvider.overrideWith((ref) async => _profileFixture()),
-        isGarminConnectedProvider(_userId).overrideWith((ref) async => false),
-      ];
+    preferencesServiceProvider.overrideWithValue(prefs),
+    currentUserProvider.overrideWith((ref) async => _profileFixture()),
+    isGarminConnectedProvider(_userId).overrideWith((ref) async => false),
+  ];
 
   testWidgets(
     'dismiss control is exposed to screen readers as a labeled button',
@@ -84,8 +84,9 @@ void main() {
     },
   );
 
-  testWidgets('tapping the dismiss control still dismisses the banner',
-      (tester) async {
+  testWidgets('tapping the dismiss control still dismisses the banner', (
+    tester,
+  ) async {
     await smokeScreen(
       tester,
       const Scaffold(body: GarminConnectBanner()),

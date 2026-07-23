@@ -47,16 +47,19 @@ class SportCategorySelector extends StatelessWidget {
               children: ActivityType.values
                   .where((type) => type.isCreatable)
                   .map((category) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: _SportCategoryButton(
-                    key: ValueKey('event_create.sport_${category.name}_chip'),
-                    category: category,
-                    isSelected: selectedCategory == category,
-                    onTap: () => onCategoryChanged(category),
-                  ),
-                );
-              }).toList(),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _SportCategoryButton(
+                        key: ValueKey(
+                          'event_create.sport_${category.name}_chip',
+                        ),
+                        category: category,
+                        isSelected: selectedCategory == category,
+                        onTap: () => onCategoryChanged(category),
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
           ),
         ),

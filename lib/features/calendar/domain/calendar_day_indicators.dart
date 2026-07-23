@@ -3,9 +3,9 @@ import '../../../theme/kyle_design/app_colors.dart';
 
 /// Types of indicators that can be shown on calendar days
 enum DayIndicatorType {
-  activity,      // Electrolyte/green - for activities
-  event,         // Orange - for events
-  carbLoading,   // Dragonfruit/pink - for carb loading days
+  activity, // Electrolyte/green - for activities
+  event, // Orange - for events
+  carbLoading, // Dragonfruit/pink - for carb loading days
 }
 
 /// Helper class for managing calendar day indicators

@@ -9,16 +9,16 @@ enum FormulaPhase {
   after;
 
   String get analyticsValue => switch (this) {
-        FormulaPhase.before => 'before',
-        FormulaPhase.during => 'during',
-        FormulaPhase.after => 'after',
-      };
+    FormulaPhase.before => 'before',
+    FormulaPhase.during => 'during',
+    FormulaPhase.after => 'after',
+  };
 
   String get displayLabel => switch (this) {
-        FormulaPhase.before => 'Before',
-        FormulaPhase.during => 'During',
-        FormulaPhase.after => 'After',
-      };
+    FormulaPhase.before => 'Before',
+    FormulaPhase.during => 'During',
+    FormulaPhase.after => 'After',
+  };
 
   /// String persisted in Drift + Supabase (`phase` column). Equals
   /// [analyticsValue]; named separately so storage intent reads clearly at

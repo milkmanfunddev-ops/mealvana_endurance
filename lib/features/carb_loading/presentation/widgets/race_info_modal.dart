@@ -7,7 +7,12 @@ import '../../domain/carb_loading_plan_simple.dart';
 
 /// Modal for collecting race information when creating carb loading plan
 class RaceInfoModal extends StatefulWidget {
-  final Function(DateTime raceDate, RaceDistance raceDistance, TrainingVolume trainingVolume) onCreatePlan;
+  final Function(
+    DateTime raceDate,
+    RaceDistance raceDistance,
+    TrainingVolume trainingVolume,
+  )
+  onCreatePlan;
   final DateTime? initialRaceDate;
   final RaceDistance? initialRaceDistance;
   final TrainingVolume? initialTrainingVolume;
@@ -38,7 +43,8 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
     super.initState();
     _selectedDate = widget.initialRaceDate;
     _selectedDistance = widget.initialRaceDistance ?? RaceDistance.marathon;
-    _selectedTrainingVolume = widget.initialTrainingVolume ?? TrainingVolume.moderate;
+    _selectedTrainingVolume =
+        widget.initialTrainingVolume ?? TrainingVolume.moderate;
   }
 
   @override
@@ -46,9 +52,7 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
     final theme = Theme.of(context);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -65,8 +69,8 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
             const SizedBox(height: 8),
             Text(
               widget.isEditing
-                ? 'Update your race information to adjust your carb loading plan.'
-                : 'Tell us about your upcoming race to create a personalized carb loading plan.',
+                  ? 'Update your race information to adjust your carb loading plan.'
+                  : 'Tell us about your upcoming race to create a personalized carb loading plan.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
@@ -190,12 +194,12 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
                     Expanded(
                       child: Text(
                         _selectedDate != null
-                          ? _dateFormat.format(_selectedDate!)
-                          : 'Select race date',
+                            ? _dateFormat.format(_selectedDate!)
+                            : 'Select race date',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: _selectedDate != null
-                            ? Colors.black
-                            : Colors.grey[600],
+                              ? Colors.black
+                              : Colors.grey[600],
                         ),
                       ),
                     ),
@@ -242,9 +246,14 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
   }
 
   void _showDatePicker() async {
-    final initialDate = _selectedDate ?? DateTime.now().add(const Duration(days: 14));
-    final firstDate = DateTime.now().add(const Duration(days: 3)); // Min 3 days from now
-    final lastDate = DateTime.now().add(const Duration(days: 365)); // Max 1 year from now
+    final initialDate =
+        _selectedDate ?? DateTime.now().add(const Duration(days: 14));
+    final firstDate = DateTime.now().add(
+      const Duration(days: 3),
+    ); // Min 3 days from now
+    final lastDate = DateTime.now().add(
+      const Duration(days: 365),
+    ); // Max 1 year from now
 
     final selectedDate = await showAppDatePicker(
       context: context,
@@ -254,9 +263,9 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: const Color(0xFF4285F4),
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: const Color(0xFF4285F4)),
           ),
           child: child!,
         );
@@ -274,8 +283,12 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
     if (_selectedDate == null) return '';
 
     final daysUntilRace = _selectedDate!.difference(DateTime.now()).inDays;
-    final carbLoadingStartDate = _selectedDate!.subtract(const Duration(days: 2));
-    final daysUntilCarbLoading = carbLoadingStartDate.difference(DateTime.now()).inDays;
+    final carbLoadingStartDate = _selectedDate!.subtract(
+      const Duration(days: 2),
+    );
+    final daysUntilCarbLoading = carbLoadingStartDate
+        .difference(DateTime.now())
+        .inDays;
 
     if (daysUntilRace < 3) {
       return 'Race date should be at least 3 days from now for proper carb loading';
@@ -301,7 +314,11 @@ class _RaceInfoModalState extends State<RaceInfoModal> {
   void _createPlan() {
     if (_selectedDate != null) {
       Navigator.of(context).pop();
-      widget.onCreatePlan(_selectedDate!, _selectedDistance, _selectedTrainingVolume);
+      widget.onCreatePlan(
+        _selectedDate!,
+        _selectedDistance,
+        _selectedTrainingVolume,
+      );
     }
   }
 }

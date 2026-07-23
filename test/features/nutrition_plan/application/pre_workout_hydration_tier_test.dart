@@ -68,34 +68,32 @@ void main() {
       },
     );
 
-    test(
-      'hydrationTier=2 with fluidsMl=250 renders TIER 2',
-      () {
-        final macroTargets = _sampleMacroTargetsWithPreRun(
-          preRun: const PreRunMacros(
-            carbsG: 0,
-            proteinG: 0,
-            fatCapG: 0,
-            fluidsMl: 250,
-            sodiumMg: 150,
-            fluidsLowMl: 200,
-            fluidsHighMl: 300,
-            hydrationTier: 2,
-          ),
-        );
+    test('hydrationTier=2 with fluidsMl=250 renders TIER 2', () {
+      final macroTargets = _sampleMacroTargetsWithPreRun(
+        preRun: const PreRunMacros(
+          carbsG: 0,
+          proteinG: 0,
+          fatCapG: 0,
+          fluidsMl: 250,
+          sodiumMg: 150,
+          fluidsLowMl: 200,
+          fluidsHighMl: 300,
+          hydrationTier: 2,
+        ),
+      );
 
-        final map = service.getFluidTransparencyData(
-          phase: ExplanationPhase.before,
-          macroTargets: macroTargets,
-          bodyWeightKg: 70,
-        )!;
+      final map = service.getFluidTransparencyData(
+        phase: ExplanationPhase.before,
+        macroTargets: macroTargets,
+        bodyWeightKg: 70,
+      )!;
 
-        final formulaText =
-            _allFormulaText(map[Scenario.singleSport]!.calculationSections);
-        expect(formulaText, contains('10–120 min window'));
-        expect(formulaText, isNot(contains('full ACSM protocol')));
-      },
-    );
+      final formulaText = _allFormulaText(
+        map[Scenario.singleSport]!.calculationSections,
+      );
+      expect(formulaText, contains('10–120 min window'));
+      expect(formulaText, isNot(contains('full ACSM protocol')));
+    });
 
     test(
       'legacy plan without hydrationTier still falls back to fluid heuristic',
@@ -121,8 +119,9 @@ void main() {
           bodyWeightKg: 70,
         )!;
 
-        final formulaText =
-            _allFormulaText(map[Scenario.singleSport]!.calculationSections);
+        final formulaText = _allFormulaText(
+          map[Scenario.singleSport]!.calculationSections,
+        );
         // 420 ml > 300 → legacy heuristic resolves to the full protocol.
         expect(formulaText, contains('full ACSM protocol'));
       },

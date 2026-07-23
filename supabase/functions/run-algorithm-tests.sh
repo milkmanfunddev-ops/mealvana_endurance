@@ -1,26 +1,60 @@
 #!/bin/bash
 # =============================================================================
-# Nutrition Algorithm Test Runner
+# Edge Function Test Runner (auto-discovery)
 # =============================================================================
 #
-# Runs all nutrition algorithm tests in sequence with clear section headers.
+# Discovers and runs EVERY *.test.ts under supabase/functions/ — a new test
+# file is picked up with zero edits to this script. There is no hand-curated
+# test list; if you add a test, it runs.
 #
 # Usage:
 #   ./supabase/functions/run-algorithm-tests.sh              # Local tests only
-#   ./supabase/functions/run-algorithm-tests.sh --e2e         # Local + E2E tests
+#   ./supabase/functions/run-algorithm-tests.sh --e2e        # Local + remote E2E
 #
-# E2E tests require environment variables:
-#   export SUPABASE_URL=https://wvmvsodrvbkxfydabqed.supabase.co
-#   export SUPABASE_ANON_KEY=<your-anon-key>
+# Remote/E2E classification (mechanical — see is_remote()):
+#   A test is REMOTE iff either
+#     (a) its filename matches *e2e* or *integration*, OR
+#     (b) it reads SUPABASE_ANON_KEY from env (Deno.env.get('SUPABASE_ANON_KEY'))
+#         to call a deployed functions/v1 endpoint.
+#   Remote tests run ONLY in the --e2e section and require:
+#     export SUPABASE_URL=https://<project-ref>.supabase.co
+#     export SUPABASE_ANON_KEY=<anon-key>
+#   Everything else runs locally in Section 1.
+#   (Note: a bare grep for 'functions/v1' is NOT the rule — local fetch-stub
+#   tests like ai-coach/index.test.ts mention that path in comments.)
+#
+# Permissions: local tests all run with one safe superset —
+#   --allow-read --allow-write --allow-env --node-modules-dir=none
+# No local test currently needs --allow-net (the AI-function tests stub
+# globalThis.fetch). If one ever genuinely does, add it to NET_ALLOWED below
+# with a comment saying why.
+#
+# The script exits non-zero if any discovered test fails, and prints
+# discovered/run/quarantined counts so a silently-dropped file is impossible.
 #
 # =============================================================================
 
-set -e
+set -o pipefail
 
 DENO="${DENO:-deno}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SHARED_DIR="$SCRIPT_DIR/_shared/nutrition"
-E2E_DIR="$SCRIPT_DIR/generate-nutrition-plan-v3"
+cd "$SCRIPT_DIR"
+
+# ─── Quarantine ──────────────────────────────────────────────────────────────
+# Known-broken tests, excluded from the run but counted and printed every time
+# so the debt stays visible. Format: "relative/path|one-line reason".
+# Fix the test, then delete its entry.
+QUARANTINE=(
+)
+
+# ─── Local tests that genuinely need --allow-net ────────────────────────────
+# Empty today: every local test stubs fetch. Add "relative/path" entries here
+# (with a comment why) if a test ever needs real network access locally.
+NET_ALLOWED=(
+)
+
+LOCAL_FLAGS=(--allow-read --allow-write --allow-env --node-modules-dir=none)
+E2E_FLAGS=(--allow-net --allow-env --allow-read --node-modules-dir=none)
 
 # Colors
 GREEN='\033[0;32m'
@@ -31,269 +65,175 @@ NC='\033[0m' # No Color
 
 PASSED=0
 FAILED=0
-SKIPPED=0
+RESULTS=()   # "PASS path" / "FAIL path" lines for the per-file summary
+START_TIME=$SECONDS
+
+# is_remote <file> — the mechanical remote/E2E rule documented in the header.
+is_remote() {
+  local f="$1" base
+  base="$(basename "$f")"
+  case "$base" in
+    *e2e*|*integration*) return 0 ;;
+  esac
+  grep -Eq "Deno\.env\.get\(['\"]SUPABASE_ANON_KEY" "$f"
+}
+
+# is_quarantined <file> — echoes the reason and returns 0 if quarantined.
+is_quarantined() {
+  local f="$1" entry
+  for entry in "${QUARANTINE[@]:-}"; do
+    [ -z "$entry" ] && continue
+    if [ "${entry%%|*}" = "$f" ]; then
+      echo "${entry#*|}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+needs_net() {
+  local f="$1" entry
+  for entry in "${NET_ALLOWED[@]:-}"; do
+    [ "$entry" = "$f" ] && return 0
+  done
+  return 1
+}
 
 run_test() {
-  local label="$1"
-  local file="$2"
-  shift 2
+  local file="$1"
+  shift
   local flags=("$@")
 
   echo ""
-  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}  $label${NC}"
-  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo ""
-
-  if [ ! -f "$file" ]; then
-    echo -e "${YELLOW}  SKIPPED: File not found: $file${NC}"
-    SKIPPED=$((SKIPPED + 1))
-    return
-  fi
-
+  echo -e "${BLUE}━━━ $file ━━━${NC}"
   if $DENO test "${flags[@]}" "$file" 2>&1; then
     echo -e "${GREEN}  PASSED${NC}"
     PASSED=$((PASSED + 1))
+    RESULTS+=("PASS $file")
   else
     echo -e "${RED}  FAILED${NC}"
     FAILED=$((FAILED + 1))
+    RESULTS+=("FAIL $file")
   fi
 }
 
 echo ""
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     Mealvana Endurance — Nutrition Algorithm Tests      ║${NC}"
+echo -e "${BLUE}║     Mealvana Endurance — Edge Function Tests             ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════╝${NC}"
 
-# ─── Section 1: Local Algorithm Tests ───────────────────────────────────────
+# ─── Discovery ───────────────────────────────────────────────────────────────
+
+ALL_FILES=()
+while IFS= read -r f; do
+  ALL_FILES+=("$f")
+done < <(find . -name '*.test.ts' -type f | sed 's|^\./||' | sort)
+
+LOCAL_FILES=()
+REMOTE_FILES=()
+QUARANTINED_LOCAL=()
+QUARANTINED_REMOTE=()
+QUARANTINE_NOTES=()
+
+for f in "${ALL_FILES[@]}"; do
+  if reason="$(is_quarantined "$f")"; then
+    QUARANTINE_NOTES+=("$f — $reason")
+    if is_remote "$f"; then QUARANTINED_REMOTE+=("$f"); else QUARANTINED_LOCAL+=("$f"); fi
+    continue
+  fi
+  if is_remote "$f"; then
+    REMOTE_FILES+=("$f")
+  else
+    LOCAL_FILES+=("$f")
+  fi
+done
+
+N_ALL=${#ALL_FILES[@]}
+N_LOCAL=${#LOCAL_FILES[@]}
+N_REMOTE=${#REMOTE_FILES[@]}
+N_QUAR=$(( ${#QUARANTINED_LOCAL[@]} + ${#QUARANTINED_REMOTE[@]} ))
 
 echo ""
-echo -e "${YELLOW}▶ SECTION 1: Local Algorithm Tests${NC}"
+echo -e "Discovered ${BLUE}$N_ALL${NC} test files: ${BLUE}$N_LOCAL${NC} local, ${BLUE}$N_REMOTE${NC} remote (--e2e only), ${YELLOW}$N_QUAR${NC} quarantined"
 
-run_test \
-  "1a. During Rule Solver (unit tests)" \
-  "$SHARED_DIR/during-rule-solver.test.ts" \
-  --allow-write
+# Silent-drop guard: every discovered file must be accounted for.
+if [ $((N_LOCAL + N_REMOTE + N_QUAR)) -ne "$N_ALL" ]; then
+  echo -e "${RED}INTERNAL ERROR: discovery bucket counts don't add up — refusing to run${NC}"
+  exit 1
+fi
 
-run_test \
-  "1b. Algorithm Audit (comprehensive local tests)" \
-  "$SHARED_DIR/algorithm-audit.test.ts" \
-  --allow-write
+# ─── Section 1: Local tests ──────────────────────────────────────────────────
 
-run_test \
-  "1c. LP Solver (unit tests)" \
-  "$SHARED_DIR/lp-solver.test.ts" \
-  --allow-write
+echo ""
+echo -e "${YELLOW}▶ SECTION 1: Local Tests ($N_LOCAL files)${NC}"
 
-run_test \
-  "1d. Before-Phase Filtering (unit tests)" \
-  "$SCRIPT_DIR/generate-nutrition-plan-v3/before-phase-filtering.test.ts" \
-  --allow-write
+for f in "${LOCAL_FILES[@]}"; do
+  if needs_net "$f"; then
+    run_test "$f" "${LOCAL_FLAGS[@]}" --allow-net
+  else
+    run_test "$f" "${LOCAL_FLAGS[@]}"
+  fi
+done
 
-run_test \
-  "1e. Pre-Workout Algorithm C (unit tests)" \
-  "$SCRIPT_DIR/generate-macros-v4/pre-workout-invariants.test.ts" \
-  --allow-write --node-modules-dir=none
+# ─── Section 2: Remote E2E tests (--e2e) ─────────────────────────────────────
 
-run_test \
-  "1e2. Pre-Workout Drink Headroom + Sodium Trim (before-water 0% / before-sodium 154% regressions)" \
-  "$SCRIPT_DIR/generate-macros-v4/pre-workout-drink-trim.test.ts" \
-  --allow-write --node-modules-dir=none
-
-run_test \
-  "1f. During Template Solver (unit tests)" \
-  "$SHARED_DIR/during-template-solver.test.ts" \
-  --allow-write
-
-run_test \
-  "1f2. During Template — Pin-Override Shortfall (Bug 395e3fdb)" \
-  "$SHARED_DIR/during-template-pinoverride.test.ts" \
-  --allow-write --node-modules-dir=none
-
-# 1g (During Template Migration Catalog) removed 2026-06-09: it asserted the
-# contents of supabase/migrations/20260406320000_during_workout_templates_complete.sql,
-# which was deleted in the Formula Kit DB cleanup (b2f86b4). Catalog now lives in the DB.
-
-run_test \
-  "1g. Corpus-Driven Parity Harness (scenario × plan-solver)" \
-  "$SCRIPT_DIR/tests/parity/parity.test.ts" \
-  --allow-read --allow-write --node-modules-dir=none
-
-run_test \
-  "1h. During Phase — Empty Pool Failure Modes (P1 bug tracking)" \
-  "$E2E_DIR/during-phase-empty-pool.test.ts" \
-  --allow-write --node-modules-dir=none
-
-run_test \
-  "1i. During Template — Missing Component Food Failure Modes (P6)" \
-  "$SHARED_DIR/during-template-missing-component.test.ts" \
-  --allow-write --node-modules-dir=none
-
-run_test \
-  "1j. Macro-Target Adherence — during-phase rule solver + shortfall asymmetry (P3)" \
-  "$E2E_DIR/macro-adherence.test.ts" \
-  --allow-read --allow-write --node-modules-dir=none
-
-run_test \
-  "1j2. During Invariant Matrix — carbs on-target OR reported, guard regression, gap-fill (bug 3a3e3fdb)" \
-  "$E2E_DIR/during-invariant-matrix.test.ts" \
-  --allow-write --node-modules-dir=none
-
-run_test \
-  "1j3. During Invariant — REAL catalog snapshot (every template pinned+free, 3-macro invariant, diets/allergies)" \
-  "$E2E_DIR/during-invariant-real-catalog.test.ts" \
-  --allow-read --allow-write --node-modules-dir=none
-
-run_test \
-  "1k. After-Phase Adherence — canonical portioning mismatch detection (P4)" \
-  "$E2E_DIR/after-phase-adherence.test.ts" \
-  --allow-write --node-modules-dir=none
-
-run_test \
-  "1l. Diet & Allergy Filtering — allergen exclusion, gluten/dairy/peanut-free, vegan/vegetarian known-failure, dislike scoring, pin bypass (P2)" \
-  "$E2E_DIR/diet-allergy-filtering.test.ts" \
-  --allow-write --node-modules-dir=none
-
-run_test \
-  "1m. LP Solver — infeasibility & empty-pool fallback (P5)" \
-  "$SHARED_DIR/lp-infeasibility.test.ts" \
-  --allow-read --allow-write --node-modules-dir=none
-
-run_test \
-  "1n. Macro Engine — duration bands, sport ceilings, gut multipliers" \
-  "$SCRIPT_DIR/generate-macros-v4/macro-bands.test.ts" \
-  --allow-read --allow-write --allow-env --node-modules-dir=none
-
-run_test \
-  "1o. Pre-Workout Template DB Failure — throws → HTTP 500 (P7)" \
-  "$SCRIPT_DIR/generate-macros-v4/pre-workout-db-failure.test.ts" \
-  --allow-read --allow-write --allow-env --node-modules-dir=none
-
-run_test \
-  "1p. AI Coach — validation, prompt wiring, guardrails, model env override" \
-  "$SCRIPT_DIR/ai-coach/index.test.ts" \
-  --allow-env --allow-read --allow-net
-
-run_test \
-  "1q. Analyze Meal Photo — schema, auth authz, MIME inference, base64, not_food" \
-  "$SCRIPT_DIR/analyze-meal-photo/index.test.ts" \
-  --allow-env --allow-read --allow-net
-
-run_test \
-  "1r. Describe Meal — validation, schema, prompt embedding, credit cost" \
-  "$SCRIPT_DIR/describe-meal/index.test.ts" \
-  --allow-env --allow-read --allow-net
-
-run_test \
-  "1s. Jade Chat — NDJSON envelope, validation, opener mode, system prompt, CORS, date math" \
-  "$SCRIPT_DIR/jade-chat/index.test.ts" \
-  --allow-env --allow-read --allow-net
-
-run_test \
-  "1t. lookup-product — detectProductType (3-stage: taxonomy, brand, keyword), sodium ×1000, catalog mapping" \
-  "$SCRIPT_DIR/lookup-product/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1u. get-foods — deduplication, column rename mapping, suitability flags, null-safety" \
-  "$SCRIPT_DIR/get-foods/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1v. search-catalog — query validation, limit clamping, has_nutrition derived field, response shape" \
-  "$SCRIPT_DIR/search-catalog/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1w. search-nutrition-products — query validation, response assembly" \
-  "$SCRIPT_DIR/search-nutrition-products/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1x. search-public-events — query validation (≥2 chars), response assembly, match flags, RPC arg wiring" \
-  "$SCRIPT_DIR/search-public-events/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1y. create-user — validation, default fields, onboarding_completed, food-prefs side-effect, duplicate 409" \
-  "$SCRIPT_DIR/create-user/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1z. delete-user — auth enforcement, cascade order, idempotency, auth admin error propagation" \
-  "$SCRIPT_DIR/delete-user/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1aa. upsert-user-profile — partial update merge, enum validation, food-pref upsert, RLS intent" \
-  "$SCRIPT_DIR/upsert-user-profile/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1ab. get-weather-forecast — date routing, Open-Meteo shape, WMO conditions, fallback defaults, hydration contract" \
-  "$SCRIPT_DIR/get-weather-forecast/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-run_test \
-  "1ac. send-nutrition-plan-email — validation, Resend call assembly, HTML template, error handling" \
-  "$SCRIPT_DIR/send-nutrition-plan-email/index.test.ts" \
-  --allow-env --node-modules-dir=none
-
-# ─── Section 2: E2E Tests (optional) ───────────────────────────────────────
-
-if [ "$1" = "--e2e" ]; then
+E2E_RUN=0
+if [ "${1:-}" = "--e2e" ]; then
   echo ""
-  echo -e "${YELLOW}▶ SECTION 2: E2E Integration Tests${NC}"
+  echo -e "${YELLOW}▶ SECTION 2: Remote E2E Tests ($N_REMOTE files)${NC}"
 
-  if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+  if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
     echo -e "${RED}  ERROR: SUPABASE_URL and SUPABASE_ANON_KEY must be set for E2E tests${NC}"
     echo "  Run:"
-    echo "    export SUPABASE_URL=https://wvmvsodrvbkxfydabqed.supabase.co"
+    echo "    export SUPABASE_URL=https://<project-ref>.supabase.co"
     echo "    export SUPABASE_ANON_KEY=<your-anon-key>"
-    SKIPPED=$((SKIPPED + 1))
+    FAILED=$((FAILED + 1))
+    RESULTS+=("FAIL (e2e requested but env not set — $N_REMOTE remote files not run)")
   else
-    run_test \
-      "2a. generate-nutrition-plan-v3 E2E" \
-      "$E2E_DIR/index.test.ts" \
-      --allow-net --allow-env
-
-    run_test \
-      "2b. generate-nutrition-plan-v3 strict macro E2E" \
-      "$E2E_DIR/strict-macro-e2e.test.ts" \
-      --allow-net --allow-env
-
-    run_test \
-      "2b2. generate-nutrition-plan-v3 during-invariant remote E2E (failure modes: gut null/'medium', pref collapse)" \
-      "$E2E_DIR/during-invariant-remote-e2e.test.ts" \
-      --allow-net --allow-env
-
-    run_test \
-      "2c. generate-macros-v4 E2E" \
-      "$SCRIPT_DIR/generate-macros-v4/index.test.ts" \
-      --allow-net --allow-env
+    E2E_RUN=$N_REMOTE
+    for f in "${REMOTE_FILES[@]}"; do
+      run_test "$f" "${E2E_FLAGS[@]}"
+    done
   fi
 else
   echo ""
-  echo -e "${YELLOW}▶ SECTION 2: E2E Tests — SKIPPED (use --e2e flag)${NC}"
-  SKIPPED=$((SKIPPED + 1))
+  echo -e "${YELLOW}▶ SECTION 2: Remote E2E Tests — SKIPPED ($N_REMOTE files; use --e2e)${NC}"
 fi
 
-# ─── Summary ────────────────────────────────────────────────────────────────
+# ─── Summary ─────────────────────────────────────────────────────────────────
+
+ELAPSED=$((SECONDS - START_TIME))
 
 echo ""
-echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                    TEST SUMMARY                        ║${NC}"
-echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-printf "${BLUE}║${NC}  ${GREEN}Passed:  %-3d${NC}                                        ${BLUE}║${NC}\n" "$PASSED"
-printf "${BLUE}║${NC}  ${RED}Failed:  %-3d${NC}                                        ${BLUE}║${NC}\n" "$FAILED"
-printf "${BLUE}║${NC}  ${YELLOW}Skipped: %-3d${NC}                                        ${BLUE}║${NC}\n" "$SKIPPED"
-echo -e "${BLUE}╚══════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}══════════════════ PER-FILE RESULTS ══════════════════${NC}"
+for line in "${RESULTS[@]:-}"; do
+  case "$line" in
+    PASS*) echo -e "  ${GREEN}${line}${NC}" ;;
+    *)     echo -e "  ${RED}${line}${NC}" ;;
+  esac
+done
+
+if [ "$N_QUAR" -gt 0 ]; then
+  echo ""
+  echo -e "${YELLOW}$N_QUAR quarantined (excluded from run — fix and remove from QUARANTINE):${NC}"
+  for note in "${QUARANTINE_NOTES[@]}"; do
+    echo -e "  ${YELLOW}QUAR $note${NC}"
+  done
+fi
+
+echo ""
+echo -e "${BLUE}════════════════════ TEST SUMMARY ════════════════════${NC}"
+echo -e "  Discovered: $N_ALL files ($N_LOCAL local, $N_REMOTE remote, $N_QUAR quarantined)"
+echo -e "  Ran:        $((PASSED + FAILED)) files (local $N_LOCAL$( [ "$E2E_RUN" -gt 0 ] && echo ", e2e $E2E_RUN" ))"
+echo -e "  ${GREEN}Passed:     $PASSED${NC}"
+echo -e "  ${RED}Failed:     $FAILED${NC}"
+echo -e "  Elapsed:    ${ELAPSED}s"
 echo ""
 
 if [ "$FAILED" -gt 0 ]; then
   echo -e "${RED}Some tests FAILED!${NC}"
   exit 1
 else
-  echo -e "${GREEN}All tests passed!${NC}"
+  echo -e "${GREEN}All discovered tests passed ($PASSED/$((N_ALL - N_QUAR - (N_REMOTE - E2E_RUN)))).${NC}"
   exit 0
 fi

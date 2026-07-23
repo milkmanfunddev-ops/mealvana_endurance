@@ -13,8 +13,8 @@ class CarbLoadingFoodService {
   const CarbLoadingFoodService({
     required CarbLoadingFoodRepository foodRepository,
     required CarbLoadingUserFoodRepository userFoodRepository,
-  })  : _foodRepository = foodRepository,
-        _userFoodRepository = userFoodRepository;
+  }) : _foodRepository = foodRepository,
+       _userFoodRepository = userFoodRepository;
 
   final CarbLoadingFoodRepository _foodRepository;
   final CarbLoadingUserFoodRepository _userFoodRepository;
@@ -25,8 +25,10 @@ class CarbLoadingFoodService {
     required domain.MealType mealType,
   }) async {
     final defaultFoods = await _foodRepository.getFoodsByMealType(mealType.id);
-    final userFoods =
-        await _userFoodRepository.getUserFoodsByMealType(deviceId, mealType.id);
+    final userFoods = await _userFoodRepository.getUserFoodsByMealType(
+      deviceId,
+      mealType.id,
+    );
 
     // Combine both lists
     return [...defaultFoods, ...userFoods];
@@ -53,8 +55,10 @@ class CarbLoadingFoodService {
     required String searchTerm,
   }) async {
     final defaultFoods = await _foodRepository.searchFoodsByName(searchTerm);
-    final userFoods =
-        await _userFoodRepository.searchUserFoodsByName(deviceId, searchTerm);
+    final userFoods = await _userFoodRepository.searchUserFoodsByName(
+      deviceId,
+      searchTerm,
+    );
 
     return [...defaultFoods, ...userFoods];
   }
@@ -125,7 +129,9 @@ class CarbLoadingFoodService {
   }
 
   /// Get all user foods for a device
-  Future<List<domain.CarbLoadingUserFood>> getAllUserFoods(String deviceId) async {
+  Future<List<domain.CarbLoadingUserFood>> getAllUserFoods(
+    String deviceId,
+  ) async {
     return _userFoodRepository.getAllUserFoods(deviceId);
   }
 
@@ -136,10 +142,13 @@ class CarbLoadingFoodService {
   }) async* {
     // Note: This is a simplified version. For production, you might want to use
     // StreamGroup or combine streams more efficiently
-    await for (final defaultFoods
-        in _foodRepository.watchFoodsByMealType(mealType.id)) {
-      final userFoods =
-          await _userFoodRepository.getUserFoodsByMealType(deviceId, mealType.id);
+    await for (final defaultFoods in _foodRepository.watchFoodsByMealType(
+      mealType.id,
+    )) {
+      final userFoods = await _userFoodRepository.getUserFoodsByMealType(
+        deviceId,
+        mealType.id,
+      );
       yield [...defaultFoods, ...userFoods];
     }
   }

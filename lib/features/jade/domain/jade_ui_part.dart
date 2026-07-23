@@ -111,10 +111,7 @@ class JadeMealCardsPart extends JadeUiPart {
 
 /// Multiple-choice prompt — rendered as [JadeChoiceButtons].
 class JadeChoicesPart extends JadeUiPart {
-  const JadeChoicesPart({
-    required this.question,
-    required this.options,
-  });
+  const JadeChoicesPart({required this.question, required this.options});
 
   final String question;
   final List<String> options;

@@ -519,9 +519,7 @@ class _NutritionTargetsScreenState
     final showBikeHighCarbWarning = _isHighCarbRate(
       _duringBikeCarbRateController,
     );
-    final fluidUnitLabel = UnitFormatter.fluidUnitLabel(
-      useMetric: _useMetric,
-    );
+    final fluidUnitLabel = UnitFormatter.fluidUnitLabel(useMetric: _useMetric);
 
     return Scaffold(
       appBar: AppBar(

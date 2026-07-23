@@ -47,24 +47,25 @@ void main() {
     final userRepo = _MockUserRepository();
     when(() => userRepo.getCurrentUser()).thenAnswer((_) async => null);
 
-    container = ProviderContainer(overrides: [
-      userRepositoryProvider.overrideWith((ref) async => userRepo),
-      appExternalDepsProvider.overrideWithValue(
-        AppExternalDeps(
-          analytics: analytics,
-          supabaseClient: _MockSupabaseClient(),
-          sentry: _MockSentryReporter(),
-          logger: _MockAppLogger(),
-          sharedPreferences: _MockSharedPreferences(),
+    container = ProviderContainer(
+      overrides: [
+        userRepositoryProvider.overrideWith((ref) async => userRepo),
+        appExternalDepsProvider.overrideWithValue(
+          AppExternalDeps(
+            analytics: analytics,
+            supabaseClient: _MockSupabaseClient(),
+            sentry: _MockSentryReporter(),
+            logger: _MockAppLogger(),
+            sharedPreferences: _MockSharedPreferences(),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
     addTearDown(container.dispose);
   });
 
   Future<FormulaEditorController> createEditor() async {
-    final provider =
-        formulaEditorControllerProvider(null, FormulaPhase.during);
+    final provider = formulaEditorControllerProvider(null, FormulaPhase.during);
     await container.read(provider.future);
     return container.read(provider.notifier);
   }

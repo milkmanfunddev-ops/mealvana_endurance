@@ -57,13 +57,16 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
     final controller = ref.read(onboardingControllerProvider.notifier);
     _selectedSports = Set.from(controller.cachedSelectedSports);
 
-    ref.read(appExternalDepsProvider).analytics.track(
-      'screen_viewed',
-      properties: {
-        'screen_name': 'Sports Selection Onboarding',
-        if (widget.stepIndex != null) 'step_index': widget.stepIndex,
-      },
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': 'Sports Selection Onboarding',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
   }
 
   void _toggleSport(String sport) {

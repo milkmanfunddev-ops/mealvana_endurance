@@ -692,15 +692,17 @@ class OnboardingController extends _$OnboardingController {
       // can never block onboarding; the generation-time ephemeral safety net
       // covers anyone this skips.
       {
-        final diet = (_cachedDietaryPreference != null &&
+        final diet =
+            (_cachedDietaryPreference != null &&
                 _cachedDietaryPreference != DietaryPreference.none)
             ? _cachedDietaryPreference!.dbValue
             : null;
-        final allergies = _cachedAllergies
-                ?.map((a) => a.dbValue)
-                .toList(growable: false) ??
+        final allergies =
+            _cachedAllergies?.map((a) => a.dbValue).toList(growable: false) ??
             const <String>[];
-        await ref.read(onboardingFormulaPinServiceProvider).autoPinDefaults(
+        await ref
+            .read(onboardingFormulaPinServiceProvider)
+            .autoPinDefaults(
               userId: userId,
               selectedSports: cachedSelectedSports,
               diet: diet,

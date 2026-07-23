@@ -101,7 +101,9 @@ void main() {
       final testDeviceId = 'device-completed-123';
       final testAuthUserId = '11111111-1111-1111-1111-111111111111';
 
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: testId,
               deviceId: testDeviceId,
@@ -129,8 +131,9 @@ void main() {
       });
 
       // App startup resolves the signed-in user from their auth id.
-      final userProfile = await database.userDao
-          .getCurrentUserProfile(currentAuthUserId: testAuthUserId);
+      final userProfile = await database.userDao.getCurrentUserProfile(
+        currentAuthUserId: testAuthUserId,
+      );
 
       logTestResult('user_profile', userProfile?.id);
       logTestResult('onboarding_completed', userProfile?.onboardingCompleted);
@@ -162,7 +165,9 @@ void main() {
       final testDeviceId = 'device-incomplete-456';
       final testAuthUserId = '22222222-2222-2222-2222-222222222222';
 
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: testId,
               deviceId: testDeviceId,
@@ -190,8 +195,9 @@ void main() {
       });
 
       // App startup resolves the signed-in user from their auth id.
-      final userProfile = await database.userDao
-          .getCurrentUserProfile(currentAuthUserId: testAuthUserId);
+      final userProfile = await database.userDao.getCurrentUserProfile(
+        currentAuthUserId: testAuthUserId,
+      );
 
       logTestResult('user_profile', userProfile?.id);
       logTestResult('onboarding_completed', userProfile?.onboardingCompleted);

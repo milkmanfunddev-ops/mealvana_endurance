@@ -51,29 +51,37 @@ void main() {
     final mockLogger = MockAppLogger();
     final mockSentry = MockSentryReporter();
 
-    when(() => mockLogger.info(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
-    when(() => mockSentry.captureMessage(
-          any(),
-          level: any(named: 'level'),
-          tags: any(named: 'tags'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSentry.captureMessage(
+        any(),
+        level: any(named: 'level'),
+        tags: any(named: 'tags'),
+      ),
+    ).thenAnswer((_) async {});
 
     repository = PersonalFormulasRepository(
       supabase: mockSupabase,
@@ -88,8 +96,7 @@ void main() {
     await database.close();
   });
 
-  test(
-      'insight persisted via persistInsight() survives a fresh getById() '
+  test('insight persisted via persistInsight() survives a fresh getById() '
       'read (simulated navigate-away-and-back)', () async {
     final now = DateTime.now();
     final formula = await repository.create(
@@ -118,28 +125,33 @@ void main() {
     final rehydrated = await repository.getById(formula.id);
 
     expect(rehydrated, isNotNull);
-    expect(rehydrated!.coachInsightText, 'Add more sodium for hot-weather runs.');
+    expect(
+      rehydrated!.coachInsightText,
+      'Add more sodium for hot-weather runs.',
+    );
     expect(rehydrated.coachInsightMarker, 'marker-abc123');
   });
 
-  test('formula with no insight yet still hydrates as null (no crash)',
-      () async {
-    final now = DateTime.now();
-    final formula = await repository.create(
-      PersonalFormula(
-        id: '',
-        userId: testUserId,
-        name: 'No Insight Yet',
-        provenance: FormulaProvenance.fromScratchFormula,
-        phase: FormulaPhase.before,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+  test(
+    'formula with no insight yet still hydrates as null (no crash)',
+    () async {
+      final now = DateTime.now();
+      final formula = await repository.create(
+        PersonalFormula(
+          id: '',
+          userId: testUserId,
+          name: 'No Insight Yet',
+          provenance: FormulaProvenance.fromScratchFormula,
+          phase: FormulaPhase.before,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
-    final rehydrated = await repository.getById(formula.id);
-    expect(rehydrated, isNotNull);
-    expect(rehydrated!.coachInsightText, isNull);
-    expect(rehydrated.coachInsightMarker, isNull);
-  });
+      final rehydrated = await repository.getById(formula.id);
+      expect(rehydrated, isNotNull);
+      expect(rehydrated!.coachInsightText, isNull);
+      expect(rehydrated.coachInsightMarker, isNull);
+    },
+  );
 }

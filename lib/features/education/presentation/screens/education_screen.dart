@@ -236,14 +236,17 @@ class _HorizontalVideoList extends ConsumerWidget {
               lessonNumber: index + 1,
               onTap: () {
                 try {
-                  ref.read(appExternalDepsProvider).analytics.track(
-                    'education_video_opened',
-                    properties: {
-                      'video_id': video.id,
-                      'title': video.displayTitle,
-                      'lesson_number': index + 1,
-                    },
-                  );
+                  ref
+                      .read(appExternalDepsProvider)
+                      .analytics
+                      .track(
+                        'education_video_opened',
+                        properties: {
+                          'video_id': video.id,
+                          'title': video.displayTitle,
+                          'lesson_number': index + 1,
+                        },
+                      );
                 } catch (_) {}
                 Navigator.of(context).push(
                   MaterialPageRoute(

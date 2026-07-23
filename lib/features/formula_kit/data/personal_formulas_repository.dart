@@ -49,10 +49,10 @@ class PersonalFormulasRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _sentry = sentry;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -87,9 +87,9 @@ class PersonalFormulasRepository with SyncableRepository {
   /// `FormulaPinsRepository.isStale`.
   @override
   Future<bool> isStale() async {
-    final activeLocal = await (_database.select(_database.personalFormulasTable)
-          ..where((tbl) => tbl.isDeleted.equals(false)))
-        .get();
+    final activeLocal = await (_database.select(
+      _database.personalFormulasTable,
+    )..where((tbl) => tbl.isDeleted.equals(false))).get();
     if (activeLocal.isEmpty) {
       final prefs = await SharedPreferences.getInstance();
       final confirmedEmpty = prefs.getBool(_confirmedEmptyPrefsKey) ?? false;
@@ -142,8 +142,9 @@ class PersonalFormulasRepository with SyncableRepository {
           .order('updated_at', ascending: false);
 
       final remoteFormulas = response as List<dynamic>;
-      final syncedCount =
-          await upsertRemoteFormulasPreservingDirty(remoteFormulas);
+      final syncedCount = await upsertRemoteFormulasPreservingDirty(
+        remoteFormulas,
+      );
 
       await setLastSyncTime(DateTime.now());
       await _refreshConfirmedEmptySentinel();
@@ -168,11 +169,9 @@ class PersonalFormulasRepository with SyncableRepository {
   }
 
   Future<void> _refreshConfirmedEmptySentinel() async {
-    final activeCount = (await (_database
-                .select(_database.personalFormulasTable)
-              ..where((tbl) => tbl.isDeleted.equals(false)))
-            .get())
-        .length;
+    final activeCount = (await (_database.select(
+      _database.personalFormulasTable,
+    )..where((tbl) => tbl.isDeleted.equals(false))).get()).length;
     final prefs = await SharedPreferences.getInstance();
     if (activeCount == 0) {
       await prefs.setBool(_confirmedEmptyPrefsKey, true);
@@ -209,11 +208,11 @@ class PersonalFormulasRepository with SyncableRepository {
     if (remoteById.isEmpty) return 0;
 
     final remoteIds = remoteById.keys.toList(growable: false);
-    final dirtyRows = await (_database.select(_database.personalFormulasTable)
-          ..where(
-            (tbl) => tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
-          ))
-        .get();
+    final dirtyRows =
+        await (_database.select(_database.personalFormulasTable)..where(
+              (tbl) => tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
+            ))
+            .get();
     final dirtyIds = dirtyRows.map((row) => row.id).toSet();
 
     var upsertedCount = 0;
@@ -270,10 +269,9 @@ class PersonalFormulasRepository with SyncableRepository {
       );
 
       final dirtyRecords =
-          await (_database.select(_database.personalFormulasTable)
-                ..where(
-                  (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
-                ))
+          await (_database.select(_database.personalFormulasTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
+              ))
               .get();
 
       if (dirtyRecords.isEmpty) {
@@ -346,10 +344,11 @@ class PersonalFormulasRepository with SyncableRepository {
 
   /// Single active formula by id, or `null` if missing/deleted/unparseable.
   Future<PersonalFormula?> getById(String id) async {
-    final row = await (_database.select(_database.personalFormulasTable)
-          ..where((tbl) => tbl.id.equals(id) & tbl.isDeleted.equals(false))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.personalFormulasTable)
+              ..where((tbl) => tbl.id.equals(id) & tbl.isDeleted.equals(false))
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return null;
     return PersonalFormula.fromDriftEntry(row);
   }
@@ -436,9 +435,9 @@ class PersonalFormulasRepository with SyncableRepository {
       localUpdatedAt: now,
     );
 
-    await (_database.update(_database.personalFormulasTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .write(
+    await (_database.update(
+      _database.personalFormulasTable,
+    )..where((tbl) => tbl.id.equals(id))).write(
       PersonalFormulasTableCompanion(
         isDeleted: const Value(true),
         updatedAt: Value(now),
@@ -463,22 +462,26 @@ class PersonalFormulasRepository with SyncableRepository {
     required String insightText,
     required String marker,
   }) async {
-    await (_database.update(_database.personalFormulasTable)
-          ..where((tbl) => tbl.id.equals(formulaId)))
-        .write(PersonalFormulasTableCompanion(
-      coachInsightText: Value(insightText),
-      coachInsightMarker: Value(marker),
-      needsUpload: const Value(true),
-      localUpdatedAt: Value(DateTime.now()),
-    ));
+    await (_database.update(
+      _database.personalFormulasTable,
+    )..where((tbl) => tbl.id.equals(formulaId))).write(
+      PersonalFormulasTableCompanion(
+        coachInsightText: Value(insightText),
+        coachInsightMarker: Value(marker),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   // ========================================================================
   // Private Helpers
   // ========================================================================
 
-  void _scheduleImmediateUpload(PersonalFormula formula,
-      {required String label}) {
+  void _scheduleImmediateUpload(
+    PersonalFormula formula, {
+    required String label,
+  }) {
     unawaited(() async {
       try {
         await _supabase

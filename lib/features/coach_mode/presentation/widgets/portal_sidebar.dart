@@ -344,8 +344,9 @@ class _CoachCodeGeneratorDialogState
 
   Future<void> _loadExistingCode() async {
     try {
-      final existing =
-          await ref.read(coachServiceProvider).getActiveCoachPairingCode();
+      final existing = await ref
+          .read(coachServiceProvider)
+          .getActiveCoachPairingCode();
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -395,8 +396,9 @@ class _CoachCodeGeneratorDialogState
     });
 
     try {
-      final code =
-          await ref.read(coachServiceProvider).generateCoachPairingCode();
+      final code = await ref
+          .read(coachServiceProvider)
+          .generateCoachPairingCode();
       if (!mounted) return;
       setState(() {
         _isGenerating = false;

@@ -9,19 +9,19 @@ import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 
 SettingsState _baseState() => const SettingsState(
-      title: 'Settings',
-      profileSectionTitle: 'Profile',
-      preferenceSectionTitle: 'Preferences',
-      genderLabel: 'Gender',
-      birthdayLabel: 'Birthday',
-      heightLabel: 'Height',
-      weightLabel: 'Weight',
-      waterBottleLabel: 'Run with water bottle',
-      distanceUnitLabel: 'Distance unit',
-      paceUnitLabel: 'Pace unit',
-      gutTrainingLabel: 'Gut training level',
-      saveButtonText: 'Save Changes',
-    );
+  title: 'Settings',
+  profileSectionTitle: 'Profile',
+  preferenceSectionTitle: 'Preferences',
+  genderLabel: 'Gender',
+  birthdayLabel: 'Birthday',
+  heightLabel: 'Height',
+  weightLabel: 'Weight',
+  waterBottleLabel: 'Run with water bottle',
+  distanceUnitLabel: 'Distance unit',
+  paceUnitLabel: 'Pace unit',
+  gutTrainingLabel: 'Gut training level',
+  saveButtonText: 'Save Changes',
+);
 
 void main() {
   group('SettingsState — unit preferences computed properties', () {
@@ -113,14 +113,17 @@ void main() {
       expect(cleared.allergies, isEmpty);
     });
 
-    test('copyWith errorMessage: null clears error (SettingsState passes null through)', () {
-      // SettingsState.copyWith always assigns errorMessage (no ??)
-      final errored = _baseState().copyWith(errorMessage: 'boom');
-      expect(errored.errorMessage, 'boom');
+    test(
+      'copyWith errorMessage: null clears error (SettingsState passes null through)',
+      () {
+        // SettingsState.copyWith always assigns errorMessage (no ??)
+        final errored = _baseState().copyWith(errorMessage: 'boom');
+        expect(errored.errorMessage, 'boom');
 
-      final cleared = errored.copyWith(errorMessage: null);
-      expect(cleared.errorMessage, isNull);
-    });
+        final cleared = errored.copyWith(errorMessage: null);
+        expect(cleared.errorMessage, isNull);
+      },
+    );
 
     test('default allergies are empty list', () {
       final s = _baseState();
@@ -154,22 +157,31 @@ void main() {
     // SettingsState.copyWith differently. These tests pin the current safe
     // behavior.
 
-    test('SettingsState.copyWith with null firstName preserves existing firstName', () {
-      final s = _baseState().copyWith(firstName: 'Alice', lastName: 'Smith');
-      expect(s.firstName, 'Alice');
-      expect(s.lastName, 'Smith');
+    test(
+      'SettingsState.copyWith with null firstName preserves existing firstName',
+      () {
+        final s = _baseState().copyWith(firstName: 'Alice', lastName: 'Smith');
+        expect(s.firstName, 'Alice');
+        expect(s.lastName, 'Smith');
 
-      // SettingsState.copyWith guards: firstName: null ?? this.firstName → 'Alice'
-      final afterUpdate = s.copyWith(
-        weightPounds: 130.0,
-        // firstName not passed → null parameter → ?? preserves 'Alice'
-      );
+        // SettingsState.copyWith guards: firstName: null ?? this.firstName → 'Alice'
+        final afterUpdate = s.copyWith(
+          weightPounds: 130.0,
+          // firstName not passed → null parameter → ?? preserves 'Alice'
+        );
 
-      expect(afterUpdate.firstName, 'Alice',
-          reason: 'SettingsState.copyWith preserves firstName via ?? guard');
-      expect(afterUpdate.lastName, 'Smith',
-          reason: 'SettingsState.copyWith preserves lastName via ?? guard');
-    });
+        expect(
+          afterUpdate.firstName,
+          'Alice',
+          reason: 'SettingsState.copyWith preserves firstName via ?? guard',
+        );
+        expect(
+          afterUpdate.lastName,
+          'Smith',
+          reason: 'SettingsState.copyWith preserves lastName via ?? guard',
+        );
+      },
+    );
 
     test('explicit firstName set replaces previous value', () {
       final s = _baseState().copyWith(firstName: 'Alice');

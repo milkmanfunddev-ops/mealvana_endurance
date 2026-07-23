@@ -34,9 +34,7 @@ class FoodDetailsDialog extends StatelessWidget {
             // Food icon and name
             Row(
               children: [
-                KyleFoodIcon(
-                  foodType: getFoodType(food.name),
-                ),
+                KyleFoodIcon(foodType: getFoodType(food.name)),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
@@ -68,7 +66,9 @@ class FoodDetailsDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: AppRadius.cardRadius,
                 ),
                 child: Column(
@@ -110,10 +110,7 @@ class FoodDetailsDialog extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: KyleSecondaryButton(
-                    text: 'Swap',
-                    onPressed: onSwap,
-                  ),
+                  child: KyleSecondaryButton(text: 'Swap', onPressed: onSwap),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -138,7 +135,12 @@ class FoodDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildNutritionRow(BuildContext context, String label, String value, Color color) {
+  Widget _buildNutritionRow(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -150,10 +152,7 @@ class FoodDetailsDialog extends StatelessWidget {
         ),
         Text(
           value,
-          style: AppTextStyles.dataNumber.copyWith(
-            color: color,
-            fontSize: 16,
-          ),
+          style: AppTextStyles.dataNumber.copyWith(color: color, fontSize: 16),
         ),
       ],
     );

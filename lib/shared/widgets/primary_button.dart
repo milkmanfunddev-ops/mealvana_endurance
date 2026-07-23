@@ -32,7 +32,6 @@ class _PrimaryButtonState extends State<PrimaryButton> {
 
   @override
   Widget build(BuildContext context) {
-    
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
@@ -46,8 +45,11 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             colors: widget.onPressed == null
                 ? [Colors.grey.shade300, Colors.grey.shade400]
                 : _isPressed
-                    ? [AppTheme.primary900.withValues(alpha: 0.8), AppTheme.primary900]
-                    : [AppTheme.primary900, AppTheme.primary900],
+                ? [
+                    AppTheme.primary900.withValues(alpha: 0.8),
+                    AppTheme.primary900,
+                  ]
+                : [AppTheme.primary900, AppTheme.primary900],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -95,10 +97,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             ),
           ),
         ),
-      ).animate().scale(
-        duration: 150.ms,
-        curve: Curves.easeInOut,
-      ),
+      ).animate().scale(duration: 150.ms, curve: Curves.easeInOut),
     );
   }
 }

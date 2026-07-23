@@ -17,42 +17,34 @@ import {
   selectPreWorkoutFoods,
 } from "./pre-workout.ts";
 import {
-  LB_TO_KG,
   IN_TO_CM,
+  LB_TO_KG,
   MI_TO_KM,
   MPH_TO_M_PER_MIN,
-  toKg,
   toCm,
+  toKg,
   toMiles,
 } from "../_shared/nutrition/unit-conversions.ts";
 import {
-  classifyEnvironment,
   baseSweatRateFromCategory,
-  sodiumConcentrationFromCategory,
   calculateActualSweatRate,
   calculateSweatRateBreakdown,
-  replacementPctForDuration,
+  classifyEnvironment,
   replacementBandLabel,
+  replacementPctForDuration,
+  sodiumConcentrationFromCategory,
 } from "../_shared/nutrition/sweat-hydration.ts";
 
 // Re-export unit conversions for other modules
-export {
-  LB_TO_KG,
-  IN_TO_CM,
-  MI_TO_KM,
-  MPH_TO_M_PER_MIN,
-  toKg,
-  toCm,
-  toMiles,
-};
+export { IN_TO_CM, LB_TO_KG, MI_TO_KM, MPH_TO_M_PER_MIN, toCm, toKg, toMiles };
 
 // Re-export hydration functions for other modules
 export {
-  classifyEnvironment,
   baseSweatRateFromCategory,
-  sodiumConcentrationFromCategory,
   calculateActualSweatRate,
+  classifyEnvironment,
   replacementPctForDuration,
+  sodiumConcentrationFromCategory,
 };
 
 // ============================================================================
@@ -107,10 +99,23 @@ export function calculateDuringWorkoutCarbRate(
   const sportCeiling = getSportCarbCeiling(activityType);
   const finalRate = Math.min(carbRate, sportCeiling);
 
+  // The band is the user-facing "acceptable intake" range, so it must obey
+  // the same sport ceiling the rate does. Unclamped, a high-gut runner got
+  // band 72-108 g/h with a rate capped at 70 — the target sat BELOW its own
+  // displayed range and adherence always rendered red (196g vs "202-302g").
+  // When the ceiling binds the whole band (scaledLow >= ceiling), a pure
+  // clamp collapses it to a knife-edge single point, so widen the low end
+  // with the same ±12.5% convention the pre/post phase ranges use.
+  let bandLow = Math.min(scaledLow, sportCeiling);
+  const bandHigh = Math.min(scaledHigh, sportCeiling);
+  if (bandLow >= bandHigh && bandHigh > 0) {
+    bandLow = bandHigh * 0.875;
+  }
+
   return {
     rate_gph: Math.round(finalRate * 10) / 10,
-    band_low: Math.round(scaledLow),
-    band_high: Math.round(scaledHigh),
+    band_low: Math.round(bandLow),
+    band_high: Math.round(bandHigh),
     raw_band_low: baseLow,
     raw_band_high: baseHigh,
     gut_multiplier: gutMult,
@@ -198,12 +203,17 @@ export function calculateDuringWorkoutHydration(
 
   // Pre-compute the breakdown so we can expose temp/humidity/indoor mults.
   const breakdown = calculateSweatRateBreakdown(
-    sweatRateCategory, tempC, humidityPct, isIndoor, knownSweatRateMlPerHour,
+    sweatRateCategory,
+    tempC,
+    humidityPct,
+    isIndoor,
+    knownSweatRateMlPerHour,
   );
 
   // Swim-only: no drinking possible
-  if (sport.toLowerCase() === 'swimming') {
-    const sodiumConc = knownSodiumConcMgPerL ?? sodiumConcentrationFromCategory(sweatSodiumCat);
+  if (sport.toLowerCase() === "swimming") {
+    const sodiumConc = knownSodiumConcMgPerL ??
+      sodiumConcentrationFromCategory(sweatSodiumCat);
     return {
       sodium_rate_mgph: 0,
       hydration_rate_mlph: 0,
@@ -233,7 +243,8 @@ export function calculateDuringWorkoutHydration(
   const effectiveSweatRateMlph = effectiveSweatRateLph * 1000;
 
   // Sodium concentration
-  const sodiumConcMgPerL = knownSodiumConcMgPerL ?? sodiumConcentrationFromCategory(sweatSodiumCat);
+  const sodiumConcMgPerL = knownSodiumConcMgPerL ??
+    sodiumConcentrationFromCategory(sweatSodiumCat);
 
   // GI ceiling for this sport
   const giCeiling = getDuringGiCeiling(sport);
@@ -251,7 +262,7 @@ export function calculateDuringWorkoutHydration(
     // Conservative: still compute 30%-based recommended, floor = 0
     const recommended = Math.round(effectiveSweatRateMlph * replacementPct);
     safety_flags.push(
-      'No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.',
+      "No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.",
     );
     const sodiumRate = Math.round((recommended / 1000) * sodiumConcMgPerL);
     return {
@@ -294,7 +305,7 @@ export function calculateDuringWorkoutHydration(
   // Apply ceiling
   if (ceilingMlHr < floorMlHr) {
     // Ceiling < floor: impossible to stay within 2% BW
-    safety_flags.push('Even at maximum intake, you will exceed 2% BW loss.');
+    safety_flags.push("Even at maximum intake, you will exceed 2% BW loss.");
   }
 
   recommendedMlHr = Math.min(recommendedMlHr, ceilingMlHr);
@@ -306,11 +317,15 @@ export function calculateDuringWorkoutHydration(
     const deficitPct = netDeficitMl / (weightKg * 1000);
     if (deficitPct > 0.03) {
       const deficitPctStr = (deficitPct * 100).toFixed(1);
-      safety_flags.push(`Significant dehydration expected (>${deficitPctStr}% BW).`);
+      safety_flags.push(
+        `Significant dehydration expected (>${deficitPctStr}% BW).`,
+      );
     }
   }
 
-  const sodiumRateMgph = Math.round((recommendedMlHr / 1000) * sodiumConcMgPerL);
+  const sodiumRateMgph = Math.round(
+    (recommendedMlHr / 1000) * sodiumConcMgPerL,
+  );
 
   return {
     sodium_rate_mgph: sodiumRateMgph,

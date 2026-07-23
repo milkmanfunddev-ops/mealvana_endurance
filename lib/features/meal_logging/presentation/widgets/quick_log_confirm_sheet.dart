@@ -114,7 +114,10 @@ Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
                         icon: const Icon(Icons.remove_circle_outline),
                         onPressed: servings > 0.5
                             ? () => setModalState(
-                                () => servings = (servings - 0.5).clamp(0.5, 10.0),
+                                () => servings = (servings - 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
                               )
                             : null,
                       ),
@@ -135,7 +138,10 @@ Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
                         icon: const Icon(Icons.add_circle_outline),
                         onPressed: servings < 10
                             ? () => setModalState(
-                                () => servings = (servings + 0.5).clamp(0.5, 10.0),
+                                () => servings = (servings + 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
                               )
                             : null,
                       ),
@@ -192,7 +198,10 @@ Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Meal type (optional)', style: Theme.of(ctx).textTheme.labelLarge),
+                Text(
+                  'Meal type (optional)',
+                  style: Theme.of(ctx).textTheme.labelLarge,
+                ),
                 const SizedBox(height: 6),
                 OptionalSlotChipSelector(
                   selectedSlot: slot,

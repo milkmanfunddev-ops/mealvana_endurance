@@ -14,7 +14,7 @@ void main() {
   final scheduledAt = DateTime(2026, 7, 16, 7);
   final completedAt = DateTime(2026, 7, 16, 8, 30);
 
-  domain.Activity buildDomainActivity() {
+  domain.Activity buildDomainActivity({bool isFasted = false}) {
     return domain.Activity(
       id: 'activity-1',
       userId: 'user-1',
@@ -22,6 +22,7 @@ void main() {
       title: 'Morning Run',
       scheduledDateTime: scheduledAt,
       status: domain.ActivityStatus.completed,
+      isFasted: isFasted,
       completedAt: completedAt,
       completionRating: 4,
       nutritionRating: 3,
@@ -31,7 +32,7 @@ void main() {
     );
   }
 
-  db.Activity buildDriftRow() {
+  db.Activity buildDriftRow({bool isFasted = false}) {
     return db.Activity(
       id: 'activity-1',
       userId: 'user-1',
@@ -39,6 +40,7 @@ void main() {
       title: 'Morning Run',
       scheduledDateTime: scheduledAt,
       status: 'completed',
+      isFasted: isFasted,
       reminderEnabled: false,
       reminderRecurring: false,
       needsNutritionRefresh: false,
@@ -120,6 +122,82 @@ void main() {
       expect(restored.completionRating, original.completionRating);
       expect(restored.nutritionRating, original.nutritionRating);
       expect(restored.completionNotes, original.completionNotes);
+    });
+  });
+
+  group('is_fasted round-trip (persisted fasted flag)', () {
+    test('domain -> Drift companion carries isFasted', () {
+      final companion = mapper.toCompanion(buildDomainActivity(isFasted: true));
+
+      expect(companion.isFasted.value, isTrue);
+    });
+
+    test('Drift row -> domain preserves isFasted', () {
+      expect(
+        mapper.fromDriftRow(buildDriftRow(isFasted: true)).isFasted,
+        isTrue,
+      );
+      expect(mapper.fromDriftRow(buildDriftRow()).isFasted, isFalse);
+    });
+
+    test('domain -> Supabase payload emits is_fasted', () {
+      final payload = mapper.buildSupabasePayload(
+        buildDomainActivity(isFasted: true),
+      );
+
+      expect(payload['is_fasted'], isTrue);
+    });
+
+    test('Drift row -> upload payload emits is_fasted', () {
+      final payload = mapper.buildUploadPayloadFromRow(
+        buildDriftRow(isFasted: true),
+      );
+
+      expect(payload['is_fasted'], isTrue);
+      expect(
+        mapper.buildUploadPayloadFromRow(buildDriftRow())['is_fasted'],
+        isFalse,
+      );
+    });
+
+    test('Supabase json -> domain reads is_fasted; missing key -> false '
+        '(old remote rows)', () {
+      final baseJson = <String, dynamic>{
+        'id': 'activity-1',
+        'user_id': 'user-1',
+        'activity_type': 'running',
+        'title': 'Morning Run',
+        'scheduled_date_time': scheduledAt.toIso8601String(),
+        'status': 'planned',
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+      };
+
+      expect(
+        mapper.fromJson({...baseJson, 'is_fasted': true}).isFasted,
+        isTrue,
+      );
+      expect(
+        mapper.fromJson({...baseJson, 'is_fasted': false}).isFasted,
+        isFalse,
+      );
+      // Rows written before the column existed have no key at all.
+      expect(mapper.fromJson(baseJson).isFasted, isFalse);
+      // Explicit null (SELECT * against a row predating a backfill).
+      expect(
+        mapper.fromJson({...baseJson, 'is_fasted': null}).isFasted,
+        isFalse,
+      );
+    });
+
+    test('full round-trip domain -> Supabase payload -> domain preserves '
+        'isFasted', () {
+      final original = buildDomainActivity(isFasted: true);
+      final restored = mapper.fromJson(
+        mapper.buildSupabasePayload(original, includeCreatedAt: true),
+      );
+
+      expect(restored.isFasted, isTrue);
     });
   });
 }

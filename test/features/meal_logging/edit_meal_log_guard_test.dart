@@ -70,10 +70,7 @@ Future<void> _pumpEditScreen(WidgetTester tester, MealLog log) async {
           ),
         ),
       ),
-      GoRoute(
-        path: '/edit',
-        builder: (_, __) => const EditMealLogScreen(),
-      ),
+      GoRoute(path: '/edit', builder: (_, __) => const EditMealLogScreen()),
     ],
   );
   addTearDown(router.dispose);
@@ -137,27 +134,25 @@ void main() {
     },
   );
 
-  testWidgets(
-    'pressing back with no edits leaves without a discard prompt',
-    (tester) async {
-      await _pumpEditScreen(tester, _componentLog());
+  testWidgets('pressing back with no edits leaves without a discard prompt', (
+    tester,
+  ) async {
+    await _pumpEditScreen(tester, _componentLog());
 
-      await tester.tap(find.byType(CustomAppBarBackButton));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byType(CustomAppBarBackButton));
+    await tester.pumpAndSettle();
 
-      // No nag dialog, and we're back on the home route.
-      expect(find.text('Discard changes?'), findsNothing);
-      expect(find.text('open'), findsOneWidget);
-    },
-  );
+    // No nag dialog, and we're back on the home route.
+    expect(find.text('Discard changes?'), findsNothing);
+    expect(find.text('open'), findsOneWidget);
+  });
 
-  testWidgets(
-    'exposes a photo re-scan entry point on the edit screen',
-    (tester) async {
-      // A log with no photo yet offers to "Scan a photo".
-      await _pumpEditScreen(tester, _componentLog());
-      expect(find.text('Scan a photo'), findsOneWidget);
-      expect(find.text('Re-scan photo'), findsNothing);
-    },
-  );
+  testWidgets('exposes a photo re-scan entry point on the edit screen', (
+    tester,
+  ) async {
+    // A log with no photo yet offers to "Scan a photo".
+    await _pumpEditScreen(tester, _componentLog());
+    expect(find.text('Scan a photo'), findsOneWidget);
+    expect(find.text('Re-scan photo'), findsNothing);
+  });
 }

@@ -207,9 +207,7 @@ class WelcomeScreen extends ConsumerWidget {
     // it is how the app functions at all (contract performance), not analytics.
     final consent = ref.read(analyticsConsentProvider);
     navigator.push(
-      consent.needsPrompt
-          ? '/privacy-consent?next=/onboarding'
-          : '/onboarding',
+      consent.needsPrompt ? '/privacy-consent?next=/onboarding' : '/onboarding',
     );
   }
 

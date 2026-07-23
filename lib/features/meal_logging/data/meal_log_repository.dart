@@ -52,10 +52,10 @@ class MealLogRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _sentry = sentry;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -146,11 +146,11 @@ class MealLogRepository with SyncableRepository {
         data: {'userId': userId},
       );
 
-      final dirtyEntries = await (_database.select(_database.mealLogsTable)
-            ..where(
-              (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
-            ))
-          .get();
+      final dirtyEntries =
+          await (_database.select(_database.mealLogsTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
+              ))
+              .get();
 
       if (dirtyEntries.isEmpty) return UploadResult.nothingToUpload();
 
@@ -201,14 +201,14 @@ class MealLogRepository with SyncableRepository {
   /// Used by [jadeHasBaselineProvider] to decide whether to show the
   /// baseline-logging tutorial copy on the Jade coach banner.
   Future<int> countLogsSince(String userId, DateTime since) async {
-    final result = await (_database.select(_database.mealLogsTable)
-          ..where(
-            (t) =>
-                t.userId.equals(userId) &
-                t.isDeleted.equals(false) &
-                t.createdAt.isBiggerOrEqualValue(since),
-          ))
-        .get();
+    final result =
+        await (_database.select(_database.mealLogsTable)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.isDeleted.equals(false) &
+                  t.createdAt.isBiggerOrEqualValue(since),
+            ))
+            .get();
     return result.length;
   }
 
@@ -226,19 +226,17 @@ class MealLogRepository with SyncableRepository {
       )
       ..orderBy([
         (t) => OrderingTerm(
-              expression: t.eatenAt,
-              mode: OrderingMode.desc,
-              nulls: NullsOrder.last,
-            ),
+          expression: t.eatenAt,
+          mode: OrderingMode.desc,
+          nulls: NullsOrder.last,
+        ),
         (t) => OrderingTerm.desc(t.createdAt),
       ]);
 
     return query.watch().map(
-          (entries) => entries
-              .map(MealLog.fromDriftEntry)
-              .whereType<MealLog>()
-              .toList(),
-        );
+      (entries) =>
+          entries.map(MealLog.fromDriftEntry).whereType<MealLog>().toList(),
+    );
   }
 
   /// Most recent non-deleted logs for [userId], newest first, up to [limit]
@@ -246,17 +244,15 @@ class MealLogRepository with SyncableRepository {
   /// meal types rather than duplicating the same meal logged many times.
   ///
   /// Deduplication is performed in Dart (not SQL) for portability.
-  Future<List<MealLog>> getRecentLogs(
-    String userId, {
-    int limit = 25,
-  }) async {
-    final entries = await (_database.select(_database.mealLogsTable)
-          ..where(
-            (t) => t.userId.equals(userId) & t.isDeleted.equals(false),
-          )
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-          ..limit(limit * 3)) // over-fetch to survive deduplication
-        .get();
+  Future<List<MealLog>> getRecentLogs(String userId, {int limit = 25}) async {
+    final entries =
+        await (_database.select(_database.mealLogsTable)
+              ..where(
+                (t) => t.userId.equals(userId) & t.isDeleted.equals(false),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+              ..limit(limit * 3)) // over-fetch to survive deduplication
+            .get();
 
     final seen = <String>{};
     final result = <MealLog>[];
@@ -361,9 +357,9 @@ class MealLogRepository with SyncableRepository {
       localUpdatedAt: now,
     );
 
-    await (_database.update(_database.mealLogsTable)
-          ..where((t) => t.id.equals(toSave.id)))
-        .write(toSave.toDriftCompanion());
+    await (_database.update(
+      _database.mealLogsTable,
+    )..where((t) => t.id.equals(toSave.id))).write(toSave.toDriftCompanion());
 
     _logger.info(
       'Updated meal log',
@@ -379,23 +375,21 @@ class MealLogRepository with SyncableRepository {
   ///
   /// Clears [isDeleted], re-dirties for sync, and schedules an immediate upload
   /// so the un-delete propagates across devices.  No-op if no row exists.
-  Future<void> restoreLog({
-    required String id,
-    required String userId,
-  }) async {
-    final row = await (_database.select(_database.mealLogsTable)
-          ..where((t) => t.id.equals(id) & t.userId.equals(userId))
-          ..limit(1))
-        .getSingleOrNull();
+  Future<void> restoreLog({required String id, required String userId}) async {
+    final row =
+        await (_database.select(_database.mealLogsTable)
+              ..where((t) => t.id.equals(id) & t.userId.equals(userId))
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return;
 
     final log = MealLog.fromDriftEntry(row);
     if (log == null) return;
 
     final now = DateTime.now();
-    await (_database.update(_database.mealLogsTable)
-          ..where((t) => t.id.equals(id)))
-        .write(
+    await (_database.update(
+      _database.mealLogsTable,
+    )..where((t) => t.id.equals(id))).write(
       MealLogsTableCompanion(
         isDeleted: const Value(false),
         updatedAt: Value(now),
@@ -424,21 +418,20 @@ class MealLogRepository with SyncableRepository {
     required String id,
     required String userId,
   }) async {
-    final row = await (_database.select(_database.mealLogsTable)
-          ..where(
-            (t) => t.id.equals(id) & t.isDeleted.equals(false),
-          )
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.mealLogsTable)
+              ..where((t) => t.id.equals(id) & t.isDeleted.equals(false))
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return;
 
     final log = MealLog.fromDriftEntry(row);
     if (log == null) return;
 
     final now = DateTime.now();
-    await (_database.update(_database.mealLogsTable)
-          ..where((t) => t.id.equals(id)))
-        .write(
+    await (_database.update(
+      _database.mealLogsTable,
+    )..where((t) => t.id.equals(id))).write(
       MealLogsTableCompanion(
         isDeleted: const Value(true),
         updatedAt: Value(now),
@@ -473,10 +466,7 @@ class MealLogRepository with SyncableRepository {
   /// [since] is reserved for future incremental-sync support; currently all
   /// rows for the user are fetched in [syncFromRemote].
   @visibleForTesting
-  Future<int> hydrateFromRemote(
-    String userId, {
-    DateTime? since,
-  }) async {
+  Future<int> hydrateFromRemote(String userId, {DateTime? since}) async {
     final response = await _supabase
         .from('meal_logs')
         .select('*')
@@ -504,11 +494,9 @@ class MealLogRepository with SyncableRepository {
     if (remoteById.isEmpty) return 0;
 
     final remoteIds = remoteById.keys.toList(growable: false);
-    final dirtyRows = await (_database.select(_database.mealLogsTable)
-          ..where(
-            (t) => t.id.isIn(remoteIds) & t.needsUpload.equals(true),
-          ))
-        .get();
+    final dirtyRows = await (_database.select(
+      _database.mealLogsTable,
+    )..where((t) => t.id.isIn(remoteIds) & t.needsUpload.equals(true))).get();
     final dirtyIds = dirtyRows.map((r) => r.id).toSet();
 
     if (dirtyIds.isNotEmpty) {
@@ -578,7 +566,9 @@ class MealLogRepository with SyncableRepository {
     if (logs.isEmpty) return;
     unawaited(() async {
       try {
-        await _supabase.from('meal_logs').upsert(
+        await _supabase
+            .from('meal_logs')
+            .upsert(
               logs.map((l) => l.toSupabaseJson()).toList(growable: false),
               onConflict: 'id',
             );

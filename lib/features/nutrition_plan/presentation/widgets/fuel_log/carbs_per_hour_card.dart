@@ -37,10 +37,7 @@ class CarbsPerHourCard extends ConsumerWidget {
     // the session number renders immediately rather than behind a spinner.
     final baseline = ref
         .watch(carbsPerHourBaselineProvider(activity.id, activity.activityType))
-        .maybeWhen(
-          data: (b) => b,
-          orElse: () => CarbsPerHourBaseline.empty,
-        );
+        .maybeWhen(data: (b) => b, orElse: () => CarbsPerHourBaseline.empty);
 
     final summary = service.buildSummary(
       activity: activity,
@@ -136,7 +133,10 @@ class CarbsPerHourCard extends ConsumerWidget {
         ? AppColors.electrolyte
         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(100),
@@ -187,9 +187,11 @@ class CarbsPerHourCard extends ConsumerWidget {
   /// The big "54g" number + label + delta chip.
   Widget _buildReadout(BuildContext context, CarbsPerHourSummary summary) {
     final showDelta =
-        summary.state == CarbsHrState.inBaseline && summary.deltaVsAverage != null;
+        summary.state == CarbsHrState.inBaseline &&
+        summary.deltaVsAverage != null;
     final showFirstEffort =
-        summary.state == CarbsHrState.buildingBaseline && summary.baselineCount == 0;
+        summary.state == CarbsHrState.buildingBaseline &&
+        summary.baselineCount == 0;
     return SizedBox(
       width: 96,
       child: Column(
@@ -244,7 +246,10 @@ class CarbsPerHourCard extends ConsumerWidget {
     final color = up ? AppColors.electrolyte : AppColors.dragonfruit;
     final rounded = delta.abs().round();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(100),
@@ -253,8 +258,11 @@ class CarbsPerHourCard extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(up ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 16, color: color),
+          Icon(
+            up ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            size: 16,
+            color: color,
+          ),
           Text(
             '${up ? '+' : '−'}$rounded vs avg',
             style: AppTextStyles.smallLabel.copyWith(
@@ -270,7 +278,10 @@ class CarbsPerHourCard extends ConsumerWidget {
 
   Widget _firstEffortChip(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: AppColors.orange.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(100),
@@ -309,11 +320,15 @@ class CarbsPerHourCard extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Last ${values.length} $sportShort',
-                style: _trendLabel(onSurface)),
+            Text(
+              'Last ${values.length} $sportShort',
+              style: _trendLabel(onSurface),
+            ),
             if (summary.targetGPerH != null)
-              Text('Target ${summary.targetGPerH!.round()}g',
-                  style: _trendLabel(onSurface)),
+              Text(
+                'Target ${summary.targetGPerH!.round()}g',
+                style: _trendLabel(onSurface),
+              ),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -363,11 +378,11 @@ class CarbsPerHourCard extends ConsumerWidget {
                         spot.x == (values.length - 1).toDouble(),
                     getDotPainter: (spot, percent, bar, index) =>
                         FlDotCirclePainter(
-                      radius: 3.2,
-                      color: kMacroColorCarbs,
-                      strokeWidth: 1.5,
-                      strokeColor: Theme.of(context).colorScheme.surface,
-                    ),
+                          radius: 3.2,
+                          color: kMacroColorCarbs,
+                          strokeWidth: 1.5,
+                          strokeColor: Theme.of(context).colorScheme.surface,
+                        ),
                   ),
                   belowBarData: BarAreaData(
                     show: true,
@@ -383,10 +398,12 @@ class CarbsPerHourCard extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Earlier', style: _trendLabel(onSurface, faint: true)),
-            Text('Today',
-                style: _trendLabel(onSurface).copyWith(
-                  color: kMacroColorCarbs.withValues(alpha: 0.85),
-                )),
+            Text(
+              'Today',
+              style: _trendLabel(
+                onSurface,
+              ).copyWith(color: kMacroColorCarbs.withValues(alpha: 0.85)),
+            ),
           ],
         ),
       ],
@@ -409,7 +426,10 @@ class CarbsPerHourCard extends ConsumerWidget {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final sportShort = '${summary.activityType.displayName}s';
     // This session counts toward the baseline.
-    final filled = (summary.baselineCount + 1).clamp(0, summary.unlockThreshold);
+    final filled = (summary.baselineCount + 1).clamp(
+      0,
+      summary.unlockThreshold,
+    );
     final remaining = (summary.unlockThreshold - filled).clamp(0, 99);
     final lower = sportShort.toLowerCase();
 
@@ -421,10 +441,12 @@ class CarbsPerHourCard extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Building baseline', style: _trendLabel(onSurface)),
-            Text('$filled / ${summary.unlockThreshold} $sportShort',
-                style: _trendLabel(onSurface).copyWith(
-                  color: kMacroColorCarbs.withValues(alpha: 0.85),
-                )),
+            Text(
+              '$filled / ${summary.unlockThreshold} $sportShort',
+              style: _trendLabel(
+                onSurface,
+              ).copyWith(color: kMacroColorCarbs.withValues(alpha: 0.85)),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -503,8 +525,11 @@ class CarbsPerHourCard extends ConsumerWidget {
             color: onSurface.withValues(alpha: 0.06),
             border: Border.all(color: onSurface.withValues(alpha: 0.12)),
           ),
-          child: Icon(Icons.bolt_outlined,
-              size: 18, color: onSurface.withValues(alpha: 0.5)),
+          child: Icon(
+            Icons.bolt_outlined,
+            size: 18,
+            color: onSurface.withValues(alpha: 0.5),
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(

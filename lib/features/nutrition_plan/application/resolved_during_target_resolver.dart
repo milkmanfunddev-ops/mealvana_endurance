@@ -18,11 +18,13 @@ class ResolvedDuringTargetResolver {
     final settingsRate = settingsOverrides?.getDuring(sport)?.carbRateGPerH;
     final isEligible = macroTargets.metrics.durationMin >= 90;
 
-    final isOverrideApplied = settingsRate != null &&
+    final isOverrideApplied =
+        settingsRate != null &&
         settingsRate > 0 &&
         isEligible &&
         (during.carbRateGPerH - settingsRate).abs() <= toleranceGPerH;
-    final isStaleVsSettings = settingsRate != null &&
+    final isStaleVsSettings =
+        settingsRate != null &&
         settingsRate > 0 &&
         isEligible &&
         !isOverrideApplied;
@@ -55,14 +57,17 @@ class ResolvedDuringTargetResolver {
     final segmentDurationH = segment.durationMinutes > 0
         ? segment.durationMinutes / 60.0
         : 0.0;
-    final snapshotRate = segment.carbsRateGPerH ??
+    final snapshotRate =
+        segment.carbsRateGPerH ??
         (segmentDurationH > 0 ? segment.carbsG / segmentDurationH : 0.0);
 
-    final isOverrideApplied = settingsRate != null &&
+    final isOverrideApplied =
+        settingsRate != null &&
         settingsRate > 0 &&
         isEligible &&
         (snapshotRate - settingsRate).abs() <= toleranceGPerH;
-    final isStaleVsSettings = settingsRate != null &&
+    final isStaleVsSettings =
+        settingsRate != null &&
         settingsRate > 0 &&
         isEligible &&
         !isOverrideApplied;

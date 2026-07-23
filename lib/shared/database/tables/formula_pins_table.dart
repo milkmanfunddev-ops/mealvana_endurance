@@ -30,8 +30,7 @@ class FormulaPinsTable extends Table {
       boolean().withDefault(const Constant(false)).named('is_deleted')();
 
   // Sync tracking (offline-first; not present in Supabase schema)
-  BoolColumn get needsUpload =>
-      boolean().nullable().named('needs_upload')();
+  BoolColumn get needsUpload => boolean().nullable().named('needs_upload')();
   DateTimeColumn get localUpdatedAt =>
       dateTime().nullable().named('local_updated_at')();
 

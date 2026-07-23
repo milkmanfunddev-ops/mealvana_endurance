@@ -39,9 +39,9 @@ class _EmojiSliderState extends State<EmojiSlider> {
             ),
           ),
         ),
-        
+
         SizedBox(height: 12.h),
-        
+
         // Text description
         Text(
           widget.selectedLevel.label,
@@ -52,9 +52,9 @@ class _EmojiSliderState extends State<EmojiSlider> {
           ),
           textAlign: TextAlign.center,
         ),
-        
+
         SizedBox(height: 16.h),
-        
+
         // Custom slider
         _buildCustomSlider(),
       ],
@@ -63,13 +63,13 @@ class _EmojiSliderState extends State<EmojiSlider> {
 
   Widget _buildCustomSlider() {
     final currentIndex = SatisfactionLevel.values.indexOf(widget.selectedLevel);
-    
+
     return SizedBox(
       height: 60.h,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final sliderWidth = constraints.maxWidth - 80.w;
-          
+
           return GestureDetector(
             onTapDown: (details) {
               _handleTap(details.localPosition.dx, sliderWidth);
@@ -89,7 +89,7 @@ class _EmojiSliderState extends State<EmojiSlider> {
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ),
-                
+
                 // Filled portion
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
@@ -103,7 +103,7 @@ class _EmojiSliderState extends State<EmojiSlider> {
                     ),
                   ),
                 ),
-                
+
                 // Slider thumb/circle
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
@@ -121,12 +121,12 @@ class _EmojiSliderState extends State<EmojiSlider> {
                     ),
                   ),
                 ),
-                
+
                 // Small emojis at positions
                 ...SatisfactionLevel.values.asMap().entries.map((entry) {
                   final index = entry.key;
                   final level = entry.value;
-                  
+
                   return Positioned(
                     left: _getEmojiPosition(index, sliderWidth),
                     child: GestureDetector(
@@ -149,7 +149,7 @@ class _EmojiSliderState extends State<EmojiSlider> {
   void _handleTap(double localX, double sliderWidth) {
     final sectionWidth = sliderWidth / 2;
     final adjustedX = localX - 40.w;
-    
+
     int newIndex;
     if (adjustedX < sectionWidth / 2) {
       newIndex = 0;
@@ -158,9 +158,9 @@ class _EmojiSliderState extends State<EmojiSlider> {
     } else {
       newIndex = 2;
     }
-    
+
     newIndex = newIndex.clamp(0, SatisfactionLevel.values.length - 1);
-    
+
     if (newIndex != SatisfactionLevel.values.indexOf(widget.selectedLevel)) {
       widget.onChanged(SatisfactionLevel.values[newIndex]);
     }

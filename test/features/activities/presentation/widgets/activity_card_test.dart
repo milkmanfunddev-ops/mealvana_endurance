@@ -61,9 +61,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: ActivityCard(activity: testActivity),
-            ),
+            home: Scaffold(body: ActivityCard(activity: testActivity)),
           ),
         ),
       );
@@ -71,14 +69,13 @@ void main() {
       expect(find.text('Morning Run'), findsOneWidget);
     });
 
-    testWidgets('displays scheduled time in activity details',
-        (WidgetTester tester) async {
+    testWidgets('displays scheduled time in activity details', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: ActivityCard(activity: testActivity),
-            ),
+            home: Scaffold(body: ActivityCard(activity: testActivity)),
           ),
         ),
       );
@@ -87,14 +84,13 @@ void main() {
       expect(find.textContaining('6:00 AM'), findsOneWidget);
     });
 
-    testWidgets('displays distance and pace for running activity',
-        (WidgetTester tester) async {
+    testWidgets('displays distance and pace for running activity', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: ActivityCard(activity: testActivity),
-            ),
+            home: Scaffold(body: ActivityCard(activity: testActivity)),
           ),
         ),
       );
@@ -127,8 +123,9 @@ void main() {
       }
     });
 
-    testWidgets('shows selection indicator when in selection mode',
-        (WidgetTester tester) async {
+    testWidgets('shows selection indicator when in selection mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -147,8 +144,9 @@ void main() {
       expect(find.byType(Container), findsWidgets);
     });
 
-    testWidgets('shows numbered indicator when selected in selection mode',
-        (WidgetTester tester) async {
+    testWidgets('shows numbered indicator when selected in selection mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -168,8 +166,9 @@ void main() {
       expect(find.text('1'), findsOneWidget);
     });
 
-    testWidgets('is wrapped in Dismissible when NOT in selection mode',
-        (WidgetTester tester) async {
+    testWidgets('is wrapped in Dismissible when NOT in selection mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -186,16 +185,14 @@ void main() {
       expect(find.byType(Dismissible), findsOneWidget);
     });
 
-    testWidgets('is NOT wrapped in Dismissible when in selection mode',
-        (WidgetTester tester) async {
+    testWidgets('is NOT wrapped in Dismissible when in selection mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: ActivityCard(
-                activity: testActivity,
-                isSelectionMode: true,
-              ),
+              body: ActivityCard(activity: testActivity, isSelectionMode: true),
             ),
           ),
         ),
@@ -204,14 +201,13 @@ void main() {
       expect(find.byType(Dismissible), findsNothing);
     });
 
-    testWidgets('displays correct activity icon for running',
-        (WidgetTester tester) async {
+    testWidgets('displays correct activity icon for running', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: ActivityCard(activity: testActivity),
-            ),
+            home: Scaffold(body: ActivityCard(activity: testActivity)),
           ),
         ),
       );
@@ -220,8 +216,9 @@ void main() {
       expect(find.byType(Icon), findsWidgets);
     });
 
-    testWidgets('displays cycling details correctly',
-        (WidgetTester tester) async {
+    testWidgets('displays cycling details correctly', (
+      WidgetTester tester,
+    ) async {
       final cyclingActivity = Activity(
         id: 'test-cycling-1',
         userId: 'test-user-1',
@@ -237,9 +234,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: ActivityCard(activity: cyclingActivity),
-            ),
+            home: Scaffold(body: ActivityCard(activity: cyclingActivity)),
           ),
         ),
       );
@@ -275,22 +270,21 @@ void main() {
     });
 
     Widget host() => ProviderScope(
-          overrides: [
-            activitiesControllerProvider.overrideWith(
-              () => _FakeActivitiesController(deleted, restored),
-            ),
-          ],
-          child: MaterialApp(
-            home: Scaffold(body: ActivityCard(activity: testActivity)),
-          ),
-        );
+      overrides: [
+        activitiesControllerProvider.overrideWith(
+          () => _FakeActivitiesController(deleted, restored),
+        ),
+      ],
+      child: MaterialApp(
+        home: Scaffold(body: ActivityCard(activity: testActivity)),
+      ),
+    );
 
     for (final (label, offset) in [
       ('right→left', const Offset(-400.0, 0.0)),
       ('left→right', const Offset(400.0, 0.0)),
     ]) {
-      testWidgets(
-          'swipe $label deletes immediately with an Undo snackbar '
+      testWidgets('swipe $label deletes immediately with an Undo snackbar '
           '(no confirm dialog)', (tester) async {
         await tester.pumpWidget(host());
         await tester.drag(find.byType(Dismissible), offset);
@@ -310,8 +304,9 @@ void main() {
       });
     }
 
-    testWidgets('Undo restores the activity via restoreActivity',
-        (tester) async {
+    testWidgets('Undo restores the activity via restoreActivity', (
+      tester,
+    ) async {
       await tester.pumpWidget(host());
       await tester.drag(find.byType(Dismissible), const Offset(-400, 0));
       await tester.pumpAndSettle();
@@ -327,16 +322,16 @@ void main() {
     late _MockAppExternalDeps deps;
 
     Activity activity({Map<String, dynamic>? plan}) => Activity(
-          id: 'test-activity-1',
-          userId: 'test-user-1',
-          activityType: ActivityType.running,
-          title: 'Morning Run',
-          scheduledDateTime: DateTime(2026, 1, 27, 6, 0),
-          distanceMiles: 10.5,
-          nutritionPlanData: plan,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
+      id: 'test-activity-1',
+      userId: 'test-user-1',
+      activityType: ActivityType.running,
+      title: 'Morning Run',
+      scheduledDateTime: DateTime(2026, 1, 27, 6, 0),
+      distanceMiles: 10.5,
+      nutritionPlanData: plan,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
 
     setUp(() {
       deps = _MockAppExternalDeps();
@@ -373,26 +368,27 @@ void main() {
       );
     }
 
-    testWidgets('tap anywhere opens Activity Detail when a plan exists',
-        (tester) async {
-      await tester.pumpWidget(
-        host(activity(plan: {'sections': <dynamic>[]})),
-      );
+    testWidgets('tap anywhere opens Activity Detail when a plan exists', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(activity(plan: {'sections': <dynamic>[]})));
       await tester.tap(find.text('Morning Run'));
       await tester.pumpAndSettle();
       expect(find.text('activity-detail-screen'), findsOneWidget);
     });
 
-    testWidgets('tap anywhere opens the prefilled editor when no plan exists',
-        (tester) async {
+    testWidgets('tap anywhere opens the prefilled editor when no plan exists', (
+      tester,
+    ) async {
       await tester.pumpWidget(host(activity()));
       await tester.tap(find.text('Morning Run'));
       await tester.pumpAndSettle();
       expect(find.text('activity-editor-screen'), findsOneWidget);
     });
 
-    testWidgets('selection-mode tap toggles selection instead of navigating',
-        (tester) async {
+    testWidgets('selection-mode tap toggles selection instead of navigating', (
+      tester,
+    ) async {
       var toggled = false;
       await tester.pumpWidget(
         ProviderScope(

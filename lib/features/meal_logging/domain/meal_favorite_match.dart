@@ -20,7 +20,8 @@ String mealFavoriteMatchKey(String name, List<MealComponent> components) {
   final normalizedName = name.trim().toLowerCase();
   final parts = components
       .map(
-        (c) => '${c.name.trim().toLowerCase()}|${c.portion.trim().toLowerCase()}',
+        (c) =>
+            '${c.name.trim().toLowerCase()}|${c.portion.trim().toLowerCase()}',
       )
       .toList();
   return '$normalizedName::${parts.join(',')}';

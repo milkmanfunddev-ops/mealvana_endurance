@@ -21,8 +21,8 @@ class EventSyncHandler {
   const EventSyncHandler({
     required AppDatabase database,
     required AppLogger logger,
-  })  : _database = database,
-        _logger = logger;
+  }) : _database = database,
+       _logger = logger;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -30,14 +30,18 @@ class EventSyncHandler {
   /// Upsert an event from remote data.
   Future<void> upsertEvent(Map<String, dynamic> data, String userId) async {
     try {
-      final eventId = SyncTypeConverters.toRequiredStringId(data['id'], 'event.id');
-      final existingEvent = await (_database.select(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(eventId)))
-          .getSingleOrNull();
+      final eventId = SyncTypeConverters.toRequiredStringId(
+        data['id'],
+        'event.id',
+      );
+      final existingEvent = await (_database.select(
+        _database.eventsTable,
+      )..where((tbl) => tbl.id.equals(eventId))).getSingleOrNull();
 
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
 
-      if (existingEvent == null || existingEvent.updatedAt.isBefore(supabaseUpdatedAt)) {
+      if (existingEvent == null ||
+          existingEvent.updatedAt.isBefore(supabaseUpdatedAt)) {
         // Keep activity_id from the data even if activity doesn't exist locally yet
         // This is important for coach sync scenarios where activities may be synced after events
         // The activity might be synced later, and the foreign key relationship will be valid
@@ -59,20 +63,30 @@ class EventSyncHandler {
           ),
           startTime: Value(data['start_time'] as String?),
           goalTimeMinutes: Value(data['goal_time_minutes'] as int?),
-          goalPaceMinutesPerMile: Value((data['goal_pace_minutes_per_mile'] as num?)?.toDouble()),
-          predictedFinishTimeMinutes: Value(data['predicted_finish_time_minutes'] as int?),
-          hasCarbLoading: Value(SyncTypeConverters.toBool(data['has_carb_loading'])),
+          goalPaceMinutesPerMile: Value(
+            (data['goal_pace_minutes_per_mile'] as num?)?.toDouble(),
+          ),
+          predictedFinishTimeMinutes: Value(
+            data['predicted_finish_time_minutes'] as int?,
+          ),
+          hasCarbLoading: Value(
+            SyncTypeConverters.toBool(data['has_carb_loading']),
+          ),
           carbLoadingDays: Value(data['carb_loading_days'] as int?),
           carbLoadingStartDate: Value(
             data['carb_loading_start_date'] != null
                 ? DateTime.parse(data['carb_loading_start_date'] as String)
                 : null,
           ),
-          hasNutritionPlan: Value(SyncTypeConverters.toBool(data['has_nutrition_plan'])),
+          hasNutritionPlan: Value(
+            SyncTypeConverters.toBool(data['has_nutrition_plan']),
+          ),
           bibNumber: Value(data['bib_number'] as String?),
           waveStartTime: Value(data['wave_start_time'] as String?),
           packetPickupInfo: Value(data['packet_pickup_info'] as String?),
-          actualFinishTimeMinutes: Value(data['actual_finish_time_minutes'] as int?),
+          actualFinishTimeMinutes: Value(
+            data['actual_finish_time_minutes'] as int?,
+          ),
           finalPlacement: Value(data['final_placement'] as int?),
           ageGroupPlacement: Value(data['age_group_placement'] as int?),
           createdAt: DateTime.parse(data['created_at'] as String),

@@ -33,12 +33,17 @@ import {
 } from "../_shared/nutrition/during-template-solver.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
-import { generateLPPhase } from "./lp-phase.ts";
+import { generateAfterPhase } from "./after-phase.ts";
+import {
+  buildPlanGenerationLogRow,
+  insertPlanGenerationLog,
+} from "./plan-generation-log.ts";
 import {
   flattenBeforeFoods,
   validatePhaseResultAgainstTargets,
 } from "./validation.ts";
 import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
+import type { UserPinSets } from "../_shared/nutrition/pins.ts";
 import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
 
 // ============================================================================
@@ -312,6 +317,10 @@ export async function handleBrickPlan(
   supabase: ReturnType<typeof createServiceClient>,
   input: PlanInputV2,
   planId: string,
+  /** Formula Kit pins, fetched by the caller. Plumbed through the brick
+   * handler 2026-07-21 — previously deferred, which silently ignored a
+   * triathlete's pins across every phase. */
+  userPins: UserPinSets,
 ): Promise<Response> {
   const segments = input.brick_segments ?? [];
   if (segments.length === 0) {
@@ -325,11 +334,19 @@ export async function handleBrickPlan(
     `[PLAN-V3-BRICK] Starting brick plan generation with ${segments.length} segments`,
   );
 
+  const pinsActive = userPins.beforePinIds.size + userPins.duringPinIds.size +
+      userPins.afterPinIds.size > 0;
+  const emitEphemeralDefault = input.emit_ephemeral_default_formula === true;
+
   // 1. Generate before phase (shared across all segments — Algorithm C)
   console.log(
     `[PLAN-V3-BRICK] Before phase input: pre_run carbs=${input.macro_targets.pre_run?.carbs_g}, water=${input.macro_targets.pre_run?.water_ml}, hours_before=${input.hours_before}`,
   );
-  const beforeResult = await generateBeforePhaseV3(supabase, input);
+  const beforeResult = await generateBeforePhaseV3(supabase, {
+    ...input,
+    pinned_food_template_ids: userPins.beforePinIds,
+    personal_formula_pins: userPins.personalFormulas,
+  });
   const beforeSubPhases = Object.keys(beforeResult);
   const beforeFoodCount = beforeSubPhases.reduce((sum, key) => {
     const sp = (beforeResult as Record<string, { foods?: unknown[] }>)[key];
@@ -451,6 +468,10 @@ export async function handleBrickPlan(
       input.dietary_preference,
       input.gut_training_level,
       segment.duration_minutes,
+      userPins.duringPinIds,
+      pinsActive,
+      userPins.personalFormulas,
+      emitEphemeralDefault,
     );
 
     duringSegments[String(segmentOrder)] = duringResult.foods;
@@ -514,11 +535,14 @@ export async function handleBrickPlan(
     }
   }
 
-  // 3. Generate after phase (use 'running' activity type — brick recovery is run-like)
+  // 3. Generate after phase (use 'running' activity type — brick recovery is
+  // run-like). Uses the same recovery-template trigger design as
+  // single-activity plans (was an LP dose path until 2026-07-21, which gave
+  // brick athletes solver-dosed foods instead of the curated recovery
+  // templates and ignored their After pins).
   const afterResult = input.macro_targets.post_run
-    ? await generateLPPhase(
+    ? await generateAfterPhase(
       supabase,
-      "after",
       input.macro_targets.post_run,
       "running",
       input.liked_foods,
@@ -527,8 +551,12 @@ export async function handleBrickPlan(
       input.device_id,
       input.allergies,
       input.dietary_preference,
+      userPins.afterPinIds,
+      pinsActive,
+      userPins.personalFormulas,
+      emitEphemeralDefault,
     )
-    : { foods: [] as FoodResult[] };
+    : { foods: [] as FoodResult[] } as LPPhaseResult;
   if (input.macro_targets.post_run) {
     const afterValidation = validatePhaseResultAgainstTargets(
       afterResult.foods,
@@ -556,6 +584,15 @@ export async function handleBrickPlan(
         { during_segment_shortfalls: duringSegmentShortfalls }),
       transitions: transitions,
       after: afterResult.foods,
+      // Additive siblings, same contract as single-activity plans; old
+      // clients ignore them. 2026-07-21.
+      after_metadata: afterResult.template_metadata ?? null,
+      ...(afterResult.shortfalls && afterResult.shortfalls.length > 0
+        ? { after_shortfalls: afterResult.shortfalls }
+        : {}),
+      ...(afterResult.pin_decision
+        ? { after_pin_decision: afterResult.pin_decision }
+        : {}),
     },
     macro_targets: {
       pre_run: input.macro_targets.pre_run,
@@ -576,6 +613,38 @@ export async function handleBrickPlan(
       Object.keys(transitions).length
     })`,
   );
+
+  // Ledger: one best-effort row per brick plan (parity with single-activity;
+  // brick was unlogged until 2026-07-21). Segment foods/shortfalls are
+  // flattened into the during slot; the path is tagged 'brick'.
+  const allSegmentFoods: FoodResult[] = Object.values(duringSegments).flat();
+  const allSegmentShortfalls = Object.values(duringSegmentShortfalls).flat();
+  const ledgerWrite = insertPlanGenerationLog(
+    supabase,
+    buildPlanGenerationLogRow({
+      planId,
+      input,
+      activityType: "brick",
+      beforeFoods: flattenBeforeFoods(
+        beforeResult as Record<string, { foods?: FoodResult[] }>,
+      ),
+      duringResult: {
+        foods: allSegmentFoods,
+        generation_path: "brick",
+        ...(allSegmentShortfalls.length > 0 &&
+          { shortfalls: allSegmentShortfalls }),
+      },
+      afterResult,
+      warnings: [],
+    }),
+  );
+  // deno-lint-ignore no-explicit-any
+  const runtime = (globalThis as any).EdgeRuntime;
+  if (typeof runtime?.waitUntil === "function") {
+    runtime.waitUntil(ledgerWrite);
+  } else {
+    await ledgerWrite;
+  }
 
   return jsonResponse(response);
 }

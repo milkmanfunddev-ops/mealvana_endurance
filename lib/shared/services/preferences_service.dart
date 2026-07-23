@@ -12,9 +12,11 @@ class PreferencesService {
   final SharedPreferences _prefs;
 
   // Keys
-  static const String _keyHasCompletedInitialSurvey = 'has_completed_initial_survey';
+  static const String _keyHasCompletedInitialSurvey =
+      'has_completed_initial_survey';
   static const String _keyTpWritebackEnabled = 'tp_writeback_enabled';
-  static const String _keyTpWritebackPremiumBlocked = 'tp_writeback_premium_blocked';
+  static const String _keyTpWritebackPremiumBlocked =
+      'tp_writeback_premium_blocked';
 
   /// Check if user has completed the initial survey after first activity creation
   bool get hasCompletedInitialSurvey {
@@ -64,7 +66,8 @@ class PreferencesService {
 
   // ─── Jade Baseline Tip Banner ───
 
-  static const String _keyJadeBaselineTipDismissed = 'jade_baseline_tip_dismissed';
+  static const String _keyJadeBaselineTipDismissed =
+      'jade_baseline_tip_dismissed';
 
   /// Whether the user has dismissed the one-time baseline-logging tutorial
   /// copy on the Jade coach banner.  Once true, the banner shows the default

@@ -44,7 +44,9 @@ void main() {
       expect(find.widgetWithText(TextField, '38'), findsOneWidget); // minutes
     });
 
-    testWidgets('shows Average Speed for cycling in By Pace mode', (tester) async {
+    testWidgets('shows Average Speed for cycling in By Pace mode', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -70,7 +72,9 @@ void main() {
       expect(find.text('mph'), findsOneWidget);
     });
 
-    testWidgets('shows Average Pace for running in By Pace mode', (tester) async {
+    testWidgets('shows Average Pace for running in By Pace mode', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -98,7 +102,9 @@ void main() {
       expect(find.text('(min/mi)'), findsOneWidget);
     });
 
-    testWidgets('shows Average Pace for swimming in By Pace mode', (tester) async {
+    testWidgets('shows Average Pace for swimming in By Pace mode', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -175,35 +181,38 @@ void main() {
       expect(_segmentFieldTexts(tester), <String>['0', '42']);
     });
 
-    testWidgets('shows empty duration fields with hints when duration is null',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 10.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: null,
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
+    testWidgets(
+      'shows empty duration fields with hints when duration is null',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: WorkoutDetailsWidget(
+                sport: ActivityType.running,
+                distance: 10.0,
+                distanceUnit: 'mi',
+                mode: DurationPaceMode.byDuration,
+                estimatedDuration: null,
+                pace: null,
+                paceUnit: 'min/mi',
+                onDistanceChanged: (_) {},
+                onModeChanged: (_) {},
+                onPaceChanged: (_) {},
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Null duration leaves both hr/mins fields empty, showing their hints.
-      expect(find.text('Estimated Duration'), findsOneWidget);
-      expect(_segmentHints(tester), containsAll(<String>['0', '00']));
-      expect(_segmentFieldTexts(tester), everyElement(isEmpty));
-    });
+        // Null duration leaves both hr/mins fields empty, showing their hints.
+        expect(find.text('Estimated Duration'), findsOneWidget);
+        expect(_segmentHints(tester), containsAll(<String>['0', '00']));
+        expect(_segmentFieldTexts(tester), everyElement(isEmpty));
+      },
+    );
 
-    testWidgets('shows empty pace fields with hints when pace is null',
-        (tester) async {
+    testWidgets('shows empty pace fields with hints when pace is null', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -229,7 +238,9 @@ void main() {
       expect(_segmentFieldTexts(tester), everyElement(isEmpty));
     });
 
-    testWidgets('calls onDistanceChanged when distance is edited', (tester) async {
+    testWidgets('calls onDistanceChanged when distance is edited', (
+      tester,
+    ) async {
       double? changedValue;
 
       await tester.pumpWidget(
@@ -291,7 +302,9 @@ void main() {
       expect(changedMode, DurationPaceMode.byPace);
     });
 
-    testWidgets('calls onPaceChanged when pace is edited in By Pace mode', (tester) async {
+    testWidgets('calls onPaceChanged when pace is edited in By Pace mode', (
+      tester,
+    ) async {
       double? changedPace;
 
       await tester.pumpWidget(
@@ -460,7 +473,9 @@ void main() {
       expect(textField.enabled, false);
     });
 
-    testWidgets('secondary field is read-only in By Duration mode', (tester) async {
+    testWidgets('secondary field is read-only in By Duration mode', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

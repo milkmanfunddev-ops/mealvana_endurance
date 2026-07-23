@@ -24,21 +24,23 @@ part 'diagnostic_dao.g.dart';
 /// - User data migration (migrateUserData)
 /// - Database health checks (isDatabaseHealthy, canExecuteQueries)
 /// - Database statistics (getDatabaseStats)
-@DriftAccessor(tables: [
-  UserProfilesTable,
-  FoodPreferencesTable,
-  FoodsTable,
-  AppContentTable,
-  ActivitiesTable,
-  EventsTable,
-  UserFoodsTable,
-  FeedbackTable,
-  CarbLoadingPlansTable,
-  CarbLoadingDaysTable,
-  CarbLoadingUserFoodsTable,
-  CarbLoadingDayMealsTable,
-  IntegrationsTable,
-])
+@DriftAccessor(
+  tables: [
+    UserProfilesTable,
+    FoodPreferencesTable,
+    FoodsTable,
+    AppContentTable,
+    ActivitiesTable,
+    EventsTable,
+    UserFoodsTable,
+    FeedbackTable,
+    CarbLoadingPlansTable,
+    CarbLoadingDaysTable,
+    CarbLoadingUserFoodsTable,
+    CarbLoadingDayMealsTable,
+    IntegrationsTable,
+  ],
+)
 class DiagnosticDao extends DatabaseAccessor<AppDatabase>
     with _$DiagnosticDaoMixin {
   DiagnosticDao(super.db);
@@ -86,7 +88,8 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       // Child tables first (foreign key constraints)
 
       // carb_loading_day_meals (via carb_loading_days via carb_loading_plans.user_id)
-      await db.customStatement('''
+      await db.customStatement(
+        '''
         DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
           SELECT id FROM carb_loading_days
@@ -94,45 +97,56 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
             SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
-      ''', [userId]);
+      ''',
+        [userId],
+      );
 
       // carb_loading_days (via carb_loading_plans.user_id)
-      await db.customStatement('''
+      await db.customStatement(
+        '''
         DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
           SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
-      ''', [userId]);
+      ''',
+        [userId],
+      );
 
       // Direct user_id filtering
-      await (delete(carbLoadingPlansTable)
-            ..where((t) => t.userId.equals(userId)))
-          .go();
+      await (delete(
+        carbLoadingPlansTable,
+      )..where((t) => t.userId.equals(userId))).go();
       await (delete(eventsTable)..where((t) => t.userId.equals(userId))).go();
-      await (delete(activitiesTable)..where((t) => t.userId.equals(userId)))
-          .go();
-      await (delete(carbLoadingUserFoodsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .go();
-      await (delete(userFoodsTable)..where((t) => t.userId.equals(userId)))
-          .go();
+      await (delete(
+        activitiesTable,
+      )..where((t) => t.userId.equals(userId))).go();
+      await (delete(
+        carbLoadingUserFoodsTable,
+      )..where((t) => t.userId.equals(userId))).go();
+      await (delete(
+        userFoodsTable,
+      )..where((t) => t.userId.equals(userId))).go();
 
       // feedback uses device_id, need to join with users table
-      await db.customStatement('''
+      await db.customStatement(
+        '''
         DELETE FROM feedback_table
         WHERE device_id IN (
           SELECT device_id FROM users WHERE id = ?
         )
-      ''', [userId]);
+      ''',
+        [userId],
+      );
 
       // food_preferences uses user_id
-      await (delete(foodPreferencesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .go();
+      await (delete(
+        foodPreferencesTable,
+      )..where((t) => t.userId.equals(userId))).go();
 
       // integrations uses user_id
-      await (delete(integrationsTable)..where((t) => t.userId.equals(userId)))
-          .go();
+      await (delete(
+        integrationsTable,
+      )..where((t) => t.userId.equals(userId))).go();
 
       // Delete user profile last
       await (delete(userProfilesTable)..where((t) => t.id.equals(userId))).go();
@@ -189,20 +203,18 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       // This ensures the fresh onboarding data is preserved without UNIQUE constraint violations.
 
       // ============ ACTIVITIES ============
-      await db.customStatement(
-        'DELETE FROM activities WHERE user_id = ?',
-        [toUserId],
-      );
+      await db.customStatement('DELETE FROM activities WHERE user_id = ?', [
+        toUserId,
+      ]);
       await db.customStatement(
         'UPDATE activities SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 
       // ============ EVENTS ============
-      await db.customStatement(
-        'DELETE FROM events WHERE user_id = ?',
-        [toUserId],
-      );
+      await db.customStatement('DELETE FROM events WHERE user_id = ?', [
+        toUserId,
+      ]);
       await db.customStatement(
         'UPDATE events SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
@@ -219,10 +231,9 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       );
 
       // ============ USER FOODS ============
-      await db.customStatement(
-        'DELETE FROM user_foods WHERE user_id = ?',
-        [toUserId],
-      );
+      await db.customStatement('DELETE FROM user_foods WHERE user_id = ?', [
+        toUserId,
+      ]);
       await db.customStatement(
         'UPDATE user_foods SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
@@ -230,7 +241,8 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
 
       // ============ CARB LOADING PLANS ============
       // Step 1: Delete carb_loading_day_meals for OAuth user's plans
-      await db.customStatement('''
+      await db.customStatement(
+        '''
         DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
           SELECT id FROM carb_loading_days
@@ -238,15 +250,20 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
             SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
-      ''', [toUserId]);
+      ''',
+        [toUserId],
+      );
 
       // Step 2: Delete carb_loading_days for OAuth user's plans
-      await db.customStatement('''
+      await db.customStatement(
+        '''
         DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
           SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
-      ''', [toUserId]);
+      ''',
+        [toUserId],
+      );
 
       // Step 3: Delete carb_loading_plans for OAuth user
       await db.customStatement(
@@ -271,10 +288,9 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
 
       // ============ INTEGRATIONS ============
       // Delete any existing integrations for the target user
-      await db.customStatement(
-        'DELETE FROM integrations WHERE user_id = ?',
-        [toUserId],
-      );
+      await db.customStatement('DELETE FROM integrations WHERE user_id = ?', [
+        toUserId,
+      ]);
       // Migrate integrations from temp user to new user
       await db.customStatement(
         'UPDATE integrations SET user_id = ? WHERE user_id = ?',
@@ -283,10 +299,7 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
 
       // ============ USER PROFILE ============
       // Delete the old anonymous user profile
-      await db.customStatement(
-        'DELETE FROM users WHERE id = ?',
-        [fromUserId],
-      );
+      await db.customStatement('DELETE FROM users WHERE id = ?', [fromUserId]);
     });
   }
 
@@ -294,22 +307,24 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
 
   /// Get database statistics for logging/debugging
   Future<Map<String, int>> getDatabaseStats() async {
-    final userCount = await (selectOnly(userProfilesTable)
-          ..addColumns([userProfilesTable.id.count()]))
-        .getSingle();
-    final preferencesCount = await (selectOnly(foodPreferencesTable)
-          ..addColumns([foodPreferencesTable.userId.count()]))
-        .getSingle();
-    final foodsCount = await (selectOnly(foodsTable)
-          ..addColumns([foodsTable.id.count()]))
-        .getSingle();
-    final contentCount = await (selectOnly(appContentTable)
-          ..addColumns([appContentTable.id.count()]))
-        .getSingle();
+    final userCount = await (selectOnly(
+      userProfilesTable,
+    )..addColumns([userProfilesTable.id.count()])).getSingle();
+    final preferencesCount = await (selectOnly(
+      foodPreferencesTable,
+    )..addColumns([foodPreferencesTable.userId.count()])).getSingle();
+    final foodsCount = await (selectOnly(
+      foodsTable,
+    )..addColumns([foodsTable.id.count()])).getSingle();
+    final contentCount = await (selectOnly(
+      appContentTable,
+    )..addColumns([appContentTable.id.count()])).getSingle();
 
     return {
       'users': userCount.read(userProfilesTable.id.count())!,
-      'preferences': preferencesCount.read(foodPreferencesTable.userId.count())!,
+      'preferences': preferencesCount.read(
+        foodPreferencesTable.userId.count(),
+      )!,
       'foods': foodsCount.read(foodsTable.id.count())!,
       'content': contentCount.read(appContentTable.id.count())!,
     };

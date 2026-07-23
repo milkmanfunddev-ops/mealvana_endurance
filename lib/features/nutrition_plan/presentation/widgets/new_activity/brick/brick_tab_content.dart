@@ -18,7 +18,8 @@ import '../../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggl
 import '../shared/environment_section.dart';
 import '../shared/fasted_toggle.dart';
 import '../../../../../../shared/providers/unit_system_provider.dart';
-import '../../../../../../features/nutrition_plan/domain/run_parameters.dart' show UnitSystem;
+import '../../../../../../features/nutrition_plan/domain/run_parameters.dart'
+    show UnitSystem;
 
 /// Brick Tab Content
 ///
@@ -39,7 +40,8 @@ class BrickTabContent extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final useImperial =
-        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) != UnitSystem.metric;
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) !=
+        UnitSystem.metric;
 
     final totalDuration = controller.getTotalDuration();
     final showFastedWarning = _shouldWarnFasted(formState, controller);
@@ -94,7 +96,14 @@ class BrickTabContent extends ConsumerWidget {
 
         // Ordered list of expandable segments
         if (formState.selectedSports.length >= 2)
-          _buildSegmentList(context, ref, formState, controller, isDark, useImperial),
+          _buildSegmentList(
+            context,
+            ref,
+            formState,
+            controller,
+            isDark,
+            useImperial,
+          ),
 
         // Total duration display (if any segments have data)
         if (totalDuration > 0) ...[
@@ -523,7 +532,9 @@ class _BrickRunningInputs extends StatelessWidget {
         // 3. TEMPERATURE
         KylePlusMinusDecimalControl(
           label: 'Temperature',
-          value: useImperial ? (input.temperatureC * 9 / 5) + 32 : input.temperatureC,
+          value: useImperial
+              ? (input.temperatureC * 9 / 5) + 32
+              : input.temperatureC,
           onChanged: useImperial
               ? (f) => onUpdate(input.copyWith(temperatureC: (f - 32) * 5 / 9))
               : (v) => onUpdate(input.copyWith(temperatureC: v)),

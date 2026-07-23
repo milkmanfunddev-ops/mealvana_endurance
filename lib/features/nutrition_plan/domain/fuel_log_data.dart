@@ -151,8 +151,8 @@ class FuelLogItem {
           ? NutritionalInfo.fromJson(json['nutritionalInfo'])
           : null,
       servingSize: json['servingSize'] as String?,
-      nutritionReferenceQuantity:
-          (json['nutritionReferenceQuantity'] as num?)?.toDouble(),
+      nutritionReferenceQuantity: (json['nutritionReferenceQuantity'] as num?)
+          ?.toDouble(),
     );
   }
 }
@@ -183,8 +183,7 @@ class FuelLogData {
     return items
         .where(
           (item) =>
-              item.sectionId == sectionId &&
-              item.subPhaseType == subPhaseType,
+              item.sectionId == sectionId && item.subPhaseType == subPhaseType,
         )
         .toList();
   }
@@ -201,11 +200,13 @@ class FuelLogData {
         // Before section with sub-phases (meal, snack, top_up)
         for (final subPhase in section.subPhases!) {
           for (final food in subPhase.foodItems) {
-            items.add(_foodItemToLogItem(
-              food: food,
-              sectionId: sectionId,
-              subPhaseType: subPhase.subPhaseType,
-            ));
+            items.add(
+              _foodItemToLogItem(
+                food: food,
+                sectionId: sectionId,
+                subPhaseType: subPhase.subPhaseType,
+              ),
+            );
           }
         }
       } else if (section.supportsByHour && section.byHourData != null) {
@@ -221,19 +222,18 @@ class FuelLogData {
         for (final entry in foodTotals.entries) {
           final food = foodMap[entry.key];
           if (food == null) continue;
-          items.add(_foodItemToLogItem(
-            food: food,
-            sectionId: sectionId,
-            overrideQuantity: entry.value,
-          ));
+          items.add(
+            _foodItemToLogItem(
+              food: food,
+              sectionId: sectionId,
+              overrideQuantity: entry.value,
+            ),
+          );
         }
       } else {
         // Standard section (summary foods list)
         for (final food in section.foodItems) {
-          items.add(_foodItemToLogItem(
-            food: food,
-            sectionId: sectionId,
-          ));
+          items.add(_foodItemToLogItem(food: food, sectionId: sectionId));
         }
       }
     }

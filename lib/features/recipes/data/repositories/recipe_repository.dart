@@ -24,11 +24,8 @@ import '../../domain/recipe.dart';
 ///   on [Recipe] objects coming from the cache — the UI can layer its own
 ///   favourite state on top if needed later.
 class RecipeRepository with SyncableRepository {
-  RecipeRepository(
-    this._supabase,
-    this._database, {
-    AppLogger? logger,
-  }) : _logger = logger ?? const NoopAppLogger();
+  RecipeRepository(this._supabase, this._database, {AppLogger? logger})
+    : _logger = logger ?? const NoopAppLogger();
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -50,9 +47,9 @@ class RecipeRepository with SyncableRepository {
   /// threshold rather than the mixin's default 1 h.
   @override
   Future<bool> isStale() async {
-    final localRows = await (_database.select(_database.recipesTable)
-          ..where((t) => t.isActive.equals(true)))
-        .get();
+    final localRows = await (_database.select(
+      _database.recipesTable,
+    )..where((t) => t.isActive.equals(true))).get();
     if (localRows.isEmpty) {
       _logger.debug(
         'Forcing sync — no local recipes found',
@@ -82,10 +79,7 @@ class RecipeRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
-        'Syncing recipes from Supabase',
-        context: 'RECIPE_REPO',
-      );
+      _logger.info('Syncing recipes from Supabase', context: 'RECIPE_REPO');
 
       final response = await _supabase
           .from('recipes')
@@ -146,28 +140,29 @@ class RecipeRepository with SyncableRepository {
   // ========================================================================
 
   Future<List<Recipe>> getAllRecipes() async {
-    final entries = await (_database.select(_database.recipesTable)
-          ..where((t) => t.isActive.equals(true))
-          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
-        .get();
+    final entries =
+        await (_database.select(_database.recipesTable)
+              ..where((t) => t.isActive.equals(true))
+              ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+            .get();
     return entries.map(_entryToRecipe).toList();
   }
 
   Future<List<Recipe>> getRecipesByType(RecipeType type) async {
-    final entries = await (_database.select(_database.recipesTable)
-          ..where(
-            (t) =>
-                t.isActive.equals(true) & t.type.equals(type.wireValue),
-          )
-          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
-        .get();
+    final entries =
+        await (_database.select(_database.recipesTable)
+              ..where(
+                (t) => t.isActive.equals(true) & t.type.equals(type.wireValue),
+              )
+              ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+            .get();
     return entries.map(_entryToRecipe).toList();
   }
 
   Future<Recipe?> getRecipeById(String id) async {
-    final entry = await (_database.select(_database.recipesTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final entry = await (_database.select(
+      _database.recipesTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     return entry != null ? _entryToRecipe(entry) : null;
   }
 
@@ -192,10 +187,8 @@ class RecipeRepository with SyncableRepository {
     return all.where((recipe) {
       return recipe.name.toLowerCase().contains(lowerQuery) ||
           recipe.description.toLowerCase().contains(lowerQuery) ||
-          recipe.ingredients
-              .any((i) => i.toLowerCase().contains(lowerQuery)) ||
-          (recipe.tags
-                  ?.any((tag) => tag.toLowerCase().contains(lowerQuery)) ??
+          recipe.ingredients.any((i) => i.toLowerCase().contains(lowerQuery)) ||
+          (recipe.tags?.any((tag) => tag.toLowerCase().contains(lowerQuery)) ??
               false);
     }).toList();
   }
@@ -216,10 +209,10 @@ class RecipeRepository with SyncableRepository {
     final resolvedImageUrl = rawImageUrl == null
         ? null
         : (rawImageUrl.startsWith('http')
-            ? rawImageUrl
-            : _supabase.storage
-                .from('recipe-images')
-                .getPublicUrl(rawImageUrl));
+              ? rawImageUrl
+              : _supabase.storage
+                    .from('recipe-images')
+                    .getPublicUrl(rawImageUrl));
 
     return Recipe(
       id: entry.id,
@@ -276,7 +269,9 @@ class RecipeRepository with SyncableRepository {
         description: Value(json['description'] as String? ?? ''),
         ingredients: Value(_jsonbToString(json['ingredients'])),
         instructions: Value(_jsonbToString(json['instructions'])),
-        prepTimeMinutes: Value((json['prep_time_minutes'] as num?)?.toInt() ?? 0),
+        prepTimeMinutes: Value(
+          (json['prep_time_minutes'] as num?)?.toInt() ?? 0,
+        ),
         servings: Value((json['servings'] as num?)?.toInt() ?? 1),
         type: Value(json['type'] as String? ?? 'mains'),
         calories: Value((json['calories'] as num?)?.toDouble() ?? 0),
@@ -287,16 +282,14 @@ class RecipeRepository with SyncableRepository {
         sugarG: Value((json['sugar_g'] as num?)?.toDouble() ?? 0),
         sodiumMg: Value((json['sodium_mg'] as num?)?.toDouble() ?? 0),
         imageUrl: Value(json['image_url'] as String?),
-        tags: Value(
-          json['tags'] != null ? _jsonbToString(json['tags']) : null,
-        ),
+        tags: Value(json['tags'] != null ? _jsonbToString(json['tags']) : null),
         isActive: Value(json['is_active'] as bool? ?? true),
         createdAt:
             DateTime.tryParse(json['created_at'] as String? ?? '') ??
-                DateTime.now(),
+            DateTime.now(),
         updatedAt:
             DateTime.tryParse(json['updated_at'] as String? ?? '') ??
-                DateTime.now(),
+            DateTime.now(),
       );
     }).toList();
 

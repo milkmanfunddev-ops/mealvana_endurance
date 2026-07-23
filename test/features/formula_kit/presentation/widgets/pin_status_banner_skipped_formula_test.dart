@@ -50,12 +50,10 @@ const _systemPinHonoredButFormulaSkipped = PinDecision(
 );
 
 Widget _host(List<PinStatusBannerRow> rows) => MaterialApp(
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: PinStatusBanner(rows: rows),
-        ),
-      ),
-    );
+  home: Scaffold(
+    body: SingleChildScrollView(child: PinStatusBanner(rows: rows)),
+  ),
+);
 
 void main() {
   group('PinStatusBanner — skipped personal formula', () {
@@ -79,8 +77,9 @@ void main() {
       },
     );
 
-    testWidgets('renders the "?" affordance when a formula was skipped',
-        (tester) async {
+    testWidgets('renders the "?" affordance when a formula was skipped', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _host(const [
           PinStatusBannerRow(
@@ -96,8 +95,9 @@ void main() {
       );
     });
 
-    testWidgets('hides the "?" affordance when nothing was skipped',
-        (tester) async {
+    testWidgets('hides the "?" affordance when nothing was skipped', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _host(const [
           PinStatusBannerRow(
@@ -120,8 +120,9 @@ void main() {
       expect(find.text('Using your pinned formulas'), findsOneWidget);
     });
 
-    testWidgets('tapping "?" explains the duration miss in plain language',
-        (tester) async {
+    testWidgets('tapping "?" explains the duration miss in plain language', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _host(const [
           PinStatusBannerRow(
@@ -146,8 +147,9 @@ void main() {
       expect(find.textContaining('< 90 min'), findsOneWidget);
     });
 
-    testWidgets('explains an activity miss differently from a duration miss',
-        (tester) async {
+    testWidgets('explains an activity miss differently from a duration miss', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _host(const [
           PinStatusBannerRow(
@@ -196,8 +198,10 @@ void main() {
       });
 
       expect(decision.hasSkippedFormulas, isTrue);
-      expect(decision.skippedPersonalFormulas.single.name,
-          'Carb Drink Mix + Stroopwafel');
+      expect(
+        decision.skippedPersonalFormulas.single.name,
+        'Carb Drink Mix + Stroopwafel',
+      );
       expect(
         decision.skippedPersonalFormulas.single.reason,
         SkippedFormulaReason.durationOutOfScope,
@@ -240,10 +244,14 @@ void main() {
     test('round-trips through toJson', () {
       const original = _systemPinHonoredButFormulaSkipped;
       final restored = PinDecision.fromJson(original.toJson());
-      expect(restored.skippedPersonalFormulas.single.name,
-          original.skippedPersonalFormulas.single.name);
-      expect(restored.skippedPersonalFormulas.single.reason,
-          original.skippedPersonalFormulas.single.reason);
+      expect(
+        restored.skippedPersonalFormulas.single.name,
+        original.skippedPersonalFormulas.single.name,
+      );
+      expect(
+        restored.skippedPersonalFormulas.single.reason,
+        original.skippedPersonalFormulas.single.reason,
+      );
     });
   });
 

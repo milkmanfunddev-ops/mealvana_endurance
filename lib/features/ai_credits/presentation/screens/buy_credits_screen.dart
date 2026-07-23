@@ -129,8 +129,7 @@ class _EnabledBody extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => const _PackagesUnavailable(),
                 data: (offering) {
-                  if (offering == null ||
-                      offering.availablePackages.isEmpty) {
+                  if (offering == null || offering.availablePackages.isEmpty) {
                     return const _PackagesUnavailable();
                   }
                   return _PackageList(
@@ -168,10 +167,7 @@ class _BalanceHeader extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text(
-              'Your Balance',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text('Your Balance', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             walletAsync.when(
               loading: () => const CircularProgressIndicator(),
@@ -179,8 +175,8 @@ class _BalanceHeader extends StatelessWidget {
               data: (wallet) => Text(
                 '${wallet.balance.clamp(0, double.maxFinite).toInt()} credits',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],

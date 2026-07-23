@@ -23,10 +23,10 @@ void main() {
   /// whichever machine happens to be running the tests, and these assertions
   /// would pass in Denver and fail in Seattle.
   Map<String, Object> geo(String country, String? region) => {
-        'privacy_region_source': 'geo',
-        'privacy_geo_country': country,
-        if (region != null) 'privacy_geo_region': region,
-      };
+    'privacy_region_source': 'geo',
+    'privacy_geo_country': country,
+    if (region != null) 'privacy_geo_region': region,
+  };
 
   Future<ProviderContainer> containerWith(
     Map<String, Object> prefsValues,
@@ -46,20 +46,22 @@ void main() {
   }
 
   group('analyticsTrackerProvider consent gate', () {
-    test('no decision on file → Noop (nothing initializes, nothing sends)',
-        () async {
-      final container = await containerWith({});
-      addTearDown(container.dispose);
+    test(
+      'no decision on file → Noop (nothing initializes, nothing sends)',
+      () async {
+        final container = await containerWith({});
+        addTearDown(container.dispose);
 
-      expect(
-        container.read(analyticsConsentProvider).status,
-        ConsentStatus.unknown,
-      );
-      expect(
-        container.read(analyticsTrackerProvider),
-        isA<NoopAnalyticsTracker>(),
-      );
-    });
+        expect(
+          container.read(analyticsConsentProvider).status,
+          ConsentStatus.unknown,
+        );
+        expect(
+          container.read(analyticsTrackerProvider),
+          isA<NoopAnalyticsTracker>(),
+        );
+      },
+    );
 
     test('explicitly denied → Noop', () async {
       final container = await containerWith({
@@ -108,28 +110,30 @@ void main() {
       },
     );
 
-    test('withdrawal takes effect immediately (Apple requires withdraw)',
-        () async {
-      final container = await containerWith({
-        'analytics_consent_status': 'granted',
-        'analytics_consent_version': kConsentVersion,
-      });
-      addTearDown(container.dispose);
+    test(
+      'withdrawal takes effect immediately (Apple requires withdraw)',
+      () async {
+        final container = await containerWith({
+          'analytics_consent_status': 'granted',
+          'analytics_consent_version': kConsentVersion,
+        });
+        addTearDown(container.dispose);
 
-      expect(
-        container.read(analyticsTrackerProvider),
-        isA<MixpanelAnalyticsTracker>(),
-      );
+        expect(
+          container.read(analyticsTrackerProvider),
+          isA<MixpanelAnalyticsTracker>(),
+        );
 
-      await container
-          .read(analyticsConsentProvider.notifier)
-          .record(granted: false);
+        await container
+            .read(analyticsConsentProvider.notifier)
+            .record(granted: false);
 
-      expect(
-        container.read(analyticsTrackerProvider),
-        isA<NoopAnalyticsTracker>(),
-      );
-    });
+        expect(
+          container.read(analyticsTrackerProvider),
+          isA<NoopAnalyticsTracker>(),
+        );
+      },
+    );
 
     // The old "Exclude this device from analytics (testers)" toggle used to
     // force a Noop here. It was removed in favour of `is_internal`, which tags
@@ -153,55 +157,59 @@ void main() {
     });
   });
 
-  group('analyticsConsentGrantedFromPrefs (the main() / Sentry-replay path)',
-      () {
-    test('fails closed with no decision', () async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
-    });
-
-    test('fails closed on a stale consent version', () async {
-      SharedPreferences.setMockInitialValues({
-        'analytics_consent_status': 'granted',
-        'analytics_consent_version': kConsentVersion - 1,
+  group(
+    'analyticsConsentGrantedFromPrefs (the main() / Sentry-replay path)',
+    () {
+      test('fails closed with no decision', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
       });
-      final prefs = await SharedPreferences.getInstance();
-      expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
-    });
 
-    test('true only on a current-version grant', () async {
-      SharedPreferences.setMockInitialValues({
-        'analytics_consent_status': 'granted',
-        'analytics_consent_version': kConsentVersion,
+      test('fails closed on a stale consent version', () async {
+        SharedPreferences.setMockInitialValues({
+          'analytics_consent_status': 'granted',
+          'analytics_consent_version': kConsentVersion - 1,
+        });
+        final prefs = await SharedPreferences.getInstance();
+        expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
       });
-      final prefs = await SharedPreferences.getInstance();
-      expect(analyticsConsentGrantedFromPrefs(prefs), isTrue);
-    });
 
-    test('an implied grant arms Sentry replay (geo, non-strict, no decision)',
+      test('true only on a current-version grant', () async {
+        SharedPreferences.setMockInitialValues({
+          'analytics_consent_status': 'granted',
+          'analytics_consent_version': kConsentVersion,
+        });
+        final prefs = await SharedPreferences.getInstance();
+        expect(analyticsConsentGrantedFromPrefs(prefs), isTrue);
+      });
+
+      test(
+        'an implied grant arms Sentry replay (geo, non-strict, no decision)',
         () async {
-      SharedPreferences.setMockInitialValues(geo('US', 'CA'));
-      final prefs = await SharedPreferences.getInstance();
-      expect(analyticsConsentGrantedFromPrefs(prefs), isTrue);
-    });
+          SharedPreferences.setMockInitialValues(geo('US', 'CA'));
+          final prefs = await SharedPreferences.getInstance();
+          expect(analyticsConsentGrantedFromPrefs(prefs), isTrue);
+        },
+      );
 
-    test('no implied grant in a strict region', () async {
-      SharedPreferences.setMockInitialValues(geo('DE', null));
-      final prefs = await SharedPreferences.getInstance();
-      expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
-    });
-
-    test('a denial outranks the implied grant', () async {
-      SharedPreferences.setMockInitialValues({
-        ...geo('US', 'CA'),
-        'analytics_consent_status': 'denied',
-        'analytics_consent_version': kConsentVersion,
+      test('no implied grant in a strict region', () async {
+        SharedPreferences.setMockInitialValues(geo('DE', null));
+        final prefs = await SharedPreferences.getInstance();
+        expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
       });
-      final prefs = await SharedPreferences.getInstance();
-      expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
-    });
-  });
+
+      test('a denial outranks the implied grant', () async {
+        SharedPreferences.setMockInitialValues({
+          ...geo('US', 'CA'),
+          'analytics_consent_status': 'denied',
+          'analytics_consent_version': kConsentVersion,
+        });
+        final prefs = await SharedPreferences.getInstance();
+        expect(analyticsConsentGrantedFromPrefs(prefs), isFalse);
+      });
+    },
+  );
 
   /// Outside the EEA/UK and Washington we no longer show a consent screen at
   /// all: disclosure (the privacy policy) plus an accessible opt-out (Settings
@@ -209,20 +217,26 @@ void main() {
   /// therefore defaults ON — but only under conditions that are load-bearing,
   /// and each of them is pinned below.
   group('implied grant outside strict regimes', () {
-    test('known non-strict location, no decision → analytics runs, no prompt',
-        () async {
-      final container = await containerWith(geo('US', 'CA'));
-      addTearDown(container.dispose);
+    test(
+      'known non-strict location, no decision → analytics runs, no prompt',
+      () async {
+        final container = await containerWith(geo('US', 'CA'));
+        addTearDown(container.dispose);
 
-      final consent = container.read(analyticsConsentProvider);
-      expect(consent.status, ConsentStatus.unknown);
-      expect(consent.allowsAnalytics, isTrue);
-      expect(consent.needsPrompt, isFalse, reason: 'no screen outside strict');
-      expect(
-        container.read(analyticsTrackerProvider),
-        isA<MixpanelAnalyticsTracker>(),
-      );
-    });
+        final consent = container.read(analyticsConsentProvider);
+        expect(consent.status, ConsentStatus.unknown);
+        expect(consent.allowsAnalytics, isTrue);
+        expect(
+          consent.needsPrompt,
+          isFalse,
+          reason: 'no screen outside strict',
+        );
+        expect(
+          container.read(analyticsTrackerProvider),
+          isA<MixpanelAnalyticsTracker>(),
+        );
+      },
+    );
 
     // THE ONE THAT MATTERS. An implied grant must never resurrect analytics for
     // somebody who explicitly turned it off in Settings. If this ever goes red,
@@ -262,19 +276,21 @@ void main() {
       expect(consent.allowsAnalytics, isFalse);
     });
 
-    test('Washington is strict → prompt, and nothing runs until answered',
-        () async {
-      final container = await containerWith(geo('US', 'WA'));
-      addTearDown(container.dispose);
+    test(
+      'Washington is strict → prompt, and nothing runs until answered',
+      () async {
+        final container = await containerWith(geo('US', 'WA'));
+        addTearDown(container.dispose);
 
-      final consent = container.read(analyticsConsentProvider);
-      expect(consent.needsPrompt, isTrue);
-      expect(consent.allowsAnalytics, isFalse);
-      expect(
-        container.read(analyticsTrackerProvider),
-        isA<NoopAnalyticsTracker>(),
-      );
-    });
+        final consent = container.read(analyticsConsentProvider);
+        expect(consent.needsPrompt, isTrue);
+        expect(consent.allowsAnalytics, isFalse);
+        expect(
+          container.read(analyticsTrackerProvider),
+          isA<NoopAnalyticsTracker>(),
+        );
+      },
+    );
 
     test('EEA is strict → prompt', () async {
       final container = await containerWith(geo('DE', null));

@@ -57,8 +57,9 @@ class BrickSegmentCard extends ConsumerWidget {
               : AppColors.cream.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: (isDark ? AppColors.cream : AppColors.blackberry)
-                .withValues(alpha: 0.1),
+            color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+              alpha: 0.1,
+            ),
             width: 1,
           ),
         ),
@@ -68,11 +69,8 @@ class BrickSegmentCard extends ConsumerWidget {
             children: [
               _buildSportIcon(),
               const SizedBox(width: 10),
-              Expanded(
-                child: _buildSegmentDetails(context, isDark, useMetric),
-              ),
-              if (showRemoveButton && onRemove != null)
-                _buildRemoveButton(),
+              Expanded(child: _buildSegmentDetails(context, isDark, useMetric)),
+              if (showRemoveButton && onRemove != null) _buildRemoveButton(),
             ],
           ),
         ),
@@ -117,8 +115,9 @@ class BrickSegmentCard extends ConsumerWidget {
           style: TextStyle(
             fontFamily: 'Apercu',
             fontSize: 12,
-            color: (isDark ? AppColors.cream : AppColors.blackberry)
-                .withValues(alpha: 0.7),
+            color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+              alpha: 0.7,
+            ),
             height: 1.3,
           ),
           maxLines: 1,
@@ -162,7 +161,9 @@ class BrickSegmentCard extends ConsumerWidget {
 
   String _getSegmentTitle(bool useMetric) {
     final sportName = segment.sport.toUpperCase();
-    final distanceUnit = useMetric ? DistanceUnit.kilometers : DistanceUnit.miles;
+    final distanceUnit = useMetric
+        ? DistanceUnit.kilometers
+        : DistanceUnit.miles;
 
     // Format distance/duration based on sport
     if (segment.sport.toLowerCase() == 'swimming') {
@@ -187,7 +188,9 @@ class BrickSegmentCard extends ConsumerWidget {
 
   String _getSegmentDetails(bool useMetric) {
     final details = <String>[];
-    final distanceUnit = useMetric ? DistanceUnit.kilometers : DistanceUnit.miles;
+    final distanceUnit = useMetric
+        ? DistanceUnit.kilometers
+        : DistanceUnit.miles;
     final paceUnit = useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
 
     if (segment.sport.toLowerCase() == 'swimming') {
@@ -210,11 +213,13 @@ class BrickSegmentCard extends ConsumerWidget {
         );
       }
 
-      if (segment.sport.toLowerCase() == 'cycling' && segment.speedMph != null) {
+      if (segment.sport.toLowerCase() == 'cycling' &&
+          segment.speedMph != null) {
         details.add(
           UnitFormatter.formatSpeed(segment.speedMph!, useMetric: useMetric),
         );
-      } else if (segment.sport.toLowerCase() == 'running' && segment.paceMinutesPerMile != null) {
+      } else if (segment.sport.toLowerCase() == 'running' &&
+          segment.paceMinutesPerMile != null) {
         details.add(
           UnitFormatter.formatPace(segment.paceMinutesPerMile!, unit: paceUnit),
         );

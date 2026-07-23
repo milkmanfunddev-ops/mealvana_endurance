@@ -44,11 +44,7 @@ SolverFood _makeFood({
   );
 }
 
-const _defaultTargets = SolverTargets(
-  carbsG: 60,
-  sodiumMg: 800,
-  fluidMl: 700,
-);
+const _defaultTargets = SolverTargets(carbsG: 60, sodiumMg: 800, fluidMl: 700);
 
 const _solver = ClientDuringPhaseSolver();
 
@@ -83,53 +79,56 @@ void main() {
     // Running — single primary carb type
     // -----------------------------------------------------------------------
     group('running — primary carb mixing constraint', () {
-      test('picks exactly one primary carb type when multiple are available',
-          () {
-        final foods = [
-          _makeFood(
-            id: 'gel-a',
-            productType: 'gel',
-            carbsG: 25,
-            sodiumMg: 50,
-            isIndivisible: true,
-          ),
-          _makeFood(
-            id: 'chew-a',
-            productType: 'chew',
-            carbsG: 10,
-            sodiumMg: 80,
-            isIndivisible: false,
-            maxServings: 4,
-          ),
-          _makeFood(
-            id: 'drink-mix-a',
-            productType: 'drink_mix',
-            carbsG: 20,
-            sodiumMg: 100,
-            isLiquid: true,
-          ),
-          _makeFood(
-            id: 'water',
-            productType: 'beverage',
-            fluidMl: 500,
-            isLiquid: true,
-          ),
-        ];
+      test(
+        'picks exactly one primary carb type when multiple are available',
+        () {
+          final foods = [
+            _makeFood(
+              id: 'gel-a',
+              productType: 'gel',
+              carbsG: 25,
+              sodiumMg: 50,
+              isIndivisible: true,
+            ),
+            _makeFood(
+              id: 'chew-a',
+              productType: 'chew',
+              carbsG: 10,
+              sodiumMg: 80,
+              isIndivisible: false,
+              maxServings: 4,
+            ),
+            _makeFood(
+              id: 'drink-mix-a',
+              productType: 'drink_mix',
+              carbsG: 20,
+              sodiumMg: 100,
+              isLiquid: true,
+            ),
+            _makeFood(
+              id: 'water',
+              productType: 'beverage',
+              fluidMl: 500,
+              isLiquid: true,
+            ),
+          ];
 
-        final result = _solver.solve(
-          foods: foods,
-          targets: _defaultTargets,
-          activityType: ActivityType.running,
-        );
+          final result = _solver.solve(
+            foods: foods,
+            targets: _defaultTargets,
+            activityType: ActivityType.running,
+          );
 
-        final types = _primaryCarbProductTypes(result, foods);
-        expect(
-          types.length,
-          equals(1),
-          reason: 'running must use exactly one primary carb product type, '
-              'got: $types',
-        );
-      });
+          final types = _primaryCarbProductTypes(result, foods);
+          expect(
+            types.length,
+            equals(1),
+            reason:
+                'running must use exactly one primary carb product type, '
+                'got: $types',
+          );
+        },
+      );
 
       test('running with single product type is untouched', () {
         final foods = [
@@ -159,35 +158,40 @@ void main() {
         expect(types, equals({'gel'}));
       });
 
-      test('running with no primary carb foods returns empty primary carbs',
-          () {
-        final foods = [
-          _makeFood(
-            id: 'sports-drink',
-            productType: 'sports_drink',
-            carbsG: 30,
-            sodiumMg: 200,
-            fluidMl: 500,
-            isLiquid: true,
-          ),
-          _makeFood(
-            id: 'water',
-            productType: 'beverage',
-            fluidMl: 500,
-            isLiquid: true,
-          ),
-        ];
+      test(
+        'running with no primary carb foods returns empty primary carbs',
+        () {
+          final foods = [
+            _makeFood(
+              id: 'sports-drink',
+              productType: 'sports_drink',
+              carbsG: 30,
+              sodiumMg: 200,
+              fluidMl: 500,
+              isLiquid: true,
+            ),
+            _makeFood(
+              id: 'water',
+              productType: 'beverage',
+              fluidMl: 500,
+              isLiquid: true,
+            ),
+          ];
 
-        final result = _solver.solve(
-          foods: foods,
-          targets: _defaultTargets,
-          activityType: ActivityType.running,
-        );
+          final result = _solver.solve(
+            foods: foods,
+            targets: _defaultTargets,
+            activityType: ActivityType.running,
+          );
 
-        final types = _primaryCarbProductTypes(result, foods);
-        expect(types, isEmpty,
-            reason: 'No gel/chew/drink_mix in pool → no primary carb type');
-      });
+          final types = _primaryCarbProductTypes(result, foods);
+          expect(
+            types,
+            isEmpty,
+            reason: 'No gel/chew/drink_mix in pool → no primary carb type',
+          );
+        },
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -222,18 +226,17 @@ void main() {
 
         final result = _solver.solve(
           foods: foods,
-          targets: const SolverTargets(
-            carbsG: 80,
-            sodiumMg: 500,
-            fluidMl: 700,
-          ),
+          targets: const SolverTargets(carbsG: 80, sodiumMg: 500, fluidMl: 700),
           activityType: ActivityType.cycling,
         );
 
         final ids = result.map((s) => s.foodId).toSet();
         // Bar (bike solid) should appear — cycling allows it
-        expect(ids.contains('bar-a'), isTrue,
-            reason: 'cycling should include bike solid (bar)');
+        expect(
+          ids.contains('bar-a'),
+          isTrue,
+          reason: 'cycling should include bike solid (bar)',
+        );
       });
 
       test('cycling allows gel and drink_mix together if needed', () {
@@ -276,8 +279,11 @@ void main() {
         // so multiple primary-carb types may appear.
         final types = _primaryCarbProductTypes(result, foods);
         // At least one primary carb type should be selected
-        expect(types, isNotEmpty,
-            reason: 'cycling: at least one primary carb type should appear');
+        expect(
+          types,
+          isNotEmpty,
+          reason: 'cycling: at least one primary carb type should appear',
+        );
         // Both types may appear — that's the cycling behaviour.
         // No assertion that types.length == 1.
       });
@@ -374,8 +380,11 @@ void main() {
             .fold(0.0, (sum, s) => sum + s.quantity);
 
         // moderate: multiplier = 1.0 → maxServings cap = 4
-        expect(gelServings, lessThanOrEqualTo(4.0),
-            reason: 'moderate gut training caps at maxServings (4)');
+        expect(
+          gelServings,
+          lessThanOrEqualTo(4.0),
+          reason: 'moderate gut training caps at maxServings (4)',
+        );
       });
 
       test('low gut training caps servings at 0.5× maxServings', () {
@@ -412,8 +421,11 @@ void main() {
             .fold(0.0, (sum, s) => sum + s.quantity);
 
         // low: multiplier = 0.5 → cap = max(1, 8 * 0.5) = 4
-        expect(gelServings, lessThanOrEqualTo(4.0),
-            reason: 'low gut training caps gel at 0.5 × maxServings(8) = 4');
+        expect(
+          gelServings,
+          lessThanOrEqualTo(4.0),
+          reason: 'low gut training caps gel at 0.5 × maxServings(8) = 4',
+        );
       });
     });
 
@@ -507,19 +519,18 @@ void main() {
 
         final result = _solver.solve(
           foods: foods,
-          targets: const SolverTargets(
-            carbsG: 25,
-            sodiumMg: 0,
-            fluidMl: 700,
-          ),
+          targets: const SolverTargets(carbsG: 25, sodiumMg: 0, fluidMl: 700),
           activityType: ActivityType.running,
         );
 
         final waterServings = result
             .where((s) => s.foodId == 'water')
             .fold(0.0, (sum, s) => sum + s.quantity);
-        expect(waterServings, greaterThan(0),
-            reason: 'water should be added to fill fluid target');
+        expect(
+          waterServings,
+          greaterThan(0),
+          reason: 'water should be added to fill fluid target',
+        );
       });
 
       test('step 5: adds electrolyte when sodium target is unmet', () {
@@ -560,8 +571,11 @@ void main() {
         final elecServings = result
             .where((s) => s.foodId == 'electrolyte')
             .fold(0.0, (sum, s) => sum + s.quantity);
-        expect(elecServings, greaterThan(0),
-            reason: 'electrolyte should be added to fill sodium target');
+        expect(
+          elecServings,
+          greaterThan(0),
+          reason: 'electrolyte should be added to fill sodium target',
+        );
       });
 
       test('step 3 not triggered for running', () {
@@ -590,18 +604,17 @@ void main() {
 
         final result = _solver.solve(
           foods: foods,
-          targets: const SolverTargets(
-            carbsG: 80,
-            sodiumMg: 200,
-            fluidMl: 400,
-          ),
+          targets: const SolverTargets(carbsG: 80, sodiumMg: 200, fluidMl: 400),
           activityType: ActivityType.running,
         );
 
         // Bar (bike solid) should NOT appear for running
         final barSelected = result.any((s) => s.foodId == 'bar-a');
-        expect(barSelected, isFalse,
-            reason: 'bike solids (bar) should not be selected for running');
+        expect(
+          barSelected,
+          isFalse,
+          reason: 'bike solids (bar) should not be selected for running',
+        );
       });
     });
 
@@ -636,9 +649,12 @@ void main() {
       );
 
       final gelSelected = result.any((s) => s.foodId == 'gel-a');
-      expect(gelSelected, isFalse,
-          reason:
-              'gel should be skipped when carb target < 15g (would overshoot)');
+      expect(
+        gelSelected,
+        isFalse,
+        reason:
+            'gel should be skipped when carb target < 15g (would overshoot)',
+      );
     });
   });
 }

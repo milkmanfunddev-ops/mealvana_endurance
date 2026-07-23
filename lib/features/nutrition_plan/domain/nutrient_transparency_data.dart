@@ -155,11 +155,7 @@ enum InlineEditType {
 
 /// Confidence level for a Full Story answer, per `research_notes_updated.md`
 /// §1.6. Renders as a pill in the UI (HIGH/MEDIUM/LOW CONFIDENCE).
-enum ConfidenceLevel {
-  high,
-  medium,
-  low,
-}
+enum ConfidenceLevel { high, medium, low }
 
 /// One Q&A section in the Full Story accordion.
 class StorySection {

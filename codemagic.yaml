@@ -226,6 +226,34 @@ definitions:
           echo "appended ANALYTICS_DEV_ENABLED=true to .env.dev.local"
         fi
 
+    - &install_patrol_cli
+      name: Install Patrol CLI
+      # patrol_cli MUST match the `patrol` package (pubspec.lock: 4.6.1). Per the
+      # Patrol compatibility table, patrol 4.6.1 pairs with patrol_cli 4.4.0 — the
+      # latest CLI (4.5.x) prints "Version incompatibility detected!" and refuses
+      # to run. Pin it. `patrol test` drives the native RunnerUITests XCUITest
+      # target, so this replaces the old (broken) `flutter test integration_test/`
+      # invocation, which never ran the patrolTest() bodies as native tests.
+      script: |
+        dart pub global activate patrol_cli 4.4.0
+        echo "PATH=$HOME/.pub-cache/bin:$PATH" >> $CM_ENV
+        "$HOME/.pub-cache/bin/patrol" doctor || true
+
+    - &write_integration_creds
+      name: Write integration-test credentials
+      # Patrol flow tests read INTEGRATION_TEST_EMAIL / INTEGRATION_TEST_PASSWORD
+      # from secrets/integration_test.env via --dart-define-from-file. That file is
+      # gitignored, so CI recreates it from the INTEGRATION_TEST_ENV secure var
+      # (upload it to the mealvana_dev variable group — contents of the local
+      # secrets/integration_test.env). If the var is unset the file is an empty
+      # stub and credentialed flows self-skip with a clear message instead of
+      # failing hard.
+      script: |
+        set -euo pipefail
+        mkdir -p secrets
+        printf '%s' "${INTEGRATION_TEST_ENV:-}" > secrets/integration_test.env
+        echo "wrote secrets/integration_test.env ($(wc -c < secrets/integration_test.env) bytes)"
+
 workflows:
   # ============================================================
   # DEV WORKFLOWS — auto-triggered on push to `develop`
@@ -638,6 +666,20 @@ workflows:
           else
             echo "Play latest build for $PACKAGE_NAME: $LATEST"
           fi
+          # A run that builds the Shorebird release but dies at Play publishing
+          # leaves a zombie release Play never saw; the next run then collides
+          # with exit 70 at `shorebird release android` (hit 2026-07-22 — the
+          # same failure class the iOS resolver already guards against). Take
+          # the max of Play and Shorebird, exactly like the iOS resolvers.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using Play number only"
+          fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
           echo "Next Android build number: $NEXT"
@@ -717,13 +759,14 @@ workflows:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
 
+    # Manual-only trigger. A push to `main` no longer auto-cuts a prod App
+    # Store release (Lee, 2026-07-23) — prod releases come from `release/*`
+    # (see prod-ios). The user-facing changelog on endurance.mealvana.io is
+    # published independently by .github/workflows/changelog-on-main.yml
+    # (a GitHub Action, not Codemagic), which is unaffected. Re-enable by
+    # restoring `events: [push]` + the `main` branch pattern.
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
       - *write_dotenv_files
@@ -834,13 +877,14 @@ workflows:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
 
+    # Manual-only trigger. A push to `main` no longer auto-cuts a prod Play
+    # release (Lee, 2026-07-23) — prod releases come from `release/*` (see
+    # prod-android). The endurance.mealvana.io changelog is published
+    # independently by .github/workflows/changelog-on-main.yml (a GitHub
+    # Action, not Codemagic). Re-enable by restoring `events: [push]` + the
+    # `main` branch pattern.
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
       - *write_dotenv_files
@@ -867,6 +911,20 @@ workflows:
             echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          # A run that builds the Shorebird release but dies at Play publishing
+          # leaves a zombie release Play never saw; the next run then collides
+          # with exit 70 at `shorebird release android` (hit 2026-07-22 — the
+          # same failure class the iOS resolver already guards against). Take
+          # the max of Play and Shorebird, exactly like the iOS resolvers.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using Play number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
@@ -1219,21 +1277,94 @@ workflows:
 
     scripts:
       - *write_dotenv_files
+      - *write_integration_creds
       - *flutter_pub_get
       - *run_build_runner
-      - *run_unit_tests
+      - *install_patrol_cli
       - *boot_ios_simulator
 
-      - name: Run integration tests
+      - name: Run Patrol integration tests
         script: |
           mkdir -p test-results
 
-          # Run integration tests with expanded output (single run)
-          flutter test integration_test/test_runner.dart \
-            -d "$TEST_DEVICE" \
-            --reporter expanded \
+          # `patrol test` builds the dev app ONCE with the native XCUITest harness
+          # (RunnerUITests → PATROL_INTEGRATION_TEST_IOS_RUNNER) and runs every
+          # patrolTest() under integration_test/ as a real native test. It also
+          # regenerates integration_test/test_bundle.dart (gitignored). Unit tests
+          # are gated separately by pr-validation on the same release/* PR, so they
+          # are not re-run here.
+          #
+          # iOS-only note: credentialed OAuth flows (e.g. Google) can't be driven
+          # through ASWebAuthSession, so those flows self-skip on iOS rather than
+          # fail. INTEGRATION_TEST_EMAIL/_PASSWORD email login is automatable.
+          patrol test \
+            --target integration_test \
+            --flavor dev \
+            --dart-define-from-file=.env.dev.local \
+            --dart-define-from-file=secrets/integration_test.env \
+            --device "$TEST_DEVICE" \
             2>&1 | tee test-results/integration-tests.log
         test_report: test-results/integration-tests.log
+
+      - *shutdown_ios_simulator
+
+    artifacts:
+      - test-results/**
+
+  # ============================================================
+  # PROD INTEGRATION TESTS — the same Patrol suite driven against the
+  # PRODUCTION backend (prod flavor + .env.prod.local). The flows boot
+  # main_prod via integration_test/helpers/flow_launcher.dart and log in with
+  # the prod tester account (INTEGRATION_TEST_PROD_EMAIL/PASSWORD inside the
+  # INTEGRATION_TEST_ENV secure var, present in BOTH the mealvana_dev and
+  # mealvana_prod groups). CRUD flows create uniquely-named rows under that
+  # tester account and delete them on the way out — they touch no other
+  # prod user's data.
+  #
+  # Triggered on push to release/* (the release-verification point) and
+  # startable manually before an App Store submit.
+  # ============================================================
+  integration-tests-prod:
+    name: Integration Tests (PROD backend)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_prod
+      vars:
+        FLUTTER_ENV: prod
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'release/*'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *write_dotenv_files
+      - *write_integration_creds
+      - *flutter_pub_get
+      - *run_build_runner
+      - *install_patrol_cli
+      - *boot_ios_simulator
+
+      - name: Run Patrol integration tests against prod
+        script: |
+          mkdir -p test-results
+          patrol test \
+            --target integration_test \
+            --flavor prod \
+            --dart-define-from-file=.env.prod.local \
+            --dart-define-from-file=secrets/integration_test.env \
+            --device "$TEST_DEVICE" \
+            2>&1 | tee test-results/integration-tests-prod.log
+        test_report: test-results/integration-tests-prod.log
 
       - *shutdown_ios_simulator
 
@@ -1253,8 +1384,9 @@ workflows:
         - mealvana_dev
       vars:
         FLUTTER_ENV: dev
-        # Default to event management test (fastest)
-        TEST_FLOW: event_management_flow_test.dart
+        # Default to a flow that actually exists (the old default,
+        # event_management_flow_test.dart, was renamed to events_crud_flow_test).
+        TEST_FLOW: events_crud_flow_test.dart
 
     # Manual only
     triggering:
@@ -1262,16 +1394,21 @@ workflows:
 
     scripts:
       - *write_dotenv_files
+      - *write_integration_creds
       - *flutter_pub_get
       - *run_build_runner
+      - *install_patrol_cli
       - *boot_ios_simulator
 
-      - name: Run single integration test
+      - name: Run single Patrol integration test
         script: |
           mkdir -p test-results
-          flutter test "integration_test/flows/$TEST_FLOW" \
-            -d "$TEST_DEVICE" \
-            --reporter expanded \
+          patrol test \
+            --target "integration_test/flows/$TEST_FLOW" \
+            --flavor dev \
+            --dart-define-from-file=.env.dev.local \
+            --dart-define-from-file=secrets/integration_test.env \
+            --device "$TEST_DEVICE" \
             2>&1 | tee test-results/quick-test.log
         test_report: test-results/quick-test.log
 
@@ -1294,10 +1431,14 @@ workflows:
     triggering:
       events:
         - pull_request
+        # Push runs the same quality gate on every develop push (Lee,
+        # 2026-07-21: tests must run on develop, not only at release time) and
+        # on pushes to release/* branches themselves.
+        - push
       branch_patterns:
-        # Full quality gate (analyze + format + unit + algorithm) runs on
-        # release/* PRs only — not on develop.
         - pattern: 'release/*'
+          include: true
+        - pattern: 'develop'
           include: true
       cancel_previous_builds: true
 
@@ -1494,6 +1635,20 @@ workflows:
             echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
             echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          # A run that builds the Shorebird release but dies at Play publishing
+          # leaves a zombie release Play never saw; the next run then collides
+          # with exit 70 at `shorebird release android` (hit 2026-07-22 — the
+          # same failure class the iOS resolver already guards against). Take
+          # the max of Play and Shorebird, exactly like the iOS resolvers.
+          SB_LATEST=$(shorebird releases list --flavor prod 2>/dev/null | grep -oE '\+[0-9]+' | tr -d '+' | sort -n | tail -1 || echo "")
+          if [ -n "$SB_LATEST" ] && [ "$SB_LATEST" -eq "$SB_LATEST" ] 2>/dev/null; then
+            echo "Shorebird latest prod release build: $SB_LATEST"
+            if [ "$SB_LATEST" -gt "$LATEST" ]; then
+              LATEST=$SB_LATEST
+            fi
+          else
+            echo "⚠️  Could not resolve Shorebird release list; using Play number only"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV

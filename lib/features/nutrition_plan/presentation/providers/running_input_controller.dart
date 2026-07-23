@@ -454,6 +454,23 @@ class RunningInputController extends _$RunningInputController {
     state = state.copyWith(isFasted: isFasted);
   }
 
+  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
+  ///
+  /// This controller is keepAlive, so form state survives navigation for the
+  /// whole app session. Every other field is re-seeded on screen entry, but
+  /// `isFasted` has no seed source (Activity doesn't persist it) — without
+  /// this reset, a fasted toggle left ON by a previous workout silently sends
+  /// `is_fasted: true` for the next one, and generate-macros-v4 then zeroes
+  /// all pre-workout targets (Adjust Macros shows 0g BEFORE carbs even though
+  /// the user set a fueling window). Mirrors the stale-title reset in
+  /// NewActivityScreen._initializeRunningController and the brick
+  /// controller's `isFasted: false` re-initialization.
+  void resetFasted() {
+    if (state.isFasted) {
+      state = state.copyWith(isFasted: false);
+    }
+  }
+
   void updateGutTraining(GutTraining gutTraining) {
     state = state.copyWith(gutTraining: gutTraining);
   }

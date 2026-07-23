@@ -72,9 +72,12 @@ void main() {
     test('Brazil', () => expect(resolve('BR', -3), ConsentRegime.standard));
   });
 
-  test('half-hour offsets do not crash the Pacific check (India, UTC+5:30)', () {
-    expect(resolve('IN', 5.5), ConsentRegime.standard);
-  });
+  test(
+    'half-hour offsets do not crash the Pacific check (India, UTC+5:30)',
+    () {
+      expect(resolve('IN', 5.5), ConsentRegime.standard);
+    },
+  );
 
   /// The authoritative path, fed by `/api/region` (Vercel edge geo, from the
   /// request IP). Everything above is the offline fallback.
@@ -82,12 +85,15 @@ void main() {
   /// The whole reason for doing a server lookup is the US: a device can tell us
   /// the country but never the *state*, and only Washington requires opt-in.
   group('resolveFromGeo — the authoritative path', () {
-    ConsentRegime geo(String? country, String? region, [double offsetHours = 0]) =>
-        PrivacyRegion.resolveFromGeo(
-          country: country,
-          region: region,
-          utcOffset: Duration(minutes: (offsetHours * 60).round()),
-        );
+    ConsentRegime geo(
+      String? country,
+      String? region, [
+      double offsetHours = 0,
+    ]) => PrivacyRegion.resolveFromGeo(
+      country: country,
+      region: region,
+      utcOffset: Duration(minutes: (offsetHours * 60).round()),
+    );
 
     test('Washington → strict (MHMDA requires opt-in)', () {
       expect(geo('US', 'WA'), ConsentRegime.strict);

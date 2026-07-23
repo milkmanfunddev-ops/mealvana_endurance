@@ -34,7 +34,5 @@ class CoachPairingCodesTable extends Table {
   String get tableName => 'coach_pairing_codes';
 
   @override
-  List<String> get customConstraints => [
-        'UNIQUE(code)',
-      ];
+  List<String> get customConstraints => ['UNIQUE(code)'];
 }

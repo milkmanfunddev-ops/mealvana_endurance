@@ -9,10 +9,7 @@ import '../../domain/pin_decision.dart';
 /// One row in the expanded banner — represents a phase / sub-phase that had a
 /// [PinDecision] attached during plan generation.
 class PinStatusBannerRow {
-  const PinStatusBannerRow({
-    required this.label,
-    required this.decision,
-  });
+  const PinStatusBannerRow({required this.label, required this.decision});
 
   /// Display label for the phase: "Meal", "Snack", "Top-Off", "During".
   final String label;
@@ -113,11 +110,9 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     }
   }
 
-  bool get _hasAnyFallthrough =>
-      widget.rows.any((r) => !r.decision.usedPin);
+  bool get _hasAnyFallthrough => widget.rows.any((r) => !r.decision.usedPin);
 
-  bool get _hasAnyHonored =>
-      widget.rows.any((r) => r.decision.usedPin);
+  bool get _hasAnyHonored => widget.rows.any((r) => r.decision.usedPin);
 
   /// Rows where the user authored a formula for the phase that didn't apply.
   /// Drives the "?" affordance — this is the case the banner was previously
@@ -139,9 +134,9 @@ class _PinStatusBannerState extends State<PinStatusBanner>
         final bracket = f.workoutBracket;
         return bracket == null
             ? '“${f.name}” is set for $targets, which doesn\'t match this '
-                'workout\'s length.'
+                  'workout\'s length.'
             : '“${f.name}” is set for $targets. This workout falls in '
-                '$bracket, so it wasn\'t used.';
+                  '$bracket, so it wasn\'t used.';
       case SkippedFormulaReason.activityOutOfScope:
         return '“${f.name}” isn\'t set up for this activity type.';
       case null:
@@ -166,11 +161,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.warning,
-                    size: 22,
-                  ),
+                  Icon(Icons.info_outline, color: AppColors.warning, size: 22),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -199,9 +190,9 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                     child: Text(
                       _skipExplanation(f),
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurfaceVariant,
+                        color: Theme.of(
+                          sheetContext,
+                        ).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -286,13 +277,10 @@ class _PinStatusBannerState extends State<PinStatusBanner>
           ? '1 of your formulas was skipped — tap ? for why'
           : '$count of your formulas were skipped — tap ? for why';
     }
-    final honoredCount =
-        widget.rows.where((r) => r.decision.usedPin).length;
+    final honoredCount = widget.rows.where((r) => r.decision.usedPin).length;
     final skippedCount = widget.rows.length - honoredCount;
     if (skippedCount == 0) {
-      return honoredCount == 1
-          ? '1 pin honored'
-          : '$honoredCount pins honored';
+      return honoredCount == 1 ? '1 pin honored' : '$honoredCount pins honored';
     }
     if (honoredCount == 0) {
       return 'No in-scope pin for this activity';
@@ -321,10 +309,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.35),
-          width: 1.5,
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.35), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,11 +324,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.push_pin_outlined,
-                    color: accent,
-                    size: 22,
-                  ),
+                  const Icon(Icons.push_pin_outlined, color: accent, size: 22),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -355,9 +336,10 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                     ),
                   ),
                   RotationTransition(
-                    turns: Tween<double>(begin: 0.0, end: 0.5).animate(
-                      _chevronController,
-                    ),
+                    turns: Tween<double>(
+                      begin: 0.0,
+                      end: 0.5,
+                    ).animate(_chevronController),
                     child: Icon(
                       Icons.expand_more,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -392,9 +374,9 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                         Text(
                           "We'll use them whenever they fit your activity.",
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -417,10 +399,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.35),
-          width: 1.5,
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.35), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,9 +437,9 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                         Text(
                           _headerSubtitle,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -490,10 +469,10 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                       tooltip: 'Why your formula wasn\'t used',
                     ),
                   RotationTransition(
-                    turns:
-                        Tween<double>(begin: 0.0, end: 0.5).animate(
-                      _chevronController,
-                    ),
+                    turns: Tween<double>(
+                      begin: 0.0,
+                      end: 0.5,
+                    ).animate(_chevronController),
                     child: Icon(
                       Icons.expand_more,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -540,8 +519,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
 
   Widget _buildRow(PinStatusBannerRow row) {
     final honored = row.decision.usedPin;
-    final rowColor =
-        honored ? AppColors.electrolyte : AppColors.warning;
+    final rowColor = honored ? AppColors.electrolyte : AppColors.warning;
     // Non-honored row copy is a three-way:
     //   reason == pinnedTemplateUnrenderable → pin matched scope but a required
     //     ingredient was missing from the food pool (PR 3 #35 guard).
@@ -551,14 +529,14 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     final templateLabel = honored
         ? (row.decision.pinnedTemplateName ?? 'Pinned formula')
         : (row.decision.fallthroughReason ==
-                PinFallthroughReason.pinnedTemplateUnrenderable
-            ? 'Pin ingredient unavailable'
-            : row.decision.fallthroughReason ==
+                  PinFallthroughReason.pinnedTemplateUnrenderable
+              ? 'Pin ingredient unavailable'
+              : row.decision.fallthroughReason ==
                     PinFallthroughReason.personalFormulaEmpty
-                ? 'Pinned formula is empty'
-                : row.decision.pinSetSize > 0
-                    ? 'Pins fell through'
-                    : 'No pin found');
+              ? 'Pinned formula is empty'
+              : row.decision.pinSetSize > 0
+              ? 'Pins fell through'
+              : 'No pin found');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -566,9 +544,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            honored
-                ? Icons.check_circle_outline
-                : Icons.info_outline,
+            honored ? Icons.check_circle_outline : Icons.info_outline,
             color: rowColor,
             size: 18,
           ),

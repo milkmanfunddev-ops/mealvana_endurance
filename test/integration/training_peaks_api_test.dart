@@ -115,12 +115,21 @@ void main() {
       });
 
       // Token must have expiration info (unlike Final Surge)
-      expect(cachedTokenData['expires_in'], isNotNull,
-          reason: 'expires_in must be present');
-      expect(cachedTokenData['expires_at'], isNotNull,
-          reason: 'expires_at must be present');
-      expect(cachedTokenData['refresh_token'], isNotNull,
-          reason: 'refresh_token must be present for token refresh');
+      expect(
+        cachedTokenData['expires_in'],
+        isNotNull,
+        reason: 'expires_in must be present',
+      );
+      expect(
+        cachedTokenData['expires_at'],
+        isNotNull,
+        reason: 'expires_at must be present',
+      );
+      expect(
+        cachedTokenData['refresh_token'],
+        isNotNull,
+        reason: 'refresh_token must be present for token refresh',
+      );
 
       // expires_in should be around 600 seconds (10 minutes) based on docs
       // but actual value is 3600 (1 hour) - let's verify
@@ -143,16 +152,20 @@ void main() {
       expect(refreshToken, isNotNull, reason: 'Need refresh token to test');
 
       // Make refresh request
-      logApiCall('POST $oauthBaseUrl/oauth/token', params: {
-        'grant_type': 'refresh_token',
-        'refresh_token': '${refreshToken!.substring(0, 10)}...',
-      });
+      logApiCall(
+        'POST $oauthBaseUrl/oauth/token',
+        params: {
+          'grant_type': 'refresh_token',
+          'refresh_token': '${refreshToken!.substring(0, 10)}...',
+        },
+      );
 
       final clientSecret =
           Platform.environment['TRAININGPEAKS_CLIENT_SECRET'] ?? '';
       if (clientSecret.isEmpty) {
         print(
-            '⚠️  TRAININGPEAKS_CLIENT_SECRET not set - skipping refresh test');
+          '⚠️  TRAININGPEAKS_CLIENT_SECRET not set - skipping refresh test',
+        );
         return;
       }
 
@@ -210,9 +223,10 @@ void main() {
         },
       );
 
-      logApiCall('/v1/athlete/profile', params: {
-        'Status': response.statusCode,
-      });
+      logApiCall(
+        '/v1/athlete/profile',
+        params: {'Status': response.statusCode},
+      );
 
       expect(response.statusCode, equals(200));
 
@@ -220,8 +234,7 @@ void main() {
 
       logTestResults({
         'Athlete ID': ResultData(actual: data['Id']),
-        'Name':
-            ResultData(actual: '${data['FirstName']} ${data['LastName']}'),
+        'Name': ResultData(actual: '${data['FirstName']} ${data['LastName']}'),
         'Weight (kg)': ResultData(actual: data['Weight'], unit: 'kg'),
         'IsPremium': ResultData(actual: data['IsPremium']),
         'PreferredUnits': ResultData(actual: data['PreferredUnits']),
@@ -230,10 +243,12 @@ void main() {
 
       // Validate required fields
       expect(data['Id'], isNotNull, reason: 'Athlete ID must be present');
-      expect(data['FirstName'], isNotNull,
-          reason: 'FirstName must be present');
-      expect(data['Weight'], isA<num>(),
-          reason: 'Weight must be numeric (always in kg)');
+      expect(data['FirstName'], isNotNull, reason: 'FirstName must be present');
+      expect(
+        data['Weight'],
+        isA<num>(),
+        reason: 'Weight must be numeric (always in kg)',
+      );
 
       // Note: Weight is ALWAYS in kg regardless of PreferredUnits
       logAssertion(
@@ -261,9 +276,10 @@ void main() {
         },
       );
 
-      logApiCall('/v2/workouts/$startDate/$endDate', params: {
-        'Status': response.statusCode,
-      });
+      logApiCall(
+        '/v2/workouts/$startDate/$endDate',
+        params: {'Status': response.statusCode},
+      );
 
       expect(response.statusCode, equals(200));
 
@@ -271,7 +287,10 @@ void main() {
       logTestResult('Total workouts', workouts.length);
 
       if (workouts.isEmpty) {
-        logTestResult('Note', 'No workouts found - add workouts in TrainingPeaks');
+        logTestResult(
+          'Note',
+          'No workouts found - add workouts in TrainingPeaks',
+        );
         return;
       }
 
@@ -296,18 +315,17 @@ void main() {
       final workouts = jsonDecode(response.body) as List;
 
       // Find a workout with distance
-      final workoutWithDistance = workouts.firstWhere(
-        (w) {
-          final dist = (w as Map<String, dynamic>)['Distance'];
-          return dist != null && dist is num && dist > 0;
-        },
-        orElse: () => <String, dynamic>{},
-      );
+      final workoutWithDistance = workouts.firstWhere((w) {
+        final dist = (w as Map<String, dynamic>)['Distance'];
+        return dist != null && dist is num && dist > 0;
+      }, orElse: () => <String, dynamic>{});
 
       if ((workoutWithDistance as Map).isEmpty) {
         logTestResult('Distance', 'NO WORKOUTS WITH DISTANCE FOUND');
-        logTestResult('Suggestion',
-            'Add a workout with distance to TrainingPeaks');
+        logTestResult(
+          'Suggestion',
+          'Add a workout with distance to TrainingPeaks',
+        );
         return;
       }
 
@@ -320,7 +338,10 @@ void main() {
       final isLikelyMeters = distanceMeters > 100;
 
       final distanceMiles = distanceMeters * 0.000621371;
-      logTestResult('Converted to miles', '${distanceMiles.toStringAsFixed(2)} mi');
+      logTestResult(
+        'Converted to miles',
+        '${distanceMiles.toStringAsFixed(2)} mi',
+      );
 
       logAssertion(
         'Distance appears to be in METERS',
@@ -351,18 +372,17 @@ void main() {
       final workouts = jsonDecode(response.body) as List;
 
       // Find a workout with time
-      final workoutWithTime = workouts.firstWhere(
-        (w) {
-          final time = (w as Map<String, dynamic>)['TotalTime'];
-          return time != null && time is num && time > 0;
-        },
-        orElse: () => <String, dynamic>{},
-      );
+      final workoutWithTime = workouts.firstWhere((w) {
+        final time = (w as Map<String, dynamic>)['TotalTime'];
+        return time != null && time is num && time > 0;
+      }, orElse: () => <String, dynamic>{});
 
       if ((workoutWithTime as Map).isEmpty) {
         logTestResult('TotalTime', 'NO WORKOUTS WITH TIME FOUND');
-        logTestResult('Suggestion',
-            'Add a workout with duration to TrainingPeaks');
+        logTestResult(
+          'Suggestion',
+          'Add a workout with duration to TrainingPeaks',
+        );
         return;
       }
 
@@ -376,7 +396,10 @@ void main() {
       final isLikelyHours = totalTimeHours < 24;
 
       final minutes = totalTimeHours * 60;
-      logTestResult('Converted to minutes', '${minutes.toStringAsFixed(1)} min');
+      logTestResult(
+        'Converted to minutes',
+        '${minutes.toStringAsFixed(1)} min',
+      );
 
       logAssertion(
         'TotalTime appears to be in DECIMAL HOURS',
@@ -497,7 +520,8 @@ void main() {
 
       for (final entry in typeCounts.entries) {
         final isSupported = supportedTypes.any(
-            (t) => t.toLowerCase() == entry.key.toLowerCase());
+          (t) => t.toLowerCase() == entry.key.toLowerCase(),
+        );
         logTestResult(
           entry.key,
           '${entry.value} workouts ${isSupported ? "(SUPPORTED)" : "(may need mapping)"}',
@@ -520,17 +544,17 @@ void main() {
         },
       );
 
-      logApiCall('/v2/events/next', params: {
-        'Status': response.statusCode,
-      });
+      logApiCall('/v2/events/next', params: {'Status': response.statusCode});
 
       // 200 = event found, 404 = no events
       expect(response.statusCode, anyOf(equals(200), equals(404)));
 
       if (response.statusCode == 404) {
         logTestResult('Next Event', 'NO UPCOMING EVENTS');
-        logTestResult('Note',
-            'Add an event/race in TrainingPeaks to test event sync');
+        logTestResult(
+          'Note',
+          'Add an event/race in TrainingPeaks to test event sync',
+        );
         return;
       }
 
@@ -555,7 +579,8 @@ void main() {
         'Event Type': ResultData(actual: event['EventType']),
         'Event Date': ResultData(actual: event['EventDate']),
         'Has Goals': ResultData(
-            actual: (event['Goals'] as List?)?.isNotEmpty ?? false),
+          actual: (event['Goals'] as List?)?.isNotEmpty ?? false,
+        ),
       });
 
       // Parse goals if present
@@ -564,22 +589,26 @@ void main() {
         logSection('Event Goals');
         for (final goal in goals) {
           final g = goal as Map<String, dynamic>;
-          logTestResult(
-            '${g['GoalType']}',
-            '${g['Value']} ${g['Unit'] ?? ''}',
-          );
+          logTestResult('${g['GoalType']}', '${g['Value']} ${g['Unit'] ?? ''}');
         }
       }
 
       // Validate event structure
       expect(event['Id'], isNotNull, reason: 'Event ID must be present');
-      expect(event['EventDate'], isNotNull,
-          reason: 'EventDate must be present');
-      expect(event['EventType'], isNotNull,
-          reason: 'EventType must be present');
+      expect(
+        event['EventDate'],
+        isNotNull,
+        reason: 'EventDate must be present',
+      );
+      expect(
+        event['EventType'],
+        isNotNull,
+        reason: 'EventType must be present',
+      );
 
       logTestPass(
-          'Event sync works! This is UNIQUE to TrainingPeaks (Final Surge does NOT have this)');
+        'Event sync works! This is UNIQUE to TrainingPeaks (Final Surge does NOT have this)',
+      );
     });
 
     test('validates event date format', () async {

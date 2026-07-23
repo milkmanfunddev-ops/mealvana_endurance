@@ -55,22 +55,22 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
       final success = await syncService.syncAllData(userProfile.id);
 
       // Check dirty records after sync
-      final dirtyActivities = await (database.select(database.activitiesTable)
-            ..where((tbl) => tbl.needsUpload.equals(true)))
-          .get();
+      final dirtyActivities = await (database.select(
+        database.activitiesTable,
+      )..where((tbl) => tbl.needsUpload.equals(true))).get();
 
-      final dirtyEvents = await (database.select(database.eventsTable)
-            ..where((tbl) => tbl.needsUpload.equals(true)))
-          .get();
+      final dirtyEvents = await (database.select(
+        database.eventsTable,
+      )..where((tbl) => tbl.needsUpload.equals(true))).get();
 
       // NOTE: Activity completions table removed - data now in activities table
 
       setState(() {
         _syncResult = success
             ? '✅ Sync successful!\n\n'
-                'Dirty records remaining:\n'
-                '• Activities (incl. completion data): ${dirtyActivities.length}\n'
-                '• Events: ${dirtyEvents.length}'
+                  'Dirty records remaining:\n'
+                  '• Activities (incl. completion data): ${dirtyActivities.length}\n'
+                  '• Events: ${dirtyEvents.length}'
             : '❌ Sync failed - check logs';
         _isSyncing = false;
       });
@@ -92,8 +92,10 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
   void _copyLogsToClipboard() {
     final logs = DebugLogStorage().getLogs();
     final logText = logs
-        .map((log) =>
-            '${log.timeString} ${log.levelEmoji} [${log.context ?? 'GENERAL'}] ${log.message}')
+        .map(
+          (log) =>
+              '${log.timeString} ${log.levelEmoji} [${log.context ?? 'GENERAL'}] ${log.message}',
+        )
         .join('\n');
 
     Clipboard.setData(ClipboardData(text: logText));
@@ -166,8 +168,9 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
                           width: 20.w,
                           child: const CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(
@@ -311,10 +314,7 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
           // Header row
           Row(
             children: [
-              Text(
-                log.levelEmoji,
-                style: TextStyle(fontSize: 16.sp),
-              ),
+              Text(log.levelEmoji, style: TextStyle(fontSize: 16.sp)),
               SizedBox(width: 8.w),
               Text(
                 log.timeString,

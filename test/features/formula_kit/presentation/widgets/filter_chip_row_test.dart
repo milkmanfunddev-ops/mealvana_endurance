@@ -10,14 +10,16 @@ Widget _wrap(Widget child) {
 void main() {
   group('FilterChipRow<BeforeSubPhase>', () {
     testWidgets('renders one chip per option using labelOf', (tester) async {
-      await tester.pumpWidget(_wrap(
-        FilterChipRow<BeforeSubPhase>(
-          options: BeforeSubPhase.values,
-          labelOf: (v) => v.displayLabel,
-          isSelected: (_) => false,
-          onToggled: (_) {},
+      await tester.pumpWidget(
+        _wrap(
+          FilterChipRow<BeforeSubPhase>(
+            options: BeforeSubPhase.values,
+            labelOf: (v) => v.displayLabel,
+            isSelected: (_) => false,
+            onToggled: (_) {},
+          ),
         ),
-      ));
+      );
       for (final v in BeforeSubPhase.values) {
         expect(find.text(v.displayLabel), findsOneWidget);
       }
@@ -25,36 +27,40 @@ void main() {
 
     testWidgets('fires onToggled with the tapped option', (tester) async {
       BeforeSubPhase? tapped;
-      await tester.pumpWidget(_wrap(
-        FilterChipRow<BeforeSubPhase>(
-          options: BeforeSubPhase.values,
-          labelOf: (v) => v.displayLabel,
-          isSelected: (_) => false,
-          onToggled: (v) => tapped = v,
+      await tester.pumpWidget(
+        _wrap(
+          FilterChipRow<BeforeSubPhase>(
+            options: BeforeSubPhase.values,
+            labelOf: (v) => v.displayLabel,
+            isSelected: (_) => false,
+            onToggled: (v) => tapped = v,
+          ),
         ),
-      ));
+      );
       await tester.tap(find.text(BeforeSubPhase.snack.displayLabel));
       await tester.pump();
       expect(tapped, BeforeSubPhase.snack);
     });
 
-    testWidgets('selection state is driven by isSelected callback',
-        (tester) async {
+    testWidgets('selection state is driven by isSelected callback', (
+      tester,
+    ) async {
       var selectedIndex = 0;
       await tester.pumpWidget(
-        StatefulBuilder(builder: (context, setState) {
-          return _wrap(
-            FilterChipRow<BeforeSubPhase>(
-              options: BeforeSubPhase.values,
-              labelOf: (v) => v.displayLabel,
-              isSelected: (v) =>
-                  v == BeforeSubPhase.values[selectedIndex],
-              onToggled: (v) => setState(
-                () => selectedIndex = BeforeSubPhase.values.indexOf(v),
+        StatefulBuilder(
+          builder: (context, setState) {
+            return _wrap(
+              FilterChipRow<BeforeSubPhase>(
+                options: BeforeSubPhase.values,
+                labelOf: (v) => v.displayLabel,
+                isSelected: (v) => v == BeforeSubPhase.values[selectedIndex],
+                onToggled: (v) => setState(
+                  () => selectedIndex = BeforeSubPhase.values.indexOf(v),
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
       );
 
       // First option is selected by default — tap second to switch.

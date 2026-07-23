@@ -209,10 +209,12 @@ class _CarbLoadingFoodSelectionScreenState
     // ensures carb-loading-curated foods surface first end-to-end.
     final query = _searchController.text.trim();
     final includeFallbackPool =
-        query.isEmpty || _ownFoodMatchCount(state, query) < _fallbackPoolThreshold;
+        query.isEmpty ||
+        _ownFoodMatchCount(state, query) < _fallbackPoolThreshold;
 
-    final notifier =
-        ref.read(foodSearchControllerProvider(_searchControllerKey).notifier);
+    final notifier = ref.read(
+      foodSearchControllerProvider(_searchControllerKey).notifier,
+    );
 
     // Carb loading wants real food — pasta, rice, bagels, potatoes — not gels
     // and chews. This screen was the only search surface that never called
@@ -230,10 +232,7 @@ class _CarbLoadingFoodSelectionScreenState
     notifier.setFilter(FoodSearchFilter.generalFirst);
 
     notifier.updateFoodPool(
-      allFoods: [
-        ...ownFoods,
-        if (includeFallbackPool) ...fallbackFoods,
-      ],
+      allFoods: [...ownFoods, if (includeFallbackPool) ...fallbackFoods],
       userFoods: userFoods,
     );
   }
@@ -247,8 +246,9 @@ class _CarbLoadingFoodSelectionScreenState
         name.toLowerCase().contains(lowerQuery) ||
         displayName.toLowerCase().contains(lowerQuery);
 
-    final templateMatches =
-        state.carbLoadingFoods.where((f) => matches(f.name, f.displayName)).length;
+    final templateMatches = state.carbLoadingFoods
+        .where((f) => matches(f.name, f.displayName))
+        .length;
     final userMatches = state.carbLoadingUserFoods
         .where((f) => !f.isDeleted && matches(f.name, f.displayName))
         .length;
@@ -297,7 +297,9 @@ class _CarbLoadingFoodSelectionScreenState
         .toList();
     // Never show an empty rail — if a meal type has no curated matches (or the
     // seed data changes), fall back to the full list rather than a blank page.
-    final templateFoods = suitable.isNotEmpty ? suitable : state.carbLoadingFoods;
+    final templateFoods = suitable.isNotEmpty
+        ? suitable
+        : state.carbLoadingFoods;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -381,7 +383,8 @@ class _CarbLoadingFoodSelectionScreenState
           InkWell(
             onTap: () {
               setState(() {
-                _isNutritionPlanUserFoodsExpanded = !_isNutritionPlanUserFoodsExpanded;
+                _isNutritionPlanUserFoodsExpanded =
+                    !_isNutritionPlanUserFoodsExpanded;
               });
             },
             borderRadius: BorderRadius.circular(8),
@@ -1014,7 +1017,8 @@ class _CarbLoadingFoodSelectionScreenState
                           color: AppColors.electrolyte.withValues(alpha: 0.7),
                           size: AppIconSizes.sm,
                         ),
-                        onPressed: () => _duplicateAndCustomizeTemplateFood(food),
+                        onPressed: () =>
+                            _duplicateAndCustomizeTemplateFood(food),
                         tooltip: 'Duplicate & customize',
                       ),
                       const SizedBox(width: AppSpacing.xs),
@@ -1056,7 +1060,9 @@ class _CarbLoadingFoodSelectionScreenState
         mealTypes: [_params.mealType],
       );
 
-      debugPrint('✅ Created custom food: ${customFood.displayName} (ID: ${customFood.id})');
+      debugPrint(
+        '✅ Created custom food: ${customFood.displayName} (ID: ${customFood.id})',
+      );
 
       // Refresh the food list to show the new custom food
       ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
@@ -1124,7 +1130,9 @@ class _CarbLoadingFoodSelectionScreenState
       fluidMlPerServing = null;
       caloriesPerServing = null;
 
-      debugPrint('✅ Fresh data loaded: ${freshFood.displayName} with ${freshFood.carbsPerServing}g carbs');
+      debugPrint(
+        '✅ Fresh data loaded: ${freshFood.displayName} with ${freshFood.carbsPerServing}g carbs',
+      );
     } else if (food is db.UserFood) {
       debugPrint('🔍 Fetching fresh data for UserFood: $foodId');
       final freshFoodQuery = database.select(database.userFoodsTable)
@@ -1147,7 +1155,9 @@ class _CarbLoadingFoodSelectionScreenState
       fluidMlPerServing = freshFood.fluidMlPerServing;
       caloriesPerServing = freshFood.caloriesPerServing;
 
-      debugPrint('✅ Fresh data loaded: ${freshFood.name} with ${freshFood.carbsPerServing}g carbs');
+      debugPrint(
+        '✅ Fresh data loaded: ${freshFood.name} with ${freshFood.carbsPerServing}g carbs',
+      );
     } else {
       return; // Not an editable food type
     }
@@ -1204,10 +1214,14 @@ class _CarbLoadingFoodSelectionScreenState
     }
     // Handle update
     else if (result is FoodDetailResult) {
-      debugPrint('📦 FoodDetailResult received: ${result.name} with ${result.carbsPerServing}g carbs (ID: ${result.foodId})');
+      debugPrint(
+        '📦 FoodDetailResult received: ${result.name} with ${result.carbsPerServing}g carbs (ID: ${result.foodId})',
+      );
 
       try {
-        debugPrint('🔧 Updating food: ${result.name} with ${result.carbsPerServing}g carbs');
+        debugPrint(
+          '🔧 Updating food: ${result.name} with ${result.carbsPerServing}g carbs',
+        );
         debugPrint('🔧 Food ID: ${result.foodId}');
 
         // CRITICAL FIX: Use carbLoadingFoodService for carb loading foods, not userFoodCrudService
@@ -1216,11 +1230,14 @@ class _CarbLoadingFoodSelectionScreenState
         // result.name from FoodDetailScreen maps to displayName (user-facing name)
         await carbLoadingFoodService.updateUserFood(
           id: result.foodId,
-          displayName: result.name,  // FoodDetailScreen's name field = displayName
+          displayName:
+              result.name, // FoodDetailScreen's name field = displayName
           carbsPerServing: result.carbsPerServing,
         );
 
-        debugPrint('🔧 Carb loading user food updated successfully in correct table');
+        debugPrint(
+          '🔧 Carb loading user food updated successfully in correct table',
+        );
 
         // Update carbs in all existing meal entries that use this food
         final dayMealRepo = ref.read(carbLoadingDayMealRepositoryProvider);

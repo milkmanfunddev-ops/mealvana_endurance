@@ -40,9 +40,9 @@ class PersonalFormulaCard extends StatelessWidget {
             _durationLabel(d),
         ];
       case FormulaPhase.after:
-        final label =
-            TravelFriendliness.fromStorageValue(formula.travelFriendliness)
-                ?.displayLabel;
+        final label = TravelFriendliness.fromStorageValue(
+          formula.travelFriendliness,
+        )?.displayLabel;
         return [if (label != null) label];
     }
   }

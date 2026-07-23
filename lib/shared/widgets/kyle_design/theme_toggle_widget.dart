@@ -18,7 +18,7 @@ class ThemeToggleWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeModeAsync = ref.watch(kyleThemeModeProvider);
     final themeNotifier = ref.read(kyleThemeModeProvider.notifier);
-    
+
     return themeModeAsync.when(
       data: (themeMode) {
         return Column(
@@ -57,7 +57,7 @@ class ThemeToggleWidget extends ConsumerWidget {
                     isSelected: themeMode == ThemeMode.light,
                     onTap: () => themeNotifier.setThemeMode(ThemeMode.light),
                   ),
-                  
+
                   // Dark theme option
                   _ThemeOption(
                     title: 'Dark Mode',
@@ -66,7 +66,7 @@ class ThemeToggleWidget extends ConsumerWidget {
                     isSelected: themeMode == ThemeMode.dark,
                     onTap: () => themeNotifier.setThemeMode(ThemeMode.dark),
                   ),
-                  
+
                   // System theme option
                   _ThemeOption(
                     title: 'System',
@@ -88,9 +88,7 @@ class ThemeToggleWidget extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AppColors.electrolyte.withOpacity(0.1),
                 borderRadius: AppRadius.cardRadius,
-                border: Border.all(
-                  color: AppColors.electrolyte,
-                ),
+                border: Border.all(color: AppColors.electrolyte),
               ),
               child: Row(
                 children: [
@@ -114,15 +112,11 @@ class ThemeToggleWidget extends ConsumerWidget {
           ],
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
         child: Text(
           'Error loading theme settings',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.error,
-          ),
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
         ),
       ),
     );
@@ -159,15 +153,15 @@ class _ThemeOption extends StatelessWidget {
               width: AppIconSizes.lg,
               height: AppIconSizes.lg,
               decoration: BoxDecoration(
-                color: isSelected 
-                    ? AppColors.electrolyte 
+                color: isSelected
+                    ? AppColors.electrolyte
                     : Theme.of(context).colorScheme.outline.withOpacity(0.2),
                 borderRadius: AppRadius.circularRadius,
               ),
               child: Icon(
                 icon,
-                color: isSelected 
-                    ? AppColors.textLight 
+                color: isSelected
+                    ? AppColors.textLight
                     : Theme.of(context).colorScheme.onSurface,
                 size: AppIconSizes.sm,
               ),
@@ -184,7 +178,9 @@ class _ThemeOption extends StatelessWidget {
                     title,
                     style: AppTextStyles.subtitle.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxs),
@@ -197,7 +193,7 @@ class _ThemeOption extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Selection indicator
             if (isSelected)
               FaIcon(

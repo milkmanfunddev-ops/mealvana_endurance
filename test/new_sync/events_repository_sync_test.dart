@@ -39,25 +39,37 @@ void main() {
     mockCarbLoadingRepository = MockCarbLoadingRepository();
 
     // Set up logger to not throw on method calls
-    when(() => mockLogger.info(any(),
-            context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.debug(any(),
-            context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
   });
 
   tearDown(() async {
@@ -123,22 +135,24 @@ void main() {
       expect(isStale, false);
     });
 
-    test('isStale should return true when synced more than 24 hours ago',
-        () async {
-      final mockSupabase = MockSupabaseClient();
-      final repository = EventsRepository(
-        supabase: mockSupabase,
-        database: database,
-        logger: mockLogger,
-        carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
-      );
+    test(
+      'isStale should return true when synced more than 24 hours ago',
+      () async {
+        final mockSupabase = MockSupabaseClient();
+        final repository = EventsRepository(
+          supabase: mockSupabase,
+          database: database,
+          logger: mockLogger,
+          carbLoadingRepository: mockCarbLoadingRepository,
+          sentry: mockSentry,
+        );
 
-      final oldSync = DateTime.now().subtract(const Duration(hours: 25));
-      await repository.setLastSyncTime(oldSync);
-      final isStale = await repository.isStale();
-      expect(isStale, true);
-    });
+        final oldSync = DateTime.now().subtract(const Duration(hours: 25));
+        await repository.setLastSyncTime(oldSync);
+        final isStale = await repository.isStale();
+        expect(isStale, true);
+      },
+    );
   });
 
   group('Timestamp Management', () {
@@ -156,8 +170,7 @@ void main() {
       expect(timestamp, null);
     });
 
-    test('setLastSyncTime and getLastSyncTime should work correctly',
-        () async {
+    test('setLastSyncTime and getLastSyncTime should work correctly', () async {
       final mockSupabase = MockSupabaseClient();
       final repository = EventsRepository(
         supabase: mockSupabase,
@@ -177,8 +190,7 @@ void main() {
   });
 
   group('uploadDirtyRecords', () {
-    test('should return nothingToUpload when no dirty records exist',
-        () async {
+    test('should return nothingToUpload when no dirty records exist', () async {
       final mockSupabase = MockSupabaseClient();
       final repository = EventsRepository(
         supabase: mockSupabase,

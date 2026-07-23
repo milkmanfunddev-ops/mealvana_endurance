@@ -39,7 +39,9 @@ void main() {
       // (FoodSelectionsCacheProvider and OnboardingController caches)
 
       // No data saved to DB yet (cache is in-memory only)
-      final profilesAfterOnboarding = await db.select(db.userProfilesTable).get();
+      final profilesAfterOnboarding = await db
+          .select(db.userProfilesTable)
+          .get();
       expect(profilesAfterOnboarding, isEmpty);
 
       // ============================================================================

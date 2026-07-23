@@ -20,43 +20,44 @@ class PlanSectionsWidget extends StatelessWidget {
   final NutritionPlan plan;
   final targets_model.MacroTargets? macroTargets;
   final Function(String foodItemId)? onFoodItemTap;
-  final Function(String foodItemId, String foodName, String category)? onSwapFood;
+  final Function(String foodItemId, String foodName, String category)?
+  onSwapFood;
   final Function(String foodItemId, String category)? onDeleteFood;
-  final Function(String foodItemId, String category, double newQuantity)? onUpdateQuantity;
+  final Function(String foodItemId, String category, double newQuantity)?
+  onUpdateQuantity;
 
   @override
   Widget build(BuildContext context) {
     if (plan.sections.isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Plan Sections with individual edit states
-            ...plan.sections.map((section) {
-              final isLastSection = section == plan.sections.last;
-              final category = _getSectionCategory(section.id);
-              return Column(
-                children: [
-                  PlanSectionEditableWidget(
-                    section: section,
-                    plan: plan,
-                    macroTargets: macroTargets,
-                    onFoodItemTap: onFoodItemTap,
-                    onSwapFood: (foodId, foodName) =>
-                      onSwapFood?.call(foodId, foodName, category),
-                    onDeleteFood: (foodId) =>
-                      onDeleteFood?.call(foodId, category),
-                    onUpdateQuantity: (foodId, newQuantity) =>
-                      onUpdateQuantity?.call(foodId, category, newQuantity),
-                  ),
-                  if (!isLastSection) SizedBox(height: 24.h),
-                ],
-              );
-            }),
-          ],
-        );
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Plan Sections with individual edit states
+        ...plan.sections.map((section) {
+          final isLastSection = section == plan.sections.last;
+          final category = _getSectionCategory(section.id);
+          return Column(
+            children: [
+              PlanSectionEditableWidget(
+                section: section,
+                plan: plan,
+                macroTargets: macroTargets,
+                onFoodItemTap: onFoodItemTap,
+                onSwapFood: (foodId, foodName) =>
+                    onSwapFood?.call(foodId, foodName, category),
+                onDeleteFood: (foodId) => onDeleteFood?.call(foodId, category),
+                onUpdateQuantity: (foodId, newQuantity) =>
+                    onUpdateQuantity?.call(foodId, category, newQuantity),
+              ),
+              if (!isLastSection) SizedBox(height: 24.h),
+            ],
+          );
+        }),
+      ],
+    );
   }
 
   /// Get section category from section id (sport-agnostic)

@@ -1,5 +1,12 @@
 # Testing Handbook (Repo Truth)
 
+## 📌 Latest status ledger (2026-07, READ FIRST)
+- **`coverage-status-2026-07.md`** — post-release/1.22.0 coverage push: layer-by-layer
+  state, the Patrol flavor model (flavor-aware launcher + creds, prod CI workflow),
+  the auto-discovery edge-fn runner, and the list of REAL bugs the suites currently
+  expose (do not "fix" those tests). Supersedes the status claims in the 2026-06 docs
+  below where they conflict.
+
 ## 📋 Current Strategy & Plan (2026-06, START HERE)
 The authoritative, up-to-date testing docs (supersede the older `roadmap.md`,
 `testing-strategy-2026.md`, `current_progress.md`, and the `phase_*` files):

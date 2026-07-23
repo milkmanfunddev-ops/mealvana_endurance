@@ -39,7 +39,8 @@ class BrickCyclingSection extends StatelessWidget {
     int? elevationGainFt,
     String? intensity,
   }) {
-    final current = segment ??
+    final current =
+        segment ??
         const BrickSegment(
           sport: 'cycling',
           order: 1,
@@ -124,11 +125,7 @@ class BrickCyclingSection extends StatelessWidget {
         _KyleDropdown(
           label: 'Terrain',
           value: terrain,
-          items: const {
-            'flat': 'Flat',
-            'rolling': 'Rolling',
-            'hilly': 'Hilly',
-          },
+          items: const {'flat': 'Flat', 'rolling': 'Rolling', 'hilly': 'Hilly'},
           onChanged: (value) => _updateSegment(terrain: value),
         ),
 
@@ -138,10 +135,7 @@ class BrickCyclingSection extends StatelessWidget {
         _KyleDropdown(
           label: 'Indoor/Outdoor',
           value: indoorOutdoor,
-          items: const {
-            'indoor': 'Indoor',
-            'outdoor': 'Outdoor',
-          },
+          items: const {'indoor': 'Indoor', 'outdoor': 'Outdoor'},
           onChanged: (value) => _updateSegment(indoorOutdoor: value),
         ),
 

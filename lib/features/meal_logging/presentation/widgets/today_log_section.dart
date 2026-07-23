@@ -89,10 +89,8 @@ class TodayLogSection extends ConsumerWidget {
                     (log) => MealLogRow(
                       log: log,
                       onDelete: () => _deleteWithUndo(context, ref, log),
-                      onEdit: () => context.push(
-                        '/meal-log/edit',
-                        extra: {'log': log},
-                      ),
+                      onEdit: () =>
+                          context.push('/meal-log/edit', extra: {'log': log}),
                     ),
                   )
                   .toList(),

@@ -76,13 +76,17 @@ void main() {
       activities: [ride],
       targets: targets,
       consumed: const ConsumedTotals(
-          calories: 574, carbsG: 58, proteinG: 30, fatG: 25),
+        calories: 574,
+        carbsG: 58,
+        proteinG: 30,
+        fatG: 25,
+      ),
     );
   }
 
   List<Override> baseOverrides() => [
-        preferencesServiceProvider.overrideWithValue(prefs),
-      ];
+    preferencesServiceProvider.overrideWithValue(prefs),
+  ];
 
   testWidgets('renders loading state without crashing', (tester) async {
     await smokeScreen(
@@ -109,8 +113,9 @@ void main() {
     expect(find.text('All'), findsOneWidget);
   });
 
-  testWidgets('energy breakdown sheet renders without crashing',
-      (tester) async {
+  testWidgets('energy breakdown sheet renders without crashing', (
+    tester,
+  ) async {
     await smokeScreen(
       tester,
       const EnergyBreakdownSheet(),

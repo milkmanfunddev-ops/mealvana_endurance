@@ -45,9 +45,7 @@ class PendingRequestCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isFromCoach
-                            ? 'Invitation Sent'
-                            : 'Connection Request',
+                        isFromCoach ? 'Invitation Sent' : 'Connection Request',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

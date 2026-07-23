@@ -15,9 +15,7 @@ void main() {
   const testUserId = 'user-abc-123';
   const testActivityId = 'activity-draft-001';
 
-  domain.Activity _makeActivity({
-    required domain.ActivityStatus status,
-  }) {
+  domain.Activity _makeActivity({required domain.ActivityStatus status}) {
     return domain.Activity(
       id: testActivityId,
       userId: testUserId,
@@ -32,62 +30,74 @@ void main() {
 
   setUp(() {
     mockActivitiesService = MockActivitiesService();
-    cleanupService =
-        DraftActivityCleanupService(activitiesService: mockActivitiesService);
+    cleanupService = DraftActivityCleanupService(
+      activitiesService: mockActivitiesService,
+    );
   });
 
   group('DraftActivityCleanupService.cleanupIfNeeded', () {
     test('deletes activity when status is draft', () async {
-      final draftActivity =
-          _makeActivity(status: domain.ActivityStatus.draft);
-      when(() => mockActivitiesService.getActivityById(testUserId, testActivityId))
-          .thenAnswer((_) async => draftActivity);
-      when(() => mockActivitiesService.deleteActivity(
-            deviceId: any(named: 'deviceId'),
-            activityId: any(named: 'activityId'),
-          )).thenAnswer((_) async {});
+      final draftActivity = _makeActivity(status: domain.ActivityStatus.draft);
+      when(
+        () => mockActivitiesService.getActivityById(testUserId, testActivityId),
+      ).thenAnswer((_) async => draftActivity);
+      when(
+        () => mockActivitiesService.deleteActivity(
+          deviceId: any(named: 'deviceId'),
+          activityId: any(named: 'activityId'),
+        ),
+      ).thenAnswer((_) async {});
 
       await cleanupService.cleanupIfNeeded(
         activityId: testActivityId,
         userId: testUserId,
       );
 
-      verify(() => mockActivitiesService.deleteActivity(
-            deviceId: testUserId,
-            activityId: testActivityId,
-          )).called(1);
+      verify(
+        () => mockActivitiesService.deleteActivity(
+          deviceId: testUserId,
+          activityId: testActivityId,
+        ),
+      ).called(1);
     });
 
     test('skips deletion when status is planned', () async {
-      final plannedActivity =
-          _makeActivity(status: domain.ActivityStatus.planned);
-      when(() => mockActivitiesService.getActivityById(testUserId, testActivityId))
-          .thenAnswer((_) async => plannedActivity);
+      final plannedActivity = _makeActivity(
+        status: domain.ActivityStatus.planned,
+      );
+      when(
+        () => mockActivitiesService.getActivityById(testUserId, testActivityId),
+      ).thenAnswer((_) async => plannedActivity);
 
       await cleanupService.cleanupIfNeeded(
         activityId: testActivityId,
         userId: testUserId,
       );
 
-      verifyNever(() => mockActivitiesService.deleteActivity(
-            deviceId: any(named: 'deviceId'),
-            activityId: any(named: 'activityId'),
-          ));
+      verifyNever(
+        () => mockActivitiesService.deleteActivity(
+          deviceId: any(named: 'deviceId'),
+          activityId: any(named: 'activityId'),
+        ),
+      );
     });
 
     test('skips deletion when activity is not found', () async {
-      when(() => mockActivitiesService.getActivityById(testUserId, testActivityId))
-          .thenAnswer((_) async => null);
+      when(
+        () => mockActivitiesService.getActivityById(testUserId, testActivityId),
+      ).thenAnswer((_) async => null);
 
       await cleanupService.cleanupIfNeeded(
         activityId: testActivityId,
         userId: testUserId,
       );
 
-      verifyNever(() => mockActivitiesService.deleteActivity(
-            deviceId: any(named: 'deviceId'),
-            activityId: any(named: 'activityId'),
-          ));
+      verifyNever(
+        () => mockActivitiesService.deleteActivity(
+          deviceId: any(named: 'deviceId'),
+          activityId: any(named: 'activityId'),
+        ),
+      );
     });
   });
 }

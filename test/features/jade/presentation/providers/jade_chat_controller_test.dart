@@ -34,7 +34,8 @@ class _FakeLogger extends Fake implements AppLogger {
 
 class _FakeContentService extends Fake implements ContentService {
   @override
-  String getValue(String key, {String? defaultValue = ''}) => defaultValue ?? '';
+  String getValue(String key, {String? defaultValue = ''}) =>
+      defaultValue ?? '';
 }
 
 class _MockRepository extends Fake implements JadeChatRepository {
@@ -197,9 +198,13 @@ void main() {
       await container.read(jadeChatControllerProvider.future);
       final state = container.read(jadeChatControllerProvider).value!;
 
-      expect(state.conversationId, 'conv-existing',
-          reason: 'The resumed conversationId should be set so send() '
-              'continues the same thread');
+      expect(
+        state.conversationId,
+        'conv-existing',
+        reason:
+            'The resumed conversationId should be set so send() '
+            'continues the same thread',
+      );
       expect(state.messages.length, 1);
 
       sub.close();

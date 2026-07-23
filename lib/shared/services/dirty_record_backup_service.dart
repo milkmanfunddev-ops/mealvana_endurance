@@ -27,9 +27,7 @@ class DirtyRecordBackupService {
   static const String _backupFileName = 'dirty_records_backup.json';
   final AppLogger _logger;
 
-  DirtyRecordBackupService({
-    required AppLogger logger,
-  }) : _logger = logger;
+  DirtyRecordBackupService({required AppLogger logger}) : _logger = logger;
 
   /// Get the backup file path in Application Support directory
   Future<File> _getBackupFile() async {

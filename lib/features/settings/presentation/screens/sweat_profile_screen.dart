@@ -60,8 +60,8 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
       _sweatRateController.text = useMetric
           ? s.knownSweatRateMlPerHour.toString()
           : (s.knownSweatRateMlPerHour! * UnitFormatter.kFlOzPerMl)
-              .round()
-              .toString();
+                .round()
+                .toString();
     }
     if (s.knownSodiumConcentrationMgPerLiter != null) {
       _sodiumController.text = s.knownSodiumConcentrationMgPerLiter.toString();
@@ -75,7 +75,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
 
     final useMetric =
         (ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
-            UnitSystem.metric;
+        UnitSystem.metric;
     final controller = ref.read(sweatProfileControllerProvider.notifier);
 
     // Push text-field values into the controller before saving.
@@ -85,12 +85,16 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
     } else {
       final raw = int.tryParse(rateText);
       if (raw == null) {
-        MealvanaSnackbar.showError(context, 'Enter a whole number for sweat rate.');
+        MealvanaSnackbar.showError(
+          context,
+          'Enter a whole number for sweat rate.',
+        );
         return;
       }
       // Convert back to canonical mL/hr if the user is in imperial mode.
-      final mlPerHour =
-          useMetric ? raw : (raw / UnitFormatter.kFlOzPerMl).round();
+      final mlPerHour = useMetric
+          ? raw
+          : (raw / UnitFormatter.kFlOzPerMl).round();
       controller.setKnownSweatRate(mlPerHour);
     }
 
@@ -100,7 +104,10 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
     } else {
       final raw = int.tryParse(sodiumText);
       if (raw == null) {
-        MealvanaSnackbar.showError(context, 'Enter a whole number for sodium concentration.');
+        MealvanaSnackbar.showError(
+          context,
+          'Enter a whole number for sodium concentration.',
+        );
         return;
       }
       controller.setKnownSodiumConcentration(raw);
@@ -223,8 +230,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
                   onPressed: s.isSaving ? null : _save,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.blackberry,
-                    disabledBackgroundColor:
-                        AppColors.blackberry.withValues(alpha: 0.4),
+                    disabledBackgroundColor: AppColors.blackberry.withValues(
+                      alpha: 0.4,
+                    ),
                     padding: const EdgeInsets.symmetric(
                       vertical: AppSpacing.md,
                     ),
@@ -281,8 +289,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
           const SizedBox(height: AppSpacing.sm),
           KyleSweatRateSegmentedControl(
             selected: s.sweatRate,
-            onChanged: (rate) =>
-                ref.read(sweatProfileControllerProvider.notifier).setSweatRate(rate),
+            onChanged: (rate) => ref
+                .read(sweatProfileControllerProvider.notifier)
+                .setSweatRate(rate),
           ),
         ],
       ),
@@ -313,8 +322,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
           const SizedBox(height: AppSpacing.sm),
           KyleSweatSodiumSegmentedControl(
             selected: s.sweatSodium,
-            onChanged: (sodium) =>
-                ref.read(sweatProfileControllerProvider.notifier).setSweatSodium(sodium),
+            onChanged: (sodium) => ref
+                .read(sweatProfileControllerProvider.notifier)
+                .setSweatSodium(sodium),
           ),
         ],
       ),
@@ -472,7 +482,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.2),
           ),
           borderRadius: AppRadius.inputRadius,
         ),
@@ -549,8 +561,9 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
             ),
           )
           .toList(),
-      onChanged: (value) =>
-          ref.read(sweatProfileControllerProvider.notifier).setSweatTestSource(value),
+      onChanged: (value) => ref
+          .read(sweatProfileControllerProvider.notifier)
+          .setSweatTestSource(value),
       dropdownColor: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(AppRadius.md),
     );
@@ -652,10 +665,9 @@ class _HowToTestSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.2),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

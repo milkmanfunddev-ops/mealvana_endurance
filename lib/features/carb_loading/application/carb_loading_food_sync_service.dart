@@ -15,9 +15,9 @@ class CarbLoadingFoodSyncService {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -32,8 +32,10 @@ class CarbLoadingFoodSyncService {
       // Direct Supabase query - no edge function needed!
       final response = await _supabase
           .from('carb_loading_foods')
-          .select('id, name, display_name, display_name_plural, carbs_per_serving, '
-                  'image_address, is_default, meal_types, created_at')
+          .select(
+            'id, name, display_name, display_name_plural, carbs_per_serving, '
+            'image_address, is_default, meal_types, created_at',
+          )
           .order('display_name');
 
       final List<dynamic> foodsData = response as List<dynamic>;
@@ -88,9 +90,7 @@ class CarbLoadingFoodSyncService {
           imageAddress: Value(foodJson['image_address'] as String? ?? ''),
           isDefault: Value(foodJson['is_default'] as bool? ?? true),
           mealTypes: Value(mealTypesArray),
-          createdAt: Value(
-            DateTime.parse(foodJson['created_at'] as String),
-          ),
+          createdAt: Value(DateTime.parse(foodJson['created_at'] as String)),
         );
 
         batch.insert(

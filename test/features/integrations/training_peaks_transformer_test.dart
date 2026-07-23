@@ -155,7 +155,10 @@ void main() {
           TrainingPeaksFixtures.structuredWorkout,
         )..['Structure'] = '[]';
 
-        final result = transformer.transform(workoutWithEmptyStructure, testUserId);
+        final result = transformer.transform(
+          workoutWithEmptyStructure,
+          testUserId,
+        );
 
         expect(result, isNotNull);
         // Should fall back to IF-based inference
@@ -570,10 +573,7 @@ void main() {
             durationSeconds: 333,
             zone: IntensityZone.conversational,
           ),
-          const WorkoutSegment(
-            durationSeconds: 333,
-            zone: IntensityZone.tempo,
-          ),
+          const WorkoutSegment(durationSeconds: 333, zone: IntensityZone.tempo),
           const WorkoutSegment(
             durationSeconds: 334,
             zone: IntensityZone.allOut,

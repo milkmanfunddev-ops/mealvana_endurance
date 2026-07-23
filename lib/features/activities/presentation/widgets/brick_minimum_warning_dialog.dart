@@ -9,9 +9,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 ///
 /// Returns true if user wants to ungroup, false if cancelled.
 class BrickMinimumWarningDialog extends StatelessWidget {
-  const BrickMinimumWarningDialog({
-    super.key,
-  });
+  const BrickMinimumWarningDialog({super.key});
 
   @override
   Widget build(BuildContext context) {

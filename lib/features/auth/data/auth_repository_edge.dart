@@ -52,7 +52,7 @@ class AuthRepositoryEdge {
       // Handle response
       if (response.status >= 200 && response.status < 300) {
         final data = response.data as Map<String, dynamic>;
-        
+
         if (data['success'] == true) {
           return CreateUserResult(
             success: true,
@@ -123,7 +123,9 @@ class AuthRepositoryEdge {
   }
 
   /// Get user food preferences (direct database call since it's simple)
-  Future<Map<String, FoodPreference>> getFoodPreferences(String deviceId) async {
+  Future<Map<String, FoodPreference>> getFoodPreferences(
+    String deviceId,
+  ) async {
     try {
       final response = await _supabase
           .from('food_preferences')
@@ -235,31 +237,42 @@ class AuthRepositoryEdge {
       if (heightFeet != null) requestBody['height_feet'] = heightFeet;
       if (heightInches != null) requestBody['height_inches'] = heightInches;
       if (weightPounds != null) requestBody['weight_pounds'] = weightPounds;
-      if (runsWithWaterBottle != null) requestBody['runs_with_water_bottle'] = runsWithWaterBottle;
-      if (gutTrainingLevel != null) requestBody['gut_training_level'] = gutTrainingLevel;
+      if (runsWithWaterBottle != null)
+        requestBody['runs_with_water_bottle'] = runsWithWaterBottle;
+      if (gutTrainingLevel != null)
+        requestBody['gut_training_level'] = gutTrainingLevel;
 
       // Food preferences
-      if (foodPreferences != null) requestBody['food_preferences'] = foodPreferences;
-      if (preferenceLevels != null) requestBody['preference_levels'] = preferenceLevels;
+      if (foodPreferences != null)
+        requestBody['food_preferences'] = foodPreferences;
+      if (preferenceLevels != null)
+        requestBody['preference_levels'] = preferenceLevels;
 
       // Dietary preference & allergies
-      if (dietaryPreference != null) requestBody['dietary_preference'] = dietaryPreference;
+      if (dietaryPreference != null)
+        requestBody['dietary_preference'] = dietaryPreference;
       if (allergies != null) requestBody['allergies'] = allergies;
 
       // Sport preferences
       if (giSensitivity != null) requestBody['gi_sensitivity'] = giSensitivity;
-      if (cyclingFtpWatts != null) requestBody['cycling_ftp_watts'] = cyclingFtpWatts;
-      if (typicalBikeBottles != null) requestBody['typical_bike_bottles'] = typicalBikeBottles;
+      if (cyclingFtpWatts != null)
+        requestBody['cycling_ftp_watts'] = cyclingFtpWatts;
+      if (typicalBikeBottles != null)
+        requestBody['typical_bike_bottles'] = typicalBikeBottles;
       if (hasAeroBottle != null) requestBody['has_aero_bottle'] = hasAeroBottle;
       if (hasBentoBox != null) requestBody['has_bento_box'] = hasBentoBox;
       if (swimmingCssSecondsPer100m != null) {
-        requestBody['swimming_css_seconds_per_100m'] = swimmingCssSecondsPer100m;
+        requestBody['swimming_css_seconds_per_100m'] =
+            swimmingCssSecondsPer100m;
       }
-      if (typicalWetsuit != null) requestBody['typical_wetsuit'] = typicalWetsuit;
-      if (typicalSwimCapType != null) requestBody['typical_swim_cap_type'] = typicalSwimCapType;
+      if (typicalWetsuit != null)
+        requestBody['typical_wetsuit'] = typicalWetsuit;
+      if (typicalSwimCapType != null)
+        requestBody['typical_swim_cap_type'] = typicalSwimCapType;
 
       // Metadata
-      if (onboardingCompleted != null) requestBody['onboarding_completed'] = onboardingCompleted;
+      if (onboardingCompleted != null)
+        requestBody['onboarding_completed'] = onboardingCompleted;
       if (appVersion != null) requestBody['app_version'] = appVersion;
 
       // Call consolidated Edge Function
@@ -276,7 +289,9 @@ class AuthRepositoryEdge {
           return UpsertUserProfileResult(
             success: true,
             message: data['message'],
-            user: data['user'] != null ? UserProfile.fromJson(data['user']) : null,
+            user: data['user'] != null
+                ? UserProfile.fromJson(data['user'])
+                : null,
             preferencesCount: data['preferences_count'],
           );
         } else {
@@ -361,10 +376,7 @@ class AuthRepositoryEdge {
   Future<bool> deleteUser(String deviceId) async {
     try {
       // Delete user (cascade will handle food_preferences and activity-linked nutrition data)
-      await _supabase
-          .from('users')
-          .delete()
-          .eq('device_id', deviceId);
+      await _supabase.from('users').delete().eq('device_id', deviceId);
 
       return true;
     } catch (e) {
@@ -385,11 +397,7 @@ class CreateUserResult {
   final UserProfile? user;
   final String? message;
 
-  CreateUserResult({
-    required this.success,
-    this.user,
-    this.message,
-  });
+  CreateUserResult({required this.success, this.user, this.message});
 }
 
 /// Result class for updating user preferences
@@ -398,11 +406,7 @@ class UpdateUserPreferencesResult {
   final String? message;
   final UserProfile? user;
 
-  UpdateUserPreferencesResult({
-    required this.success,
-    this.message,
-    this.user,
-  });
+  UpdateUserPreferencesResult({required this.success, this.message, this.user});
 }
 
 /// Result class for upserting user profile (consolidated operation)

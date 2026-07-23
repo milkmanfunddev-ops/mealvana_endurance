@@ -45,19 +45,22 @@ void main() {
         },
       });
 
-      final beforeSection =
-          plan.sections.firstWhere((s) => s.id == 'before_run');
+      final beforeSection = plan.sections.firstWhere(
+        (s) => s.id == 'before_run',
+      );
       expect(beforeSection.subPhases, isNotNull);
       expect(beforeSection.subPhases!.length, 2);
 
-      final meal = beforeSection.subPhases!
-          .firstWhere((s) => s.subPhaseType == 'meal');
+      final meal = beforeSection.subPhases!.firstWhere(
+        (s) => s.subPhaseType == 'meal',
+      );
       expect(meal.pinDecision, isNotNull);
       expect(meal.pinDecision!.usedPin, isTrue);
       expect(meal.pinDecision!.pinnedTemplateName, 'Bagel + Jam');
 
-      final topUp = beforeSection.subPhases!
-          .firstWhere((s) => s.subPhaseType == 'top_up');
+      final topUp = beforeSection.subPhases!.firstWhere(
+        (s) => s.subPhaseType == 'top_up',
+      );
       expect(topUp.pinDecision, isNotNull);
       expect(topUp.pinDecision!.usedPin, isFalse);
       expect(
@@ -88,14 +91,12 @@ void main() {
         },
       });
 
-      final duringSection =
-          plan.sections.firstWhere((s) => s.id == 'during_run');
+      final duringSection = plan.sections.firstWhere(
+        (s) => s.id == 'during_run',
+      );
       expect(duringSection.pinDecision, isNotNull);
       expect(duringSection.pinDecision!.usedPin, isTrue);
-      expect(
-        duringSection.pinDecision!.pinnedTemplateName,
-        'Energy Chews',
-      );
+      expect(duringSection.pinDecision!.pinnedTemplateName, 'Energy Chews');
     });
 
     test('Pre-pin plans (no pin_decision anywhere) parse with null '
@@ -106,10 +107,7 @@ void main() {
         'plan_data': {
           'plan': {
             'before': {
-              'meal': {
-                'sub_phase_type': 'meal',
-                'foods': <dynamic>[],
-              },
+              'meal': {'sub_phase_type': 'meal', 'foods': <dynamic>[]},
             },
             'during': {'foods': <dynamic>[]},
             'after': <dynamic>[],
@@ -117,14 +115,17 @@ void main() {
         },
       });
 
-      final beforeSection =
-          plan.sections.firstWhere((s) => s.id == 'before_run');
-      final meal = beforeSection.subPhases!
-          .firstWhere((s) => s.subPhaseType == 'meal');
+      final beforeSection = plan.sections.firstWhere(
+        (s) => s.id == 'before_run',
+      );
+      final meal = beforeSection.subPhases!.firstWhere(
+        (s) => s.subPhaseType == 'meal',
+      );
       expect(meal.pinDecision, isNull);
 
-      final duringSection =
-          plan.sections.firstWhere((s) => s.id == 'during_run');
+      final duringSection = plan.sections.firstWhere(
+        (s) => s.id == 'during_run',
+      );
       expect(duringSection.pinDecision, isNull);
     });
 
@@ -155,15 +156,16 @@ void main() {
         },
       });
 
-      final duringSection =
-          plan.sections.firstWhere((s) => s.id == 'during_run');
-      expect(duringSection.pinDecision, isNotNull);
-      expect(
-        duringSection.pinDecision!.pinnedTemplateName,
-        'Energy Chews',
+      final duringSection = plan.sections.firstWhere(
+        (s) => s.id == 'during_run',
       );
-      expect(duringSection.byHourData, isNotNull,
-          reason: 'by_hour_data must survive the chained copyWith');
+      expect(duringSection.pinDecision, isNotNull);
+      expect(duringSection.pinDecision!.pinnedTemplateName, 'Energy Chews');
+      expect(
+        duringSection.byHourData,
+        isNotNull,
+        reason: 'by_hour_data must survive the chained copyWith',
+      );
     });
   });
 }

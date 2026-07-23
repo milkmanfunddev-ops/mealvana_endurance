@@ -99,10 +99,16 @@ class MacroComparisonBanner extends StatelessWidget {
           _buildMacroRow('Carbs', '${templateCarbsG}g', '${targetCarbsG}g'),
           if (templateProteinG != null && targetProteinG != null)
             _buildMacroRow(
-                'Protein', '${templateProteinG}g', '${targetProteinG}g'),
+              'Protein',
+              '${templateProteinG}g',
+              '${targetProteinG}g',
+            ),
           if (templateSodiumMg != null && targetSodiumMg != null)
             _buildMacroRow(
-                'Sodium', '${templateSodiumMg}mg', '${targetSodiumMg}mg'),
+              'Sodium',
+              '${templateSodiumMg}mg',
+              '${targetSodiumMg}mg',
+            ),
 
           // Guidance text
           const SizedBox(height: AppSpacing.sm),

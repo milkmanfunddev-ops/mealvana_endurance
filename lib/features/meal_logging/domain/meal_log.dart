@@ -277,6 +277,7 @@ class MealLog {
     String? userId,
     String? logDate,
     MealSlot? slot,
+
     /// When true, sets [slot] to `null` regardless of the [slot] argument
     /// (the plain `slot ?? this.slot` pattern can't express "clear it").
     bool clearSlot = false,

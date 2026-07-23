@@ -125,8 +125,7 @@ class DraftMealController extends _$DraftMealController {
   }
 
   void removeComponentAt(int index) {
-    final updated = List<MealComponent>.from(state.components)
-      ..removeAt(index);
+    final updated = List<MealComponent>.from(state.components)..removeAt(index);
     _applyComponents(updated);
   }
 

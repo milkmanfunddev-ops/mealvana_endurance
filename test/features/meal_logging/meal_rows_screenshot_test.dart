@@ -21,15 +21,23 @@ final bool _captureMode = Platform.environment['CAPTURE_SCREENSHOTS'] == '1';
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
   for (final path in paths) {
-    loader.addFont(Future.value(
-      ByteData.view(Uint8List.fromList(File(path).readAsBytesSync()).buffer),
-    ));
+    loader.addFont(
+      Future.value(
+        ByteData.view(Uint8List.fromList(File(path).readAsBytesSync()).buffer),
+      ),
+    );
   }
   await loader.load();
 }
 
-MealLog _log(MealSlot slot, String name, int kcal, double c, double p,
-    double f) {
+MealLog _log(
+  MealSlot slot,
+  String name,
+  int kcal,
+  double c,
+  double p,
+  double f,
+) {
   final now = DateTime(2026, 6, 13);
   return MealLog(
     id: '$slot',
@@ -83,19 +91,33 @@ void main() {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       for (final r in [
-                        _log(MealSlot.breakfast, 'Oatmeal & berries', 420, 68,
-                            14, 9),
-                        _log(MealSlot.lunch, 'Chicken rice bowl', 640, 72, 45,
-                            18),
-                        _log(MealSlot.dinner, 'Salmon & sweet potato', 580, 48,
-                            42, 22),
+                        _log(
+                          MealSlot.breakfast,
+                          'Oatmeal & berries',
+                          420,
+                          68,
+                          14,
+                          9,
+                        ),
+                        _log(
+                          MealSlot.lunch,
+                          'Chicken rice bowl',
+                          640,
+                          72,
+                          45,
+                          18,
+                        ),
+                        _log(
+                          MealSlot.dinner,
+                          'Salmon & sweet potato',
+                          580,
+                          48,
+                          42,
+                          22,
+                        ),
                         _log(MealSlot.snack, 'Greek yogurt', 180, 12, 18, 4),
                       ])
-                        MealLogRow(
-                          log: r,
-                          onDelete: () {},
-                          onEdit: () {},
-                        ),
+                        MealLogRow(log: r, onDelete: () {}, onEdit: () {}),
                     ],
                   ),
                 ),

@@ -102,11 +102,7 @@ class FoodChip extends StatelessWidget {
             if (isLiked && !showRemoveButton)
               Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.xxs),
-                child: Icon(
-                  Icons.favorite,
-                  size: 16,
-                  color: AppColors.orange,
-                ),
+                child: Icon(Icons.favorite, size: 16, color: AppColors.orange),
               ),
 
             // Food name

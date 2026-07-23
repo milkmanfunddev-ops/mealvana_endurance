@@ -188,7 +188,8 @@ class DailyMacroTargets {
     return {
       'id': id,
       'user_id': userId,
-      'target_date': '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}',
+      'target_date':
+          '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}',
       'carb_g': carbG,
       'prot_g': protG,
       'fat_g': fatG,

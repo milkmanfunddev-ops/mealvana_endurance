@@ -48,32 +48,35 @@ void main() {
       expect(restored.isIndoor, isFalse);
     });
 
-    test('null derivation fields are handled gracefully (legacy JSON safe)', () {
-      // Simulate a legacy JSON payload that has no derivation fields.
-      final legacyJson = {
-        'carbRateGPerH': 50.0,
-        'carbTotalG': 100.0,
-        'fluidRateMlPerH': 500.0,
-        'fluidTotalMl': 1000.0,
-        'sodiumRateMgPerH': 400.0,
-        'sodiumTotalMg': 800.0,
-        'massNormRateGPerH': 0.7,
-        'absClampRangeGPerH': [30.0, 60.0],
-      };
+    test(
+      'null derivation fields are handled gracefully (legacy JSON safe)',
+      () {
+        // Simulate a legacy JSON payload that has no derivation fields.
+        final legacyJson = {
+          'carbRateGPerH': 50.0,
+          'carbTotalG': 100.0,
+          'fluidRateMlPerH': 500.0,
+          'fluidTotalMl': 1000.0,
+          'sodiumRateMgPerH': 400.0,
+          'sodiumTotalMg': 800.0,
+          'massNormRateGPerH': 0.7,
+          'absClampRangeGPerH': [30.0, 60.0],
+        };
 
-      final restored = DuringRunMacros.fromJson(legacyJson);
+        final restored = DuringRunMacros.fromJson(legacyJson);
 
-      expect(restored.effectiveSweatRateLPerH, isNull);
-      expect(restored.sodiumConcMgPerL, isNull);
-      expect(restored.replacementPercent, isNull);
-      expect(restored.floorMlPerH, isNull);
-      expect(restored.ceilingMlPerH, isNull);
-      expect(restored.safetyFlags, isEmpty);
-      expect(restored.isTested, isFalse);
-      expect(restored.tempC, isNull);
-      expect(restored.humidityPct, isNull);
-      expect(restored.isIndoor, isNull);
-    });
+        expect(restored.effectiveSweatRateLPerH, isNull);
+        expect(restored.sodiumConcMgPerL, isNull);
+        expect(restored.replacementPercent, isNull);
+        expect(restored.floorMlPerH, isNull);
+        expect(restored.ceilingMlPerH, isNull);
+        expect(restored.safetyFlags, isEmpty);
+        expect(restored.isTested, isFalse);
+        expect(restored.tempC, isNull);
+        expect(restored.humidityPct, isNull);
+        expect(restored.isIndoor, isNull);
+      },
+    );
 
     test('isTested=false is omitted from toJson but restored correctly', () {
       const notTested = DuringRunMacros(
@@ -178,108 +181,114 @@ void main() {
   });
 
   group('Full MacroTargets JSON round-trip with derivation fields', () {
-    test('brickPhaseTargets with derivation fields survive full round-trip', () {
-      final macroTargets = MacroTargets(
-        id: 'test-id-123',
-        activityType: ActivityType.brick,
-        preRun: const PreRunMacros(
-          carbsG: 60.0,
-          proteinG: 20.0,
-          fatCapG: 10.0,
-          fluidsMl: 500.0,
-          sodiumMg: 500.0,
-        ),
-        duringRun: const DuringRunMacros(
-          carbRateGPerH: 60.0,
-          carbTotalG: 150.0,
-          fluidRateMlPerH: 700.0,
-          fluidTotalMl: 1750.0,
-          sodiumRateMgPerH: 560.0,
-          sodiumTotalMg: 1400.0,
-          massNormRateGPerH: 0.8,
-          effectiveSweatRateLPerH: 1.28,
-          sodiumConcMgPerL: 825,
-          replacementPercent: 0.60,
-          safetyFlags: [],
-          isTested: false,
-          tempC: 22.0,
-          humidityPct: 50.0,
-          isIndoor: false,
-        ),
-        postRun: const PostRunMacros(
-          carbsG: 80.0,
-          proteinG: 25.0,
-          fluidsMl: 600.0,
-          sodiumMg: 500.0,
-        ),
-        metrics: const RunMetrics(
-          distanceMi: 31.2,
-          distanceKm: 50.2,
-          durationH: 2.5,
-          durationMin: 150.0,
-          speedMph: 12.5,
-          caloriesGrossKcal: 1800.0,
-          caloriesNetKcal: 1600.0,
-          met: 8.0,
-        ),
-        calculationRule: 'brick-test',
-        timestamp: DateTime(2026, 4, 20),
-        isUserModified: false,
-        brickPhaseTargets: const BrickPhaseTargets(
-          duringSegments: [
-            BrickSegmentMacroTarget(
-              segmentOrder: 1,
-              sport: 'cycling',
-              durationMinutes: 90,
-              carbsG: 90.0,
-              sodiumMg: 825.0,
-              waterMl: 1050.0,
-              effectiveSweatRateLPerH: 1.28,
-              sodiumConcMgPerL: 825,
-              replacementPercent: 0.60,
-              floorMlPerH: 560,
-              ceilingMlPerH: 1200,
-              safetyFlags: [],
-              isTested: false,
-            ),
-          ],
-          transitions: [
-            BrickTransitionMacroTarget(
-              transitionName: 'T2',
-              carbsG: 0.0,
-              sodiumMg: 248.0,
-              waterMl: 300.0,
-              effectiveSweatRateLPerH: 1.28,
-              sodiumConcMgPerL: 825,
-              replacementPercent: 0.30,
-              safetyFlags: [],
-              isTested: false,
-            ),
-          ],
-        ),
-      );
+    test(
+      'brickPhaseTargets with derivation fields survive full round-trip',
+      () {
+        final macroTargets = MacroTargets(
+          id: 'test-id-123',
+          activityType: ActivityType.brick,
+          preRun: const PreRunMacros(
+            carbsG: 60.0,
+            proteinG: 20.0,
+            fatCapG: 10.0,
+            fluidsMl: 500.0,
+            sodiumMg: 500.0,
+          ),
+          duringRun: const DuringRunMacros(
+            carbRateGPerH: 60.0,
+            carbTotalG: 150.0,
+            fluidRateMlPerH: 700.0,
+            fluidTotalMl: 1750.0,
+            sodiumRateMgPerH: 560.0,
+            sodiumTotalMg: 1400.0,
+            massNormRateGPerH: 0.8,
+            effectiveSweatRateLPerH: 1.28,
+            sodiumConcMgPerL: 825,
+            replacementPercent: 0.60,
+            safetyFlags: [],
+            isTested: false,
+            tempC: 22.0,
+            humidityPct: 50.0,
+            isIndoor: false,
+          ),
+          postRun: const PostRunMacros(
+            carbsG: 80.0,
+            proteinG: 25.0,
+            fluidsMl: 600.0,
+            sodiumMg: 500.0,
+          ),
+          metrics: const RunMetrics(
+            distanceMi: 31.2,
+            distanceKm: 50.2,
+            durationH: 2.5,
+            durationMin: 150.0,
+            speedMph: 12.5,
+            caloriesGrossKcal: 1800.0,
+            caloriesNetKcal: 1600.0,
+            met: 8.0,
+          ),
+          calculationRule: 'brick-test',
+          timestamp: DateTime(2026, 4, 20),
+          isUserModified: false,
+          brickPhaseTargets: const BrickPhaseTargets(
+            duringSegments: [
+              BrickSegmentMacroTarget(
+                segmentOrder: 1,
+                sport: 'cycling',
+                durationMinutes: 90,
+                carbsG: 90.0,
+                sodiumMg: 825.0,
+                waterMl: 1050.0,
+                effectiveSweatRateLPerH: 1.28,
+                sodiumConcMgPerL: 825,
+                replacementPercent: 0.60,
+                floorMlPerH: 560,
+                ceilingMlPerH: 1200,
+                safetyFlags: [],
+                isTested: false,
+              ),
+            ],
+            transitions: [
+              BrickTransitionMacroTarget(
+                transitionName: 'T2',
+                carbsG: 0.0,
+                sodiumMg: 248.0,
+                waterMl: 300.0,
+                effectiveSweatRateLPerH: 1.28,
+                sodiumConcMgPerL: 825,
+                replacementPercent: 0.30,
+                safetyFlags: [],
+                isTested: false,
+              ),
+            ],
+          ),
+        );
 
-      final json = macroTargets.toJson();
-      final restored = MacroTargets.fromJson(json);
+        final json = macroTargets.toJson();
+        final restored = MacroTargets.fromJson(json);
 
-      // DuringRunMacros derivation fields
-      expect(restored.duringRun.effectiveSweatRateLPerH, closeTo(1.28, 0.001));
-      expect(restored.duringRun.sodiumConcMgPerL, 825);
-      expect(restored.duringRun.tempC, closeTo(22.0, 0.001));
-      expect(restored.duringRun.isIndoor, isFalse);
+        // DuringRunMacros derivation fields
+        expect(
+          restored.duringRun.effectiveSweatRateLPerH,
+          closeTo(1.28, 0.001),
+        );
+        expect(restored.duringRun.sodiumConcMgPerL, 825);
+        expect(restored.duringRun.tempC, closeTo(22.0, 0.001));
+        expect(restored.duringRun.isIndoor, isFalse);
 
-      // BrickSegmentMacroTarget derivation fields
-      final segment = restored.brickPhaseTargets!.duringSegments.first;
-      expect(segment.effectiveSweatRateLPerH, closeTo(1.28, 0.001));
-      expect(segment.sodiumConcMgPerL, 825);
-      expect(segment.floorMlPerH, 560);
-      expect(segment.ceilingMlPerH, 1200);
+        // BrickSegmentMacroTarget derivation fields
+        final segment = restored.brickPhaseTargets!.duringSegments.first;
+        expect(segment.effectiveSweatRateLPerH, closeTo(1.28, 0.001));
+        expect(segment.sodiumConcMgPerL, 825);
+        expect(segment.floorMlPerH, 560);
+        expect(segment.ceilingMlPerH, 1200);
 
-      // BrickTransitionMacroTarget derivation fields
-      final transition = restored.brickPhaseTargets!.transitions.first;
-      expect(transition.effectiveSweatRateLPerH, closeTo(1.28, 0.001));
-      expect(transition.sodiumConcMgPerL, 825);
-      expect(transition.isTested, isFalse);
-    });
+        // BrickTransitionMacroTarget derivation fields
+        final transition = restored.brickPhaseTargets!.transitions.first;
+        expect(transition.effectiveSweatRateLPerH, closeTo(1.28, 0.001));
+        expect(transition.sodiumConcMgPerL, 825);
+        expect(transition.isTested, isFalse);
+      },
+    );
   });
 }

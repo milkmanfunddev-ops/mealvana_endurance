@@ -34,15 +34,17 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
     bool? runsWithWaterBottle,
     String? gutTrainingLevel,
   }) async {
-    identifyCalls.add(IdentifyCall(
-      userId: userId,
-      properties: properties,
-      gender: gender,
-      age: age,
-      weightPounds: weightPounds,
-      runsWithWaterBottle: runsWithWaterBottle,
-      gutTrainingLevel: gutTrainingLevel,
-    ));
+    identifyCalls.add(
+      IdentifyCall(
+        userId: userId,
+        properties: properties,
+        gender: gender,
+        age: age,
+        weightPounds: weightPounds,
+        runsWithWaterBottle: runsWithWaterBottle,
+        gutTrainingLevel: gutTrainingLevel,
+      ),
+    );
   }
 
   @override
@@ -51,12 +53,17 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
   }
 
   @override
-  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
-    trackedEvents.add(TrackCall(
-      eventName: eventName,
-      properties: properties,
-      timestamp: DateTime.now(),
-    ));
+  Future<void> track(
+    String eventName, {
+    Map<String, dynamic>? properties,
+  }) async {
+    trackedEvents.add(
+      TrackCall(
+        eventName: eventName,
+        properties: properties,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -79,9 +86,7 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
 
   TrackCall? getEvent(String eventName) {
     try {
-      return trackedEvents.firstWhere(
-        (call) => call.eventName == eventName,
-      );
+      return trackedEvents.firstWhere((call) => call.eventName == eventName);
     } catch (e) {
       return null;
     }

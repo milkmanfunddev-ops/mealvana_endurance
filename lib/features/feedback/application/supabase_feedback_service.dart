@@ -9,7 +9,7 @@ class SupabaseFeedbackService {
   SupabaseFeedbackService(this._supabase);
 
   final SupabaseClient _supabase;
-  
+
   /// Submit feedback to Supabase database
   Future<bool> submitFeedback(FeedbackResponse feedback) async {
     if (kDebugMode) {
@@ -27,7 +27,9 @@ class SupabaseFeedbackService {
         'suggestions': feedback.suggestions,
         'plan_name': feedback.planName,
         'user_name': feedback.userName,
-        'timestamp': feedback.timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        'timestamp':
+            feedback.timestamp?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
         'created_at': DateTime.now().toIso8601String(),
       };
 
@@ -39,10 +41,15 @@ class SupabaseFeedbackService {
       }
 
       // Insert into feedback table
-      final result = await _supabase.from('feedback').insert(feedbackData).select();
+      final result = await _supabase
+          .from('feedback')
+          .insert(feedbackData)
+          .select();
 
       if (kDebugMode) {
-        DebugLogger.info('📡 Supabase response: ${result.length} rows inserted');
+        DebugLogger.info(
+          '📡 Supabase response: ${result.length} rows inserted',
+        );
         DebugLogger.info('✅ Submission successful!');
       }
 
@@ -64,7 +71,7 @@ class SupabaseFeedbackService {
           .from('feedback')
           .select()
           .order('created_at', ascending: false);
-      
+
       return List<Map<String, dynamic>>.from(response);
     } catch (error) {
       if (kDebugMode) {
@@ -82,7 +89,7 @@ class SupabaseFeedbackService {
           .from('feedback')
           .select('satisfaction_level');
 
-      // Get app feedback distribution  
+      // Get app feedback distribution
       final appFeedbackStats = await _supabase
           .from('feedback')
           .select('app_feedback');
@@ -134,7 +141,9 @@ class SupabaseFeedbackService {
       final result = await _supabase.from('feedback').insert(testData).select();
 
       if (kDebugMode) {
-        DebugLogger.info('🧪 Test connection: ${result.isNotEmpty ? 'SUCCESS' : 'FAILED'}');
+        DebugLogger.info(
+          '🧪 Test connection: ${result.isNotEmpty ? 'SUCCESS' : 'FAILED'}',
+        );
       }
 
       return result.isNotEmpty;

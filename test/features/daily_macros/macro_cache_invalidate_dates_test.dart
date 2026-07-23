@@ -38,20 +38,37 @@ void main() {
         '$uid-${day.millisecondsSinceEpoch}',
         uid,
         day.millisecondsSinceEpoch,
-        300.0, 150.0, 70.0, 2600.0, 1600.0, 600.0, 300.0, 100.0,
-        'performance', 40.0, null, 'v5.0.0', 0,
-        0, 0,
+        300.0,
+        150.0,
+        70.0,
+        2600.0,
+        1600.0,
+        600.0,
+        300.0,
+        100.0,
+        'performance',
+        40.0,
+        null,
+        'v5.0.0',
+        0,
+        0,
+        0,
       ],
     );
   }
 
   Future<Set<DateTime>> cachedDaysFor(String uid) async {
-    final rows = await database.customSelect(
-      'SELECT target_date FROM daily_macro_targets WHERE user_id = ?',
-      variables: [Variable.withString(uid)],
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT target_date FROM daily_macro_targets WHERE user_id = ?',
+          variables: [Variable.withString(uid)],
+        )
+        .get();
     return rows
-        .map((r) => DateTime.fromMillisecondsSinceEpoch(r.read<int>('target_date')))
+        .map(
+          (r) =>
+              DateTime.fromMillisecondsSinceEpoch(r.read<int>('target_date')),
+        )
         .toSet();
   }
 
@@ -120,7 +137,8 @@ void main() {
       // pins is that the CHUNKING ITSELF is correct: every requested day is
       // deleted across chunk boundaries, and nothing outside the set is.
       final manyDays = [
-        for (var i = 0; i < 1500; i++) DateTime(2024, 1, 1).add(Duration(days: i)),
+        for (var i = 0; i < 1500; i++)
+          DateTime(2024, 1, 1).add(Duration(days: i)),
       ];
       for (final d in manyDays) {
         await seedCachedDay(userId, d);
@@ -139,42 +157,40 @@ void main() {
     },
   );
 
-  test(
-    'editing one workout drops only its week — months of cache survive '
-    '(previously ALL of this was deleted)',
-    () async {
-      // A user with macros cached across three separate months.
-      final march = [for (var d = 2; d <= 6; d++) DateTime(2026, 3, d)];
-      final june = [for (var d = 8; d <= 12; d++) DateTime(2026, 6, d)];
-      // The week of the edit: Mon Jul 13 .. Sun Jul 19.
-      final julyWeek = [for (var d = 13; d <= 19; d++) DateTime(2026, 7, d)];
-      // A later week that must be untouched.
-      final julyNextWeek = [for (var d = 20; d <= 24; d++) DateTime(2026, 7, d)];
+  test('editing one workout drops only its week — months of cache survive '
+      '(previously ALL of this was deleted)', () async {
+    // A user with macros cached across three separate months.
+    final march = [for (var d = 2; d <= 6; d++) DateTime(2026, 3, d)];
+    final june = [for (var d = 8; d <= 12; d++) DateTime(2026, 6, d)];
+    // The week of the edit: Mon Jul 13 .. Sun Jul 19.
+    final julyWeek = [for (var d = 13; d <= 19; d++) DateTime(2026, 7, d)];
+    // A later week that must be untouched.
+    final julyNextWeek = [for (var d = 20; d <= 24; d++) DateTime(2026, 7, d)];
 
-      for (final d in [...march, ...june, ...julyWeek, ...julyNextWeek]) {
-        await seedCachedDay(userId, d);
-      }
-      final totalSeeded = march.length + june.length + julyWeek.length + julyNextWeek.length;
-      expect(await cachedDaysFor(userId), hasLength(totalSeeded));
+    for (final d in [...march, ...june, ...julyWeek, ...julyNextWeek]) {
+      await seedCachedDay(userId, d);
+    }
+    final totalSeeded =
+        march.length + june.length + julyWeek.length + julyNextWeek.length;
+    expect(await cachedDaysFor(userId), hasLength(totalSeeded));
 
-      // The user deletes a workout on Wednesday 2026-07-15.
-      final stale = daysAffectedByActivityOn(DateTime(2026, 7, 15));
-      await repository.invalidateDates(userId, stale);
+    // The user deletes a workout on Wednesday 2026-07-15.
+    final stale = daysAffectedByActivityOn(DateTime(2026, 7, 15));
+    await repository.invalidateDates(userId, stale);
 
-      final survivors = await cachedDaysFor(userId);
+    final survivors = await cachedDaysFor(userId);
 
-      // The edited week is gone...
-      for (final d in julyWeek) {
-        expect(survivors, isNot(contains(d)), reason: '$d is in the edited week');
-      }
-      // ...and absolutely everything else survived.
-      for (final d in [...march, ...june, ...julyNextWeek]) {
-        expect(survivors, contains(d), reason: '$d must NOT have been wiped');
-      }
-      expect(
-        survivors,
-        hasLength(march.length + june.length + julyNextWeek.length),
-      );
-    },
-  );
+    // The edited week is gone...
+    for (final d in julyWeek) {
+      expect(survivors, isNot(contains(d)), reason: '$d is in the edited week');
+    }
+    // ...and absolutely everything else survived.
+    for (final d in [...march, ...june, ...julyNextWeek]) {
+      expect(survivors, contains(d), reason: '$d must NOT have been wiped');
+    }
+    expect(
+      survivors,
+      hasLength(march.length + june.length + julyNextWeek.length),
+    );
+  });
 }

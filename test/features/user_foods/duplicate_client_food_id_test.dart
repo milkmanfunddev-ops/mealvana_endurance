@@ -56,41 +56,38 @@ void main() {
     );
   }
 
-  test(
-    'the reported scenario: gel saved via Swap/Preferences path (device_id '
-    '= legacy deviceId) then again via Add Food path (device_id = '
-    'profile.id) surfaces once, not twice, in the fuel list',
-    () async {
-      // Path 2 (UserFoodCrudService / Swap Food / Food Preferences):
-      // device_id = profile.deviceId.
-      await saveFood(
-        id: '00000000-0000-0000-0000-0000000000a1',
-        deviceId: legacyDeviceId,
-        userId: userId,
-        clientFoodId: gelClientFoodId,
-        name: 'SiS Salted Strawberry Gel',
-      );
-      // Path 1 (AddFoodScreen, pre-fix): device_id = profile.id.
-      await saveFood(
-        id: '00000000-0000-0000-0000-0000000000a2',
-        deviceId: userId,
-        userId: userId,
-        clientFoodId: gelClientFoodId,
-        name: 'SiS Salted Strawberry Gel',
-      );
+  test('the reported scenario: gel saved via Swap/Preferences path (device_id '
+      '= legacy deviceId) then again via Add Food path (device_id = '
+      'profile.id) surfaces once, not twice, in the fuel list', () async {
+    // Path 2 (UserFoodCrudService / Swap Food / Food Preferences):
+    // device_id = profile.deviceId.
+    await saveFood(
+      id: '00000000-0000-0000-0000-0000000000a1',
+      deviceId: legacyDeviceId,
+      userId: userId,
+      clientFoodId: gelClientFoodId,
+      name: 'SiS Salted Strawberry Gel',
+    );
+    // Path 1 (AddFoodScreen, pre-fix): device_id = profile.id.
+    await saveFood(
+      id: '00000000-0000-0000-0000-0000000000a2',
+      deviceId: userId,
+      userId: userId,
+      clientFoodId: gelClientFoodId,
+      name: 'SiS Salted Strawberry Gel',
+    );
 
-      final foods = await database.foodsDao.getUserFoods(userId);
-      final gels =
-          foods.where((f) => f.clientFoodId == gelClientFoodId).toList();
+    final foods = await database.foodsDao.getUserFoods(userId);
+    final gels = foods.where((f) => f.clientFoodId == gelClientFoodId).toList();
 
-      expect(
-        gels,
-        hasLength(1),
-        reason: 'the same catalog gel saved via two device_id paths must '
-            'collapse to a single fuel-list entry',
-      );
-    },
-  );
+    expect(
+      gels,
+      hasLength(1),
+      reason:
+          'the same catalog gel saved via two device_id paths must '
+          'collapse to a single fuel-list entry',
+    );
+  });
 
   test(
     'a third save of the same client_food_id still collapses to one entry',
@@ -113,61 +110,61 @@ void main() {
       }
 
       final foods = await database.foodsDao.getUserFoods(userId);
-      final gels =
-          foods.where((f) => f.clientFoodId == gelClientFoodId).toList();
+      final gels = foods
+          .where((f) => f.clientFoodId == gelClientFoodId)
+          .toList();
 
       expect(gels, hasLength(1));
     },
   );
 
-  test(
-    'distinct catalog foods (different client_food_id) are never collapsed '
-    'into each other',
-    () async {
-      await saveFood(
-        id: '00000000-0000-0000-0000-0000000000b1',
-        deviceId: userId,
-        userId: userId,
-        clientFoodId: gelClientFoodId,
-        name: 'SiS Salted Strawberry Gel',
-      );
-      await saveFood(
-        id: '00000000-0000-0000-0000-0000000000b2',
-        deviceId: userId,
-        userId: userId,
-        clientFoodId: barClientFoodId,
-        name: 'Clif Bar Chocolate',
-      );
+  test('distinct catalog foods (different client_food_id) are never collapsed '
+      'into each other', () async {
+    await saveFood(
+      id: '00000000-0000-0000-0000-0000000000b1',
+      deviceId: userId,
+      userId: userId,
+      clientFoodId: gelClientFoodId,
+      name: 'SiS Salted Strawberry Gel',
+    );
+    await saveFood(
+      id: '00000000-0000-0000-0000-0000000000b2',
+      deviceId: userId,
+      userId: userId,
+      clientFoodId: barClientFoodId,
+      name: 'Clif Bar Chocolate',
+    );
 
-      final foods = await database.foodsDao.getUserFoods(userId);
+    final foods = await database.foodsDao.getUserFoods(userId);
 
-      expect(foods, hasLength(2));
-      expect(foods.map((f) => f.clientFoodId),
-          containsAll(<String>[gelClientFoodId, barClientFoodId]));
-    },
-  );
+    expect(foods, hasLength(2));
+    expect(
+      foods.map((f) => f.clientFoodId),
+      containsAll(<String>[gelClientFoodId, barClientFoodId]),
+    );
+  });
 
-  test(
-    'hasUserFoodWithClientFoodId used by AddFoodScreen catches an existing '
-    'row saved via the legacy device_id path (Path 2)',
-    () async {
-      await saveFood(
-        id: '00000000-0000-0000-0000-0000000000d1',
-        deviceId: legacyDeviceId,
-        userId: userId,
-        clientFoodId: gelClientFoodId,
-        name: 'SiS Salted Strawberry Gel',
-      );
+  test('hasUserFoodWithClientFoodId used by AddFoodScreen catches an existing '
+      'row saved via the legacy device_id path (Path 2)', () async {
+    await saveFood(
+      id: '00000000-0000-0000-0000-0000000000d1',
+      deviceId: legacyDeviceId,
+      userId: userId,
+      clientFoodId: gelClientFoodId,
+      name: 'SiS Salted Strawberry Gel',
+    );
 
-      final hasDuplicate = await database.foodsDao
-          .hasUserFoodWithClientFoodId(userId, gelClientFoodId);
+    final hasDuplicate = await database.foodsDao.hasUserFoodWithClientFoodId(
+      userId,
+      gelClientFoodId,
+    );
 
-      expect(
-        hasDuplicate,
-        isTrue,
-        reason: 'AddFoodScreen must detect the duplicate even though the '
-            'existing row was persisted under a different device_id',
-      );
-    },
-  );
+    expect(
+      hasDuplicate,
+      isTrue,
+      reason:
+          'AddFoodScreen must detect the duplicate even though the '
+          'existing row was persisted under a different device_id',
+    );
+  });
 }

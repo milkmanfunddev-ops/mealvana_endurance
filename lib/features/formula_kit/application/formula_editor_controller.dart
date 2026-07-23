@@ -190,8 +190,11 @@ class FormulaEditorController extends _$FormulaEditorController {
     if (!_validIndex(index)) return;
     _patch((d) {
       final next = _cloneComponents(d.components);
-      next[index] =
-          FormulaMacros.componentFromFood(food, quantity, isUserFood: isUserFood);
+      next[index] = FormulaMacros.componentFromFood(
+        food,
+        quantity,
+        isUserFood: isUserFood,
+      );
       return d.copyWith(components: next);
     });
     _trackComponentEvent(
@@ -229,12 +232,17 @@ class FormulaEditorController extends _$FormulaEditorController {
     final draft = state.value;
     if (draft == null) return;
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    unawaited(analytics.track(event, properties: {
-      'phase': draft.phase.analyticsValue,
-      'is_new_formula': draft.original == null,
-      'component_count': draft.components.length,
-      ...?extra,
-    }));
+    unawaited(
+      analytics.track(
+        event,
+        properties: {
+          'phase': draft.phase.analyticsValue,
+          'is_new_formula': draft.original == null,
+          'component_count': draft.components.length,
+          ...?extra,
+        },
+      ),
+    );
   }
 
   // ── Save ─────────────────────────────────────────────────────────────────
@@ -251,8 +259,9 @@ class FormulaEditorController extends _$FormulaEditorController {
     final now = DateTime.now();
     final original = draft.original;
 
-    final currentInsight =
-        ref.read(coachInsightControllerProvider(formulaId)).value;
+    final currentInsight = ref
+        .read(coachInsightControllerProvider(formulaId))
+        .value;
 
     final formula = PersonalFormula(
       id: original?.id ?? '',
@@ -283,7 +292,9 @@ class FormulaEditorController extends _$FormulaEditorController {
       updatedAt: now,
     );
 
-    final listController = ref.read(personalFormulasControllerProvider.notifier);
+    final listController = ref.read(
+      personalFormulasControllerProvider.notifier,
+    );
     final saved = original != null
         ? await listController.updateFormula(
             formula,

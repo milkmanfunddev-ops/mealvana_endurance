@@ -7,7 +7,7 @@ class FoodItem {
   final String? description;
   final String? instructions;
   final List<FoodCategory> categories;
-  
+
   // Serving Information
   final String? servingSize; // Legacy field - deprecated in simplified approach
   final double? servingAmount; // Should always be 1.0 in simplified approach
@@ -111,11 +111,11 @@ class FoodItem {
       imageAddress: json['image_address']?.toString(),
       description: json['description']?.toString(),
       instructions: json['instructions']?.toString(),
-      categories: json['categories'] != null 
-        ? (json['categories'] as List).map((cat) => 
-            FoodCategory.fromDbValue(cat as String)
-          ).toList()
-        : [],
+      categories: json['categories'] != null
+          ? (json['categories'] as List)
+                .map((cat) => FoodCategory.fromDbValue(cat as String))
+                .toList()
+          : [],
       servingSize: json['serving_size']?.toString(),
       servingAmount: (json['serving_amount'] as num?)?.toDouble(),
       servingUnit: json['serving_unit']?.toString(),
@@ -182,12 +182,12 @@ class FoodItem {
       'to_exclude_from_solver': toExcludeFromSolver,
     };
   }
-  
+
   /// Check if this food belongs to a specific category
   bool belongsToCategory(FoodCategory category) {
     return categories.contains(category);
   }
-  
+
   /// Format quantity for display using simplified display name approach
   /// If display names are available, use them. Otherwise fall back to complex logic.
   String formatQuantity(double quantity) {
@@ -271,10 +271,10 @@ enum FoodCategory {
   beforeRun('before_run'),
   duringRun('during_run'),
   afterRun('after_run');
-  
+
   const FoodCategory(this.dbValue);
   final String dbValue;
-  
+
   static FoodCategory fromDbValue(String value) {
     return FoodCategory.values.firstWhere(
       (cat) => cat.dbValue == value,

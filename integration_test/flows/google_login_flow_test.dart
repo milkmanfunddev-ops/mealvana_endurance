@@ -27,8 +27,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
-import 'package:mealvana_endurance/main_dev.dart' as app;
 
+import '../helpers/flow_launcher.dart';
 import '../helpers/test_helpers.dart';
 
 const _googleEmail = String.fromEnvironment('GOOGLE_TEST_EMAIL');
@@ -48,7 +48,8 @@ void main() {
         return;
       }
 
-      await app.main();
+      // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
+      await launchApp();
       await tester.pumpAndSettle(
         const Duration(milliseconds: 100),
         EnginePhase.sendSemanticsUpdate,
@@ -57,11 +58,13 @@ void main() {
 
       // If already authed (calendar present), nothing to do.
       if (find
-          .byKey(const ValueKey('calendar.create_activity_fab'))
+          .byKey(const ValueKey('bottom_nav.timeline_tab'))
           .evaluate()
           .isNotEmpty) {
-        expect(find.byKey(const ValueKey('calendar.create_activity_fab')),
-            findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('bottom_nav.timeline_tab')),
+          findsOneWidget,
+        );
         return;
       }
 
@@ -91,7 +94,9 @@ void main() {
           // Account not in the picker — try a generic "Continue"/account row.
           try {
             await native.tap(Selector(textContains: 'Continue'));
-          } catch (_) {/* fall through to the assertion */}
+          } catch (_) {
+            /* fall through to the assertion */
+          }
         }
       }
 
@@ -99,7 +104,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 30));
 
       final landed = await tester.waitForWidget(
-        find.byKey(const ValueKey('calendar.create_activity_fab')),
+        find.byKey(const ValueKey('bottom_nav.timeline_tab')),
         timeout: const Duration(seconds: 20),
       );
       expect(

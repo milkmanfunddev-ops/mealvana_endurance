@@ -187,6 +187,12 @@ class AppDatabase extends _$AppDatabase {
   /// meal-logging redesign notes — NOT bundled with this migration, applied
   /// out-of-band by the orchestrator).
   ///
+  /// v14 also adds `activities.is_fasted` (INTEGER NOT NULL DEFAULT 0) so a
+  /// plan generated fasted regenerates fasted. Folded into the existing v14
+  /// step (not a v15 bump) because v14 has not shipped to any user. The
+  /// matching Supabase column (`activities.is_fasted boolean not null
+  /// default false`) already exists on dev + prod.
+  ///
   /// Schema version 11: meal logging + Jade groundwork. Adds three tables:
   ///   • meal_logs   — logged meals on the Daily Macros tab (offline-first,
   ///     soft-deleted via is_deleted, needs_upload dirty tracking)
@@ -378,6 +384,17 @@ class AppDatabase extends _$AppDatabase {
           await addColumn(
             'during_workout_templates',
             'selection_priority',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+
+        // v14 (part 2): persist the fasted flag the nutrition plan was
+        // generated with. addColumn is idempotent, so a web user_version
+        // replay of this step is harmless.
+        if (from < 14) {
+          await addColumn(
+            'activities',
+            'is_fasted',
             'INTEGER NOT NULL DEFAULT 0',
           );
         }

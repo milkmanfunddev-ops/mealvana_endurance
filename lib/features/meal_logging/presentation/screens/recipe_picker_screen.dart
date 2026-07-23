@@ -44,8 +44,7 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       _logDate = extra?['logDate'] as String? ?? _todayDateString();
       _initialized = true;
       _loadRecipes();
@@ -62,8 +61,12 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
   Future<void> _loadRecipes() async {
     try {
       final service = ref.read(recipeServiceProvider);
-      final userId =
-          ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.id;
+      final userId = ref
+          .read(appExternalDepsProvider)
+          .supabaseClient
+          .auth
+          .currentUser
+          ?.id;
       if (userId != null) {
         await service.ensureSynced(userId);
       }
@@ -99,20 +102,20 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final scaledCal =
-              (recipe.nutrition.calories * servings).round();
-          final scaledCarb =
-              (recipe.nutrition.carbohydratesGrams * servings).toStringAsFixed(0);
-          final scaledProt =
-              (recipe.nutrition.proteinGrams * servings).toStringAsFixed(0);
-          final scaledFat =
-              (recipe.nutrition.fatGrams * servings).toStringAsFixed(0);
+          final scaledCal = (recipe.nutrition.calories * servings).round();
+          final scaledCarb = (recipe.nutrition.carbohydratesGrams * servings)
+              .toStringAsFixed(0);
+          final scaledProt = (recipe.nutrition.proteinGrams * servings)
+              .toStringAsFixed(0);
+          final scaledFat = (recipe.nutrition.fatGrams * servings)
+              .toStringAsFixed(0);
 
           return Container(
             decoration: BoxDecoration(
               color: isDark ? AppColors.blackberry : AppColors.cream,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             padding: EdgeInsets.only(
               left: AppSpacing.lg,
@@ -150,10 +153,7 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Servings stepper
-                  Text(
-                    'Servings',
-                    style: Theme.of(ctx).textTheme.labelLarge,
-                  ),
+                  Text('Servings', style: Theme.of(ctx).textTheme.labelLarge),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -162,7 +162,11 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
                         icon: const Icon(Icons.remove_circle_outline),
                         onPressed: servings > 0.5
                             ? () => setModalState(
-                                () => servings = (servings - 0.5).clamp(0.5, 10.0))
+                                () => servings = (servings - 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
+                              )
                             : null,
                       ),
                       SizedBox(
@@ -182,7 +186,11 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
                         icon: const Icon(Icons.add_circle_outline),
                         onPressed: servings < 10
                             ? () => setModalState(
-                                () => servings = (servings + 0.5).clamp(0.5, 10.0))
+                                () => servings = (servings + 0.5).clamp(
+                                  0.5,
+                                  10.0,
+                                ),
+                              )
                             : null,
                       ),
                     ],
@@ -190,10 +198,7 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
                   const SizedBox(height: AppSpacing.md),
 
                   // Slot selector
-                  Text(
-                    'Meal type',
-                    style: Theme.of(ctx).textTheme.labelLarge,
-                  ),
+                  Text('Meal type', style: Theme.of(ctx).textTheme.labelLarge),
                   const SizedBox(height: 6),
                   SlotChipSelector(
                     selectedSlot: slot,
@@ -217,8 +222,7 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
     );
   }
 
-  Future<void> _logRecipe(
-      Recipe recipe, double servings, MealSlot slot) async {
+  Future<void> _logRecipe(Recipe recipe, double servings, MealSlot slot) async {
     final params = RecipeLogParams(
       recipeId: recipe.id,
       recipeName: recipe.name,
@@ -268,7 +272,9 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: 6),
+                horizontal: AppSpacing.md,
+                vertical: 6,
+              ),
               children: [
                 _TypeChip(
                   label: 'All',
@@ -293,43 +299,44 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filtered.isEmpty
-                    ? const Center(child: Text('No recipes found.'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                        itemCount: _filtered.length,
-                        itemBuilder: (_, i) {
-                          final recipe = _filtered[i];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            child: ListTile(
-                              leading: _RecipePickerThumbnail(
-                                imageUrl: recipe.imageUrl,
-                                type: recipe.type,
-                              ),
-                              title: Text(recipe.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600)),
-                              subtitle: Text(
-                                '${recipe.nutrition.calories.round()} kcal/serving  ·  '
-                                'C ${recipe.nutrition.carbohydratesGrams.toStringAsFixed(0)}g  '
-                                'P ${recipe.nutrition.proteinGrams.toStringAsFixed(0)}g  '
-                                'F ${recipe.nutrition.fatGrams.toStringAsFixed(0)}g',
-                                style:
-                                    Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => _showLogSheet(recipe),
-                            ),
-                          );
-                        },
-                      ),
+                ? const Center(child: Text('No recipes found.'))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    itemCount: _filtered.length,
+                    itemBuilder: (_, i) {
+                      final recipe = _filtered[i];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          leading: _RecipePickerThumbnail(
+                            imageUrl: recipe.imageUrl,
+                            type: recipe.type,
+                          ),
+                          title: Text(
+                            recipe.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            '${recipe.nutrition.calories.round()} kcal/serving  ·  '
+                            'C ${recipe.nutrition.carbohydratesGrams.toStringAsFixed(0)}g  '
+                            'P ${recipe.nutrition.proteinGrams.toStringAsFixed(0)}g  '
+                            'F ${recipe.nutrition.fatGrams.toStringAsFixed(0)}g',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => _showLogSheet(recipe),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
-
 }
 
 /// Small rounded thumbnail (~48 px) shown in recipe list tile leading slot.
@@ -337,10 +344,7 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
 /// Falls back to a category-coloured icon when the URL is null or fails to
 /// load.  Uses plain [Image.network] — no extra dependency required.
 class _RecipePickerThumbnail extends StatelessWidget {
-  const _RecipePickerThumbnail({
-    required this.imageUrl,
-    required this.type,
-  });
+  const _RecipePickerThumbnail({required this.imageUrl, required this.type});
 
   final String? imageUrl;
   final RecipeType type;
@@ -438,7 +442,9 @@ class _TypeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.electrolyte
-              : (isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08)),
+              : (isDark
+                    ? Colors.white12
+                    : Colors.black.withValues(alpha: 0.08)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -447,8 +453,7 @@ class _TypeChip extends StatelessWidget {
             color: selected
                 ? AppColors.blackberry
                 : (isDark ? Colors.white : AppColors.blackberry),
-            fontWeight:
-                selected ? FontWeight.w700 : FontWeight.normal,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
             fontSize: 13,
           ),
         ),

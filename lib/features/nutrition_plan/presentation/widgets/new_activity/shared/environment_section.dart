@@ -71,13 +71,18 @@ class EnvironmentSection extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // Check if weather is auto-filled (from forecast/history)
-    final isAutoFilled = _hasWeatherIntegration &&
+    final isAutoFilled =
+        _hasWeatherIntegration &&
         !isIndoor &&
         weatherSource != null &&
         weatherSource != WeatherSource.defaultValue;
     final showWeatherPrompt =
-        _hasWeatherIntegration && !isIndoor && hasAttemptedWeatherFetch && !isAutoFilled;
-    final showLocationPrompt = showWeatherPrompt && locationFailureReason != null;
+        _hasWeatherIntegration &&
+        !isIndoor &&
+        hasAttemptedWeatherFetch &&
+        !isAutoFilled;
+    final showLocationPrompt =
+        showWeatherPrompt && locationFailureReason != null;
     final isServicesDisabled =
         locationFailureReason == LocationFailureReason.servicesDisabled;
     final isPermissionDenied =
@@ -122,7 +127,9 @@ class EnvironmentSection extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.electrolyte.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),

@@ -26,7 +26,8 @@ class EditableExpandableFoodItem extends StatefulWidget {
   final bool isExpanded;
 
   @override
-  State<EditableExpandableFoodItem> createState() => _EditableExpandableFoodItemState();
+  State<EditableExpandableFoodItem> createState() =>
+      _EditableExpandableFoodItemState();
 }
 
 class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
@@ -45,7 +46,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
     _isExpanded = widget.isExpanded;
     _currentQuantity = _extractQuantityFromString(widget.foodItem.quantity);
     _originalQuantity = _currentQuantity;
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -54,7 +55,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    
+
     if (_isExpanded) {
       _controller.value = 1.0;
     }
@@ -72,7 +73,8 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
     super.didUpdateWidget(oldWidget);
     // Only update local quantity if there are no local changes
     // This prevents losing local edits when parent state updates
-    if (!_hasLocalChanges && oldWidget.foodItem.quantity != widget.foodItem.quantity) {
+    if (!_hasLocalChanges &&
+        oldWidget.foodItem.quantity != widget.foodItem.quantity) {
       final newQuantity = _extractQuantityFromString(widget.foodItem.quantity);
       setState(() {
         _currentQuantity = newQuantity;
@@ -120,7 +122,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
   void _debouncedUpdateQuantity() {
     // Cancel the previous timer if it's still running
     _debounceTimer?.cancel();
-    
+
     // Start a new timer
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       _updateQuantity();
@@ -129,7 +131,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
 
   void _updateQuantity() {
     if (!_hasLocalChanges) return;
-    
+
     final container = ProviderScope.containerOf(context);
     final logger = container.read(appExternalDepsProvider).logger;
     logger.userAction(
@@ -144,9 +146,9 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
         'category': widget.category,
       },
     );
-    
+
     _hasLocalChanges = false;
-    
+
     // Call the callback to sync to backend
     widget.onQuantityChanged?.call(_currentQuantity);
   }
@@ -173,9 +175,9 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
 
   /// Generate updated quantity display for the current quantity
   String _generateUpdatedQuantityDisplay() {
-    final quantityStr = _currentQuantity == _currentQuantity.toInt() ?
-        _currentQuantity.toInt().toString() :
-        _currentQuantity.toStringAsFixed(1);
+    final quantityStr = _currentQuantity == _currentQuantity.toInt()
+        ? _currentQuantity.toInt().toString()
+        : _currentQuantity.toStringAsFixed(1);
 
     // Use proper plural/singular form based on current quantity
     final displayName = _getDisplayName().toLowerCase();
@@ -185,7 +187,8 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
       final unit = parts.skip(1).join(' '); // e.g., "tablets", "bagel", "fl oz"
 
       // Check if the unit already contains the food name (to avoid duplication)
-      if (unit.toLowerCase().contains(displayName) || displayName.contains(unit.toLowerCase())) {
+      if (unit.toLowerCase().contains(displayName) ||
+          displayName.contains(unit.toLowerCase())) {
         // Unit already contains food name (e.g., "bagel" contains "bagel")
         return '$quantityStr $unit';
       } else {
@@ -202,9 +205,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
       decoration: BoxDecoration(
         color: Color(0xFFD6E0FF), // Correct light blue from design
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppTheme.primary900,
-        ),
+        border: Border.all(color: AppTheme.primary900),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primary600.withValues(alpha: 0.1),
@@ -225,13 +226,10 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                 child: Row(
                   children: [
                     // Food Icon
-                    FoodIcon(
-                      imageUrl: widget.foodItem.imageUrl,
-                      size: 40.w,
-                    ),
-                    
+                    FoodIcon(imageUrl: widget.foodItem.imageUrl, size: 40.w),
+
                     SizedBox(width: 12.w),
-                    
+
                     // Food Info
                     Expanded(
                       child: Text(
@@ -243,7 +241,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                         ),
                       ),
                     ),
-                    
+
                     // Expand/Collapse Icon
                     AnimatedRotation(
                       turns: _isExpanded ? 0.5 : 0.0,
@@ -258,7 +256,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                 ),
               ),
             ),
-            
+
             // Expandable Details
             SizeTransition(
               sizeFactor: _expandAnimation,
@@ -278,7 +276,8 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                       ),
 
                       // Serving Size (if available)
-                      if (widget.foodItem.servingSize != null && widget.foodItem.servingSize!.isNotEmpty) ...[
+                      if (widget.foodItem.servingSize != null &&
+                          widget.foodItem.servingSize!.isNotEmpty) ...[
                         Text(
                           widget.foodItem.servingSize!,
                           style: AppTheme.textStyle.copyWith(
@@ -329,13 +328,16 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                             // SizedBox(width: 16.w),
                             // Quantity display
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                                vertical: 8.h,
+                              ),
                               decoration: BoxDecoration(
                                 border: Border.all(color: AppTheme.primary100),
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: Text(
-                                _currentQuantity == _currentQuantity.toInt() 
+                                _currentQuantity == _currentQuantity.toInt()
                                     ? _currentQuantity.toInt().toString()
                                     : _currentQuantity.toStringAsFixed(1),
                                 style: AppTheme.textStyle.copyWith(
@@ -367,9 +369,9 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                           ],
                         ),
                       ),
-                      
+
                       SizedBox(height: 16.h),
-                      
+
                       // Description
                       if (widget.foodItem.description != null) ...[
                         Text(
@@ -381,7 +383,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                         ),
                         SizedBox(height: 12.h),
                       ],
-                      
+
                       // Instructions
                       if (widget.foodItem.instructions != null) ...[
                         Container(
@@ -413,7 +415,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                         ),
                         SizedBox(height: 12.h),
                       ],
-                      
+
                       // Nutritional Info (dynamically calculated based on current quantity)
                       if (widget.foodItem.nutritionalInfo != null)
                         _buildNutritionInfo(),
@@ -432,16 +434,16 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
     final nutrition = widget.foodItem.nutritionalInfo!;
     // Use the original quantity for scaling calculations
     // Handle edge cases: if original quantity is 0 or invalid, use scale factor of 1.0
-    final scaleFactor = (_originalQuantity > 0) ? _currentQuantity / _originalQuantity : 1.0;
-    
+    final scaleFactor = (_originalQuantity > 0)
+        ? _currentQuantity / _originalQuantity
+        : 1.0;
+
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: AppTheme.baseWhite,
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: AppTheme.baseGrey.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppTheme.baseGrey.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +457,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
             ),
           ),
           SizedBox(height: 8.h),
-          
+
           Row(
             children: [
               if (nutrition.calories != null)
@@ -464,21 +466,21 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
                   '${(nutrition.calories! * scaleFactor).round()}',
                   AppTheme.caloriesColor,
                 ),
-              
+
               if (nutrition.carbs != null)
                 _buildNutritionItem(
                   'Carbs',
                   '${(nutrition.carbs! * scaleFactor).round()}g',
                   AppTheme.carbsColor,
                 ),
-              
+
               if (nutrition.protein != null)
                 _buildNutritionItem(
                   'Protein',
                   '${(nutrition.protein! * scaleFactor).round()}g',
                   AppTheme.proteinColor,
                 ),
-              
+
               if (nutrition.fat != null)
                 _buildNutritionItem(
                   'Fat',
@@ -500,9 +502,7 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6.r),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [

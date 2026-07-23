@@ -48,7 +48,8 @@ class IntensityCompositeBar extends StatelessWidget {
     final allOutFlex = allOutPct > 0 ? allOutPct : 0;
 
     // Build semantic description of intensity distribution
-    final semanticLabel = 'Intensity distribution: '
+    final semanticLabel =
+        'Intensity distribution: '
         '$conversationalPct% conversational, '
         '$tempoPct% tempo, '
         '$allOutPct% all-out';
@@ -63,40 +64,44 @@ class IntensityCompositeBar extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.2),
         ),
         child: ClipRRect(
-        borderRadius: BorderRadius.circular(height / 2),
-        child: Row(
-          children: [
-            // Conversational zone (green)
-            if (conversationalFlex > 0)
-              Expanded(
-                flex: conversationalFlex,
-                child: Container(
-                  color: enabled
-                      ? zoneConversationalColor
-                      : zoneConversationalColor.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(height / 2),
+          child: Row(
+            children: [
+              // Conversational zone (green)
+              if (conversationalFlex > 0)
+                Expanded(
+                  flex: conversationalFlex,
+                  child: Container(
+                    color: enabled
+                        ? zoneConversationalColor
+                        : zoneConversationalColor.withValues(alpha: 0.4),
+                  ),
                 ),
-              ),
 
-            // Tempo zone (yellow)
-            if (tempoFlex > 0)
-              Expanded(
-                flex: tempoFlex,
-                child: Container(
-                  color: enabled ? zoneTempoColor : zoneTempoColor.withValues(alpha: 0.4),
+              // Tempo zone (yellow)
+              if (tempoFlex > 0)
+                Expanded(
+                  flex: tempoFlex,
+                  child: Container(
+                    color: enabled
+                        ? zoneTempoColor
+                        : zoneTempoColor.withValues(alpha: 0.4),
+                  ),
                 ),
-              ),
 
-            // All-Out zone (red)
-            if (allOutFlex > 0)
-              Expanded(
-                flex: allOutFlex,
-                child: Container(
-                  color: enabled ? zoneAllOutColor : zoneAllOutColor.withValues(alpha: 0.4),
+              // All-Out zone (red)
+              if (allOutFlex > 0)
+                Expanded(
+                  flex: allOutFlex,
+                  child: Container(
+                    color: enabled
+                        ? zoneAllOutColor
+                        : zoneAllOutColor.withValues(alpha: 0.4),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

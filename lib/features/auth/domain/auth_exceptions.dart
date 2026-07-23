@@ -7,4 +7,3 @@ class AccountAlreadyExistsException implements Exception {
   @override
   String toString() => 'AccountAlreadyExistsException: $message';
 }
-

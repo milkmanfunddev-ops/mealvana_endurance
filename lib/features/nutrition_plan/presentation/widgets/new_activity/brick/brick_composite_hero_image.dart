@@ -42,9 +42,7 @@ class BrickCompositeHeroImage extends StatelessWidget {
     // Calculate image size based on number of sports
     // For 2 sports: each image is ~55% of the single sport size
     // For 3 sports: each image is ~40% of the single sport size
-    final imageHeight = imagesToShow.length == 2
-        ? height * 0.6
-        : height * 0.45;
+    final imageHeight = imagesToShow.length == 2 ? height * 0.6 : height * 0.45;
 
     return SizedBox(
       height: height,

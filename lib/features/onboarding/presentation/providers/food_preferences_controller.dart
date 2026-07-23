@@ -56,13 +56,13 @@ class FoodPreferencesController extends _$FoodPreferencesController {
   Future<void> _ensureFoodPreferencesSynced() async {
     try {
       final userId = await ref.read(userIdProvider.future);
-      final repository = await ref.read(foodPreferencesRepositoryProvider.future);
-
-      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
-        'food_preferences',
-        userId,
-        repository: repository,
+      final repository = await ref.read(
+        foodPreferencesRepositoryProvider.future,
       );
+
+      await ref
+          .read(syncCoordinatorProvider.notifier)
+          .ensureSynced('food_preferences', userId, repository: repository);
     } catch (e, stackTrace) {
       _logger.warning(
         'Food preferences sync failed - proceeding with cached data',
@@ -80,16 +80,19 @@ class FoodPreferencesController extends _$FoodPreferencesController {
     final userProfile = await database.userDao.getCurrentUserProfile();
     final userId = userProfile?.id ?? 'unknown';
 
-    final results = await Future.wait([
-      _loadPrimaryFoods(),
-      _loadAdditionalFoods(),
-      _loadUserFoods(userId),
-    ]).timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        throw TimeoutException('Failed to load food data - operation timed out after 15 seconds');
-      },
-    );
+    final results =
+        await Future.wait([
+          _loadPrimaryFoods(),
+          _loadAdditionalFoods(),
+          _loadUserFoods(userId),
+        ]).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            throw TimeoutException(
+              'Failed to load food data - operation timed out after 15 seconds',
+            );
+          },
+        );
 
     final primaryFoods = results[0];
     final additionalFoods = results[1];
@@ -118,7 +121,9 @@ class FoodPreferencesController extends _$FoodPreferencesController {
     final userFoodsData = await database.foodsDao.getUserFoods(userId);
 
     return userFoodsData
-        .map((userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood))
+        .map(
+          (userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood),
+        )
         .toList();
   }
 

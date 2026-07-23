@@ -59,18 +59,27 @@ void main() {
 
     test('changes when a component is added', () {
       final a = ctx(components: [comp()]);
-      final b = ctx(components: [comp(), comp(name: 'Banana', carbs: 27)]);
+      final b = ctx(
+        components: [
+          comp(),
+          comp(name: 'Banana', carbs: 27),
+        ],
+      );
       expect(a.staleMarker, isNot(b.staleMarker));
     });
 
     test('changes when the sub-phase changes', () {
-      expect(ctx(subPhase: 'snack').staleMarker,
-          isNot(ctx(subPhase: 'meal').staleMarker));
+      expect(
+        ctx(subPhase: 'snack').staleMarker,
+        isNot(ctx(subPhase: 'meal').staleMarker),
+      );
     });
 
     test('changes when the phase changes', () {
-      expect(ctx(phase: FormulaPhase.before).staleMarker,
-          isNot(ctx(phase: FormulaPhase.during, subPhase: null).staleMarker));
+      expect(
+        ctx(phase: FormulaPhase.before).staleMarker,
+        isNot(ctx(phase: FormulaPhase.during, subPhase: null).staleMarker),
+      );
     });
 
     test('changes when the name changes', () {
@@ -92,7 +101,11 @@ void main() {
     });
 
     test('omits null scope fields', () {
-      final json = ctx(subPhase: null, durations: null, activities: null).toJson();
+      final json = ctx(
+        subPhase: null,
+        durations: null,
+        activities: null,
+      ).toJson();
       expect(json.containsKey('sub_phase'), isFalse);
       expect(json.containsKey('durations'), isFalse);
       expect(json.containsKey('activities'), isFalse);
