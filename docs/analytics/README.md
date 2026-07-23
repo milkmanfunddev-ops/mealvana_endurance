@@ -4,6 +4,103 @@ Status: pre-wiring reference. Written 2026-07-08 after the prod engagement
 audit. **Read this before wiring Mixpanel identify/track or building any
 engagement dashboard.**
 
+## ⚠️⚠️ CORRECTION 2 (2026-07-08, dev/test pollution — supersedes CORRECTION 1 below)
+
+Mixpanel is heavily polluted by internal dev/test traffic; it invalidates
+several event-based claims (including some in CORRECTION 1):
+- **"Invisible majority" was mostly dev traffic, NOT hidden real users.** Of
+  826 non-internal distinct_ids, **546 (66%) are dev/test**: 506 in team cities
+  (Birmingham/Hoover), 195 iOS **simulators** (`$model=arm64`), 13
+  emulator/web builds. **Clean real users ≈ 280 — matching Supabase's 263.**
+  Retract the "hundreds of hidden real users" framing.
+- **Real external fuel logging ≈ 0.** All 9 `fuel_log_completed` "users" are
+  Birmingham/Hoover or simulators = dev/team. So CORRECTION 1's "fuel logging
+  is NOT zero / adoption not build problem" was itself fooled by pollution —
+  the ORIGINAL Supabase finding (feedback loop barely used by real users)
+  stands. Same for `plan_item_swapped/removed` (dev).
+- **The two activity-sync "bugs" are retracted** — the flagship "authed user,
+  24 logs, 0 synced activities" (`1E1ACE27…`) is an `arm64` **simulator** in
+  Birmingham. No real sync bug established; re-validate on clean data only.
+- **Retention curve is robust to cleaning** (D1 ~19%, D7 ~9%, D30 ~5.5% both
+  polluted and clean) → those numbers stand.
+- **`activity_viewed` plan-view count (24 users)** and any per-feature counts
+  need re-running with the dev filter; treat as upper bounds until then.
+- **Action:** Mixpanel needs a standing dev/internal-traffic exclusion before
+  ANY metric is trusted — see `ops/data/feature-requests/
+  2026-07-08-analytics-exclude-dev-internal-traffic.md`. Heuristic filter lives
+  in `ops/scripts/mp_clean.py`.
+
+## ⚠️ CORRECTION (2026-07-08, from raw Mixpanel event export — supersedes claims below)
+
+Pulling the raw event stream (`ops/data/mixpanel/`, 77k events Nov 2025–Jul
+2026) overturned several conclusions that were based on Supabase table state.
+Trust the events over the earlier table-inferences where they conflict:
+
+- **Fuel logging is NOT zero — and it's a SYNC/IDENTITY gap, not a wrong
+  table.** 9 external users completed fuel logs (`fuel_log_completed`, 62
+  events). Code trace: `activity_detail_controller.dart:~2427` writes
+  `fuelLogData` into `activities.fuel_log_data` via `updateActivity`, and the
+  sync handler DOES include it in the upload payload
+  (`activity_sync_handler.dart:388`) — same field I queried. The reason
+  Supabase showed ~0: **almost all fuel-logging happens on anonymous /
+  not-yet-synced clients.** Of the 9: 2 are Android device fingerprints
+  (`CP1A.*`, anonymous/local-only), 5 are iOS IDFV device-ids (mostly no synced
+  activities in prod at all), and only 2 lowercase-UUID (anonymous) users
+  actually synced — with 1 `fuel_log_data` row each. Notable: one non-anonymous
+  device with **24 fuel logs** has ZERO activities in Supabase → a real sync
+  failure even for an authed user. **Implication: Supabase = authed/synced
+  state only; anonymous engagement (143 anon users) is largely invisible there
+  but visible in Mixpanel. The ID-merge/anon-sync gap is the real issue.**
+- **Plan editing is instrumented and used**: `plan_item_swapped` (28 ev, 9
+  users), `plan_item_removed` (29 ev, 9 users). Not a gap; DB just stores only
+  current state.
+- **Push→feedback loop is not dead**: 7 external users tapped an upload/push
+  notification, 9 logged fuel, **3 did both**. Instrumented via
+  `activity_upload_notification_clicked` / `push_notification_opened`.
+- **Instrumentation is far richer than the code grep implied**: 160 event
+  types live. Real `app_opened` volume exists (8168 external) → retention is
+  properly measurable; stop using write-timestamp proxies.
+- **What still holds:** engagement is *low* (9 of ~104 plan-creators log fuel),
+  so the qualitative story (most users don't close the loop) stands — but it's
+  an **adoption** problem, not a missing/broken feature. "Zero" and "dead UI"
+  were wrong.
+- **Q1 answered:** plan views = **24 distinct external users, 149 views**
+  (`activity_viewed` + `has_nutrition_plan=true`, internal excluded).
+- Still genuinely archived/dead: `planRating` / `effort_rating` (confirmed no
+  events fire).
+
+## Real event-based retention & insights (2026-07-08 export, internal excluded)
+
+Computed from `app_opened` in the 77k-event export (`ops/scripts/mp_retention.py`).
+Replaces the write-timestamp proxies (which swung 3–4x).
+
+- **The invisible majority.** Mixpanel has **826 distinct users** (251 authed,
+  575 anon-only) vs **263 in Supabase.** Hundreds open the app, never create an
+  account, never sync — invisible to every prior table-based number. Most
+  people who open never authenticate. (826 is somewhat inflated by ID-merge;
+  see caveat.)
+- **Real retention curve (unbounded, still-active-on/after day N):** D1 19.9%,
+  D3 13.3%, D7 9.1%, D14 7.2%, D30 5.2%. Honest baseline — low but early-stage.
+- **The create→view cliff.** 27% of users create a plan, but only **4.5% ever
+  come back to *view* one**, 1.8% edit, 1.1% log fuel. Creation is common;
+  returning to use the plan is where it collapses. (Views are event-only —
+  invisible in Supabase.)
+- **Revised retention predictors (week-1 behavior → D14 return; baseline 7.2%):**
+  authenticated +15pp (22%, n=123), **connected an integration +6pp (13.5%,
+  n=74)**, viewed a plan +8pp (15%, n=26). **Generating a plan showed NO lift**
+  (n=177) — this REVISES the earlier SQL claim that plan-creation was the
+  activation gate. In the fuller population, plan-generation is table-stakes;
+  **integration-connect and auth are the real early separators.** (fuel-log
+  wk1 showed +43pp but n=4 — ignore.)
+- **⚠️ Data-quality caveat (ID-merge).** Per-identity retention is contaminated
+  by anon↔auth identity fragmentation: an authed user's pre-auth events sit
+  under a device-id, their post-auth under a user-id, splitting one person into
+  two. This is why "anon-only retains better at D7 (11%) than authed (4.8%)" —
+  almost certainly an ARTIFACT, not real. **Trustworthy per-user retention
+  requires fixing ID-merge first** (already an open workstream item; now clearly
+  the top data-integrity blocker).
+- Funnel note: `nutrition_plan_created` > `plan_generated` (non-monotonic), so
+  the funnel events aren't a strict sequence — read step-conversions loosely.
 ## AI Analyze and Coach Insights metering
 
 The mobile client emits these Mixpanel events for the AI surfaces:
@@ -23,6 +120,10 @@ The mobile client emits these Mixpanel events for the AI surfaces:
 model call, not a client-side price estimate. Gateway requests are tagged by
 feature and modality (`feature:meal-analyze`, `feature:coach-insight`) and by
 user ID, so its spend reports can be reconciled against Mixpanel funnels.
+
+> **Note (2026-07-22):** the counts in the AI events above are subject to the
+> same dev/test pollution caveat as CORRECTION 2 — filter internal traffic
+> before reading `cost_usd` or funnel volume from them.
 
 ## 1. Internal-account exclusion (`users.is_internal`)
 
@@ -309,15 +410,59 @@ system of record. Plan (agreed 2026-07-08):
    become SQL queries. Track a server-side `push_sent` event once Mixpanel is
    wired.
 
-Context: the "Workout uploaded" push is sent unconditionally on every Garmin
-match (no `notifications_enabled` check server-side), but engaged users
-(Anna, Claudia) have `notifications_enabled = false` — the startup soft
-permission prompt is being declined, so auto-completion pushes likely never
-reach devices. Fix directions: re-ask for permission right after a provider
-connect; change push copy from FYI ("Workout uploaded") to an ask ("How did
-fueling go?") deep-linking into the rating flow.
+**VERIFIED via OneSignal API 2026-07-08 (corrects earlier assumption):**
+- Anna & Claudia are BOTH push-subscribed (iOSPush, enabled=true,
+  notification_types=31, valid token). The DB `users.notifications_enabled=false`
+  is NOT a deliverability signal — it's out of sync with real OS/OneSignal
+  push state. Do not use it to reason about push reach.
+- Recent 30 "Workout uploaded" messages: 25/30 delivered (~83%), 5/30 hard
+  failed (stale tokens), **7/30 clicked (~23% tap rate)**. Pushes ARE sent,
+  delivered, and tapped.
+- So the auto-completion feedback gap is NOT a delivery problem. It's the
+  message: "Workout uploaded" is a passive FYI that deep-links to the activity
+  view, not the fuel-log/rating flow. A tap yields an app-open, not a logged
+  entry. **Fix = push copy + deep-link destination** ("How did fueling go on
+  your 12-miler?" → rating screen), NOT permission re-prompting. There's a
+  live 23% tap audience being wasted.
+- Secondary: ~17% hard-failure rate → periodic stale-token cleanup.
+- App ID 335e597f-9862-4fa1-91f9-506d546ef953; working REST key is the long
+  os_v2_ form (in Supabase edge-function secrets / OneSignal dashboard), NOT
+  the 25-char value that was stale in .env.prod.local.
 
-## 5. Open items
+## 5. Recommended priorities (synthesis, 2026-07-08)
+
+**Why events at all (Mixpanel or a Supabase `analytics_events` table):** tables
+record state; only an event stream captures behavior + negative space. Blind
+spots this session that no schema can fill: plan/screen *views*, the invisible
+majority who open→browse→leave without a write, generate→create drop-off,
+which edit happened (swap vs delete), reliable retention (proxies swung 3–4x;
+`last_active_at` broken), acquisition source. DB stays better for state,
+content, joins, ground truth — the two are complementary. You need an event
+stream; Mixpanel is optional (fastest self-serve funnel/retention UI, but ships
+health-adjacent data to a 3rd party — an in-house events table keeps the GDPR
+posture cleaner). Capture `app_opened` + views + funnel steps regardless.
+
+**App changes most likely to drive engagement (ranked, each evidence-backed):**
+1. Rewrite auto-completion push + deep-link into fuel-log/rating screen
+   (83% delivered, 23% tapped, but dead-ends on activity view; 0 external
+   fuel logs). Lowest effort, highest confidence.
+2. End onboarding with a first activity ("next run?") / move provider-connect
+   into onboarding — 44% of onboarded never add one, ~1% retention without it.
+3. Prompt a plan the evening before synced long/Saturday runs — synced plan
+   rate 5.4% vs 72% manual; planning a synced workout → 45% vs 20% retention.
+4. Post-race re-engagement trigger, 3–10 days after race date — 84% carb-load
+   churn, no recovery-lull, immediate exit.
+5. A/B test a week-1 "swap one food" nudge — editing in wk1 → 95% wk3
+   retention (correlational; TEST, don't assume causal).
+
+**Minimal event set (question each answers):** `app_opened` (retention,
+foundational) · `plan_viewed` (did they look) · `plan_generate_started`
+(generate→create drop) · `plan_created` +props source_activity_type/
+days_before_workout/distance · `plan_food_swapped|removed|quantity_changed`
+(decompose edits) · `first_activity_added`+source (cliff #2) · `push_opened`
+→next-action (does #1 work). Skip plan_rated/effort_rating — archived UI.
+
+## 6. Open items
 
 - Fix `last_active_at` updating (or replace with a server-side heartbeat).
 - Confirm + flag the two anonymous internal candidates.
