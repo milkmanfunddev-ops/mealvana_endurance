@@ -7,8 +7,19 @@ import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../activities/domain/brick_exceptions.dart';
 import '../../../activities/presentation/navigation/open_activity_fuel.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../activities/presentation/providers/brick_actions_controller.dart';
+import '../../../activities/presentation/providers/brick_creation_available_provider.dart';
+import '../../../activities/presentation/providers/brick_selection_controller.dart';
+import '../../../activities/presentation/widgets/activity_card.dart';
+import '../../../activities/presentation/widgets/brick_confirmation_dialog.dart';
+import '../../../activities/presentation/widgets/brick_group_card.dart';
+import '../../../activities/presentation/widgets/brick_minimum_warning_dialog.dart';
+import '../../../activities/presentation/widgets/brick_ungroup_dialog.dart';
+import '../../../activities/presentation/widgets/brick_validation_error_dialog.dart';
+import '../../../activities/presentation/widgets/create_brick_button.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../calendar/presentation/providers/calendar_day_indicators_provider.dart';
 import '../../../events/presentation/screens/event_detail_screen.dart';
@@ -164,6 +175,12 @@ class FuelTimelineScreen extends ConsumerWidget {
               100,
             ),
             children: [
+              // Brick grouping controls: "Create Brick" when the day has 2+
+              // activities of different sports, or Cancel/Confirm while in
+              // selection mode. Hidden under the Meals filter (no workouts
+              // visible to group).
+              if (view.filter.showsAddActivity)
+                _brickControls(context, ref, workoutNodes, selectedDate),
               _addRow(context, ref, view, selectedDate),
               for (final n in nodes) _tile(context, ref, n, view),
               if (nodes.isEmpty)
@@ -267,6 +284,46 @@ class FuelTimelineScreen extends ConsumerWidget {
           onRemove: () => _deleteMealWithUndo(context, ref, meal),
         );
       case WorkoutNode(:final activity):
+        final selectionState = ref.watch(brickSelectionControllerProvider);
+        // Brick selection mode: workouts render as selectable activity cards
+        // (checkbox + 1/2/3 order badge), mirroring the old activities screen.
+        // Full-width (no time rail): these cards are designed for the full
+        // screen width and overflow inside the rail row.
+        if (selectionState.isSelectionMode) {
+          final selectionNotifier = ref.read(
+            brickSelectionControllerProvider.notifier,
+          );
+          return Padding(
+            // The card's own 12px bottom margin + 4 ≈ the tile row's 16px gap.
+            padding: const EdgeInsets.only(bottom: 4),
+            child: ActivityCard(
+              activity: activity,
+              isSelectionMode: true,
+              isSelected: selectionNotifier.isActivitySelected(activity.id),
+              selectionOrder: selectionNotifier.getSelectionOrder(activity.id),
+              onSelectionToggle: () =>
+                  selectionNotifier.toggleActivity(activity),
+            ),
+          );
+        }
+        // Brick workouts render as the grouped brick card (segments +
+        // View Combined / Ungroup / Remove Segment / Delete), not a regular
+        // workout tile. Full-width for the same reason as above; delete goes
+        // through its own confirm dialog (it also deletes the nutrition
+        // plan), so no swipe-to-remove here.
+        if (activity.isBrick) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: BrickGroupCard(
+              brick: activity,
+              onUngroup: () => _handleUngroupBrick(context, ref, activity),
+              onViewCombined: () => _handleViewCombinedBrick(context, activity),
+              onRemoveSegment: (segmentIndex) =>
+                  _handleRemoveSegment(context, ref, activity, segmentIndex),
+              onDelete: () => _handleDeleteBrick(context, ref, activity),
+            ),
+          );
+        }
         return TimelineNodeTile(
           node: node,
           timelineOpen: view.timelineOpen,
@@ -355,6 +412,346 @@ class FuelTimelineScreen extends ConsumerWidget {
         }
       },
     );
+  }
+
+  /// Brick grouping controls above the Add row (ported from the old
+  /// activities list screen): a "Create Brick" button when the selected day
+  /// has 2+ activities of different sports, replaced by Cancel / Confirm (n)
+  /// while selection mode is active.
+  Widget _brickControls(
+    BuildContext context,
+    WidgetRef ref,
+    List<WorkoutNode> workoutNodes,
+    DateTime selectedDate,
+  ) {
+    final dayActivities = workoutNodes
+        .map((n) => n.activity)
+        .toList(growable: false);
+    final selectionState = ref.watch(brickSelectionControllerProvider);
+    final isSelectionMode = selectionState.isSelectionMode;
+    final isBrickAvailable = ref.watch(
+      isBrickCreationAvailableProvider(
+        activities: dayActivities,
+        selectedDate: selectedDate,
+      ),
+    );
+
+    if (!isSelectionMode && !isBrickAvailable) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (!isSelectionMode)
+            CreateBrickButton(
+              onPressed: () => ref
+                  .read(brickSelectionControllerProvider.notifier)
+                  .enterSelectionMode(),
+            ),
+          if (isSelectionMode) ...[
+            // Flexible so the two buttons can shrink instead of overflowing
+            // on narrow widths (the button text ellipsizes gracefully).
+            Flexible(
+              child: KyleSecondaryButtonSmall(
+                text: 'Cancel',
+                onPressed: () => ref
+                    .read(brickSelectionControllerProvider.notifier)
+                    .exitSelectionMode(),
+                variant: SecondaryButtonVariant.light,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: KyleSecondaryButtonSmall(
+                text: 'Confirm (${selectionState.selectedActivityIds.length})',
+                onPressed:
+                    ref
+                        .read(brickSelectionControllerProvider.notifier)
+                        .canCreateBrick()
+                    ? () => _handleConfirmSelection(context, ref)
+                    : null,
+                variant: SecondaryButtonVariant.orange,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Handle Confirm in brick selection mode: confirmation dialog → create the
+  /// brick via [BrickActionsController] → exit selection mode. Mirrors the old
+  /// activities screen flow, including validation/creation error dialogs.
+  Future<void> _handleConfirmSelection(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    // Selection order is preserved by the controller: [0] = first segment.
+    final selectedActivities = List<Activity>.from(
+      ref.read(brickSelectionControllerProvider).selectedActivities,
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) =>
+          BrickConfirmationDialog(selectedActivities: selectedActivities),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    // Show loading indicator before try block so catch blocks can dismiss it
+    final loadingSnackbarController = MealvanaSnackbar.showLoading(
+      context,
+      'Creating brick workout...',
+    );
+    var loadingDismissed = false;
+    void dismissLoadingSnackbar() {
+      if (loadingDismissed) return;
+      loadingDismissed = true;
+      loadingSnackbarController.close();
+    }
+
+    try {
+      // Business logic lives in the controller (FOA) — the screen only wires
+      // dialogs + feedback.
+      await ref
+          .read(brickActionsControllerProvider.notifier)
+          .createBrickFromSelection(
+            activities: selectedActivities,
+            segmentOrder: selectedActivities
+                .map((activity) => activity.activityType.name)
+                .toList(),
+          );
+
+      if (!context.mounted) return;
+
+      ref.read(brickSelectionControllerProvider.notifier).exitSelectionMode();
+      // fuelTimelineDayProvider watches the activities controller, so this
+      // refreshes the timeline (brick replaces the grouped activities).
+      ref.invalidate(activitiesControllerProvider);
+
+      dismissLoadingSnackbar();
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Brick workout created successfully!',
+      );
+    } on BrickValidationException catch (e) {
+      dismissLoadingSnackbar();
+      if (!context.mounted) return;
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => BrickValidationErrorDialog(
+          exception: e,
+          onRetry: () {
+            // Keep selection mode active so user can adjust selection
+          },
+        ),
+      );
+    } on BrickCreationException catch (e) {
+      dismissLoadingSnackbar();
+      if (!context.mounted) return;
+      final shouldRetry = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => BrickCreationErrorDialog(
+          exception: e,
+          onRetry: () {
+            // Retry callback - executed after dialog closes
+          },
+        ),
+      );
+      if (shouldRetry == true && e.code == 'NETWORK_ERROR' && context.mounted) {
+        await _handleConfirmSelection(context, ref);
+      }
+    } catch (e) {
+      dismissLoadingSnackbar();
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Unexpected error creating brick: ${e.toString()}',
+        );
+      }
+    } finally {
+      dismissLoadingSnackbar();
+    }
+  }
+
+  /// Handle Ungroup on a brick group card: confirmation dialog → restore the
+  /// original standalone activities via [BrickActionsController].
+  Future<void> _handleUngroupBrick(
+    BuildContext context,
+    WidgetRef ref,
+    Activity brick,
+  ) async {
+    final segmentCount = brick.brickMetadata?.segments.length ?? 0;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => BrickUngroupDialog(segmentCount: segmentCount),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final loadingSnackbarController = MealvanaSnackbar.showLoading(
+      context,
+      'Ungrouping brick...',
+    );
+    var loadingDismissed = false;
+    void dismissLoadingSnackbar() {
+      if (loadingDismissed) return;
+      loadingDismissed = true;
+      loadingSnackbarController.close();
+    }
+
+    try {
+      await ref
+          .read(brickActionsControllerProvider.notifier)
+          .ungroupBrick(brick.id);
+
+      if (!context.mounted) return;
+      ref.invalidate(activitiesControllerProvider);
+
+      dismissLoadingSnackbar();
+      MealvanaSnackbar.showSuccess(context, 'Brick ungrouped successfully!');
+    } on BrickUngroupException catch (e) {
+      dismissLoadingSnackbar();
+      if (!context.mounted) return;
+      final shouldRetry = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => BrickUngroupErrorDialog(
+          exception: e,
+          onRetry: () {
+            // Retry callback - executed after dialog closes
+          },
+        ),
+      );
+      if (shouldRetry == true && e.code == 'NETWORK_ERROR' && context.mounted) {
+        await _handleUngroupBrick(context, ref, brick);
+      }
+    } catch (e) {
+      dismissLoadingSnackbar();
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Unexpected error ungrouping brick: ${e.toString()}',
+        );
+      }
+    } finally {
+      dismissLoadingSnackbar();
+    }
+  }
+
+  /// Handle View Combined on a brick group card. With a nutrition plan → the
+  /// Activity Detail screen; without one → the New Activity screen's Brick tab
+  /// to complete setup (same routing as the old activities screen).
+  void _handleViewCombinedBrick(BuildContext context, Activity brick) {
+    if (brick.nutritionPlanData != null) {
+      context.push('/plan', extra: {'mode': 'view', 'activityId': brick.id});
+    } else {
+      context.push(
+        '/distancepacegut',
+        extra: {
+          'activityId': brick.id,
+          'initialDate': brick.scheduledDateTime,
+          'initialTitle': brick.title,
+          'activityType': 'brick',
+          // Brick metadata will be loaded from the activity by the screen
+        },
+      );
+    }
+  }
+
+  /// Handle Remove Segment on a brick segment card. Removing down to 1 sport
+  /// isn't a brick anymore, so at 2 segments this offers to ungroup instead.
+  Future<void> _handleRemoveSegment(
+    BuildContext context,
+    WidgetRef ref,
+    Activity brick,
+    int segmentIndex,
+  ) async {
+    final segmentCount = brick.brickMetadata?.segments.length ?? 0;
+
+    // If removing this segment would leave only 1 sport, offer ungroup instead
+    if (segmentCount <= 2) {
+      final shouldUngroup = await showDialog<bool>(
+        context: context,
+        builder: (context) => const BrickMinimumWarningDialog(),
+      );
+      if (shouldUngroup == true && context.mounted) {
+        await _handleUngroupBrick(context, ref, brick);
+      }
+      return;
+    }
+
+    // If 3+ segments, remove segment is not yet implemented (parity with the
+    // old activities screen — BrickActionsController.removeSegmentFromBrick
+    // is still Phase 3.4).
+    MealvanaSnackbar.showInfo(
+      context,
+      'Remove segment feature not yet implemented',
+    );
+  }
+
+  /// Handle Delete on a brick group card: confirm (the nutrition plan goes
+  /// with it), then delete via the activities controller.
+  Future<void> _handleDeleteBrick(
+    BuildContext context,
+    WidgetRef ref,
+    Activity brick,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Brick Workout?'),
+        content: const Text(
+          'Delete this brick workout? This will also delete the nutrition plan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final loadingSnackbarController = MealvanaSnackbar.showLoading(
+      context,
+      'Deleting brick...',
+    );
+    var loadingDismissed = false;
+    void dismissLoadingSnackbar() {
+      if (loadingDismissed) return;
+      loadingDismissed = true;
+      loadingSnackbarController.close();
+    }
+
+    try {
+      await ref
+          .read(activitiesControllerProvider.notifier)
+          .deleteActivity(brick.id);
+
+      if (!context.mounted) return;
+      ref.invalidate(activitiesControllerProvider);
+
+      dismissLoadingSnackbar();
+      MealvanaSnackbar.showSuccess(context, 'Brick deleted successfully');
+    } catch (e) {
+      dismissLoadingSnackbar();
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Error deleting brick: ${e.toString()}',
+        );
+      }
+    } finally {
+      dismissLoadingSnackbar();
+    }
   }
 
   Widget _addButtons(
