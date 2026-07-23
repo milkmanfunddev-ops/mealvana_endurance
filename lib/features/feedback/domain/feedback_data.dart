@@ -12,17 +12,31 @@ class FeedbackData {
   final SatisfactionLevel satisfactionLevel;
   final String? comment;
   final DateTime? timestamp;
-  final int activityId; // Associated activity (nutrition data embedded on activity row)
+  final int
+  activityId; // Associated activity (nutrition data embedded on activity row)
 
   @override
-  String toString() => 'FeedbackData(sessionId: $sessionId, level: $satisfactionLevel)';
+  String toString() =>
+      'FeedbackData(sessionId: $sessionId, level: $satisfactionLevel)';
 }
 
 /// Three-level satisfaction rating for emoji slider
 enum SatisfactionLevel {
-  tooMuch(value: 1, emoji: '😞', label: 'Much more than what I think I should use'),
-  justRight(value: 2, emoji: '🤗', label: 'Pretty close to what I think I should use'),
-  tooLittle(value: 3, emoji: '😊', label: 'Much less than what I think I should use');
+  tooMuch(
+    value: 1,
+    emoji: '😞',
+    label: 'Much more than what I think I should use',
+  ),
+  justRight(
+    value: 2,
+    emoji: '🤗',
+    label: 'Pretty close to what I think I should use',
+  ),
+  tooLittle(
+    value: 3,
+    emoji: '😊',
+    label: 'Much less than what I think I should use',
+  );
 
   const SatisfactionLevel({
     required this.value,
@@ -80,12 +94,14 @@ class FeedbackResponse {
       'suggestions': suggestions ?? '',
       'plan_name': planName ?? '',
       'user_name': userName ?? '',
-      'timestamp': timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'timestamp':
+          timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
     };
   }
 
   @override
-  String toString() => 'FeedbackResponse(level: $satisfactionLevel, appFeedback: $appFeedback, suggestions: ${suggestions?.length ?? 0} chars)';
+  String toString() =>
+      'FeedbackResponse(level: $satisfactionLevel, appFeedback: $appFeedback, suggestions: ${suggestions?.length ?? 0} chars)';
 }
 
 /// Confidence level for survey (1-5 scale)
@@ -158,7 +174,8 @@ class NotificationPreference {
     this.customDate,
   });
 
-  final int? dayOfWeek; // 1=Monday, 4=Thursday, 6=Saturday - nullable for custom dates
+  final int?
+  dayOfWeek; // 1=Monday, 4=Thursday, 6=Saturday - nullable for custom dates
   final int hour;
   final int minute;
   final bool isRecurring;
@@ -190,21 +207,22 @@ class NotificationPreference {
 
   DateTime getNextReminderDate() {
     final now = DateTime.now();
-    
+
     // If it's a one-time reminder with custom date, use that date
     if (!isRecurring && customDate != null) {
       return customDate!;
     }
-    
+
     // For recurring reminders or dayOfWeek-based reminders
     final targetDayOfWeek = dayOfWeek ?? DateTime.thursday;
     var scheduledDate = DateTime(now.year, now.month, now.day, hour, minute);
-    
+
     // Find next occurrence of the specified day
-    while (scheduledDate.weekday != targetDayOfWeek || scheduledDate.isBefore(now)) {
+    while (scheduledDate.weekday != targetDayOfWeek ||
+        scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-    
+
     return scheduledDate;
   }
 
@@ -212,20 +230,40 @@ class NotificationPreference {
   String getDescription() {
     if (!isRecurring && customDate != null) {
       final date = customDate!;
-      final weekday = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][date.weekday];
-      final hour12 = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+      final weekday = [
+        '',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ][date.weekday];
+      final hour12 = date.hour > 12
+          ? date.hour - 12
+          : (date.hour == 0 ? 12 : date.hour);
       final amPm = date.hour >= 12 ? 'PM' : 'AM';
       final minute = date.minute.toString().padLeft(2, '0');
       return '$weekday, ${date.month}/${date.day} at $hour12:$minute $amPm (one-time)';
     }
-    
+
     final targetDay = dayOfWeek ?? 4;
-    final weekday = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][targetDay];
+    final weekday = [
+      '',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ][targetDay];
     final hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
     final amPm = hour >= 12 ? 'PM' : 'AM';
     final minuteStr = minute.toString().padLeft(2, '0');
     final frequency = isRecurring ? 'recurring' : 'one-time';
-    
+
     return '$weekday at $hour12:$minuteStr $amPm ($frequency)';
   }
 
@@ -301,6 +339,7 @@ class SurveyResponse {
     'missed_other': missedOther,
     'device_id': deviceId,
     'plan_name': planName,
-    'timestamp': timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
+    'timestamp':
+        timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
   };
 }

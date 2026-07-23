@@ -39,30 +39,52 @@ class ByHourView extends StatefulWidget {
   final String category;
   final bool useImperial;
   final ActivityType activityType;
-  final void Function(String foodId, String foodName, String category) onSwapFood;
+  final void Function(String foodId, String foodName, String category)
+  onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
-      onUpdateQuantity;
+  onUpdateQuantity;
   final void Function(
-          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
-      onMoveFoodToTimeSlot;
+    String foodId,
+    String category,
+    TimeSlot sourceTimeSlot,
+    TimeSlot newTimeSlot,
+  )
+  onMoveFoodToTimeSlot;
 
   /// Called when a food is placed from the tray into a slot.
-  final void Function(String foodId, String category, TimeSlot slot, double qty,
-      TimingCategory? timingCategory, bool isSipThroughout) onPlaceFoodInSlot;
+  final void Function(
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double qty,
+    TimingCategory? timingCategory,
+    bool isSipThroughout,
+  )
+  onPlaceFoodInSlot;
 
   /// Called when a food is removed from a slot (returns to tray).
   final void Function(String foodId, String category, TimeSlot slot)
-      onRemoveFoodFromSlot;
+  onRemoveFoodFromSlot;
 
   /// Called to adjust a placed food's slot quantity by delta.
   final void Function(
-      String foodId, String category, TimeSlot slot, double delta)?
-      onAdjustSlotQuantity;
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double delta,
+  )?
+  onAdjustSlotQuantity;
 
   /// Called when a sip food is moved from global sip into a specific hour slot.
-  final void Function(String foodId, String category, TimeSlot targetSlot,
-      double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
+  final void Function(
+    String foodId,
+    String category,
+    TimeSlot targetSlot,
+    double qty,
+    TimingCategory? timingCategory,
+  )?
+  onMoveSipFoodToSlot;
 
   @override
   State<ByHourView> createState() => _ByHourViewState();

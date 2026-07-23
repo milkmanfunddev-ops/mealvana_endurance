@@ -50,7 +50,9 @@ class ImportProgressDialog extends StatelessWidget {
             // Title
             Text(
               _getTitle(),
-              style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: AppColors.textDark,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -58,7 +60,9 @@ class ImportProgressDialog extends StatelessWidget {
             // Status message
             Text(
               _getStatusMessage(),
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textDarkSecondary),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textDarkSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
 
@@ -70,7 +74,9 @@ class ImportProgressDialog extends StatelessWidget {
                     ? importedCount / totalCount!
                     : null,
                 backgroundColor: AppColors.blackberry,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.dragonfruit),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.dragonfruit,
+                ),
               ),
             ],
 
@@ -85,7 +91,9 @@ class ImportProgressDialog extends StatelessWidget {
                 ),
                 child: Text(
                   errorMessage!,
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.dragonfruit),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.dragonfruit,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -98,7 +106,9 @@ class ImportProgressDialog extends StatelessWidget {
                 onPressed: onDismiss,
                 child: Text(
                   'Continue',
-                  style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.dragonfruit),
+                  style: AppTextStyles.buttonPrimary.copyWith(
+                    color: AppColors.dragonfruit,
+                  ),
                 ),
               ),
             ],
@@ -128,11 +138,7 @@ class ImportProgressDialog extends StatelessWidget {
       );
     }
 
-    return Icon(
-      Icons.check_circle,
-      size: 48,
-      color: AppColors.success,
-    );
+    return Icon(Icons.check_circle, size: 48, color: AppColors.success);
   }
 
   String _getTitle() {

@@ -22,44 +22,52 @@ class SportSelector extends ConsumerWidget {
 
     return SizedBox(
       height: 80,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
-        child: Row(
-          children: [
-            _SportButton(
-              icon: FontAwesomeIcons.personRunning,
+      child: Row(
+        children: [
+          Expanded(
+            child: _SportButton(
+              key: const ValueKey('activity_create.tab_running'),
+              icon: FontAwesomeIcons.personRunning.data,
               label: 'RUNNING',
               isSelected: coordinatorState.selectedTab == SportTab.running,
               onTap: () => coordinator.selectTab(SportTab.running),
               isDark: isDark,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            _SportButton(
-              icon: FontAwesomeIcons.personBiking,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _SportButton(
+              key: const ValueKey('activity_create.tab_biking'),
+              icon: FontAwesomeIcons.personBiking.data,
               label: 'BIKING',
               isSelected: coordinatorState.selectedTab == SportTab.cycling,
               onTap: () => coordinator.selectTab(SportTab.cycling),
               isDark: isDark,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            _SportButton(
-              icon: FontAwesomeIcons.personSwimming,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _SportButton(
+              key: const ValueKey('activity_create.tab_swimming'),
+              icon: FontAwesomeIcons.personSwimming.data,
               label: 'SWIMMING',
               isSelected: coordinatorState.selectedTab == SportTab.swimming,
               onTap: () => coordinator.selectTab(SportTab.swimming),
               isDark: isDark,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            _SportButton(
-              icon: FontAwesomeIcons.link,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _SportButton(
+              key: const ValueKey('activity_create.tab_brick'),
+              icon: FontAwesomeIcons.link.data,
               label: 'BRICK',
               isSelected: coordinatorState.selectedTab == SportTab.brick,
               onTap: () => coordinator.selectTab(SportTab.brick),
               isDark: isDark,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -67,6 +75,7 @@ class SportSelector extends ConsumerWidget {
 
 class _SportButton extends StatelessWidget {
   const _SportButton({
+    super.key,
     required this.icon,
     required this.label,
     required this.isSelected,
@@ -85,7 +94,6 @@ class _SportButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80,
         height: 80,
         decoration: BoxDecoration(
           color: isSelected

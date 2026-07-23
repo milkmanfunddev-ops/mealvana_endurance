@@ -1,32 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart' show UnitSystem;
 import '../../domain/weather_forecast.dart';
 import '../../domain/location.dart' as domain;
 
 /// Weather detail screen
 /// Shows complete weather forecast information
-class WeatherDetailScreen extends StatelessWidget {
+///
+/// Reads the user's imperial/metric preference directly from
+/// [unitSystemProvider] so no call site can forget to pass it (and
+/// silently default to the wrong unit).
+class WeatherDetailScreen extends ConsumerWidget {
   final WeatherForecast forecast;
   final domain.Location? location;
-  final bool useImperial;
 
-  const WeatherDetailScreen({
-    super.key,
-    required this.forecast,
-    this.location,
-    this.useImperial = false,
-  });
+  const WeatherDetailScreen({super.key, required this.forecast, this.location});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unitSystem =
+        ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
+    final useMetric = unitSystem == UnitSystem.metric;
+    final useImperial = !useMetric;
+
     return Scaffold(
       appBar: AppBar(
-        leading: CustomAppBarBackButton(),
+        // The bar background is a fixed light cream in every theme, so force a
+        // dark foreground. Without this the back-button icon (defaults to
+        // colorScheme.onSurface, which is near-white in dark mode) and the
+        // white title are invisible on cream — making it look like there is no
+        // back button at all.
+        leading: const CustomAppBarBackButton(iconColor: AppTheme.primary900),
         title: const Text('Weather Forecast'),
         backgroundColor: AppTheme.baseCream,
-        foregroundColor: Colors.white,
+        foregroundColor: AppTheme.primary900,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -48,9 +60,10 @@ class WeatherDetailScreen extends StatelessWidget {
                   Icon(_getWeatherIcon(), size: 80, color: Colors.white),
                   SizedBox(height: 16.h),
                   Text(
-                    useImperial
-                        ? '${forecast.temperatureF.round()}°F'
-                        : '${forecast.temperatureC.round()}°C',
+                    UnitFormatter.formatTemperature(
+                      forecast.temperatureC,
+                      useMetric: useMetric,
+                    ),
                     style: TextStyle(
                       fontSize: 48.sp,
                       fontWeight: FontWeight.bold,
@@ -103,17 +116,18 @@ class WeatherDetailScreen extends StatelessWidget {
                 children: [
                   _buildInfoRow(
                     'Temperature',
-                    useImperial
-                        ? '${forecast.temperatureF.round()}°F'
-                        : '${forecast.temperatureC.round()}°C',
+                    UnitFormatter.formatTemperature(
+                      forecast.temperatureC,
+                      useMetric: useMetric,
+                    ),
                   ),
                   _buildInfoRow('Humidity', '${forecast.humidityPct}%'),
                   if (forecast.windSpeedKmh != null)
                     _buildInfoRow(
                       'Wind Speed',
-                      useImperial
-                          ? '${forecast.windSpeedMph?.round()} mph'
-                          : '${forecast.windSpeedKmh} km/h',
+                      useMetric
+                          ? '${forecast.windSpeedKmh} km/h'
+                          : '${forecast.windSpeedMph?.round()} mph',
                     ),
                   if (forecast.precipitationMm != null)
                     _buildInfoRow(

@@ -25,8 +25,10 @@ class RecommendedAlternatives extends StatelessWidget {
   final Map<String, FoodPreference> preferences;
   final String title;
   final int maxItems;
+
   /// Set of food IDs that are user foods (editable)
   final Set<String> userFoodIds;
+
   /// Callback when user wants to edit a user food
   final Function(Food)? onEditUserFood;
 
@@ -60,7 +62,8 @@ class RecommendedAlternatives extends StatelessWidget {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             itemCount: displayFoods.length,
-            separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final food = displayFoods[index];
               final preference = preferences[food.name];
@@ -71,7 +74,8 @@ class RecommendedAlternatives extends StatelessWidget {
                 food: food,
                 onTap: () => onFoodSelected(food),
                 isAvoided: isAvoided,
-                showPreference: false, // Don't show preference chips in recommendations
+                showPreference:
+                    false, // Don't show preference chips in recommendations
                 showEditButton: isUserFood && onEditUserFood != null,
                 onEdit: isUserFood && onEditUserFood != null
                     ? () => onEditUserFood!(food)
@@ -93,10 +97,12 @@ class RecommendedAlternatives extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.utensils,
                 size: AppIconSizes.xl,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -111,7 +117,9 @@ class RecommendedAlternatives extends StatelessWidget {
                 'Try searching for foods or use the barcode scanner',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
             ],

@@ -2130,9 +2130,8 @@ class CoachRepository with SyncableRepository {
 
   /// Get the athlete's connected coach info.
   /// Returns null if the athlete has no active coach connection.
-  Future<({String relationshipId, String coachUserId, String? coachName})?> getMyCoach(
-    String athleteUserId,
-  ) async {
+  Future<({String relationshipId, String coachUserId, String? coachName})?>
+  getMyCoach(String athleteUserId) async {
     try {
       final response = await _supabase
           .from('coach_athlete_relationships')
@@ -2185,7 +2184,11 @@ class CoachRepository with SyncableRepository {
         // Name lookup is best-effort
       }
 
-      return (relationshipId: relationshipId, coachUserId: coachUserId, coachName: coachName);
+      return (
+        relationshipId: relationshipId,
+        coachUserId: coachUserId,
+        coachName: coachName,
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get athlete coach',

@@ -43,6 +43,7 @@ class BrickNutritionSections extends StatelessWidget {
     this.bodyWeightKg = 70.0,
     this.enableSectionHeroes = false,
     this.heroTagSeed,
+    this.onRegenerate,
   });
 
   final Activity brick;
@@ -94,6 +95,10 @@ class BrickNutritionSections extends StatelessWidget {
   final double bodyWeightKg;
   final bool enableSectionHeroes;
   final String? heroTagSeed;
+
+  /// Called after an inline sweat-profile edit is saved so the parent can
+  /// trigger a plan regen (e.g. via ActivityDetailController.forceRefresh).
+  final VoidCallback? onRegenerate;
 
   @override
   Widget build(BuildContext context) {
@@ -228,6 +233,7 @@ class BrickNutritionSections extends StatelessWidget {
         sectionColor: sectionColor,
         sectionTitle: displayTitle.toUpperCase(),
         useImperial: useImperial,
+        planId: brick.id,
         categoryPrefix: 'before',
         onSwapFood: (foodId, foodName, cat) =>
             onSwapFood(foodId, foodName, cat),
@@ -240,6 +246,7 @@ class BrickNutritionSections extends StatelessWidget {
         macroTargets: macroTargets,
         bodyWeightKg: bodyWeightKg,
         sportLabel: 'Brick',
+        onRegenerate: onRegenerate,
       );
     }
 
@@ -263,6 +270,7 @@ class BrickNutritionSections extends StatelessWidget {
           sectionColor: sectionColor,
           sectionTitle: displayTitle.toUpperCase(),
           category: category,
+          planId: brick.id,
           durationMinutes: segmentDuration,
           useImperial: useImperial,
           activityType: ActivityType.fromDbValue(sportType ?? 'running'),
@@ -291,6 +299,7 @@ class BrickNutritionSections extends StatelessWidget {
           fluidsHigh: _getFluidsHigh(section, category),
           brickSegment: brickSeg,
           isBrick: true, // Always true — we're in BrickNutritionSections
+          onRegenerate: onRegenerate,
         );
       }
     }
@@ -332,21 +341,25 @@ class BrickNutritionSections extends StatelessWidget {
           if (_isEmptyNutritionSection(section, isSwimming, isTransition)) ...[
             _buildQuickTransitionMessage(context, section, isTransition),
           ] else ...[
-            MacroSummaryRow(
-              foods: section.foodItems,
-              section: section,
-              category: category,
-              useImperial: useImperial,
-              carbsLow: _getCarbsLow(section, category),
-              carbsHigh: _getCarbsHigh(section, category),
-              proteinLow: _getProteinLow(section, category),
-              proteinHigh: _getProteinHigh(section, category),
-              sodiumLow: _getSodiumLow(section, category),
-              sodiumHigh: _getSodiumHigh(section, category),
-              fluidsLow: _getFluidsLow(section, category),
-              fluidsHigh: _getFluidsHigh(section, category),
-            ),
-            const SizedBox(height: AppSpacing.md),
+            // Post-workout recovery is a trigger, not a macro-dosing event —
+            // hide the carbs/protein/sodium/fluid bar for the after section.
+            if (!category.startsWith('after')) ...[
+              MacroSummaryRow(
+                foods: section.foodItems,
+                section: section,
+                category: category,
+                useImperial: useImperial,
+                carbsLow: _getCarbsLow(section, category),
+                carbsHigh: _getCarbsHigh(section, category),
+                proteinLow: _getProteinLow(section, category),
+                proteinHigh: _getProteinHigh(section, category),
+                sodiumLow: _getSodiumLow(section, category),
+                sodiumHigh: _getSodiumHigh(section, category),
+                fluidsLow: _getFluidsLow(section, category),
+                fluidsHigh: _getFluidsHigh(section, category),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             ...section.foodItems.asMap().entries.map((entry) {
               final index = entry.key;
               final food = entry.value;
@@ -394,7 +407,7 @@ class BrickNutritionSections extends StatelessWidget {
     return Row(
       children: [
         if (isTransition) ...[
-          Icon(
+          FaIcon(
             FontAwesomeIcons.repeat,
             size: AppIconSizes.md,
             color: sectionColor,
@@ -446,10 +459,13 @@ class BrickNutritionSections extends StatelessWidget {
                   sportLabel: sportLabel,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  planId: brick.id,
                   brickSegment: brickSegment,
                   // Always true for during/transition — we're in BrickNutritionSections
-                  isBrick: phase != ExplanationPhase.before &&
+                  isBrick:
+                      phase != ExplanationPhase.before &&
                       phase != ExplanationPhase.after,
+                  onRegenerate: onRegenerate,
                 );
               },
             ),
@@ -477,22 +493,22 @@ class BrickNutritionSections extends StatelessWidget {
     Color iconColor;
 
     if (sportType == 'swimming') {
-      iconData = FontAwesomeIcons.personSwimming;
+      iconData = FontAwesomeIcons.personSwimming.data;
       iconColor = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
     } else if (sportType == 'cycling') {
-      iconData = FontAwesomeIcons.personBiking;
+      iconData = FontAwesomeIcons.personBiking.data;
       iconColor = AppColors.orange;
     } else if (sportType == 'running') {
-      iconData = FontAwesomeIcons.personRunning;
+      iconData = FontAwesomeIcons.personRunning.data;
       iconColor = AppColors.dragonfruit;
     } else if (sportType == null && sectionId == 'before') {
-      iconData = FontAwesomeIcons.clock;
+      iconData = FontAwesomeIcons.clock.data;
       iconColor = AppColors.orange;
     } else if (sportType == null && sectionId == 'after') {
-      iconData = FontAwesomeIcons.utensils;
+      iconData = FontAwesomeIcons.utensils.data;
       iconColor = AppColors.dragonfruit;
     } else {
-      iconData = FontAwesomeIcons.utensils;
+      iconData = FontAwesomeIcons.utensils.data;
       iconColor = AppColors.orange;
     }
 

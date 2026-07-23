@@ -10,6 +10,8 @@ import '../../domain/carb_loading_day_meal.dart';
 import '../../domain/meal_type.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
+import '../../../barcode_scanning/application/product_detail_service.dart';
+import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/open_food_facts_search_service.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
@@ -76,13 +78,17 @@ class CarbLoadingFoodSelectionState {
       carbLoadingFoods: carbLoadingFoods ?? this.carbLoadingFoods,
       carbLoadingUserFoods: carbLoadingUserFoods ?? this.carbLoadingUserFoods,
       nutritionPlanFoods: nutritionPlanFoods ?? this.nutritionPlanFoods,
-      nutritionPlanUserFoods: nutritionPlanUserFoods ?? this.nutritionPlanUserFoods,
+      nutritionPlanUserFoods:
+          nutritionPlanUserFoods ?? this.nutritionPlanUserFoods,
       searchQuery: searchQuery ?? this.searchQuery,
       searchResults: searchResults ?? this.searchResults,
       openFoodFactsResults: openFoodFactsResults ?? this.openFoodFactsResults,
-      selectedFood: clearSelectedFood ? null : (selectedFood ?? this.selectedFood),
+      selectedFood: clearSelectedFood
+          ? null
+          : (selectedFood ?? this.selectedFood),
       selectedQuantity: selectedQuantity ?? this.selectedQuantity,
-      isSearchingOpenFoodFacts: isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
+      isSearchingOpenFoodFacts:
+          isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
     );
   }
 }
@@ -110,15 +116,14 @@ class CarbLoadingFoodSelectionParams {
 }
 
 @riverpod
-class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionController {
+class CarbLoadingFoodSelectionController
+    extends _$CarbLoadingFoodSelectionController {
   CarbLoadingFoodService get _carbLoadingFoodService =>
       ref.read(carbLoadingFoodServiceProvider);
-  FoodImportService get _importService =>
-      ref.read(foodImportServiceProvider);
+  FoodImportService get _importService => ref.read(foodImportServiceProvider);
   FoodSelectionService get _selectionService =>
       ref.read(foodSelectionServiceProvider);
-  FoodRepository get _foodRepository =>
-      ref.read(foodRepositoryProvider);
+  FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   OpenFoodFactsSearchService get _openFoodFactsService =>
       ref.read(openFoodFactsSearchServiceProvider);
 
@@ -126,7 +131,9 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
   final _searchStrategy = SearchStrategy();
 
   @override
-  Future<CarbLoadingFoodSelectionState> build(CarbLoadingFoodSelectionParams params) async {
+  Future<CarbLoadingFoodSelectionState> build(
+    CarbLoadingFoodSelectionParams params,
+  ) async {
     // Load all food sources
     final deviceId = await ref.read(userIdProvider.future);
     final database = ref.read(appDatabaseProvider);
@@ -141,45 +148,54 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     );
 
     // Load carb loading specific foods
-    final carbLoadingFoods = await _carbLoadingFoodService.getDefaultFoodsForMealType(params.mealType);
-    final carbLoadingUserFoods = await _carbLoadingFoodService.getAllUserFoods(deviceId);
+    final carbLoadingFoods = await _carbLoadingFoodService
+        .getDefaultFoodsForMealType(params.mealType);
+    final carbLoadingUserFoods = await _carbLoadingFoodService.getAllUserFoods(
+      deviceId,
+    );
 
     // Load nutrition plan foods (for importing) - convert FoodItems to Foods
     final foodItems = await _foodRepository.getAllFoods();
-    final nutritionPlanFoods = foodItems.map((item) => Food(
-      id: item.id,
-      name: item.name,
-      imageAddress: item.imageAddress,
-      description: item.description,
-      instructions: item.instructions,
-      servingAmount: item.servingAmount,
-      displayName: item.displayName,
-      displayNamePlural: item.displayNamePlural,
-      servingUnit: item.servingUnit,
-      servingUnitPlural: item.servingUnitPlural,
-      servingQualifier: item.servingQualifier,
-      servingSize: item.servingSize,
-      carbsPerServing: item.carbsPerServing,
-      proteinPerServing: item.proteinPerServing,
-      fatPerServing: item.fatPerServing,
-      caloriesPerServing: item.caloriesPerServing,
-      fluidMlPerServing: item.fluidMlPerServing,
-      sodiumMg: item.sodiumMg,
-      caffeineMg: item.caffeineMg,
-      potassiumMg: item.potassiumMg,
-      productTypeId: item.productTypeId,
-      beforeRunSuitable: item.beforeRunSuitable,
-      duringRunSuitable: item.duringRunSuitable,
-      runPortable: item.runPortable,
-      requiresPreparation: item.requiresPreparation,
-      aidStationAvailable: item.aidStationAvailable,
-      maxServingsBefore: item.maxServingsBefore,
-      maxServingsDuring: item.maxServingsDuring,
-    )).toList();
+    final nutritionPlanFoods = foodItems
+        .map(
+          (item) => Food(
+            id: item.id,
+            name: item.name,
+            imageAddress: item.imageAddress,
+            description: item.description,
+            instructions: item.instructions,
+            servingAmount: item.servingAmount,
+            displayName: item.displayName,
+            displayNamePlural: item.displayNamePlural,
+            servingUnit: item.servingUnit,
+            servingUnitPlural: item.servingUnitPlural,
+            servingQualifier: item.servingQualifier,
+            servingSize: item.servingSize,
+            carbsPerServing: item.carbsPerServing,
+            proteinPerServing: item.proteinPerServing,
+            fatPerServing: item.fatPerServing,
+            caloriesPerServing: item.caloriesPerServing,
+            fluidMlPerServing: item.fluidMlPerServing,
+            sodiumMg: item.sodiumMg,
+            caffeineMg: item.caffeineMg,
+            potassiumMg: item.potassiumMg,
+            productTypeId: item.productTypeId,
+            beforeRunSuitable: item.beforeRunSuitable,
+            duringRunSuitable: item.duringRunSuitable,
+            runPortable: item.runPortable,
+            requiresPreparation: item.requiresPreparation,
+            aidStationAvailable: item.aidStationAvailable,
+            maxServingsBefore: item.maxServingsBefore,
+            maxServingsDuring: item.maxServingsDuring,
+          ),
+        )
+        .toList();
 
     // Load user's custom nutrition foods
     final userFoodsQuery = database.select(database.userFoodsTable)
-      ..where((tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false),
+      );
     final nutritionPlanUserFoods = await userFoodsQuery.get();
 
     // Initialize with all foods as search results
@@ -214,55 +230,62 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     if (query.isEmpty) {
       // Show all foods when no search query
       filteredFoods.addAll(currentState.carbLoadingFoods);
-      filteredFoods.addAll(currentState.carbLoadingUserFoods.where((f) => !f.isDeleted));
+      filteredFoods.addAll(
+        currentState.carbLoadingUserFoods.where((f) => !f.isDeleted),
+      );
       filteredFoods.addAll(currentState.nutritionPlanFoods);
       filteredFoods.addAll(currentState.nutritionPlanUserFoods);
 
       // Clear OpenFoodFacts results and cancel any pending search
       _searchStrategy.cancelAutoSearch();
-      state = AsyncData(currentState.copyWith(
-        searchQuery: query,
-        searchResults: filteredFoods,
-        openFoodFactsResults: [],
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          searchQuery: query,
+          searchResults: filteredFoods,
+          openFoodFactsResults: [],
+        ),
+      );
     } else {
       // Filter carb loading foods
       filteredFoods.addAll(
-        currentState.carbLoadingFoods.where((food) =>
-          food.displayName.toLowerCase().contains(lowerQuery) ||
-          food.name.toLowerCase().contains(lowerQuery)
+        currentState.carbLoadingFoods.where(
+          (food) =>
+              food.displayName.toLowerCase().contains(lowerQuery) ||
+              food.name.toLowerCase().contains(lowerQuery),
         ),
       );
 
       // Filter carb loading user foods
       filteredFoods.addAll(
-        currentState.carbLoadingUserFoods.where((food) =>
-          !food.isDeleted &&
-          (food.displayName.toLowerCase().contains(lowerQuery) ||
-           food.name.toLowerCase().contains(lowerQuery))
+        currentState.carbLoadingUserFoods.where(
+          (food) =>
+              !food.isDeleted &&
+              (food.displayName.toLowerCase().contains(lowerQuery) ||
+                  food.name.toLowerCase().contains(lowerQuery)),
         ),
       );
 
       // Filter nutrition plan foods
       filteredFoods.addAll(
-        currentState.nutritionPlanFoods.where((food) =>
-          (food.displayName?.toLowerCase().contains(lowerQuery) ?? false) ||
-          food.name.toLowerCase().contains(lowerQuery)
+        currentState.nutritionPlanFoods.where(
+          (food) =>
+              (food.displayName?.toLowerCase().contains(lowerQuery) ?? false) ||
+              food.name.toLowerCase().contains(lowerQuery),
         ),
       );
 
       // Filter nutrition plan user foods
       filteredFoods.addAll(
-        currentState.nutritionPlanUserFoods.where((food) =>
-          (food.displayName?.toLowerCase().contains(lowerQuery) ?? false) ||
-          food.name.toLowerCase().contains(lowerQuery)
+        currentState.nutritionPlanUserFoods.where(
+          (food) =>
+              (food.displayName?.toLowerCase().contains(lowerQuery) ?? false) ||
+              food.name.toLowerCase().contains(lowerQuery),
         ),
       );
 
-      state = AsyncData(currentState.copyWith(
-        searchQuery: query,
-        searchResults: filteredFoods,
-      ));
+      state = AsyncData(
+        currentState.copyWith(searchQuery: query, searchResults: filteredFoods),
+      );
 
       // Use search strategy to determine if we should auto-search OpenFoodFacts
       if (_searchStrategy.shouldAutoSearch(filteredFoods.length)) {
@@ -286,17 +309,21 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       final results = await _openFoodFactsService.searchProducts(query);
 
       if (state.value != null) {
-        state = AsyncData(state.value!.copyWith(
-          openFoodFactsResults: results,
-          isSearchingOpenFoodFacts: false,
-        ));
+        state = AsyncData(
+          state.value!.copyWith(
+            openFoodFactsResults: results,
+            isSearchingOpenFoodFacts: false,
+          ),
+        );
       }
     } catch (e) {
       if (state.value != null) {
-        state = AsyncData(state.value!.copyWith(
-          openFoodFactsResults: [],
-          isSearchingOpenFoodFacts: false,
-        ));
+        state = AsyncData(
+          state.value!.copyWith(
+            openFoodFactsResults: [],
+            isSearchingOpenFoodFacts: false,
+          ),
+        );
       }
     }
   }
@@ -306,9 +333,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = AsyncData(currentState.copyWith(
-      openFoodFactsResults: [],
-    ));
+    state = AsyncData(currentState.copyWith(openFoodFactsResults: []));
   }
 
   /// Select a food (any type)
@@ -324,10 +349,12 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       defaultQuantity = 1.0;
     }
 
-    state = AsyncData(currentState.copyWith(
-      selectedFood: food,
-      selectedQuantity: defaultQuantity,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        selectedFood: food,
+        selectedQuantity: defaultQuantity,
+      ),
+    );
   }
 
   /// Update selected quantity
@@ -335,9 +362,7 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     final currentState = state.value;
     if (currentState == null || newQuantity <= 0) return;
 
-    state = AsyncData(currentState.copyWith(
-      selectedQuantity: newQuantity,
-    ));
+    state = AsyncData(currentState.copyWith(selectedQuantity: newQuantity));
   }
 
   /// Increment quantity by 0.5
@@ -345,9 +370,11 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = AsyncData(currentState.copyWith(
-      selectedQuantity: currentState.selectedQuantity + 0.5,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        selectedQuantity: currentState.selectedQuantity + 0.5,
+      ),
+    );
   }
 
   /// Decrement quantity by 0.5 (minimum 0.5)
@@ -355,9 +382,11 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     final currentState = state.value;
     if (currentState == null || currentState.selectedQuantity <= 0.5) return;
 
-    state = AsyncData(currentState.copyWith(
-      selectedQuantity: currentState.selectedQuantity - 0.5,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        selectedQuantity: currentState.selectedQuantity - 0.5,
+      ),
+    );
   }
 
   /// Add selected food to the meal
@@ -383,10 +412,12 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       // Handle different food types
       if (selectedFood is CarbLoadingFood) {
         // Check if this food already exists in the meal
-        final existingMeal = existingMeals.cast<CarbLoadingDayMeal?>().firstWhere(
-          (m) => m != null && m.carbLoadingFoodId == selectedFood.id,
-          orElse: () => null,
-        );
+        final existingMeal = existingMeals
+            .cast<CarbLoadingDayMeal?>()
+            .firstWhere(
+              (m) => m != null && m.carbLoadingFoodId == selectedFood.id,
+              orElse: () => null,
+            );
 
         if (existingMeal != null) {
           // Increment existing quantity
@@ -408,7 +439,10 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
         CarbLoadingUserFood foodToAdd = selectedFood;
         if (!selectedFood.mealTypes.contains(currentState.mealType)) {
           // Add this meal type to the food
-          final updatedMealTypes = [...selectedFood.mealTypes, currentState.mealType];
+          final updatedMealTypes = [
+            ...selectedFood.mealTypes,
+            currentState.mealType,
+          ];
           foodToAdd = await _carbLoadingFoodService.updateUserFood(
             id: selectedFood.id,
             mealTypes: updatedMealTypes,
@@ -416,10 +450,12 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
         }
 
         // Check if this food already exists in the meal
-        final existingMeal = existingMeals.cast<CarbLoadingDayMeal?>().firstWhere(
-          (m) => m != null && m.carbLoadingUserFoodId == foodToAdd.id,
-          orElse: () => null,
-        );
+        final existingMeal = existingMeals
+            .cast<CarbLoadingDayMeal?>()
+            .firstWhere(
+              (m) => m != null && m.carbLoadingUserFoodId == foodToAdd.id,
+              orElse: () => null,
+            );
 
         if (existingMeal != null) {
           // Increment existing quantity
@@ -446,7 +482,9 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
         CarbLoadingUserFood importedFood;
         if (alreadyImported) {
           // Reuse existing imported food and update meal types if needed
-          final existingFoods = await _carbLoadingFoodService.getAllUserFoods(deviceId);
+          final existingFoods = await _carbLoadingFoodService.getAllUserFoods(
+            deviceId,
+          );
           final existingFood = existingFoods.firstWhere(
             (f) => f.sourceFoodId == selectedFood.id && !f.isDeleted,
           );
@@ -454,7 +492,10 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           // Check if current meal type is already in the food's meal types
           if (!existingFood.mealTypes.contains(currentState.mealType)) {
             // Add this meal type to the food
-            final updatedMealTypes = [...existingFood.mealTypes, currentState.mealType];
+            final updatedMealTypes = [
+              ...existingFood.mealTypes,
+              currentState.mealType,
+            ];
             importedFood = await _carbLoadingFoodService.updateUserFood(
               id: existingFood.id,
               mealTypes: updatedMealTypes,
@@ -462,21 +503,41 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           } else {
             importedFood = existingFood;
           }
-        } else {
+        } else if (await _importService.existsInFoodsTable(selectedFood.id)) {
           // Import from nutrition plan foods table
           importedFood = await _importService.importFromFoodsTable(
             deviceId: deviceId,
-            userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
+            userId:
+                deviceId, // TODO: Replace with actual userId once user authentication is implemented
             sourceFoodId: selectedFood.id,
+            mealTypes: [currentState.mealType],
+          );
+        } else {
+          // A barcode scan: the Food was just fetched from the catalog / USDA /
+          // Open Food Facts and exists in neither `foods` nor `user_foods`, so
+          // importFromFoodsTable would throw 'Source food not found' — which is
+          // why scanning a barcode here used to fail every time. Create it from
+          // the scanned food's own data, which already carries real nutrition.
+          importedFood = await _importService.createCustomFood(
+            deviceId: deviceId,
+            userId:
+                deviceId, // TODO: Replace with actual userId once user authentication is implemented
+            name: selectedFood.name,
+            displayName: selectedFood.displayName ?? selectedFood.name,
+            displayNamePlural: selectedFood.displayNamePlural,
+            carbsPerServing: selectedFood.carbsPerServing ?? 0.0,
+            imageAddress: selectedFood.imageAddress,
             mealTypes: [currentState.mealType],
           );
         }
 
         // Check if this imported food already exists in the meal
-        final existingMeal = existingMeals.cast<CarbLoadingDayMeal?>().firstWhere(
-          (m) => m != null && m.carbLoadingUserFoodId == importedFood.id,
-          orElse: () => null,
-        );
+        final existingMeal = existingMeals
+            .cast<CarbLoadingDayMeal?>()
+            .firstWhere(
+              (m) => m != null && m.carbLoadingUserFoodId == importedFood.id,
+              orElse: () => null,
+            );
 
         if (existingMeal != null) {
           // Increment existing quantity
@@ -503,7 +564,9 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
         CarbLoadingUserFood importedFood;
         if (alreadyImported) {
           // Reuse existing imported food and update meal types if needed
-          final existingFoods = await _carbLoadingFoodService.getAllUserFoods(deviceId);
+          final existingFoods = await _carbLoadingFoodService.getAllUserFoods(
+            deviceId,
+          );
           final existingFood = existingFoods.firstWhere(
             (f) => f.sourceUserFoodId == selectedFood.id && !f.isDeleted,
           );
@@ -511,7 +574,10 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           // Check if current meal type is already in the food's meal types
           if (!existingFood.mealTypes.contains(currentState.mealType)) {
             // Add this meal type to the food
-            final updatedMealTypes = [...existingFood.mealTypes, currentState.mealType];
+            final updatedMealTypes = [
+              ...existingFood.mealTypes,
+              currentState.mealType,
+            ];
             importedFood = await _carbLoadingFoodService.updateUserFood(
               id: existingFood.id,
               mealTypes: updatedMealTypes,
@@ -523,17 +589,20 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
           // Import from user_foods table
           importedFood = await _importService.importFromUserFoodsTable(
             deviceId: deviceId,
-            userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
+            userId:
+                deviceId, // TODO: Replace with actual userId once user authentication is implemented
             sourceUserFoodId: selectedFood.id,
             mealTypes: [currentState.mealType],
           );
         }
 
         // Check if this imported food already exists in the meal
-        final existingMeal = existingMeals.cast<CarbLoadingDayMeal?>().firstWhere(
-          (m) => m != null && m.carbLoadingUserFoodId == importedFood.id,
-          orElse: () => null,
-        );
+        final existingMeal = existingMeals
+            .cast<CarbLoadingDayMeal?>()
+            .firstWhere(
+              (m) => m != null && m.carbLoadingUserFoodId == importedFood.id,
+              orElse: () => null,
+            );
 
         if (existingMeal != null) {
           // Increment existing quantity
@@ -562,7 +631,9 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
 
   /// Add food from Open Food Facts result
   /// Creates a new carb_loading_user_food entry or updates existing one with new meal type
-  Future<CarbLoadingUserFood> addFromOpenFoodFacts(FoodSearchResult result) async {
+  Future<CarbLoadingUserFood> addFromOpenFoodFacts(
+    FoodSearchResult result,
+  ) async {
     final deviceId = await ref.read(userIdProvider.future);
     final currentState = state.value;
     if (currentState == null) return Future.error('State not initialized');
@@ -576,7 +647,9 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
     CarbLoadingUserFood importedFood;
     if (alreadyImported) {
       // Reuse existing imported food and update meal types if needed
-      final existingFoods = await _carbLoadingFoodService.getAllUserFoods(deviceId);
+      final existingFoods = await _carbLoadingFoodService.getAllUserFoods(
+        deviceId,
+      );
       final existingFood = existingFoods.firstWhere(
         (f) => f.barcode == result.id && !f.isDeleted,
       );
@@ -584,7 +657,10 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
       // Check if current meal type is already in the food's meal types
       if (!existingFood.mealTypes.contains(currentState.mealType)) {
         // Add this meal type to the food
-        final updatedMealTypes = [...existingFood.mealTypes, currentState.mealType];
+        final updatedMealTypes = [
+          ...existingFood.mealTypes,
+          currentState.mealType,
+        ];
         importedFood = await _carbLoadingFoodService.updateUserFood(
           id: existingFood.id,
           mealTypes: updatedMealTypes,
@@ -593,14 +669,39 @@ class CarbLoadingFoodSelectionController extends _$CarbLoadingFoodSelectionContr
         importedFood = existingFood;
       }
     } else {
-      // Create carb loading user food from OFF search result
-      // Note: We'll need to fetch detailed nutrition info or use default values
+      // Open Food Facts *search* results carry no nutrition — only name, id and
+      // image. Fetch the product detail for the real carb value rather than
+      // guessing: this is the carb loading screen, so an invented carb number
+      // is the one number that must not be wrong. (Previously hardcoded to 30g
+      // with a "user can edit later" note.)
+      final apiProduct = await ref
+          .read(productDetailServiceProvider)
+          .getProductDetails(barcode: result.id);
+
+      // Reuse the same mapper the other search surfaces use, rather than
+      // reading raw per-100g/per-serving fields here — it already resolves
+      // serving size and unit conversion.
+      final carbs = apiProduct == null
+          ? null
+          : (await ref.read(foodMappingServiceProvider).mapToFood(apiProduct))
+                .carbsPerServing;
+
+      if (carbs == null) {
+        // No usable nutrition — surface it instead of inventing a number. The
+        // caller shows the error; the user can still add the food manually.
+        return Future.error(
+          'No carb information available for this product. '
+          'Add it manually to set the carbs yourself.',
+        );
+      }
+
       importedFood = await _importService.createFromBarcodeScan(
         deviceId: deviceId,
-        userId: deviceId, // TODO: Replace with actual userId once user authentication is implemented
+        userId:
+            deviceId, // TODO: Replace with actual userId once user authentication is implemented
         barcode: result.id,
         productName: result.name,
-        carbsPerServing: 30.0, // Default - user can edit later
+        carbsPerServing: carbs,
         imageUrl: result.imageUrl,
         mealTypes: [currentState.mealType],
       );

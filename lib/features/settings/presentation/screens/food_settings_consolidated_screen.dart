@@ -24,10 +24,12 @@ class FoodSettingsConsolidatedScreen extends ConsumerStatefulWidget {
   const FoodSettingsConsolidatedScreen({super.key});
 
   @override
-  ConsumerState<FoodSettingsConsolidatedScreen> createState() => _FoodSettingsConsolidatedScreenState();
+  ConsumerState<FoodSettingsConsolidatedScreen> createState() =>
+      _FoodSettingsConsolidatedScreenState();
 }
 
-class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsConsolidatedScreen> {
+class _FoodSettingsConsolidatedScreenState
+    extends ConsumerState<FoodSettingsConsolidatedScreen> {
   // State for dietary preference
   DietaryPreference? _selectedDietaryPreference;
   DietaryPreference? _originalDietaryPreference;
@@ -47,9 +49,13 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
   @override
   void initState() {
     super.initState();
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Food Settings Consolidated',
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {'screen_name': 'Food Settings Consolidated'},
+        );
     _loadCurrentSettings();
   }
 
@@ -87,7 +93,8 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
 
     // Check if allergies changed
     if (_selectedAllergies.length != _originalAllergies.length) return true;
-    if (!_selectedAllergies.every((a) => _originalAllergies.contains(a))) return true;
+    if (!_selectedAllergies.every((a) => _originalAllergies.contains(a)))
+      return true;
 
     return false;
   }
@@ -101,10 +108,14 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
       final controller = ref.read(onboardingControllerProvider.notifier);
 
       // Save dietary preference
-      final dietSuccess = await controller.saveDietaryPreference(_selectedDietaryPreference);
+      final dietSuccess = await controller.saveDietaryPreference(
+        _selectedDietaryPreference,
+      );
 
       // Save allergies
-      final allergySuccess = await controller.saveAllergies(_selectedAllergies.toList());
+      final allergySuccess = await controller.saveAllergies(
+        _selectedAllergies.toList(),
+      );
 
       if (!mounted) return;
 
@@ -113,26 +124,38 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
         final analytics = ref.read(appExternalDepsProvider);
 
         if (_selectedDietaryPreference != _originalDietaryPreference) {
-          analytics.analytics.track('dietary_preference_changed', properties: {
-            'from': _originalDietaryPreference?.name ?? 'none',
-            'to': _selectedDietaryPreference?.name ?? 'none',
-            'source': 'consolidated_settings',
-          });
+          analytics.analytics.track(
+            'dietary_preference_changed',
+            properties: {
+              'from': _originalDietaryPreference?.name ?? 'none',
+              'to': _selectedDietaryPreference?.name ?? 'none',
+              'source': 'consolidated_settings',
+            },
+          );
         }
 
         if (_selectedAllergies != _originalAllergies) {
-          analytics.analytics.track('allergies_changed', properties: {
-            'from_count': _originalAllergies.length,
-            'to_count': _selectedAllergies.length,
-            'allergies': _selectedAllergies.map((a) => a.name).toList(),
-            'source': 'consolidated_settings',
-          });
+          analytics.analytics.track(
+            'allergies_changed',
+            properties: {
+              'from_count': _originalAllergies.length,
+              'to_count': _selectedAllergies.length,
+              'allergies': _selectedAllergies.map((a) => a.name).toList(),
+              'source': 'consolidated_settings',
+            },
+          );
         }
 
-        MealvanaSnackbar.showSuccess(context, 'Food preferences updated successfully');
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Food preferences updated successfully',
+        );
         context.pop();
       } else {
-        MealvanaSnackbar.showError(context, 'Failed to save preferences. Please try again.');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to save preferences. Please try again.',
+        );
       }
     } finally {
       if (mounted) {
@@ -147,9 +170,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
       return Scaffold(
         backgroundColor: AppColors.blackberry,
         body: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.orange,
-          ),
+          child: CircularProgressIndicator(color: AppColors.orange),
         ),
       );
     }
@@ -258,7 +279,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                const Icon(
+                const FaIcon(
                   FontAwesomeIcons.leaf,
                   color: AppColors.orange,
                   size: 20,
@@ -342,7 +363,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                const Icon(
+                const FaIcon(
                   FontAwesomeIcons.triangleExclamation,
                   color: AppColors.orange,
                   size: 20,
@@ -431,7 +452,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              const Icon(
+              const FaIcon(
                 FontAwesomeIcons.utensils,
                 color: AppColors.orange,
                 size: 20,

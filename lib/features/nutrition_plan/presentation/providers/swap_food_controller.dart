@@ -43,6 +43,29 @@ class SwapFoodParams {
   final bool isCoachView;
 }
 
+/// Result returned by [SwapFoodScreen] when launched in `returnSelection`
+/// mode (e.g. from the personal-formula editor). Instead of mutating an
+/// activity's nutrition plan, the screen pops with the user's selected food +
+/// quantity so the caller can use it however it wants.
+class SwapFoodSelection {
+  const SwapFoodSelection({
+    required this.food,
+    required this.quantity,
+    required this.isUserFood,
+    this.replacedFoodId,
+  });
+
+  final Food food;
+  final double quantity;
+
+  /// Whether [food] came from the user's own library (`user_foods`) vs the
+  /// system catalog (`template_foods`).
+  final bool isUserFood;
+
+  /// When swapping, the id of the component food being replaced (else null).
+  final String? replacedFoodId;
+}
+
 /// State for the swap food screen.
 ///
 /// Search state (query, catalog results, OFF results) is now managed by the
@@ -61,7 +84,8 @@ class SwapFoodState {
 
   final List<Food>
   recommendations; // Smart recommendations (user + generic foods)
-  final List<Food>? allFoodsForSearch; // All foods for searching (template + user)
+  final List<Food>?
+  allFoodsForSearch; // All foods for searching (template + user)
   final Food? selectedFood;
   final Map<String, FoodPreference> preferences; // User food preferences
   final Set<String> userFoodIds; // Set of food IDs that are user-created foods
@@ -147,12 +171,12 @@ class SwapFoodController extends _$SwapFoodController {
 
       // Ensure user_foods are synced from remote (pulls down after re-login)
       try {
-        final userFoodsRepo = await ref.read(userFoodsRepositoryProvider.future);
-        await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
-          'user_foods',
-          userId,
-          repository: userFoodsRepo,
+        final userFoodsRepo = await ref.read(
+          userFoodsRepositoryProvider.future,
         );
+        await ref
+            .read(syncCoordinatorProvider.notifier)
+            .ensureSynced('user_foods', userId, repository: userFoodsRepo);
       } catch (e) {
         _logger.warning(
           'User foods sync failed, continuing with cached data',
@@ -213,10 +237,7 @@ class SwapFoodController extends _$SwapFoodController {
       );
 
       // Return empty state on error
-      return const SwapFoodState(
-        recommendations: [],
-        allFoodsForSearch: [],
-      );
+      return const SwapFoodState(recommendations: [], allFoodsForSearch: []);
     }
   }
 
@@ -250,7 +271,9 @@ class SwapFoodController extends _$SwapFoodController {
     }
 
     if (productTypeId != null) {
-      var matches = foods.where((f) => f.productTypeId == productTypeId).toList();
+      var matches = foods
+          .where((f) => f.productTypeId == productTypeId)
+          .toList();
       if (normalizedCategory != null) {
         final filtered = _filterByCat(matches, normalizedCategory);
         if (filtered.isNotEmpty) return filtered;
@@ -358,9 +381,7 @@ class SwapFoodController extends _$SwapFoodController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = AsyncValue.data(
-      currentState.copyWith(selectedFood: food),
-    );
+    state = AsyncValue.data(currentState.copyWith(selectedFood: food));
   }
 
   /// Clear selection
@@ -485,6 +506,19 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
+    // In fuel-log mode the fuel log screen renders from state.fuelLogData,
+    // not the nutrition plan — route the write there or the food silently
+    // never appears despite the success snackbar (bug 3a3e3fdb). This also
+    // keeps the plan itself untouched while logging what was consumed.
+    if (!params.isCoachView && controllerState.isFuelLogMode == true) {
+      activityDetailController.addFoodToFuelLogFromRawFood(
+        food,
+        category,
+        customAmount: customAmount,
+      );
+      return;
+    }
+
     await activityDetailController.addFoodItem(
       food,
       category,
@@ -498,7 +532,10 @@ class SwapFoodController extends _$SwapFoodController {
   /// If [selectAfterRefresh] is provided, the food will be selected after the rebuild completes.
   /// If [expandMyFoods] is true, the My Foods section will be expanded after rebuild.
   /// This prevents race conditions where the food is selected before the state is rebuilt.
-  Future<void> refreshFoods({Food? selectAfterRefresh, bool expandMyFoods = false}) async {
+  Future<void> refreshFoods({
+    Food? selectAfterRefresh,
+    bool expandMyFoods = false,
+  }) async {
     // Invalidate and rebuild to refresh food data
     ref.invalidateSelf();
 
@@ -514,9 +551,7 @@ class SwapFoodController extends _$SwapFoodController {
     if (expandMyFoods && _isMounted) {
       final freshState = state.value;
       if (freshState != null) {
-        state = AsyncValue.data(
-          freshState.copyWith(isMyFoodsExpanded: true),
-        );
+        state = AsyncValue.data(freshState.copyWith(isMyFoodsExpanded: true));
       }
     }
   }

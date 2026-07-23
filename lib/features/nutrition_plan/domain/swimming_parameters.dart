@@ -5,8 +5,10 @@ class SwimmingParameters {
   final int durationMinutes;
   final String poolOrOpenWater; // 'pool', 'open_water'
   final int timeBeforeMinutes;
-  final String? intensityTarget; // 'recovery', 'endurance', 'tempo', 'threshold', 'vo2max'
-  final String? sessionGoal; // 'base_building', 'race_prep', 'recovery', 'intervals'
+  final String?
+  intensityTarget; // 'recovery', 'endurance', 'tempo', 'threshold', 'vo2max'
+  final String?
+  sessionGoal; // 'base_building', 'race_prep', 'recovery', 'intervals'
   final double? waterTempC;
 
   const SwimmingParameters({

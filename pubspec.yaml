@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.18.1+80
+version: 1.22.0+1
 
 environment:
   sdk: ^3.8.1
@@ -56,11 +56,15 @@ dependencies:
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.2
   shared_preferences: ^2.3.2
+  # Keychain-backed storage. On iOS the Keychain survives app uninstall, which
+  # is what makes the internal-device flag reinstall-proof (see
+  # shared/services/analytics/internal_user_service.dart).
+  flutter_secure_storage: ^9.2.2
   url_launcher: ^6.2.0
   pub_semver: ^2.1.4
   
   # Analytics
-  mixpanel_flutter: ^2.4.4
+  mixpanel_flutter: ^2.10.0
   
   # Backend & Auth
   supabase_flutter: ^2.10.0  # Required for linkIdentityWithIdToken() (gotrue 2.15.0+)
@@ -88,9 +92,12 @@ dependencies:
 
   # Barcode Scanning
   mobile_scanner: ^7.2.0
+
+  # Meal photo capture (meal logging)
+  image_picker: ^1.2.2
   
   # Font Awesome Icons
-  font_awesome_flutter: ^10.6.0
+  font_awesome_flutter: ^11.0.0
 
   # PDF Generation
   pdf: ^3.11.1
@@ -112,18 +119,31 @@ dependencies:
   fl_chart: ^1.2.0
   onesignal_flutter: ^5.5.0
 
+  # Dev-only accessibility checker overlay + testing-tools panel.
+  # Pinned exact: 2.7.0+ uses SemanticsFlags collection APIs that require a
+  # newer Flutter SDK than Codemagic's stable channel ships.
+  # Wrapped in a debug-only widget that resets panel state on every hot
+  # reload so panel overrides (text scale, color mode, etc.) cannot leak
+  # across sessions — see lib/shared/widgets/root_app_widget.dart.
+  accessibility_tools: 2.2.3
+  purchases_flutter: ^10.3.0
+
+
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1
   flutter_test:
     sdk: flutter
   integration_test:
     sdk: flutter
+  # Parses ios/Runner/PrivacyInfo.xcprivacy in test/privacy/privacy_manifest_test.dart,
+  # which pins the manifest to the live App Store Connect privacy label.
+  xml: ^6.5.0
 
   flutter_lints: ^5.0.0
 
   # Testing
   mocktail: ^1.0.4
-  patrol: ^4.3.0
+  patrol: ^4.5.0
   
   # Code Generation
   build_runner: ^2.6.0
@@ -224,11 +244,16 @@ flutter:
       fonts:
         - asset: assets/fonts/Compadre/Compadre-Demo-Regular.otf
           weight: 400
-        - asset: assets/fonts/Compadre/Compadre-Demo-Wide.otf
-          weight: 400
         - asset: assets/fonts/Compadre/Compadre-Demo-Extended.otf
-          weight: 400
+          weight: 700
         - asset: assets/fonts/Compadre/Compadre-Demo-Narrow.otf
+          weight: 300
+
+    # Wide variant as its own family so it's selectable (the mockup uses it for
+    # the BY WEEK / BY MONTH toggle). Same bundled asset, just addressable.
+    - family: Compadre Wide
+      fonts:
+        - asset: assets/fonts/Compadre/Compadre-Demo-Wide.otf
           weight: 400
   
   # For details regarding fonts from package dependencies,
@@ -263,6 +288,10 @@ flutter_native_splash:
 
 patrol:
   app_name: Mealvana Endurance
+  # Our Patrol tests live in integration_test/ (patrol_cli >= 4.3 defaults this
+  # to patrol_test/; without this override the generated test_bundle.dart import
+  # path is malformed and the iOS build fails with xcodebuild code 65).
+  test_directory: integration_test
   android:
     package_name: com.milkman.mealvanaendurance
   ios:

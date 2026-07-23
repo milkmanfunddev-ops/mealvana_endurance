@@ -16,6 +16,7 @@ class KyleSwitch extends StatelessWidget {
     this.activeTrackColor,
     this.inactiveTrackColor,
     this.materialTapTargetSize,
+    this.semanticLabel,
   });
 
   final bool value;
@@ -24,6 +25,11 @@ class KyleSwitch extends StatelessWidget {
   final Color? activeTrackColor;
   final Color? inactiveTrackColor;
   final MaterialTapTargetSize? materialTapTargetSize;
+
+  /// Optional spoken label for screen readers (e.g., "Fasted workout").
+  /// When omitted, the adjacent label text typically supplies context, but
+  /// providing a label here makes the switch self-describing in isolation.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +43,7 @@ class KyleSwitch extends StatelessWidget {
           context,
         ).colorScheme.onSurface.withValues(alpha: isDark ? 0.32 : 0.26);
 
-    return Switch(
+    final widget = Switch(
       value: value,
       onChanged: enabled ? onChanged : null,
       materialTapTargetSize: materialTapTargetSize,
@@ -58,5 +64,8 @@ class KyleSwitch extends StatelessWidget {
       }),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     );
+
+    if (semanticLabel == null) return widget;
+    return Semantics(label: semanticLabel, toggled: value, child: widget);
   }
 }

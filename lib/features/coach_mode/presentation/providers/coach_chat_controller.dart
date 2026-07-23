@@ -24,9 +24,14 @@ class CoachChatController extends _$CoachChatController {
 
   @override
   FutureOr<CoachChatState> build(String relationshipId) async {
-    // Setup cleanup on dispose
+    // Cache service reference BEFORE registering onDispose.
+    // ref.read() is forbidden inside onDispose callbacks in Riverpod 3.x —
+    // the ref is already invalidated at that point.
+    final coachService = ref.read(coachServiceProvider);
+
+    // Setup cleanup on dispose using the cached reference (not ref.read)
     ref.onDispose(() {
-      _unsubscribe();
+      _unsubscribeWithService(coachService);
     });
 
     return _loadChat(relationshipId);
@@ -38,7 +43,9 @@ class CoachChatController extends _$CoachChatController {
     await _coachService.syncMyCoachesData();
 
     // Get relationship details
-    final relationship = await _coachService.getRelationshipById(relationshipId);
+    final relationship = await _coachService.getRelationshipById(
+      relationshipId,
+    );
     if (relationship == null) {
       throw Exception('Relationship not found');
     }
@@ -95,7 +102,10 @@ class CoachChatController extends _$CoachChatController {
       data: {
         'messageId': message.id,
         'senderUserId': message.senderUserId,
-        'messageText': message.messageText.substring(0, message.messageText.length.clamp(0, 50)),
+        'messageText': message.messageText.substring(
+          0,
+          message.messageText.length.clamp(0, 50),
+        ),
       },
     );
 
@@ -130,13 +140,18 @@ class CoachChatController extends _$CoachChatController {
       final updatedPending = currentState.pendingMessages
           .where((m) => m.id != message.id)
           .toList();
-      final updatedMessages = [...currentState.messages, message.copyWith(status: MessageStatus.sent)];
+      final updatedMessages = [
+        ...currentState.messages,
+        message.copyWith(status: MessageStatus.sent),
+      ];
       _stableSort(updatedMessages);
 
-      state = AsyncData(currentState.copyWith(
-        messages: updatedMessages,
-        pendingMessages: updatedPending,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          messages: updatedMessages,
+          pendingMessages: updatedPending,
+        ),
+      );
 
       return;
     }
@@ -148,10 +163,7 @@ class CoachChatController extends _$CoachChatController {
     _logger.info(
       'Adding new message to chat',
       context: 'COACH_CHAT_CONTROLLER',
-      data: {
-        'messageId': message.id,
-        'totalMessages': updatedMessages.length,
-      },
+      data: {'messageId': message.id, 'totalMessages': updatedMessages.length},
     );
 
     state = AsyncData(currentState.copyWith(messages: updatedMessages));
@@ -172,6 +184,15 @@ class CoachChatController extends _$CoachChatController {
   Future<void> _unsubscribe() async {
     if (_channel != null) {
       await _coachService.unsubscribeFromConversation(_channel!);
+      _channel = null;
+    }
+  }
+
+  /// Unsubscribe using a pre-cached service reference.
+  /// Used by onDispose where ref.read() is forbidden (Riverpod 3.x).
+  Future<void> _unsubscribeWithService(CoachService service) async {
+    if (_channel != null) {
+      await service.unsubscribeFromConversation(_channel!);
       _channel = null;
     }
   }
@@ -206,12 +227,17 @@ class CoachChatController extends _$CoachChatController {
     );
 
     // Add to pending messages immediately (optimistic UI)
-    final updatedPendingMessages = [...currentState.pendingMessages, optimisticMessage];
-    state = AsyncData(currentState.copyWith(
-      pendingMessages: updatedPendingMessages,
-      isSending: false,
-      error: null,
-    ));
+    final updatedPendingMessages = [
+      ...currentState.pendingMessages,
+      optimisticMessage,
+    ];
+    state = AsyncData(
+      currentState.copyWith(
+        pendingMessages: updatedPendingMessages,
+        isSending: false,
+        error: null,
+      ),
+    );
 
     // Try to send to Supabase
     try {
@@ -229,13 +255,18 @@ class CoachChatController extends _$CoachChatController {
         final updatedPending = newState.pendingMessages
             .where((m) => m.id != optimisticMessage.id)
             .toList();
-        final updatedMessages = [...newState.messages, sentMessage.copyWith(status: MessageStatus.sent)];
+        final updatedMessages = [
+          ...newState.messages,
+          sentMessage.copyWith(status: MessageStatus.sent),
+        ];
         _stableSort(updatedMessages);
 
-        state = AsyncData(newState.copyWith(
-          messages: updatedMessages,
-          pendingMessages: updatedPending,
-        ));
+        state = AsyncData(
+          newState.copyWith(
+            messages: updatedMessages,
+            pendingMessages: updatedPending,
+          ),
+        );
       } else {
         // Failed: Update status to failed, keep in pending
         _markMessageAsFailed(optimisticMessage.id);
@@ -258,10 +289,12 @@ class CoachChatController extends _$CoachChatController {
       return m;
     }).toList();
 
-    state = AsyncData(currentState.copyWith(
-      pendingMessages: updatedPending,
-      error: 'Some messages failed to send. Tap to retry.',
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        pendingMessages: updatedPending,
+        error: 'Some messages failed to send. Tap to retry.',
+      ),
+    );
   }
 
   /// Refresh messages
@@ -302,10 +335,9 @@ class CoachChatController extends _$CoachChatController {
       return m;
     }).toList();
 
-    state = AsyncData(currentState.copyWith(
-      pendingMessages: updatedPending,
-      error: null,
-    ));
+    state = AsyncData(
+      currentState.copyWith(pendingMessages: updatedPending, error: null),
+    );
 
     // Retry each failed message
     for (final message in failedMessages) {
@@ -324,13 +356,18 @@ class CoachChatController extends _$CoachChatController {
           final updatedPendingInner = newState.pendingMessages
               .where((m) => m.id != message.id)
               .toList();
-          final updatedMessagesInner = [...newState.messages, sentMessage.copyWith(status: MessageStatus.sent)];
+          final updatedMessagesInner = [
+            ...newState.messages,
+            sentMessage.copyWith(status: MessageStatus.sent),
+          ];
           _stableSort(updatedMessagesInner);
 
-          state = AsyncData(newState.copyWith(
-            messages: updatedMessagesInner,
-            pendingMessages: updatedPendingInner,
-          ));
+          state = AsyncData(
+            newState.copyWith(
+              messages: updatedMessagesInner,
+              pendingMessages: updatedPendingInner,
+            ),
+          );
         } else {
           _markMessageAsFailed(message.id);
         }

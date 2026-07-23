@@ -319,5 +319,11 @@ export function phaseResultToSubPhaseResult(
     sub_phase_type: phaseResult.phase,
     targets: phaseTargets,
     foods,
+    ...(phaseResult.shortfalls && phaseResult.shortfalls.length > 0 && {
+      shortfalls: phaseResult.shortfalls,
+    }),
+    ...(phaseResult.pin_decision && {
+      pin_decision: phaseResult.pin_decision,
+    }),
   };
 }

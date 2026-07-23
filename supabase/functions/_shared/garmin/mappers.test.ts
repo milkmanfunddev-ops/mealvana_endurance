@@ -129,12 +129,16 @@ const fixtures = {
     parentSummaryId: 'activity-005',
   } as GarminActivitySummary,
 
+  // Reporter scenario (bug 38ee3fdb): a planned run completed as a 0.0-mi /
+  // 0-min run. Garmin sends explicit zeros that must overwrite the plan.
   zeroActivity: {
     userId: 'garmin-user-123',
     userAccessToken: 'token-abc',
     summaryId: 'activity-007',
     activityType: 'running',
     durationInSeconds: 0,
+    distanceInMeters: 0,
+    averagePaceInMinutesPerKilometer: 0,
     startTimeInSeconds: 1711584000,
     startTimeOffsetInSeconds: 0,
   } as GarminActivitySummary,
@@ -356,8 +360,24 @@ describe('Garmin Mappers', () => {
       assertEquals(result.activity_type, 'running');
     });
 
-    it('handles zero-duration activity', () => {
+    it('keeps zero duration/distance/pace so an abandoned run overwrites the plan', () => {
+      // Regression for bug 38ee3fdb: zero values were coerced to null/undefined
+      // by truthiness guards, so a 0.0-mi completed run never overwrote the
+      // planned 14-mi distance. They must now survive as real zeros.
       const result = mapGarminActivityToActivity(fixtures.zeroActivity, USER_ID);
+
+      assertEquals(result.duration_minutes, 0);
+      assertEquals(result.distance_meters, 0);
+      assertEquals(result.distance_miles, 0);
+      assertEquals(result.average_pace_minutes_per_mile, 0);
+    });
+
+    it('coerces missing (undefined) duration to null', () => {
+      const activity = {
+        ...fixtures.minimalActivity,
+        durationInSeconds: undefined as unknown as number,
+      };
+      const result = mapGarminActivityToActivity(activity, USER_ID);
 
       assertEquals(result.duration_minutes, null);
     });

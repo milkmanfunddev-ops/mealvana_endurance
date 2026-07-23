@@ -11,49 +11,47 @@
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import type { PreWorkoutTemplate } from "./types.ts";
 import {
+  applyPreWorkoutHydrationOverlay,
+  calculatePreWorkoutHydration,
   calculatePreWorkoutTargets,
   selectPreWorkoutFoods,
 } from "./pre-workout.ts";
 import {
-  LB_TO_KG,
   IN_TO_CM,
+  LB_TO_KG,
   MI_TO_KM,
   MPH_TO_M_PER_MIN,
-  toKg,
   toCm,
+  toKg,
   toMiles,
 } from "../_shared/nutrition/unit-conversions.ts";
 import {
-  classifyEnvironment,
   baseSweatRateFromCategory,
-  sodiumConcentrationFromCategory,
   calculateActualSweatRate,
+  calculateSweatRateBreakdown,
+  classifyEnvironment,
+  replacementBandLabel,
+  replacementPctForDuration,
+  sodiumConcentrationFromCategory,
 } from "../_shared/nutrition/sweat-hydration.ts";
 
 // Re-export unit conversions for other modules
-export {
-  LB_TO_KG,
-  IN_TO_CM,
-  MI_TO_KM,
-  MPH_TO_M_PER_MIN,
-  toKg,
-  toCm,
-  toMiles,
-};
+export { IN_TO_CM, LB_TO_KG, MI_TO_KM, MPH_TO_M_PER_MIN, toCm, toKg, toMiles };
 
 // Re-export hydration functions for other modules
 export {
-  classifyEnvironment,
   baseSweatRateFromCategory,
-  sodiumConcentrationFromCategory,
   calculateActualSweatRate,
+  classifyEnvironment,
+  replacementPctForDuration,
+  sodiumConcentrationFromCategory,
 };
 
 // ============================================================================
 // DURING-WORKOUT NUTRITION
 // ============================================================================
 
-function getDurationCarbBand(durationMin: number): [number, number] {
+export function getDurationCarbBand(durationMin: number): [number, number] {
   if (durationMin < 60) return [0, 30];
   else if (durationMin < 90) return [30, 60];
   else if (durationMin < 150) return [45, 60];
@@ -61,14 +59,14 @@ function getDurationCarbBand(durationMin: number): [number, number] {
   else return [80, 100];
 }
 
-function getGutTrainingMultiplier(gutTraining: string): number {
+export function getGutTrainingMultiplier(gutTraining: string): number {
   if (gutTraining === "low") return 0.7;
   if (gutTraining === "moderate") return 1.0;
   if (gutTraining === "high") return 1.2;
   return 1.0;
 }
 
-function getSportCarbCeiling(activityType: string): number {
+export function getSportCarbCeiling(activityType: string): number {
   if (activityType === "running") return 70;
   if (activityType === "cycling") return 120;
   if (activityType === "swimming") return 0;
@@ -101,10 +99,23 @@ export function calculateDuringWorkoutCarbRate(
   const sportCeiling = getSportCarbCeiling(activityType);
   const finalRate = Math.min(carbRate, sportCeiling);
 
+  // The band is the user-facing "acceptable intake" range, so it must obey
+  // the same sport ceiling the rate does. Unclamped, a high-gut runner got
+  // band 72-108 g/h with a rate capped at 70 — the target sat BELOW its own
+  // displayed range and adherence always rendered red (196g vs "202-302g").
+  // When the ceiling binds the whole band (scaledLow >= ceiling), a pure
+  // clamp collapses it to a knife-edge single point, so widen the low end
+  // with the same ±12.5% convention the pre/post phase ranges use.
+  let bandLow = Math.min(scaledLow, sportCeiling);
+  const bandHigh = Math.min(scaledHigh, sportCeiling);
+  if (bandLow >= bandHigh && bandHigh > 0) {
+    bandLow = bandHigh * 0.875;
+  }
+
   return {
     rate_gph: Math.round(finalRate * 10) / 10,
-    band_low: Math.round(scaledLow),
-    band_high: Math.round(scaledHigh),
+    band_low: Math.round(bandLow),
+    band_high: Math.round(bandHigh),
     raw_band_low: baseLow,
     raw_band_high: baseHigh,
     gut_multiplier: gutMult,
@@ -112,38 +123,229 @@ export function calculateDuringWorkoutCarbRate(
   };
 }
 
-export function calculateDuringWorkoutHydration(
-  durationH: number,
-  sweatRateCategory: string,
-  sweatSodiumCat: string,
-  tempC: number | null,
-  humidityPct: number | null,
-): {
+// ============================================================================
+// During-Workout Hydration Input Type
+// ============================================================================
+
+export interface DuringWorkoutHydrationInput {
+  durationMin: number;
+  weightKg: number;
+  sweatRateCategory: string;
+  sweatSodiumCat: string;
+  tempC: number | null;
+  humidityPct: number | null;
+  isIndoor: boolean;
+  sport: string; // 'running' | 'cycling' | 'swimming'
+  knownSweatRateMlPerHour: number | null;
+  knownSodiumConcMgPerL: number | null;
+}
+
+export interface DuringWorkoutHydrationResult {
   sodium_rate_mgph: number;
   hydration_rate_mlph: number;
   sodium_total_mg: number;
   hydration_total_ml: number;
   sweat_rate_lph: number;
   sodium_conc_mg_per_l: number;
-} {
-  const actualSweatRateLph = calculateActualSweatRate(
+  // New derivation fields
+  effective_sweat_rate_lph: number;
+  replacement_pct: number;
+  floor_ml_hr: number;
+  ceiling_ml_hr: number;
+  safety_flags: string[];
+  is_tested: boolean;
+  is_tested_sodium: boolean;
+  // Transparency breakdown (for step-numbered calc UI)
+  base_sweat_rate_lph: number;
+  temp_mult: number;
+  humidity_mult: number;
+  indoor_mult: number;
+  replacement_band: string;
+}
+
+const GI_CEILING: Record<string, number> = {
+  running: 800,
+  cycling: 1200,
+  swimming: 0, // cannot drink while swimming
+};
+
+function getDuringGiCeiling(sport: string): number {
+  return GI_CEILING[sport.toLowerCase()] ?? 800;
+}
+
+/**
+ * Calculate during-workout hydration targets.
+ *
+ * Implements spec algorithm:
+ * - Duration-scaled replacement %
+ * - Short-workout gate (duration < 60 && temp < 30)
+ * - 2% BW floor
+ * - GI ceiling (min(sport GI, 100% sweat rate))
+ * - Sodium derived from fluid × concentration
+ */
+export function calculateDuringWorkoutHydration(
+  input: DuringWorkoutHydrationInput,
+): DuringWorkoutHydrationResult {
+  const {
+    durationMin,
+    weightKg,
+    sweatRateCategory,
+    sweatSodiumCat,
+    tempC,
+    humidityPct,
+    isIndoor,
+    sport,
+    knownSweatRateMlPerHour,
+    knownSodiumConcMgPerL,
+  } = input;
+
+  const safety_flags: string[] = [];
+
+  // Pre-compute the breakdown so we can expose temp/humidity/indoor mults.
+  const breakdown = calculateSweatRateBreakdown(
     sweatRateCategory,
     tempC,
     humidityPct,
+    isIndoor,
+    knownSweatRateMlPerHour,
   );
-  const sodiumConcMgPerL = sodiumConcentrationFromCategory(sweatSodiumCat);
+
+  // Swim-only: no drinking possible
+  if (sport.toLowerCase() === "swimming") {
+    const sodiumConc = knownSodiumConcMgPerL ??
+      sodiumConcentrationFromCategory(sweatSodiumCat);
+    return {
+      sodium_rate_mgph: 0,
+      hydration_rate_mlph: 0,
+      sodium_total_mg: 0,
+      hydration_total_ml: 0,
+      sweat_rate_lph: breakdown.effective_lph,
+      sodium_conc_mg_per_l: sodiumConc,
+      effective_sweat_rate_lph: breakdown.effective_lph,
+      replacement_pct: 0,
+      floor_ml_hr: 0,
+      ceiling_ml_hr: 0,
+      safety_flags: [],
+      is_tested: knownSweatRateMlPerHour !== null,
+      is_tested_sodium: knownSodiumConcMgPerL !== null,
+      base_sweat_rate_lph: breakdown.base_lph,
+      temp_mult: breakdown.temp_mult,
+      humidity_mult: breakdown.humidity_mult,
+      indoor_mult: breakdown.indoor_mult,
+      replacement_band: replacementBandLabel(durationMin),
+    };
+  }
+
+  const durationH = durationMin / 60;
+
+  // Effective sweat rate
+  const effectiveSweatRateLph = breakdown.effective_lph;
+  const effectiveSweatRateMlph = effectiveSweatRateLph * 1000;
+
+  // Sodium concentration
+  const sodiumConcMgPerL = knownSodiumConcMgPerL ??
+    sodiumConcentrationFromCategory(sweatSodiumCat);
+
+  // GI ceiling for this sport
+  const giCeiling = getDuringGiCeiling(sport);
+  // Ceiling = min(sport GI, 100% sweat rate)
+  const ceilingMlHr = Math.round(Math.min(giCeiling, effectiveSweatRateMlph));
+
+  // Replacement % by total duration
+  const replacementPct = replacementPctForDuration(durationMin);
+
+  // Short-workout gate: duration < 60 AND temp < 30
+  const temp = tempC ?? 22;
+  const gateTriggered = durationMin < 60 && temp < 30;
+
+  if (gateTriggered) {
+    // Conservative: still compute 30%-based recommended, floor = 0
+    const recommended = Math.round(effectiveSweatRateMlph * replacementPct);
+    safety_flags.push(
+      "No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.",
+    );
+    const sodiumRate = Math.round((recommended / 1000) * sodiumConcMgPerL);
+    return {
+      sodium_rate_mgph: sodiumRate,
+      hydration_rate_mlph: recommended,
+      sodium_total_mg: Math.round(sodiumRate * durationH),
+      hydration_total_ml: Math.round(recommended * durationH),
+      sweat_rate_lph: effectiveSweatRateLph,
+      sodium_conc_mg_per_l: sodiumConcMgPerL,
+      effective_sweat_rate_lph: effectiveSweatRateLph,
+      replacement_pct: replacementPct,
+      floor_ml_hr: 0,
+      ceiling_ml_hr: ceilingMlHr,
+      safety_flags,
+      is_tested: knownSweatRateMlPerHour !== null,
+      is_tested_sodium: knownSodiumConcMgPerL !== null,
+      base_sweat_rate_lph: breakdown.base_lph,
+      temp_mult: breakdown.temp_mult,
+      humidity_mult: breakdown.humidity_mult,
+      indoor_mult: breakdown.indoor_mult,
+      replacement_band: replacementBandLabel(durationMin),
+    };
+  }
+
+  // Standard path:
+  // Total sweat loss over duration
+  const totalLossMl = effectiveSweatRateMlph * durationH;
+
+  // 2% BW floor
+  const maxDeficitMl = weightKg * 1000 * 0.02;
+  const rawFloorMlHr = (totalLossMl - maxDeficitMl) / durationH;
+  const floorMlHr = Math.max(0, Math.round(rawFloorMlHr));
+
+  // Pct-based recommendation
+  const pctBasedMlHr = Math.round(effectiveSweatRateMlph * replacementPct);
+
+  // Apply floor (raises target if needed)
+  let recommendedMlHr = Math.max(pctBasedMlHr, floorMlHr);
+
+  // Apply ceiling
+  if (ceilingMlHr < floorMlHr) {
+    // Ceiling < floor: impossible to stay within 2% BW
+    safety_flags.push("Even at maximum intake, you will exceed 2% BW loss.");
+  }
+
+  recommendedMlHr = Math.min(recommendedMlHr, ceilingMlHr);
+
+  // Safety check: realized deficit
+  const totalIntakeMl = recommendedMlHr * durationH;
+  const netDeficitMl = totalLossMl - totalIntakeMl;
+  if (weightKg > 0) {
+    const deficitPct = netDeficitMl / (weightKg * 1000);
+    if (deficitPct > 0.03) {
+      const deficitPctStr = (deficitPct * 100).toFixed(1);
+      safety_flags.push(
+        `Significant dehydration expected (>${deficitPctStr}% BW).`,
+      );
+    }
+  }
+
   const sodiumRateMgph = Math.round(
-    actualSweatRateLph * sodiumConcMgPerL * 0.6,
+    (recommendedMlHr / 1000) * sodiumConcMgPerL,
   );
-  const hydrationRateMlph = Math.round(actualSweatRateLph * 1000 * 0.75);
 
   return {
     sodium_rate_mgph: sodiumRateMgph,
-    hydration_rate_mlph: hydrationRateMlph,
+    hydration_rate_mlph: recommendedMlHr,
     sodium_total_mg: Math.round(sodiumRateMgph * durationH),
-    hydration_total_ml: Math.round(hydrationRateMlph * durationH),
-    sweat_rate_lph: Math.round(actualSweatRateLph * 100) / 100,
+    hydration_total_ml: Math.round(recommendedMlHr * durationH),
+    sweat_rate_lph: effectiveSweatRateLph,
     sodium_conc_mg_per_l: sodiumConcMgPerL,
+    effective_sweat_rate_lph: effectiveSweatRateLph,
+    replacement_pct: replacementPct,
+    floor_ml_hr: floorMlHr,
+    ceiling_ml_hr: ceilingMlHr,
+    safety_flags,
+    is_tested: knownSweatRateMlPerHour !== null,
+    is_tested_sodium: knownSodiumConcMgPerL !== null,
+    base_sweat_rate_lph: breakdown.base_lph,
+    temp_mult: breakdown.temp_mult,
+    humidity_mult: breakdown.humidity_mult,
+    indoor_mult: breakdown.indoor_mult,
+    replacement_band: replacementBandLabel(durationMin),
   };
 }
 
@@ -307,12 +509,17 @@ export function getIntensityDistribution(
 // DATABASE QUERY
 // ============================================================================
 
-export async function loadPreWorkoutTemplates(): Promise<{
+export async function loadPreWorkoutTemplates(
+  // Optional client injection for unit tests — production path uses
+  // createServiceClient() when no client is provided.
+  // deno-lint-ignore no-explicit-any
+  clientOverride?: any,
+): Promise<{
   food: PreWorkoutTemplate[];
   drink: PreWorkoutTemplate[];
   electrolyte: PreWorkoutTemplate[];
 }> {
-  const supabase = createServiceClient();
+  const supabase = clientOverride ?? createServiceClient();
 
   const [foodResult, drinkResult, electrolyteResult] = await Promise.all([
     supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
@@ -423,15 +630,32 @@ export interface MacroInputV4 {
   segment_order?: string[];
   gut_training: string;
   sweat_rate_category: string;
-  sweat_sodium: string;
-  drink_sodium_mg_per_l?: number;
-  optional_sweat_rate_lph?: number;
+  sweat_sodium: string; // 'low' | 'average' | 'high' (or legacy 'medium' = alias for 'average')
+  drink_sodium_mg_per_l?: number; // kept in schema but not consumed by new algorithm
+  optional_sweat_rate_lph?: number; // legacy field, use known_sweat_rate_ml_hr instead
   temp_c?: number | null;
   humidity_pct?: number | null;
+  is_indoor?: boolean; // new: indoor training flag (1.30× indoor multiplier)
+  known_sweat_rate_ml_hr?: number | null; // new: known sweat rate from sweat test (ml/hr)
+  known_sodium_concentration_mg_l?: number | null; // new: known sodium concentration from test (mg/L)
   overrides?: NutritionOverrides;
   liked_foods?: string[];
   disliked_foods?: string[];
   allergies?: string[];
+  /**
+   * Device identifier used to look up the user's active formula pins from
+   * `formula_pins`. Optional — when absent, byte-identical pre-pin behavior
+   * (no pin override). See `_shared/nutrition/pins.ts`. Formula Kit PR 2
+   * substep 5b-followup (2026-05-22).
+   */
+  device_id?: string;
+  /**
+   * Client opt-in for the ephemeral default-formula safety net on the before
+   * phase. When true, an unpinned before phase tags its selected system
+   * formula as an ephemeral pin (formula-first flip). Old clients omit it →
+   * byte-identical pre-safety-net behavior. 2026-07-03 (plan Phase 2 #5).
+   */
+  emit_ephemeral_default_formula?: boolean;
 }
 
 /**
@@ -468,6 +692,17 @@ export async function calculateMacrosV4(
     drink: PreWorkoutTemplate[];
     electrolyte: PreWorkoutTemplate[];
   },
+  /**
+   * Set of pre_workout_template ids the user has actively pinned. When
+   * supplied + non-empty + a pin's `time_window` matches a sub-phase,
+   * candidate selection is overridden for that phase (see substep 5a in
+   * `pre-workout.ts`). Optional — empty/undefined yields byte-identical
+   * pre-pin behavior.
+   */
+  beforePinIds?: Set<string>,
+  /** When true, tag an unpinned before phase's selected system formula as an
+   * ephemeral default-formula pin (formula-first flip, plan Phase 2 #5). */
+  emitEphemeralDefault = false,
 ) {
   const weightKg = toKg(input.weight, input.weight_unit);
   const activityType = input.activity_type || "running";
@@ -527,12 +762,28 @@ export async function calculateMacrosV4(
   );
 
   // === PRE-WORKOUT (V4 — Algorithm C) ===
-  const preTargets = calculatePreWorkoutTargets(
+  const preTargetsLegacy = calculatePreWorkoutTargets(
     weightKg,
     input.hours_before,
     input.is_fasted,
-    input.sweat_sodium,
+    input.sweat_sodium ?? "average",
     envLabel,
+  );
+
+  // Spec-compliant pre-workout hydration (time-tier algorithm). Overlaid on
+  // top of the legacy targets so carbs/protein/fat still drive food selection.
+  // NOTE: applied regardless of is_fasted — fasted only affects carbs/protein/
+  // fat, not fluid/sodium. The spec's pre-workout gate is duration < 60 AND
+  // temp < 30, not fasted status.
+  const preHydration = calculatePreWorkoutHydration({
+    bodyWeightKg: weightKg,
+    workoutDurationMin: durationMin,
+    timeBeforeWorkoutMin: input.hours_before * 60,
+    tempC: input.temp_c ?? null,
+  });
+  const preTargets = applyPreWorkoutHydrationOverlay(
+    preTargetsLegacy,
+    preHydration,
   );
 
   const preSelections = selectPreWorkoutFoods(
@@ -545,6 +796,8 @@ export async function calculateMacrosV4(
     input.liked_foods ?? [],
     input.disliked_foods ?? [],
     input.allergies ?? [],
+    beforePinIds,
+    emitEphemeralDefault,
   );
 
   // === DURING-WORKOUT (V3 unchanged) ===
@@ -554,13 +807,18 @@ export async function calculateMacrosV4(
     input.gut_training,
     intensityDist,
   );
-  const duringHydration = calculateDuringWorkoutHydration(
-    durationH,
-    input.sweat_rate_category,
-    input.sweat_sodium,
-    input.temp_c ?? null,
-    input.humidity_pct ?? null,
-  );
+  const duringHydration = calculateDuringWorkoutHydration({
+    durationMin,
+    weightKg,
+    sweatRateCategory: input.sweat_rate_category ?? "medium",
+    sweatSodiumCat: input.sweat_sodium ?? "average",
+    tempC: input.temp_c ?? null,
+    humidityPct: input.humidity_pct ?? null,
+    isIndoor: input.is_indoor ?? false,
+    sport: activityType,
+    knownSweatRateMlPerHour: input.known_sweat_rate_ml_hr ?? null,
+    knownSodiumConcMgPerL: input.known_sodium_concentration_mg_l ?? null,
+  });
   const isSwimmingSession = activityType === "swimming";
 
   // === POST-WORKOUT (V3 unchanged) ===
@@ -711,6 +969,11 @@ export async function calculateMacrosV4(
     pre_run_water_high_ml: preWaterHigh,
     pre_run_meal_type: preTargets.meal_type,
 
+    // Pre-workout hydration transparency (spec time-tier algorithm)
+    pre_run_hydration_tier: preHydration.tier,
+    pre_run_hydration_gate_triggered: preHydration.gate_triggered,
+    pre_run_hydration_message: preHydration.message,
+
     // Pre-workout food selections (V4 new)
     pre_run_selections: preSelections,
 
@@ -754,10 +1017,26 @@ export async function calculateMacrosV4(
     post_run_water_low_ml: postWaterLow,
     post_run_water_high_ml: postWaterHigh,
 
-    // Hydration details
+    // Hydration details (extended)
     sweat_rate_lph: duringHydration.sweat_rate_lph,
     sodium_conc_mg_per_l: duringHydration.sodium_conc_mg_per_l,
     environment_label: envLabel,
     environment_multiplier: envMultiplier,
+    // Derivation transparency fields
+    effective_sweat_rate_lph: duringHydration.effective_sweat_rate_lph,
+    replacement_pct: duringHydration.replacement_pct,
+    replacement_band: duringHydration.replacement_band,
+    floor_ml_hr: duringHydration.floor_ml_hr,
+    ceiling_ml_hr: duringHydration.ceiling_ml_hr,
+    base_sweat_rate_lph: duringHydration.base_sweat_rate_lph,
+    temp_mult: duringHydration.temp_mult,
+    humidity_mult: duringHydration.humidity_mult,
+    indoor_mult: duringHydration.indoor_mult,
+    safety_flags: duringHydration.safety_flags,
+    is_tested: duringHydration.is_tested,
+    is_tested_sodium: duringHydration.is_tested_sodium,
+    temp_c: input.temp_c ?? null,
+    humidity_pct: input.humidity_pct ?? null,
+    is_indoor: input.is_indoor ?? false,
   };
 }

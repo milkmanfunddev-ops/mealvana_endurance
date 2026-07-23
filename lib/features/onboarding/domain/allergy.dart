@@ -131,6 +131,16 @@ enum Allergy {
     return '{${allergies.map((a) => a.dbValue).join(',')}}';
   }
 
+  /// Convert list of allergies to a plain JSON array of dbValue strings.
+  ///
+  /// Use this when sending to Supabase (column `users.allergies` is
+  /// `allergy_enum[]`). PostgREST cannot cast a JSON string like `"{dairy}"`
+  /// into an enum array — it needs a real JSON array `["dairy"]`. The
+  /// PG-literal `toDbArray` form is correct for local Drift writes only.
+  static List<String> toJsonList(List<Allergy> allergies) {
+    return allergies.map((a) => a.dbValue).toList();
+  }
+
   /// All values for UI display
   static List<Allergy> get allValues => Allergy.values;
 }

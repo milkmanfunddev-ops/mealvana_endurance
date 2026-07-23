@@ -8,10 +8,7 @@ import '../../../theme/kyle_design/app_spacing.dart';
 /// Styled as an outlined orange button. Always rendered by parent
 /// when the search query is non-empty.
 class SearchOpenFoodFactsButton extends StatelessWidget {
-  const SearchOpenFoodFactsButton({
-    super.key,
-    required this.onPressed,
-  });
+  const SearchOpenFoodFactsButton({super.key, required this.onPressed});
 
   /// Callback when button is pressed
   final VoidCallback onPressed;
@@ -26,18 +23,13 @@ class SearchOpenFoodFactsButton extends StatelessWidget {
             onPressed: onPressed,
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.orange,
-              side: BorderSide(
-                color: AppColors.orange.withValues(alpha: 0.3),
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 14,
-              ),
+              side: BorderSide(color: AppColors.orange.withValues(alpha: 0.3)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(26),
               ),
             ),
-            icon: const Icon(
+            icon: const FaIcon(
               FontAwesomeIcons.magnifyingGlass,
               size: AppIconSizes.sm,
             ),

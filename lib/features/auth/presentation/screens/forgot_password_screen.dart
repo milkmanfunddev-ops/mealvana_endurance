@@ -116,7 +116,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     defaultValue: 'you@example.com',
                   ),
                   prefixIcon: Icon(
-                    FontAwesomeIcons.envelope,
+                    FontAwesomeIcons.envelope.data,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

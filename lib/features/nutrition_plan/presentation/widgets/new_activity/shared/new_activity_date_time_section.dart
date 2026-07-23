@@ -10,7 +10,9 @@ import '../../../../../../theme/kyle_design/app_text_styles.dart';
 /// - Side-by-side DATE and TIME labels with values
 /// - Formatted date: "Nov 9, 2025"
 /// - Formatted time: "12:00 pm"
-/// - Edit link with icon that triggers date/time picker
+/// - Tap the date or time value directly to edit (unified with Activity
+///   Details' tap-the-value pattern). A small pencil glyph beside each value
+///   is the only affordance — there is no separate "Edit" link anymore.
 class NewActivityDateTimeSection extends StatelessWidget {
   const NewActivityDateTimeSection({
     super.key,
@@ -27,85 +29,73 @@ class NewActivityDateTimeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Date and Time side-by-side
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // DATE section
-            Column(
-              children: [
-                Text(
-                  'DATE',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _formatDate(selectedDate),
-                  style: AppTextStyles.dataNumber.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+    // Date and Time side-by-side. FittedBox scales the pair down so a long
+    // date string never overflows a narrow phone.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        key: const ValueKey('activity_create.datetime_labels'),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildTappableColumn(
+            label: 'DATE',
+            value: _formatDate(selectedDate),
+            valueKey: const ValueKey('activity_create.datetime_display'),
+            columnKey: const ValueKey('activity_create.edit_datetime_button'),
+          ),
+          const SizedBox(width: AppSpacing.xxl),
+          _buildTappableColumn(label: 'TIME', value: _formatTime(selectedTime)),
+        ],
+      ),
+    );
+  }
+
+  /// A DATE/TIME column that is itself the tap target for editing. A small
+  /// pencil glyph beside the value is the subtle "this is tappable"
+  /// affordance — replaces the old separate "Edit" link.
+  Widget _buildTappableColumn({
+    required String label,
+    required String value,
+    Key? valueKey,
+    Key? columnKey,
+  }) {
+    final color = isDark ? AppColors.cream : AppColors.blackberry;
+    return GestureDetector(
+      key: columnKey,
+      onTap: onEditTapped,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.smallLabel.copyWith(
+              color: color,
+              fontSize: 12,
             ),
-
-            const SizedBox(width: AppSpacing.xxl),
-
-            // TIME section
-            Column(
-              children: [
-                Text(
-                  'TIME',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _formatTime(selectedTime),
-                  style: AppTextStyles.dataNumber.copyWith(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        // Edit link (centered)
-        GestureDetector(
-          onTap: onEditTapped,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                FontAwesomeIcons.penToSquare,
-                size: 14,
-                color: AppColors.dragonfruit,
-              ),
-              const SizedBox(width: AppSpacing.xs),
               Text(
-                'Edit',
-                style: AppTextStyles.smallLabel.copyWith(
-                  color: AppColors.dragonfruit,
+                key: valueKey,
+                value,
+                style: AppTextStyles.dataNumber.copyWith(
+                  color: color,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              const SizedBox(width: 4),
+              FaIcon(
+                FontAwesomeIcons.penToSquare,
+                size: 11,
+                color: color.withValues(alpha: 0.45),
+              ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -123,7 +113,7 @@ class NewActivityDateTimeSection extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     final monthName = months[date.month - 1];
     return '$monthName ${date.day}, ${date.year}';

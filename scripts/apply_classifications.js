@@ -38,7 +38,14 @@ const BATCH_SIZE = 50;
 // ---------------------------------------------------------------------------
 
 async function supabasePatch(shopifyProductId, updates) {
-  const url = `${SUPABASE_URL}/rest/v1/catalog_products?shopify_product_id=eq.${encodeURIComponent(shopifyProductId)}`;
+  let url = `${SUPABASE_URL}/rest/v1/catalog_products?shopify_product_id=eq.${encodeURIComponent(shopifyProductId)}`;
+  // Refresh-routine mode: with ONLY_UNCLASSIFIED=1, only classify products that
+  // are not already classified — so existing (e.g. 'claude') classifications are
+  // never overwritten by the heuristic 'auto' pass. (PATCH matching 0 rows is a
+  // safe no-op.)
+  if (process.env.ONLY_UNCLASSIFIED === "1") {
+    url += "&classification_source=is.null";
+  }
 
   const res = await fetch(url, {
     method: "PATCH",

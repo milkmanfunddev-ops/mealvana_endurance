@@ -30,7 +30,6 @@ class _SecondaryButtonState extends State<SecondaryButton> {
 
   @override
   Widget build(BuildContext context) {
-    
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
@@ -40,14 +39,11 @@ class _SecondaryButtonState extends State<SecondaryButton> {
         width: widget.width ?? 280.w,
         height: widget.height ?? 56.h,
         decoration: BoxDecoration(
-          color: _isPressed 
+          color: _isPressed
               ? AppTheme.highlight490.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(28.r),
-          border: Border.all(
-            color: AppTheme.highlight490,
-            width: 1,
-          ),
+          border: Border.all(color: AppTheme.highlight490, width: 1),
         ),
         child: Material(
           color: Colors.transparent,
@@ -71,10 +67,7 @@ class _SecondaryButtonState extends State<SecondaryButton> {
             ),
           ),
         ),
-      ).animate().scale(
-        duration: 150.ms,
-        curve: Curves.easeInOut,
-      ),
+      ).animate().scale(duration: 150.ms, curve: Curves.easeInOut),
     );
   }
 }

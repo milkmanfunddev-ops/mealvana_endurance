@@ -7,10 +7,7 @@ import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.
 
 /// Reusable carb loading day card widget with swipe-to-delete functionality.
 class CarbLoadingDayCard extends ConsumerWidget {
-  const CarbLoadingDayCard({
-    super.key,
-    required this.carbDay,
-  });
+  const CarbLoadingDayCard({super.key, required this.carbDay});
 
   final db.CarbLoadingDay carbDay;
 
@@ -19,7 +16,9 @@ class CarbLoadingDayCard extends ConsumerWidget {
     final dayNumber = carbDay.dayNumber;
     final targetCarbs = carbDay.carbTargetGrams;
     final loggedCarbs = carbDay.loggedCarbsGrams;
-    final progress = targetCarbs > 0 ? (loggedCarbs / targetCarbs).clamp(0.0, 1.0) : 0.0;
+    final progress = targetCarbs > 0
+        ? (loggedCarbs / targetCarbs).clamp(0.0, 1.0)
+        : 0.0;
     final isCompleted = carbDay.completed;
 
     return Dismissible(
@@ -33,11 +32,7 @@ class CarbLoadingDayCard extends ConsumerWidget {
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-          size: 32,
-        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 32),
       ),
       confirmDismiss: (direction) => _confirmDelete(context, dayNumber),
       onDismissed: (direction) => _handleDelete(context, ref, dayNumber),
@@ -47,10 +42,7 @@ class CarbLoadingDayCard extends ConsumerWidget {
           onTap: () => _handleTap(context),
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(
-                color: const Color(0xFFFF9800),
-                width: 2,
-              ),
+              border: Border.all(color: const Color(0xFFFF9800), width: 2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Padding(
@@ -60,7 +52,13 @@ class CarbLoadingDayCard extends ConsumerWidget {
                   _buildIcon(),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildDetails(context, dayNumber, targetCarbs, loggedCarbs, progress),
+                    child: _buildDetails(
+                      context,
+                      dayNumber,
+                      targetCarbs,
+                      loggedCarbs,
+                      progress,
+                    ),
                   ),
                   _buildStatusIndicator(isCompleted),
                 ],
@@ -103,9 +101,9 @@ class CarbLoadingDayCard extends ConsumerWidget {
             Flexible(
               child: Text(
                 'Carb Loading Day $dayNumber',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -130,9 +128,9 @@ class CarbLoadingDayCard extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           'Target: ${targetCarbs}g carbs',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
         ),
         if (loggedCarbs > 0) ...[
           const SizedBox(height: 8),
@@ -154,9 +152,9 @@ class CarbLoadingDayCard extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 '${loggedCarbs}g',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -169,7 +167,9 @@ class CarbLoadingDayCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: isCompleted ? Colors.green.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+        color: isCompleted
+            ? Colors.green.withValues(alpha: 0.2)
+            : Colors.grey.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -186,7 +186,9 @@ class CarbLoadingDayCard extends ConsumerWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Carb Loading Day'),
-          content: Text('Are you sure you want to delete "Carb Loading Day $dayNumber"?'),
+          content: Text(
+            'Are you sure you want to delete "Carb Loading Day $dayNumber"?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -206,18 +208,21 @@ class CarbLoadingDayCard extends ConsumerWidget {
   void _handleDelete(BuildContext context, WidgetRef ref, int dayNumber) {
     final carbDayId = carbDay.id;
 
-    final carbLoadingController = ref.read(carbLoadingControllerProvider.notifier);
+    final carbLoadingController = ref.read(
+      carbLoadingControllerProvider.notifier,
+    );
     carbLoadingController.deleteCarbLoadingDay(carbDayId);
 
-    MealvanaSnackbar.showSuccess(context, 'Deleted "Carb Loading Day $dayNumber"');
+    MealvanaSnackbar.showSuccess(
+      context,
+      'Deleted "Carb Loading Day $dayNumber"',
+    );
   }
 
   void _handleTap(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => CarbLoadingDayDetailPage(
-          carbLoadingDay: carbDay,
-        ),
+        builder: (context) => CarbLoadingDayDetailPage(carbLoadingDay: carbDay),
       ),
     );
   }

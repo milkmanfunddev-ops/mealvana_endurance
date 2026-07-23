@@ -3,13 +3,16 @@
  * Extracted from index.ts so tests can import without triggering serve()
  */
 
-import type { DailyMacroInput, DailyMacroOutput, WeekMacroInput } from './types.ts';
-import { calculateRMR } from './formulas/rmr.ts';
+import type {
+  DailyMacroInput,
+  DailyMacroOutput,
+  MacroSources,
+  SessionSources,
+  WeekMacroInput,
+} from './types.ts';
 import {
   zoneDistributionToIF,
-  sessionCost,
   carbDemand,
-  processSession,
 } from './formulas/session.ts';
 import {
   baselineMacros,
@@ -25,7 +28,6 @@ import {
 import {
   inferVolumeTier,
   getDayModifier,
-  calculateNEAT,
   calculateTDEE,
 } from './formulas/neat-tef.ts';
 import {
@@ -35,8 +37,15 @@ import {
   multiSessionCarbCompound,
   carbCycleAdjust,
 } from './formulas/safety.ts';
+import {
+  resolveAthleteProfile,
+  resolveRMR,
+  resolveNEAT,
+  resolveSessionData,
+  type ResolvedSessionData,
+} from './formulas/resolve.ts';
 
-export const ALGORITHM_VERSION = 'v4.0.0';
+export const ALGORITHM_VERSION = 'v5.0.0';
 
 /**
  * Validate input data
@@ -132,9 +141,7 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   const {
     sex,
     age,
-    weight_kg,
     height_cm,
-    body_fat_pct,
     lifestyle,
     typical_weekly_hours,
     carb_cycle_opt_in,
@@ -148,6 +155,35 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     weekly_hours_ratio,
     mode,
   } = input;
+
+  // Auto-promote prospective → retrospective when Garmin data is present.
+  // Prospective plans are forecasts; the moment we have Garmin's measured
+  // session/daily kcal, we should be using it rather than formulas. Callers can
+  // pass mode='prospective' explicitly without having to also know to flip it
+  // when Garmin data shows up — the pipeline figures it out from the input.
+  const hasGarminActivity = (input.garmin_activities ?? []).some(
+    (a) => a != null && (a.activeKilocalories ?? 0) > 0,
+  );
+  const hasGarminDaily =
+    (input.garmin_daily?.activeKilocalories ?? 0) > 0;
+  const effectiveMode =
+    mode === 'retrospective' || hasGarminActivity || hasGarminDaily
+      ? 'retrospective'
+      : (mode ?? 'prospective');
+
+  // Resolve weight + body fat % — Garmin body comp wins when newer than user's
+  // last manual entry (latest-wins precedence). Falls back to input fields when
+  // no Garmin data is present.
+  const resolved = resolveAthleteProfile(
+    input.garmin_body_comp ?? null,
+    input.weight_kg,
+    input.body_fat_pct ?? null,
+    Math.floor(Date.now() / 1000),
+    input.user_weight_updated_at_seconds ?? null,
+    input.user_body_fat_updated_at_seconds ?? null,
+  );
+  const weight_kg = resolved.weight_kg;
+  const body_fat_pct = resolved.body_fat_pct;
 
   // Calculate LBM if body fat % available
   const lbm_kg =
@@ -187,7 +223,22 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
 
   // ====================================================================
   // STEP 2: Today's sessions (with compounding for multi-session)
+  //
+  // Per-session resolution: when Garmin (or TP, future) data is present we
+  // override formula kcal/duration. Resolved values are also used to populate
+  // the `sources` block returned to the client.
   // ====================================================================
+
+  const garmin_activities = input.garmin_activities ?? null;
+  const resolved_sessions: ResolvedSessionData[] = sessions.map((session, i) =>
+    resolveSessionData(
+      session,
+      weight_kg,
+      effectiveMode,
+      garmin_activities?.[i] ?? null,
+      null, // tp_session — not yet wired
+    ),
+  );
 
   let total_session_kcal = 0;
   let session_carb_add = 0;
@@ -199,14 +250,13 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     prot_bump = 0;
   } else if (sessions.length === 1) {
     // Single session: standard logic from Iteration 1
-    const session = sessions[0];
-    const result = processSession(session, weight_kg);
-
-    total_session_kcal = result.session_kcal;
-    session_carb_add = result.session_carb;
+    const r = resolved_sessions[0];
+    total_session_kcal = r.session_kcal;
+    session_carb_add = Math.round(r.session_carb);
     prot_bump = calculateProteinBump(sessions, weight_kg);
   } else {
-    // Multi-session: use compounding
+    // Multi-session: carb-compounding stays formula-driven (carb demand is
+    // intensity-driven, not energy-driven, so Garmin kcal doesn't affect it).
     const compound = multiSessionCarbCompound(
       sessions,
       weight_kg,
@@ -217,10 +267,9 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     session_carb_add = compound.session_carb;
     prot_bump = compound.prot_bump;
 
-    // Calculate total session kcal
-    for (const session of sessions) {
-      const result = processSession(session, weight_kg);
-      total_session_kcal += result.session_kcal;
+    // Total kcal sums resolved values — Garmin overrides flow through here.
+    for (const r of resolved_sessions) {
+      total_session_kcal += r.session_kcal;
     }
   }
 
@@ -275,17 +324,36 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   // STEP 8: Dynamic NEAT + iterative TEF → TDEE + fat
   // ====================================================================
 
-  const rmr = calculateRMR(weight_kg, height_cm, age, sex, body_fat_pct);
+  // RMR: use Garmin daily BMR when present (positive number), else formula.
+  // Predicate: input.garmin_daily?.bmrKilocalories != null &&
+  //            input.garmin_daily.bmrKilocalories > 0
+  const resolvedRMR = resolveRMR(input.garmin_daily ?? null, {
+    weight_kg,
+    height_cm,
+    age,
+    sex,
+    body_fat_pct,
+  });
+  const rmr = resolvedRMR.rmr;
 
   const volume = inferVolumeTier(typical_weekly_hours);
   const day_info = getDayModifier(sessions, yesterday_tss);
 
-  const neat = calculateNEAT(
+  // NEAT: use Garmin daily activeKilocalories − session kcal when:
+  //   - mode is 'retrospective', AND
+  //   - input.garmin_daily?.activeKilocalories != null &&
+  //     input.garmin_daily.activeKilocalories > 0
+  // Otherwise use the formula-derived NEAT.
+  const resolvedNEAT = resolveNEAT(
+    effectiveMode,
+    input.garmin_daily ?? null,
+    total_session_kcal,
     rmr,
     volume.base_neat,
     day_info.modifier,
     lifestyle,
   );
+  const neat = resolvedNEAT.neat_kcal;
 
   const tdee_result = calculateTDEE(
     rmr,
@@ -298,7 +366,7 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
 
   let fat = tdee_result.fat_g;
   let tdee = tdee_result.tdee;
-  const tef = tdee_result.tef;
+  let tef = tdee_result.tef;
 
   // ====================================================================
   // STEP 9: EA Safety Check + Override
@@ -314,9 +382,40 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   let ea_status = ea_check.status;
   let ea_value = ea_check.ea;
 
+  // Fat is normally clamped to 1.5 g/kg by calculateTDEE so race-day TDEE
+  // doesn't translate into absurd 5+ g/kg fat targets (issue #6). On extreme
+  // single-day session loads, that clamp can drop intake far enough below TDEE
+  // to push EA into BLOCK. In that case, relax the fat ceiling just enough to
+  // keep EA at the floor (20 kcal/kg FFM) — physiologically the body covers
+  // the gap from glycogen + body fat anyway, and we'd rather warn than refuse.
   if (ea_check.status === 'BLOCK') {
+    // Target a small buffer above the BLOCK threshold so int rounding can't
+    // dip the result back below 20.
+    const target_ea = 20.5;
+    const min_intake_for_safety = target_ea * ffm_kg + total_session_kcal;
+    const intake_deficit = min_intake_for_safety - intake;
+    if (intake_deficit > 0) {
+      const additional_fat = intake_deficit / 9;
+      fat = Math.ceil(fat + additional_fat);
+      const recomputed_intake = carb * 4 + prot * 4 + fat * 9;
+      tef = Math.round(recomputed_intake * 0.10);
+      tdee = Math.round(rmr + neat + tef + total_session_kcal);
+      const recheck = checkEnergyAvailability(
+        recomputed_intake,
+        total_session_kcal,
+        ffm_kg,
+      );
+      ea_value = recheck.ea;
+      ea_status = recheck.status;
+      console.log(
+        `[FAT-RELAX] EA was BLOCK; relaxed fat ceiling: fat=${fat}g, EA=${ea_value.toFixed(1)} (${ea_status})`,
+      );
+    }
+  }
+
+  if (ea_status === 'BLOCK') {
     throw new Error(
-      `Energy Availability too low (${ea_check.ea.toFixed(1)} kcal/kg FFM). Cannot generate plan. Please increase intake or reduce exercise volume.`,
+      `Energy Availability too low (${ea_value.toFixed(1)} kcal/kg FFM). Cannot generate plan. Please increase intake or reduce exercise volume.`,
     );
   }
 
@@ -361,25 +460,68 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   // RETURN
   // ====================================================================
 
+  const session_sources: SessionSources[] = resolved_sessions.map((r) => ({
+    session_kcal: r.kcal_source,
+    intensity_factor: r.if_source,
+    tss: r.tss_source,
+    duration: r.duration_source,
+  }));
+
+  const sources: MacroSources = {
+    rmr: resolvedRMR.source,
+    neat: resolvedNEAT.source,
+    weight: resolved.weight_source,
+    body_fat: resolved.body_fat_source,
+    sessions: session_sources,
+  };
+
+  const carb_g = Math.round(carb);
+  const prot_g = Math.round(prot);
+  const fat_g = Math.round(fat);
+  const session_kcal = Math.round(total_session_kcal);
+
+  // Delta vs prior prospective plan — only emitted when we just recomputed
+  // retrospectively and the caller passed in the prospective baseline. The
+  // contract is asymmetric on purpose: prospective recomputes never emit
+  // delta even if a prior plan is passed in (a forecast diffing another
+  // forecast isn't useful — we only diff against measured truth).
+  const prior = input.prospective_plan;
+  const delta =
+    effectiveMode === 'retrospective' && prior
+      ? {
+          carb_g: carb_g - prior.carb_g,
+          prot_g: prot_g - prior.prot_g,
+          fat_g: fat_g - prior.fat_g,
+          tdee: tdee - prior.tdee,
+          session_kcal: session_kcal - prior.session_kcal,
+        }
+      : undefined;
+
   return {
-    carb_g: Math.round(carb),
-    prot_g: Math.round(prot),
-    fat_g: Math.round(fat),
+    carb_g,
+    prot_g,
+    fat_g,
     tdee: tdee,
     rmr: Math.round(rmr),
-    session_kcal: Math.round(total_session_kcal),
+    session_kcal,
     neat_kcal: Math.round(neat),
     tef_kcal: tef,
-    mode: mode ?? 'prospective',
+    mode: effectiveMode,
     ea: parseFloat(ea_value.toFixed(1)),
     ea_status: ea_status,
     algorithm_version: ALGORITHM_VERSION,
+    weight_kg: parseFloat(weight_kg.toFixed(2)),
+    body_fat_pct: body_fat_pct,
+    sources,
+    ...(delta !== undefined && { delta }),
   };
 }
 
 /**
  * Calculate macros for an entire week in a single call.
  * Merges shared profile fields with each day's sessions/context.
+ * Per-day Garmin context (garmin_body_comp, garmin_daily) flows through from
+ * each WeekDayInput when present — populated server-side by attachGarminContext.
  */
 export function calculateWeekMacros(input: WeekMacroInput): DailyMacroOutput[] {
   return input.days.map((day) => {
@@ -394,6 +536,9 @@ export function calculateWeekMacros(input: WeekMacroInput): DailyMacroOutput[] {
       carb_cycle_opt_in: input.carb_cycle_opt_in,
       training_phase: input.training_phase,
       mode: input.mode,
+      // Shared user timestamps (used by resolveAthleteProfile)
+      user_weight_updated_at_seconds: input.user_weight_updated_at_seconds,
+      user_body_fat_updated_at_seconds: input.user_body_fat_updated_at_seconds,
       ...day,
     };
     return calculateDailyMacros(dayInput);

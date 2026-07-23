@@ -6,9 +6,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:sentry_drift/sentry_drift.dart';
 
-/// Native platforms (iOS/Android) connection using SQLite file
-LazyDatabase openNativeConnection() {
+/// Native platforms (iOS/Android) connection using SQLite file.
+/// Wrapped with [SentryQueryInterceptor] to add Sentry performance spans for
+/// database operations (queries, transactions, batches).
+QueryExecutor openNativeConnection() {
   return LazyDatabase(() async {
     // Put the database file in the documents directory
     final dbFolder = await getApplicationDocumentsDirectory();
@@ -30,7 +33,7 @@ LazyDatabase openNativeConnection() {
     final db = NativeDatabase.createInBackground(file);
 
     return db;
-  });
+  }).interceptWith(SentryQueryInterceptor(databaseName: 'mealvana_endurance'));
 }
 
 /// Create in-memory native database for testing

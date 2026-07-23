@@ -23,7 +23,8 @@ class UserFoodsTable extends Table {
 
   /// Display names (matches Supabase user_foods.display_name and display_name_plural)
   TextColumn get displayName => text().nullable().named('display_name')();
-  TextColumn get displayNamePlural => text().nullable().named('display_name_plural')();
+  TextColumn get displayNamePlural =>
+      text().nullable().named('display_name_plural')();
 
   /// Description (matches Supabase user_foods.description)
   TextColumn get description => text().nullable()();
@@ -37,12 +38,16 @@ class UserFoodsTable extends Table {
   TextColumn get servingSize => text().nullable().named('serving_size')();
 
   /// Nutritional values per serving (matches Supabase user_foods)
-  IntColumn get caloriesPerServing => integer().nullable().named('calories_per_serving')();
-  RealColumn get carbsPerServing => real().nullable().named('carbs_per_serving')();
-  RealColumn get proteinPerServing => real().nullable().named('protein_per_serving')();
+  IntColumn get caloriesPerServing =>
+      integer().nullable().named('calories_per_serving')();
+  RealColumn get carbsPerServing =>
+      real().nullable().named('carbs_per_serving')();
+  RealColumn get proteinPerServing =>
+      real().nullable().named('protein_per_serving')();
   RealColumn get fatPerServing => real().nullable().named('fat_per_serving')();
   IntColumn get sodiumMg => integer().nullable().named('sodium_mg')();
-  RealColumn get fluidMlPerServing => real().nullable().named('fluid_ml_per_serving')();
+  RealColumn get fluidMlPerServing =>
+      real().nullable().named('fluid_ml_per_serving')();
 
   /// Product type reference (matches Supabase user_foods.product_type_id)
   TextColumn get productTypeId => text().nullable().named('product_type_id')();
@@ -55,18 +60,27 @@ class UserFoodsTable extends Table {
   TextColumn get activityTypes => text().nullable().named('activity_types')();
 
   /// Flags (matches Supabase user_foods)
-  BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false)).named('is_electrolyte')();
-  BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false)).named('is_deleted')();
+  BoolColumn get isElectrolyte =>
+      boolean().withDefault(const Constant(false)).named('is_electrolyte')();
+  BoolColumn get toExcludeFromSolver => boolean()
+      .withDefault(const Constant(false))
+      .named('to_exclude_from_solver')();
+  BoolColumn get isDeleted =>
+      boolean().withDefault(const Constant(false)).named('is_deleted')();
 
   /// Timestamps (matches Supabase user_foods)
-  DateTimeColumn get createdAt => dateTime().clientDefault(() => DateTime.now()).named('created_at')();
-  DateTimeColumn get updatedAt => dateTime().clientDefault(() => DateTime.now()).named('updated_at')();
-  DateTimeColumn get clientUpdatedAt => dateTime().nullable().named('client_updated_at')();
+  DateTimeColumn get createdAt =>
+      dateTime().clientDefault(() => DateTime.now()).named('created_at')();
+  DateTimeColumn get updatedAt =>
+      dateTime().clientDefault(() => DateTime.now()).named('updated_at')();
+  DateTimeColumn get clientUpdatedAt =>
+      dateTime().nullable().named('client_updated_at')();
 
   /// Sync tracking columns
-  BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
-  DateTimeColumn get localUpdatedAt => dateTime().nullable().named('local_updated_at')();
+  BoolColumn get needsUpload =>
+      boolean().withDefault(const Constant(false)).named('needs_upload')();
+  DateTimeColumn get localUpdatedAt =>
+      dateTime().nullable().named('local_updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -75,7 +89,5 @@ class UserFoodsTable extends Table {
   String get tableName => 'user_foods';
 
   @override
-  List<String> get customConstraints => [
-    'UNIQUE (device_id, client_food_id)',
-  ];
+  List<String> get customConstraints => ['UNIQUE (device_id, client_food_id)'];
 }

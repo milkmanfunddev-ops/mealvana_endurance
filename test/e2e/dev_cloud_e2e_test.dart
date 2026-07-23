@@ -4,7 +4,8 @@
 /// IMPORTANT: These tests run against the actual dev Supabase instance
 /// and make real network calls. They should be run sparingly.
 ///
-/// Run with: flutter test test/e2e/dev_cloud_e2e_test.dart
+/// Run with: flutter test test/e2e/dev_cloud_e2e_test.dart --tags e2e
+@Tags(['e2e'])
 library;
 
 import 'dart:convert';
@@ -34,10 +35,10 @@ class SupabaseTestClient {
   String? get userId => _userId;
 
   Map<String, String> get headers => {
-        'Content-Type': 'application/json',
-        'apikey': DevCloudConfig.supabaseAnonKey,
-        if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
-      };
+    'Content-Type': 'application/json',
+    'apikey': DevCloudConfig.supabaseAnonKey,
+    if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+  };
 
   /// Sign in anonymously and get an access token
   /// Uses the GoTrue API: POST /signup with empty body creates anonymous user
@@ -61,11 +62,13 @@ class SupabaseTestClient {
 
       if (_accessToken == null) {
         throw Exception(
-            'Anonymous signup succeeded but no access_token returned: ${response.body}');
+          'Anonymous signup succeeded but no access_token returned: ${response.body}',
+        );
       }
     } else {
       throw Exception(
-          'Failed to sign in anonymously: ${response.statusCode} ${response.body}');
+        'Failed to sign in anonymously: ${response.statusCode} ${response.body}',
+      );
     }
   }
 
@@ -93,9 +96,9 @@ class SupabaseTestClient {
     String table, {
     Map<String, String>? queryParams,
   }) async {
-    final uri = Uri.parse('${DevCloudConfig.restUrl}/$table').replace(
-      queryParameters: queryParams,
-    );
+    final uri = Uri.parse(
+      '${DevCloudConfig.restUrl}/$table',
+    ).replace(queryParameters: queryParams);
 
     return http.get(uri, headers: headers);
   }
@@ -126,14 +129,85 @@ Map<String, double> sumFoodMacros(List<dynamic> foods) {
 }
 
 /// Assert a macro value falls within percentage range of target
-void assertMacroInRange(double actual, double target, double minPct, double maxPct, String label) {
+void assertMacroInRange(
+  double actual,
+  double target,
+  double minPct,
+  double maxPct,
+  String label,
+) {
   if (target <= 0) return;
   final low = target * minPct;
   final high = target * maxPct;
-  expect(actual, greaterThanOrEqualTo(low),
-    reason: '$label: ${actual.toStringAsFixed(1)} < ${low.toStringAsFixed(1)} (${(actual/target*100).toStringAsFixed(0)}% of target $target)');
-  expect(actual, lessThanOrEqualTo(high),
-    reason: '$label: ${actual.toStringAsFixed(1)} > ${high.toStringAsFixed(1)} (${(actual/target*100).toStringAsFixed(0)}% of target $target)');
+  expect(
+    actual,
+    greaterThanOrEqualTo(low),
+    reason:
+        '$label: ${actual.toStringAsFixed(1)} < ${low.toStringAsFixed(1)} (${(actual / target * 100).toStringAsFixed(0)}% of target $target)',
+  );
+  expect(
+    actual,
+    lessThanOrEqualTo(high),
+    reason:
+        '$label: ${actual.toStringAsFixed(1)} > ${high.toStringAsFixed(1)} (${(actual / target * 100).toStringAsFixed(0)}% of target $target)',
+  );
+}
+
+/// Shortfall lists from the v3 plan response. The engine's honest-shortfall
+/// contract: when the food pool cannot reach a macro target it MUST declare
+/// `{macro, delivered, target, unit, reason}` (during: `plan.during.shortfalls`,
+/// after: `plan.after_shortfalls`).
+List<dynamic> getDuringShortfalls(Map<String, dynamic> plan) {
+  final during = plan['during'] as Map<String, dynamic>?;
+  return (during?['shortfalls'] as List?) ?? const [];
+}
+
+List<dynamic> getAfterShortfalls(Map<String, dynamic> plan) {
+  return (plan['after_shortfalls'] as List?) ?? const [];
+}
+
+/// Enforces the honest-shortfall contract instead of a blind macro floor:
+/// - No declared carb shortfall -> delivered must be within [90%, 110%] of
+///   target (the old strict assertion).
+/// - Declared carb shortfall -> the declaration must be honest: delivered in
+///   the response body must match the declared `delivered` (within 5% or 1g),
+///   and must never exceed 110% of target.
+/// A plan that silently under-delivers (no declaration) still fails — that is
+/// a real engine bug, not an acceptable shortfall.
+void assertCarbsMeetTargetOrDeclaredShortfall(
+  double actual,
+  double target,
+  List<dynamic> shortfalls,
+  String label,
+) {
+  if (target <= 0) return;
+  Map<String, dynamic>? carbShortfall;
+  for (final s in shortfalls) {
+    if (s is Map<String, dynamic> && s['macro'] == 'carbs') {
+      carbShortfall = s;
+      break;
+    }
+  }
+  if (carbShortfall == null) {
+    assertMacroInRange(actual, target, 0.9, 1.1, label);
+    return;
+  }
+  final declared = (carbShortfall['delivered'] as num).toDouble();
+  final tolerance = declared * 0.05 < 1.0 ? 1.0 : declared * 0.05;
+  expect(
+    actual,
+    closeTo(declared, tolerance),
+    reason:
+        '$label: response foods sum to ${actual.toStringAsFixed(1)}g but the '
+        'declared shortfall says delivered=${declared.toStringAsFixed(1)}g — '
+        'the shortfall declaration is dishonest',
+  );
+  expect(
+    actual,
+    lessThanOrEqualTo(target * 1.1),
+    reason:
+        '$label: ${actual.toStringAsFixed(1)} exceeds 110% of target $target',
+  );
 }
 
 /// Extract before-phase foods from plan response
@@ -230,10 +304,7 @@ void main() {
 
       final response = await client.invokeFunction(
         'get-foods',
-        body: {
-          'category': null,
-          'generic_only': false,
-        },
+        body: {'category': null, 'generic_only': false},
       );
 
       logTestResult('status_code', response.statusCode);
@@ -293,6 +364,9 @@ void main() {
         'run_pace_unit': 'min_per_mile',
         'gut_training': 'moderate',
         'activity_type': 'running',
+        // v4 rejects requests without the pre-workout window fields.
+        'hours_before': 2.0,
+        'is_fasted': false,
       };
 
       logTestSetup(requestData);
@@ -300,7 +374,7 @@ void main() {
       logSection('Calling generate-macros edge function');
 
       final response = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: requestData,
       );
 
@@ -354,6 +428,9 @@ void main() {
         'run_pace_unit': 'min_per_mile',
         'gut_training': 'high',
         'activity_type': 'running',
+        // v4 rejects requests without the pre-workout window fields.
+        'hours_before': 2.0,
+        'is_fasted': false,
       };
 
       logTestSetup({
@@ -364,7 +441,7 @@ void main() {
       });
 
       final response = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: requestData,
       );
 
@@ -383,8 +460,10 @@ void main() {
         // For high gut training, expect 45-90g carbs/hour (range based on duration)
         logAssertion(
           'Carbs/hour in expected range for high gut training',
-          passed: carbsPerHour != null && carbsPerHour >= 45 && carbsPerHour <= 90,
-          reason: 'High gut training should allow 45-90g carbs/hour for 2h activity',
+          passed:
+              carbsPerHour != null && carbsPerHour >= 45 && carbsPerHour <= 90,
+          reason:
+              'High gut training should allow 45-90g carbs/hour for 2h activity',
         );
 
         if (carbsPerHour != null) {
@@ -412,7 +491,7 @@ void main() {
 
       // Test low gut training
       final lowResponse = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: {...baseRequest, 'gut_training': 'low'},
       );
       final lowData = jsonDecode(lowResponse.body) as Map<String, dynamic>;
@@ -421,7 +500,7 @@ void main() {
 
       // Test high gut training
       final highResponse = await client.invokeFunction(
-        'generate-macros',
+        'generate-macros-v4',
         body: {...baseRequest, 'gut_training': 'high'},
       );
       final highData = jsonDecode(highResponse.body) as Map<String, dynamic>;
@@ -433,7 +512,8 @@ void main() {
 
       logAssertion(
         'High gut training allows more carbs',
-        passed: highCarbsPerHour != null &&
+        passed:
+            highCarbsPerHour != null &&
             lowCarbsPerHour != null &&
             highCarbsPerHour > lowCarbsPerHour,
         reason: 'Higher gut training should allow more carbs/hour',
@@ -451,10 +531,7 @@ void main() {
     test('can search for public events', () async {
       logTestHeading('E2E - Search Public Events');
 
-      final requestData = {
-        'query': 'marathon',
-        'limit': 5,
-      };
+      final requestData = {'query': 'marathon', 'limit': 5};
 
       logTestSetup(requestData);
 
@@ -483,8 +560,14 @@ void main() {
 
         if (events.isNotEmpty) {
           final firstEvent = events.first as Map<String, dynamic>;
-          logTestResult('sample_event_name', firstEvent['name'] ?? firstEvent['title']);
-          logTestResult('sample_event_date', firstEvent['date'] ?? firstEvent['start_date']);
+          logTestResult(
+            'sample_event_name',
+            firstEvent['name'] ?? firstEvent['title'],
+          );
+          logTestResult(
+            'sample_event_date',
+            firstEvent['date'] ?? firstEvent['start_date'],
+          );
         }
 
         logAssertion(
@@ -506,7 +589,9 @@ void main() {
       final requestData = {
         'latitude': 30.2672,
         'longitude': -97.7431,
-        'activity_date': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+        'activity_date': DateTime.now()
+            .add(const Duration(days: 1))
+            .toIso8601String(),
       };
 
       logTestSetup({
@@ -534,7 +619,10 @@ void main() {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-      logTestResult('has_temperature', data.containsKey('temperature') || data.containsKey('temp'));
+      logTestResult(
+        'has_temperature',
+        data.containsKey('temperature') || data.containsKey('temp'),
+      );
       logTestResult('has_humidity', data.containsKey('humidity'));
 
       if (data.containsKey('temperature')) {
@@ -552,525 +640,800 @@ void main() {
   });
 
   group('Edge Function - generate-nutrition-plan (LP Solver)', () {
-    test('can generate nutrition plan with macro validation', () async {
-      logTestHeading('E2E - Generate Nutrition Plan (LP Solver)');
+    test(
+      'can generate nutrition plan with macro validation',
+      () async {
+        logTestHeading('E2E - Generate Nutrition Plan (LP Solver)');
 
-      // The edge function expects device_id and macro_targets
-      // macro_targets has pre_run, during_run, post_run phases
-      final requestData = {
-        'device_id': client.userId ?? testDeviceId,
-        'activity_type': 'running',
-        'macro_targets': {
-          'pre_run': {
-            'carbs_g': 100,
-            'protein_g': 15,
-            'sodium_mg': 300,
-            'water_ml': 500,
+        // The edge function expects device_id and macro_targets
+        // macro_targets has pre_run, during_run, post_run phases
+        final requestData = {
+          'device_id': client.userId ?? testDeviceId,
+          'activity_type': 'running',
+          'macro_targets': {
+            'pre_run': {
+              'carbs_g': 100,
+              'protein_g': 15,
+              'sodium_mg': 300,
+              'water_ml': 500,
+            },
+            'during_run': {'carbs_g': 60, 'sodium_mg': 400, 'water_ml': 800},
+            'post_run': {
+              'carbs_g': 80,
+              'protein_g': 25,
+              'sodium_mg': 300,
+              'water_ml': 600,
+            },
           },
-          'during_run': {
-            'carbs_g': 60,
-            'sodium_mg': 400,
-            'water_ml': 800,
-          },
-          'post_run': {
-            'carbs_g': 80,
-            'protein_g': 25,
-            'sodium_mg': 300,
-            'water_ml': 600,
-          },
-        },
-        'liked_foods': ['Banana', 'Energy Gel', 'Sports Drink'],
-        'willing_to_try_foods': [],
-        'disliked_foods': ['Oatmeal'],
-      };
+          'liked_foods': ['Banana', 'Energy Gel', 'Sports Drink'],
+          'willing_to_try_foods': [],
+          'disliked_foods': ['Oatmeal'],
+        };
 
-      logTestSetup({
-        'activity_type': 'running',
-        'pre_run_carbs_g': 100,
-        'during_run_carbs_g': 60,
-        'post_run_carbs_g': 80,
-      });
+        logTestSetup({
+          'activity_type': 'running',
+          'pre_run_carbs_g': 100,
+          'during_run_carbs_g': 60,
+          'post_run_carbs_g': 80,
+        });
 
-      logSection('Calling generate-nutrition-plan edge function');
-      logTestResult('note', 'Uses LP solver for food selection');
+        logSection('Calling generate-nutrition-plan edge function');
+        logTestResult('note', 'Uses LP solver for food selection');
 
-      final stopwatch = Stopwatch()..start();
+        final stopwatch = Stopwatch()..start();
 
-      final response = await client.invokeFunction(
-        'generate-nutrition-plan',
-        body: requestData,
-      );
+        final response = await client.invokeFunction(
+          'generate-nutrition-plan-v3',
+          body: requestData,
+        );
 
-      stopwatch.stop();
+        stopwatch.stop();
 
-      logTestResult('status_code', response.statusCode);
-      logTestResult('response_time_ms', stopwatch.elapsedMilliseconds);
+        logTestResult('status_code', response.statusCode);
+        logTestResult('response_time_ms', stopwatch.elapsedMilliseconds);
 
-      // Accept 200 or 500 (may fail due to missing foods in dev database)
-      logAssertion(
-        'Edge function responds',
-        passed: response.statusCode == 200 || response.statusCode == 500 || response.statusCode == 400,
-        reason: 'Edge function should respond',
-      );
+        // Accept 200 or 500 (may fail due to missing foods in dev database)
+        logAssertion(
+          'Edge function responds',
+          passed:
+              response.statusCode == 200 ||
+              response.statusCode == 500 ||
+              response.statusCode == 400,
+          reason: 'Edge function should respond',
+        );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-        logTestResult('success', data['success']);
-        logTestResult('has_foods', data.containsKey('foods'));
+          logTestResult('success', data['success']);
+          logTestResult('has_foods', data.containsKey('foods'));
 
-        if (data['success'] == true) {
-          final foods = data['foods'] as Map<String, dynamic>?;
-          if (foods != null) {
-            logTestResult('has_before', foods.containsKey('before'));
-            logTestResult('has_during', foods.containsKey('during'));
-            logTestResult('has_after', foods.containsKey('after'));
+          if (data['success'] == true) {
+            final foods = data['foods'] as Map<String, dynamic>?;
+            if (foods != null) {
+              logTestResult('has_before', foods.containsKey('before'));
+              logTestResult('has_during', foods.containsKey('during'));
+              logTestResult('has_after', foods.containsKey('after'));
 
-            // Validate macros for each phase
-            final macroTargets = requestData['macro_targets'] as Map<String, dynamic>;
+              // Validate macros for each phase
+              final macroTargets =
+                  requestData['macro_targets'] as Map<String, dynamic>;
 
-            // Before phase validation
-            final beforeFoods = getBeforeFoods(foods);
-            if (beforeFoods.isNotEmpty) {
-              final beforeSums = sumFoodMacros(beforeFoods);
-              final preTargets = macroTargets['pre_run'] as Map<String, dynamic>;
+              // Before phase validation
+              final beforeFoods = getBeforeFoods(foods);
+              if (beforeFoods.isNotEmpty) {
+                final beforeSums = sumFoodMacros(beforeFoods);
+                final preTargets =
+                    macroTargets['pre_run'] as Map<String, dynamic>;
 
-              logSection('Before Phase Macro Validation');
-              logTestResult('before_carbs_actual', beforeSums['carbs']!.toStringAsFixed(1));
-              logTestResult('before_carbs_target', preTargets['carbs_g']);
+                logSection('Before Phase Macro Validation');
+                logTestResult(
+                  'before_carbs_actual',
+                  beforeSums['carbs']!.toStringAsFixed(1),
+                );
+                logTestResult('before_carbs_target', preTargets['carbs_g']);
 
-              assertMacroInRange(
-                beforeSums['carbs']!,
-                (preTargets['carbs_g'] as num).toDouble(),
-                0.9, 1.1,
-                'Before carbs'
-              );
-              assertMacroInRange(
-                beforeSums['protein']!,
-                (preTargets['protein_g'] as num).toDouble(),
-                0.9, 1.1,
-                'Before protein'
-              );
-              assertMacroInRange(
-                beforeSums['sodium']!,
-                (preTargets['sodium_mg'] as num).toDouble(),
-                0.85, 1.1,
-                'Before sodium'
-              );
-              assertMacroInRange(
-                beforeSums['water']!,
-                (preTargets['water_ml'] as num).toDouble(),
-                0.85, 1.1,
-                'Before water'
-              );
-            }
+                assertMacroInRange(
+                  beforeSums['carbs']!,
+                  (preTargets['carbs_g'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'Before carbs',
+                );
+                assertMacroInRange(
+                  beforeSums['protein']!,
+                  (preTargets['protein_g'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'Before protein',
+                );
+                assertMacroInRange(
+                  beforeSums['sodium']!,
+                  (preTargets['sodium_mg'] as num).toDouble(),
+                  0.85,
+                  1.1,
+                  'Before sodium',
+                );
+                assertMacroInRange(
+                  beforeSums['water']!,
+                  (preTargets['water_ml'] as num).toDouble(),
+                  0.85,
+                  1.1,
+                  'Before water',
+                );
+              }
 
-            // During phase validation
-            final duringFoods = getDuringFoods(foods);
-            if (duringFoods.isNotEmpty) {
-              final duringSums = sumFoodMacros(duringFoods);
-              final duringTargets = macroTargets['during_run'] as Map<String, dynamic>;
+              // During phase validation
+              final duringFoods = getDuringFoods(foods);
+              if (duringFoods.isNotEmpty) {
+                final duringSums = sumFoodMacros(duringFoods);
+                final duringTargets =
+                    macroTargets['during_run'] as Map<String, dynamic>;
 
-              logSection('During Phase Macro Validation');
-              logTestResult('during_carbs_actual', duringSums['carbs']!.toStringAsFixed(1));
-              logTestResult('during_carbs_target', duringTargets['carbs_g']);
+                logSection('During Phase Macro Validation');
+                logTestResult(
+                  'during_carbs_actual',
+                  duringSums['carbs']!.toStringAsFixed(1),
+                );
+                logTestResult('during_carbs_target', duringTargets['carbs_g']);
 
-              assertMacroInRange(
-                duringSums['carbs']!,
-                (duringTargets['carbs_g'] as num).toDouble(),
-                0.9, 1.1,
-                'During carbs'
-              );
-              assertMacroInRange(
-                duringSums['sodium']!,
-                (duringTargets['sodium_mg'] as num).toDouble(),
-                0.9, 1.1,
-                'During sodium'
-              );
-              assertMacroInRange(
-                duringSums['water']!,
-                (duringTargets['water_ml'] as num).toDouble(),
-                0.9, 1.1,
-                'During water'
-              );
-            }
+                assertMacroInRange(
+                  duringSums['carbs']!,
+                  (duringTargets['carbs_g'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'During carbs',
+                );
+                assertMacroInRange(
+                  duringSums['sodium']!,
+                  (duringTargets['sodium_mg'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'During sodium',
+                );
+                assertMacroInRange(
+                  duringSums['water']!,
+                  (duringTargets['water_ml'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'During water',
+                );
+              }
 
-            // After phase validation
-            final afterFoods = getAfterFoods(foods);
-            if (afterFoods.isNotEmpty) {
-              final afterSums = sumFoodMacros(afterFoods);
-              final postTargets = macroTargets['post_run'] as Map<String, dynamic>;
+              // After phase validation
+              final afterFoods = getAfterFoods(foods);
+              if (afterFoods.isNotEmpty) {
+                final afterSums = sumFoodMacros(afterFoods);
+                final postTargets =
+                    macroTargets['post_run'] as Map<String, dynamic>;
 
-              logSection('After Phase Macro Validation');
-              logTestResult('after_carbs_actual', afterSums['carbs']!.toStringAsFixed(1));
-              logTestResult('after_carbs_target', postTargets['carbs_g']);
+                logSection('After Phase Macro Validation');
+                logTestResult(
+                  'after_carbs_actual',
+                  afterSums['carbs']!.toStringAsFixed(1),
+                );
+                logTestResult('after_carbs_target', postTargets['carbs_g']);
 
-              assertMacroInRange(
-                afterSums['carbs']!,
-                (postTargets['carbs_g'] as num).toDouble(),
-                0.9, 1.1,
-                'After carbs'
-              );
-              assertMacroInRange(
-                afterSums['protein']!,
-                (postTargets['protein_g'] as num).toDouble(),
-                0.9, 1.1,
-                'After protein'
-              );
-              assertMacroInRange(
-                afterSums['sodium']!,
-                (postTargets['sodium_mg'] as num).toDouble(),
-                0.85, 1.1,
-                'After sodium'
-              );
-              assertMacroInRange(
-                afterSums['water']!,
-                (postTargets['water_ml'] as num).toDouble(),
-                0.85, 1.1,
-                'After water'
-              );
+                assertMacroInRange(
+                  afterSums['carbs']!,
+                  (postTargets['carbs_g'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'After carbs',
+                );
+                assertMacroInRange(
+                  afterSums['protein']!,
+                  (postTargets['protein_g'] as num).toDouble(),
+                  0.9,
+                  1.1,
+                  'After protein',
+                );
+                assertMacroInRange(
+                  afterSums['sodium']!,
+                  (postTargets['sodium_mg'] as num).toDouble(),
+                  0.85,
+                  1.1,
+                  'After sodium',
+                );
+                assertMacroInRange(
+                  afterSums['water']!,
+                  (postTargets['water_ml'] as num).toDouble(),
+                  0.85,
+                  1.1,
+                  'After water',
+                );
+              }
             }
           }
+        } else {
+          final bodyLen = response.body.length;
+          logTestResult(
+            'response_body',
+            response.body.substring(0, bodyLen > 200 ? 200 : bodyLen),
+          );
         }
-      } else {
-        final bodyLen = response.body.length;
-        logTestResult('response_body', response.body.substring(0, bodyLen > 200 ? 200 : bodyLen));
-      }
 
-      expect(response.statusCode, anyOf(equals(200), equals(500), equals(400)));
+        expect(
+          response.statusCode,
+          anyOf(equals(200), equals(500), equals(400)),
+        );
 
-      logTestPass('Generate nutrition plan edge function verified');
-    }, timeout: const Timeout(Duration(minutes: 2)));
+        logTestPass('Generate nutrition plan edge function verified');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
   });
 
   group('Edge Function - Strict Macro Validation', () {
-    test('strict macro validation - 50kg female 5K runner', () async {
-      logTestHeading('E2E - Strict Validation: 50kg Female 5K');
+    test(
+      'strict macro validation - 50kg female 5K runner',
+      () async {
+        logTestHeading('E2E - Strict Validation: 50kg Female 5K');
 
-      final profileData = {
-        'device_id': 'test-strict-e2e',
-        'weight': 50.0,
-        'weight_unit': 'kg',
-        'run_distance': 5.0,
-        'run_distance_unit': 'km',
-        'run_pace': 6.0,
-        'run_pace_unit': 'min_per_km',
-        'gut_training': 'low',
-        'activity_type': 'running',
-      };
+        final profileData = {
+          'device_id': 'test-strict-e2e',
+          'weight': 50.0,
+          'weight_unit': 'kg',
+          'run_distance': 5.0,
+          'run_distance_unit': 'km',
+          'run_pace': 6.0,
+          'run_pace_unit': 'min_per_km',
+          'gut_training': 'low',
+          'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
+        };
 
-      logTestSetup(profileData);
+        logTestSetup(profileData);
 
-      // 1. Get V4 macro targets
-      logSection('Step 1: Generate V4 Macros');
-      final v4Response = await client.invokeFunction('generate-macros-v4', body: profileData);
-      logTestResult('v4_status', v4Response.statusCode);
-      expect(v4Response.statusCode, equals(200));
+        // 1. Get V4 macro targets
+        logSection('Step 1: Generate V4 Macros');
+        final v4Response = await client.invokeFunction(
+          'generate-macros-v4',
+          body: profileData,
+        );
+        logTestResult('v4_status', v4Response.statusCode);
+        expect(v4Response.statusCode, equals(200));
 
-      final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
-      final v4Macros = v4Data['macros'] as Map<String, dynamic>;
+        final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
+        final v4Macros = v4Data['macros'] as Map<String, dynamic>;
 
-      logTestResult('v4_pre_run_carbs', v4Macros['pre_run_carbs_g']);
-      logTestResult('v4_during_carbs', v4Macros['during_total_g']);
-      logTestResult('v4_post_run_carbs', v4Macros['post_run_carbs_g']);
+        logTestResult('v4_pre_run_carbs', v4Macros['pre_run_carbs_g']);
+        logTestResult('v4_during_carbs', v4Macros['during_total_g']);
+        logTestResult('v4_post_run_carbs', v4Macros['post_run_carbs_g']);
 
-      // 2. Transform to V3 format
-      final macroTargets = transformV4ToV3Targets(v4Macros);
+        // 2. Transform to V3 format
+        final macroTargets = transformV4ToV3Targets(v4Macros);
 
-      // 3. Call V3 nutrition plan
-      logSection('Step 2: Generate V3 Nutrition Plan');
-      final v3Response = await client.invokeFunction('generate-nutrition-plan-v3', body: {
-        'device_id': 'test-strict-e2e',
-        'activity_type': 'running',
-        'macro_targets': macroTargets,
-        'liked_foods': <String>[],
-        'willing_to_try_foods': <String>[],
-        'disliked_foods': <String>[],
-      });
+        // 3. Call V3 nutrition plan
+        logSection('Step 2: Generate V3 Nutrition Plan');
+        final v3Response = await client.invokeFunction(
+          'generate-nutrition-plan-v3',
+          body: {
+            'device_id': 'test-strict-e2e',
+            'activity_type': 'running',
+            'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
+            'liked_foods': <String>[],
+            'willing_to_try_foods': <String>[],
+            'disliked_foods': <String>[],
+          },
+        );
 
-      logTestResult('v3_status', v3Response.statusCode);
-      expect(v3Response.statusCode, equals(200));
+        logTestResult('v3_status', v3Response.statusCode);
+        expect(v3Response.statusCode, equals(200));
 
-      final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
-      expect(planData['success'], isTrue);
-      final plan = planData['foods'] as Map<String, dynamic>;
+        final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
+        expect(planData['success'], isTrue);
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
-      // 4. Validate before phase
-      logSection('Step 3: Validate Macros');
-      if (!profileData.containsKey('is_fasted') || profileData['is_fasted'] != true) {
+        // 4. Validate before phase
+        logSection('Step 3: Validate Macros');
+        if (!profileData.containsKey('is_fasted') ||
+            profileData['is_fasted'] != true) {
+          final beforeFoods = getBeforeFoods(plan);
+          if (beforeFoods.isNotEmpty) {
+            final sums = sumFoodMacros(beforeFoods);
+            logTestResult(
+              'before_carbs_actual',
+              sums['carbs']!.toStringAsFixed(1),
+            );
+            assertMacroInRange(
+              sums['carbs']!,
+              (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+              0.9,
+              1.1,
+              'Before carbs',
+            );
+            assertMacroInRange(
+              sums['protein']!,
+              (v4Macros['pre_run_protein_g'] as num).toDouble(),
+              0.9,
+              1.1,
+              'Before protein',
+            );
+            assertMacroInRange(
+              sums['sodium']!,
+              (v4Macros['pre_run_sodium_mg'] as num).toDouble(),
+              0.85,
+              1.1,
+              'Before sodium',
+            );
+            assertMacroInRange(
+              sums['water']!,
+              (v4Macros['pre_run_water_ml'] as num).toDouble(),
+              0.85,
+              1.1,
+              'Before water',
+            );
+          }
+        }
+
+        // 5. Validate during phase
+        final duringFoods = getDuringFoods(plan);
+        if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
+          final sums = sumFoodMacros(duringFoods);
+          logTestResult(
+            'during_carbs_actual',
+            sums['carbs']!.toStringAsFixed(1),
+          );
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['during_total_g'] as num).toDouble(),
+            getDuringShortfalls(plan),
+            'During carbs',
+          );
+          assertMacroInRange(
+            sums['sodium']!,
+            (v4Macros['during_sodium_total_mg'] as num).toDouble(),
+            0.9,
+            1.1,
+            'During sodium',
+          );
+          assertMacroInRange(
+            sums['water']!,
+            (v4Macros['during_water_total_ml'] as num).toDouble(),
+            0.9,
+            1.1,
+            'During water',
+          );
+        }
+
+        // 6. Validate after phase
+        final afterFoods = getAfterFoods(plan);
+        if (afterFoods.isNotEmpty) {
+          final sums = sumFoodMacros(afterFoods);
+          logTestResult(
+            'after_carbs_actual',
+            sums['carbs']!.toStringAsFixed(1),
+          );
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['post_run_carbs_g'] as num).toDouble(),
+            getAfterShortfalls(plan),
+            'After carbs',
+          );
+          assertMacroInRange(
+            sums['protein']!,
+            (v4Macros['post_run_protein_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'After protein',
+          );
+          assertMacroInRange(
+            sums['sodium']!,
+            (v4Macros['post_run_sodium_mg'] as num).toDouble(),
+            0.85,
+            1.1,
+            'After sodium',
+          );
+          assertMacroInRange(
+            sums['water']!,
+            (v4Macros['post_run_water_ml'] as num).toDouble(),
+            0.85,
+            1.1,
+            'After water',
+          );
+        }
+
+        logTestPass('50kg female 5K validation complete');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+
+    test(
+      'strict macro validation - 70kg male 10mi runner',
+      () async {
+        logTestHeading('E2E - Strict Validation: 70kg Male 10mi');
+
+        final profileData = {
+          'device_id': 'test-strict-e2e',
+          'weight': 70.0,
+          'weight_unit': 'kg',
+          'run_distance': 10.0,
+          'run_distance_unit': 'mi',
+          'run_pace': 8.0,
+          'run_pace_unit': 'min_per_mile',
+          'gut_training': 'moderate',
+          'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
+        };
+
+        logTestSetup(profileData);
+
+        // 1. Get V4 macro targets
+        final v4Response = await client.invokeFunction(
+          'generate-macros-v4',
+          body: profileData,
+        );
+        expect(v4Response.statusCode, equals(200));
+        final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
+        final v4Macros = v4Data['macros'] as Map<String, dynamic>;
+
+        // 2. Transform to V3 format
+        final macroTargets = transformV4ToV3Targets(v4Macros);
+
+        // 3. Call V3 nutrition plan
+        final v3Response = await client.invokeFunction(
+          'generate-nutrition-plan-v3',
+          body: {
+            'device_id': 'test-strict-e2e',
+            'activity_type': 'running',
+            'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
+            'liked_foods': <String>[],
+            'willing_to_try_foods': <String>[],
+            'disliked_foods': <String>[],
+          },
+        );
+        expect(v3Response.statusCode, equals(200));
+        final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
+        expect(planData['success'], isTrue);
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
+
+        // 4-6. Validate all phases
         final beforeFoods = getBeforeFoods(plan);
         if (beforeFoods.isNotEmpty) {
           final sums = sumFoodMacros(beforeFoods);
-          logTestResult('before_carbs_actual', sums['carbs']!.toStringAsFixed(1));
-          assertMacroInRange(sums['carbs']!, (v4Macros['pre_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'Before carbs');
-          assertMacroInRange(sums['protein']!, (v4Macros['pre_run_protein_g'] as num).toDouble(), 0.9, 1.1, 'Before protein');
-          assertMacroInRange(sums['sodium']!, (v4Macros['pre_run_sodium_mg'] as num).toDouble(), 0.85, 1.1, 'Before sodium');
-          assertMacroInRange(sums['water']!, (v4Macros['pre_run_water_ml'] as num).toDouble(), 0.85, 1.1, 'Before water');
+          assertMacroInRange(
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'Before carbs',
+          );
+          assertMacroInRange(
+            sums['protein']!,
+            (v4Macros['pre_run_protein_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'Before protein',
+          );
         }
-      }
 
-      // 5. Validate during phase
-      final duringFoods = getDuringFoods(plan);
-      if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
-        final sums = sumFoodMacros(duringFoods);
-        logTestResult('during_carbs_actual', sums['carbs']!.toStringAsFixed(1));
-        assertMacroInRange(sums['carbs']!, (v4Macros['during_total_g'] as num).toDouble(), 0.9, 1.1, 'During carbs');
-        assertMacroInRange(sums['sodium']!, (v4Macros['during_sodium_total_mg'] as num).toDouble(), 0.9, 1.1, 'During sodium');
-        assertMacroInRange(sums['water']!, (v4Macros['during_water_total_ml'] as num).toDouble(), 0.9, 1.1, 'During water');
-      }
+        final duringFoods = getDuringFoods(plan);
+        if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
+          final sums = sumFoodMacros(duringFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['during_total_g'] as num).toDouble(),
+            getDuringShortfalls(plan),
+            'During carbs',
+          );
+          assertMacroInRange(
+            sums['sodium']!,
+            (v4Macros['during_sodium_total_mg'] as num).toDouble(),
+            0.9,
+            1.1,
+            'During sodium',
+          );
+        }
 
-      // 6. Validate after phase
-      final afterFoods = getAfterFoods(plan);
-      if (afterFoods.isNotEmpty) {
-        final sums = sumFoodMacros(afterFoods);
-        logTestResult('after_carbs_actual', sums['carbs']!.toStringAsFixed(1));
-        assertMacroInRange(sums['carbs']!, (v4Macros['post_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'After carbs');
-        assertMacroInRange(sums['protein']!, (v4Macros['post_run_protein_g'] as num).toDouble(), 0.9, 1.1, 'After protein');
-        assertMacroInRange(sums['sodium']!, (v4Macros['post_run_sodium_mg'] as num).toDouble(), 0.85, 1.1, 'After sodium');
-        assertMacroInRange(sums['water']!, (v4Macros['post_run_water_ml'] as num).toDouble(), 0.85, 1.1, 'After water');
-      }
+        final afterFoods = getAfterFoods(plan);
+        if (afterFoods.isNotEmpty) {
+          final sums = sumFoodMacros(afterFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['post_run_carbs_g'] as num).toDouble(),
+            getAfterShortfalls(plan),
+            'After carbs',
+          );
+          assertMacroInRange(
+            sums['protein']!,
+            (v4Macros['post_run_protein_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'After protein',
+          );
+        }
 
-      logTestPass('50kg female 5K validation complete');
-    }, timeout: const Timeout(Duration(minutes: 2)));
+        logTestPass('70kg male 10mi validation complete');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
 
-    test('strict macro validation - 70kg male 10mi runner', () async {
-      logTestHeading('E2E - Strict Validation: 70kg Male 10mi');
+    test(
+      'strict macro validation - 90kg male half marathon',
+      () async {
+        logTestHeading('E2E - Strict Validation: 90kg Male Half Marathon');
 
-      final profileData = {
-        'device_id': 'test-strict-e2e',
-        'weight': 70.0,
-        'weight_unit': 'kg',
-        'run_distance': 10.0,
-        'run_distance_unit': 'mi',
-        'run_pace': 8.0,
-        'run_pace_unit': 'min_per_mile',
-        'gut_training': 'moderate',
-        'activity_type': 'running',
-      };
+        final profileData = {
+          'device_id': 'test-strict-e2e',
+          'weight': 90.0,
+          'weight_unit': 'kg',
+          'run_distance': 13.1,
+          'run_distance_unit': 'mi',
+          'run_pace': 9.0,
+          'run_pace_unit': 'min_per_mile',
+          'gut_training': 'high',
+          'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
+        };
 
-      logTestSetup(profileData);
+        logTestSetup(profileData);
 
-      // 1. Get V4 macro targets
-      final v4Response = await client.invokeFunction('generate-macros-v4', body: profileData);
-      expect(v4Response.statusCode, equals(200));
-      final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
-      final v4Macros = v4Data['macros'] as Map<String, dynamic>;
+        final v4Response = await client.invokeFunction(
+          'generate-macros-v4',
+          body: profileData,
+        );
+        expect(v4Response.statusCode, equals(200));
+        final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
+        final v4Macros = v4Data['macros'] as Map<String, dynamic>;
 
-      // 2. Transform to V3 format
-      final macroTargets = transformV4ToV3Targets(v4Macros);
+        final macroTargets = transformV4ToV3Targets(v4Macros);
 
-      // 3. Call V3 nutrition plan
-      final v3Response = await client.invokeFunction('generate-nutrition-plan-v3', body: {
-        'device_id': 'test-strict-e2e',
-        'activity_type': 'running',
-        'macro_targets': macroTargets,
-        'liked_foods': <String>[],
-        'willing_to_try_foods': <String>[],
-        'disliked_foods': <String>[],
-      });
-      expect(v3Response.statusCode, equals(200));
-      final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
-      expect(planData['success'], isTrue);
-      final plan = planData['foods'] as Map<String, dynamic>;
+        final v3Response = await client.invokeFunction(
+          'generate-nutrition-plan-v3',
+          body: {
+            'device_id': 'test-strict-e2e',
+            'activity_type': 'running',
+            'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
+            'liked_foods': <String>[],
+            'willing_to_try_foods': <String>[],
+            'disliked_foods': <String>[],
+          },
+        );
+        expect(v3Response.statusCode, equals(200));
+        final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
+        expect(planData['success'], isTrue);
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
-      // 4-6. Validate all phases
-      final beforeFoods = getBeforeFoods(plan);
-      if (beforeFoods.isNotEmpty) {
-        final sums = sumFoodMacros(beforeFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['pre_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'Before carbs');
-        assertMacroInRange(sums['protein']!, (v4Macros['pre_run_protein_g'] as num).toDouble(), 0.9, 1.1, 'Before protein');
-      }
+        final beforeFoods = getBeforeFoods(plan);
+        if (beforeFoods.isNotEmpty) {
+          final sums = sumFoodMacros(beforeFoods);
+          assertMacroInRange(
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'Before carbs',
+          );
+        }
 
-      final duringFoods = getDuringFoods(plan);
-      if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
-        final sums = sumFoodMacros(duringFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['during_total_g'] as num).toDouble(), 0.9, 1.1, 'During carbs');
-        assertMacroInRange(sums['sodium']!, (v4Macros['during_sodium_total_mg'] as num).toDouble(), 0.9, 1.1, 'During sodium');
-      }
+        final duringFoods = getDuringFoods(plan);
+        if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
+          final sums = sumFoodMacros(duringFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['during_total_g'] as num).toDouble(),
+            getDuringShortfalls(plan),
+            'During carbs',
+          );
+        }
 
-      final afterFoods = getAfterFoods(plan);
-      if (afterFoods.isNotEmpty) {
-        final sums = sumFoodMacros(afterFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['post_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'After carbs');
-        assertMacroInRange(sums['protein']!, (v4Macros['post_run_protein_g'] as num).toDouble(), 0.9, 1.1, 'After protein');
-      }
+        final afterFoods = getAfterFoods(plan);
+        if (afterFoods.isNotEmpty) {
+          final sums = sumFoodMacros(afterFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['post_run_carbs_g'] as num).toDouble(),
+            getAfterShortfalls(plan),
+            'After carbs',
+          );
+        }
 
-      logTestPass('70kg male 10mi validation complete');
-    }, timeout: const Timeout(Duration(minutes: 2)));
+        logTestPass('90kg male half marathon validation complete');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
 
-    test('strict macro validation - 90kg male half marathon', () async {
-      logTestHeading('E2E - Strict Validation: 90kg Male Half Marathon');
+    test(
+      'strict macro validation - 65kg female marathon',
+      () async {
+        logTestHeading('E2E - Strict Validation: 65kg Female Marathon');
 
-      final profileData = {
-        'device_id': 'test-strict-e2e',
-        'weight': 90.0,
-        'weight_unit': 'kg',
-        'run_distance': 13.1,
-        'run_distance_unit': 'mi',
-        'run_pace': 9.0,
-        'run_pace_unit': 'min_per_mile',
-        'gut_training': 'high',
-        'activity_type': 'running',
-      };
+        final profileData = {
+          'device_id': 'test-strict-e2e',
+          'weight': 65.0,
+          'weight_unit': 'kg',
+          'run_distance': 26.2,
+          'run_distance_unit': 'mi',
+          'run_pace': 10.0,
+          'run_pace_unit': 'min_per_mile',
+          'gut_training': 'high',
+          'activity_type': 'running',
+          'hours_before': 2.0,
+          'is_fasted': false,
+        };
 
-      logTestSetup(profileData);
+        logTestSetup(profileData);
 
-      final v4Response = await client.invokeFunction('generate-macros-v4', body: profileData);
-      expect(v4Response.statusCode, equals(200));
-      final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
-      final v4Macros = v4Data['macros'] as Map<String, dynamic>;
+        final v4Response = await client.invokeFunction(
+          'generate-macros-v4',
+          body: profileData,
+        );
+        expect(v4Response.statusCode, equals(200));
+        final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
+        final v4Macros = v4Data['macros'] as Map<String, dynamic>;
 
-      final macroTargets = transformV4ToV3Targets(v4Macros);
+        final macroTargets = transformV4ToV3Targets(v4Macros);
 
-      final v3Response = await client.invokeFunction('generate-nutrition-plan-v3', body: {
-        'device_id': 'test-strict-e2e',
-        'activity_type': 'running',
-        'macro_targets': macroTargets,
-        'liked_foods': <String>[],
-        'willing_to_try_foods': <String>[],
-        'disliked_foods': <String>[],
-      });
-      expect(v3Response.statusCode, equals(200));
-      final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
-      expect(planData['success'], isTrue);
-      final plan = planData['foods'] as Map<String, dynamic>;
+        final v3Response = await client.invokeFunction(
+          'generate-nutrition-plan-v3',
+          body: {
+            'device_id': 'test-strict-e2e',
+            'activity_type': 'running',
+            'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
+            'liked_foods': <String>[],
+            'willing_to_try_foods': <String>[],
+            'disliked_foods': <String>[],
+          },
+        );
+        expect(v3Response.statusCode, equals(200));
+        final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
+        expect(planData['success'], isTrue);
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
-      final beforeFoods = getBeforeFoods(plan);
-      if (beforeFoods.isNotEmpty) {
-        final sums = sumFoodMacros(beforeFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['pre_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'Before carbs');
-      }
+        final beforeFoods = getBeforeFoods(plan);
+        if (beforeFoods.isNotEmpty) {
+          final sums = sumFoodMacros(beforeFoods);
+          assertMacroInRange(
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'Before carbs',
+          );
+        }
 
-      final duringFoods = getDuringFoods(plan);
-      if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
-        final sums = sumFoodMacros(duringFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['during_total_g'] as num).toDouble(), 0.9, 1.1, 'During carbs');
-      }
+        final duringFoods = getDuringFoods(plan);
+        if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
+          final sums = sumFoodMacros(duringFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['during_total_g'] as num).toDouble(),
+            getDuringShortfalls(plan),
+            'During carbs',
+          );
+        }
 
-      final afterFoods = getAfterFoods(plan);
-      if (afterFoods.isNotEmpty) {
-        final sums = sumFoodMacros(afterFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['post_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'After carbs');
-      }
+        final afterFoods = getAfterFoods(plan);
+        if (afterFoods.isNotEmpty) {
+          final sums = sumFoodMacros(afterFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['post_run_carbs_g'] as num).toDouble(),
+            getAfterShortfalls(plan),
+            'After carbs',
+          );
+        }
 
-      logTestPass('90kg male half marathon validation complete');
-    }, timeout: const Timeout(Duration(minutes: 2)));
+        logTestPass('65kg female marathon validation complete');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
 
-    test('strict macro validation - 65kg female marathon', () async {
-      logTestHeading('E2E - Strict Validation: 65kg Female Marathon');
+    test(
+      'strict macro validation - 80kg male cyclist 60mi',
+      () async {
+        logTestHeading('E2E - Strict Validation: 80kg Male Cyclist 60mi');
 
-      final profileData = {
-        'device_id': 'test-strict-e2e',
-        'weight': 65.0,
-        'weight_unit': 'kg',
-        'run_distance': 26.2,
-        'run_distance_unit': 'mi',
-        'run_pace': 10.0,
-        'run_pace_unit': 'min_per_mile',
-        'gut_training': 'high',
-        'activity_type': 'running',
-      };
+        final profileData = {
+          'device_id': 'test-strict-e2e',
+          'weight': 80.0,
+          'weight_unit': 'kg',
+          // The cycling branch of generate-macros-v4 validates distance_miles /
+          // speed_mph — the ride_distance / ride_pace names this test used are
+          // not part of the contract and always failed validation.
+          'distance_miles': 60.0,
+          'speed_mph': 18.0,
+          'gut_training': 'moderate',
+          'activity_type': 'cycling',
+          'hours_before': 2.0,
+          'is_fasted': false,
+        };
 
-      logTestSetup(profileData);
+        logTestSetup(profileData);
 
-      final v4Response = await client.invokeFunction('generate-macros-v4', body: profileData);
-      expect(v4Response.statusCode, equals(200));
-      final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
-      final v4Macros = v4Data['macros'] as Map<String, dynamic>;
+        final v4Response = await client.invokeFunction(
+          'generate-macros-v4',
+          body: profileData,
+        );
+        expect(v4Response.statusCode, equals(200));
+        final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
+        final v4Macros = v4Data['macros'] as Map<String, dynamic>;
 
-      final macroTargets = transformV4ToV3Targets(v4Macros);
+        final macroTargets = transformV4ToV3Targets(v4Macros);
 
-      final v3Response = await client.invokeFunction('generate-nutrition-plan-v3', body: {
-        'device_id': 'test-strict-e2e',
-        'activity_type': 'running',
-        'macro_targets': macroTargets,
-        'liked_foods': <String>[],
-        'willing_to_try_foods': <String>[],
-        'disliked_foods': <String>[],
-      });
-      expect(v3Response.statusCode, equals(200));
-      final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
-      expect(planData['success'], isTrue);
-      final plan = planData['foods'] as Map<String, dynamic>;
+        final v3Response = await client.invokeFunction(
+          'generate-nutrition-plan-v3',
+          body: {
+            'device_id': 'test-strict-e2e',
+            'activity_type': 'cycling',
+            'macro_targets': macroTargets,
+            // generate-nutrition-plan-v3 rejects a request without
+            // hours_before; duration_minutes drives the during-phase split.
+            'hours_before': 2.0,
+            'duration_minutes': (v4Macros['duration_min'] as num).toDouble(),
+            'liked_foods': <String>[],
+            'willing_to_try_foods': <String>[],
+            'disliked_foods': <String>[],
+          },
+        );
+        expect(v3Response.statusCode, equals(200));
+        final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
+        expect(planData['success'], isTrue);
+        // v3 returns the phases under `plan` (before/during/after), not `foods`.
+        final plan = planData['plan'] as Map<String, dynamic>;
 
-      final beforeFoods = getBeforeFoods(plan);
-      if (beforeFoods.isNotEmpty) {
-        final sums = sumFoodMacros(beforeFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['pre_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'Before carbs');
-      }
+        final beforeFoods = getBeforeFoods(plan);
+        if (beforeFoods.isNotEmpty) {
+          final sums = sumFoodMacros(beforeFoods);
+          assertMacroInRange(
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            0.9,
+            1.1,
+            'Before carbs',
+          );
+        }
 
-      final duringFoods = getDuringFoods(plan);
-      if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
-        final sums = sumFoodMacros(duringFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['during_total_g'] as num).toDouble(), 0.9, 1.1, 'During carbs');
-      }
+        final duringFoods = getDuringFoods(plan);
+        if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
+          final sums = sumFoodMacros(duringFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['during_total_g'] as num).toDouble(),
+            getDuringShortfalls(plan),
+            'During carbs',
+          );
+        }
 
-      final afterFoods = getAfterFoods(plan);
-      if (afterFoods.isNotEmpty) {
-        final sums = sumFoodMacros(afterFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['post_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'After carbs');
-      }
+        final afterFoods = getAfterFoods(plan);
+        if (afterFoods.isNotEmpty) {
+          final sums = sumFoodMacros(afterFoods);
+          assertCarbsMeetTargetOrDeclaredShortfall(
+            sums['carbs']!,
+            (v4Macros['post_run_carbs_g'] as num).toDouble(),
+            getAfterShortfalls(plan),
+            'After carbs',
+          );
+        }
 
-      logTestPass('65kg female marathon validation complete');
-    }, timeout: const Timeout(Duration(minutes: 2)));
-
-    test('strict macro validation - 80kg male cyclist 60mi', () async {
-      logTestHeading('E2E - Strict Validation: 80kg Male Cyclist 60mi');
-
-      final profileData = {
-        'device_id': 'test-strict-e2e',
-        'weight': 80.0,
-        'weight_unit': 'kg',
-        'ride_distance': 60.0,
-        'ride_distance_unit': 'mi',
-        'ride_pace': 18.0,
-        'ride_pace_unit': 'mph',
-        'gut_training': 'moderate',
-        'activity_type': 'cycling',
-      };
-
-      logTestSetup(profileData);
-
-      final v4Response = await client.invokeFunction('generate-macros-v4', body: profileData);
-      expect(v4Response.statusCode, equals(200));
-      final v4Data = jsonDecode(v4Response.body) as Map<String, dynamic>;
-      final v4Macros = v4Data['macros'] as Map<String, dynamic>;
-
-      final macroTargets = transformV4ToV3Targets(v4Macros);
-
-      final v3Response = await client.invokeFunction('generate-nutrition-plan-v3', body: {
-        'device_id': 'test-strict-e2e',
-        'activity_type': 'cycling',
-        'macro_targets': macroTargets,
-        'liked_foods': <String>[],
-        'willing_to_try_foods': <String>[],
-        'disliked_foods': <String>[],
-      });
-      expect(v3Response.statusCode, equals(200));
-      final planData = jsonDecode(v3Response.body) as Map<String, dynamic>;
-      expect(planData['success'], isTrue);
-      final plan = planData['foods'] as Map<String, dynamic>;
-
-      final beforeFoods = getBeforeFoods(plan);
-      if (beforeFoods.isNotEmpty) {
-        final sums = sumFoodMacros(beforeFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['pre_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'Before carbs');
-      }
-
-      final duringFoods = getDuringFoods(plan);
-      if (duringFoods.isNotEmpty && (v4Macros['during_total_g'] as num) > 0) {
-        final sums = sumFoodMacros(duringFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['during_total_g'] as num).toDouble(), 0.9, 1.1, 'During carbs');
-      }
-
-      final afterFoods = getAfterFoods(plan);
-      if (afterFoods.isNotEmpty) {
-        final sums = sumFoodMacros(afterFoods);
-        assertMacroInRange(sums['carbs']!, (v4Macros['post_run_carbs_g'] as num).toDouble(), 0.9, 1.1, 'After carbs');
-      }
-
-      logTestPass('80kg male cyclist 60mi validation complete');
-    }, timeout: const Timeout(Duration(minutes: 2)));
+        logTestPass('80kg male cyclist 60mi validation complete');
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
   });
 
   group('Edge Function Health Check', () {
@@ -1079,10 +1442,10 @@ void main() {
 
       final functions = [
         'get-foods',
-        'generate-macros',
+        'generate-macros-v4',
         'search-public-events',
         'get-weather-forecast',
-        'generate-nutrition-plan',
+        'generate-nutrition-plan-v3',
       ];
 
       final results = <String, int>{};
@@ -1104,7 +1467,9 @@ void main() {
       }
 
       // Count successful functions
-      final successCount = results.values.where((s) => s == 200 || s == 400).length;
+      final successCount = results.values
+          .where((s) => s == 200 || s == 400)
+          .length;
 
       logAssertion(
         'Most functions responding',

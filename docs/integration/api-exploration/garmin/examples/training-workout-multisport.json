@@ -1,0 +1,53 @@
+{
+  "ownerId": 12345,
+  "workoutName": "Brick",
+  "description": "Multisport bike-to-run workout",
+  "sport": "MULTI_SPORT",
+  "estimatedDurationInSecs": 1200,
+  "estimatedDistanceInMeters": 1400,
+  "poolLength": null,
+  "poolLengthUnit": null,
+  "workoutProvider": "example",
+  "workoutSourceId": "example",
+  "isSessionTransitionEnabled": true,
+  "segments": [
+    {
+      "segmentOrder": 1,
+      "sport": "CYCLING",
+      "poolLength": null,
+      "poolLengthUnit": null,
+      "estimatedDurationInSecs": 500,
+      "estimatedDistanceInMeters": 500,
+      "steps": [
+        {
+          "type": "WorkoutStep",
+          "stepOrder": 1,
+          "intensity": "ACTIVE",
+          "durationType": "DISTANCE",
+          "durationValue": 1000,
+          "durationValueType": "METER",
+          "targetType": "OPEN"
+        }
+      ]
+    },
+    {
+      "segmentOrder": 2,
+      "sport": "RUNNING",
+      "poolLength": null,
+      "poolLengthUnit": null,
+      "estimatedDurationInSecs": null,
+      "estimatedDistanceInMeters": null,
+      "steps": [
+        {
+          "type": "WorkoutStep",
+          "stepOrder": 2,
+          "intensity": "ACTIVE",
+          "durationType": "DISTANCE",
+          "durationValue": 1000,
+          "durationValueType": "METER",
+          "targetType": "OPEN"
+        }
+      ]
+    }
+  ]
+}

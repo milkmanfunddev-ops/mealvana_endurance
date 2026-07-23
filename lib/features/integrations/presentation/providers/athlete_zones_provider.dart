@@ -20,8 +20,13 @@ Future<AthleteZones?> athleteZones(Ref ref, String userId) async {
   final repository = ref.watch(integrationsRepositoryProvider);
 
   // Check Training Peaks integration first (primary source of zones)
-  final tpIntegration = await repository.getIntegration(userId, 'training_peaks');
-  if (tpIntegration != null && tpIntegration.isActive && tpIntegration.athleteZonesJson != null) {
+  final tpIntegration = await repository.getIntegration(
+    userId,
+    'training_peaks',
+  );
+  if (tpIntegration != null &&
+      tpIntegration.isActive &&
+      tpIntegration.athleteZonesJson != null) {
     return AthleteZones.fromJsonString(tpIntegration.athleteZonesJson);
   }
 

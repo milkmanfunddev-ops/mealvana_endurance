@@ -27,6 +27,7 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
     this.mode = ScreenMode.onboarding,
     this.onContinue,
     this.onBack,
+    this.stepIndex,
   });
 
   /// The screen mode determines visual style and navigation behavior
@@ -37,6 +38,11 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null in settings mode, where the
+  /// screen is not part of a funnel.
+  final int? stepIndex;
 
   @override
   ConsumerState<DietaryPreferenceScreen> createState() =>
@@ -62,7 +68,13 @@ class _DietaryPreferenceScreenState
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('screen_viewed', properties: {'screen_name': screenName});
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': screenName,
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -150,7 +162,7 @@ class _DietaryPreferenceScreenState
           ref.invalidate(settingsControllerProvider);
 
           MealvanaSnackbar.showSuccess(context, 'Dietary preference updated');
-          context.pop();
+          if (context.canPop()) context.pop();
         } else {
           MealvanaSnackbar.showError(
             context,
@@ -230,7 +242,11 @@ class _DietaryPreferenceScreenState
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: widget.onBack ?? () => context.pop(),
+                          onTap:
+                              widget.onBack ??
+                              () {
+                                if (context.canPop()) context.pop();
+                              },
                           child: Container(
                             width: 48,
                             height: 48,
@@ -272,6 +288,7 @@ class _DietaryPreferenceScreenState
                   // Title
                   const SizedBox(height: 24),
                   Text(
+                    key: const ValueKey('dietary_preference.title'),
                     'What is your dietary preference?',
                     style: const TextStyle(
                       fontFamily: 'Sansita',
@@ -294,12 +311,19 @@ class _DietaryPreferenceScreenState
           FigmaOnboardingFooter(
             onContinue: _continue,
             onBack: _isOnboarding
-                ? (widget.onBack ?? () => context.pop())
+                ? (widget.onBack ??
+                      () {
+                        if (context.canPop()) context.pop();
+                      })
                 : null,
             canContinue: true, // Always allow continue/skip
             isLoading: _isSaving,
             buttonText: _isSettings ? 'Save' : 'Continue',
             showBackButton: _isOnboarding,
+            continueButtonKey: const ValueKey(
+              'dietary_preference.continue_button',
+            ),
+            backButtonKey: const ValueKey('dietary_preference.back_button'),
           ),
         ],
       ),
@@ -312,7 +336,11 @@ class _DietaryPreferenceScreenState
     // Use ordered list with omnivore first, excluding 'none'
     return FigmaRadioOptionList<DietaryPreference>(
       items: DietaryPreference.orderedForOnboarding.map((diet) {
-        return FigmaRadioOptionItem(value: diet, label: diet.displayName);
+        return FigmaRadioOptionItem(
+          value: diet,
+          label: diet.displayName,
+          valueKey: ValueKey('dietary_preference.${diet.name}_chip'),
+        );
       }).toList(),
       selectedValue: _selectedPreference,
       onSelected: (value) => setState(() => _selectedPreference = value),

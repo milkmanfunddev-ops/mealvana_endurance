@@ -37,13 +37,13 @@ class CoachSyncHandler {
     required EventSyncHandler eventSyncHandler,
     required CarbLoadingSyncHandler carbLoadingSyncHandler,
     required UserSyncHandler userSyncHandler,
-  })  : _database = database,
-        _logger = logger,
-        _supabase = supabase,
-        _activitySyncHandler = activitySyncHandler,
-        _eventSyncHandler = eventSyncHandler,
-        _carbLoadingSyncHandler = carbLoadingSyncHandler,
-        _userSyncHandler = userSyncHandler;
+  }) : _database = database,
+       _logger = logger,
+       _supabase = supabase,
+       _activitySyncHandler = activitySyncHandler,
+       _eventSyncHandler = eventSyncHandler,
+       _carbLoadingSyncHandler = carbLoadingSyncHandler,
+       _userSyncHandler = userSyncHandler;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -147,7 +147,10 @@ class CoachSyncHandler {
             'has_last_name': profileData['last_name'] != null,
           },
         );
-        await _userSyncHandler.saveRemoteUserProfile(profileData, athleteUserId);
+        await _userSyncHandler.saveRemoteUserProfile(
+          profileData,
+          athleteUserId,
+        );
       } else {
         _logger.warning(
           'No profile data found for athlete $athleteUserId in Supabase',
@@ -164,7 +167,9 @@ class CoachSyncHandler {
         await _eventSyncHandler.syncAthleteEvents(eventsData);
       }
       if (carbLoadingData.isNotEmpty) {
-        await _carbLoadingSyncHandler.syncAthleteCarbLoadingPlans(carbLoadingData);
+        await _carbLoadingSyncHandler.syncAthleteCarbLoadingPlans(
+          carbLoadingData,
+        );
       }
 
       _logger.info(
@@ -204,7 +209,9 @@ class CoachSyncHandler {
         lastName: coachData['last_name'] as String,
         email: coachData['email'] as String,
         bio: Value(coachData['bio'] as String?),
-        applicationStatus: Value(coachData['application_status'] as String? ?? 'pending'),
+        applicationStatus: Value(
+          coachData['application_status'] as String? ?? 'pending',
+        ),
         reviewedBy: Value(coachData['reviewed_by'] as String?),
         reviewedAt: Value(
           coachData['reviewed_at'] != null
@@ -249,7 +256,9 @@ class CoachSyncHandler {
   }
 
   /// Sync coach-athlete relationships from edge function response.
-  Future<void> syncCoachAthleteRelationships(List<dynamic> relationships) async {
+  Future<void> syncCoachAthleteRelationships(
+    List<dynamic> relationships,
+  ) async {
     try {
       for (final r in relationships) {
         final data = r as Map<String, dynamic>;

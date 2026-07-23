@@ -57,7 +57,7 @@ class PreRunTimingSelector extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
         ],
-        
+
         Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
@@ -84,7 +84,11 @@ class PreRunTimingSelector extends StatelessWidget {
                 size: 24.w,
               ),
               items: timingOptions.map<DropdownMenuItem<int>>((int value) {
-                final description = value <= 60 ? 'Quick fuel' : value <= 120 ? 'Optimal' : 'Full meal';
+                final description = value <= 60
+                    ? 'Quick fuel'
+                    : value <= 120
+                    ? 'Optimal'
+                    : 'Full meal';
                 return DropdownMenuItem<int>(
                   value: value,
                   child: Text(
@@ -99,7 +103,7 @@ class PreRunTimingSelector extends StatelessWidget {
             ),
           ),
         ),
-        
+
         SizedBox(height: 8.h),
         Text(
           _getTimingDescription(selectedMinutes),
@@ -146,11 +150,7 @@ class CompactPreRunTimingSelector extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.schedule,
-            color: AppTheme.primary900,
-            size: 16.w,
-          ),
+          Icon(Icons.schedule, color: AppTheme.primary900, size: 16.w),
           SizedBox(width: 6.w),
           DropdownButtonHideUnderline(
             child: DropdownButton<int>(
@@ -170,18 +170,20 @@ class CompactPreRunTimingSelector extends StatelessWidget {
                 color: AppTheme.primary900,
                 size: 20.w,
               ),
-              items: PreRunTimingSelector.timingOptions.map<DropdownMenuItem<int>>((int value) {
-                return DropdownMenuItem<int>(
-                  value: value,
-                  child: Text(
-                    PreRunTimingSelector.formatTiming(value),
-                    style: AppTheme.textStyle.copyWith(
-                      fontSize: 14.sp,
-                      color: AppTheme.primary900,
-                    ),
-                  ),
-                );
-              }).toList(),
+              items: PreRunTimingSelector.timingOptions
+                  .map<DropdownMenuItem<int>>((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text(
+                        PreRunTimingSelector.formatTiming(value),
+                        style: AppTheme.textStyle.copyWith(
+                          fontSize: 14.sp,
+                          color: AppTheme.primary900,
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
           ),
         ],

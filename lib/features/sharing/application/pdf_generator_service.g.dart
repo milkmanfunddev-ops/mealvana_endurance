@@ -55,4 +55,4 @@ final class PdfGeneratorServiceProvider
 }
 
 String _$pdfGeneratorServiceHash() =>
-    r'5bc2a9dc3b44971d2cc18f9ed2f04be06898b261';
+    r'4cc6f101435cfe91f8f1a653a0a0e45f51e26cf2';

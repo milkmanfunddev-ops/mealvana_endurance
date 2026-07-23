@@ -239,6 +239,15 @@ class BrickSegmentMacroTarget {
     this.sportCeilingGPerH,
     this.brickPenalty,
     this.cumulativeDurationMin,
+    // Hydration/sodium derivation fields (Phase 2)
+    this.effectiveSweatRateLPerH,
+    this.sodiumConcMgPerL,
+    this.replacementPercent,
+    this.floorMlPerH,
+    this.ceilingMlPerH,
+    this.safetyFlags = const [],
+    this.isTested = false,
+    this.isTestedSodium = false,
   });
 
   final int segmentOrder;
@@ -263,6 +272,31 @@ class BrickSegmentMacroTarget {
   final double? brickPenalty;
   final double? cumulativeDurationMin;
 
+  // Hydration/sodium derivation fields (Phase 2 — transparency sheet)
+  /// Effective sweat rate used in derivation (L/hr).
+  final double? effectiveSweatRateLPerH;
+
+  /// Sodium concentration used for derivation (mg/L).
+  final int? sodiumConcMgPerL;
+
+  /// Fluid replacement percentage applied (0.0–1.0).
+  final double? replacementPercent;
+
+  /// 2% BW floor (ml/hr) if it raised the target for this segment.
+  final int? floorMlPerH;
+
+  /// GI ceiling applied (ml/hr) for this sport segment.
+  final int? ceilingMlPerH;
+
+  /// Safety flag messages for this segment.
+  final List<String> safetyFlags;
+
+  /// Whether the sweat rate was sourced from a personal sweat test.
+  final bool isTested;
+
+  /// Whether sweat sodium concentration was sourced from a personal test.
+  final bool isTestedSodium;
+
   Map<String, dynamic> toJson() {
     return {
       'segmentOrder': segmentOrder,
@@ -280,8 +314,7 @@ class BrickSegmentMacroTarget {
       if (carbsRateGPerH != null) 'carbsRateGPerH': carbsRateGPerH,
       if (rawBandLowGPerH != null) 'rawBandLowGPerH': rawBandLowGPerH,
       if (rawBandHighGPerH != null) 'rawBandHighGPerH': rawBandHighGPerH,
-      if (scaledBandLowGPerH != null)
-        'scaledBandLowGPerH': scaledBandLowGPerH,
+      if (scaledBandLowGPerH != null) 'scaledBandLowGPerH': scaledBandLowGPerH,
       if (scaledBandHighGPerH != null)
         'scaledBandHighGPerH': scaledBandHighGPerH,
       if (gutMultiplier != null) 'gutMultiplier': gutMultiplier,
@@ -289,6 +322,16 @@ class BrickSegmentMacroTarget {
       if (brickPenalty != null) 'brickPenalty': brickPenalty,
       if (cumulativeDurationMin != null)
         'cumulativeDurationMin': cumulativeDurationMin,
+      // Hydration/sodium derivation fields
+      if (effectiveSweatRateLPerH != null)
+        'effectiveSweatRateLPerH': effectiveSweatRateLPerH,
+      if (sodiumConcMgPerL != null) 'sodiumConcMgPerL': sodiumConcMgPerL,
+      if (replacementPercent != null) 'replacementPercent': replacementPercent,
+      if (floorMlPerH != null) 'floorMlPerH': floorMlPerH,
+      if (ceilingMlPerH != null) 'ceilingMlPerH': ceilingMlPerH,
+      if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
+      if (isTested) 'isTested': isTested,
+      if (isTestedSodium) 'isTestedSodium': isTestedSodium,
     };
   }
 
@@ -314,8 +357,18 @@ class BrickSegmentMacroTarget {
       gutMultiplier: (json['gutMultiplier'] as num?)?.toDouble(),
       sportCeilingGPerH: (json['sportCeilingGPerH'] as num?)?.toDouble(),
       brickPenalty: (json['brickPenalty'] as num?)?.toDouble(),
-      cumulativeDurationMin:
-          (json['cumulativeDurationMin'] as num?)?.toDouble(),
+      cumulativeDurationMin: (json['cumulativeDurationMin'] as num?)
+          ?.toDouble(),
+      // Hydration/sodium derivation fields (all optional — legacy JSON safe)
+      effectiveSweatRateLPerH: (json['effectiveSweatRateLPerH'] as num?)
+          ?.toDouble(),
+      sodiumConcMgPerL: (json['sodiumConcMgPerL'] as num?)?.toInt(),
+      replacementPercent: (json['replacementPercent'] as num?)?.toDouble(),
+      floorMlPerH: (json['floorMlPerH'] as num?)?.toInt(),
+      ceilingMlPerH: (json['ceilingMlPerH'] as num?)?.toInt(),
+      safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
+      isTested: json['isTested'] as bool? ?? false,
+      isTestedSodium: json['isTestedSodium'] as bool? ?? false,
     );
   }
 
@@ -343,7 +396,15 @@ class BrickSegmentMacroTarget {
         other.gutMultiplier == gutMultiplier &&
         other.sportCeilingGPerH == sportCeilingGPerH &&
         other.brickPenalty == brickPenalty &&
-        other.cumulativeDurationMin == cumulativeDurationMin;
+        other.cumulativeDurationMin == cumulativeDurationMin &&
+        other.effectiveSweatRateLPerH == effectiveSweatRateLPerH &&
+        other.sodiumConcMgPerL == sodiumConcMgPerL &&
+        other.replacementPercent == replacementPercent &&
+        other.floorMlPerH == floorMlPerH &&
+        other.ceilingMlPerH == ceilingMlPerH &&
+        _listEquals(other.safetyFlags, safetyFlags) &&
+        other.isTested == isTested &&
+        other.isTestedSodium == isTestedSodium;
   }
 
   @override
@@ -365,7 +426,18 @@ class BrickSegmentMacroTarget {
     rawBandHighGPerH,
     scaledBandLowGPerH,
     scaledBandHighGPerH,
-    Object.hash(gutMultiplier, sportCeilingGPerH, brickPenalty, cumulativeDurationMin),
+    Object.hash(
+      gutMultiplier,
+      sportCeilingGPerH,
+      brickPenalty,
+      cumulativeDurationMin,
+      effectiveSweatRateLPerH,
+      sodiumConcMgPerL,
+      replacementPercent,
+      floorMlPerH,
+      ceilingMlPerH,
+      Object.hash(Object.hashAll(safetyFlags), isTested, isTestedSodium),
+    ),
   );
 }
 
@@ -382,6 +454,15 @@ class BrickTransitionMacroTarget {
     required this.waterMl,
     this.waterLowMl,
     this.waterHighMl,
+    // Hydration/sodium derivation fields (Phase 2)
+    this.effectiveSweatRateLPerH,
+    this.sodiumConcMgPerL,
+    this.replacementPercent,
+    this.floorMlPerH,
+    this.ceilingMlPerH,
+    this.safetyFlags = const [],
+    this.isTested = false,
+    this.isTestedSodium = false,
   });
 
   final String transitionName;
@@ -395,6 +476,31 @@ class BrickTransitionMacroTarget {
   final double? waterLowMl;
   final double? waterHighMl;
 
+  // Hydration/sodium derivation fields (Phase 2 — transparency sheet)
+  /// Effective sweat rate used to size the transition drink (L/hr).
+  final double? effectiveSweatRateLPerH;
+
+  /// Sodium concentration used (mg/L).
+  final int? sodiumConcMgPerL;
+
+  /// Fluid replacement percentage applied (0.0–1.0).
+  final double? replacementPercent;
+
+  /// Floor ml/hr applied for this transition window, if any.
+  final int? floorMlPerH;
+
+  /// GI ceiling applied (ml/hr) for this transition window.
+  final int? ceilingMlPerH;
+
+  /// Safety flag messages for this transition.
+  final List<String> safetyFlags;
+
+  /// Whether the sweat rate was sourced from a personal sweat test.
+  final bool isTested;
+
+  /// Whether sweat sodium concentration was sourced from a personal test.
+  final bool isTestedSodium;
+
   Map<String, dynamic> toJson() {
     return {
       'transitionName': transitionName,
@@ -407,6 +513,16 @@ class BrickTransitionMacroTarget {
       'waterMl': waterMl,
       if (waterLowMl != null) 'waterLowMl': waterLowMl,
       if (waterHighMl != null) 'waterHighMl': waterHighMl,
+      // Hydration/sodium derivation fields
+      if (effectiveSweatRateLPerH != null)
+        'effectiveSweatRateLPerH': effectiveSweatRateLPerH,
+      if (sodiumConcMgPerL != null) 'sodiumConcMgPerL': sodiumConcMgPerL,
+      if (replacementPercent != null) 'replacementPercent': replacementPercent,
+      if (floorMlPerH != null) 'floorMlPerH': floorMlPerH,
+      if (ceilingMlPerH != null) 'ceilingMlPerH': ceilingMlPerH,
+      if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
+      if (isTested) 'isTested': isTested,
+      if (isTestedSodium) 'isTestedSodium': isTestedSodium,
     };
   }
 
@@ -422,6 +538,16 @@ class BrickTransitionMacroTarget {
       waterMl: (json['waterMl'] as num).toDouble(),
       waterLowMl: (json['waterLowMl'] as num?)?.toDouble(),
       waterHighMl: (json['waterHighMl'] as num?)?.toDouble(),
+      // Hydration/sodium derivation fields (all optional — legacy JSON safe)
+      effectiveSweatRateLPerH: (json['effectiveSweatRateLPerH'] as num?)
+          ?.toDouble(),
+      sodiumConcMgPerL: (json['sodiumConcMgPerL'] as num?)?.toInt(),
+      replacementPercent: (json['replacementPercent'] as num?)?.toDouble(),
+      floorMlPerH: (json['floorMlPerH'] as num?)?.toInt(),
+      ceilingMlPerH: (json['ceilingMlPerH'] as num?)?.toInt(),
+      safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
+      isTested: json['isTested'] as bool? ?? false,
+      isTestedSodium: json['isTestedSodium'] as bool? ?? false,
     );
   }
 
@@ -438,7 +564,15 @@ class BrickTransitionMacroTarget {
         other.sodiumHighMg == sodiumHighMg &&
         other.waterMl == waterMl &&
         other.waterLowMl == waterLowMl &&
-        other.waterHighMl == waterHighMl;
+        other.waterHighMl == waterHighMl &&
+        other.effectiveSweatRateLPerH == effectiveSweatRateLPerH &&
+        other.sodiumConcMgPerL == sodiumConcMgPerL &&
+        other.replacementPercent == replacementPercent &&
+        other.floorMlPerH == floorMlPerH &&
+        other.ceilingMlPerH == ceilingMlPerH &&
+        _listEquals(other.safetyFlags, safetyFlags) &&
+        other.isTested == isTested &&
+        other.isTestedSodium == isTestedSodium;
   }
 
   @override
@@ -453,6 +587,16 @@ class BrickTransitionMacroTarget {
     waterMl,
     waterLowMl,
     waterHighMl,
+    Object.hash(
+      effectiveSweatRateLPerH,
+      sodiumConcMgPerL,
+      replacementPercent,
+      floorMlPerH,
+      ceilingMlPerH,
+      Object.hashAll(safetyFlags),
+      isTested,
+      isTestedSodium,
+    ),
   );
 }
 
@@ -472,6 +616,7 @@ class PreRunMacros {
     this.sodiumHighMg,
     this.fluidsLowMl,
     this.fluidsHighMl,
+    this.hydrationTier,
   });
 
   final double carbsG;
@@ -487,6 +632,11 @@ class PreRunMacros {
   final double? sodiumHighMg;
   final double? fluidsLowMl;
   final double? fluidsHighMl;
+  // Pre-workout hydration tier from edge function:
+  // 1 = body-weight scaled (>=2h before, BW*6 ml), 2 = fixed 250 ml top-up
+  // (10 min - 2 h), 3 = no hydration (<10 min before / gated). Null when
+  // emitted by legacy paths that do not yet supply the tier.
+  final int? hydrationTier;
 
   /// Convert fluids to US units (fl oz)
   double get fluidsFlOz => fluidsMl * 0.033814;
@@ -505,6 +655,7 @@ class PreRunMacros {
     double? sodiumHighMg,
     double? fluidsLowMl,
     double? fluidsHighMl,
+    int? hydrationTier,
   }) {
     return PreRunMacros(
       carbsG: carbsG ?? this.carbsG,
@@ -520,6 +671,7 @@ class PreRunMacros {
       sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
       fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
       fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
+      hydrationTier: hydrationTier ?? this.hydrationTier,
     );
   }
 
@@ -538,6 +690,7 @@ class PreRunMacros {
       if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
       if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
       if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
+      if (hydrationTier != null) 'hydrationTier': hydrationTier,
     };
   }
 
@@ -556,6 +709,7 @@ class PreRunMacros {
       sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
       fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
       fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
+      hydrationTier: (json['hydrationTier'] as num?)?.toInt(),
     );
   }
 
@@ -575,7 +729,8 @@ class PreRunMacros {
         other.sodiumLowMg == sodiumLowMg &&
         other.sodiumHighMg == sodiumHighMg &&
         other.fluidsLowMl == fluidsLowMl &&
-        other.fluidsHighMl == fluidsHighMl;
+        other.fluidsHighMl == fluidsHighMl &&
+        other.hydrationTier == hydrationTier;
   }
 
   @override
@@ -594,6 +749,7 @@ class PreRunMacros {
       sodiumHighMg,
       fluidsLowMl,
       fluidsHighMl,
+      hydrationTier,
     );
   }
 
@@ -624,6 +780,19 @@ class DuringRunMacros {
     this.sportCeilingGPerH,
     this.rawBandLowGPerH,
     this.rawBandHighGPerH,
+    // Hydration/sodium derivation fields (Phase 2)
+    this.effectiveSweatRateLPerH,
+    this.sodiumConcMgPerL,
+    this.replacementPercent,
+    this.floorMlPerH,
+    this.ceilingMlPerH,
+    this.safetyFlags = const [],
+    this.isTested = false,
+    this.isTestedSodium = false,
+    // Environment echo fields
+    this.tempC,
+    this.humidityPct,
+    this.isIndoor,
   });
 
   final double carbRateGPerH;
@@ -644,6 +813,41 @@ class DuringRunMacros {
   final double? sportCeilingGPerH;
   final double? rawBandLowGPerH;
   final double? rawBandHighGPerH;
+
+  // Hydration/sodium derivation fields (Phase 2 — transparency sheet)
+  /// Effective sweat rate used in derivation (L/hr), after env multipliers and clamps.
+  final double? effectiveSweatRateLPerH;
+
+  /// Sodium concentration used for derivation (mg/L).
+  final int? sodiumConcMgPerL;
+
+  /// Fluid replacement percentage applied (0.0–1.0).
+  final double? replacementPercent;
+
+  /// 2% BW floor that raised the fluid target (ml/hr), if applicable.
+  final int? floorMlPerH;
+
+  /// GI ceiling applied (ml/hr).
+  final int? ceilingMlPerH;
+
+  /// Safety flag messages emitted by the algorithm (e.g. deficit warnings).
+  final List<String> safetyFlags;
+
+  /// Whether the sweat rate was sourced from a personal sweat test.
+  final bool isTested;
+
+  /// Whether sweat sodium concentration was sourced from a personal test.
+  final bool isTestedSodium;
+
+  // Environment echo fields
+  /// Temperature used in derivation (°C).
+  final double? tempC;
+
+  /// Relative humidity used in derivation (%).
+  final double? humidityPct;
+
+  /// Whether the workout was flagged as indoor.
+  final bool? isIndoor;
 
   /// Convert fluids to US units (fl oz)
   double get fluidRateFlOzPerH => fluidRateMlPerH * 0.033814;
@@ -692,6 +896,19 @@ class DuringRunMacros {
     double? sportCeilingGPerH,
     double? rawBandLowGPerH,
     double? rawBandHighGPerH,
+    // Hydration/sodium derivation fields
+    double? effectiveSweatRateLPerH,
+    int? sodiumConcMgPerL,
+    double? replacementPercent,
+    int? floorMlPerH,
+    int? ceilingMlPerH,
+    List<String>? safetyFlags,
+    bool? isTested,
+    bool? isTestedSodium,
+    // Environment echo fields
+    double? tempC,
+    double? humidityPct,
+    bool? isIndoor,
   }) {
     return DuringRunMacros(
       carbRateGPerH: carbRateGPerH ?? this.carbRateGPerH,
@@ -712,6 +929,20 @@ class DuringRunMacros {
       sportCeilingGPerH: sportCeilingGPerH ?? this.sportCeilingGPerH,
       rawBandLowGPerH: rawBandLowGPerH ?? this.rawBandLowGPerH,
       rawBandHighGPerH: rawBandHighGPerH ?? this.rawBandHighGPerH,
+      // Hydration/sodium derivation fields
+      effectiveSweatRateLPerH:
+          effectiveSweatRateLPerH ?? this.effectiveSweatRateLPerH,
+      sodiumConcMgPerL: sodiumConcMgPerL ?? this.sodiumConcMgPerL,
+      replacementPercent: replacementPercent ?? this.replacementPercent,
+      floorMlPerH: floorMlPerH ?? this.floorMlPerH,
+      ceilingMlPerH: ceilingMlPerH ?? this.ceilingMlPerH,
+      safetyFlags: safetyFlags ?? this.safetyFlags,
+      isTested: isTested ?? this.isTested,
+      isTestedSodium: isTestedSodium ?? this.isTestedSodium,
+      // Environment echo fields
+      tempC: tempC ?? this.tempC,
+      humidityPct: humidityPct ?? this.humidityPct,
+      isIndoor: isIndoor ?? this.isIndoor,
     );
   }
 
@@ -735,6 +966,20 @@ class DuringRunMacros {
       if (sportCeilingGPerH != null) 'sportCeilingGPerH': sportCeilingGPerH,
       if (rawBandLowGPerH != null) 'rawBandLowGPerH': rawBandLowGPerH,
       if (rawBandHighGPerH != null) 'rawBandHighGPerH': rawBandHighGPerH,
+      // Hydration/sodium derivation fields
+      if (effectiveSweatRateLPerH != null)
+        'effectiveSweatRateLPerH': effectiveSweatRateLPerH,
+      if (sodiumConcMgPerL != null) 'sodiumConcMgPerL': sodiumConcMgPerL,
+      if (replacementPercent != null) 'replacementPercent': replacementPercent,
+      if (floorMlPerH != null) 'floorMlPerH': floorMlPerH,
+      if (ceilingMlPerH != null) 'ceilingMlPerH': ceilingMlPerH,
+      if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
+      if (isTested) 'isTested': isTested,
+      if (isTestedSodium) 'isTestedSodium': isTestedSodium,
+      // Environment echo fields
+      if (tempC != null) 'tempC': tempC,
+      if (humidityPct != null) 'humidityPct': humidityPct,
+      if (isIndoor != null) 'isIndoor': isIndoor,
     };
   }
 
@@ -760,6 +1005,20 @@ class DuringRunMacros {
       sportCeilingGPerH: (json['sportCeilingGPerH'] as num?)?.toDouble(),
       rawBandLowGPerH: (json['rawBandLowGPerH'] as num?)?.toDouble(),
       rawBandHighGPerH: (json['rawBandHighGPerH'] as num?)?.toDouble(),
+      // Hydration/sodium derivation fields (all optional — legacy JSON safe)
+      effectiveSweatRateLPerH: (json['effectiveSweatRateLPerH'] as num?)
+          ?.toDouble(),
+      sodiumConcMgPerL: (json['sodiumConcMgPerL'] as num?)?.toInt(),
+      replacementPercent: (json['replacementPercent'] as num?)?.toDouble(),
+      floorMlPerH: (json['floorMlPerH'] as num?)?.toInt(),
+      ceilingMlPerH: (json['ceilingMlPerH'] as num?)?.toInt(),
+      safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
+      isTested: json['isTested'] as bool? ?? false,
+      isTestedSodium: json['isTestedSodium'] as bool? ?? false,
+      // Environment echo fields
+      tempC: (json['tempC'] as num?)?.toDouble(),
+      humidityPct: (json['humidityPct'] as num?)?.toDouble(),
+      isIndoor: json['isIndoor'] as bool?,
     );
   }
 
@@ -784,7 +1043,18 @@ class DuringRunMacros {
         other.gutMultiplier == gutMultiplier &&
         other.sportCeilingGPerH == sportCeilingGPerH &&
         other.rawBandLowGPerH == rawBandLowGPerH &&
-        other.rawBandHighGPerH == rawBandHighGPerH;
+        other.rawBandHighGPerH == rawBandHighGPerH &&
+        other.effectiveSweatRateLPerH == effectiveSweatRateLPerH &&
+        other.sodiumConcMgPerL == sodiumConcMgPerL &&
+        other.replacementPercent == replacementPercent &&
+        other.floorMlPerH == floorMlPerH &&
+        other.ceilingMlPerH == ceilingMlPerH &&
+        _listEquals(other.safetyFlags, safetyFlags) &&
+        other.isTested == isTested &&
+        other.isTestedSodium == isTestedSodium &&
+        other.tempC == tempC &&
+        other.humidityPct == humidityPct &&
+        other.isIndoor == isIndoor;
   }
 
   @override
@@ -808,12 +1078,25 @@ class DuringRunMacros {
       sportCeilingGPerH,
       rawBandLowGPerH,
       rawBandHighGPerH,
+      Object.hash(
+        effectiveSweatRateLPerH,
+        sodiumConcMgPerL,
+        replacementPercent,
+        floorMlPerH,
+        ceilingMlPerH,
+        Object.hashAll(safetyFlags),
+        isTested,
+        isTestedSodium,
+        tempC,
+        humidityPct,
+        isIndoor,
+      ),
     );
   }
 
   @override
   String toString() {
-    return 'DuringRunMacros(carbRateGPerH: $carbRateGPerH, carbTotalG: $carbTotalG, fluidRateMlPerH: $fluidRateMlPerH, fluidTotalMl: $fluidTotalMl, sodiumRateMgPerH: $sodiumRateMgPerH, sodiumTotalMg: $sodiumTotalMg, massNormRateGPerH: $massNormRateGPerH, absClampRangeGPerH: $absClampRangeGPerH)';
+    return 'DuringRunMacros(carbRateGPerH: $carbRateGPerH, carbTotalG: $carbTotalG, fluidRateMlPerH: $fluidRateMlPerH, fluidTotalMl: $fluidTotalMl, sodiumRateMgPerH: $sodiumRateMgPerH, sodiumTotalMg: $sodiumTotalMg, massNormRateGPerH: $massNormRateGPerH, absClampRangeGPerH: $absClampRangeGPerH, isTested: $isTested)';
   }
 }
 

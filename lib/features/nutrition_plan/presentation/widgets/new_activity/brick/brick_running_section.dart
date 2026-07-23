@@ -39,7 +39,8 @@ class BrickRunningSection extends StatelessWidget {
     double? paceMinutesPerMile,
     String? intensity,
   }) {
-    final current = segment ??
+    final current =
+        segment ??
         const BrickSegment(
           sport: 'running',
           order: 1,
@@ -124,10 +125,7 @@ class BrickRunningSection extends StatelessWidget {
 
 /// Custom pace control (reused from running_tab_content.dart)
 class _PaceControl extends StatelessWidget {
-  const _PaceControl({
-    required this.paceMinutes,
-    required this.onChanged,
-  });
+  const _PaceControl({required this.paceMinutes, required this.onChanged});
 
   final double paceMinutes;
   final ValueChanged<double> onChanged;
@@ -155,7 +153,7 @@ class _PaceControl extends StatelessWidget {
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: paceMinutes > 4.0
                   ? () => onChanged((paceMinutes - 0.08333).clamp(4.0, 20.0))
                   : null,
@@ -177,7 +175,7 @@ class _PaceControl extends StatelessWidget {
             const SizedBox(width: AppSpacing.xl),
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: paceMinutes < 20.0
                   ? () => onChanged((paceMinutes + 0.08333).clamp(4.0, 20.0))
                   : null,
@@ -233,7 +231,8 @@ class _ControlButton extends StatelessWidget {
           icon,
           size: _controlIconSize,
           color: enabled
-              ? AppColors.cream  // White/cream icon color to match Kyle's design
+              ? AppColors
+                    .cream // White/cream icon color to match Kyle's design
               : AppColors.cream.withValues(alpha: 0.4),
         ),
       ),

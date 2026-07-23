@@ -7,7 +7,10 @@ import '../providers/cycling_input_controller.dart';
 import '../providers/swimming_input_controller.dart';
 import '../providers/brick_input_controller.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../activities/domain/activity_title_formatter.dart';
+import '../../domain/run_parameters.dart' show DistanceUnit;
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/core/guarded_navigation.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
@@ -37,7 +40,8 @@ import '../../../../shared/widgets/content_area.dart';
 /// Features:
 /// - Sport selector buttons (Running/Biking/Swimming)
 /// - Dynamic hero image with pink star overlay
-/// - Date/Time side-by-side with Edit link
+/// - Date/Time side-by-side; tap either value directly to edit (unified with
+///   Activity Details' tap-the-value pattern)
 /// - All sport-specific fields in single scroll
 /// - Forecast link that navigates to weather screen
 /// - Generate button at bottom
@@ -123,6 +127,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      recordNavigationDestinationRendered('name:distancepacegut');
+    });
 
     // Initialize controllers with event data after first frame
     // Using microtask to avoid modifying providers during build
@@ -268,6 +276,12 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   void _initializeRunningController() {
     final controller = ref.read(runningInputControllerProvider.notifier);
 
+    // isFasted is per-activity state with no seed source (Activity doesn't
+    // persist it). The controller is keepAlive, so clear any leftover fasted
+    // toggle from a previous workout — otherwise this activity would silently
+    // generate with is_fasted=true and show 0g pre-workout targets.
+    controller.resetFasted();
+
     if (widget.initialDistance != null) {
       DebugLogger.info(
         '📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles',
@@ -298,12 +312,27 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
       controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
+    } else if (widget.activityId == null && widget.eventId == null) {
+      // Plain "new activity" flow (no event/synced source): reset any stale
+      // manually-set title left over from a previous keepAlive session (e.g.
+      // after creating a plan from an event) so distance edits recompute the
+      // "N mi Run" default again instead of showing the old event name.
+      final currentDistance = ref.read(runningInputControllerProvider).distance;
+      controller.seedActivityTitle(
+        ActivityTitleFormatter.formatRunningTitle(currentDistance),
+        markManuallySet: false,
+      );
     }
   }
 
   /// Initialize cycling controller with synced activity data
   Future<void> _initializeCyclingController() async {
     final controller = ref.read(cyclingInputControllerProvider.notifier);
+
+    // Clear any keepAlive leftover fasted toggle from a previous workout
+    // (see _initializeRunningController for rationale).
+    controller.resetFasted();
+
     await controller.waitForPreferencesLoaded();
 
     final hasExplicitDuration =
@@ -366,6 +395,19 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
       controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
+    } else if (widget.activityId == null && widget.eventId == null) {
+      // Plain "new activity" flow: reset any stale manually-set title left
+      // over from a previous keepAlive session so distance edits recompute
+      // the "N mi Ride" default again. Mirrors the unit conversion the
+      // controller itself applies internally (see _distanceToMilesForTitle).
+      final currentState = ref.read(cyclingInputControllerProvider);
+      final milesForTitle = currentState.distanceUnit == DistanceUnit.kilometers
+          ? currentState.distance * 0.621371
+          : currentState.distance;
+      controller.seedActivityTitle(
+        ActivityTitleFormatter.formatCyclingTitle(milesForTitle),
+        markManuallySet: false,
+      );
     }
   }
 
@@ -405,6 +447,17 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
       controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
+    } else if (widget.activityId == null && widget.eventId == null) {
+      // Plain "new activity" flow: reset any stale manually-set title left
+      // over from a previous keepAlive session so distance edits recompute
+      // the "N m Swim" default again instead of showing the old event name.
+      final currentDistanceMeters = ref
+          .read(swimmingInputControllerProvider)
+          .distanceMeters;
+      controller.seedActivityTitle(
+        ActivityTitleFormatter.formatSwimmingTitle(currentDistanceMeters),
+        markManuallySet: false,
+      );
     }
   }
 
@@ -416,6 +469,12 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// 3. Otherwise → start fresh with defaults
   void _initializeBrickController() {
     final initialTitle = widget.initialTitle;
+
+    // Clear any keepAlive leftover fasted toggle from a previous workout.
+    // The metadata/event init paths below rebuild state with isFasted: false
+    // anyway; this covers the plain "start fresh" path (see
+    // _initializeRunningController for rationale).
+    ref.read(brickInputControllerProvider.notifier).resetFasted();
 
     if (widget.activityId != null) {
       DebugLogger.info(
@@ -457,6 +516,16 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       ref
           .read(brickInputControllerProvider.notifier)
           .seedActivityTitle(initialTitle, markManuallySet: true);
+    } else if (widget.eventId == null) {
+      // Plain new brick (no activityId, no event context): reset any stale
+      // manually-set title left over from a previous keepAlive session so
+      // sport selection changes recompute the default "SWIM/RUN BRICK"-style
+      // title again instead of showing an old event name.
+      final brickController = ref.read(brickInputControllerProvider.notifier);
+      brickController.seedActivityTitle(
+        brickController.getBrickType(),
+        markManuallySet: false,
+      );
     }
   }
 
@@ -518,58 +587,55 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: NewActivityAppBar(isDark: isDark),
+      // Buttons live in bottomNavigationBar so they cannot be pushed off-screen
+      // when system text scaling makes the form taller than the viewport.
+      // Scaffold reserves space for this slot and respects SafeArea automatically.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: _buildBottomButtons(context, coordinator, coordinatorState),
+      ),
       body: ContentArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           behavior: HitTestBehavior.opaque,
-          child: Column(
-            children: [
-              // Main scrollable content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 20),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
 
-                      // Sport selector is horizontally scrollable on compact widths.
-                      const SportSelector(),
+                // Sport selector is horizontally scrollable on compact widths.
+                const SportSelector(),
 
-                      const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                      // Hero Image Section (center this)
-                      // For brick workouts, shows composite image of all three sports
-                      NewActivityHeroSection(
-                        heroImagePath: coordinator.getHeroImagePath(),
-                        isBrick: coordinatorState.selectedTab == SportTab.brick,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Date and Time Section (center this)
-                      NewActivityDateTimeSection(
-                        selectedDate: coordinatorState.selectedDate,
-                        selectedTime: coordinatorState.selectedTime,
-                        onEditTapped: () =>
-                            _showDateTimePicker(coordinatorState, coordinator),
-                        isDark: isDark,
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Sport-specific form fields (full width)
-                      _buildFormFields(coordinatorState),
-
-                      const SizedBox(height: 16),
-                    ],
-                  ),
+                // Hero Image Section (center this)
+                // For brick workouts, shows composite image of all three sports
+                NewActivityHeroSection(
+                  heroImagePath: coordinator.getHeroImagePath(),
+                  isBrick: coordinatorState.selectedTab == SportTab.brick,
                 ),
-              ),
 
-              // Action Buttons (fixed at bottom)
-              _buildBottomButtons(context, coordinator, coordinatorState),
-            ],
+                const SizedBox(height: 24),
+
+                // Date and Time Section (center this)
+                NewActivityDateTimeSection(
+                  selectedDate: coordinatorState.selectedDate,
+                  selectedTime: coordinatorState.selectedTime,
+                  onEditTapped: () =>
+                      _showDateTimePicker(coordinatorState, coordinator),
+                  isDark: isDark,
+                ),
+
+                const SizedBox(height: 32),
+
+                // Sport-specific form fields (full width)
+                _buildFormFields(coordinatorState),
+
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -616,6 +682,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         children: [
           Expanded(
             child: KylePrimaryButton(
+              key: const ValueKey('activity_create.generate_plan_button'),
               text: 'Generate Plan',
               onPressed: coordinatorState.isGenerating
                   ? null
@@ -627,7 +694,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: KyleSecondaryButton(
-                text: 'Use Template',
+                key: const ValueKey('activity_create.use_template_button'),
+                text: 'Use Routine',
                 onPressed: coordinatorState.isGenerating
                     ? null
                     : () => _handleUseTemplate(

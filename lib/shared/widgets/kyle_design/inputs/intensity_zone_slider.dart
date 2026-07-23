@@ -43,7 +43,8 @@ class IntensityZoneSlider extends ConsumerStatefulWidget {
   final bool enabled;
 
   @override
-  ConsumerState<IntensityZoneSlider> createState() => _IntensityZoneSliderState();
+  ConsumerState<IntensityZoneSlider> createState() =>
+      _IntensityZoneSliderState();
 }
 
 class _IntensityZoneSliderState extends ConsumerState<IntensityZoneSlider> {
@@ -150,7 +151,9 @@ class _IntensityZoneSliderState extends ConsumerState<IntensityZoneSlider> {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: widget.enabled ? widget.color : widget.color.withValues(alpha: 0.4),
+                    color: widget.enabled
+                        ? widget.color
+                        : widget.color.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -163,7 +166,9 @@ class _IntensityZoneSliderState extends ConsumerState<IntensityZoneSlider> {
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: widget.enabled
                         ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                        : Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -183,7 +188,8 @@ class _IntensityZoneSliderState extends ConsumerState<IntensityZoneSlider> {
                     height: 36,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppColors.inputBackground, // Brighter purple for visibility
+                      color: AppColors
+                          .inputBackground, // Brighter purple for visibility
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextField(
@@ -220,7 +226,9 @@ class _IntensityZoneSliderState extends ConsumerState<IntensityZoneSlider> {
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: widget.enabled
                         ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                        : Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -239,11 +247,15 @@ class _IntensityZoneSliderState extends ConsumerState<IntensityZoneSlider> {
           enabled: widget.enabled,
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: widget.enabled ? widget.color : widget.color.withValues(alpha: 0.4),
+              activeTrackColor: widget.enabled
+                  ? widget.color
+                  : widget.color.withValues(alpha: 0.4),
               inactiveTrackColor: widget.enabled
                   ? widget.color.withValues(alpha: 0.2)
                   : widget.color.withValues(alpha: 0.1),
-              thumbColor: widget.enabled ? widget.color : widget.color.withValues(alpha: 0.4),
+              thumbColor: widget.enabled
+                  ? widget.color
+                  : widget.color.withValues(alpha: 0.4),
               overlayColor: widget.color.withValues(alpha: 0.2),
               trackHeight: 6.0,
               thumbShape: const RoundSliderThumbShape(

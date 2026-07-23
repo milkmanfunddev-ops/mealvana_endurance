@@ -1,0 +1,34 @@
+{
+  "description": "LP solver — running 90 min, moderate gut. Exercises solveLPModel on the during-phase in-memory food pool with standard targets. Verifies LP path produces valid + parity-passing output.",
+  "solver": "lp",
+  "athlete": {
+    "weight_kg": 70,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 90,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 55,
+      "sodium_mg": 700,
+      "water_ml": 800
+    },
+    "post_run": {
+      "carbs_g": 60,
+      "protein_g": 26,
+      "sodium_mg": 750,
+      "water_ml": 800
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

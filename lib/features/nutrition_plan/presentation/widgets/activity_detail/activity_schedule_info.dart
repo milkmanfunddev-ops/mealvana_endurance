@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../utils/activity_detail_helpers.dart';
 
 /// Displays scheduled date and time for an activity,
 /// plus optional activity summary (distance/pace/duration)
-/// and tappable date/time editing.
+/// and tappable date/time editing. A small pencil glyph beside each
+/// tappable value is the "this is editable" affordance — matches the
+/// New Activity screen's date/time section.
 class ActivityScheduleInfo extends StatelessWidget {
   const ActivityScheduleInfo({
     super.key,
@@ -52,6 +55,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     return Column(
       children: [
         Text(
+          key: const ValueKey('plan_detail.summary_label'),
           '$activityLabel SCHEDULED FOR',
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -65,27 +69,36 @@ class ActivityScheduleInfo extends StatelessWidget {
           _buildActivitySummary(context),
         ],
         const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildDateColumn(context),
-            const SizedBox(width: AppSpacing.xxl),
-            _buildTimeColumn(context),
-          ],
+        // FittedBox scales the date/time pair down so it never overflows a
+        // narrow phone.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildDateColumn(context),
+              const SizedBox(width: AppSpacing.xxl),
+              _buildTimeColumn(context),
+            ],
+          ),
         ),
       ],
     );
   }
 
   bool get _hasSummary =>
-      distanceMiles != null || durationMinutes != null || paceTargetMinutesPerMile != null;
+      distanceMiles != null ||
+      durationMinutes != null ||
+      paceTargetMinutesPerMile != null;
 
   Widget _buildActivitySummary(BuildContext context) {
     final parts = <String>[];
 
     if (distanceMiles != null) {
       final d = distanceMiles!;
-      final display = d == d.roundToDouble() ? d.toInt().toString() : d.toStringAsFixed(1);
+      final display = d == d.roundToDouble()
+          ? d.toInt().toString()
+          : d.toStringAsFixed(1);
       parts.add('$display mi');
     }
 
@@ -108,21 +121,37 @@ class ActivityScheduleInfo extends StatelessWidget {
   }
 
   Widget _buildDateColumn(BuildContext context) {
+    final isTappable = onDateTap != null;
+    final valueColor = Theme.of(context).colorScheme.onSurface;
     final dateWidget = Column(
       children: [
         Text(
+          key: const ValueKey('plan_detail.date_label'),
           'DATE',
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          ActivityDetailHelpers.formatDateShort(scheduledDateTime),
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 20,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ActivityDetailHelpers.formatDateShort(scheduledDateTime),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: valueColor,
+                fontSize: 20,
+              ),
+            ),
+            if (isTappable) ...[
+              const SizedBox(width: 4),
+              FaIcon(
+                FontAwesomeIcons.penToSquare,
+                size: 12,
+                color: valueColor.withValues(alpha: 0.4),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -130,6 +159,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     if (onDateTap != null) {
       return GestureDetector(
         onTap: onDateTap,
+        behavior: HitTestBehavior.opaque,
         child: dateWidget,
       );
     }
@@ -137,21 +167,37 @@ class ActivityScheduleInfo extends StatelessWidget {
   }
 
   Widget _buildTimeColumn(BuildContext context) {
+    final isTappable = onTimeTap != null;
+    final valueColor = Theme.of(context).colorScheme.onSurface;
     final timeWidget = Column(
       children: [
         Text(
+          key: const ValueKey('plan_detail.time_label'),
           'TIME',
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          ActivityDetailHelpers.formatTime(scheduledDateTime),
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 20,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ActivityDetailHelpers.formatTime(scheduledDateTime),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: valueColor,
+                fontSize: 20,
+              ),
+            ),
+            if (isTappable) ...[
+              const SizedBox(width: 4),
+              FaIcon(
+                FontAwesomeIcons.penToSquare,
+                size: 12,
+                color: valueColor.withValues(alpha: 0.4),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -159,6 +205,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     if (onTimeTap != null) {
       return GestureDetector(
         onTap: onTimeTap,
+        behavior: HitTestBehavior.opaque,
         child: timeWidget,
       );
     }

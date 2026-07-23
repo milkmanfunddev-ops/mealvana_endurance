@@ -3,6 +3,7 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../application/macro_explanation_service.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
+import '../macro_shortfall_card.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
 import 'phase_explanation_sheet.dart';
@@ -26,6 +27,7 @@ class BeforePhaseWidget extends StatefulWidget {
     required this.onAddFood,
     this.categoryPrefix = 'before_run',
     this.showSwipeHint = false,
+    this.planId,
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
@@ -45,6 +47,7 @@ class BeforePhaseWidget extends StatefulWidget {
     this.proteinOverrideLabel,
     this.sodiumOverrideLabel,
     this.fluidsOverrideLabel,
+    this.onRegenerate,
   });
 
   final PlanSection section;
@@ -63,6 +66,11 @@ class BeforePhaseWidget extends StatefulWidget {
   final void Function(String category) onAddFood;
   final String categoryPrefix;
   final bool showSwipeHint;
+
+  /// Activity id, forwarded to the explanation sheet so transparency views
+  /// can be attributed to a plan.
+  final String? planId;
+
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
@@ -82,6 +90,10 @@ class BeforePhaseWidget extends StatefulWidget {
   final String? proteinOverrideLabel;
   final String? sodiumOverrideLabel;
   final String? fluidsOverrideLabel;
+
+  /// Called after an inline sweat-profile edit is saved so the parent can
+  /// trigger a plan regen (e.g. via ActivityDetailController.forceRefresh).
+  final VoidCallback? onRegenerate;
 
   @override
   State<BeforePhaseWidget> createState() => _BeforePhaseWidgetState();
@@ -146,10 +158,13 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         bodyWeightKg: widget.bodyWeightKg,
                         sportLabel: widget.sportLabel,
                         useImperial: widget.useImperial,
-                        foods: widget.section.subPhases
+                        planId: widget.planId,
+                        foods:
+                            widget.section.subPhases
                                 ?.expand((sp) => sp.foodItems)
                                 .toList() ??
                             widget.section.foodItems,
+                        onRegenerate: widget.onRegenerate,
                       );
                     },
                   ),
@@ -327,7 +342,8 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     final foodIndex = entry.key;
                     final food = entry.value;
                     // Use sub-phase-specific category to target the correct sub-phase
-                    final subCategory = '${widget.categoryPrefix}:${subPhase.subPhaseType}';
+                    final subCategory =
+                        '${widget.categoryPrefix}:${subPhase.subPhaseType}';
                     return Padding(
                       padding: EdgeInsets.only(
                         bottom: foodIndex < subPhase.foodItems.length - 1
@@ -341,8 +357,12 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                             widget.onSwapFood(food.id, food.name, subCategory),
                         onDelete: () =>
                             widget.onDeleteFood(food.id, subCategory),
-                        onQuantityChange: (newQuantity) => widget
-                            .onUpdateQuantity(food.id, subCategory, newQuantity),
+                        onQuantityChange: (newQuantity) =>
+                            widget.onUpdateQuantity(
+                              food.id,
+                              subCategory,
+                              newQuantity,
+                            ),
                         showSwipeHint:
                             widget.showSwipeHint &&
                             index == 0 &&
@@ -352,9 +372,18 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     );
                   }),
                   const SizedBox(height: AppSpacing.sm),
+                  if (subPhase.shortfalls.isNotEmpty) ...[
+                    MacroShortfallCard(
+                      shortfalls: subPhase.shortfalls,
+                      dietHint: _dietHint,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   KyleAddFoodButton(
                     text: 'ADD FOOD',
-                    onPressed: () => widget.onAddFood('${widget.categoryPrefix}:${subPhase.subPhaseType}'),
+                    onPressed: () => widget.onAddFood(
+                      '${widget.categoryPrefix}:${subPhase.subPhaseType}',
+                    ),
                   ),
                 ],
               ),
@@ -364,6 +393,11 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       ),
     );
   }
+
+  /// Optional diet hint passed to MacroShortfallCard for diet-aware
+  /// suggestions. Returns null when no diet context is available — the card
+  /// then uses the generic suggestion list.
+  String? get _dietHint => null; // Wire user diet here when threaded through
 
   /// Centered macro summary displayed inside expanded sub-phase content.
   /// Shows CARBS/FLUIDS/SODIUM to match the parent card header.

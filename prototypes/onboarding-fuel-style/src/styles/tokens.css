@@ -1,0 +1,67 @@
+:root {
+  --me-blackberry-dark:   rgb(38, 14, 34);
+  --me-blackberry:        rgb(56, 22, 51);
+  --me-blackberry-light:  rgb(82, 40, 75);
+
+  --me-cream:             rgb(248, 246, 235);
+  --me-cream-dark:        rgb(235, 232, 216);
+
+  --me-orange:            rgb(247, 139, 20);
+  --me-orange-dark:       rgb(214, 115, 8);
+  --me-orange-light:      rgb(251, 167, 72);
+
+  --me-dragonfruit:       rgb(220, 37, 151);
+  --me-electrolyte:       rgb(28, 249, 207);
+  --me-hairline:          rgb(198, 195, 178);
+  --me-inactive:          rgb(117, 77, 111);
+
+  --me-bg-dark:           var(--me-blackberry);
+  --me-bg-dark-alt:       var(--me-blackberry-light);
+  --me-bg-light:          var(--me-cream);
+  --me-bg-light-alt:      var(--me-cream-dark);
+
+  --me-fg-on-dark:        var(--me-cream);
+  --me-fg-on-dark-muted:  rgba(248, 246, 235, 0.6);
+  --me-fg-on-light:       var(--me-blackberry);
+  --me-fg-on-light-muted: var(--me-inactive);
+
+  --me-accent:            var(--me-orange);
+  --me-link:              var(--me-orange);
+  --me-success:           var(--me-electrolyte);
+  --me-warning:           var(--me-dragonfruit);
+
+  --me-surface-card:      var(--me-cream);
+  --me-surface-card-dark: var(--me-blackberry-light);
+
+  --me-protein:           oklch(0.52 0.22 340);
+  --me-carbs:             oklch(0.84 0.15 85);
+  --me-fats:              oklch(0.50 0.18 260);
+
+  --me-font-display:  "Sansita", Georgia, serif;
+  --me-font-body:     "Apercu", ui-sans-serif, system-ui, sans-serif;
+  --me-font-ui:       "Compadre", Georgia, serif;
+  --me-font-mono:     "Apercu Mono", ui-monospace, monospace;
+
+  --me-radius-xs:   4px;
+  --me-radius-sm:   8px;
+  --me-radius-md:   15px;
+  --me-radius-lg:   25px;
+  --me-radius-pill: 100px;
+
+  --me-shadow-xs:   0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --me-shadow-sm:   0px 2px 6px 0px rgba(16, 24, 40, 0.08);
+  --me-shadow-md:   0px 8px 20px -4px rgba(16, 24, 40, 0.12);
+  --me-shadow-lg:   0px 18px 40px -12px rgba(56, 22, 51, 0.25);
+  --me-shadow-glow: 0px 0px 40px 0px rgba(247, 139, 20, 0.25);
+
+  --me-border-hair:   1px solid var(--me-hairline);
+  --me-border-thin:   1px solid var(--me-blackberry);
+  --me-border-orange: 1px solid var(--me-orange);
+  --me-border-dragon: 1px solid var(--me-dragonfruit);
+
+  --me-duration-fast:   120ms;
+  --me-duration-base:   220ms;
+  --me-duration-slow:   420ms;
+  --me-ease-out:  cubic-bezier(0.2, 0.8, 0.2, 1);
+  --me-ease-in:   cubic-bezier(0.5, 0, 0.75, 0);
+}

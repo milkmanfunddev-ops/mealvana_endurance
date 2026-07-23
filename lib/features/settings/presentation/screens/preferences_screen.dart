@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
@@ -24,9 +25,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   // Local state for editing
   Gender? _gender;
   DateTime? _birthday;
-  final _heightFeetController = TextEditingController();
-  final _heightInchesController = TextEditingController();
-  final _weightController = TextEditingController();
   bool? _runsWithWaterBottle;
   UnitSystem? _unitSystem;
   GutTraining? _gutTraining;
@@ -57,16 +55,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           _gutTraining = settingsState.gutTrainingLevel;
           _sweatRate = settingsState.sweatRate;
         });
-        // Set text controller values
-        if (settingsState.heightFeet != null) {
-          _heightFeetController.text = settingsState.heightFeet.toString();
-        }
-        if (settingsState.heightInches != null) {
-          _heightInchesController.text = settingsState.heightInches.toString();
-        }
-        if (settingsState.weightPounds != null) {
-          _weightController.text = settingsState.weightPounds.toString();
-        }
         // Optional name fields
         if (settingsState.firstName != null) {
           _firstNameController.text = settingsState.firstName!;
@@ -84,9 +72,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   @override
   void dispose() {
-    _heightFeetController.dispose();
-    _heightInchesController.dispose();
-    _weightController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
@@ -121,18 +106,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final controller = ref.read(settingsControllerProvider.notifier);
 
     try {
-      // Parse height values
-      final heightFeet = int.tryParse(_heightFeetController.text);
-      final heightInches = int.tryParse(_heightInchesController.text);
-      final weightPounds = double.tryParse(_weightController.text);
-
-      // Save all preferences in a single batch operation
+      // weight/height intentionally not passed — those fields now live in
+      // the Body Composition screen and are saved through its own flow.
       await controller.saveAllPreferences(
         gender: _gender,
         birthday: _birthday,
-        heightFeet: heightFeet,
-        heightInches: heightInches,
-        weightPounds: weightPounds,
         runsWithWaterBottle: _runsWithWaterBottle,
         unitSystem: _unitSystem,
         gutTrainingLevel: _gutTraining,
@@ -202,6 +180,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 canContinue: _hasChanges && !_isSaving,
                 isLoading: _isSaving,
                 buttonText: 'Save Changes',
+                continueButtonKey: const ValueKey('profile_edit.save_button'),
+                backButtonKey: const ValueKey('profile_edit.back_button'),
               ),
             ),
           ],
@@ -222,7 +202,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -336,10 +316,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             children: [
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile_edit.first_name_field'),
                   context: context,
                   controller: _firstNameController,
                   hint: 'First name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -347,10 +328,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile_edit.last_name_field'),
                   context: context,
                   controller: _lastNameController,
                   hint: 'Last name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -362,12 +344,15 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           // Email field
           _buildTextField(
+            fieldKey: const ValueKey('profile_edit.email_field'),
             context: context,
             controller: _emailController,
             label: 'Email',
             hint: 'Email address',
-            icon: FontAwesomeIcons.envelope,
+            icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            autofillHints: const [AutofillHints.email],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -431,100 +416,22 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildPhysicalInfoSection(BuildContext context) {
+    // Weight, height, and body fat now live in the dedicated Body
+    // Composition screen (settings → Body Composition). This section
+    // retains the on-run hydration toggle since it's a behavioral
+    // preference, not a body metric.
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Physical Information',
-            style: AppTextStyles.subtitle.copyWith(
+            'Hydration',
+            style: AppTextStyles.sectionTitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 18,
             ),
           ),
-
           const SizedBox(height: AppSpacing.md),
-
-          // Height fields (feet + inches) with validation
-          Text(
-            'Height',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  context: context,
-                  controller: _heightFeetController,
-                  hint: 'ft',
-                  icon: FontAwesomeIcons.rulerVertical,
-                  keyboardType: TextInputType.number,
-                  suffix: 'ft',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Required';
-                    }
-                    final feet = int.tryParse(value);
-                    if (feet == null || feet < 3 || feet > 8) {
-                      return 'Valid: 3-8';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: _buildTextField(
-                  context: context,
-                  controller: _heightInchesController,
-                  hint: 'in',
-                  icon: FontAwesomeIcons.rulerVertical,
-                  keyboardType: TextInputType.number,
-                  suffix: 'in',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Required';
-                    }
-                    final inches = int.tryParse(value);
-                    if (inches == null || inches < 0 || inches >= 12) {
-                      return 'Valid: 0-11';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Weight field
-          _buildTextField(
-            context: context,
-            controller: _weightController,
-            label: 'Weight',
-            hint: 'Enter your weight',
-            icon: FontAwesomeIcons.weightScale,
-            keyboardType: TextInputType.number,
-            suffix: 'lbs',
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your weight';
-              }
-              final weight = double.tryParse(value);
-              if (weight == null || weight < 80 || weight > 500) {
-                return 'Please enter a valid weight (80-500 lbs)';
-              }
-              return null;
-            },
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Water bottle toggle
           _buildWaterBottleToggle(context),
         ],
       ),
@@ -550,6 +457,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           children: [
             Expanded(
               child: _buildRadioOption(
+                radioKey: const ValueKey('profile_edit.gender_male_button'),
                 context: context,
                 title: 'Male',
                 value: Gender.male,
@@ -563,6 +471,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildRadioOption(
+                radioKey: const ValueKey('profile_edit.gender_female_button'),
                 context: context,
                 title: 'Female',
                 value: Gender.female,
@@ -576,6 +485,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildRadioOption(
+                radioKey: const ValueKey(
+                  'profile_edit.gender_non_binary_button',
+                ),
                 context: context,
                 title: 'Non-binary',
                 value: Gender.other,
@@ -598,12 +510,14 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     required Gender value,
     required Gender groupValue,
     required ValueChanged<Gender> onChanged,
+    Key? radioKey,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isSelected = groupValue == value;
 
     return GestureDetector(
+      key: radioKey,
       onTap: () => onChanged(value),
       child: Container(
         height: 80,
@@ -623,10 +537,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             // Icon based on gender
             Icon(
               value == Gender.male
-                  ? FontAwesomeIcons.mars
+                  ? FontAwesomeIcons.mars.data
                   : value == Gender.female
-                  ? FontAwesomeIcons.venus
-                  : FontAwesomeIcons.genderless,
+                  ? FontAwesomeIcons.venus.data
+                  : FontAwesomeIcons.genderless.data,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)
@@ -671,6 +585,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         const SizedBox(height: AppSpacing.sm),
 
         InkWell(
+          key: const ValueKey('profile_edit.birthday_button'),
           onTap: () async {
             final selectedDate = await showAppDatePicker(
               context: context,
@@ -706,7 +621,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ),
             child: Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.calendar,
                   size: AppIconSizes.controlIcon,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -740,8 +655,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool autocorrect = true,
+    Iterable<String>? autofillHints,
     String? suffix,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    Key? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,11 +676,14 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           const SizedBox(height: AppSpacing.sm),
         ],
         TextFormField(
+          key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
+          autocorrect: autocorrect,
+          autofillHints: autofillHints,
           validator: validator,
-          onChanged: (_) => _markChanged(),
+          onChanged: onChanged ?? (_) => _markChanged(),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.bodyMedium.copyWith(
@@ -888,6 +810,55 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               _markChanged();
             },
           ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Navigation row to the dedicated Sweat Profile screen
+          InkWell(
+            onTap: () => context.push('/settings/sweat-profile'),
+            borderRadius: AppRadius.cardRadius,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Row(
+                children: [
+                  const FaIcon(
+                    FontAwesomeIcons.droplet,
+                    size: 16,
+                    color: AppColors.orange,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sweat Profile',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Sodium category, sweat-test values',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  FaIcon(
+                    FontAwesomeIcons.chevronRight,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -938,7 +909,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: (_runsWithWaterBottle ?? false)
-                  ? const Icon(
+                  ? const FaIcon(
                       FontAwesomeIcons.check,
                       size: 14,
                       color: AppColors.cream,

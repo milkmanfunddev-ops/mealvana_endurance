@@ -62,8 +62,8 @@ class AdditionalFoodsSectionWidget extends StatelessWidget {
                 ),
                 Icon(
                   isExpanded
-                      ? FontAwesomeIcons.chevronUp
-                      : FontAwesomeIcons.chevronDown,
+                      ? FontAwesomeIcons.chevronUp.data
+                      : FontAwesomeIcons.chevronDown.data,
                   color: Theme.of(context).colorScheme.onSurface,
                   size: AppIconSizes.chevron,
                 ),
@@ -73,10 +73,7 @@ class AdditionalFoodsSectionWidget extends StatelessWidget {
         ),
 
         // Expandable content
-        if (isExpanded) ...[
-          const SizedBox(height: AppSpacing.md),
-          ...children,
-        ],
+        if (isExpanded) ...[const SizedBox(height: AppSpacing.md), ...children],
       ],
     );
   }

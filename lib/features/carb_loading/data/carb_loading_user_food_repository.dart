@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../domain/carb_loading_user_food.dart' as domain;
+import '../domain/meal_type.dart' show parseMealTypeIds;
 
 part 'carb_loading_user_food_repository.g.dart';
 
@@ -18,9 +18,13 @@ class CarbLoadingUserFoodRepository {
   final AppDatabase _database;
 
   /// Get all user foods (excluding soft-deleted)
-  Future<List<domain.CarbLoadingUserFood>> getAllUserFoods(String deviceId) async {
+  Future<List<domain.CarbLoadingUserFood>> getAllUserFoods(
+    String deviceId,
+  ) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false),
+      );
 
     final foods = await query.get();
     return foods.map((food) => _convertToUserFoodDomain(food)).toList();
@@ -32,7 +36,9 @@ class CarbLoadingUserFoodRepository {
     int mealTypeId,
   ) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false));
+      ..where(
+        (tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false),
+      );
 
     final allFoods = await query.get();
 
@@ -40,7 +46,7 @@ class CarbLoadingUserFoodRepository {
     return allFoods
         .where((food) {
           if (food.mealTypes == null) return false;
-          final mealTypes = _parseMealTypesArray(food.mealTypes);
+          final mealTypes = parseMealTypeIds(food.mealTypes);
           return mealTypes.contains(mealTypeId);
         })
         .map((food) => _convertToUserFoodDomain(food))
@@ -77,10 +83,14 @@ class CarbLoadingUserFoodRepository {
     final id = _uuid.v4();
 
     // Serialize meal types to PostgreSQL array format
-    final mealTypesStr = mealTypeIds.isNotEmpty ? '{${mealTypeIds.join(',')}}' : null;
+    final mealTypesStr = mealTypeIds.isNotEmpty
+        ? '{${mealTypeIds.join(',')}}'
+        : null;
 
     // Insert the user food
-    await _database.into(_database.carbLoadingUserFoodsTable).insert(
+    await _database
+        .into(_database.carbLoadingUserFoodsTable)
+        .insert(
           CarbLoadingUserFoodsTableCompanion.insert(
             id: id,
             deviceId: deviceId,
@@ -100,9 +110,9 @@ class CarbLoadingUserFoodRepository {
         );
 
     // Fetch and return the created food
-    final food = await (_database.select(_database.carbLoadingUserFoodsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .getSingle();
+    final food = await (_database.select(
+      _database.carbLoadingUserFoodsTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingle();
 
     return _convertToUserFoodDomain(food);
   }
@@ -120,10 +130,18 @@ class CarbLoadingUserFoodRepository {
     // Build companion with only provided fields
     final companion = CarbLoadingUserFoodsTableCompanion(
       name: name != null ? Value(name) : const Value.absent(),
-      displayName: displayName != null ? Value(displayName) : const Value.absent(),
-      displayNamePlural: displayNamePlural != null ? Value(displayNamePlural) : const Value.absent(),
-      carbsPerServing: carbsPerServing != null ? Value(carbsPerServing) : const Value.absent(),
-      imageAddress: imageAddress != null ? Value(imageAddress) : const Value.absent(),
+      displayName: displayName != null
+          ? Value(displayName)
+          : const Value.absent(),
+      displayNamePlural: displayNamePlural != null
+          ? Value(displayNamePlural)
+          : const Value.absent(),
+      carbsPerServing: carbsPerServing != null
+          ? Value(carbsPerServing)
+          : const Value.absent(),
+      imageAddress: imageAddress != null
+          ? Value(imageAddress)
+          : const Value.absent(),
       mealTypes: mealTypeIds != null
           ? Value(mealTypeIds.isNotEmpty ? '{${mealTypeIds.join(',')}}' : null)
           : const Value.absent(),
@@ -131,26 +149,28 @@ class CarbLoadingUserFoodRepository {
     );
 
     // Update the user food
-    await (_database.update(_database.carbLoadingUserFoodsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .write(companion);
+    await (_database.update(
+      _database.carbLoadingUserFoodsTable,
+    )..where((tbl) => tbl.id.equals(id))).write(companion);
 
     // Fetch and return the updated food
-    final food = await (_database.select(_database.carbLoadingUserFoodsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .getSingle();
+    final food = await (_database.select(
+      _database.carbLoadingUserFoodsTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingle();
 
     return _convertToUserFoodDomain(food);
   }
 
   /// Soft delete a user food
   Future<void> deleteUserFood(String id) async {
-    await (_database.update(_database.carbLoadingUserFoodsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .write(const CarbLoadingUserFoodsTableCompanion(
-      isDeleted: Value(true),
-      updatedAt: Value.absent(), // Drift will auto-update
-    ));
+    await (_database.update(
+      _database.carbLoadingUserFoodsTable,
+    )..where((tbl) => tbl.id.equals(id))).write(
+      const CarbLoadingUserFoodsTableCompanion(
+        isDeleted: Value(true),
+        updatedAt: Value.absent(), // Drift will auto-update
+      ),
+    );
   }
 
   /// Search user foods by name
@@ -159,42 +179,22 @@ class CarbLoadingUserFoodRepository {
     String searchTerm,
   ) async {
     final query = _database.select(_database.carbLoadingUserFoodsTable)
-      ..where((tbl) =>
-          tbl.deviceId.equals(deviceId) &
-          tbl.isDeleted.equals(false) &
-          tbl.displayName.contains(searchTerm));
+      ..where(
+        (tbl) =>
+            tbl.deviceId.equals(deviceId) &
+            tbl.isDeleted.equals(false) &
+            tbl.displayName.contains(searchTerm),
+      );
 
     final foods = await query.get();
     return foods.map((food) => _convertToUserFoodDomain(food)).toList();
   }
 
-  /// Parse meal types from array column (PostgreSQL array format: {1,2,3})
-  List<int> _parseMealTypesArray(String? mealTypesStr) {
-    if (mealTypesStr == null || mealTypesStr.isEmpty) return [];
-
-    try {
-      // Handle PostgreSQL array format: {1,2,3}
-      if (mealTypesStr.startsWith('{') && mealTypesStr.endsWith('}')) {
-        final content = mealTypesStr.substring(1, mealTypesStr.length - 1);
-        if (content.isEmpty) return [];
-        return content.split(',').map((s) => int.parse(s.trim())).toList();
-      }
-
-      // Handle JSON array format: [1,2,3]
-      if (mealTypesStr.startsWith('[') && mealTypesStr.endsWith(']')) {
-        final List<dynamic> parsed = jsonDecode(mealTypesStr);
-        return parsed.map((e) => e as int).toList();
-      }
-
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
   /// Convert Drift entity to domain model
-  domain.CarbLoadingUserFood _convertToUserFoodDomain(CarbLoadingUserFood food) {
-    final mealTypeIds = _parseMealTypesArray(food.mealTypes);
+  domain.CarbLoadingUserFood _convertToUserFoodDomain(
+    CarbLoadingUserFood food,
+  ) {
+    final mealTypeIds = parseMealTypeIds(food.mealTypes);
 
     return domain.CarbLoadingUserFood.fromDatabase(
       id: food.id,
@@ -217,10 +217,14 @@ class CarbLoadingUserFoodRepository {
 
   /// Watch all user foods (for real-time updates)
   Stream<List<domain.CarbLoadingUserFood>> watchUserFoods(String deviceId) {
-    return (_database.select(_database.carbLoadingUserFoodsTable)
-          ..where((tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false)))
+    return (_database.select(_database.carbLoadingUserFoodsTable)..where(
+          (tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false),
+        ))
         .watch()
-        .map((foods) => foods.map((food) => _convertToUserFoodDomain(food)).toList());
+        .map(
+          (foods) =>
+              foods.map((food) => _convertToUserFoodDomain(food)).toList(),
+        );
   }
 
   /// Watch user foods by meal type (for real-time updates)
@@ -228,17 +232,20 @@ class CarbLoadingUserFoodRepository {
     String deviceId,
     int mealTypeId,
   ) {
-    return (_database.select(_database.carbLoadingUserFoodsTable)
-          ..where((tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false)))
+    return (_database.select(_database.carbLoadingUserFoodsTable)..where(
+          (tbl) => tbl.deviceId.equals(deviceId) & tbl.isDeleted.equals(false),
+        ))
         .watch()
-        .map((foods) => foods
-            .where((food) {
-              if (food.mealTypes == null) return false;
-              final mealTypes = _parseMealTypesArray(food.mealTypes);
-              return mealTypes.contains(mealTypeId);
-            })
-            .map((food) => _convertToUserFoodDomain(food))
-            .toList());
+        .map(
+          (foods) => foods
+              .where((food) {
+                if (food.mealTypes == null) return false;
+                final mealTypes = parseMealTypeIds(food.mealTypes);
+                return mealTypes.contains(mealTypeId);
+              })
+              .map((food) => _convertToUserFoodDomain(food))
+              .toList(),
+        );
   }
 }
 

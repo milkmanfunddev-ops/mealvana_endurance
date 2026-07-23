@@ -132,6 +132,7 @@ class FigmaRadioOptionList<T> extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.only(bottom: index < items.length - 1 ? 12 : 0),
           child: FigmaRadioOptionCard(
+            key: item.valueKey,
             label: item.label,
             isSelected: selectedValue == item.value,
             onTap: () => onSelected(item.value),
@@ -145,8 +146,15 @@ class FigmaRadioOptionList<T> extends StatelessWidget {
 
 /// Data class for Figma radio option items
 class FigmaRadioOptionItem<T> {
-  const FigmaRadioOptionItem({required this.value, required this.label});
+  const FigmaRadioOptionItem({
+    required this.value,
+    required this.label,
+    this.valueKey,
+  });
 
   final T value;
   final String label;
+
+  /// Optional key for the card widget (for integration tests)
+  final Key? valueKey;
 }

@@ -1,14 +1,16 @@
 /**
  * LP-based phase generation for nutrition plan V3.
  *
- * Used primarily for the after phase and as LP fallback for during phase.
+ * Used as the fallback for the AFTER phase only. The during phase no longer
+ * has an LP tier (2026-07-21 refactor): its rule solver + closing gap-fill
+ * pass strictly dominate the LP fallback, which ran on a different food pool
+ * with no gut caps and shipped unvalidated output.
  */
 
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import {
   type ActivityType,
   buildLPModel,
-  deriveTimingCategory,
   type FoodResult,
   getOptimizationWeights,
   getSportConfig,
@@ -19,12 +21,10 @@ import {
 } from "../_shared/nutrition/index.ts";
 import { getTemplateFoodsForPhase } from "../_shared/nutrition/template-food-queries.ts";
 import type { LPPhaseResult } from "./types.ts";
-import { generateByHourData } from "./by-hour-apportionment.ts";
-import { postProcessDuringPhase } from "./during-phase.ts";
 import { validatePhaseResultAgainstTargets } from "./validation.ts";
 
 /**
- * Generate a phase (during or after) using the LP solver with greedy fallback.
+ * Generate a phase using the LP solver with greedy fallback.
  */
 export async function generateLPPhase(
   supabase: ReturnType<typeof createServiceClient>,
@@ -35,14 +35,10 @@ export async function generateLPPhase(
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
-  durationMinutes?: number,
-  gutTrainingLevel?: string,
   allergies?: string[],
   dietaryPreference?: string,
 ): Promise<LPPhaseResult> {
   console.log(`[PLAN-V3] Generating ${phase} phase via LP solver`);
-  const isDuringPhase = phase === "during";
-  const useDefaultDuringFilter = isDuringPhase && activityType === "running";
 
   // Get foods for this phase from template_foods table
   let foods = await getTemplateFoodsForPhase(
@@ -87,33 +83,6 @@ export async function generateLPPhase(
     }
   }
 
-  // Hydration strategy: filter food pool based on carb demand per hour
-  if (isDuringPhase && durationMinutes && durationMinutes > 0) {
-    const durationHours = durationMinutes / 60;
-    const carbsPerHour = targets.carbs_g / durationHours;
-
-    if (carbsPerHour <= 30) {
-      const before = foods.length;
-      foods = foods.filter((f) => {
-        const tc = deriveTimingCategory(f);
-        return tc !== "fuel_drink";
-      });
-      if (foods.length < before) {
-        console.log(
-          `[PLAN-V3] Hydration strategy: electrolyte_water (removed ${
-            before - foods.length
-          } fuel drinks, carbsPerHour=${carbsPerHour.toFixed(1)})`,
-        );
-      }
-    } else if (carbsPerHour > 60) {
-      console.log(
-        `[PLAN-V3] Hydration strategy: sports_drink (high carb demand, carbsPerHour=${
-          carbsPerHour.toFixed(1)
-        })`,
-      );
-    }
-  }
-
   const sportConfig = getSportConfig(activityType);
   const phaseConfig = sportConfig.phases[phase];
   const dynamicMaxServingsCap = phase === "after" && targets.water_ml > 2000
@@ -123,68 +92,23 @@ export async function generateLPPhase(
   // Get optimization weights for this phase
   const weights = getOptimizationWeights(activityType, phase);
 
-  // Two-pass approach for during phase:
-  // Pass 1: LP solver with reduced sodium weight so carbs + preference dominate
-  // Pass 2: Post-processing adds electrolyte supplements to fill sodium deficit
-  const weightOverrides = isDuringPhase ? { sodium: 0.05 } : undefined;
-  const constraintOverrides = isDuringPhase
-    ? { sodium: { min: 0.0, max: 1.1 } }
-    : undefined;
   const modelOptions = {
     maxFoodItems: phaseConfig.maxFoods,
     maxServingsCap: dynamicMaxServingsCap,
-    selectionPenalty: isDuringPhase ? 1.0 : 0.1,
-    maxElectrolyteSupplements: isDuringPhase && activityType === "running"
-      ? 1
-      : undefined,
-    enforceWaterMin: isDuringPhase,
-    randomVariance: isDuringPhase,
+    selectionPenalty: 0.1,
   };
 
   // Build and solve LP model
-  let model = buildLPModel(
+  const model = buildLPModel(
     foods,
     targets,
     phase,
     weights,
-    weightOverrides,
-    constraintOverrides,
+    undefined,
+    undefined,
     modelOptions,
   );
-  let solution = solveLPModel(model, foods, phase);
-
-  // Running during default policy:
-  // if default pool is infeasible, retry with all during foods.
-  if (useDefaultDuringFilter && (!solution || solution.foods.length === 0)) {
-    const expandedFoods = await getTemplateFoodsForPhase(
-      supabase,
-      phase,
-      activityType,
-      likedFoods,
-      willingToTryFoods,
-      dislikedFoods,
-      deviceId,
-      true,
-      allergies,
-      dietaryPreference,
-    );
-    if (expandedFoods.length > foods.length) {
-      console.log(
-        `[PLAN-V3] during running default pool infeasible; retrying with expanded food pool (${foods.length} -> ${expandedFoods.length})`,
-      );
-      foods = expandedFoods;
-      model = buildLPModel(
-        foods,
-        targets,
-        phase,
-        weights,
-        weightOverrides,
-        constraintOverrides,
-        modelOptions,
-      );
-      solution = solveLPModel(model, foods, phase);
-    }
-  }
+  const solution = solveLPModel(model, foods, phase);
 
   let resultFoods: FoodResult[];
   if (solution && solution.foods.length > 0) {
@@ -195,18 +119,6 @@ export async function generateLPPhase(
     console.log(`[PLAN-V3] ${phase} LP failed, using greedy fallback`);
     const greedyResult = greedyFallback(foods, targets, phase);
     resultFoods = greedyResult.foods;
-  }
-
-  // Pass 2: Post-process during phase to add electrolyte supplements for sodium deficit
-  if (isDuringPhase) {
-    resultFoods = await postProcessDuringPhase(
-      supabase,
-      resultFoods,
-      targets,
-      phaseConfig.maxFoods,
-      likedFoods,
-      willingToTryFoods,
-    );
   }
 
   // If phase output is out-of-range and imported user foods are present in the pool,
@@ -241,8 +153,8 @@ export async function generateLPPhase(
           targets,
           phase,
           weights,
-          weightOverrides,
-          constraintOverrides,
+          undefined,
+          undefined,
           modelOptions,
         );
         const retrySolution = solveLPModel(retryModel, sanitizedFoods, phase);
@@ -251,17 +163,6 @@ export async function generateLPPhase(
           retryFoods = retrySolution.foods;
         } else {
           retryFoods = greedyFallback(sanitizedFoods, targets, phase).foods;
-        }
-
-        if (isDuringPhase) {
-          retryFoods = await postProcessDuringPhase(
-            supabase,
-            retryFoods,
-            targets,
-            phaseConfig.maxFoods,
-            likedFoods,
-            willingToTryFoods,
-          );
         }
 
         const retryValidation = validatePhaseResultAgainstTargets(
@@ -287,21 +188,5 @@ export async function generateLPPhase(
     }
   }
 
-  // Generate by-hour data for during phase
-  let byHourData = null;
-  if (isDuringPhase && durationMinutes && durationMinutes >= 60) {
-    byHourData = generateByHourData(
-      resultFoods,
-      durationMinutes,
-      activityType,
-      gutTrainingLevel ?? "moderate",
-    );
-    if (byHourData) {
-      console.log(
-        `[PLAN-V3] Generated by-hour data: ${byHourData.assignments.length} assignments for ${durationMinutes}min`,
-      );
-    }
-  }
-
-  return { foods: resultFoods, by_hour_data: byHourData };
+  return { foods: resultFoods };
 }

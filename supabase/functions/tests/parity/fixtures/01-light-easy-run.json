@@ -1,0 +1,35 @@
+{
+  "description": "Light athlete (50kg female) — short easy 30-min run. Minimal fueling; tests degenerate low-target case.",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: solver picks Sports Drink×0.5 + Water×1 delivering only 50mg sodium vs 200mg target (delta=150mg, above 100mg absolute floor). Real catalog electrolyte_capsule has 190mg sodium — even adding 1 capsule (190mg) would bring total to 240mg, exceeding target slightly; but the electrolyte top-up does not fire at this low carb anchor (10g). Same electrolyte-scoring-skip algorithm gap as fixture 17. Previously passed on synthetic catalog only because the synthetic electrolyte tab had an inflated 350mg.",
+  "athlete": {
+    "weight_kg": 50,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 30,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 10,
+      "sodium_mg": 200,
+      "water_ml": 300
+    },
+    "post_run": {
+      "carbs_g": 30,
+      "protein_g": 15,
+      "sodium_mg": 250,
+      "water_ml": 350
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

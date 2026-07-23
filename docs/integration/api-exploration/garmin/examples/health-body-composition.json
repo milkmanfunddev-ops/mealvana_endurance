@@ -1,0 +1,17 @@
+{
+  "bodyComps": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "body-20240328",
+      "measurementTimeInSeconds": 1711612800,
+      "measurementTimeOffsetInSeconds": -18000,
+      "weightInGrams": 72000,
+      "percentFat": 15.2,
+      "percentHydration": 58.5,
+      "boneMassInGrams": 3200,
+      "muscleMassInGrams": 34000,
+      "bmi": 23.1
+    }
+  ]
+}

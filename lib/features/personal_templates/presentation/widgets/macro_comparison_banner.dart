@@ -75,7 +75,7 @@ class MacroComparisonBanner extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Template vs. Recommended',
+                  'Routine vs. Recommended',
                   style: AppTextStyles.subtitle.copyWith(
                     color: AppColors.textDark,
                     fontWeight: FontWeight.w600,
@@ -99,10 +99,16 @@ class MacroComparisonBanner extends StatelessWidget {
           _buildMacroRow('Carbs', '${templateCarbsG}g', '${targetCarbsG}g'),
           if (templateProteinG != null && targetProteinG != null)
             _buildMacroRow(
-                'Protein', '${templateProteinG}g', '${targetProteinG}g'),
+              'Protein',
+              '${templateProteinG}g',
+              '${targetProteinG}g',
+            ),
           if (templateSodiumMg != null && targetSodiumMg != null)
             _buildMacroRow(
-                'Sodium', '${templateSodiumMg}mg', '${targetSodiumMg}mg'),
+              'Sodium',
+              '${templateSodiumMg}mg',
+              '${targetSodiumMg}mg',
+            ),
 
           // Guidance text
           const SizedBox(height: AppSpacing.sm),
@@ -134,7 +140,7 @@ class MacroComparisonBanner extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '$templateVal template  ·  $targetVal target',
+              '$templateVal routine  ·  $targetVal target',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.textDark,
               ),
@@ -150,11 +156,11 @@ class MacroComparisonBanner extends StatelessWidget {
     final pct = targetCarbsG > 0 ? (carbDiff.abs() / targetCarbsG * 100) : 0;
 
     if (pct < 10) {
-      return 'Your template closely matches the recommended targets.';
+      return 'Your routine closely matches the recommended targets.';
     } else if (carbDiff > 0) {
-      return 'Your template has more carbs than recommended for this activity. Consider scaling or adjusting.';
+      return 'Your routine has more carbs than recommended for this activity. Consider scaling or adjusting.';
     } else {
-      return 'Your template has fewer carbs than recommended for this activity. Consider scaling or adjusting.';
+      return 'Your routine has fewer carbs than recommended for this activity. Consider scaling or adjusting.';
     }
   }
 }

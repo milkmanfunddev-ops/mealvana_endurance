@@ -37,25 +37,37 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Setup default logger behavior
-    when(() => mockLogger.info(any(),
-            context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.debug(any(),
-            context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
 
     repository = CoachRepository(
       supabase: mockSupabase,

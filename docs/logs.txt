@@ -1,43 +1,176 @@
-Restarted application in 1,629ms.
+Launching lib/main_dev.dart on iPhone 17 Pro in debug mode...
+To ensure your app continues to launch on upcoming iOS versions, UIScene lifecycle support will soon be required. Please see https://flutter.dev/to/uiscene-migration for the migration guide.
+
+The following plugins do not support Swift Package Manager for ios:
+  - device_info_plus
+  - flutter_secure_storage
+  - flutter_web_auth_2
+  - patrol
+  - printing
+  - sign_in_with_apple
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+Xcode build done.                                           53.2s
+`UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+-[WFIsolatedShortcutRunner init] Taking sandbox extensions for execution
+-[WFIsolatedShortcutRunner init]_block_invoke Sandbox extensions acquired
+Indexing for request: <WFToolKitIndexingRequest: 0x600001727240>, changeset: .partial(updatedCount: 1 removedCount: 0 updated: ["com.milkman.mealvanaendurance.dev"], removed: []), priority: 31
+Resolved Preferred localizations: [BackgroundShortcutRunner.ToolKitIndexer.(unknown context at $100e86284).(unknown context at $100e8628c).LocaleWithUsage(locale: en (fixed en), usage: __C.WFLocalizationUsage(_rawValue: display), preferenceOrder: 0), BackgroundShortcutRunner.ToolKitIndexer.(unknown context at $100e86284).(unknown context at $100e8628c).LocaleWithUsage(locale: en (fixed en), usage: __C.WFLocalizationUsage(_rawValue: languageModel), preferenceOrder: 1)]
+Indexed: 0
+Errored: 0
+Skipped: [:]
+Connecting to VM Service at ws://127.0.0.1:55668/VWQj01WDQqk=/ws
+Connected to the VM Service.
+Finished in 0.416802s
+-[WFIsolatedShortcutRunner unaliveProcess] Releasing sandbox extensions
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: ✅ Schema validation passed (26 tables verified)
-flutter: 🔄 Integration sync skipped (garmin) - data is fresh
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: 🔄 Integration sync skipped (garmin) - data is fresh
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: 🔑 ConnectTrainingController: Using real user ID: 09cd66df-b38e-42c9-a738-1f002f7c1f1e
+flutter: ✅ Schema validation passed (35 tables verified)
+flutter: 📊 [ANALYTICS] app_opened {device_id: D553A42C-346D-4587-B6B5-06D10A3275EF, session_id: db18d756-fada-467e-817e-eae70ab797ae, timestamp: 2026-07-17T09:43:34.869140}
+flutter: [RevenueCatService] configured (key suffix: ...nCTs)
+flutter: 📊 [ANALYTICS] log_meal_opened {source: fuel_timeline, log_date: 2026-07-17, is_today: true}
+flutter: 📊 [ANALYTICS] diary_opened {source: fuel_timeline, log_date: 2026-07-17, is_today: true}
+flutter: 📊 [ANALYTICS] diary_closed {duration_sec: 117, items_logged: 1, log_date: 2026-07-17}
+flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connected Apps Settings}
+flutter: 🔑 ConnectTrainingController: Using real user ID: 37129f7e-d0b8-4748-b584-e3af0575b8b4
 flutter:    (user profile exists: true, onboardingCompleted: true)
-flutter:    (auth user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, resolved user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e)
-flutter: 🔑 ConnectTrainingController: Using real user ID: 09cd66df-b38e-42c9-a738-1f002f7c1f1e
+flutter:    (auth user: 37129f7e-d0b8-4748-b584-e3af0575b8b4, resolved user: 37129f7e-d0b8-4748-b584-e3af0575b8b4)
+flutter: 🔑 ConnectTrainingController: Using real user ID: 37129f7e-d0b8-4748-b584-e3af0575b8b4
 flutter:    (user profile exists: true, onboardingCompleted: true)
-flutter:    (auth user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, resolved user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e)
-flutter: ✅ Garmin user mapping deleted
-flutter: ✅ Garmin Connect integration disconnected
-flutter: 🔌 connectgarmin: Starting connection for user 09cd66df-b38e-42c9-a738-1f002f7c1f1e
-flutter: 🔐 Starting Garmin Connect OAuth flow...
-flutter:    Auth URL: https://connect.garmin.com/oauth2Confirm?client_id=6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6&response_type=code&redirect_uri=https%3A%2F%2Fwvmvsodrvbkxfydabqed.supabase.co%2Ffunctions%2Fv1%2Fgarmin-oauth-callback&scope=ACTIVITY_EXPORT+HEALTH_EXPORT&code_challenge=kSvERmyOhV97CJC3TFANzQlwPna009PQ8BJcJmbtmO8&code_challenge_method=S256&state=b6fe213a5db9ba33b328663ace2ea08b1091c6e6286bf5990bf81377084e773c
-flutter:    Redirect URI: https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/garmin-oauth-callback
-flutter: 📥 Garmin callback received:
-flutter:    Raw callback: com.milkman.mealvanaendurance://callback?code=09531ed95dde47a491464ba48f8364c9&state=b6fe213a5db9ba33b328663ace2ea08b1091c6e6286bf5990bf81377084e773c
-flutter:    Code param: 09531ed95dde47a491464ba48f8364c9
-flutter:    Code length: 32
-flutter: ✅ Received Garmin authorization code
-flutter: ✅ Garmin token exchange successful
-flutter: ✅ Garmin user ID fetched: af701316-e43f-4a8c-be41-a3fde89a8e96
-flutter: ⚠️ Garmin body comp fetch returned 404
-flutter: 📊 Garmin body comp: weight=nullkg, bodyFat=null%
-flutter: ✅ Garmin integration saved to database
-flutter: ❌ connectgarmin: Error occurred
-flutter:    Error: FunctionException(status: 401, details: {success: false, error: Unable to verify Garmin account}, reasonPhrase: Unauthorized)
-flutter:    Stack: #0      FunctionsClient.invoke (package:functions_client/src/functions_client.dart:186:7)
-<asynchronous suspension>
-#1      GarminOAuthService._invokeGarminUserMapping (package:mealvana_endurance/features/integrations/application/garmin_oauth_service.dart:454:22)
-<asynchronous suspension>
-#2      GarminOAuthService._upsertGarminUserMapping (package:mealvana_endurance/features/integrations/application/garmin_oauth_service.dart:428:5)
-<asynchronous suspension>
-#3      GarminOAuthService.authenticate (package:mealvana_endurance/features/integrations/application/garmin_oauth_service.dart:180:7)
-<asynchronous suspension>
-#4      ConnectTrainingController._connectProvider (package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart:357:27)
-<asynchronous suspension>
-#5      _ConnectedAppsScreenState._connectGarmin (package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart:633:21)
-<asynchronous suspension>
+flutter:    (auth user: 37129f7e-d0b8-4748-b584-e3af0575b8b4, resolved user: 37129f7e-d0b8-4748-b584-e3af0575b8b4)
+flutter: 📊 [ANALYTICS] activity_button_pressed {timestamp: 2026-07-17T09:46:13.687056, selected_date: 2026-07-17T00:00:00.000}
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 09:46:13.953 (+0:02:42.128134)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Location permission permanently denied\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 09:46:13.982 (+0:02:42.156863)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Location permission permanently denied\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 09:46:13.983 (+0:02:42.157405)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [WeatherService] No location available for weather\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Data: {failure_reason: permissionDeniedForever}\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 09:46:13.983 (+0:02:42.157858)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Could not get location, using default weather\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 📊 [ANALYTICS] plan_generation_started {device_id: 37129f7e-d0b8-4748-b584-e3af0575b8b4, timestamp: 2026-07-17T09:46:15.290769, distance_miles: 12.0, pace_minutes_per_mile: 9.0, gut_training_level: high}
+flutter: 📊 [ANALYTICS] plan_generated {device_id: 37129f7e-d0b8-4748-b584-e3af0575b8b4, activity_id: f19c87e7-6c8a-4e9f-8058-65927d99f26e, activity_type: running, timestamp: 2026-07-17T09:46:17.210298, distance_miles: 12.0, pace_minutes_per_mile: 9.0, total_calories: 1472, total_carbs: 303, before_run_items: 1, during_run_items: 1, after_run_items: 1, is_first_plan: true}
+flutter: 📊 [ANALYTICS] create_plan_button_tapped {screen: adjust_macros}
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 09:46:18.386 (+0:02:46.560725)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [ADJUST_MACROS_SCREEN] Coach create-plan tapped\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Data: {activityId: f19c87e7-6c8a-4e9f-8058-65927d99f26e, eventId: null, forUserId: null}\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 09:46:18.391 (+0:02:46.565612)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [MACRO_TARGETS_CONTROLLER] Create nutrition plan started\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Data: {activityId: f19c87e7-6c8a-4e9f-8058-65927d99f26e, eventId: null, forUserId: null}\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: 📊 [ANALYTICS] nutrition_plan_creation_started_from_adjusted_macros {distance_miles: 11.999950290181069, duration_hours: 1.8, modified_fields_count: 0}
+flutter: 📊 [ANALYTICS] nutrition_plan_created_from_adjusted_macros {distance_miles: 11.999950290181069, duration_hours: 1.8, total_calories: 1472, pre_run_carbs_g: 114.0, during_run_carbs_g: 113.0, post_run_carbs_g: 76.0, modified_fields_count: 0, plan_type: v2_template}
+flutter: 📊 [ANALYTICS] plan_used_pin {device_id: 37129f7e-d0b8-4748-b584-e3af0575b8b4, activity_id: f19c87e7-6c8a-4e9f-8058-65927d99f26e, template_id: ef02c939-03db-4fab-8886-8fde45dea1bf, template_name: (Gel + Water) + Sports Drink, phase: during, pin_set_size: 1, timestamp: 2026-07-17T09:46:19.972736}
+flutter: 📊 [ANALYTICS] plan_used_pin {device_id: 37129f7e-d0b8-4748-b584-e3af0575b8b4, activity_id: f19c87e7-6c8a-4e9f-8058-65927d99f26e, template_id: 56e17d6b-967c-4226-8700-97863bde55ad, template_name: Nut Butter + Toast + Banana, phase: after, pin_set_size: 1, timestamp: 2026-07-17T09:46:19.972919}
+flutter: 📊 [ANALYTICS] pin_status_banner_shown {activity_id: f19c87e7-6c8a-4e9f-8058-65927d99f26e, mode: status, rows: 4, honored_count: 2}
+flutter: 📊 [ANALYTICS] add_food_tapped {section: before_run:snack}
+flutter: 📊 [ANALYTICS] swap_food_screen_viewed {is_swapping: false, category: before_run:snack}
+flutter: 📊 [ANALYTICS] carb_loading_protocol_selected {protocol: 3_day, protocol_days: 3, event_id: f9b5b467-f919-48cb-b856-39133d558a86}
+
+════════ Exception caught by Flutter framework ═════════════════════════════════
+The following assertion was thrown:
+ListTile background color or ink splashes may be invisible.
+The ListTile is wrapped in a DecoratedBox that has a background color. Because ListTile paints its background and ink splashes on the nearest Material ancestor, this DecoratedBox will hide those effects.
+To fix this, wrap the ListTile in its own Material widget, or remove the background color from the intermediate DecoratedBox.
+
+ListTile: ListTile
+    isThreeLine: null
+    dense: true
+    visualDensity: null
+    shape: null
+    style: null
+    selectedColor: null
+    iconColor: null
+    textColor: null
+    titleTextStyle: null
+    subtitleTextStyle: null
+    leadingAndTrailingTextStyle: null
+    contentPadding: EdgeInsets.zero
+    enabled: true
+    onTap: Closure: () => Future<void>
+    onLongPress: null
+    mouseCursor: null
+    selected: false
+    focusColor: null
+    hoverColor: null
+    focusNode: null
+    autofocus: false
+    tileColor: null
+    selectedTileColor: null
+    enableFeedback: null
+    horizontalTitleGap: null
+    minVerticalPadding: null
+    minLeadingWidth: null
+    titleAlignment: null
+DecoratedBox: DecoratedBox
+    bg: BoxDecoration(color: Color(alpha: 1.0000, red: 0.2902, green: 0.1569, blue: 0.3294, colorSpace: ColorSpace.sRGB), borderRadius: BorderRadius.circular(15.0))
+        color: Color(alpha: 1.0000, red: 0.2902, green: 0.1569, blue: 0.3294, colorSpace: ColorSpace.sRGB)
+        borderRadius: BorderRadius.circular(15.0)
+════════════════════════════════════════════════════════════════════════════════
+flutter: 📊 [ANALYTICS] carb_loading_protocol_selected {protocol: 3_day, protocol_days: 3, event_id: f9b5b467-f919-48cb-b856-39133d558a86}
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m│ Bad state: Too many elements\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+flutter: \^[[38;5;196m│ #2   CarbLoadingService.getCarbLoadingPlan (package:mealvana_endurance/features/carb_loading/application/carb_loading_service.dart:421:15)\^[[0m
+flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ 09:49:26.233 (+0:05:54.408051)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Error getting carb loading plan for event: f9b5b467-f919-48cb-b856-39133d558a86\^[[0m
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m│ Bad state: Too many elements\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+flutter: \^[[38;5;196m│ #2   CarbLoadingService.deleteCarbLoadingPlan (package:mealvana_endurance/features/carb_loading/application/carb_loading_service.dart:241:15)\^[[0m
+flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ 09:49:26.237 (+0:05:54.411360)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Error deleting carb loading plan\^[[0m
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m│ Bad state: Too many elements\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+flutter: \^[[38;5;196m│ #2   CarbLoadingService.updateCarbLoadingProtocol (package:mealvana_endurance/features/carb_loading/application/carb_loading_service.dart:408:15)\^[[0m
+flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ 09:49:26.238 (+0:05:54.412941)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Error updating carb loading protocol\^[[0m
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;196m│ Bad state: Too many elements\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+flutter: \^[[38;5;196m│ #2   CarbLoadingController.updateCarbLoadingProtocol (package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_controller.dart:143:15)\^[[0m
+flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ 09:49:26.240 (+0:05:54.414812)\^[[0m
+flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;196m│ ⛔ Error updating carb loading protocol\^[[0m
+flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m

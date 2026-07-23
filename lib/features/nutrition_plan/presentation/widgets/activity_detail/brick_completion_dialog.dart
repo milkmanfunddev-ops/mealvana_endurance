@@ -56,7 +56,7 @@ class _BrickCompletionDialogState extends State<BrickCompletionDialog> {
                   color: AppColors.electrolyte.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.link,
                   size: AppIconSizes.xl,
                   color: AppColors.orange,
@@ -104,8 +104,8 @@ class _BrickCompletionDialogState extends State<BrickCompletionDialog> {
                   return IconButton(
                     icon: Icon(
                       rating <= _rating
-                          ? FontAwesomeIcons.solidStar
-                          : FontAwesomeIcons.star,
+                          ? FontAwesomeIcons.solidStar.data
+                          : FontAwesomeIcons.star.data,
                       color: AppColors.orange,
                       size: AppIconSizes.md,
                     ),

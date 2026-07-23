@@ -19,6 +19,8 @@ import {
   type PlanState,
   type TemplateSelection,
   type PreWorkoutPhaseResult,
+  type PreWorkoutShortfall,
+  type AddOn,
   BUDGET_SPLITS,
   BANANA_CARBS,
   BANANA_SODIUM,
@@ -26,6 +28,15 @@ import {
   SPORTS_DRINK_CARBS,
   SPORTS_DRINK_SODIUM,
   SPORTS_DRINK_FLUID,
+  DATES_CARBS,
+  DATES_SODIUM,
+  DATES_FLUID,
+  APPLESAUCE_CARBS,
+  APPLESAUCE_SODIUM,
+  APPLESAUCE_FLUID,
+  RAISINS_CARBS,
+  RAISINS_SODIUM,
+  RAISINS_FLUID,
 } from './types.ts';
 
 import {
@@ -105,6 +116,35 @@ function makeBananaAddOn() {
   return { type: 'banana' as const, carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
 }
 
+// Pass 1.5 universal fallback add-ons (#15). All three are vegan, gluten-free,
+// and free of the common allergens we filter on, so the only gating needed in
+// Pass 1.5 is dislikes + macro headroom.
+function makeDatesAddOn() {
+  return { type: 'dates' as const, carbs_g: DATES_CARBS, sodium_mg: DATES_SODIUM, fluid_ml: DATES_FLUID, servings: 1 };
+}
+
+function makeApplesauceAddOn() {
+  return { type: 'applesauce' as const, carbs_g: APPLESAUCE_CARBS, sodium_mg: APPLESAUCE_SODIUM, fluid_ml: APPLESAUCE_FLUID, servings: 1 };
+}
+
+function makeRaisinsAddOn() {
+  return { type: 'raisins' as const, carbs_g: RAISINS_CARBS, sodium_mg: RAISINS_SODIUM, fluid_ml: RAISINS_FLUID, servings: 1 };
+}
+
+interface FallbackFoodSpec {
+  name: 'dates' | 'applesauce' | 'raisins';
+  carbs: number;
+  sodium: number;
+  fluid: number;
+  make: () => AddOn;
+}
+
+const PASS_1_5_FALLBACK_FOODS: FallbackFoodSpec[] = [
+  { name: 'dates', carbs: DATES_CARBS, sodium: DATES_SODIUM, fluid: DATES_FLUID, make: makeDatesAddOn },
+  { name: 'applesauce', carbs: APPLESAUCE_CARBS, sodium: APPLESAUCE_SODIUM, fluid: APPLESAUCE_FLUID, make: makeApplesauceAddOn },
+  { name: 'raisins', carbs: RAISINS_CARBS, sodium: RAISINS_SODIUM, fluid: RAISINS_FLUID, make: makeRaisinsAddOn },
+];
+
 function makeSportsDrinkAddOn(servings: number = 1) {
   return {
     type: 'sports_drink' as const,
@@ -167,7 +207,11 @@ export function calculatePreWorkoutTargets(
   let hydrationHigh: number;
   let mealType: string;
 
-  if (hoursBefore >= 2.5) {
+  // Tier thresholds per the Notion spec "Pre-Workout Fueling Plan Algorithm"
+  // (31fe3fdb): >= 90 min -> Meal + Snack + Top-off; 30-89 min -> Snack +
+  // Top-off; < 30 min -> Top-off only. These had drifted to 2.5h/1.0h,
+  // which denied a full meal to athletes eating 1.5-2.5h out (bug, 2026-07-21).
+  if (hoursBefore >= 1.5) {
     // Full meal
     protein = Math.round(weightKg * 0.25);
     proteinLow = Math.round(weightKg * 0.15);
@@ -180,7 +224,7 @@ export function calculatePreWorkoutTargets(
     sodiumHigh = 2000;
     hydrationLow = Math.max(200, Math.round(hydration * 0.50));
     hydrationHigh = Math.max(600, Math.round(hydration * 1.50));
-  } else if (hoursBefore >= 1.0) {
+  } else if (hoursBefore >= 0.5) {
     // Snack
     protein = Math.round(weightKg * 0.15);
     proteinLow = 0;
@@ -227,12 +271,146 @@ export function calculatePreWorkoutTargets(
 }
 
 // ============================================================================
+// Pre-Workout Hydration (new spec — time-based tiers)
+// ============================================================================
+
+export interface PreWorkoutHydrationInput {
+  bodyWeightKg: number;
+  workoutDurationMin: number;
+  timeBeforeWorkoutMin: number;
+  tempC: number | null;
+}
+
+export interface PreWorkoutHydrationResult {
+  tier: 1 | 2 | 3;
+  gate_triggered: boolean;
+  fluid_ml: number;
+  fluid_low_ml: number;
+  fluid_high_ml: number;
+  sodium_mg: number;
+  sodium_low_mg: number;
+  sodium_high_mg: number;
+  message: string | null;
+}
+
+/**
+ * Pre-workout hydration targets per spec tiers.
+ *
+ * Gate: workoutDurationMin < 60 AND tempC < 30 → no structured plan.
+ * Gate is bypassed when tempC >= 30 regardless of duration.
+ *
+ * Tier 1 (timeBeforeWorkoutMin >= 120):
+ *   fluid = BW * 6 ml [BW*5 .. BW*7]; sodium = 450 mg [300 .. 600]
+ * Tier 2 (10 <= timeBeforeWorkoutMin < 120):
+ *   fluid = 250 ml [200 .. 300]; sodium = 150 mg [100 .. 200]
+ * Tier 3 (timeBeforeWorkoutMin < 10):
+ *   fluid = 0; sodium = 0; informational message
+ */
+export function calculatePreWorkoutHydration(
+  input: PreWorkoutHydrationInput,
+): PreWorkoutHydrationResult {
+  const { bodyWeightKg, workoutDurationMin, timeBeforeWorkoutMin, tempC } = input;
+  const temp = tempC ?? 22;
+
+  // Gate: duration < 60 AND temp < 30
+  const gateTriggered = workoutDurationMin < 60 && temp < 30;
+  if (gateTriggered) {
+    // Target is 0 — the spec recommends no structured pre-hydration. We still
+    // emit an advisory upper band (matched to Tier-2 ceilings) so the UI can
+    // render a meaningful range bar. Athletes who happen to drink a bit pre-
+    // workout are graded against this ceiling rather than against zero.
+    return {
+      tier: 1, // tier is irrelevant when gated, but set to what it would have been
+      gate_triggered: true,
+      fluid_ml: 0,
+      fluid_low_ml: 0,
+      fluid_high_ml: 300,
+      sodium_mg: 0,
+      sodium_low_mg: 0,
+      sodium_high_mg: 200,
+      message: 'No structured pre-hydration needed for short workouts in mild conditions.',
+    };
+  }
+
+  // Tier selection
+  if (timeBeforeWorkoutMin >= 120) {
+    const fluid = Math.round(bodyWeightKg * 6);
+    return {
+      tier: 1,
+      gate_triggered: false,
+      fluid_ml: fluid,
+      fluid_low_ml: Math.round(bodyWeightKg * 5),
+      fluid_high_ml: Math.round(bodyWeightKg * 7),
+      sodium_mg: 450,
+      sodium_low_mg: 300,
+      sodium_high_mg: 600,
+      message: null,
+    };
+  }
+
+  if (timeBeforeWorkoutMin >= 10) {
+    return {
+      tier: 2,
+      gate_triggered: false,
+      fluid_ml: 250,
+      fluid_low_ml: 200,
+      fluid_high_ml: 300,
+      sodium_mg: 150,
+      sodium_low_mg: 100,
+      sodium_high_mg: 200,
+      // Spec verbatim (`transparency_pre_hydration.md:49`) + evening-before
+      // append for early-morning case (`transparency_pre_hydration.md:57`).
+      message:
+        'Small top-up only — not enough time for full pre-hydration. Rely on during-workout hydration to cover the gap. For early morning workouts with limited time, consider hydrating well the evening before (extra 300–500 ml with dinner).',
+    };
+  }
+
+  // Tier 3: too late
+  return {
+    tier: 3,
+    gate_triggered: false,
+    fluid_ml: 0,
+    fluid_low_ml: 0,
+    fluid_high_ml: 0,
+    sodium_mg: 0,
+    sodium_low_mg: 0,
+    sodium_high_mg: 0,
+    message: 'Too late for structured pre-hydration. Focus on your during-workout plan.',
+  };
+}
+
+/**
+ * Overlay spec-compliant pre-workout hydration values onto the legacy
+ * carb/protein/fat targets produced by calculatePreWorkoutTargets.
+ *
+ * Carbs/protein/fat/meal_type come from the legacy time-window path (still
+ * drives food selection). Fluid and sodium are replaced with the time-tier
+ * algorithm values from calculatePreWorkoutHydration.
+ */
+export function applyPreWorkoutHydrationOverlay(
+  targets: PreWorkoutTargets,
+  hydration: PreWorkoutHydrationResult,
+): PreWorkoutTargets {
+  return {
+    ...targets,
+    sodium_mg: hydration.sodium_mg,
+    sodium_low_mg: hydration.sodium_low_mg,
+    sodium_high_mg: hydration.sodium_high_mg,
+    water_ml: hydration.fluid_ml,
+    water_low_ml: hydration.fluid_low_ml,
+    water_high_ml: hydration.fluid_high_ml,
+  };
+}
+
+// ============================================================================
 // Phase Schedule & Target Splitting
 // ============================================================================
 
 export function getActiveSubPhases(hoursBefore: number): SubPhaseType[] {
-  if (hoursBefore >= 2.5) return ['meal', 'snack', 'top_up'];
-  if (hoursBefore >= 1.0) return ['snack', 'top_up'];
+  // Spec (Notion 31fe3fdb): >= 90 min -> all three tiers; 30-89 min ->
+  // snack + top-off; < 30 min -> top-off only.
+  if (hoursBefore >= 1.5) return ['meal', 'snack', 'top_up'];
+  if (hoursBefore >= 0.5) return ['snack', 'top_up'];
   return ['top_up'];
 }
 
@@ -450,7 +628,7 @@ function scoreDrinkOption(
  * Scores every (drink × servings) combo against sodium and fluid targets.
  * "No drink" is a valid baseline.
  */
-function pickDrink(
+export function pickDrink(
   drinkTemplates: PreWorkoutTemplate[],
   proteinDelivered: number,
   totalSodiumDelivered: number,
@@ -469,16 +647,35 @@ function pickDrink(
   for (const template of drinkTemplates) {
     for (let srv = template.min_servings; srv <= template.max_servings; srv += 0.5) {
       const servings = snapToHalf(srv);
-      const resultCarbs = carbsDelivered + template.carbs_per_serving * servings;
-      const resultProtein = proteinDelivered + template.protein_per_serving * servings;
       const resultSodium = totalSodiumDelivered + template.sodium_mg * servings;
       const resultFluid = totalFluidDelivered + template.fluid_ml * servings;
 
       // Hard cap: skip any combo that would push fluids past 1.5x target
       if (fluidTarget > 0 && resultFluid > fluidTarget * 1.5) continue;
-      if (resultCarbs > carbsHigh + 1e-6) continue;
-      if (resultProtein > proteinHigh + 1e-6) continue;
-      if (resultSodium > sodiumHigh + 1e-6) continue;
+      // Headroom-based caps for ALL non-fluid macros (parity with
+      // pickElectrolyte): reject only candidates whose own delta exceeds the
+      // remaining headroom. When food selection already left the state over
+      // carbs_high or protein_high, a zero-carb/zero-protein drink like
+      // water must stay selectable — the old absolute checks
+      // (`resultCarbs > carbsHigh`, `resultProtein > proteinHigh`) rejected
+      // EVERY drink in that case and produced no-water plans (before-water
+      // 0%, found 2026-07-21 — same bug class as the #22 sodium fix below,
+      // which had only been applied to sodium).
+      const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+      const drinkCarbsAdded = template.carbs_per_serving * servings;
+      if (drinkCarbsAdded > carbsHeadroom + 1e-6) continue;
+      const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+      const drinkProteinAdded = template.protein_per_serving * servings;
+      if (drinkProteinAdded > proteinHeadroom + 1e-6) continue;
+      // Sodium cap: reject only if the drink itself would consume more sodium
+      // headroom than remains. When state is already over sodium_high
+      // (headroom = 0), a zero-sodium drink like water is still selectable
+      // because it can't make a sodium overage worse. Previously this check
+      // was `resultSodium > sodiumHigh`, which rejected water in that case
+      // and produced no-water plans. (#22)
+      const sodiumHeadroom = Math.max(0, sodiumHigh - totalSodiumDelivered);
+      const drinkSodiumAdded = template.sodium_mg * servings;
+      if (drinkSodiumAdded > sodiumHeadroom + 1e-6) continue;
       if (resultFluid > fluidHigh + 1e-6) continue;
 
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget);
@@ -498,7 +695,7 @@ function pickDrink(
  * Pick the best electrolyte supplement for sodium gap.
  * Independent from drink selection — electrolytes dissolve in water.
  */
-function pickElectrolyte(
+export function pickElectrolyte(
   electrolyteTemplates: PreWorkoutTemplate[],
   carbsDelivered: number,
   proteinDelivered: number,
@@ -520,16 +717,34 @@ function pickElectrolyte(
   let bestPick: { template: PreWorkoutTemplate; servings: number } | null = null;
 
   for (const template of electrolyteTemplates) {
-    for (let srv = template.min_servings; srv <= template.max_servings; srv += 1) {
+    // Divisible sources (e.g. a half-packet electrolyte mix) step in 0.5
+    // increments so the sodium gap can be closed precisely; indivisible
+    // sources (tablets) keep the original whole-unit steps. Mirrors the
+    // `is_indivisible === false` convention used by pin-backfill.ts.
+    // Item 5 (before-run sodium over/undershoot), 2026-07-04.
+    const step = template.is_indivisible === false ? 0.5 : 1;
+    for (let srv = template.min_servings; srv <= template.max_servings; srv += step) {
       const resultCarbs = carbsDelivered + template.carbs_per_serving * srv;
       const resultProtein = proteinDelivered + template.protein_per_serving * srv;
       const resultSodium = totalSodiumDelivered + template.sodium_mg * srv;
       // Electrolytes have 0 fluid_ml — they dissolve in the drink
       const resultFluid = totalFluidDelivered + template.fluid_ml * srv;
-      if (resultCarbs > carbsHigh + 1e-6) continue;
-      if (resultProtein > proteinHigh + 1e-6) continue;
-      if (resultSodium > sodiumHigh + 1e-6) continue;
-      if (resultFluid > fluidHigh + 1e-6) continue;
+      // Headroom-based caps: reject only candidates whose delta exceeds remaining
+      // headroom, so zero-delta picks (e.g. a zero-carb electrolyte tablet when
+      // state is already over carbs_high) stay selectable on their sodium criteria.
+      // Mirrors the fix in pickDrink for #22.
+      const carbsAdded = template.carbs_per_serving * srv;
+      const proteinAdded = template.protein_per_serving * srv;
+      const sodiumAdded = template.sodium_mg * srv;
+      const fluidAdded = template.fluid_ml * srv;
+      const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+      const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+      const sodiumHeadroom = Math.max(0, sodiumHigh - totalSodiumDelivered);
+      const fluidHeadroom = Math.max(0, fluidHigh - totalFluidDelivered);
+      if (carbsAdded > carbsHeadroom + 1e-6) continue;
+      if (proteinAdded > proteinHeadroom + 1e-6) continue;
+      if (sodiumAdded > sodiumHeadroom + 1e-6) continue;
+      if (fluidAdded > fluidHeadroom + 1e-6) continue;
 
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget) +
         (carbsTarget > 0 ? Math.max(0, resultCarbs - carbsHigh) / carbsTarget : 0) * 4;
@@ -544,8 +759,114 @@ function pickElectrolyte(
     }
   }
 
+  // Floor enforcement (before-run sodium fix): the loop above rejects any
+  // serving whose sodium overshoots sodium_high. When every eligible
+  // electrolyte serving overshoots the high bound (e.g. only a 300mg tablet is
+  // available against a 100–200mg target), that leaves `bestPick` null and
+  // strands sodium below the low floor — the bug where before-run showed 77mg
+  // against a 100mg floor. Rather than emit an under-target plan, add the
+  // serving that clears the floor with the *smallest* overshoot (least
+  // over-delivery), still respecting the carb/protein/fluid caps so we don't
+  // blow other macros. This mirrors the pin/formula path, which always tops
+  // sodium up toward target via backfillPinnedFluidsAndSodium.
+  if (!bestPick) {
+    let leastOvershootSodium = Infinity;
+    for (const template of electrolyteTemplates) {
+      const step = template.is_indivisible === false ? 0.5 : 1;
+      for (let srv = template.min_servings; srv <= template.max_servings; srv += step) {
+        const carbsAdded = template.carbs_per_serving * srv;
+        const proteinAdded = template.protein_per_serving * srv;
+        const fluidAdded = template.fluid_ml * srv;
+        const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+        const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+        const fluidHeadroom = Math.max(0, fluidHigh - totalFluidDelivered);
+        if (carbsAdded > carbsHeadroom + 1e-6) continue;
+        if (proteinAdded > proteinHeadroom + 1e-6) continue;
+        if (fluidAdded > fluidHeadroom + 1e-6) continue;
+        const resultSodium = totalSodiumDelivered + template.sodium_mg * srv;
+        // Must at least reach the floor to be worth adding.
+        if (resultSodium < sodiumLow - 1e-6) continue;
+        if (resultSodium < leastOvershootSodium) {
+          leastOvershootSodium = resultSodium;
+          bestPick = { template, servings: srv };
+        }
+      }
+    }
+  }
+
   if (!bestPick) return null;
   return makeSelection(bestPick.template, bestPick.servings);
+}
+
+/**
+ * Pass 1.6: trim a sodium overage left by carb-driven food selection.
+ *
+ * Big carb targets (e.g. a 440g pre-marathon load) accumulate food sodium far
+ * past `sodium_high` — the sodium band is body-independent [300..600]mg while
+ * food sodium scales with servings — and nothing downstream can subtract
+ * (pickDrink / pickElectrolyte only ever add). Trim ADD-ONS only — never
+ * primaries or stacks, which are the meal's identity — removing the
+ * cheapest-carb-loss-per-mg-sodium add-on first, while total carbs stay at or
+ * above `carbsLowG`. Must run BEFORE Pass 2 (pickDrink) so water can backfill
+ * any fluid the removed add-ons carried, sodium-free.
+ *
+ * Deliberately does NOT reset `state.sports_drink_used` when a sports-drink
+ * add-on is trimmed — that would invite a later pass to re-add what was just
+ * removed. Found via before-sodium 154% (Very Heavy Marathon), 2026-07-21.
+ *
+ * Exported for unit testing.
+ */
+export function trimSodiumOverage(
+  results: PreWorkoutPhaseResult[],
+  state: PlanState,
+  carbsLowG: number,
+): void {
+  if (state.sodium_delivered <= state.sodium_high + 1e-6) return;
+  console.log(
+    `[ALGO-C] Sodium trim: delivered=${state.sodium_delivered.toFixed(0)}mg > ` +
+      `high=${state.sodium_high}mg — trimming add-ons`,
+  );
+
+  while (state.sodium_delivered > state.sodium_high + 1e-6) {
+    let best:
+      | { phaseIdx: number; addOnIdx: number; costPerMg: number }
+      | null = null;
+    for (let pi = 0; pi < results.length; pi++) {
+      const addOns = results[pi].add_ons ?? [];
+      for (let ai = 0; ai < addOns.length; ai++) {
+        const a = addOns[ai];
+        if (a.sodium_mg <= 0) continue;
+        // Removing must keep total carbs at/above the low band.
+        if (state.carbs_delivered - a.carbs_g < carbsLowG - 1e-6) continue;
+        const costPerMg = a.carbs_g / a.sodium_mg;
+        if (!best || costPerMg < best.costPerMg) {
+          best = { phaseIdx: pi, addOnIdx: ai, costPerMg };
+        }
+      }
+    }
+    if (!best) {
+      console.log(
+        `[ALGO-C] Sodium trim: still ${
+          (state.sodium_delivered - state.sodium_high).toFixed(0)
+        }mg over high — no more trimmable add-ons (primaries are never trimmed)`,
+      );
+      return;
+    }
+
+    const phase = results[best.phaseIdx];
+    const [removed] = phase.add_ons.splice(best.addOnIdx, 1);
+    phase.total_carbs_g = Math.round((phase.total_carbs_g - removed.carbs_g) * 10) / 10;
+    phase.total_sodium_mg = Math.round((phase.total_sodium_mg - removed.sodium_mg) * 10) / 10;
+    phase.total_fluid_ml = Math.round((phase.total_fluid_ml - removed.fluid_ml) * 10) / 10;
+    state.carbs_delivered -= removed.carbs_g;
+    state.sodium_delivered -= removed.sodium_mg;
+    state.fluid_delivered -= removed.fluid_ml;
+    console.log(
+      `[ALGO-C] Sodium trim: removed ${removed.type} from ${phase.phase} ` +
+        `(-${removed.sodium_mg}mg sodium, -${removed.carbs_g}g carbs, ` +
+        `now ${state.sodium_delivered.toFixed(0)}mg)`,
+    );
+  }
 }
 
 // ============================================================================
@@ -566,12 +887,79 @@ export function selectPreWorkoutFoods(
   likedFoods: string[] = [],
   dislikedFoods: string[] = [],
   allergies: string[] = [],
+  /**
+   * Set of pre_workout_template ids the user has actively pinned (food
+   * templates only; drink/electrolyte not pinnable in V1). When a pinned
+   * template matches the current sub_phase's time_window, it overrides
+   * candidate selection: allergen / diet / dislike / cross-phase-dedup
+   * filters and the [min_servings, max_servings] scale clamp are all
+   * bypassed for that phase. When undefined or empty, behavior is byte-
+   * identical to pre-pin v3. Formula Kit PR 2 substep 5a.
+   */
+  pinnedTemplateIds?: Set<string>,
+  /**
+   * When true, tag an unpinned phase's selected system formula as an
+   * EPHEMERAL default-formula pin on `pin_decision` (formula-first flip,
+   * plan Phase 2 #5). Pre templates have no `selection_priority` /
+   * `activity_types`, so the "best-fit" default IS whatever `pickBestFormula`
+   * already selects from the time_window-scoped eligible set — this only tags
+   * that outcome, it does not change food output. Opt-in so old clients stay
+   * byte-identical (the no-pin-parity tests rely on `pin_decision` being
+   * omitted when neither pins nor this flag are supplied). 2026-07-03.
+   */
+  emitEphemeralDefault = false,
 ): PreWorkoutPhaseResult[] {
   if (targets.meal_type === 'fasted') return [];
   const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
 
   const phases = getActiveSubPhases(hoursBefore);
   const phaseTargets = splitTargets(targets, hoursBefore);
+
+  // ── Pre-check: redistribute budget from empty phases ─────────────
+  // If a phase has zero eligible food templates (e.g. all top-off foods
+  // disliked), redistribute its carb/protein/fat budget proportionally
+  // to the surviving phases so the targets aren't silently dropped.
+  // A phase with an in-scope pin is NOT empty: the pin override below
+  // bypasses the preference filters, so the pinned template WILL deliver
+  // there. Classifying it empty hands its budget to the other phases and
+  // then the pin delivers on top — a guaranteed cross-phase overshoot
+  // (picky athlete + fully-pinned 30-min window: 52.5g vs a 42g high).
+  const hasPinInScope = (p: SubPhaseType): boolean =>
+    pinnedTemplateIds !== undefined &&
+    pinnedTemplateIds.size > 0 &&
+    foodTemplates.some(
+      (t) =>
+        pinnedTemplateIds.has(t.id) &&
+        t.time_window === getTimeWindowForPhase(p),
+    );
+  const emptyPhases = phases.filter(
+    (p) =>
+      !hasPinInScope(p) &&
+      getEligibleTemplates(foodTemplates, p, diet, dislikedFoods, allergies).length === 0,
+  );
+  if (emptyPhases.length > 0 && emptyPhases.length < phases.length) {
+    const activePhases = phases.filter((p) => !emptyPhases.includes(p));
+    const macroKeys: Array<keyof SubPhaseTargets> = [
+      'carbs_g', 'protein_g', 'fat_g', 'sodium_mg', 'water_ml',
+    ];
+    for (const key of macroKeys) {
+      let orphaned = 0;
+      for (const ep of emptyPhases) {
+        orphaned += phaseTargets.get(ep)?.[key] ?? 0;
+      }
+      if (orphaned <= 0) continue;
+      let activeTotal = 0;
+      for (const ap of activePhases) {
+        activeTotal += phaseTargets.get(ap)?.[key] ?? 0;
+      }
+      for (const ap of activePhases) {
+        const t = phaseTargets.get(ap)!;
+        const proportion = activeTotal > 0 ? t[key] / activeTotal : 1 / activePhases.length;
+        t[key] = Math.round((t[key] + orphaned * proportion) * 10) / 10;
+      }
+    }
+    console.log(`[ALGO-C] Redistributed budget from empty phases [${emptyPhases.join(', ')}] to [${activePhases.join(', ')}]`);
+  }
 
   const state: PlanState = {
     used_foods: new Set(),
@@ -596,31 +984,87 @@ export function selectPreWorkoutFoods(
   };
 
   const results: PreWorkoutPhaseResult[] = [];
+  const pinsActive = pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0;
 
   // ── Pass 1: Food selection per phase ────────────────────────────────
   for (const phase of phases) {
     const pTargets = phaseTargets.get(phase);
     const carbTarget = pTargets?.carbs_g ?? 0;
 
-    const eligible = getEligibleTemplates(foodTemplates, phase, diet, dislikedFoods, allergies);
+    // Pin override: when the user has pins matching this phase's time_window,
+    // they take over candidate selection — bypassing dietary/dislike/allergen
+    // filters, cross-phase dedup, and the scale clamp. Per locked Formula Kit
+    // policy (2026-05-21): in-scope pins are honored unconditionally.
+    const phaseTimeWindow = getTimeWindowForPhase(phase);
+    const pinnedForPhase = pinsActive
+      ? foodTemplates.filter(
+          (t) => pinnedTemplateIds!.has(t.id) && t.time_window === phaseTimeWindow,
+        )
+      : [];
+    const pinOverrideActive = pinnedForPhase.length > 0;
 
-    // Filter to unused categories (fallback to all if none left)
-    let candidates = eligible.filter((t) => !state.used_categories.has(t.base_category));
-    if (candidates.length === 0) candidates = eligible;
+    const eligible = pinOverrideActive
+      ? pinnedForPhase
+      : getEligibleTemplates(foodTemplates, phase, diet, dislikedFoods, allergies);
 
-    // Cross-phase food dedup: exclude templates that share non-exempt
-    // component foods with already-selected phases (e.g. no bagel in both meal and snack)
-    if (state.used_foods.size > 0) {
-      const deduped = candidates.filter((t) => {
-        const components = t.component_food_names ?? [];
-        return !components.some((name) =>
-          state.used_foods.has(name) && !CROSS_PHASE_EXEMPT_FOODS.has(name)
-        );
-      });
-      if (deduped.length > 0) candidates = deduped;
+    let candidates: PreWorkoutTemplate[];
+    if (pinOverrideActive) {
+      // Pins skip category-dedup and cross-phase-dedup. Whichever pinned
+      // template scores best is what ships.
+      candidates = pinnedForPhase;
+    } else {
+      // Filter to unused categories (fallback to all if none left)
+      candidates = eligible.filter((t) => !state.used_categories.has(t.base_category));
+      if (candidates.length === 0) candidates = eligible;
+
+      // Cross-phase food dedup: exclude templates that share non-exempt
+      // component foods with already-selected phases (e.g. no bagel in both meal and snack)
+      if (state.used_foods.size > 0) {
+        const deduped = candidates.filter((t) => {
+          const components = t.component_food_names ?? [];
+          return !components.some((name) =>
+            state.used_foods.has(name) && !CROSS_PHASE_EXEMPT_FOODS.has(name)
+          );
+        });
+        if (deduped.length > 0) candidates = deduped;
+      }
     }
 
     if (candidates.length === 0) {
+      // No template survived preference / diet / allergen filtering for this
+      // phase. Emit shortfalls so the UI surfaces "no foods matched, try X"
+      // guidance instead of silently dropping the carb target (issue #15).
+      // Specifically the top-up-only window: when hoursBefore < 0.5 and all
+      // top-up templates are disliked, this is the only phase — no
+      // redistribution can help, so the shortfall is the user's only signal.
+      const shortfalls: PreWorkoutShortfall[] = [];
+      if ((pTargets?.carbs_g ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'carbs',
+          delivered: 0,
+          target: Math.round(pTargets!.carbs_g),
+          unit: 'g',
+          reason: 'all_disliked',
+        });
+      }
+      if ((pTargets?.sodium_mg ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'sodium',
+          delivered: 0,
+          target: Math.round(pTargets!.sodium_mg),
+          unit: 'mg',
+          reason: 'all_disliked',
+        });
+      }
+      if ((pTargets?.water_ml ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'fluid',
+          delivered: 0,
+          target: Math.round(pTargets!.water_ml),
+          unit: 'ml',
+          reason: 'all_disliked',
+        });
+      }
       results.push({
         phase,
         primary: null,
@@ -630,12 +1074,89 @@ export function selectPreWorkoutFoods(
         total_fat_g: 0,
         total_sodium_mg: 0,
         total_fluid_ml: 0,
+        ...(shortfalls.length > 0 && { shortfalls }),
+        // pinsActive but no pin matched this scope — the user has pins
+        // elsewhere but not here, and the regular eligibility filter
+        // returned nothing. Surface as no_pin_for_scope for telemetry.
+        ...(pinsActive && {
+          pin_decision: {
+            used_pin: false,
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: 'no_pin_for_scope' as const,
+            pin_set_size: pinnedForPhase.length,
+          },
+        }),
       });
       continue;
     }
 
-    // Score every candidate (with liked-food boost)
-    const scored = candidates.map((t) => scoreFormula(t, carbTarget, state, dislikedSet, likedFoods));
+    // Cross-phase carb ceiling: a later phase whose SMALLEST eligible pick
+    // would blow past carbs_high_g must not select at all — over-delivering
+    // this close to the workout is a GI risk, not a bonus. Concrete case: in
+    // the 30-min window the snack phase delivers 30g of a 31-39g band, then
+    // the top-up's smallest template (25g chews) lands the total at 55g.
+    // Skip the phase instead; if we are still under carbs_low_g, document
+    // the gap as a template_constraint shortfall (serving granularity, not
+    // preferences). The fill passes below are already headroom-guarded, and
+    // Pass 2 can still attach a drink to the phase — fluid is the top-up's
+    // real job this close to a start. Pins bypass this per the locked
+    // Formula Kit policy (in-scope pins are honored unconditionally).
+    if (!pinOverrideActive && state.carbs_delivered > 0) {
+      const carbHeadroom = targets.carbs_high_g - state.carbs_delivered;
+      const minCandidateCarbs = Math.min(
+        ...candidates.map((t) => templateCarbs(t, t.min_servings ?? 1)),
+      );
+      if (minCandidateCarbs > carbHeadroom + 1e-6) {
+        const shortfalls: PreWorkoutShortfall[] = [];
+        if (
+          state.carbs_delivered < targets.carbs_low_g &&
+          (pTargets?.carbs_g ?? 0) > 0
+        ) {
+          shortfalls.push({
+            macro: 'carbs',
+            delivered: 0,
+            target: Math.round(pTargets!.carbs_g),
+            unit: 'g',
+            reason: 'template_constraint',
+          });
+        }
+        console.log(
+          `[ALGO-C] Skipping ${phase} phase: smallest eligible pick ` +
+            `(${minCandidateCarbs.toFixed(1)}g) exceeds remaining carb ` +
+            `headroom (${carbHeadroom.toFixed(1)}g of ${targets.carbs_high_g}g high)`,
+        );
+        results.push({
+          phase,
+          primary: null,
+          add_ons: [],
+          total_carbs_g: 0,
+          total_protein_g: 0,
+          total_fat_g: 0,
+          total_sodium_mg: 0,
+          total_fluid_ml: 0,
+          ...(shortfalls.length > 0 && { shortfalls }),
+          ...(pinsActive && {
+            pin_decision: {
+              used_pin: false,
+              pinned_template_id: null,
+              pinned_template_name: null,
+              fallthrough_reason: 'no_pin_for_scope' as const,
+              pin_set_size: pinnedForPhase.length,
+            },
+          }),
+        });
+        continue;
+      }
+    }
+
+    // Score every candidate (with liked-food boost). When the pin override is
+    // active, pass bypassScaleClamp=true so the scaling factor can exceed
+    // [min_servings, max_servings] — honoring the user's explicit pin even at
+    // 3× the template's normal range.
+    const scored = candidates.map((t) =>
+      scoreFormula(t, carbTarget, state, dislikedSet, likedFoods, pinOverrideActive),
+    );
 
     // Pick best by combined score
     const pick = pickBestFormula(scored, state, carbTarget);
@@ -648,7 +1169,11 @@ export function selectPreWorkoutFoods(
 
     let stackSelection: TemplateSelection | null = null;
 
-    if (pctShort > STACK_THRESHOLD && remainingGap > 20) {
+    // Stacking is bypassed when the pin override is active: scaling is
+    // already unclamped (bypassScaleClamp=true), so the pinned template
+    // covers the carb target itself. Stacking another template on top
+    // would dilute the pin signal — the user pinned X, they want X.
+    if (!pinOverrideActive && pctShort > STACK_THRESHOLD && remainingGap > 20) {
       const stack = tryStack(
         remainingGap,
         eligible,
@@ -705,6 +1230,38 @@ export function selectPreWorkoutFoods(
       total_fat_g: Math.round(totalFat * 10) / 10,
       total_sodium_mg: Math.round(totalSodium * 10) / 10,
       total_fluid_ml: Math.round(totalFluid * 10) / 10,
+      // Emit `pin_decision` when a real pin was supplied OR the client opted
+      // into the ephemeral default-formula net. When neither, it's omitted so
+      // the no-pin-parity contract stays byte-identical.
+      ...((pinsActive || emitEphemeralDefault) && {
+        pin_decision: pinOverrideActive
+          ? {
+              used_pin: true,
+              pinned_template_id: pick.template.id,
+              pinned_template_name: pick.template.name,
+              fallthrough_reason: null,
+              pin_set_size: pinnedForPhase.length,
+            }
+          : emitEphemeralDefault
+          // Ephemeral default-formula: this phase's algorithmically-selected
+          // system formula is honored like a pin (formula-first) without a
+          // real pin row. Food output is unchanged; only the tag differs.
+          ? {
+              used_pin: true,
+              ephemeral: true,
+              pinned_template_id: pick.template.id,
+              pinned_template_name: pick.template.name,
+              fallthrough_reason: null,
+              pin_set_size: pinnedForPhase.length,
+            }
+          : {
+              used_pin: false,
+              pinned_template_id: null,
+              pinned_template_name: null,
+              fallthrough_reason: 'no_pin_for_scope' as const,
+              pin_set_size: pinnedForPhase.length,
+            },
+      }),
     });
   }
 
@@ -743,6 +1300,39 @@ export function selectPreWorkoutFoods(
         filled = true;
         console.log(`[ALGO-C] Added banana to ${targetPhase} phase (+${BANANA_CARBS}g carbs). ` +
           `New total: ${(totalCarbsAfterPass1 + BANANA_CARBS).toFixed(1)}g`);
+      }
+    }
+
+    // #15: Try universal fallback foods (dates, applesauce, raisins) if the
+    // banana branch didn't fire or didn't close the gap. These are all vegan,
+    // gluten-free, and allergen-clean, so they only need dislikes + headroom
+    // checks. We loop until we've closed the gap or exhausted the catalog —
+    // this matters most in the top-up-only window where a single phase exists
+    // and the banana may have been disliked.
+    for (const food of PASS_1_5_FALLBACK_FOODS) {
+      const currentTotal = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+      if (currentTotal >= targets.carbs_low_g) break;
+      if (state.used_foods.has(food.name)) continue;
+      if (dislikedSet.has(food.name)) continue;
+      if (wouldExceedHighs(state, food.carbs, 0, food.sodium, food.fluid)) continue;
+
+      // Prefer top_up phase for fast-digesting fallbacks; fall back to snack/meal.
+      const phaseOrder: SubPhaseType[] = ['top_up', 'snack', 'meal'];
+      for (const targetPhase of phaseOrder) {
+        const phaseIdx = results.findIndex((p) => p.phase === targetPhase);
+        if (phaseIdx < 0) continue;
+        const phase = results[phaseIdx];
+        phase.add_ons.push(food.make());
+        phase.total_carbs_g = Math.round((phase.total_carbs_g + food.carbs) * 10) / 10;
+        phase.total_sodium_mg = Math.round((phase.total_sodium_mg + food.sodium) * 10) / 10;
+        phase.total_fluid_ml = Math.round((phase.total_fluid_ml + food.fluid) * 10) / 10;
+        state.used_foods.add(food.name);
+        state.carbs_delivered += food.carbs;
+        state.sodium_delivered += food.sodium;
+        state.fluid_delivered += food.fluid;
+        console.log(`[ALGO-C] Added ${food.name} to ${targetPhase} phase (+${food.carbs}g carbs). ` +
+          `New total: ${(currentTotal + food.carbs).toFixed(1)}g`);
+        break;
       }
     }
 
@@ -786,6 +1376,9 @@ export function selectPreWorkoutFoods(
       }
     }
   }
+
+  // ── Pass 1.6: Sodium overage trim (before drink selection) ─────────
+  trimSodiumOverage(results, state, targets.carbs_low_g);
 
   // ── Pass 2: Add standalone drink to top-up phase ──────────────────
   const topUpIdx = results.findIndex((p) => p.phase === 'top_up');
@@ -847,6 +1440,24 @@ export function selectPreWorkoutFoods(
       state.protein_delivered += electrolyte.protein_g;
       state.sodium_delivered += electrolyte.sodium_mg;
       state.fluid_delivered += electrolyte.fluid_ml;
+    }
+  }
+
+  // A template_constraint carb shortfall is recorded at phase-skip time,
+  // before the fill passes run. If those passes closed the gap (total is
+  // back at/above carbs_low_g), the shortfall is resolved — drop it so the
+  // UI doesn't warn about a target the plan actually hits. Preference-driven
+  // shortfalls (all_disliked etc.) are left untouched: issue #15 wants those
+  // surfaced even when other phases compensate.
+  const finalCarbs = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+  if (finalCarbs >= targets.carbs_low_g) {
+    for (const phase of results) {
+      if (!phase.shortfalls) continue;
+      const kept = phase.shortfalls.filter(
+        (s) => !(s.macro === 'carbs' && s.reason === 'template_constraint'),
+      );
+      if (kept.length === 0) delete phase.shortfalls;
+      else phase.shortfalls = kept;
     }
   }
 

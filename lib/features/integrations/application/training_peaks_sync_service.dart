@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../data/integrations_repository.dart';
@@ -34,17 +36,27 @@ class TrainingPeaksSyncService {
     required ActivitiesRepository activitiesRepository,
     required TrainingPeaksTransformer transformer,
     required ChangeDetectionService changeDetectionService,
+    AnalyticsTracker? analytics,
   }) : _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
-       _changeDetectionService = changeDetectionService;
+       _changeDetectionService = changeDetectionService,
+       _analytics = analytics;
 
   final TrainingPeaksApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
   final ActivitiesRepository _activitiesRepository;
   final TrainingPeaksTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
+  final AnalyticsTracker? _analytics;
+
+  void _trackSyncedWorkoutPlanned(Activity activity) =>
+      trackSyncedWorkoutPlanned(
+        _analytics,
+        activity,
+        provider: 'training_peaks',
+      );
 
   /// Buffer time before token expiration to trigger proactive refresh (5 min)
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -195,6 +207,7 @@ class TrainingPeaksSyncService {
       for (final activity in changeResult.newActivities) {
         await _activitiesRepository.insertActivity(activity);
         insertedActivities.add(activity);
+        _trackSyncedWorkoutPlanned(activity);
 
         if (kDebugMode) {
           print('   ✓ Inserted: ${activity.title}');
@@ -389,6 +402,7 @@ class TrainingPeaksSyncService {
       for (final activity in changeResult.newActivities) {
         await _activitiesRepository.insertActivity(activity);
         insertedActivities.add(activity);
+        _trackSyncedWorkoutPlanned(activity);
       }
 
       // Update CHANGED activities

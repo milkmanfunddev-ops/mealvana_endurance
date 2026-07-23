@@ -1,5 +1,7 @@
 import 'food_item_data.dart';
+import 'macro_shortfall.dart';
 import 'time_slot_assignment.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 /// Sub-phase within the "before" section (meal, snack, top_up)
@@ -15,6 +17,8 @@ class BeforeSubPhase {
     this.fluidsTarget,
     this.templateId,
     this.templateName,
+    this.shortfalls = const <MacroShortfall>[],
+    this.pinDecision,
   });
 
   final String subPhaseType; // 'meal', 'snack', 'top_up'
@@ -26,6 +30,16 @@ class BeforeSubPhase {
   final double? fluidsTarget;
   final String? templateId;
   final String? templateName;
+
+  /// Macros the algorithm could not satisfy due to user preference filtering
+  /// (dislikes, allergens, diet exclusions). Empty list means clean fit.
+  /// Issue #14 / #15.
+  final List<MacroShortfall> shortfalls;
+
+  /// Pin honoring telemetry for this sub-phase. Populated only when pins
+  /// were supplied to the algorithm. Used by the activity-detail pin banner
+  /// (Formula Kit PR 2 substep 9).
+  final PinDecision? pinDecision;
 
   /// Display title for this sub-phase
   String get displayTitle {
@@ -102,6 +116,10 @@ class BeforeSubPhase {
           json['template_id'] as String? ?? json['templateId'] as String?,
       templateName:
           json['template_name'] as String? ?? json['templateName'] as String?,
+      shortfalls: ((json['shortfalls'] as List<dynamic>?) ?? const [])
+          .map((e) => MacroShortfall.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      pinDecision: _parsePinDecision(json),
     );
   }
 
@@ -116,6 +134,9 @@ class BeforeSubPhase {
       'fluidsTarget': fluidsTarget,
       'templateId': templateId,
       'templateName': templateName,
+      if (shortfalls.isNotEmpty)
+        'shortfalls': shortfalls.map((s) => s.toJson()).toList(),
+      if (pinDecision != null) 'pinDecision': pinDecision!.toJson(),
     };
   }
 
@@ -129,6 +150,8 @@ class BeforeSubPhase {
     double? fluidsTarget,
     String? templateId,
     String? templateName,
+    List<MacroShortfall>? shortfalls,
+    PinDecision? pinDecision,
   }) {
     return BeforeSubPhase(
       subPhaseType: subPhaseType ?? this.subPhaseType,
@@ -140,7 +163,19 @@ class BeforeSubPhase {
       fluidsTarget: fluidsTarget ?? this.fluidsTarget,
       templateId: templateId ?? this.templateId,
       templateName: templateName ?? this.templateName,
+      shortfalls: shortfalls ?? this.shortfalls,
+      pinDecision: pinDecision ?? this.pinDecision,
     );
+  }
+
+  /// Parse pin_decision from either edge fn (`pin_decision`, snake_case) or
+  /// persisted (`pinDecision`, camelCase) JSON shape. Returns null when
+  /// absent — the algorithm omits the field entirely when pins were not
+  /// supplied to the call.
+  static PinDecision? _parsePinDecision(Map<String, dynamic> json) {
+    final raw = json['pin_decision'] ?? json['pinDecision'];
+    if (raw is! Map<String, dynamic>) return null;
+    return PinDecision.fromJson(raw);
   }
 
   @override
@@ -171,6 +206,8 @@ class PlanSection {
     this.fluidsHighTarget,
     this.subPhases,
     this.byHourData,
+    this.pinDecision,
+    this.shortfalls = const <MacroShortfall>[],
   });
 
   final String id;
@@ -201,6 +238,20 @@ class PlanSection {
   /// By-hour time slot assignments for during-activity sections.
   /// Lazily initialized on first "By Hour" toggle for qualifying sections.
   final ByHourData? byHourData;
+
+  /// Pin honoring telemetry for this section. Populated only when pins were
+  /// supplied to the algorithm; today only the During section ever carries
+  /// one at the section level (Before pins live on each [BeforeSubPhase]).
+  /// Used by the activity-detail pin banner (Formula Kit PR 2 substep 9).
+  final PinDecision? pinDecision;
+
+  /// Macros the solver could not satisfy for this section. Mirrors
+  /// [BeforeSubPhase.shortfalls] (Before carries them per sub-phase); today
+  /// only the During section ever carries them at the section level, from
+  /// `plan.during.shortfalls` in the V3 response. Empty list means clean
+  /// fit. Bug 3a3e3fdb: these were previously discarded, so during-phase
+  /// plans silently missed carb targets.
+  final List<MacroShortfall> shortfalls;
 
   /// Whether this section uses the template-based sub-phase layout
   bool get hasSubPhases => subPhases != null && subPhases!.isNotEmpty;
@@ -252,7 +303,19 @@ class PlanSection {
       fluidsHighTarget: (json['fluidsHighTarget'] as num?)?.toDouble(),
       subPhases: subPhases,
       byHourData: byHourData,
+      pinDecision: _parsePinDecision(json),
+      shortfalls: ((json['shortfalls'] as List<dynamic>?) ?? const [])
+          .map((e) => MacroShortfall.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
+  }
+
+  /// Parse pin_decision from either edge fn (`pin_decision`, snake_case) or
+  /// persisted (`pinDecision`, camelCase) JSON shape.
+  static PinDecision? _parsePinDecision(Map<String, dynamic> json) {
+    final raw = json['pin_decision'] ?? json['pinDecision'];
+    if (raw is! Map<String, dynamic>) return null;
+    return PinDecision.fromJson(raw);
   }
 
   /// Create PlanSection from Edge Function format (before/during/after arrays)
@@ -308,6 +371,9 @@ class PlanSection {
       if (subPhases != null)
         'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
       if (byHourData != null) 'byHourData': byHourData!.toJson(),
+      if (pinDecision != null) 'pinDecision': pinDecision!.toJson(),
+      if (shortfalls.isNotEmpty)
+        'shortfalls': shortfalls.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -334,6 +400,8 @@ class PlanSection {
     List<BeforeSubPhase>? subPhases,
     ByHourData? byHourData,
     bool clearByHourData = false,
+    PinDecision? pinDecision,
+    List<MacroShortfall>? shortfalls,
   }) {
     return PlanSection(
       id: id ?? this.id,
@@ -356,6 +424,8 @@ class PlanSection {
       fluidsHighTarget: fluidsHighTarget ?? this.fluidsHighTarget,
       subPhases: subPhases ?? this.subPhases,
       byHourData: clearByHourData ? null : (byHourData ?? this.byHourData),
+      pinDecision: pinDecision ?? this.pinDecision,
+      shortfalls: shortfalls ?? this.shortfalls,
     );
   }
 

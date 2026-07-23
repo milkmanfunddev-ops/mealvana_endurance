@@ -44,12 +44,17 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
   CalendarViewMode _viewMode = CalendarViewMode.week;
 
   // Cache the date range to avoid creating new provider instances on every rebuild
-  late final DateTime _queryStartDate = DateTime.now().subtract(const Duration(days: 365));
-  late final DateTime _queryEndDate = DateTime.now().add(const Duration(days: 730));
+  late final DateTime _queryStartDate = DateTime.now().subtract(
+    const Duration(days: 365),
+  );
+  late final DateTime _queryEndDate = DateTime.now().add(
+    const Duration(days: 730),
+  );
 
   static const int _totalDays = 730;
   static const int _centerIndex = 365;
-  static const double _dateItemWidth = 68.0; // 60 (container) + 4*2 (horizontal margin)
+  static const double _dateItemWidth =
+      68.0; // 60 (container) + 4*2 (horizontal margin)
 
   @override
   void initState() {
@@ -80,7 +85,8 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
     final visibleCenterIndex = (currentOffset / _dateItemWidth).round();
     final visibleCenterDate = _getScrollableDate(visibleCenterIndex);
 
-    if (!_isSameMonth(visibleCenterDate, _visibleMonthDate) || shouldShow != _showTodayButton) {
+    if (!_isSameMonth(visibleCenterDate, _visibleMonthDate) ||
+        shouldShow != _showTodayButton) {
       setState(() {
         _visibleMonthDate = visibleCenterDate;
         _showTodayButton = shouldShow;
@@ -137,7 +143,11 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
 
   void _navigateToPreviousMonth() {
     setState(() {
-      final newMonth = DateTime(_visibleMonthDate.year, _visibleMonthDate.month - 1, 1);
+      final newMonth = DateTime(
+        _visibleMonthDate.year,
+        _visibleMonthDate.month - 1,
+        1,
+      );
       _visibleMonthDate = newMonth;
       if (_viewMode == CalendarViewMode.week) {
         final daysFromToday = newMonth.difference(_referenceDate).inDays;
@@ -153,7 +163,11 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
 
   void _navigateToNextMonth() {
     setState(() {
-      final newMonth = DateTime(_visibleMonthDate.year, _visibleMonthDate.month + 1, 1);
+      final newMonth = DateTime(
+        _visibleMonthDate.year,
+        _visibleMonthDate.month + 1,
+        1,
+      );
       _visibleMonthDate = newMonth;
       if (_viewMode == CalendarViewMode.week) {
         final daysFromToday = newMonth.difference(_referenceDate).inDays;
@@ -182,10 +196,9 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
   Widget build(BuildContext context) {
     final activitiesState = ref.watch(activitiesControllerProvider);
     final eventsState = ref.watch(eventsControllerProvider);
-    final carbLoadingState = ref.watch(carbLoadingDaysForRangeProvider(
-      _queryStartDate,
-      _queryEndDate,
-    ));
+    final carbLoadingState = ref.watch(
+      carbLoadingDaysForRangeProvider(_queryStartDate, _queryEndDate),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -235,12 +248,15 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
                   onTap: _showMonthYearPicker,
                   borderRadius: BorderRadius.circular(8),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     child: Text(
                       DateFormat('MMMM yyyy').format(_visibleMonthDate),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -278,7 +294,10 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
                       onTap: _scrollToToday,
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(16),
@@ -286,11 +305,7 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.today,
-                              size: 14,
-                              color: Colors.white,
-                            ),
+                            Icon(Icons.today, size: 14, color: Colors.white),
                             const SizedBox(width: 4),
                             Text(
                               'Today',
@@ -351,16 +366,21 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
                 onTap: () => widget.onDateSelected(date),
                 child: Container(
                   width: 60,
-                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Theme.of(context).primaryColor
                         : isToday
-                            ? const Color(0xFFFFC107).withValues(alpha: 0.2)
-                            : Colors.transparent,
+                        ? const Color(0xFFFFC107).withValues(alpha: 0.2)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isToday ? const Color(0xFFFFC107) : Colors.transparent,
+                      color: isToday
+                          ? const Color(0xFFFFC107)
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -371,7 +391,9 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
                         DateFormat('EEE').format(date),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isSelected ? AppTheme.baseCream : Colors.grey[600],
+                          color: isSelected
+                              ? AppTheme.baseCream
+                              : Colors.grey[600],
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -421,8 +443,8 @@ class _CalendarDatePickerState extends ConsumerState<CalendarDatePicker> {
             color: isSelected
                 ? Theme.of(context).primaryColor
                 : isToday
-                    ? const Color(0xFFFFC107).withValues(alpha: 0.2)
-                    : Colors.transparent,
+                ? const Color(0xFFFFC107).withValues(alpha: 0.2)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(

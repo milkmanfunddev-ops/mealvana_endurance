@@ -38,9 +38,12 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(
+        key: ValueKey('food_prefs.back_button'),
+      ),
       title: Text(
-        'Food Preferences',
+        key: const ValueKey('food_prefs.title'),
+        'Diet, Allergies & Formulas',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -59,7 +62,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -93,7 +96,8 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.leaf,
+                  tileKey: const ValueKey('food_prefs.dietary_row'),
+                  icon: FontAwesomeIcons.leaf.data,
                   title: 'Dietary Preference',
                   subtitle: _getDietaryPreferenceSubtitle(state),
                   route: '/settings/dietary-preference',
@@ -106,7 +110,8 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.triangleExclamation,
+                  tileKey: const ValueKey('food_prefs.allergies_row'),
+                  icon: FontAwesomeIcons.triangleExclamation.data,
                   title: 'Allergies',
                   subtitle: _getAllergiesSubtitle(state),
                   route: '/settings/allergies',
@@ -115,15 +120,31 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
 
                 const SizedBox(height: AppSpacing.sm),
 
-                // Food Likes & Dislikes
+                // Food Likes & Dislikes — restored 2026-07-08. Preferences are
+                // collected again (scoped to endurance/fuel foods) and now feed
+                // the nutrition-plan default-formula tier + solver.
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.heart,
+                  tileKey: const ValueKey('food_prefs.likes_dislikes_row'),
+                  icon: FontAwesomeIcons.heart.data,
                   title: 'Food Likes & Dislikes',
-                  subtitle: 'Manage your food preferences',
+                  subtitle: 'Manage your fuel preferences',
                   route: '/settings/food-preferences',
                   analyticsEvent: 'settings_food_likes_dislikes_tapped',
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // Formula Library — browse Before/During/After nutrition formulas.
+                _buildHubTile(
+                  context: context,
+                  ref: ref,
+                  icon: FontAwesomeIcons.flask.data,
+                  title: 'Formula Library',
+                  subtitle: 'Browse Before & During & After formulas',
+                  route: '/settings/food-preferences/formula-library',
+                  analyticsEvent: 'settings_formula_library_tapped',
                 ),
               ],
             ),
@@ -143,8 +164,10 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
     required String subtitle,
     required String route,
     required String analyticsEvent,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: () {
         final analytics = ref.read(appExternalDepsProvider);
         analytics.analytics.track(analyticsEvent);
@@ -194,7 +217,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
               ),
             ),
 
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

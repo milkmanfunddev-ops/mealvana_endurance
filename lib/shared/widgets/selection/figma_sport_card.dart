@@ -54,17 +54,10 @@ class FigmaSportCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 border: isSelected
                     ? null
-                    : Border.all(
-                        color: AppColors.textDark,
-                        width: 2,
-                      ),
+                    : Border.all(color: AppColors.textDark, width: 2),
               ),
               child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      size: 18,
-                      color: Colors.white,
-                    )
+                  ? Icon(Icons.check, size: 18, color: Colors.white)
                   : null,
             ),
 

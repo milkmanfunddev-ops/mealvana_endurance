@@ -16,8 +16,8 @@ class SupabaseBarcodeService {
   SupabaseBarcodeService({
     required ProductDetailService productDetailService,
     required AppLogger logger,
-  })  : _productDetailService = productDetailService,
-        _logger = logger;
+  }) : _productDetailService = productDetailService,
+       _logger = logger;
 
   /// Look up a barcode using the unified ProductDetailService
   /// Returns null if the product is not found or if there's an error
@@ -29,10 +29,7 @@ class SupabaseBarcodeService {
       );
 
       if (apiProduct != null) {
-        return BarcodeResult.success(
-          barcode: barcode,
-          product: apiProduct,
-        );
+        return BarcodeResult.success(barcode: barcode, product: apiProduct);
       } else {
         return BarcodeResult.notFound(
           barcode: barcode,
@@ -42,12 +39,13 @@ class SupabaseBarcodeService {
     } on ProductDetailException catch (e) {
       _logger.error('ProductDetailService error: ${e.message}');
 
-      return BarcodeResult.error(
-        barcode: barcode,
-        message: e.message,
-      );
+      return BarcodeResult.error(barcode: barcode, message: e.message);
     } catch (e, stackTrace) {
-      _logger.error('Barcode lookup error for $barcode: $e', error: e, stackTrace: stackTrace);
+      _logger.error(
+        'Barcode lookup error for $barcode: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
 
       return BarcodeResult.error(
         barcode: barcode,
@@ -58,7 +56,10 @@ class SupabaseBarcodeService {
 
   /// Validate barcode format
   bool isValidBarcodeFormat(String barcode) {
-    final cleanBarcode = barcode.replaceAll(RegExp(r'\D'), ''); // Remove non-digits
+    final cleanBarcode = barcode.replaceAll(
+      RegExp(r'\D'),
+      '',
+    ); // Remove non-digits
     return [8, 12, 13].contains(cleanBarcode.length);
   }
 

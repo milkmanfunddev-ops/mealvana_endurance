@@ -1,8 +1,10 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables/user_profiles.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart' as run_params;
-import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart' as domain;
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart'
+    as run_params;
+import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart'
+    as domain;
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../features/onboarding/domain/dietary_preference.dart';
 import '../../../features/onboarding/domain/allergy.dart';
@@ -43,12 +45,32 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     return getUserProfileByAuthUserId(currentAuthUserId);
   }
 
+  /// Returns the most-recently-updated local user profile regardless of auth
+  /// state.  Used by [AppStartupService.checkUserSession] to identify the user
+  /// in analytics even before a Supabase session is established (e.g. on first
+  /// launch after an anonymous session or a local-only account).
+  ///
+  /// Returns null when the database is empty.
+  Future<domain.UserProfile?> getLocalUserProfile() async {
+    final result =
+        await (select(userProfilesTable)
+              ..orderBy([(u) => OrderingTerm.desc(u.updatedAt)])
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (result == null) return null;
+    return _convertToDomainUserProfile(result);
+  }
+
   /// Look up a user profile by Supabase auth user ID.
-  Future<domain.UserProfile?> getUserProfileByAuthUserId(String authUserId) async {
-    final result = await (select(userProfilesTable)
-          ..where((u) => u.authUserId.equals(authUserId))
-          ..limit(1))
-        .getSingleOrNull();
+  Future<domain.UserProfile?> getUserProfileByAuthUserId(
+    String authUserId,
+  ) async {
+    final result =
+        await (select(userProfilesTable)
+              ..where((u) => u.authUserId.equals(authUserId))
+              ..limit(1))
+            .getSingleOrNull();
 
     if (result == null) {
       return null;
@@ -59,10 +81,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
 
   /// Look up a user profile by its primary key/ID.
   Future<domain.UserProfile?> getUserProfileById(String userId) async {
-    final result = await (select(userProfilesTable)
-          ..where((u) => u.id.equals(userId))
-          ..limit(1))
-        .getSingleOrNull();
+    final result =
+        await (select(userProfilesTable)
+              ..where((u) => u.id.equals(userId))
+              ..limit(1))
+            .getSingleOrNull();
 
     if (result == null) {
       return null;
@@ -84,10 +107,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   }) async {
     // Delete any existing user with this device_id that has a DIFFERENT id
     // This handles the case where a new user is created on a device that already has a user
-    await (delete(userProfilesTable)
-          ..where((u) =>
+    await (delete(userProfilesTable)..where(
+          (u) =>
               u.deviceId.equals(profile.deviceId) &
-              u.id.equals(profile.id).not()))
+              u.id.equals(profile.id).not(),
+        ))
         .go();
 
     await into(userProfilesTable).insertOnConflictUpdate(
@@ -113,9 +137,13 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         updatedAt: Value(profile.updatedAt),
         appVersion: Value(profile.appVersion),
         // Default pace/speed for workout estimation
-        defaultRunningPaceMinPerMile: Value(profile.defaultRunningPaceMinPerMile),
+        defaultRunningPaceMinPerMile: Value(
+          profile.defaultRunningPaceMinPerMile,
+        ),
         defaultCyclingSpeedMph: Value(profile.defaultCyclingSpeedMph),
-        defaultSwimmingPacePer100Sec: Value(profile.defaultSwimmingPacePer100Sec),
+        defaultSwimmingPacePer100Sec: Value(
+          profile.defaultSwimmingPacePer100Sec,
+        ),
         // Dietary preference and allergies
         // Convert DietaryPreference.none to null for database (constraint doesn't allow 'none')
         dietaryPreference: Value(
@@ -131,13 +159,26 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Contact information
         email: Value(profile.email),
         // Nutrition target overrides (JSON string)
-        nutritionTargetOverrides: Value(profile.nutritionTargetOverrides?.toJsonString()),
+        nutritionTargetOverrides: Value(
+          profile.nutritionTargetOverrides?.toJsonString(),
+        ),
         // Daily macro calculation fields
         bodyFatPct: Value(profile.bodyFatPct),
         lifestyle: Value(profile.lifestyle.dbValue),
         typicalWeeklyHours: Value(profile.typicalWeeklyHours),
         carbCycleOptIn: Value(profile.carbCycleOptIn),
         trainingPhase: Value(profile.trainingPhase.dbValue),
+        // Sweat profile fields
+        sweatSodium: Value(profile.sweatSodium?.value),
+        knownSweatRateMlPerHour: Value(profile.knownSweatRateMlPerHour),
+        knownSodiumConcentrationMgPerLiter: Value(
+          profile.knownSodiumConcentrationMgPerLiter,
+        ),
+        sweatTestDate: Value(profile.sweatTestDate),
+        sweatTestSource: Value(profile.sweatTestSource),
+        // Garmin precedence timestamps
+        weightPoundsUpdatedAt: Value(profile.weightPoundsUpdatedAt),
+        bodyFatPctUpdatedAt: Value(profile.bodyFatPctUpdatedAt),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -152,8 +193,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     domain.UserProfile profile, {
     bool needsUpload = true,
   }) async {
-    await (update(userProfilesTable)..where((u) => u.id.equals(profile.id)))
-        .write(
+    await (update(
+      userProfilesTable,
+    )..where((u) => u.id.equals(profile.id))).write(
       UserProfilesTableCompanion(
         deviceId: Value(profile.deviceId),
         authUserId: Value(profile.authUserId),
@@ -174,9 +216,13 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
         // Default pace/speed for workout estimation
-        defaultRunningPaceMinPerMile: Value(profile.defaultRunningPaceMinPerMile),
+        defaultRunningPaceMinPerMile: Value(
+          profile.defaultRunningPaceMinPerMile,
+        ),
         defaultCyclingSpeedMph: Value(profile.defaultCyclingSpeedMph),
-        defaultSwimmingPacePer100Sec: Value(profile.defaultSwimmingPacePer100Sec),
+        defaultSwimmingPacePer100Sec: Value(
+          profile.defaultSwimmingPacePer100Sec,
+        ),
         // Dietary preference and allergies
         // Convert DietaryPreference.none to null for database (constraint doesn't allow 'none')
         dietaryPreference: Value(
@@ -192,13 +238,26 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Contact information
         email: Value(profile.email),
         // Nutrition target overrides (JSON string)
-        nutritionTargetOverrides: Value(profile.nutritionTargetOverrides?.toJsonString()),
+        nutritionTargetOverrides: Value(
+          profile.nutritionTargetOverrides?.toJsonString(),
+        ),
         // Daily macro calculation fields
         bodyFatPct: Value(profile.bodyFatPct),
         lifestyle: Value(profile.lifestyle.dbValue),
         typicalWeeklyHours: Value(profile.typicalWeeklyHours),
         carbCycleOptIn: Value(profile.carbCycleOptIn),
         trainingPhase: Value(profile.trainingPhase.dbValue),
+        // Sweat profile fields
+        sweatSodium: Value(profile.sweatSodium?.value),
+        knownSweatRateMlPerHour: Value(profile.knownSweatRateMlPerHour),
+        knownSodiumConcentrationMgPerLiter: Value(
+          profile.knownSodiumConcentrationMgPerLiter,
+        ),
+        sweatTestDate: Value(profile.sweatTestDate),
+        sweatTestSource: Value(profile.sweatTestSource),
+        // Garmin precedence timestamps
+        weightPoundsUpdatedAt: Value(profile.weightPoundsUpdatedAt),
+        bodyFatPctUpdatedAt: Value(profile.bodyFatPctUpdatedAt),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -207,17 +266,17 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
 
   /// Delete user profile
   Future<bool> deleteUserProfile(String userId) async {
-    final deletedRows =
-        await (delete(userProfilesTable)..where((u) => u.id.equals(userId)))
-            .go();
+    final deletedRows = await (delete(
+      userProfilesTable,
+    )..where((u) => u.id.equals(userId))).go();
     return deletedRows > 0;
   }
 
   /// Check if any user data exists in the database
   Future<bool> hasUserData() async {
-    final userCount = await (selectOnly(userProfilesTable)
-          ..addColumns([userProfilesTable.id.count()]))
-        .getSingle();
+    final userCount = await (selectOnly(
+      userProfilesTable,
+    )..addColumns([userProfilesTable.id.count()])).getSingle();
     return userCount.read(userProfilesTable.id.count())! > 0;
   }
 
@@ -258,8 +317,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   Future<void> markSwipeHintAsShown() async {
     final user = await getCurrentUserProfile();
     if (user != null) {
-      await (update(userProfilesTable)..where((t) => t.id.equals(user.id)))
-          .write(
+      await (update(
+        userProfilesTable,
+      )..where((t) => t.id.equals(user.id))).write(
         UserProfilesTableCompanion(
           swipeHintShown: const Value(true),
           updatedAt: Value(DateTime.now()),
@@ -310,7 +370,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       // Convert null to DietaryPreference.none for UI
       dietaryPreference:
           DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
-              DietaryPreference.none,
+          DietaryPreference.none,
       allergies: Allergy.fromDbArray(dbUser.allergies),
       // Sharing preferences
       senderName: dbUser.senderName,
@@ -329,6 +389,16 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       typicalWeeklyHours: dbUser.typicalWeeklyHours,
       carbCycleOptIn: dbUser.carbCycleOptIn,
       trainingPhase: TrainingPhase.fromDbValue(dbUser.trainingPhase),
+      // Sweat profile fields
+      sweatSodium: domain.SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
+      knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter:
+          dbUser.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: dbUser.sweatTestDate,
+      sweatTestSource: dbUser.sweatTestSource,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
     );
   }
 }

@@ -97,6 +97,8 @@ Future<List<String>> getPendingUploadIds(
     args.add(userId);
   }
 
-  final result = await db.customSelect(sql, variables: args.map((a) => Variable(a)).toList()).get();
+  final result = await db
+      .customSelect(sql, variables: args.map((a) => Variable(a)).toList())
+      .get();
   return result.map((row) => row.read<String>(idColumn)).toList();
 }

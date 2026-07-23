@@ -1,0 +1,122 @@
+# Tests on a self-hosted macOS runner (Lee's Mac mini M1).
+#
+# Split CI: Codemagic keeps doing build/deploy (signing, TestFlight, Play,
+# Shorebird). This workflow runs the TEST suites on owned hardware to save
+# Codemagic minutes. Results show as PR status checks in GitHub.
+#
+# Requires:
+#  - A self-hosted runner registered on the M1 with labels: [self-hosted, macOS, ARM64]
+#    (scripts/setup_m1_runner.sh sets this up).
+#  - Repo secrets DOTENV_ROOT / DOTENV_DEV_LOCAL / DOTENV_WEB_LOCAL (mirrors of the
+#    gitignored .env files; the Flutter app bundles the first two as assets and the
+#    web e2e reads .env.web.local). Added via `gh secret set`.
+#
+# Until a runner is online, these jobs simply queue (pending) — they don't fail.
+#
+# Trigger model: this runs the FULL test suite on the M1 whenever a release/*
+# branch is in play — i.e. exactly when Codemagic is cutting a release build —
+# so testing happens on owned hardware in parallel with the Codemagic release.
+# `workflow_dispatch` also allows a manual run on the M1 without a PR/Codemagic
+# build (requires the workflow to exist on the default branch).
+#
+# NOTE: for `push: release/**` to trigger, THIS FILE must exist on that release
+# branch. Release branches are cut from main/develop, so merge this workflow
+# into main (and/or develop) once — every future release/* branch inherits it.
+name: Tests (self-hosted M1)
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - 'ci/**'          # CI smoke branches — exercise the self-hosted runner
+  pull_request:
+    branches:
+      - 'release/**'
+  workflow_dispatch:
+
+# One in-flight run per ref; newer pushes cancel older.
+concurrency:
+  group: tests-selfhosted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Device-less suites — fast, reliable, no Xcode/emulator needed.
+  unit-web-deno:
+    name: Unit + Web e2e + Deno
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write gitignored .env files from secrets
+        run: |
+          printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
+          printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
+          printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
+          : > .env.prod.local   # empty stub; asset bundler just needs the file
+          test -s .env.web.local || { echo "::error::DOTENV_WEB_LOCAL secret is empty"; exit 1; }
+
+      - name: Flutter deps
+        run: flutter pub get
+
+      - name: Code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze (non-fatal — reports lints, fails only on errors)
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+
+      - name: Unit + widget tests
+        run: |
+          mkdir -p test-results
+          flutter test --exclude-tags="integration || e2e"
+
+      - name: Nutrition algorithm tests (Deno)
+        run: bash supabase/functions/run-algorithm-tests.sh
+
+      - name: Web e2e (flutter drive boot smoke)
+        run: bash scripts/run_web_e2e.sh
+
+  # Patrol integration smoke on iOS. Runs via patrol_cli (NOT `flutter test`) —
+  # patrol builds an XCUITest host, boots the sim, and drives the dev flavor.
+  # Android Patrol is intentionally deferred (needs Android SDK 36 + AVD).
+  #
+  # KNOWN RISK: the iOS 26.2 simulator (Xcode 26.2) can drop patrol's native
+  # automation handshake and hang; the smoke test caps itself at 3 min and the
+  # job at 45. If this proves flaky, gate it behind a label instead of removing.
+  integration-patrol-ios:
+    name: Patrol (iOS)
+    # Expensive + can be flaky on the iOS 26.2 sim; only run it for real releases,
+    # not on every CI smoke push.
+    if: startsWith(github.ref, 'refs/heads/release/')
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write gitignored .env files from secrets
+        run: |
+          printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
+          printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
+          printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
+          : > .env.prod.local
+      - name: Flutter deps + codegen
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+      - name: Install patrol_cli
+        # MUST match the `patrol` package (pubspec.lock: 4.6.1 pairs with CLI
+        # 4.4.0). An unpinned activate pulls 4.5.x, which prints "Version
+        # incompatibility detected!" and refuses to run.
+        run: dart pub global activate patrol_cli 4.4.0
+      - name: Boot iOS simulator
+        run: |
+          DEVICE="iPhone 15 Pro Max"
+          xcrun simctl boot "$DEVICE" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE" || true
+      - name: Patrol smoke test (iOS)
+        run: |
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          patrol test \
+            --target integration_test/patrol_smoke_test.dart \
+            --flavor dev \
+            --dart-define-from-file=.env.dev.local \
+            -d "iPhone 15 Pro Max"

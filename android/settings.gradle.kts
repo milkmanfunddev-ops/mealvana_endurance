@@ -18,7 +18,9 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.7.3" apply false
+    // 8.9.1+ required by androidx.core 1.18 / navigationevent 1.0.2, pulled in
+    // transitively by image_picker 1.2.2 (Android release build failed on 8.7.3).
+    id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
     // Google Services plugin for Firebase (required for OneSignal push notifications)
     id("com.google.gms.google-services") version "4.4.2" apply false

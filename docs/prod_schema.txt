@@ -38,7 +38,7 @@ create type cycling_goal_enum as enum ('endurance', 'tempo', 'intervals');
 
 alter type cycling_goal_enum owner to postgres;
 
-create type category_enum as enum ('before_run', 'during_run', 'after_run', 'transition');
+create type category_enum as enum ('before_run', 'during_run', 'after_run', 'transition', 'during_bike', 'during_swim');
 
 comment on type category_enum is 'Food category phases for multi-sport workouts. Includes: before, during_run, during_bike, during_swim, after, transition (for brick T1/T2).';
 
@@ -94,77 +94,89 @@ alter type activity_status_enum owner to postgres;
 
 create table users
 (
-    id                                uuid                     default gen_random_uuid()               not null
+    id                                      uuid                     default gen_random_uuid()               not null
         primary key,
-    device_id                         text                                                             not null,
-    created_at                        timestamp with time zone default now(),
-    updated_at                        timestamp with time zone default now(),
-    gender                            gender_enum,
-    birthday                          date,
-    height_feet                       integer,
-    height_inches                     integer,
-    weight_pounds                     numeric(5, 2),
-    runs_with_water_bottle            boolean                  default false,
-    food_preferences                  jsonb                    default '{}'::jsonb,
-    preferred_distance_unit           distance_unit_enum       default 'miles'::distance_unit_enum,
-    preferred_pace_unit               pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
-    gut_training_level                gut_training_enum        default 'moderate'::gut_training_enum,
-    onboarding_completed              boolean                  default false,
-    last_active_at                    timestamp with time zone default now(),
-    app_version                       text,
-    notifications_enabled             boolean                  default false,
-    default_reminder_day              integer                  default 4,
-    default_reminder_hour             integer                  default 17,
-    default_reminder_minute           integer                  default 0,
-    default_reminder_recurring        boolean                  default false,
-    cycling_ftp_watts                 integer,
-    prefers_cycling_power             boolean                  default false,
-    swimming_css_seconds_per_100m     integer,
-    prefers_swimming_pace             boolean                  default false,
-    auth_user_id                      uuid,
-    auth_provider                     auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
-    is_anonymous                      boolean                  default true                            not null,
-    auth_skipped_at                   timestamp with time zone,
-    typical_bike_bottles              integer
+    device_id                               text                                                             not null,
+    created_at                              timestamp with time zone default now(),
+    updated_at                              timestamp with time zone default now(),
+    gender                                  gender_enum,
+    birthday                                date,
+    height_feet                             integer,
+    height_inches                           integer,
+    weight_pounds                           numeric(5, 2),
+    runs_with_water_bottle                  boolean                  default false,
+    food_preferences                        jsonb                    default '{}'::jsonb,
+    preferred_distance_unit                 distance_unit_enum       default 'miles'::distance_unit_enum,
+    preferred_pace_unit                     pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
+    gut_training_level                      gut_training_enum        default 'moderate'::gut_training_enum,
+    onboarding_completed                    boolean                  default false,
+    last_active_at                          timestamp with time zone default now(),
+    app_version                             text,
+    notifications_enabled                   boolean                  default false,
+    default_reminder_day                    integer                  default 4,
+    default_reminder_hour                   integer                  default 17,
+    default_reminder_minute                 integer                  default 0,
+    default_reminder_recurring              boolean                  default false,
+    cycling_ftp_watts                       integer,
+    prefers_cycling_power                   boolean                  default false,
+    swimming_css_seconds_per_100m           integer,
+    prefers_swimming_pace                   boolean                  default false,
+    auth_user_id                            uuid,
+    auth_provider                           auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
+    is_anonymous                            boolean                  default true                            not null,
+    auth_skipped_at                         timestamp with time zone,
+    typical_bike_bottles                    integer
         constraint check_bike_bottles
             check ((typical_bike_bottles IS NULL) OR ((typical_bike_bottles >= 0) AND (typical_bike_bottles <= 6))),
-    has_aero_bottle                   boolean,
-    has_bento_box                     boolean,
-    typical_wetsuit                   boolean,
-    typical_swim_cap_type             text
+    has_aero_bottle                         boolean,
+    has_bento_box                           boolean,
+    typical_wetsuit                         boolean,
+    typical_swim_cap_type                   text
         constraint check_swim_cap_type
             check ((typical_swim_cap_type IS NULL) OR (typical_swim_cap_type = ANY
                                                        (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
-    gi_sensitivity                    boolean,
-    dietary_preference                dietary_preference_enum,
-    allergies                         allergy_enum[]           default '{}'::allergy_enum[],
-    sweat_rate                        text                     default 'medium'::text                  not null
+    gi_sensitivity                          boolean,
+    dietary_preference                      dietary_preference_enum,
+    allergies                               allergy_enum[]           default '{}'::allergy_enum[],
+    sweat_rate                              text                     default 'medium'::text                  not null
         constraint check_sweat_rate
             check (sweat_rate = ANY (ARRAY ['light'::text, 'medium'::text, 'heavy'::text])),
-    calendar_week_start               text                     default 'monday'::text                  not null
+    calendar_week_start                     text                     default 'monday'::text                  not null
         constraint check_calendar_week_start
             check (calendar_week_start = ANY (ARRAY ['sunday'::text, 'monday'::text])),
-    default_activity_time             text                     default '07:00:00'::text                not null,
-    default_activity_day              text                     default 'saturday'::text                not null
+    default_activity_time                   text                     default '07:00:00'::text                not null,
+    default_activity_day                    text                     default 'saturday'::text                not null
         constraint check_default_activity_day
             check (default_activity_day = ANY
                    (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
-    auto_generate_nutrition           boolean                  default true                            not null,
-    completion_reminders              boolean                  default true                            not null,
-    sender_name                       text,
-    first_name                        text,
-    last_name                         text,
-    unit_system                       text                     default 'imperial'::text,
-    default_running_pace_min_per_mile real,
-    default_cycling_speed_mph         real,
-    default_swimming_pace_per_100_sec integer,
-    nutrition_target_overrides        jsonb,
-    email                             text,
-    body_fat_pct                      real,
-    lifestyle                         text                     default 'mixed'::text,
-    typical_weekly_hours              real,
-    carb_cycle_opt_in                 boolean                  default false                           not null,
-    training_phase                    text                     default 'base'::text
+    auto_generate_nutrition                 boolean                  default true                            not null,
+    completion_reminders                    boolean                  default true                            not null,
+    sender_name                             text,
+    first_name                              text,
+    last_name                               text,
+    unit_system                             text                     default 'imperial'::text,
+    default_running_pace_min_per_mile       real,
+    default_cycling_speed_mph               real,
+    default_swimming_pace_per_100_sec       integer,
+    nutrition_target_overrides              jsonb,
+    email                                   text,
+    body_fat_pct                            real,
+    lifestyle                               text                     default 'mixed'::text,
+    typical_weekly_hours                    real,
+    carb_cycle_opt_in                       boolean                  default false                           not null,
+    training_phase                          text                     default 'base'::text,
+    weight_pounds_updated_at                timestamp with time zone,
+    body_fat_pct_updated_at                 timestamp with time zone,
+    sweat_sodium                            text
+        constraint users_sweat_sodium_check
+            check (sweat_sodium = ANY (ARRAY ['low'::text, 'average'::text, 'high'::text, 'medium'::text])),
+    known_sweat_rate_ml_per_hour            integer,
+    known_sodium_concentration_mg_per_liter integer,
+    sweat_test_date                         timestamp with time zone,
+    sweat_test_source                       text
+        constraint users_sweat_test_source_check
+            check (sweat_test_source = ANY
+                   (ARRAY ['self_calculated'::text, 'commercial_test'::text, 'gatorade_gx'::text, 'estimated'::text, 'other'::text]))
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -563,7 +575,12 @@ create table activities
     provider_scheduled_at          timestamp with time zone,
     schedule_changed_at            timestamp with time zone,
     fuel_log_data                  jsonb,
-    tss                            real
+    tss                            real,
+    garmin_summary_id              text,
+    garmin_last_synced_at          timestamp with time zone,
+    garmin_device_name             text,
+    needs_upload                   boolean              default false,
+    local_updated_at               timestamp            default CURRENT_TIMESTAMP
 );
 
 comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
@@ -620,6 +637,10 @@ comment on column activities.schedule_changed_at is 'Timestamp when schedule cha
 
 comment on column activities.fuel_log_data is 'Actual consumption data logged on activity completion. JSON with items array containing planned vs actual quantities per food.';
 
+comment on column activities.needs_upload is 'Flag indicating record needs upload to Supabase (offline-first sync)';
+
+comment on column activities.local_updated_at is 'Timestamp of last local modification (for conflict resolution)';
+
 alter table activities
     owner to postgres;
 
@@ -660,6 +681,13 @@ comment on index idx_activities_provider_deleted_at is 'Partial index for activi
 
 create unique index uq_activities_provider_workout
     on activities (user_id, synced_from_provider, provider_workout_id);
+
+create unique index activities_user_garmin_summary_id_key
+    on activities (user_id, garmin_summary_id);
+
+create index idx_activities_needs_upload
+    on activities (needs_upload, user_id)
+    where (needs_upload = true);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
@@ -1129,7 +1157,7 @@ create table integrations
     provider                      text                                               not null
         constraint integrations_provider_check
             check (provider = ANY
-                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
+                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text, 'vdot'::text])),
     access_token                  text                                               not null,
     refresh_token                 text,
     token_expires_at              timestamp with time zone,
@@ -1140,20 +1168,31 @@ create table integrations
     last_sync_at                  timestamp with time zone,
     last_sync_status              text
         constraint integrations_last_sync_status_check
-            check ((last_sync_status IS NULL) OR
-                   (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
+            check ((last_sync_status IS NULL) OR (last_sync_status = ANY
+                                                  (ARRAY ['success'::text, 'error'::text, 'pending'::text, 'requires_reauth'::text]))),
     last_sync_error               text,
     created_at                    timestamp with time zone default now(),
     updated_at                    timestamp with time zone default now(),
     threshold_pace_min_per_mile   real,
     athlete_zones_json            jsonb,
     provider_athlete_body_fat_pct real,
+    provider_athlete_weight_kg    real,
+    provider_athlete_birth_month  text,
+    provider_athlete_gender       text,
     unique (user_id, provider)
 );
 
 comment on column integrations.threshold_pace_min_per_mile is 'Athlete threshold pace in minutes per mile (e.g., 7.5 = 7:30/mi). Used to calculate accurate workout pace from Training Peaks IF and Structure data. Fetched from provider speed zones during sync.';
 
+comment on column integrations.athlete_zones_json is 'Serialized HR/Speed/Power zone data from Training Peaks for intensity classification.';
+
 comment on column integrations.provider_athlete_body_fat_pct is 'Athlete body fat percentage from Garmin body composition API. Used to auto-populate nutrition profile.';
+
+comment on column integrations.provider_athlete_weight_kg is 'Athlete weight in kilograms from provider profile. Convert to lbs: kg * 2.20462';
+
+comment on column integrations.provider_athlete_birth_month is 'Athlete birth month in YYYY-MM format (Training Peaks does not provide birth day).';
+
+comment on column integrations.provider_athlete_gender is 'Athlete gender: "m" or "f" (Training Peaks format).';
 
 alter table integrations
     owner to postgres;
@@ -1455,7 +1494,12 @@ create table template_foods
     serving_qualifier      text,
     is_indivisible         boolean                  default false,
     default_during         boolean                  default false             not null,
-    min_servings_during    numeric(4, 1)            default 1.0
+    min_servings_during    numeric(4, 1)            default 1.0,
+    max_per_hr_low         numeric(4, 2),
+    max_per_hr_moderate    numeric(4, 2),
+    max_per_hr_high        numeric(4, 2),
+    min_increment          numeric(3, 2)            default 0.5,
+    sodium_top_up_eligible boolean                  default false             not null
 );
 
 comment on table template_foods is 'Food ingredient catalog for nutrition templates. Nutrition data from USDA FoodData Central.';
@@ -1469,6 +1513,16 @@ comment on column template_foods.digestion_speed is 'How quickly food digests: f
 comment on column template_foods.is_indivisible is 'Whether this food comes in discrete, sealed units that cannot be fractionally consumed (e.g., tablets, gel packets)';
 
 comment on column template_foods.default_during is 'Whether this food is part of the default during-activity recommendation set.';
+
+comment on column template_foods.max_per_hr_low is 'Max servings per hour for low gut training level. NULL = unconstrained.';
+
+comment on column template_foods.max_per_hr_moderate is 'Max servings per hour for moderate gut training level. NULL = unconstrained.';
+
+comment on column template_foods.max_per_hr_high is 'Max servings per hour for high gut training level. NULL = unconstrained.';
+
+comment on column template_foods.min_increment is 'Minimum serving increment for rounding (e.g. 1 for gels = whole units only, 0.5 for bars = half bars allowed).';
+
+comment on column template_foods.sodium_top_up_eligible is 'Whether this food may be used as a generic sodium top-up in during-workout template solving. Carb-delivery drinks should remain false and only be used when explicitly present in a template.';
 
 alter table template_foods
     owner to postgres;
@@ -1625,17 +1679,17 @@ grant delete, insert, references, select, trigger, truncate, update on catalog_s
 
 create table personal_templates
 (
-    id                        uuid                     default gen_random_uuid() not null
+    id                        uuid                     default gen_random_uuid()   not null
         primary key,
-    user_id                   uuid                                               not null
+    user_id                   uuid                                                 not null
         references ??? ()
         on delete cascade,
-    name                      text                                               not null,
-    activity_type             text                                               not null,
+    name                      text                                                 not null,
+    activity_type             text                                                 not null,
     original_duration_minutes integer,
     original_distance         numeric(8, 2),
     original_activity_title   text,
-    plan_data                 jsonb                                              not null,
+    plan_data                 jsonb                                                not null,
     total_carbs_g             integer,
     total_protein_g           integer,
     total_fat_g               integer,
@@ -1644,8 +1698,31 @@ create table personal_templates
     total_calories            integer,
     brick_segment_order       text[],
     created_at                timestamp with time zone default now(),
-    updated_at                timestamp with time zone default now()
+    updated_at                timestamp with time zone default now(),
+    provenance                text                     default 'legacy_plan'::text not null
+        constraint personal_templates_provenance_check
+            check (provenance = ANY
+                   (ARRAY ['legacy_plan'::text, 'forked_formula'::text, 'from_scratch_formula'::text])),
+    phase                     text
+        constraint personal_templates_phase_check
+            check ((phase IS NULL) OR (phase = ANY (ARRAY ['before'::text, 'during'::text]))),
+    source_template_id        uuid,
+    sub_phase                 text,
+    digest_speed              text,
+    activities                jsonb,
+    durations                 jsonb,
+    gut_training              text,
+    custom_food_ids           jsonb,
+    constraint personal_templates_provenance_phase_check
+        check (
+            CASE provenance
+                WHEN 'forked_formula'::text THEN ((phase IS NOT NULL) AND (source_template_id IS NOT NULL))
+                WHEN 'from_scratch_formula'::text THEN (phase IS NOT NULL)
+                ELSE true
+                END)
 );
+
+comment on column personal_templates.custom_food_ids is 'JSON array of user_foods.id values used as custom components in this formula.';
 
 alter table personal_templates
     owner to postgres;
@@ -1655,6 +1732,9 @@ create index idx_personal_templates_user
 
 create index idx_personal_templates_sport
     on personal_templates (user_id, activity_type);
+
+create index idx_personal_templates_provenance_phase
+    on personal_templates (user_id, provenance, phase);
 
 grant delete, insert, references, select, trigger, truncate, update on personal_templates to anon;
 
@@ -2014,6 +2094,232 @@ grant delete, insert, references, select, trigger, truncate, update on coach_pai
 grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to service_role;
+
+create table during_workout_templates
+(
+    id                         uuid                     default gen_random_uuid() not null
+        primary key,
+    template_number            integer                                            not null
+        unique,
+    name                       text                                               not null,
+    formula                    text                                               not null,
+    food_form                  text                                               not null,
+    activity_types             text[]                   default '{}'::text[]      not null,
+    duration_brackets          text[]                   default '{}'::text[]      not null,
+    gut_training_levels        text[]                   default '{}'::text[]      not null,
+    component_food_names       text[]                   default '{}'::text[]      not null,
+    component_carb_ratios      jsonb,
+    primary_to_secondary_ratio text,
+    allergens                  text[]                   default '{}'::text[]      not null,
+    excluded_diets             text[]                   default '{}'::text[]      not null,
+    notes                      text,
+    is_active                  boolean                  default true              not null,
+    created_at                 timestamp with time zone default now()             not null,
+    updated_at                 timestamp with time zone default now()             not null,
+    selection_priority         integer                  default 0                 not null
+);
+
+comment on table during_workout_templates is 'Formula templates for during-workout nutrition. Each template defines a food combination for a specific activity/duration/gut-training context.';
+
+comment on column during_workout_templates.component_food_names is 'Array of template_foods.name values that compose this template formula.';
+
+comment on column during_workout_templates.component_carb_ratios is 'JSONB mapping food names to their target share of total carb allocation. e.g. {"energy_gel": 0.7, "sports_drink": 0.3}. Water and electrolytes are excluded (they fill fluid/sodium gaps).';
+
+comment on column during_workout_templates.primary_to_secondary_ratio is 'Unit ratio for triple-source templates. "1:1" means solid and gel must have equal unit counts. NULL for single/dual-source templates.';
+
+comment on column during_workout_templates.selection_priority is 'Catalog-driven tie breaker for template selection. Higher values are tried before lower values after activity, duration, gut, diet, allergy, and preference filtering.';
+
+alter table during_workout_templates
+    owner to postgres;
+
+create index idx_dwt_active
+    on during_workout_templates (is_active)
+    where (is_active = true);
+
+create index idx_dwt_activity_types
+    on during_workout_templates using gin (activity_types);
+
+create index idx_dwt_template_number
+    on during_workout_templates (template_number);
+
+grant delete, insert, references, select, trigger, truncate, update on during_workout_templates to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on during_workout_templates to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on during_workout_templates to service_role;
+
+create table post_workout_templates
+(
+    id                        uuid                     default gen_random_uuid() not null
+        primary key,
+    template_number           integer                                            not null
+        unique,
+    name                      text                                               not null,
+    formula                   text                                               not null,
+    recovery_window           text,
+    recovery_type             text,
+    activity_types            text[]                   default '{}'::text[]      not null,
+    workout_intensity         text[]                   default '{}'::text[]      not null,
+    component_food_names      text[]                   default '{}'::text[]      not null,
+    component_ratios          jsonb,
+    target_carb_protein_ratio text,
+    allergens                 text[]                   default '{}'::text[]      not null,
+    excluded_diets            text[]                   default '{}'::text[]      not null,
+    notes                     text,
+    is_active                 boolean                  default true              not null,
+    created_at                timestamp with time zone default now()             not null,
+    updated_at                timestamp with time zone default now()             not null,
+    travel_friendliness       text
+        constraint post_workout_templates_travel_friendliness_check
+            check ((travel_friendliness IS NULL) OR
+                   (travel_friendliness = ANY (ARRAY ['in_bag'::text, 'cooler_friendly'::text, 'home_only'::text]))),
+    flavor_profile            text
+        constraint post_workout_templates_flavor_profile_check
+            check ((flavor_profile IS NULL) OR (flavor_profile = ANY
+                                                (ARRAY ['sweet_creamy'::text, 'sweet_crunchy'::text, 'savory_salty'::text, 'warm_comforting'::text, 'mixed'::text]))),
+    prep_effort               text
+        constraint post_workout_templates_prep_effort_check
+            check ((prep_effort IS NULL) OR
+                   (prep_effort = ANY (ARRAY ['grab_and_go'::text, 'assemble'::text, 'cook'::text]))),
+    protein_anchor            text
+        constraint post_workout_templates_protein_anchor_check
+            check ((protein_anchor IS NULL) OR (protein_anchor = ANY
+                                                (ARRAY ['whey_shake'::text, 'plant_shake'::text, 'yogurt'::text, 'cottage_cheese'::text, 'chocolate_milk'::text, 'smoothie'::text, 'egg'::text, 'nut_butter'::text, 'deli_cheese'::text]))),
+    carb_sources              text[]                   default '{}'::text[]      not null,
+    portions                  text,
+    selection_priority        integer                  default 0                 not null,
+    default_servings          jsonb                    default '{}'::jsonb       not null
+);
+
+comment on column post_workout_templates.travel_friendliness is 'Where the template can be eaten: in_bag (shelf stable), cooler_friendly, or home_only.';
+
+comment on column post_workout_templates.flavor_profile is 'Sensory dimension used for re-rolls and personalization.';
+
+comment on column post_workout_templates.prep_effort is 'How much work the athlete has to do once they get to the food.';
+
+comment on column post_workout_templates.protein_anchor is 'Primary protein category, mirrors the Notion taxonomy.';
+
+comment on column post_workout_templates.carb_sources is 'Carb source tags (snake_case subset of Notion carb sources).';
+
+comment on column post_workout_templates.portions is 'Human-readable portion description shown to the athlete.';
+
+comment on column post_workout_templates.selection_priority is 'Tie breaker for template selection. Higher = preferred when scores tie.';
+
+comment on column post_workout_templates.default_servings is 'Servings count per food name for the canonical portion. Single shared portion across all athletes — no body-size scaling.';
+
+alter table post_workout_templates
+    owner to postgres;
+
+create index idx_pwt_active
+    on post_workout_templates (is_active)
+    where (is_active = true);
+
+create index idx_pwt_activity_types
+    on post_workout_templates using gin (activity_types);
+
+create index idx_pwt_template_number
+    on post_workout_templates (template_number);
+
+create index idx_pwt_protein_anchor
+    on post_workout_templates (protein_anchor);
+
+create index idx_pwt_flavor_profile
+    on post_workout_templates (flavor_profile);
+
+grant delete, insert, references, select, trigger, truncate, update on post_workout_templates to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on post_workout_templates to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on post_workout_templates to service_role;
+
+create table formula_pins
+(
+    id            uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id       uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    template_id   uuid                                               not null,
+    template_kind text                                               not null
+        constraint formula_pins_template_kind_check
+            check (template_kind = ANY (ARRAY ['pre_system'::text, 'during_system'::text, 'post_system'::text])),
+    created_at    timestamp with time zone default now()             not null,
+    updated_at    timestamp with time zone default now()             not null,
+    is_deleted    boolean                  default false             not null
+);
+
+comment on column formula_pins.template_kind is 'Polymorphic ref into pre_workout_templates, during_workout_templates, or post_workout_templates. Intentionally text, not FK. Widened to ''personal_template'' in PR 5 when personal formulas become pinnable.';
+
+alter table formula_pins
+    owner to postgres;
+
+create unique index formula_pins_active_unique
+    on formula_pins (user_id, template_id, template_kind)
+    where (NOT is_deleted);
+
+create index formula_pins_user_kind
+    on formula_pins (user_id, template_kind)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on formula_pins to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on formula_pins to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on formula_pins to service_role;
+
+create table personal_formulas
+(
+    id                   uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id              uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    name                 text                                               not null,
+    provenance           text                                               not null
+        constraint personal_formulas_provenance_check
+            check (provenance = ANY (ARRAY ['forked_formula'::text, 'from_scratch_formula'::text])),
+    phase                text                                               not null
+        constraint personal_formulas_phase_check
+            check (phase = ANY (ARRAY ['before'::text, 'during'::text, 'after'::text])),
+    source_template_id   uuid,
+    source_template_kind text
+        constraint personal_formulas_source_template_kind_check
+            check ((source_template_kind IS NULL) OR (source_template_kind = ANY
+                                                      (ARRAY ['pre_system'::text, 'during_system'::text, 'post_system'::text]))),
+    sub_phase            text,
+    digest_speed         text,
+    activities           jsonb,
+    durations            jsonb,
+    gut_training         text,
+    travel_friendliness  text,
+    components           jsonb                    default '[]'::jsonb       not null,
+    notes                text,
+    total_carbs_g        integer,
+    total_protein_g      integer,
+    total_fat_g          integer,
+    total_sodium_mg      integer,
+    total_fluids_ml      integer,
+    total_calories       integer,
+    created_at           timestamp with time zone default now()             not null,
+    updated_at           timestamp with time zone default now()             not null,
+    is_deleted           boolean                  default false             not null,
+    constraint personal_formulas_forked_source_check
+        check ((provenance <> 'forked_formula'::text) OR
+               ((source_template_id IS NOT NULL) AND (source_template_kind IS NOT NULL)))
+);
+
+alter table personal_formulas
+    owner to postgres;
+
+create index personal_formulas_user_phase
+    on personal_formulas (user_id, phase)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on personal_formulas to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on personal_formulas to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on personal_formulas to service_role;
 
 create materialized view catalog_items as
 SELECT v.id,
@@ -3336,6 +3642,50 @@ grant execute on function is_approved_coach(uuid) to anon;
 grant execute on function is_approved_coach(uuid) to authenticated;
 
 grant execute on function is_approved_coach(uuid) to service_role;
+
+create function formula_pins_set_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+alter function formula_pins_set_updated_at() owner to postgres;
+
+grant execute on function formula_pins_set_updated_at() to anon;
+
+grant execute on function formula_pins_set_updated_at() to authenticated;
+
+grant execute on function formula_pins_set_updated_at() to service_role;
+
+create function custom_foods_set_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+alter function custom_foods_set_updated_at() owner to postgres;
+
+grant execute on function custom_foods_set_updated_at() to anon;
+
+grant execute on function custom_foods_set_updated_at() to authenticated;
+
+grant execute on function custom_foods_set_updated_at() to service_role;
+
+create function personal_formulas_set_updated_at() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+alter function personal_formulas_set_updated_at() owner to postgres;
+
+grant execute on function personal_formulas_set_updated_at() to anon;
+
+grant execute on function personal_formulas_set_updated_at() to authenticated;
+
+grant execute on function personal_formulas_set_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

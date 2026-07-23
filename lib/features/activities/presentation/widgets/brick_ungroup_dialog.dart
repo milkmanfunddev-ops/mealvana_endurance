@@ -9,10 +9,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 ///
 /// Returns true if user confirms ungrouping, false if cancelled.
 class BrickUngroupDialog extends StatelessWidget {
-  const BrickUngroupDialog({
-    super.key,
-    required this.segmentCount,
-  });
+  const BrickUngroupDialog({super.key, required this.segmentCount});
 
   final int segmentCount;
 
@@ -37,7 +34,7 @@ class BrickUngroupDialog extends StatelessWidget {
                 color: AppColors.orange.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: const FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 size: AppIconSizes.xl,
                 color: AppColors.orange,
@@ -76,7 +73,7 @@ class BrickUngroupDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  const FaIcon(
                     FontAwesomeIcons.circleInfo,
                     size: AppIconSizes.sm,
                     color: AppColors.orange,

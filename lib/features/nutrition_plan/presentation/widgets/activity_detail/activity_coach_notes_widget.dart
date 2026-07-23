@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../activities/domain/activity.dart';
+import '../../../../integrations/presentation/widgets/garmin_attribution.dart';
 
-/// Displays coach notes / TrainingPeaks description for an activity.
+/// Displays coach notes / provider description for an activity.
 /// Only shown when the activity has notes and was synced from a provider.
 class ActivityCoachNotesWidget extends StatelessWidget {
   final Activity activity;
@@ -18,13 +19,14 @@ class ActivityCoachNotesWidget extends StatelessWidget {
     final isFromTP = activity.syncedFromProvider == 'training_peaks';
     final isFromFS = activity.syncedFromProvider == 'final_surge';
     final isFromGarmin = activity.syncedFromProvider == 'garmin';
+    final isFromVdot = activity.syncedFromProvider == 'vdot';
     final providerName = isFromTP
         ? 'TrainingPeaks'
         : isFromFS
-            ? 'Final Surge'
-            : isFromGarmin
-                ? 'Garmin'
-                : null;
+        ? 'Final Surge'
+        : isFromVdot
+        ? 'V.O2'
+        : null;
 
     // Extract the coach description (before metadata line)
     // The notes format from TP transformer: "description\nElevation: ... | Calories: ... | Tags: ..."
@@ -47,7 +49,9 @@ class ActivityCoachNotesWidget extends StatelessWidget {
               const Icon(Icons.notes, size: 16, color: AppColors.electrolyte),
               const SizedBox(width: 6),
               Text(
-                providerName != null
+                isFromGarmin
+                    ? 'Coach Notes (from'
+                    : providerName != null
                     ? 'Coach Notes (from $providerName)'
                     : 'Notes',
                 style: const TextStyle(
@@ -56,6 +60,18 @@ class ActivityCoachNotesWidget extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (isFromGarmin) ...[
+                const SizedBox(width: 4),
+                GarminAttribution(deviceName: activity.garminDeviceName),
+                const Text(
+                  ')',
+                  style: TextStyle(
+                    color: AppColors.electrolyte,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),

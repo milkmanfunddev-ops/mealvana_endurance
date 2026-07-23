@@ -1,0 +1,21 @@
+{
+  "Steps": [
+    {
+      "Type": "WorkoutRampStep",
+      "Duration": { "Unit": "Minute", "Value": 10 },
+      "IntensityTargetStart": { "Unit": "PercentFTP", "Value": 0.50 },
+      "IntensityTargetEnd": { "Unit": "PercentFTP", "Value": 0.75 }
+    },
+    {
+      "Type": "WorkoutStep",
+      "Duration": { "Unit": "Minute", "Value": 20 },
+      "IntensityTarget": { "Unit": "PercentFTP", "Value": 0.88 }
+    },
+    {
+      "Type": "WorkoutRampStep",
+      "Duration": { "Unit": "Minute", "Value": 10 },
+      "IntensityTargetStart": { "Unit": "PercentFTP", "Value": 0.75 },
+      "IntensityTargetEnd": { "Unit": "PercentFTP", "Value": 0.50 }
+    }
+  ]
+}

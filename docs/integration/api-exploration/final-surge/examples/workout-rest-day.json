@@ -1,0 +1,11 @@
+{
+  "WorkoutKey": "rest-day",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=test&id=rest-day",
+  "WorkoutDate": "2026-01-04T00:00:00",
+  "WorkoutTitle": null,
+  "WorkoutDescription": null,
+  "WorkoutTypeName": "Rest Day",
+  "WorkoutIcon": 6,
+  "PlannedTime": null,
+  "PlannedDistance": null
+}

@@ -22,12 +22,15 @@ class EventSubtypeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtypes = EventSubtype.getSubtypesForEventType(sportCategory.dbValue);
+    final subtypes = EventSubtype.getSubtypesForEventType(
+      sportCategory.dbValue,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          key: const ValueKey('event_create.race_distance_heading'),
           'Race Distance',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -35,6 +38,7 @@ class EventSubtypeDropdown extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<EventSubtype>(
+          key: const ValueKey('event_create.race_distance_dropdown'),
           initialValue: selectedSubtype,
           decoration: InputDecoration(
             border: OutlineInputBorder(
@@ -51,25 +55,20 @@ class EventSubtypeDropdown extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(
-                color: AppColors.electrolyte,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: AppColors.electrolyte, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(
-                color: AppColors.dragonfruit,
-              ),
+              borderSide: BorderSide(color: AppColors.dragonfruit),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(
-                color: AppColors.dragonfruit,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: AppColors.dragonfruit, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             // prefixIcon: FaIcon(
             //   _getIconForCategory(sportCategory),
             //   size: AppIconSizes.sm,
@@ -83,6 +82,9 @@ class EventSubtypeDropdown extends StatelessWidget {
           dropdownColor: Theme.of(context).colorScheme.surface,
           items: subtypes.map((subtype) {
             return DropdownMenuItem<EventSubtype>(
+              key: ValueKey(
+                'event_create.race_distance_option_${subtype.name}',
+              ),
               value: subtype,
               child: Text(
                 subtype.displayName,
@@ -111,17 +113,19 @@ class EventSubtypeDropdown extends StatelessWidget {
   IconData _getIconForCategory(ActivityType category) {
     switch (category) {
       case ActivityType.running:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       case ActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case ActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
-        return FontAwesomeIcons.trophy;
+        return FontAwesomeIcons.trophy.data;
       case ActivityType.brick:
-        return FontAwesomeIcons.link; // Chain link icon for brick workouts
+        return FontAwesomeIcons.link.data; // Chain link icon for brick workouts
+      case ActivityType.other:
+        return FontAwesomeIcons.circle.data;
     }
   }
 }

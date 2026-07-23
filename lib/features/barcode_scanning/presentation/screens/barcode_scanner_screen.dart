@@ -36,6 +36,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? _controller;
   bool _isScanning = true;
+  bool _isStartingScanner = false;
   String? _lastScannedBarcode;
   BarcodeScanResult? _lastScanResult;
   bool _flashOn = false;
@@ -45,9 +46,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
+    // autoStart is disabled on the controller (see _initializeController) so
+    // that every start() call in this screen goes through the same guarded
+    // entry point (_safeStartScanner). Kick off the initial start here.
+    _safeStartScanner();
 
     // Track scanner opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final analytics = ref.read(appExternalDepsProvider);
       analytics.analytics.track(
         'barcode_scanner_opened',
@@ -65,6 +71,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   void _initializeController() {
     _controller = MobileScannerController(
+      // Disabled so every start() call is funneled through
+      // _safeStartScanner, which guards against the
+      // `controllerInitializing` race (Sentry MEALVANA-ENDURANCE-79).
+      autoStart: false,
       detectionSpeed: DetectionSpeed.noDuplicates,
       formats: [
         BarcodeFormat.ean13,
@@ -88,15 +98,46 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _controller!.start();
+        _safeStartScanner();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        _controller!.stop();
+        _safeStopScanner();
         break;
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
         break;
+    }
+  }
+
+  /// Start the scanner, tolerating the race where the controller is still
+  /// initializing (a previous start() is still in flight — e.g. app-resume
+  /// firing while the initial start hasn't finished, or the reset button
+  /// being tapped again before the last start completed). In that window
+  /// `start()` throws `MobileScannerException(controllerInitializing)` —
+  /// safe to ignore since the controller will be running once init
+  /// completes. Fixes an app-resume crash: Sentry MEALVANA-ENDURANCE-79.
+  ///
+  /// All start() calls in this screen must go through this method (the
+  /// controller itself is created with `autoStart: false`) so the
+  /// `_isStartingScanner` guard and mounted checks apply uniformly.
+  Future<void> _safeStartScanner() async {
+    if (_isStartingScanner || _controller == null) return;
+    _isStartingScanner = true;
+    try {
+      await _controller?.start();
+    } on MobileScannerException catch (_) {
+      // Already starting / still initializing — ignore, benign race.
+    } finally {
+      _isStartingScanner = false;
+    }
+  }
+
+  Future<void> _safeStopScanner() async {
+    try {
+      await _controller?.stop();
+    } on MobileScannerException catch (_) {
+      // Not initialized yet — nothing to stop.
     }
   }
 
@@ -200,12 +241,32 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     if (result.isSuccess) {
       _showSuccessResult(result.food!, result.barcode);
     } else if (result.isNotFound) {
+      _trackLookupFailed('not_found', result.barcode);
       _showNotFoundResult(result.barcode, result.message!);
     } else if (result.isInvalidFormat) {
+      _trackLookupFailed('invalid_format', result.barcode);
       _showInvalidFormatResult(result.barcode, result.message!);
     } else {
+      _trackLookupFailed('error', result.barcode);
       _showError(result.message ?? 'Unknown error occurred');
     }
+  }
+
+  /// Fire the scan-failure event so the barcode funnel can measure no-match /
+  /// invalid / error rate (OpenFoodFacts coverage is barcode's make-or-break).
+  void _trackLookupFailed(String reason, String code) {
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'barcode_lookup_failed',
+          properties: {
+            'reason': reason,
+            'code': code,
+            'category': widget.category,
+            'context': widget.context,
+          },
+        );
   }
 
   void _showSuccessResult(Food food, String barcode) {
@@ -218,7 +279,28 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     _showVerificationDialog(food, apiProduct);
   }
 
+  /// Whether this scan originated from the meal-log ("Discover") flow rather
+  /// than from adding/swapping a food in the nutrition plan.
+  ///
+  /// In that flow the user is logging what they ate, so the nutrition-plan
+  /// before/during/after-run [FoodDetailScreen] is the wrong destination — we
+  /// hand the raw scanned [Food] straight back to the caller, which routes to
+  /// the logging-specific confirmation page.
+  /// `build_meal_add_food` is the Build-a-Meal component search — also meal
+  /// logging, also general food. It was previously omitted, so scanning there
+  /// fell through to [FoodDetailScreen]'s "When would you eat this?
+  /// Before/During/After Run" picker inside a plain meal builder.
+  static const _mealLogContexts = {'meal_log_discover', 'build_meal_add_food'};
+
+  bool get _isMealLogContext => _mealLogContexts.contains(widget.context);
+
   Future<void> _showVerificationDialog(Food food, dynamic apiProduct) async {
+    // Meal logging: bypass the plan's category page and return the scanned food.
+    if (_isMealLogContext) {
+      context.pop(food);
+      return;
+    }
+
     // Determine the context and pre-selected categories based on widget.category
     FoodDetailContext foodContext;
     List<int>? preSelectedCategories;
@@ -323,7 +405,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,
@@ -378,7 +460,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               const SizedBox(height: AppSpacing.sm),
               KyleSecondaryButton(
                 text: 'Create Manually',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _openCreateFoodScreen();
@@ -405,7 +487,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.xmark,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,
@@ -444,7 +526,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               const SizedBox(height: AppSpacing.sm),
               KyleSecondaryButton(
                 text: 'Create Manually',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _openCreateFoodScreen();
@@ -471,7 +553,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,
@@ -518,7 +600,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               const SizedBox(height: AppSpacing.sm),
               KyleSecondaryButton(
                 text: 'Create Manually',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _openCreateFoodScreen();
@@ -582,12 +664,16 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   }
 
   void _resetScanning() {
+    if (!mounted) return;
     setState(() {
       _isScanning = true;
       _lastScannedBarcode = null;
       _lastScanResult = null;
     });
-    _controller?.start();
+    // Route through the guarded starter — a rapid double-tap of the reset
+    // button (or a resume racing with it) can otherwise throw
+    // `MobileScannerException(controllerInitializing)` unhandled.
+    _safeStartScanner();
   }
 
   void _toggleFlashlight() {
@@ -619,12 +705,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         title: Row(
           children: [
             const CustomAppBarBackButton(
+              key: ValueKey('barcode.back_button'),
               margin: EdgeInsets.zero,
               iconColor: Colors.white,
               backgroundColor: Color(0x80000000),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
+              key: const ValueKey('barcode.title'),
               title,
               style: AppTextStyles.sectionTitle.copyWith(color: Colors.white),
             ),
@@ -633,9 +721,12 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         actions: [
           // Flash toggle button
           IconButton(
+            key: const ValueKey('barcode.flash_button'),
             onPressed: _toggleFlashlight,
             icon: Icon(
-              _flashOn ? FontAwesomeIcons.bolt : FontAwesomeIcons.bolt,
+              _flashOn
+                  ? FontAwesomeIcons.bolt.data
+                  : FontAwesomeIcons.bolt.data,
               color: _flashOn ? AppColors.orange : Colors.white,
               size: AppIconSizes.md,
             ),
@@ -681,6 +772,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   Widget _buildInstructions() {
     return Container(
+      key: const ValueKey('barcode.instructions'),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.7),
@@ -700,14 +792,16 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       children: [
         // Reset scanning button
         _buildControlButton(
-          icon: FontAwesomeIcons.arrowRotateRight,
+          buttonKey: const ValueKey('barcode.reset_button'),
+          icon: FontAwesomeIcons.arrowRotateRight.data,
           onPressed: _resetScanning,
           label: 'Reset',
         ),
 
         // Switch camera button
         _buildControlButton(
-          icon: FontAwesomeIcons.cameraRotate,
+          buttonKey: const ValueKey('barcode.switch_button'),
+          icon: FontAwesomeIcons.cameraRotate.data,
           onPressed: _switchCamera,
           label: 'Switch',
         ),
@@ -719,6 +813,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     required IconData icon,
     required VoidCallback onPressed,
     required String label,
+    Key? buttonKey,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -735,6 +830,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             ),
           ),
           child: IconButton(
+            key: buttonKey,
             icon: Icon(icon, color: Colors.white, size: AppIconSizes.md),
             onPressed: onPressed,
           ),

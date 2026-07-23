@@ -31,17 +31,17 @@ class TrainingPeaksApiClient {
     bool useSandbox = true,
     http.Client? httpClient,
     RetryConfig? retryConfig,
-  })  : _clientId = clientId,
-        _clientSecret = clientSecret,
-        _appVersion = appVersion,
-        _oauthBaseUrl = useSandbox
-            ? 'https://oauth.sandbox.trainingpeaks.com'
-            : 'https://oauth.trainingpeaks.com',
-        _apiBaseUrl = useSandbox
-            ? 'https://api.sandbox.trainingpeaks.com'
-            : 'https://api.trainingpeaks.com',
-        _httpClient = httpClient ?? http.Client(),
-        _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
+  }) : _clientId = clientId,
+       _clientSecret = clientSecret,
+       _appVersion = appVersion,
+       _oauthBaseUrl = useSandbox
+           ? 'https://oauth.sandbox.trainingpeaks.com'
+           : 'https://oauth.trainingpeaks.com',
+       _apiBaseUrl = useSandbox
+           ? 'https://api.sandbox.trainingpeaks.com'
+           : 'https://api.trainingpeaks.com',
+       _httpClient = httpClient ?? http.Client(),
+       _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
 
   static const _provider = 'training_peaks';
 
@@ -194,10 +194,13 @@ class TrainingPeaksApiClient {
   }) async {
     return HttpRetryClient.executeWithRetry(
       request: () => _httpClient.get(
-        Uri.parse('$_apiBaseUrl/v2/workouts/${_formatDate(startDate)}/${_formatDate(endDate)}')
-            .replace(queryParameters: {
-          if (includeDescription) 'includeDescription': 'true',
-        }),
+        Uri.parse(
+          '$_apiBaseUrl/v2/workouts/${_formatDate(startDate)}/${_formatDate(endDate)}',
+        ).replace(
+          queryParameters: {
+            if (includeDescription) 'includeDescription': 'true',
+          },
+        ),
         headers: _authHeaders(accessToken),
       ),
       onResponse: (response) {
@@ -340,7 +343,9 @@ class TrainingPeaksApiClient {
     final endDate = startDate.add(Duration(days: days));
 
     if (kDebugMode) {
-      print('🔍 Searching for events from ${_formatDate(startDate)} to ${_formatDate(endDate)} ($days days)');
+      print(
+        '🔍 Searching for events from ${_formatDate(startDate)} to ${_formatDate(endDate)} ($days days)',
+      );
     }
 
     // Iterate through each day
@@ -354,14 +359,18 @@ class TrainingPeaksApiClient {
             seenIds.add(eventId);
             events.add(event);
             if (kDebugMode) {
-              print('   Found event: ${event['Name']} on ${_formatDate(currentDate)}');
+              print(
+                '   Found event: ${event['Name']} on ${_formatDate(currentDate)}',
+              );
             }
           }
         }
       } catch (e) {
         // Skip individual day errors, continue with other days
         if (kDebugMode) {
-          print('   ⚠️ Error fetching events for ${_formatDate(currentDate)}: $e');
+          print(
+            '   ⚠️ Error fetching events for ${_formatDate(currentDate)}: $e',
+          );
         }
       }
       currentDate = currentDate.add(const Duration(days: 1));
@@ -471,9 +480,9 @@ class TrainingPeaksApiClient {
   }
 
   Map<String, String> _authHeaders(String accessToken) => {
-        'Authorization': 'Bearer $accessToken',
-        'User-Agent': _userAgent,
-      };
+    'Authorization': 'Bearer $accessToken',
+    'User-Agent': _userAgent,
+  };
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -516,7 +525,8 @@ class TrainingPeaksTokenResponse {
 
   final String accessToken;
   final String? refreshToken;
-  final int expiresIn; // Always present (usually 600 seconds = 10 min? or 3600 = 1 hour)
+  final int
+  expiresIn; // Always present (usually 600 seconds = 10 min? or 3600 = 1 hour)
   final String? tokenType;
   final String? scope;
 
@@ -587,11 +597,8 @@ class TrainingPeaksAthleteProfile {
 /// Extends the shared [IntegrationApiException] for consistency across integrations.
 /// Kept for backward compatibility with existing code.
 class TrainingPeaksApiException extends IntegrationApiException {
-  const TrainingPeaksApiException(
-    super.message, {
-    super.statusCode,
-    super.body,
-  }) : super(provider: 'training_peaks');
+  const TrainingPeaksApiException(super.message, {super.statusCode, super.body})
+    : super(provider: 'training_peaks');
 
   @override
   String toString() {
@@ -612,7 +619,7 @@ class TrainingPeaksApiException extends IntegrationApiException {
 /// This exception should trigger a token refresh flow.
 class TrainingPeaksTokenExpiredException extends TokenExpiredException {
   const TrainingPeaksTokenExpiredException()
-      : super('Token expired. Call refreshToken().', provider: 'training_peaks');
+    : super('Token expired. Call refreshToken().', provider: 'training_peaks');
 
   @override
   String toString() =>
@@ -621,7 +628,8 @@ class TrainingPeaksTokenExpiredException extends TokenExpiredException {
 
 /// Exception for OAuth-specific errors
 class TrainingPeaksOAuthException extends IntegrationApiException {
-  const TrainingPeaksOAuthException(super.message) : super(provider: 'training_peaks');
+  const TrainingPeaksOAuthException(super.message)
+    : super(provider: 'training_peaks');
 
   @override
   String toString() => 'TrainingPeaksOAuthException: $message';

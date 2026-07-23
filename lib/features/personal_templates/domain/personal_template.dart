@@ -60,8 +60,8 @@ class PersonalTemplate {
     List<String>? segmentOrder;
     if (entry.brickSegmentOrder != null) {
       try {
-        segmentOrder =
-            (jsonDecode(entry.brickSegmentOrder!) as List).cast<String>();
+        segmentOrder = (jsonDecode(entry.brickSegmentOrder!) as List)
+            .cast<String>();
       } catch (_) {
         segmentOrder = null;
       }

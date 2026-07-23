@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,7 +7,7 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/carb_loading_food.dart' as domain;
-import '../domain/meal_type.dart' show MealType;
+import '../domain/meal_type.dart' show MealType, parseMealTypeIds;
 
 part 'carb_loading_food_repository.g.dart';
 
@@ -203,7 +202,7 @@ class CarbLoadingFoodRepository with SyncableRepository {
             return true; // Changed from false to true - more forgiving!
           }
 
-          final mealTypes = _parseMealTypesArray(food.mealTypes);
+          final mealTypes = parseMealTypeIds(food.mealTypes);
           final matches = mealTypes.isEmpty || mealTypes.contains(mealTypeId);
 
           return matches;
@@ -252,62 +251,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
     return foods.map((food) => _convertToFoodDomain(food)).toList();
   }
 
-  /// Parse meal types from array column
-  /// Production schema: meal_types text[] (e.g., {breakfast,lunch,dinner})
-  /// Converts meal type names to integer IDs for domain model compatibility
-  List<int> _parseMealTypesArray(String? mealTypesStr) {
-    if (mealTypesStr == null || mealTypesStr.isEmpty) return [];
-
-    try {
-      // Handle PostgreSQL array format: {breakfast,lunch,dinner}
-      if (mealTypesStr.startsWith('{') && mealTypesStr.endsWith('}')) {
-        final content = mealTypesStr.substring(1, mealTypesStr.length - 1);
-        if (content.isEmpty) return [];
-
-        // Parse meal type names and convert to IDs
-        return content.split(',').map((nameStr) {
-          final trimmedName = nameStr.trim();
-          // Try to parse as integer first (backward compatibility)
-          final intId = int.tryParse(trimmedName);
-          if (intId != null) return intId;
-
-          // Parse as meal type name and convert to ID
-          try {
-            final mealType = MealType.fromName(trimmedName);
-            return mealType.id;
-          } catch (e) {
-            // If parsing fails, return breakfast as default
-            return MealType.breakfast.id;
-          }
-        }).toList();
-      }
-
-      // Handle JSON array format: [1,2,3] or ["breakfast","lunch"]
-      if (mealTypesStr.startsWith('[') && mealTypesStr.endsWith(']')) {
-        final List<dynamic> parsed = jsonDecode(mealTypesStr);
-        return parsed.map((e) {
-          if (e is int) return e;
-          if (e is String) {
-            try {
-              final mealType = MealType.fromName(e);
-              return mealType.id;
-            } catch (err) {
-              return MealType.breakfast.id;
-            }
-          }
-          return MealType.breakfast.id;
-        }).toList();
-      }
-
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
   /// Convert Drift entity to domain model
   domain.CarbLoadingFood _convertToFoodDomain(CarbLoadingFood food) {
-    final mealTypeIds = _parseMealTypesArray(food.mealTypes);
+    final mealTypeIds = parseMealTypeIds(food.mealTypes);
 
     return domain.CarbLoadingFood.fromDatabase(
       id: food.id,
@@ -341,7 +287,7 @@ class CarbLoadingFoodRepository with SyncableRepository {
           (foods) => foods
               .where((food) {
                 if (food.mealTypes == null) return false;
-                final mealTypes = _parseMealTypesArray(food.mealTypes);
+                final mealTypes = parseMealTypeIds(food.mealTypes);
                 return mealTypes.contains(mealTypeId);
               })
               .map((food) => _convertToFoodDomain(food))

@@ -1,0 +1,44 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. A completed quality session with a structured step tree. Note: status 'completed' still exposes only the PLAN — plannedTime/plannedDistance are the planned values, and the API returns no completed-session actuals (real time, distance, HR, or pace).",
+  "eventId": "c1f4a2b9-77de-4c31-9b60-2ea5f3c88101",
+  "eventName": "Quality Session",
+  "eventDate": "2026-06-03T00:00:00",
+  "eventType": "qualitySession",
+  "status": "completed",
+  "plannedTime": 3600,
+  "plannedDistance": 12000,
+  "steps": [
+    {
+      "type": "step",
+      "intensity": "warmup",
+      "duration": { "type": "time", "value": 900 },
+      "order": 1
+    },
+    {
+      "type": "repeatStep",
+      "repeatValue": 6,
+      "order": 2,
+      "steps": [
+        {
+          "type": "step",
+          "intensity": "interval",
+          "duration": { "type": "distance", "value": 800 },
+          "target": { "type": "speed", "valueLow": 4.55, "valueHigh": 4.79 },
+          "order": 1
+        },
+        {
+          "type": "step",
+          "intensity": "recovery",
+          "duration": { "type": "time", "value": 120 },
+          "order": 2
+        }
+      ]
+    },
+    {
+      "type": "step",
+      "intensity": "cooldown",
+      "duration": { "type": "time", "value": 600 },
+      "order": 3
+    }
+  ]
+}

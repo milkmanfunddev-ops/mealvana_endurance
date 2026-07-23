@@ -22,10 +22,7 @@ enum RecoveryChoice {
 /// - How many records are in the backup
 /// - Which repositories have dirty records
 class DirtyRecordRecoveryDialog extends StatelessWidget {
-  const DirtyRecordRecoveryDialog({
-    super.key,
-    required this.backup,
-  });
+  const DirtyRecordRecoveryDialog({super.key, required this.backup});
 
   final DirtyRecordBackup backup;
 
@@ -96,116 +93,113 @@ class DirtyRecordRecoveryDialog extends StatelessWidget {
 
     return Dialog(
       backgroundColor: AppTheme.baseCream,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(24.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            // Warning icon
-            Container(
-              width: 80.w,
-              height: 80.h,
-              decoration: BoxDecoration(
-                color: AppTheme.highlight600.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(40.r),
-              ),
-              child: Icon(
-                Icons.cloud_upload_outlined,
-                size: 40.w,
-                color: AppTheme.highlight600,
-              ),
-            ),
-
-            SizedBox(height: 20.h),
-
-            // Title
-            Text(
-              'Unsaved Data Found',
-              style: AppTheme.titleStyle.copyWith(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primary900,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: 12.h),
-
-            // Description
-            Text(
-              'We found ${backup.totalRecordCount} unsaved ${backup.totalRecordCount == 1 ? 'record' : 'records'} from your last session.',
-              style: AppTheme.textStyle.copyWith(
-                fontSize: 15.sp,
-                color: AppTheme.baseGrey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: 20.h),
-
-            // Backup details card
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: AppTheme.primary50,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: AppTheme.primary100,
-                  width: 1,
+              // Warning icon
+              Container(
+                width: 80.w,
+                height: 80.h,
+                decoration: BoxDecoration(
+                  color: AppTheme.highlight600.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(40.r),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetailRow(
-                    Icons.access_time,
-                    'Backup created',
-                    _formatBackupTime(backup.backupCreatedAt),
-                  ),
-                  SizedBox(height: 12.h),
-                  _buildDetailRow(
-                    Icons.storage,
-                    'Records',
-                    '${backup.totalRecordCount} (${_formatRepositoryNames(repositoriesWithData)})',
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 24.h),
-
-            // Upload button (primary action)
-            PrimaryButton(
-              text: 'Upload Now',
-              onPressed: () => Navigator.of(context).pop(RecoveryChoice.upload),
-              width: double.infinity,
-              height: 48.h,
-            ),
-
-            SizedBox(height: 12.h),
-
-            // Discard button (secondary/destructive action)
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(RecoveryChoice.discard),
-              style: TextButton.styleFrom(
-                minimumSize: Size(double.infinity, 48.h),
-              ),
-              child: Text(
-                'Discard',
-                style: AppTheme.textStyle.copyWith(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
+                child: Icon(
+                  Icons.cloud_upload_outlined,
+                  size: 40.w,
                   color: AppTheme.highlight600,
                 ),
               ),
-            ),
-          ],
+
+              SizedBox(height: 20.h),
+
+              // Title
+              Text(
+                'Unsaved Data Found',
+                style: AppTheme.titleStyle.copyWith(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary900,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Description
+              Text(
+                'We found ${backup.totalRecordCount} unsaved ${backup.totalRecordCount == 1 ? 'record' : 'records'} from your last session.',
+                style: AppTheme.textStyle.copyWith(
+                  fontSize: 15.sp,
+                  color: AppTheme.baseGrey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              SizedBox(height: 20.h),
+
+              // Backup details card
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary50,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppTheme.primary100, width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow(
+                      Icons.access_time,
+                      'Backup created',
+                      _formatBackupTime(backup.backupCreatedAt),
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildDetailRow(
+                      Icons.storage,
+                      'Records',
+                      '${backup.totalRecordCount} (${_formatRepositoryNames(repositoriesWithData)})',
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 24.h),
+
+              // Upload button (primary action)
+              PrimaryButton(
+                text: 'Upload Now',
+                onPressed: () =>
+                    Navigator.of(context).pop(RecoveryChoice.upload),
+                width: double.infinity,
+                height: 48.h,
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Discard button (secondary/destructive action)
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(RecoveryChoice.discard),
+                style: TextButton.styleFrom(
+                  minimumSize: Size(double.infinity, 48.h),
+                ),
+                child: Text(
+                  'Discard',
+                  style: AppTheme.textStyle.copyWith(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.highlight600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -213,11 +207,7 @@ class DirtyRecordRecoveryDialog extends StatelessWidget {
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20.w,
-          color: AppTheme.primary600,
-        ),
+        Icon(icon, size: 20.w, color: AppTheme.primary600),
         SizedBox(width: 12.w),
         Expanded(
           child: Column(

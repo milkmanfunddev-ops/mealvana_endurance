@@ -24,7 +24,7 @@ class KyleAddFoodButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bgColor = backgroundColor ?? Colors.transparent;
     final txtColor = textColor ?? Colors.orange;
-    
+
     return Material(
       color: bgColor,
       borderRadius: AppRadius.buttonRadius,
@@ -39,16 +39,13 @@ class KyleAddFoodButton extends ConsumerWidget {
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: AppRadius.buttonRadius,
-            border: Border.all(
-              color: Colors.orange,
-              width: 2,
-            ),
+            border: Border.all(color: Colors.orange, width: 2),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.plus,
                 size: AppIconSizes.controlIcon,
                 color: txtColor,

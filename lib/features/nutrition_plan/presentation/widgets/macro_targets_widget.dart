@@ -4,7 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../domain/nutrition_plan.dart';
 import '../utils/activity_detail_helpers.dart';
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Macro targets display widget with progress bars matching original design
@@ -26,11 +26,14 @@ class MacroTargetsWidget extends StatelessWidget {
     if (targets == null) {
       return const SizedBox.shrink();
     }
-    
+
     return _buildMacroTargetsWithProgressBars(targets!, plan);
   }
 
-  Widget _buildMacroTargetsWithProgressBars(targets_model.MacroTargets detailedTargets, NutritionPlan? plan) {
+  Widget _buildMacroTargetsWithProgressBars(
+    targets_model.MacroTargets detailedTargets,
+    NutritionPlan? plan,
+  ) {
     // Calculate current values from food items in ALL plan sections (NUMERATOR - actual consumption)
     // This sums nutrition from food items across all three phases: before + during + after
     int currentCarbs = 0;
@@ -39,7 +42,9 @@ class MacroTargetsWidget extends StatelessWidget {
 
     if (plan != null) {
       for (final section in plan.sections) {
-        DebugLogger.info('🔍 MacroTargetsWidget: Processing ${section.title} section with ${section.foodItems.length} food items');
+        DebugLogger.info(
+          '🔍 MacroTargetsWidget: Processing ${section.title} section with ${section.foodItems.length} food items',
+        );
         for (final foodItem in section.foodItems) {
           final nutrition = foodItem.nutritionalInfo;
           if (nutrition != null) {
@@ -47,7 +52,9 @@ class MacroTargetsWidget extends StatelessWidget {
             final itemSodium = nutrition.sodium ?? 0;
             final itemFluids = nutrition.fluids ?? 0.0;
 
-            DebugLogger.info('  📊 ${foodItem.name} (${foodItem.quantity}): ${itemSodium}mg sodium, ${itemFluids}ml fluids, ${itemCarbs}g carbs');
+            DebugLogger.info(
+              '  📊 ${foodItem.name} (${foodItem.quantity}): ${itemSodium}mg sodium, ${itemFluids}ml fluids, ${itemCarbs}g carbs',
+            );
 
             currentCarbs += itemCarbs;
             currentSodium += itemSodium;
@@ -55,22 +62,30 @@ class MacroTargetsWidget extends StatelessWidget {
           }
         }
       }
-      DebugLogger.info('🎯 MacroTargetsWidget TOTALS: ${currentSodium}mg sodium, ${currentFluids.round()}ml fluids, ${currentCarbs}g carbs');
+      DebugLogger.info(
+        '🎯 MacroTargetsWidget TOTALS: ${currentSodium}mg sodium, ${currentFluids.round()}ml fluids, ${currentCarbs}g carbs',
+      );
     }
 
     // Target values from detailed targets (DENOMINATOR - what should be consumed)
     // Sum ALL phases: pre-run + during-run + post-run
-    final targetCarbs = (detailedTargets.preRun.carbsG +
-                        detailedTargets.duringRun.carbTotalG +
-                        detailedTargets.postRun.carbsG).round();
+    final targetCarbs =
+        (detailedTargets.preRun.carbsG +
+                detailedTargets.duringRun.carbTotalG +
+                detailedTargets.postRun.carbsG)
+            .round();
 
-    final targetSodium = (detailedTargets.preRun.sodiumMg +
-                         detailedTargets.duringRun.sodiumTotalMg +
-                         detailedTargets.postRun.sodiumMg).round();
+    final targetSodium =
+        (detailedTargets.preRun.sodiumMg +
+                detailedTargets.duringRun.sodiumTotalMg +
+                detailedTargets.postRun.sodiumMg)
+            .round();
 
-    final targetFluids = (detailedTargets.preRun.fluidsMl +
-                         detailedTargets.duringRun.fluidTotalMl +
-                         detailedTargets.postRun.fluidsMl).round(); // in ml
+    final targetFluids =
+        (detailedTargets.preRun.fluidsMl +
+                detailedTargets.duringRun.fluidTotalMl +
+                detailedTargets.postRun.fluidsMl)
+            .round(); // in ml
 
     // Widget now correctly calculates:
     // - NUMERATOR (current): Sum of actual food item nutrition across all phases (changes when user edits plan)
@@ -83,10 +98,7 @@ class MacroTargetsWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.baseWhite,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: AppTheme.primary900,
-          width: 2.0,
-        ),
+        border: Border.all(color: AppTheme.primary900, width: 2.0),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primary600.withValues(alpha: 0.1),
@@ -141,7 +153,13 @@ class MacroTargetsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressItem(String label, int current, int target, String unit, Color color) {
+  Widget _buildProgressItem(
+    String label,
+    int current,
+    int target,
+    String unit,
+    Color color,
+  ) {
     final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
     final dynamicColor = _getColorForProgress(current, target);
 

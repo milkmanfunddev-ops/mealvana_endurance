@@ -9,7 +9,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 /// Example:
 /// ```dart
 /// CircularActionButton(
-///   icon: FontAwesomeIcons.calendar,
+///   icon: FontAwesomeIcons.calendar.data,
 ///   onPressed: () => _handleCalendarTap(),
 ///   backgroundColor: AppColors.kyleOrange,
 /// )
@@ -19,6 +19,7 @@ class CircularActionButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onPressed,
+    required this.semanticLabel,
     this.backgroundColor,
     this.iconColor,
     this.size = 42.0,
@@ -27,6 +28,10 @@ class CircularActionButton extends StatelessWidget {
 
   final IconData icon;
   final VoidCallback onPressed;
+
+  /// Spoken label for screen readers and a long-press tooltip.
+  /// Required so this button never ships unlabeled to assistive tech.
+  final String semanticLabel;
   final Color? backgroundColor;
   final Color? iconColor;
   final double size;
@@ -38,22 +43,20 @@ class CircularActionButton extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final defaultBg = backgroundColor ?? Colors.transparent;
-    final defaultIconColor = iconColor ??
-        (isDark ? AppColors.cream : AppColors.blackberry);
+    final defaultIconColor =
+        iconColor ?? (isDark ? AppColors.cream : AppColors.blackberry);
 
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: defaultBg,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: defaultBg, shape: BoxShape.circle),
       child: IconButton(
         icon: Icon(icon),
         iconSize: iconSize,
         color: defaultIconColor,
         onPressed: onPressed,
         padding: EdgeInsets.zero,
+        tooltip: semanticLabel,
       ),
     );
   }

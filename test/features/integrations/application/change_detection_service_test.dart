@@ -187,12 +187,15 @@ void main() {
           provider: testProvider,
         );
 
-        // Assert
+        // Assert - a sub-threshold time-only shift (no other field changed) is
+        // NOT a significant schedule change and has no minor field change
+        // either, so it is classified as unchanged (no update emitted, no
+        // nutrition-plan refresh).
         expect(result.newActivities.length, 0);
-        expect(result.updatedActivities.length, 1);
-        expect(result.updatedActivities.first.scheduleChanged, false);
-        expect(result.updatedActivities.first.timeDifferenceMinutes, 15);
+        expect(result.updatedActivities.length, 0);
+        expect(result.unchangedCount, 1);
         expect(result.hasScheduleChanges, false);
+        expect(result.hasChanges, false);
       });
 
       test(
@@ -228,8 +231,12 @@ void main() {
             provider: testProvider,
           );
 
-          // Assert - Should NOT be flagged as significant (> 30 min threshold)
-          expect(result.updatedActivities.first.scheduleChanged, false);
+          // Assert - exactly 30 min is the boundary: NOT significant (> 30 min
+          // threshold). With no other field changed, this is unchanged, so no
+          // schedule-change update is emitted.
+          expect(result.updatedActivities, isEmpty);
+          expect(result.unchangedCount, 1);
+          expect(result.hasScheduleChanges, false);
         },
       );
 
@@ -420,8 +427,12 @@ void main() {
           provider: testProvider,
         );
 
-        // Assert
-        expect(result.updatedActivities.first.scheduleChanged, false);
+        // Assert - same-day 15 min shift with no other field change is not a
+        // significant schedule change and not a minor field change, so the
+        // activity is treated as unchanged.
+        expect(result.updatedActivities, isEmpty);
+        expect(result.unchangedCount, 1);
+        expect(result.hasScheduleChanges, false);
       });
     });
 

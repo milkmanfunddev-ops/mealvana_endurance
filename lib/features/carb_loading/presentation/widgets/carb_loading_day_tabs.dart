@@ -75,14 +75,10 @@ class _DayTab extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            color: isSelected
-              ? AppTheme.primary900
-              : Colors.grey[100],
+            color: isSelected ? AppTheme.primary900 : Colors.grey[100],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
-                ? AppTheme.primary900
-                : Colors.grey[300]!,
+              color: isSelected ? AppTheme.primary900 : Colors.grey[300]!,
               width: 1,
             ),
           ),
@@ -102,8 +98,8 @@ class _DayTab extends StatelessWidget {
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isSelected
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : Colors.grey[600],
+                      ? Colors.white.withValues(alpha: 0.9)
+                      : Colors.grey[600],
                   fontSize: 12,
                 ),
                 textAlign: TextAlign.center,

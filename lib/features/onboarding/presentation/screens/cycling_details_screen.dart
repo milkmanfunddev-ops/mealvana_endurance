@@ -285,6 +285,7 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
+                            key: const ValueKey('cycling_prefs.back_button'),
                             onTap: widget.onBack ?? () => context.pop(),
                             child: Container(
                               width: 48,
@@ -331,6 +332,7 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                       children: [
                         // Title
                         Text(
+                          key: const ValueKey('cycling_prefs.title'),
                           'Cycling details',
                           style: TextStyle(
                             fontFamily: 'Sansita',
@@ -347,6 +349,9 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                         _FTPSection(
                           controller: _ftpController,
                           figmaCream: AppColors.textDark,
+                          ftpFieldKey: const ValueKey(
+                            'cycling_prefs.ftp_field',
+                          ),
                         ),
 
                         const SizedBox(height: 28),
@@ -359,6 +364,9 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                             ),
                           ),
                           child: KylePlusMinusControl(
+                            key: const ValueKey(
+                              'cycling_prefs.bottles_control',
+                            ),
                             label: 'What is your bike\'s bottle capacity?',
                             value: _bikeBottles,
                             onChanged: (value) =>
@@ -384,6 +392,9 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
                         // Aero bottle toggle
                         FigmaToggleCard(
+                          key: const ValueKey(
+                            'cycling_prefs.aero_bottles_toggle',
+                          ),
                           label: 'I use Aero Bottles',
                           value: _hasAeroBottle,
                           onChanged: (value) =>
@@ -394,6 +405,7 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
                         // Bento box toggle
                         FigmaToggleCard(
+                          key: const ValueKey('cycling_prefs.bento_box_toggle'),
                           label: 'I use a Bento Box for food',
                           value: _hasBentoBox,
                           onChanged: (value) =>
@@ -416,6 +428,7 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
               isLoading: _isSaving,
               buttonText: _isSettings ? 'Save' : 'Continue',
               showBackButton: _isOnboarding,
+              continueButtonKey: const ValueKey('cycling_prefs.save_button'),
             ),
           ],
         ),
@@ -426,10 +439,15 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
 /// FTP input section matching Figma design
 class _FTPSection extends StatelessWidget {
-  const _FTPSection({required this.controller, required this.figmaCream});
+  const _FTPSection({
+    required this.controller,
+    required this.figmaCream,
+    this.ftpFieldKey,
+  });
 
   final TextEditingController controller;
   final Color figmaCream;
+  final Key? ftpFieldKey;
 
   @override
   Widget build(BuildContext context) {
@@ -477,6 +495,7 @@ class _FTPSection extends StatelessWidget {
             children: [
               Expanded(
                 child: TextFormField(
+                  key: ftpFieldKey,
                   controller: controller,
                   keyboardType: TextInputType.number,
                   style: TextStyle(

@@ -138,7 +138,9 @@ void main() {
 
           final structuredWorkouts = workouts.where((w) {
             final structure = w['Structure'] as String?;
-            return structure != null && structure.isNotEmpty && structure != '[]';
+            return structure != null &&
+                structure.isNotEmpty &&
+                structure != '[]';
           }).toList();
 
           print('Found ${structuredWorkouts.length} structured workouts');
@@ -165,7 +167,9 @@ void main() {
                 equals(100),
               );
             } else {
-              print('   Distribution: null (structure parsing may have failed)');
+              print(
+                '   Distribution: null (structure parsing may have failed)',
+              );
             }
           }
         } catch (e) {
@@ -194,7 +198,9 @@ void main() {
             accessToken = tokenData['token'] as String?;
             if (accessToken != null) {
               apiClient = FinalSurgeApiClient(
-                clientId: tokenData['client_id'] as String? ?? 'BD5D0C2B-7507-405B-8A3F-DB161288E6FC',
+                clientId:
+                    tokenData['client_id'] as String? ??
+                    'BD5D0C2B-7507-405B-8A3F-DB161288E6FC',
                 clientSecret: tokenData['client_secret'] as String? ?? '',
               );
             }
@@ -306,7 +312,9 @@ void main() {
           print('\nSubtype → Distribution mappings:');
           subtypeDistributions.forEach((subtype, distributions) {
             final uniqueDists = distributions.toSet();
-            print('  $subtype: ${uniqueDists.join(', ')} (${distributions.length} workouts)');
+            print(
+              '  $subtype: ${uniqueDists.join(', ')} (${distributions.length} workouts)',
+            );
           });
         } catch (e) {
           print('API call failed: $e');

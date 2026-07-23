@@ -38,11 +38,23 @@ class CalendarMonthGrid extends StatelessWidget {
           orElse: () => <db.CarbLoadingDay>[],
         );
 
-        final firstDayOfMonth = DateTime(visibleMonthDate.year, visibleMonthDate.month, 1);
-        final lastDayOfMonth = DateTime(visibleMonthDate.year, visibleMonthDate.month + 1, 0);
+        final firstDayOfMonth = DateTime(
+          visibleMonthDate.year,
+          visibleMonthDate.month,
+          1,
+        );
+        final lastDayOfMonth = DateTime(
+          visibleMonthDate.year,
+          visibleMonthDate.month + 1,
+          0,
+        );
 
-        final startDate = firstDayOfMonth.subtract(Duration(days: (firstDayOfMonth.weekday - 1) % 7));
-        final endDate = lastDayOfMonth.add(Duration(days: (7 - lastDayOfMonth.weekday) % 7));
+        final startDate = firstDayOfMonth.subtract(
+          Duration(days: (firstDayOfMonth.weekday - 1) % 7),
+        );
+        final endDate = lastDayOfMonth.add(
+          Duration(days: (7 - lastDayOfMonth.weekday) % 7),
+        );
 
         final totalDays = endDate.difference(startDate).inDays + 1;
         final weekCount = (totalDays / 7).ceil();
@@ -85,18 +97,20 @@ class CalendarMonthGrid extends StatelessWidget {
   Widget _buildWeekdayHeaders(BuildContext context) {
     return Row(
       children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-          .map((day) => Expanded(
-                child: Center(
-                  child: Text(
-                    day,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
-                    ),
+          .map(
+            (day) => Expanded(
+              child: Center(
+                child: Text(
+                  day,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -126,15 +140,15 @@ class CalendarMonthGrid extends StatelessWidget {
                 color: isSelected
                     ? Theme.of(context).primaryColor
                     : isToday
-                        ? const Color(0xFFFFC107).withValues(alpha: 0.2)
-                        : Colors.transparent,
+                    ? const Color(0xFFFFC107).withValues(alpha: 0.2)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isToday
                       ? const Color(0xFFFFC107)
                       : isSelected
-                          ? Theme.of(context).primaryColor
-                          : Colors.transparent,
+                      ? Theme.of(context).primaryColor
+                      : Colors.transparent,
                   width: isToday || isSelected ? 2 : 0,
                 ),
               ),
@@ -145,12 +159,14 @@ class CalendarMonthGrid extends StatelessWidget {
                     '${date.day}',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isCurrentMonth ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: isCurrentMonth
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                       color: isSelected
                           ? AppTheme.baseCream
                           : isCurrentMonth
-                              ? Colors.black
-                              : Colors.grey[400],
+                          ? Colors.black
+                          : Colors.grey[400],
                     ),
                   ),
                   const SizedBox(height: 2),

@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
+import '../services/app_config.dart';
 import '../../main.dart' show sentryNavigatorKey;
 
 // Import all screens
@@ -37,10 +39,18 @@ import '../../features/settings/presentation/screens/food_preferences_screen.dar
     as settings;
 import '../../features/settings/presentation/screens/food_settings_consolidated_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
+import '../../features/formula_kit/domain/formula_phase.dart';
+import '../../features/formula_kit/presentation/screens/formula_detail_screen.dart';
+import '../../features/formula_kit/presentation/screens/formula_editor_screen.dart';
+import '../../features/formula_kit/presentation/screens/formula_library_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
+import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
+import '../../features/privacy/presentation/screens/privacy_consent_screen.dart';
+import '../services/privacy/analytics_consent.dart';
+import '../../features/settings/presentation/screens/sweat_profile_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_profile_screen.dart';
 import '../../features/settings/presentation/screens/coach_connection_screen.dart';
@@ -56,6 +66,7 @@ import '../../features/race_checklist/presentation/screens/race_checklist_screen
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
+import '../../features/ai_credits/presentation/screens/buy_credits_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
@@ -65,6 +76,16 @@ import '../../features/coach_mode/presentation/screens/coach_directory_screen.da
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
+// Jade AI coach
+import '../../features/jade/presentation/screens/jade_chat_screen.dart';
+// Meal logging screens
+import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
+import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
+import '../../features/meal_logging/presentation/screens/photo_capture_screen.dart';
+import '../../features/meal_logging/presentation/screens/describe_meal_screen.dart';
+import '../../features/meal_logging/presentation/screens/meal_review_screen.dart';
+import '../../features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
+import '../../features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
 /// Used by AuthListenerService to signal sign-out/sign-in events.
@@ -88,12 +109,52 @@ class AppRouter {
       refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget
       navigatorKey: sentryNavigatorKey,
+      // SentryNavigatorObserver records screen transitions as Sentry breadcrumbs
+      // and navigation spans for performance monitoring.
+      observers: [SentryNavigatorObserver()],
       // Redirect logic based on app startup state
       redirect: (context, state) {
         final currentPath = state.uri.path;
 
         // Allow navigation to force-upgrade route always
         if (currentPath == '/force-upgrade') {
+          return null;
+        }
+
+        // Metered meal-AI routes fail closed. Hiding the entry points is the
+        // primary UX, while this guard also blocks stale deep links from an
+        // older build when the release flag is off. `/jade` rides the same
+        // flag: its banner entry point is intentionally unrendered, and the
+        // chat screen calls the jade-chat edge function on every send.
+        // `/buy-credits` rides it too — with every AI surface hidden there is
+        // nothing to buy credits for, and the 402 paywall flows that push it
+        // all originate from the gated AI calls.
+        if ((currentPath == '/meal-log/photo' ||
+                currentPath == '/meal-log/describe' ||
+                currentPath == '/jade' ||
+                currentPath == '/buy-credits') &&
+            !ref.read(appConfigProvider).describeMealEnabled) {
+          return '/';
+        }
+
+        // ANALYTICS CONSENT.
+        //
+        // The screen is no longer a gate that fires ahead of everything. It is
+        // reached two ways, both of which route TO it explicitly:
+        //   - new users, from Welcome's "Get Started" (see welcome_screen.dart),
+        //     so it reads as the first step of onboarding rather than a popup;
+        //   - existing users who were onboarded before the prompt existed, from
+        //     the startup `data:` branch below.
+        //
+        // Only strict-regime users (EEA/UK, Washington) are ever sent here —
+        // `needsPrompt` encodes that. Everyone else gets disclosure + an
+        // always-available Settings → Privacy opt-out instead of a screen.
+        //
+        // Let it render once we're on it. Without this the session check below
+        // bounces /privacy-consent to /welcome whenever `signInAnonymously()`
+        // failed (welcome_screen swallows that error), producing an infinite
+        // redirect loop between the two.
+        if (currentPath == '/privacy-consent') {
           return null;
         }
 
@@ -147,6 +208,22 @@ class AppRouter {
             if (appStartupData.isLoggedOut) {
               return '/welcome';
             }
+
+            // Existing user, onboarded before the consent prompt existed, in a
+            // strict region. New users can't reach this — !hasCompletedOnboarding
+            // short-circuits to /welcome above — so this is only the backfill.
+            //
+            // Placed HERE, not at the top of the redirect, on purpose: reaching
+            // this branch means appStartupProvider has returned data, which
+            // means the region lookup has completed (it is awaited in that
+            // provider's Future.wait). A top-of-redirect check would run on the
+            // very first parse of '/', while startup is still loading and the
+            // region is still an unresolved device-signal guess — and would
+            // prompt Californians.
+            if (ref.read(analyticsConsentProvider).needsPrompt) {
+              return '/privacy-consent';
+            }
+
             // User is fully onboarded - go to main app
             return '/main';
           },
@@ -155,6 +232,17 @@ class AppRouter {
         );
       },
       routes: [
+        // Analytics consent - strict regions only (EEA/UK, Washington).
+        // `next` is where to go once a decision is recorded: '/onboarding' when
+        // entered from Get Started, '/' for the existing-user backfill (which
+        // then resolves through the startup redirect to /main).
+        GoRoute(
+          path: '/privacy-consent',
+          name: 'privacy-consent',
+          builder: (context, state) => PrivacyConsentScreen(
+            next: state.uri.queryParameters['next'] ?? '/',
+          ),
+        ),
         // Force Upgrade Screen - Mandatory update required
         GoRoute(
           path: '/force-upgrade',
@@ -354,18 +442,21 @@ class AppRouter {
             // Web:    0=activities, 1=nutrition, 2=coach, 3=events, 4=learn
             final hasCoachTab = kIsWeb;
 
+            // Activities + Nutrition merged into the single Fuel Timeline tab (0).
             switch (tabParam) {
               case 'nutrition':
-                initialTab = 1;
+              case 'activities':
+              case 'calendar':
+                initialTab = 0;
                 break;
               case 'notes':
               case 'workout-notes':
               case 'events':
-                initialTab = hasCoachTab ? 3 : 2;
+                initialTab = hasCoachTab ? 2 : 1;
                 break;
               case 'survey':
               case 'learn':
-                initialTab = hasCoachTab ? 4 : 3;
+                initialTab = hasCoachTab ? 3 : 2;
                 break;
               default:
                 initialTab = 0;
@@ -509,6 +600,13 @@ class AppRouter {
           builder: (context, state) => const ProVersionScreen(),
         ),
 
+        // AI Credits Paywall - purchase credit packs for AI features
+        GoRoute(
+          path: '/buy-credits',
+          name: 'buy-credits',
+          builder: (context, state) => const BuyCreditsScreen(),
+        ),
+
         // Settings Screen - User profile and preferences
         GoRoute(
           path: '/settings',
@@ -523,11 +621,25 @@ class AppRouter {
           builder: (context, state) => const ConnectedAppsScreen(),
         ),
 
+        // Privacy Screen - analytics consent withdrawal + policy/terms links
+        GoRoute(
+          path: '/settings/privacy',
+          name: 'settings-privacy',
+          builder: (context, state) => const PrivacySettingsScreen(),
+        ),
+
         // Preferences Screen - Edit profile and preferences with save button
         GoRoute(
           path: '/settings/preferences',
           name: 'settings-preferences',
           builder: (context, state) => const PreferencesScreen(),
+        ),
+
+        // Sweat Profile Screen - Detailed sweat rate, sodium, and sweat-test data
+        GoRoute(
+          path: '/settings/sweat-profile',
+          name: 'settings-sweat-profile',
+          builder: (context, state) => const SweatProfileScreen(),
         ),
 
         // Sport Settings Screen - Cycling, swimming, and sport-specific preferences
@@ -640,6 +752,63 @@ class AppRouter {
           builder: (context, state) => const AddFoodScreen(),
         ),
 
+        // Formula Library — browse system Before/During formulas (PR 1).
+        GoRoute(
+          path: '/settings/food-preferences/formula-library',
+          name: 'settings-formula-library',
+          builder: (context, state) => const FormulaLibraryScreen(),
+          routes: [
+            GoRoute(
+              path: 'before/:id',
+              name: 'settings-formula-detail-before',
+              builder: (context, state) => FormulaDetailScreen(
+                id: state.pathParameters['id']!,
+                phase: FormulaPhase.before,
+              ),
+            ),
+            GoRoute(
+              path: 'during/:id',
+              name: 'settings-formula-detail-during',
+              builder: (context, state) => FormulaDetailScreen(
+                id: state.pathParameters['id']!,
+                phase: FormulaPhase.during,
+              ),
+            ),
+            GoRoute(
+              path: 'after/:id',
+              name: 'settings-formula-detail-after',
+              builder: (context, state) => FormulaDetailScreen(
+                id: state.pathParameters['id']!,
+                phase: FormulaPhase.after,
+              ),
+            ),
+            // Personal formulas. `create` is registered before `:id` so the
+            // literal segment wins the match. Tapping a personal formula opens
+            // the editor directly (no read-only detail screen) — `personal/:id`
+            // IS the editor in edit mode.
+            GoRoute(
+              path: 'personal/create',
+              name: 'settings-formula-personal-create',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                final phase =
+                    (extra?['phase'] as FormulaPhase?) ?? FormulaPhase.before;
+                return FormulaEditorScreen(formulaId: null, phase: phase);
+              },
+            ),
+            GoRoute(
+              path: 'personal/:id',
+              name: 'settings-formula-personal-edit',
+              builder: (context, state) => FormulaEditorScreen(
+                formulaId: state.pathParameters['id'],
+                // Phase is loaded from the existing formula in the editor
+                // controller; this default is unused for edit.
+                phase: FormulaPhase.before,
+              ),
+            ),
+          ],
+        ),
+
         // Help & Feedback Screen - Support and feedback collection
         GoRoute(
           path: '/help',
@@ -657,7 +826,10 @@ class AppRouter {
             final activityId = extra?['activityId'] as String?;
             final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
             final isCoachView = extra?['isCoachView'] as bool? ?? false;
-            if (activityId == null) {
+            // Return-selection mode (e.g. personal-formula editor) reuses this
+            // screen without an activity — it pops a SwapFoodSelection instead.
+            final returnSelection = extra?['returnSelection'] as bool? ?? false;
+            if (activityId == null && !returnSelection) {
               return const Scaffold(
                 body: Center(child: Text('Missing activity')),
               );
@@ -666,9 +838,10 @@ class AppRouter {
               foodToSwapId: extra?['foodToSwapId'] as String?,
               foodToSwapName: extra?['foodToSwapName'] as String?,
               category: extra?['category'] as String? ?? 'before_run',
-              activityId: activityId,
+              activityId: activityId ?? '',
               isNewActivity: isNewActivity,
               isCoachView: isCoachView,
+              returnSelection: returnSelection,
             );
           },
         ),
@@ -814,6 +987,60 @@ class AppRouter {
             final relationshipId = state.pathParameters['relationshipId']!;
             return CoachChatScreen(relationshipId: relationshipId);
           },
+        ),
+
+        // ====================================================================
+        // MEAL LOGGING ROUTES
+        // ====================================================================
+        GoRoute(
+          path: '/meal-log/edit',
+          name: 'meal-log-edit',
+          builder: (context, state) => const EditMealLogScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/manual',
+          name: 'meal-log-manual',
+          builder: (context, state) => const ManualLogScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/photo',
+          name: 'meal-log-photo',
+          builder: (context, state) => const PhotoCaptureScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/describe',
+          name: 'meal-log-describe',
+          builder: (context, state) => const DescribeMealScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/review',
+          name: 'meal-log-review',
+          builder: (context, state) => const MealReviewScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/recent-saved',
+          name: 'meal-log-recent-saved',
+          builder: (context, state) => const RecentSavedPickerScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/recipe',
+          name: 'meal-log-recipe',
+          builder: (context, state) => const RecipePickerScreen(),
+        ),
+
+        // ====================================================================
+        // JADE AI COACH
+        // ====================================================================
+        GoRoute(
+          path: '/jade',
+          name: 'jade-chat',
+          builder: (context, state) => const JadeChatScreen(),
         ),
       ],
 

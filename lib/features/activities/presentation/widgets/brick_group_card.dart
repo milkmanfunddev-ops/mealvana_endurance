@@ -89,7 +89,7 @@ class BrickGroupCard extends StatelessWidget {
         children: [
           // Chain link icon (decorative, exclude from semantics)
           ExcludeSemantics(
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.link,
               color: AppColors.orange,
               size: 20,

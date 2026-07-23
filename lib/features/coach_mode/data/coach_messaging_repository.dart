@@ -33,10 +33,10 @@ class CoachMessagingRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _sentry = sentry;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -208,14 +208,13 @@ class CoachMessagingRepository {
       // User can be either coach or athlete in the conversation
       // Count messages where they are the recipient (not the sender) and unread
       final results =
-          await (_database.select(_database.coachMessagesTable)
-                ..where(
-                  (t) =>
-                      (t.coachUserId.equals(userId) |
-                          t.athleteUserId.equals(userId)) &
-                      t.senderUserId.isNotValue(userId) &
-                      t.isRead.equals(false),
-                ))
+          await (_database.select(_database.coachMessagesTable)..where(
+                (t) =>
+                    (t.coachUserId.equals(userId) |
+                        t.athleteUserId.equals(userId)) &
+                    t.senderUserId.isNotValue(userId) &
+                    t.isRead.equals(false),
+              ))
               .get();
 
       return results.length;
@@ -403,20 +402,19 @@ class CoachMessagingRepository {
     try {
       // Mark all messages in this conversation as read where:
       // - The reader is not the sender (they're the recipient)
-      await (_database.update(_database.coachMessagesTable)
-            ..where(
-              (t) =>
-                  t.coachUserId.equals(coachUserId) &
-                  t.athleteUserId.equals(athleteUserId) &
-                  t.senderUserId.isNotValue(readerUserId) &
-                  t.isRead.equals(false),
-            ))
+      await (_database.update(_database.coachMessagesTable)..where(
+            (t) =>
+                t.coachUserId.equals(coachUserId) &
+                t.athleteUserId.equals(athleteUserId) &
+                t.senderUserId.isNotValue(readerUserId) &
+                t.isRead.equals(false),
+          ))
           .write(
-        CoachMessagesTableCompanion(
-          isRead: const Value(true),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
+            CoachMessagesTableCompanion(
+              isRead: const Value(true),
+              updatedAt: Value(DateTime.now()),
+            ),
+          );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to mark messages as read',
@@ -433,8 +431,7 @@ class CoachMessagingRepository {
     try {
       await (_database.delete(
         _database.coachMessagesTable,
-      )..where((t) => t.id.equals(messageId)))
-          .go();
+      )..where((t) => t.id.equals(messageId))).go();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete message',

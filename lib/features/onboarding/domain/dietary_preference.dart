@@ -129,8 +129,9 @@ enum DietaryPreference {
   }
 
   /// All values for UI display (excludes 'none' - users should select 'omnivore' instead)
-  static List<DietaryPreference> get allValues =>
-      DietaryPreference.values.where((d) => d != DietaryPreference.none).toList();
+  static List<DietaryPreference> get allValues => DietaryPreference.values
+      .where((d) => d != DietaryPreference.none)
+      .toList();
 
   /// All values ordered for onboarding display (omnivore first as recommended default)
   static List<DietaryPreference> get orderedForOnboarding => [

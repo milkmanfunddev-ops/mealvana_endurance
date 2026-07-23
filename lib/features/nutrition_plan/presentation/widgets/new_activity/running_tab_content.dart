@@ -82,6 +82,7 @@ class RunningTabContent extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ActivityNameField(
+          key: const ValueKey('activity_create.workout_name_field'),
           value: formState.activityTitle,
           onChanged: controller.updateActivityTitle,
           hint: 'e.g., Long Run',
@@ -126,7 +127,7 @@ class RunningTabContent extends ConsumerWidget {
         //           mainAxisSize: MainAxisSize.min,
         //           children: [
         //             Icon(
-        //               FontAwesomeIcons.heartPulse,
+        //               FontAwesomeIcons.heartPulse.data,
         //               size: 10,
         //               color: AppColors.electrolyteDark,
         //             ),
@@ -188,11 +189,17 @@ class RunningTabContent extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Temperature label with Forecast link on the right
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Temperature label with Forecast link on the right.
+            // Wrap (vs Row) lets the forecast link drop to a second line when
+            // text scaling or longer translations would otherwise truncate it.
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Temperature',
@@ -208,6 +215,7 @@ class RunningTabContent extends ConsumerWidget {
                   ],
                 ),
                 GestureDetector(
+                  key: const ValueKey('activity_create.view_forecast_link'),
                   onTap: formState.isLoadingWeather
                       ? null
                       : (canOpenForecast
@@ -220,7 +228,6 @@ class RunningTabContent extends ConsumerWidget {
                                       builder: (_) => WeatherDetailScreen(
                                         forecast: forecast,
                                         location: formState.location,
-                                        useImperial: useImperial,
                                       ),
                                     ),
                                   );
@@ -393,6 +400,7 @@ class RunningTabContent extends ConsumerWidget {
                   children: [
                     // Minus button
                     GestureDetector(
+                      key: const ValueKey('activity_create.temp_minus'),
                       onTap: !formState.isLoadingWeather && tempC > minC
                           ? () => controller.updateTemperature(
                               (tempC - (useImperial ? 10 / 9 : 1.0)).clamp(
@@ -425,6 +433,7 @@ class RunningTabContent extends ConsumerWidget {
                       child: Column(
                         children: [
                           Text(
+                            key: const ValueKey('activity_create.temp_value'),
                             '${displayTemp.toStringAsFixed(0)}$primaryUnit',
                             style: AppTextStyles.dataNumber.copyWith(
                               color: isDark
@@ -443,6 +452,7 @@ class RunningTabContent extends ConsumerWidget {
 
                     // Plus button
                     GestureDetector(
+                      key: const ValueKey('activity_create.temp_plus'),
                       onTap: !formState.isLoadingWeather && tempC < maxC
                           ? () => controller.updateTemperature(
                               (tempC + (useImperial ? 10 / 9 : 1.0)).clamp(
@@ -497,6 +507,7 @@ class RunningTabContent extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             KylePlusMinusDecimalControl(
+              key: const ValueKey('activity_create.humidity_control'),
               value: formState.humidityPct,
               onChanged: controller.updateHumidity,
               min: 20.0,
@@ -517,6 +528,7 @@ class RunningTabContent extends ConsumerWidget {
 /// Control button for plus/minus controls (copied from kyle_design for consistency)
 class _ControlButton extends StatelessWidget {
   const _ControlButton({
+    super.key,
     required this.icon,
     required this.onPressed,
     required this.enabled,
@@ -609,7 +621,8 @@ class _TimeBeforeRunControl extends StatelessWidget {
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              key: const ValueKey('activity_create.fueling_window_minus'),
+              icon: FontAwesomeIcons.minus.data,
               onPressed: canDecrement ? () => onChanged(value - 15) : null,
               enabled: canDecrement,
             ),
@@ -617,6 +630,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Value display
             Expanded(
               child: Text(
+                key: const ValueKey('activity_create.fueling_window_value'),
                 _formatTime(value),
                 style: AppTextStyles.dataNumber.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
@@ -629,7 +643,8 @@ class _TimeBeforeRunControl extends StatelessWidget {
             const SizedBox(width: AppSpacing.xl),
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              key: const ValueKey('activity_create.fueling_window_plus'),
+              icon: FontAwesomeIcons.plus.data,
               onPressed: canIncrement ? () => onChanged(value + 15) : null,
               enabled: canIncrement,
             ),

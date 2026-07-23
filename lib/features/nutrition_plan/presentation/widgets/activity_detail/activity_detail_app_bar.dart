@@ -77,6 +77,7 @@ class ActivityDetailAppBar extends ConsumerWidget
                   ),
                 )
               : CustomAppBarBackButton(
+                  key: const ValueKey('plan_detail.back_button'),
                   onPressed: () {
                     if (context.canPop()) {
                       context.pop();
@@ -133,15 +134,22 @@ class ActivityDetailAppBar extends ConsumerWidget
                   isNewActivity: isNewActivity,
                 ),
               );
-        final eventName = asyncState.whenOrNull(
-          data: (data) {
-            if (data is ActivityDetailState) return data.eventName;
-            return null;
-          },
-        );
+        final (String? eventName, String? activityTitle) =
+            asyncState.whenOrNull(
+              data: (data) {
+                if (data is ActivityDetailState) {
+                  return (data.eventName, data.activity?.title);
+                }
+                return (null, null);
+              },
+            ) ??
+            (null, null);
         final title =
-            eventName ?? (isNewActivity ? 'New Activity' : 'Activity Details');
+            eventName ??
+            activityTitle ??
+            (isNewActivity ? 'New Activity' : 'Activity Details');
         return Text(
+          key: const ValueKey('plan_detail.title'),
           title,
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -188,18 +196,18 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Save as Template button (only for existing activities with a nutrition plan)
       if (!isNewActivity && !isCoachView && !isCompleted)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.bookmark,
             size: AppIconSizes.md,
             color: AppColors.electrolyte,
           ),
           onPressed: onSaveTemplate,
-          tooltip: 'Save as Template',
+          tooltip: 'Save as Routine',
         ),
       // Edit button for existing activities (not new ones, not coach view)
       if (!isNewActivity && !isCoachView && !isCompleted)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.penToSquare,
             size: AppIconSizes.md,
             color: Theme.of(context).colorScheme.onSurface,
@@ -210,7 +218,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Edit Fuel Log button for completed activities
       if (isCompleted && !isCoachView)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.penToSquare,
             size: AppIconSizes.md,
             color: Theme.of(context).colorScheme.onSurface,
@@ -221,7 +229,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Show delete button for existing activities (including coach view)
       if (!isNewActivity)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.trash,
             size: AppIconSizes.md,
             color: AppColors.dragonfruit,

@@ -19,6 +19,7 @@ import '../../features/events/data/events_repository.dart';
 import '../../features/food_preferences/data/food_preferences_repository.dart';
 import '../../features/carb_loading/data/carb_loading_repository.dart';
 import '../../features/feedback/data/feedback_repository.dart';
+import '../../features/integrations/presentation/providers/integrations_providers.dart';
 import '../../features/user_foods/data/user_foods_repository.dart';
 import '../data/syncable_repository.dart';
 
@@ -172,7 +173,10 @@ class VersionCheckService {
   ///
   /// IMPORTANT: The database must be reinitialized after this method returns true.
   /// The app should restart or reinitialize the database connection.
-  Future<bool> performSchemaResync(String? userId) async {
+  Future<bool> performSchemaResync(
+    String? userId, {
+    int? targetSchemaVersion,
+  }) async {
     try {
       _logger.info(
         'Starting schema resync',
@@ -244,7 +248,11 @@ class VersionCheckService {
         context: 'VERSION_CHECK_SERVICE',
       );
 
-      await AppDatabase.deleteAndResync();
+      await AppDatabase.deleteAndResync(
+        reason: 'remote_schema_version_resync',
+        oldSchemaVersion: _database.schemaVersion,
+        newSchemaVersion: targetSchemaVersion,
+      );
 
       // Step 5: Clear all repository sync staleness timestamps from SharedPreferences.
       // Without this, controllers calling ensureSynced() after the DB is recreated
@@ -288,6 +296,7 @@ class VersionCheckService {
       'food_preferences': await _ref.read(
         foodPreferencesRepositoryProvider.future,
       ),
+      'integrations': _ref.read(integrationsRepositoryProvider),
       'user_foods': await _ref.read(userFoodsRepositoryProvider.future),
     };
   }

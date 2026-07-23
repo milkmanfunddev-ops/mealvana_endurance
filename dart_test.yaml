@@ -1,0 +1,14 @@
+# Test runner configuration.
+#
+# Declares the custom tags used to separate fast, offline unit/widget tests
+# from tests that require live external services. CI runs the offline suite
+# with `--exclude-tags=integration --exclude-tags=e2e`; the tagged suites are
+# run on demand by developers who have the required credentials/network.
+tags:
+  # Live third-party provider API tests (TrainingPeaks, Final Surge).
+  # Require cached OAuth tokens under tool/ and real network access.
+  integration:
+    skip: false
+  # End-to-end tests that hit the live dev Supabase edge functions over HTTP.
+  e2e:
+    skip: false

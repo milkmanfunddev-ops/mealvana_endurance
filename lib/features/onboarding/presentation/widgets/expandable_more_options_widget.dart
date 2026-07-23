@@ -20,13 +20,16 @@ class ExpandableMoreOptionsWidget extends ConsumerStatefulWidget {
 
   final List<FoodItem> additionalFoods;
   final Map<String, FoodPreference> selectedPreferences;
-  final Function(String foodName, FoodPreference preference) onPreferenceChanged;
+  final Function(String foodName, FoodPreference preference)
+  onPreferenceChanged;
 
   @override
-  ConsumerState<ExpandableMoreOptionsWidget> createState() => _ExpandableMoreOptionsWidgetState();
+  ConsumerState<ExpandableMoreOptionsWidget> createState() =>
+      _ExpandableMoreOptionsWidgetState();
 }
 
-class _ExpandableMoreOptionsWidgetState extends ConsumerState<ExpandableMoreOptionsWidget>
+class _ExpandableMoreOptionsWidgetState
+    extends ConsumerState<ExpandableMoreOptionsWidget>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -153,8 +156,10 @@ class _ExpandableMoreOptionsWidgetState extends ConsumerState<ExpandableMoreOpti
                   separatorBuilder: (context, index) => SizedBox(height: 8.h),
                   itemBuilder: (context, index) {
                     final food = widget.additionalFoods[index];
-                    final selected = widget.selectedPreferences[food.name] ??
-                        FoodPreference.dislike; // Default to "Avoid" for additional foods
+                    final selected =
+                        widget.selectedPreferences[food.name] ??
+                        FoodPreference
+                            .dislike; // Default to "Avoid" for additional foods
 
                     return FoodPreferenceChipItem(
                       food: food,

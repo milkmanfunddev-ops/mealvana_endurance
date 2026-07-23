@@ -99,6 +99,21 @@ export interface ScaledFood {
   calories: number;
 }
 
+/**
+ * A macro target the algorithm could not fully satisfy because viable foods
+ * were filtered out by the user's preferences (dislikes, allergens, diet).
+ * Surfaced to the UI as a guidance card with curated suggestions. Mirrors
+ * the same shape used by during-phase (PhaseShortfall in plan-v3 types) so
+ * the Flutter widget can render both with one code path. Issue #14 / #15.
+ */
+export interface SubPhaseShortfall {
+  macro: 'carbs' | 'sodium' | 'fluid' | 'protein' | 'caffeine';
+  delivered: number;
+  target: number;
+  unit: 'g' | 'mg' | 'ml';
+  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+}
+
 export interface SubPhaseResult {
   sub_phase_type: SubPhaseType;
   targets: SubPhaseTargets;
@@ -106,6 +121,36 @@ export interface SubPhaseResult {
   template_id?: string;
   template_name?: string;
   drink?: FoodResult;
+  /** Per-macro shortfalls when preferences eliminated viable options for
+   * this sub-phase. Empty/absent on a clean fit. */
+  shortfalls?: SubPhaseShortfall[];
+  /** Pin honoring telemetry. Populated only when pins were supplied to the
+   * algorithm. Mirrors PreWorkoutPhaseResult.pin_decision; carried into the
+   * SubPhaseResult so the response surfaces it per phase. Formula Kit PR 2
+   * substep 5b. */
+  pin_decision?: {
+    used_pin: boolean;
+    /** True when satisfied by the EPHEMERAL default-formula safety net rather
+     * than a real `formula_pins` row. Absent/false for real pins. Formula-first
+     * flip, 2026-07-03 (plan Phase 1 #2). */
+    ephemeral?: boolean;
+    pinned_template_id: string | null;
+    /** Template display name when `used_pin = true`, otherwise null. Lets the
+     * client render the pinned formula's label in the activity-detail pin
+     * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
+    pinned_template_name: string | null;
+    /** `no_pin_for_scope` — pins supplied but none matched this sub-phase.
+     * `personal_formula_empty` — a pinned personal formula matched this
+     * slot but rendered zero components, so the algorithmic selection for
+     * the slot was kept. Item 12 (personal formulas silently dropped),
+     * 2026-07-04. */
+    fallthrough_reason: 'no_pin_for_scope' | 'personal_formula_empty' | null;
+    /** Count of in-scope pinned candidates the algorithm saw for this phase
+     * after scope-matching (sub_phase / activity_type × duration). Drives
+     * the `plan_used_pin` / `plan_pin_fallthrough` analytics payload. 0 when
+     * pins were supplied but none matched scope. Formula Kit PR 2 substep 7. */
+    pin_set_size: number;
+  };
 }
 
 // ============================================================================

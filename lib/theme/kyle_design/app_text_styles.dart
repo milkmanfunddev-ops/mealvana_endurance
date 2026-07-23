@@ -11,7 +11,7 @@ class AppTextStyles {
   static const String apercu = 'Apercu';
 
   // === Headings (Sansita Bold) ===
-  
+
   // Page titles (28px)
   static const TextStyle pageTitle = TextStyle(
     fontFamily: sansita,
@@ -45,7 +45,7 @@ class AppTextStyles {
   );
 
   // === Activity & Food Titles (Compadre Wide) ===
-  
+
   // Activity titles (18px)
   static const TextStyle activityTitle = TextStyle(
     fontFamily: compadre,
@@ -83,7 +83,7 @@ class AppTextStyles {
   );
 
   // === Body & Data (Apercu) ===
-  
+
   // Body large (16px)
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: apercu,
@@ -133,7 +133,7 @@ class AppTextStyles {
   );
 
   // === Button Styles ===
-  
+
   // Primary button text (16px)
   static const TextStyle buttonPrimary = TextStyle(
     fontFamily: sansita,
@@ -151,7 +151,7 @@ class AppTextStyles {
   );
 
   // === Specialized Styles ===
-  
+
   // Segmented control text (12px)
   static const TextStyle segmentedControl = TextStyle(
     fontFamily: sansita,

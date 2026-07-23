@@ -1,0 +1,19 @@
+{
+  "WorkoutKey": "structured-workout-001",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=test&id=structured-001",
+  "WorkoutDate": "2026-02-01T00:00:00",
+  "WorkoutTitle": "Interval Session",
+  "WorkoutDescription": "Warmup, 4x1000m, Cooldown",
+  "WorkoutTypeName": "Run",
+  "WorkoutSubTypeName": "Intervals",
+  "WorkoutCompleted": false,
+  "WorkoutRace": false,
+  "WorkoutIcon": 1,
+  "PlannedTime": 3600,
+  "PlannedDistance": 8.0,
+  "PlannedDistanceType": "mi",
+  "HasStructuredWorkout": true,
+  "StructuredWorkoutURLs": {
+    "json_fs_v1": "https://log.finalsurge.com/API/v1/StructuredWorkout/structured-workout-001?format=json_fs_v1"
+  }
+}

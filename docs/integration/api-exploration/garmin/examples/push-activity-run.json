@@ -1,0 +1,24 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-run-001",
+      "activityType": "running",
+      "activityName": "Easy Morning Run",
+      "durationInSeconds": 2700,
+      "startTimeInSeconds": 1711612800,
+      "startTimeOffsetInSeconds": -18000,
+      "distanceInMeters": 5200,
+      "activeKilocalories": 380,
+      "averageHeartRateInBeatsPerMinute": 142,
+      "maxHeartRateInBeatsPerMinute": 168,
+      "averageRunCadenceInStepsPerMinute": 172,
+      "averageSpeedInMetersPerSecond": 1.93,
+      "averagePaceInMinutesPerKilometer": 8.65,
+      "elevationGainInMeters": 35,
+      "elevationLossInMeters": 40,
+      "deviceName": "Garmin Forerunner 965"
+    }
+  ]
+}

@@ -18,6 +18,7 @@ class DismissibleFoodItem extends StatelessWidget {
     this.showSwipeHint = false,
     this.useImperial = true,
     this.subtitleOverride,
+    this.showQuantity = true,
   });
 
   final FoodItemData food;
@@ -29,27 +30,34 @@ class DismissibleFoodItem extends StatelessWidget {
   final bool useImperial;
   final String? subtitleOverride;
 
+  /// Forwarded to [ExpandableFoodItemWidget] — false hides the quantity in the
+  /// title and the +/- stepper (personal-formula editor).
+  final bool showQuantity;
+
   @override
   Widget build(BuildContext context) {
+    // Swipe right→left (endToStart) = Delete, swipe left→right (startToEnd) =
+    // Swap — the iOS-conventional "swipe left to delete". Kept in sync with the
+    // Fuel Timeline rows (TimelineNodeTile).
     return Dismissible(
       key: Key(food.id),
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
+          color: AppColors.electrolyte,
           borderRadius: AppRadius.smRadius,
         ),
         child: Row(
           children: [
-            Icon(
-              FontAwesomeIcons.trash,
+            FaIcon(
+              FontAwesomeIcons.arrowRightArrowLeft,
               color: Colors.white,
               size: AppIconSizes.md,
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Delete',
+              'Swap',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -62,22 +70,22 @@ class DismissibleFoodItem extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.electrolyte,
+          color: AppColors.dragonfruit,
           borderRadius: AppRadius.smRadius,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              'Swap',
+              'Delete',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Icon(
-              FontAwesomeIcons.arrowRightArrowLeft,
+            FaIcon(
+              FontAwesomeIcons.trash,
               color: Colors.white,
               size: AppIconSizes.md,
             ),
@@ -85,7 +93,7 @@ class DismissibleFoodItem extends StatelessWidget {
         ),
       ),
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
+        if (direction == DismissDirection.endToStart) {
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
@@ -111,7 +119,7 @@ class DismissibleFoodItem extends StatelessWidget {
             onDelete();
           }
           return false;
-        } else if (direction == DismissDirection.endToStart) {
+        } else if (direction == DismissDirection.startToEnd) {
           onSwap();
           return false;
         }
@@ -128,6 +136,7 @@ class DismissibleFoodItem extends StatelessWidget {
         onQuantityChange: onQuantityChange,
         useImperial: useImperial,
         subtitleOverride: subtitleOverride,
+        showQuantity: showQuantity,
       ),
     );
   }

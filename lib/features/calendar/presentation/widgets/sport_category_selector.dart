@@ -24,6 +24,7 @@ class SportCategorySelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          key: const ValueKey('event_create.sport_category_heading'),
           'Sport Category',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -39,20 +40,28 @@ class SportCategorySelector extends StatelessWidget {
             },
           ),
           child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: ActivityType.values.map((category) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: _SportCategoryButton(
-                  category: category,
-                  isSelected: selectedCategory == category,
-                  onTap: () => onCategoryChanged(category),
-                ),
-              );
-            }).toList(),
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              // Import-only types (e.g. ActivityType.other) can never be
+              // manually created — only offer types the user can pick here.
+              children: ActivityType.values
+                  .where((type) => type.isCreatable)
+                  .map((category) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _SportCategoryButton(
+                        key: ValueKey(
+                          'event_create.sport_${category.name}_chip',
+                        ),
+                        category: category,
+                        isSelected: selectedCategory == category,
+                        onTap: () => onCategoryChanged(category),
+                      ),
+                    );
+                  })
+                  .toList(),
+            ),
           ),
-        ),
         ),
       ],
     );
@@ -62,6 +71,7 @@ class SportCategorySelector extends StatelessWidget {
 /// Individual button for a sport category (Kyle's Activity Type Selector)
 class _SportCategoryButton extends StatelessWidget {
   const _SportCategoryButton({
+    super.key,
     required this.category,
     required this.isSelected,
     required this.onTap,
@@ -95,20 +105,13 @@ class _SportCategoryButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: borderColor,
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Icon (36px Font Awesome)
-            FaIcon(
-              _getIconForCategory(category),
-              size: 36,
-              color: iconColor,
-            ),
+            FaIcon(_getIconForCategory(category), size: 36, color: iconColor),
             const SizedBox(height: 4),
             // Label (Compadre Regular 12px)
             Text(
@@ -127,7 +130,7 @@ class _SportCategoryButton extends StatelessWidget {
     );
   }
 
-  IconData _getIconForCategory(ActivityType category) {
+  FaIconData _getIconForCategory(ActivityType category) {
     switch (category) {
       case ActivityType.running:
         return FontAwesomeIcons.personRunning;
@@ -141,6 +144,8 @@ class _SportCategoryButton extends StatelessWidget {
         return FontAwesomeIcons.trophy;
       case ActivityType.brick:
         return FontAwesomeIcons.link; // Chain link icon for brick workouts
+      case ActivityType.other:
+        return FontAwesomeIcons.circle;
     }
   }
 }

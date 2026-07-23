@@ -36,6 +36,10 @@ rg -n "functions\.invoke\(" lib -S
 - Repository sync remains on-demand (`ensureSynced`/coordinator-driven).
 - Architecture docs and deployment docs do not reference deprecated edge-function names as active.
 
+## Audits
+- `food-search-scan-audit-2026-07-16.md` — the three food search/barcode surfaces, their data-source cascades, `user_foods`, meals tables, and endurance/carb-loading classification.
+- `food-formula-plan-architecture-audit.md` — terminology, plan generation (formulas vs foods), endurance-vs-general separation.
+
 ## Related Docs
 - `/docs/technical/README.md`
 - `/docs/database/README.md`

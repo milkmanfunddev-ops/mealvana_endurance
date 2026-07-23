@@ -25,6 +25,22 @@ argument-hint: "[message] | --amend [message] | --no-push [message] | --merge | 
    - If not, write a short **Conventional Commit** title (≤72 chars) + 1–3 bullets from the diff.
    - If `--amend`, amend the prior commit with the same rules.
 
+### Mealvana commit conventions
+
+- **Types:** feat / fix / refactor / docs / style / test / chore / perf. Imperative mood,
+  lowercase subject, no trailing period.
+- **Scopes** follow the feature or layer: `nutrition-plan`, `auth`, `content`, `database`,
+  `calendar`, `analytics`, `ui`, or `feature/layer` for FOA work
+  (e.g. `refactor(nutrition-plan/controller): migrate to AsyncNotifier`).
+- **Generated files travel with their sources** — commit `.g.dart` / `.freezed.dart` alongside
+  the annotated files that produced them.
+- **Schema changes travel with their snapshots** — commit `database_schemas/` dumps and any
+  migration SQL with the schema change, and mention the new schema version in the message.
+- **Pre-commit sanity:** no debug prints, no secrets/API keys, no dead commented-out blocks.
+- When the work maps to a Notion bug/FR, carry the page-ID prefix in the branch or subject
+  (`claude/fix-<8-hex>-<slug>`, `fix(...): ... (bug 39de3fdb)`) — it's the join key the
+  release-cut and sprint-sync skills resolve against.
+
 2) **Stage & commit**
    - Stage all changes.
    - If nothing changed → say “No changes to commit.” and stop.

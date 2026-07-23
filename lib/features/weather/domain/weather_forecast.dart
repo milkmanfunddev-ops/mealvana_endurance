@@ -32,8 +32,12 @@ class WeatherForecast {
       forecastDate: DateTime.parse(json['forecast_date'] as String),
       source: WeatherSource.fromString(json['source'] as String),
       conditions: json['conditions'] as String?,
-      windSpeedKmh: json['wind_speed_kmh'] == null ? null : (json['wind_speed_kmh'] as num).toInt(),
-      precipitationMm: json['precipitation_mm'] == null ? null : (json['precipitation_mm'] as num).toDouble(),
+      windSpeedKmh: json['wind_speed_kmh'] == null
+          ? null
+          : (json['wind_speed_kmh'] as num).toInt(),
+      precipitationMm: json['precipitation_mm'] == null
+          ? null
+          : (json['precipitation_mm'] as num).toDouble(),
     );
   }
 
@@ -73,10 +77,12 @@ class WeatherForecast {
   double get temperatureF => (temperatureC * 9 / 5) + 32;
 
   /// Get wind speed in mph
-  double? get windSpeedMph => windSpeedKmh != null ? windSpeedKmh! * 0.621371 : null;
+  double? get windSpeedMph =>
+      windSpeedKmh != null ? windSpeedKmh! * 0.621371 : null;
 
   /// Get precipitation in inches
-  double? get precipitationIn => precipitationMm != null ? precipitationMm! * 0.0393701 : null;
+  double? get precipitationIn =>
+      precipitationMm != null ? precipitationMm! * 0.0393701 : null;
 
   WeatherForecast copyWith({
     double? temperatureC,

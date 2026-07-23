@@ -29,7 +29,9 @@ class FoodPreferenceItemWidget extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.blackberry.withOpacity(0.3) : Theme.of(context).colorScheme.surface,
+        color: isDark
+            ? AppColors.blackberry.withOpacity(0.3)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.cardRadius,
       ),
       child: Column(
@@ -39,7 +41,10 @@ class FoodPreferenceItemWidget extends ConsumerWidget {
             children: [
               // Food icon
               KyleFoodIcon(
-                foodType: mapFoodType(productTypeId: food.productTypeId, name: food.name),
+                foodType: mapFoodType(
+                  productTypeId: food.productTypeId,
+                  name: food.name,
+                ),
               ),
 
               const SizedBox(width: AppSpacing.md),

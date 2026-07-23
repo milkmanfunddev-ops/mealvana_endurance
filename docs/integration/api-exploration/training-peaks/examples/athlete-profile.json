@@ -1,0 +1,14 @@
+{
+  "_comment": "GET /v1/athlete/profile. Weight is ALWAYS kilograms regardless of PreferredUnits. IsPremium is true only for full premium (excludes trial subscriptions). BirthMonth is YYYY-MM (no day). Sex is 'm' or 'f'. A non-null CoachedBy means the athlete has a coach.",
+  "Id": 123456,
+  "FirstName": "John",
+  "LastName": "Doe",
+  "Email": "jdoe@example.com",
+  "TimeZone": "America/Denver",
+  "BirthMonth": "1980-10",
+  "Sex": "m",
+  "CoachedBy": 987654,
+  "Weight": 87.5223617553711,
+  "IsPremium": true,
+  "PreferredUnits": "English"
+}

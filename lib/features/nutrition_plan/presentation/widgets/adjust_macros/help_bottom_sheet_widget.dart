@@ -7,15 +7,13 @@ import '../../providers/macro_targets_controller.dart';
 /// Help Bottom Sheet with Nutrition Science Guidelines
 /// Shows detailed information about how we calculate each macro
 class HelpBottomSheetWidget extends ConsumerStatefulWidget {
-  const HelpBottomSheetWidget({
-    super.key,
-    required this.state,
-  });
+  const HelpBottomSheetWidget({super.key, required this.state});
 
   final MacroTargetsState state;
 
   @override
-  ConsumerState<HelpBottomSheetWidget> createState() => _HelpBottomSheetWidgetState();
+  ConsumerState<HelpBottomSheetWidget> createState() =>
+      _HelpBottomSheetWidgetState();
 }
 
 class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
@@ -36,9 +34,7 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
         ),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(15),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +45,9 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -77,11 +75,14 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                     // Carbohydrates
                     _buildAccordionSection(
                       title: 'Carbohydrates',
-                      content: '**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.\n\nReplenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.',
+                      content:
+                          '**How we calculate it:** Duration establishes a safe **absorption band**. We adjust for **intensity (MET)**, **gut training**, **body size**, and fuel mix—then **cap** based on what your gut can process.\n\nReplenish with high-quality carbs immediately after exercise to jumpstart recovery and restore glycogen.',
                       isExpanded: _expandedSection == 'Carbohydrates',
                       onTap: () {
                         setState(() {
-                          _expandedSection = _expandedSection == 'Carbohydrates' ? null : 'Carbohydrates';
+                          _expandedSection = _expandedSection == 'Carbohydrates'
+                              ? null
+                              : 'Carbohydrates';
                         });
                       },
                     ),
@@ -89,11 +90,14 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                     // Sodium
                     _buildAccordionSection(
                       title: 'Sodium',
-                      content: '**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.\n\nInclude sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.',
+                      content:
+                          '**How we calculate it:** If you know your **sweat rate**, we estimate hourly sodium loss (**sweat sodium × sweat rate**) and target **~50–70%** of that (clamped at **300–1200 mg/h**). If not, we determine needs based on your **sweater type** (low/medium/high) and adjust for **heat/humidity**.\n\nInclude sodium in your **pre-run** and **post-run** drinks to enhance fluid retention and improve rehydration.',
                       isExpanded: _expandedSection == 'Sodium',
                       onTap: () {
                         setState(() {
-                          _expandedSection = _expandedSection == 'Sodium' ? null : 'Sodium';
+                          _expandedSection = _expandedSection == 'Sodium'
+                              ? null
+                              : 'Sodium';
                         });
                       },
                     ),
@@ -101,11 +105,14 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                     // Fluids
                     _buildAccordionSection(
                       title: 'Fluids',
-                      content: '**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.\n\nPost-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.',
+                      content:
+                          '**How we calculate it:** We begin with a running-friendly range (**~0.4–0.8 L/h**), adjust for **body size** and **intensity (MET)**, then modify based on **weather** (less in cool conditions, more in hot/humid). For those with a **measured sweat rate**, we target **~70–80%** of that rate, staying within the safe range to prevent overhydration.\n\nPost-run, replenish approximately **125%** of your **estimated fluid deficit** using a drink containing **~500–700 mg/L sodium**.',
                       isExpanded: _expandedSection == 'Fluids',
                       onTap: () {
                         setState(() {
-                          _expandedSection = _expandedSection == 'Fluids' ? null : 'Fluids';
+                          _expandedSection = _expandedSection == 'Fluids'
+                              ? null
+                              : 'Fluids';
                         });
                       },
                     ),
@@ -113,11 +120,14 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                     // Protein
                     _buildAccordionSection(
                       title: 'Protein',
-                      content: '**How we calculate it:**\n\n- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.\n- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).\n- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.\n\nRemember: "carbs first, protein **right after**" for optimal recovery.',
+                      content:
+                          '**How we calculate it:**\n\n- **Pre-run:** small amount, **~0.15–0.25 g/kg** (varies with timing) for satiety without digestive discomfort.\n- **During:** **0 g/h** for runs ≤3.5 h (minimal amounts only for ultramarathons).\n- **After:** **~0.3 g/kg** within the first hour; 20–40 g high-quality protein containing **~2–3 g leucine**.\n\nRemember: "carbs first, protein **right after**" for optimal recovery.',
                       isExpanded: _expandedSection == 'Protein',
                       onTap: () {
                         setState(() {
-                          _expandedSection = _expandedSection == 'Protein' ? null : 'Protein';
+                          _expandedSection = _expandedSection == 'Protein'
+                              ? null
+                              : 'Protein';
                         });
                       },
                     ),
@@ -125,11 +135,14 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                     // Fats
                     _buildAccordionSection(
                       title: 'Fats',
-                      content: '**How we calculate it:**\n\n- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).\n- **During:** **0–2 g/h** maximum (minimized to protect gut function).\n- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.\n\nPrioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.',
+                      content:
+                          '**How we calculate it:**\n\n- **Pre-run:** modest intake, **~0.1–0.2 g/kg** (reduce fiber/fat closer to start time).\n- **During:** **0–2 g/h** maximum (minimized to protect gut function).\n- **After:** approximately **~0.2 g/kg** as part of your recovery meal—supports satiety and overall energy intake.\n\nPrioritize **unsaturated fats** (e.g., olive oil, nuts) in your recovery meals.',
                       isExpanded: _expandedSection == 'Fats',
                       onTap: () {
                         setState(() {
-                          _expandedSection = _expandedSection == 'Fats' ? null : 'Fats';
+                          _expandedSection = _expandedSection == 'Fats'
+                              ? null
+                              : 'Fats';
                         });
                       },
                     ),
@@ -159,7 +172,9 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                             '• IOC/consensus updates on recovery protein\n'
                             '• Burke et al., IOC consensus on athlete nutrition',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               height: 1.5,
                             ),
                           ),
@@ -217,8 +232,8 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                   ),
                   Icon(
                     isExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     size: 16,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

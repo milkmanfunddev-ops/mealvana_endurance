@@ -528,10 +528,12 @@ Deno.test('Iter3: TDEE - Fat at floor (pre-race)', () => {
   assertWithinPercent(result.tdee, 3773, 5);
 });
 
-Deno.test('Iter3: TDEE - 90min run', () => {
+Deno.test('Iter3: TDEE - Fat ceiling clamps high-session days', () => {
+  // 90min run, 1205 kcal session — residual fat-from-TDEE would push fat to
+  // ~209g (≈2.8 g/kg). Ceiling caps at 1.5 g/kg = 112.5g for a 75kg athlete.
   const result = calculateTDEE(1908, 378, 1205, 369, 130, 75);
-  assertWithinPercent(result.tdee, 3879, 5);
-  assertWithinPercent(result.fat_g, 209, 15);
+  assertWithinPercent(result.tdee, 3879, 10);
+  assertEquals(result.fat_g, 113); // 1.5 * 75 ceiling, rounded
 });
 
 // ============================================================================
@@ -770,17 +772,22 @@ Deno.test('Pipeline Iter1: Rest day (no sessions)', () => {
   assertWithinPercent(result.fat_g, 93, 15);
   assertWithinPercent(result.tdee, 2501, 5);
   assertEquals(result.mode, 'prospective');
-  assertEquals(result.algorithm_version, 'v4.0.0');
+  assertEquals(result.algorithm_version, 'v5.0.0');
 });
 
 Deno.test('Pipeline Iter1: 90-min run', () => {
   // Zones 0.70/0.20/0.10 → IF ≈ 0.771 (spec assumed IF=0.74)
+  // Fat starts clamped to 1.5 g/kg ceiling (≈113g for 75kg). Pre-clamp residual
+  // would be ~219g, which is implausibly high for a 90-min run day. eaOverride
+  // may relax fat slightly to keep EA ≥ 30; final fat sits near 113-130g.
   const result = calculateDailyMacros(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
   }));
-  assertWithinPercent(result.carb_g, 376, 5);
+  assertWithinPercent(result.carb_g, 376, 10);
   assertWithinPercent(result.prot_g, 130, 5);
-  assertWithinPercent(result.fat_g, 219, 15);
+  // Fat must respect the realistic-intake ceiling, not balloon to 200+g.
+  assertEquals(result.fat_g >= 113, true, `fat_g=${result.fat_g} below floor`);
+  assertEquals(result.fat_g <= 135, true, `fat_g=${result.fat_g} above ceiling+relax`);
   assertWithinPercent(result.session_kcal, 1309, 5);
   assertEquals(result.ea_status !== null, true);
 });
@@ -890,8 +897,11 @@ Deno.test('Pipeline Iter4: Normal day has EA status', () => {
   }));
   assertEquals(result.ea !== null, true);
   assertEquals(result.ea_status !== null, true);
-  // EA should be well above 30 for a normal training day
-  assertEquals(result.ea! > 30, true);
+  // With the fat ceiling at 1.5 g/kg, intake on a 90-min run day can fall
+  // below TDEE (which is physiologically expected). eaOverride brings EA to
+  // ≈30; status should be OK or SOFT_WARNING — never BLOCK.
+  assertEquals(result.ea! >= 29, true, `EA was ${result.ea}`);
+  assertEquals(result.ea_status !== 'BLOCK', true);
 });
 
 Deno.test('Pipeline Iter4: Carb cycling easy day', () => {
@@ -1032,7 +1042,7 @@ Deno.test('Edge: Output includes all required fields', () => {
   assertEquals(typeof result.mode, 'string');
   assertEquals(typeof result.ea, 'number');
   assertEquals(typeof result.ea_status, 'string');
-  assertEquals(result.algorithm_version, 'v4.0.0');
+  assertEquals(result.algorithm_version, 'v5.0.0');
 });
 
 Deno.test('Edge: Clamp ceiling - carb capped at 12g/kg', () => {

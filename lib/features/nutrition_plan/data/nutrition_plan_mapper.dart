@@ -1,8 +1,10 @@
 import 'dart:convert';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
+import '../domain/macro_shortfall.dart';
 import '../domain/time_slot_assignment.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 
 /// Mapper for converting NutritionPlan to/from JSON formats
 /// Handles Edge Function JSON and Supabase database JSON formats
@@ -137,7 +139,7 @@ class NutritionPlanMapper {
             if (plan['during'] is Map) {
               final duringMap = plan['during'] as Map<String, dynamic>;
               final duringFoods = duringMap['foods'] as List<dynamic>? ?? [];
-              final section = PlanSection.fromEdgeFunctionJson(
+              var section = PlanSection.fromEdgeFunctionJson(
                 'during_run',
                 duringFoods,
               );
@@ -145,12 +147,38 @@ class NutritionPlanMapper {
               final byHourJson =
                   duringMap['by_hour_data'] as Map<String, dynamic>?;
               if (byHourJson != null) {
-                parsedSections.add(
-                  section.copyWith(byHourData: ByHourData.fromJson(byHourJson)),
+                section = section.copyWith(
+                  byHourData: ByHourData.fromJson(byHourJson),
                 );
-              } else {
-                parsedSections.add(section);
               }
+              // Parse pin_decision telemetry (Formula Kit PR 2 substep 9).
+              // Present only when pins were supplied to the algorithm.
+              final pinDecisionJson =
+                  duringMap['pin_decision'] as Map<String, dynamic>?;
+              if (pinDecisionJson != null) {
+                section = section.copyWith(
+                  pinDecision: PinDecision.fromJson(pinDecisionJson),
+                );
+              }
+              // Parse macro shortfalls the solver reported for this phase
+              // (bug 3a3e3fdb: previously dropped on the floor, so plans
+              // that knowingly missed carb targets showed no explanation).
+              // Mirrors BeforeSubPhase.shortfalls; absent or malformed
+              // entries are skipped rather than failing the whole parse.
+              final shortfallsJson = duringMap['shortfalls'];
+              if (shortfallsJson is List) {
+                final shortfalls = shortfallsJson
+                    .whereType<Map>()
+                    .map(
+                      (e) =>
+                          MacroShortfall.fromJson(Map<String, dynamic>.from(e)),
+                    )
+                    .toList();
+                if (shortfalls.isNotEmpty) {
+                  section = section.copyWith(shortfalls: shortfalls);
+                }
+              }
+              parsedSections.add(section);
             } else if (plan['during'] is List) {
               // Backward compat: plain array of food items
               parsedSections.add(
@@ -162,13 +190,23 @@ class NutritionPlanMapper {
             }
 
             // Parse "after" section
+            // Foods ride under `after` as a flat list (older-client contract);
+            // the pin_decision telemetry rides as a sibling key
+            // `after_pin_decision` — see generate-nutrition-plan-v3/index.ts.
+            // Formula Kit PR 3 substep 9.
             if (plan['after'] is List) {
-              parsedSections.add(
-                PlanSection.fromEdgeFunctionJson(
-                  'after_run',
-                  plan['after'] as List<dynamic>,
-                ),
+              var afterSection = PlanSection.fromEdgeFunctionJson(
+                'after_run',
+                plan['after'] as List<dynamic>,
               );
+              final afterPinDecisionJson =
+                  plan['after_pin_decision'] as Map<String, dynamic>?;
+              if (afterPinDecisionJson != null) {
+                afterSection = afterSection.copyWith(
+                  pinDecision: PinDecision.fromJson(afterPinDecisionJson),
+                );
+              }
+              parsedSections.add(afterSection);
             }
 
             // Apply per-phase targets from macro_targets (snake_case from V2 edge function)

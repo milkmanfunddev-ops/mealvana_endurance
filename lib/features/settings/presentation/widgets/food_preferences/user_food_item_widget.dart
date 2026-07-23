@@ -58,7 +58,9 @@ class UserFoodItemWidget extends ConsumerWidget {
       return Text(
         'Tap to set categories',
         style: AppTextStyles.smallLabel.copyWith(
-          color: isDark ? AppColors.cream.withOpacity(0.5) : AppColors.blackberry.withOpacity(0.5),
+          color: isDark
+              ? AppColors.cream.withOpacity(0.5)
+              : AppColors.blackberry.withOpacity(0.5),
           fontStyle: FontStyle.italic,
         ),
       );
@@ -101,7 +103,9 @@ class UserFoodItemWidget extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.blackberry.withOpacity(0.3) : Theme.of(context).colorScheme.surface,
+          color: isDark
+              ? AppColors.blackberry.withOpacity(0.3)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: AppRadius.cardRadius,
         ),
         child: Column(
@@ -111,7 +115,10 @@ class UserFoodItemWidget extends ConsumerWidget {
               children: [
                 // Food icon
                 KyleFoodIcon(
-                  foodType: mapFoodType(productTypeId: food.productTypeId, name: food.name),
+                  foodType: mapFoodType(
+                    productTypeId: food.productTypeId,
+                    name: food.name,
+                  ),
                 ),
 
                 const SizedBox(width: AppSpacing.md),
@@ -129,13 +136,16 @@ class UserFoodItemWidget extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       // Category badges - convert FoodCategory to strings
-                      _buildCategoryBadges(food.categories.map((c) => c.dbValue).toList(), isDark),
+                      _buildCategoryBadges(
+                        food.categories.map((c) => c.dbValue).toList(),
+                        isDark,
+                      ),
                     ],
                   ),
                 ),
 
                 // Edit indicator
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.penToSquare,
                   size: AppIconSizes.sm,
                   color: AppColors.electrolyte.withOpacity(0.7),

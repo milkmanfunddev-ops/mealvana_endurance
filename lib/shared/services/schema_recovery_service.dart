@@ -51,11 +51,9 @@ class SchemaRecoveryCompleteException implements Exception {
 /// ```
 
 class SchemaRecoveryService {
-  SchemaRecoveryService({
-    required AppLogger logger,
-    required Ref providerRef,
-  })  : _logger = logger,
-        _providerRef = providerRef;
+  SchemaRecoveryService({required AppLogger logger, required Ref providerRef})
+    : _logger = logger,
+      _providerRef = providerRef;
 
   final AppLogger _logger;
   final Ref _providerRef;

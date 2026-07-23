@@ -42,13 +42,15 @@ class CatalogSectionWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Catalog result cards (no header)
-          ...catalogResults.map((result) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: CatalogCard(
-              result: result,
-              onTap: () => onCatalogResultTap(result),
+          ...catalogResults.map(
+            (result) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: CatalogCard(
+                result: result,
+                onTap: () => onCatalogResultTap(result),
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -60,11 +62,7 @@ class CatalogCard extends StatelessWidget {
   final CatalogSearchResult result;
   final VoidCallback onTap;
 
-  const CatalogCard({
-    super.key,
-    required this.result,
-    required this.onTap,
-  });
+  const CatalogCard({super.key, required this.result, required this.onTap});
 
   String _capitalize(String text) =>
       text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
@@ -93,14 +91,14 @@ class CatalogCard extends StatelessWidget {
                         child: Image.network(
                           result.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
+                          errorBuilder: (context, error, stackTrace) => FaIcon(
                             FontAwesomeIcons.cartShopping,
                             color: AppColors.electrolyte,
                             size: AppIconSizes.controlIcon,
                           ),
                         ),
                       )
-                    : Icon(
+                    : FaIcon(
                         FontAwesomeIcons.cartShopping,
                         color: AppColors.electrolyte,
                         size: AppIconSizes.controlIcon,
@@ -141,7 +139,9 @@ class CatalogCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.electrolyte.withValues(alpha: 0.15),
+                              color: AppColors.electrolyte.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -157,7 +157,9 @@ class CatalogCard extends StatelessWidget {
                             Text(
                               '${result.caloriesPerServing} cal',
                               style: AppTextStyles.smallLabel.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                                 fontSize: 10,
                               ),
                             ),
@@ -165,7 +167,10 @@ class CatalogCard extends StatelessWidget {
                           Text(
                             'No nutrition data',
                             style: AppTextStyles.smallLabel.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withValues(alpha: 0.5),
                               fontSize: 10,
                             ),
                           ),
@@ -176,8 +181,8 @@ class CatalogCard extends StatelessWidget {
               ),
               Icon(
                 result.hasNutrition
-                    ? FontAwesomeIcons.circlePlus
-                    : FontAwesomeIcons.chevronRight,
+                    ? FontAwesomeIcons.circlePlus.data
+                    : FontAwesomeIcons.chevronRight.data,
                 color: result.hasNutrition
                     ? AppColors.orange
                     : Theme.of(context).colorScheme.onSurfaceVariant,

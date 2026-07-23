@@ -117,15 +117,15 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                     defaultValue: 'At least 8 characters',
                   ),
                   prefixIcon: Icon(
-                    FontAwesomeIcons.lock,
+                    FontAwesomeIcons.lock.data,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                          ? FontAwesomeIcons.eye.data
+                          : FontAwesomeIcons.eyeSlash.data,
                       size: AppIconSizes.controlIcon,
                     ),
                     onPressed: () {
@@ -162,15 +162,15 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                     defaultValue: 'Re-enter your password',
                   ),
                   prefixIcon: Icon(
-                    FontAwesomeIcons.lock,
+                    FontAwesomeIcons.lock.data,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                          ? FontAwesomeIcons.eye.data
+                          : FontAwesomeIcons.eyeSlash.data,
                       size: AppIconSizes.controlIcon,
                     ),
                     onPressed: () {

@@ -8,22 +8,24 @@ import 'user_food_crud_service.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
 
 /// Provider for FoodRecommendationService
-final foodRecommendationServiceProvider = Provider<FoodRecommendationService>((ref) {
+final foodRecommendationServiceProvider = Provider<FoodRecommendationService>((
+  ref,
+) {
   final userFoodService = ref.read(userFoodCrudServiceProvider);
   final foodRepository = ref.read(foodRepositoryProvider);
   final logger = ref.read(appExternalDepsProvider).logger;
-  return FoodRecommendationService(
-    userFoodService,
-    foodRepository,
-    logger,
-  );
+  return FoodRecommendationService(userFoodService, foodRepository, logger);
 });
 
 /// Service for generating smart food recommendations
 /// Combines user foods and generic foods with preference-based sorting
 
 class FoodRecommendationService {
-  FoodRecommendationService(this._userFoodService, this._foodRepository, this._logger);
+  FoodRecommendationService(
+    this._userFoodService,
+    this._foodRepository,
+    this._logger,
+  );
 
   final UserFoodCrudService _userFoodService;
   final FoodRepository _foodRepository;
@@ -37,8 +39,8 @@ class FoodRecommendationService {
   /// This is the preferred path — callers should load template foods from
   /// local Drift cache and pass them here.
   Future<List<Food>> getRecommendations({
-    String? productTypeId,     // For swap scenarios (match same product type)
-    String? category,           // For add scenarios (match timing category)
+    String? productTypeId, // For swap scenarios (match same product type)
+    String? category, // For add scenarios (match timing category)
     Map<String, FoodPreference> preferences = const {},
     int maxResults = 10,
     String? userId,
@@ -56,7 +58,9 @@ class FoodRecommendationService {
         genericFoods = preloadedGenericFoods;
       } else {
         final genericFoodItems = await _foodRepository.getAllFoods();
-        genericFoods = genericFoodItems.map((item) => _convertFoodItemToFood(item)).toList();
+        genericFoods = genericFoodItems
+            .map((item) => _convertFoodItemToFood(item))
+            .toList();
       }
 
       // Combine all foods
@@ -67,9 +71,9 @@ class FoodRecommendationService {
 
       if (productTypeId != null) {
         // Swap scenario: Try to match product type first
-        List<Food> productTypeMatches = allFoods.where((food) =>
-          food.productTypeId == productTypeId
-        ).toList();
+        List<Food> productTypeMatches = allFoods
+            .where((food) => food.productTypeId == productTypeId)
+            .toList();
 
         // Apply category filter if category is provided
         if (category != null) {
@@ -95,10 +99,11 @@ class FoodRecommendationService {
         filteredFoods,
         preferences,
         maxResults: maxResults,
-      );      return recommendations;
-
+      );
+      return recommendations;
     } catch (e) {
-      _logger.error('Error getting recommendations',
+      _logger.error(
+        'Error getting recommendations',
         context: 'FoodRecommendationService',
         error: e,
       );
@@ -149,7 +154,7 @@ class FoodRecommendationService {
       ...lovedFoods,
       ...willingFoods,
       ...neutralFoods,
-      ...avoidedFoods,  // Include but will be grayed out in UI
+      ...avoidedFoods, // Include but will be grayed out in UI
     ];
 
     // Apply max results if specified
@@ -183,7 +188,10 @@ class FoodRecommendationService {
   }
 
   /// Get preference display info for a food
-  FoodPreferenceInfo getPreferenceInfo(Food food, Map<String, FoodPreference> preferences) {
+  FoodPreferenceInfo getPreferenceInfo(
+    Food food,
+    Map<String, FoodPreference> preferences,
+  ) {
     final preference = preferences[food.name];
 
     return FoodPreferenceInfo(
@@ -250,5 +258,5 @@ class FoodPreferenceInfo {
 
   final FoodPreference preference;
   final bool isAvoided;
-  final int priority;  // Lower = higher priority
+  final int priority; // Lower = higher priority
 }

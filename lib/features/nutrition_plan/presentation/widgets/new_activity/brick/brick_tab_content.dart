@@ -17,6 +17,9 @@ import '../shared/activity_name_field.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import '../shared/environment_section.dart';
 import '../shared/fasted_toggle.dart';
+import '../../../../../../shared/providers/unit_system_provider.dart';
+import '../../../../../../features/nutrition_plan/domain/run_parameters.dart'
+    show UnitSystem;
 
 /// Brick Tab Content
 ///
@@ -36,6 +39,9 @@ class BrickTabContent extends ConsumerWidget {
     final controller = ref.read(brickInputControllerProvider.notifier);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final useImperial =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) !=
+        UnitSystem.metric;
 
     final totalDuration = controller.getTotalDuration();
     final showFastedWarning = _shouldWarnFasted(formState, controller);
@@ -44,6 +50,7 @@ class BrickTabContent extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ActivityNameField(
+          key: const ValueKey('brick.workout_name_field'),
           value: formState.activityTitle,
           onChanged: controller.updateActivityTitle,
           hint: 'e.g., SWIM/BIKE BRICK',
@@ -63,6 +70,7 @@ class BrickTabContent extends ConsumerWidget {
 
         // Brick-level Pre-Activity Fueling Window (applies to whole brick)
         KylePlusMinusControl(
+          key: const ValueKey('brick.fueling_window_control'),
           label: 'Pre-Activity Fueling Window',
           value: formState.preActivityMinutes,
           onChanged: controller.updatePreActivityMinutes,
@@ -76,6 +84,7 @@ class BrickTabContent extends ConsumerWidget {
 
         // Brick-level Fasted Toggle (applies to pre-activity fueling only)
         FastedToggle(
+          key: const ValueKey('brick.fasted_toggle'),
           isFasted: formState.isFasted,
           onChanged: controller.updateFasted,
           showWarning: showFastedWarning,
@@ -87,13 +96,21 @@ class BrickTabContent extends ConsumerWidget {
 
         // Ordered list of expandable segments
         if (formState.selectedSports.length >= 2)
-          _buildSegmentList(context, ref, formState, controller, isDark),
+          _buildSegmentList(
+            context,
+            ref,
+            formState,
+            controller,
+            isDark,
+            useImperial,
+          ),
 
         // Total duration display (if any segments have data)
         if (totalDuration > 0) ...[
           const SizedBox(height: AppSpacing.lg),
           Center(
             child: Text(
+              key: const ValueKey('brick.total_duration_label'),
               'Total Duration: $totalDuration minutes',
               style: AppTextStyles.descriptor.copyWith(
                 color: isDark ? AppColors.cream : AppColors.blackberry,
@@ -137,6 +154,7 @@ class BrickTabContent extends ConsumerWidget {
     BrickFormState formState,
     BrickInputController controller,
     bool isDark,
+    bool useImperial,
   ) {
     // Filter to only show selected sports in the current order
     final orderedSelectedSports = formState.sportOrder
@@ -162,11 +180,12 @@ class BrickTabContent extends ConsumerWidget {
         final segmentInput = formState.segmentInputs[sport];
 
         return _ExpandableSegmentCard(
-          key: ValueKey(sport),
+          key: ValueKey('brick.segment_card_$index'),
           sport: sport,
           order: index + 1,
           segmentInput: segmentInput,
           isDark: isDark,
+          useImperial: useImperial,
           onUpdate: (updated) => controller.updateSegmentInput(sport, updated),
         );
       },
@@ -180,6 +199,7 @@ class _ExpandableSegmentCard extends StatefulWidget {
   final int order;
   final BrickSegmentInput? segmentInput;
   final bool isDark;
+  final bool useImperial;
   final ValueChanged<BrickSegmentInput> onUpdate;
 
   const _ExpandableSegmentCard({
@@ -188,6 +208,7 @@ class _ExpandableSegmentCard extends StatefulWidget {
     required this.order,
     required this.segmentInput,
     required this.isDark,
+    required this.useImperial,
     required this.onUpdate,
   });
 
@@ -215,6 +236,7 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
         children: [
           // Header (always visible)
           GestureDetector(
+            key: ValueKey('brick.segment_expand_${widget.order - 1}'),
             onTap: () => setState(() => _isExpanded = !_isExpanded),
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -225,6 +247,7 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
                 children: [
                   // Drag handle
                   ReorderableDragStartListener(
+                    key: ValueKey('brick.segment_reorder_${widget.order - 1}'),
                     index: widget.order - 1,
                     child: Icon(
                       Icons.drag_handle,
@@ -318,12 +341,14 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
         return _BrickRunningInputs(
           input: input,
           isDark: widget.isDark,
+          useImperial: widget.useImperial,
           onUpdate: widget.onUpdate,
         );
       case 'cycling':
         return _BrickCyclingInputs(
           input: input,
           isDark: widget.isDark,
+          useImperial: widget.useImperial,
           onUpdate: widget.onUpdate,
         );
       case 'swimming':
@@ -337,7 +362,7 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
     }
   }
 
-  IconData _getSportIcon(String sport) {
+  FaIconData _getSportIcon(String sport) {
     switch (sport) {
       case 'swimming':
         return FontAwesomeIcons.personSwimming;
@@ -389,11 +414,13 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
 class _BrickRunningInputs extends StatelessWidget {
   final BrickSegmentInput input;
   final bool isDark;
+  final bool useImperial;
   final ValueChanged<BrickSegmentInput> onUpdate;
 
   const _BrickRunningInputs({
     required this.input,
     required this.isDark,
+    required this.useImperial,
     required this.onUpdate,
   });
 
@@ -505,13 +532,17 @@ class _BrickRunningInputs extends StatelessWidget {
         // 3. TEMPERATURE
         KylePlusMinusDecimalControl(
           label: 'Temperature',
-          value: input.temperatureC,
-          onChanged: (v) => onUpdate(input.copyWith(temperatureC: v)),
-          min: -5.0,
-          max: 40.0,
-          step: 1.0,
+          value: useImperial
+              ? (input.temperatureC * 9 / 5) + 32
+              : input.temperatureC,
+          onChanged: useImperial
+              ? (f) => onUpdate(input.copyWith(temperatureC: (f - 32) * 5 / 9))
+              : (v) => onUpdate(input.copyWith(temperatureC: v)),
+          min: useImperial ? 23.0 : -5.0,
+          max: useImperial ? 104.0 : 40.0,
+          step: useImperial ? 2.0 : 1.0,
           decimalPlaces: 0,
-          unit: '°C',
+          unit: useImperial ? '°F' : '°C',
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -544,11 +575,13 @@ class _BrickRunningInputs extends StatelessWidget {
 class _BrickCyclingInputs extends StatelessWidget {
   final BrickSegmentInput input;
   final bool isDark;
+  final bool useImperial;
   final ValueChanged<BrickSegmentInput> onUpdate;
 
   const _BrickCyclingInputs({
     required this.input,
     required this.isDark,
+    required this.useImperial,
     required this.onUpdate,
   });
 
@@ -707,6 +740,7 @@ class _BrickCyclingInputs extends StatelessWidget {
           onSunChanged: (v) => onUpdate(input.copyWith(sunExposure: v)),
           isIndoor: isIndoor,
           showWindAndSun: false,
+          useImperial: useImperial,
         ),
       ],
     );

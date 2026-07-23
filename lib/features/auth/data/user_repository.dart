@@ -175,6 +175,16 @@ class UserRepository with SyncableRepository {
       lastName: dbUser.lastName,
       // Contact information
       email: dbUser.email,
+      // Sweat profile fields
+      sweatSodium: SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
+      knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter:
+          dbUser.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: dbUser.sweatTestDate,
+      sweatTestSource: dbUser.sweatTestSource,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
     );
   }
 
@@ -255,13 +265,23 @@ class UserRepository with SyncableRepository {
         needsUpload: needsUpload,
       );
 
-      // Skip immediate Supabase sync if marked for background upload
+      // Skip immediate Supabase sync if explicitly marked for background upload.
+      // Otherwise: write-through to Supabase now, and ONLY if that fails (e.g.
+      // a connection issue) flip the local record to needsUpload=true so the
+      // background sync retries it later. Previously the failure was swallowed
+      // WITHOUT marking the record dirty, so a failed save never reached
+      // Supabase and was never retried.
       if (!needsUpload) {
         try {
           await _upsertUserProfileToSupabase(updatedProfile);
         } catch (e, stackTrace) {
+          // Mark dirty so uploadDirtyRecords() retries this on the next sync.
+          await database.userDao.updateUserProfile(
+            updatedProfile,
+            needsUpload: true,
+          );
           sentry.addBreadcrumb(
-            message: 'Immediate upload failed; record stays dirty for retry',
+            message: 'Immediate upload failed; record marked dirty for retry',
             category: 'sync',
             data: {
               'operation': 'update_profile',
@@ -487,14 +507,72 @@ class UserRepository with SyncableRepository {
     );
   }
 
-  /// Get liked foods for a user
+  /// In-memory throttle so a burst of preference reads during a single plan
+  /// generation (liked + willing + disliked, sometimes across services)
+  /// triggers at most one remote reconcile per user.
+  final Map<String, DateTime> _prefsReconciledAt = {};
+  static const Duration _prefsReconcileTtl = Duration(seconds: 15);
+
+  /// Make the LOCAL food-preference cache mirror the server before a read.
+  ///
+  /// Historically these getters were local-first and only hit the server when
+  /// Drift was empty, with a merge-only hydrate. That let STALE local rows
+  /// (e.g. a food the user later changed to "like" remotely, or an avoid set
+  /// from an earlier app version) survive forever and be shipped to the plan
+  /// edge function — producing a disliked list that contradicts the user's own
+  /// likes and collapses the candidate pool to an empty/under-fuelled plan.
+  ///
+  /// We now reconcile from the server (authoritative full snapshot, see
+  /// [fetchAndCacheRemoteFoodPreferences] which REPLACES local on a confirmed
+  /// non-empty fetch). Best-effort: offline / network failure leaves the local
+  /// cache untouched and the read falls back to whatever is cached. Throttled
+  /// to one network round-trip per [_prefsReconcileTtl] per user.
+  Future<void> _reconcileFoodPreferencesIfStale(String userId) async {
+    final last = _prefsReconciledAt[userId];
+    if (last != null && DateTime.now().difference(last) < _prefsReconcileTtl) {
+      return;
+    }
+    // Stamp first so concurrent/sequential reads in the same plan generation
+    // don't each fire a fetch; clear on failure so a later read can retry.
+    _prefsReconciledAt[userId] = DateTime.now();
+    try {
+      await fetchAndCacheRemoteFoodPreferences(userId);
+    } catch (_) {
+      _prefsReconciledAt.remove(userId);
+      // Reported by fetchAndCacheRemoteFoodPreferences via SentryReporter.
+    }
+  }
+
+  /// Get liked foods for a user.
+  ///
+  /// Reconciles the local cache against the server first (see
+  /// [_reconcileFoodPreferencesIfStale]) so the plan pipeline never receives a
+  /// stale preference set. Falls back to the local cache when offline.
   Future<List<String>> getLikedFoods(String userId) async {
+    await _reconcileFoodPreferencesIfStale(userId);
     return await database.foodPreferencesDao.getLikedFoods(userId);
   }
 
-  /// Get disliked foods for a user
+  /// Get disliked foods for a user. Same reconcile-then-read policy as
+  /// [getLikedFoods].
   Future<List<String>> getDislikedFoods(String userId) async {
+    await _reconcileFoodPreferencesIfStale(userId);
     return await database.foodPreferencesDao.getDislikedFoods(userId);
+  }
+
+  /// Get willing-to-try foods for a user. Same reconcile-then-read policy as
+  /// [getLikedFoods]. (Previously unfetched anywhere, so willing-to-try foods
+  /// never reached the plan edge function.)
+  Future<List<String>> getWillingToTryFoods(String userId) async {
+    await _reconcileFoodPreferencesIfStale(userId);
+    return await database.foodPreferencesDao.getWillingToTryFoods(userId);
+  }
+
+  /// Force a reconcile of the local food-preference cache from the server,
+  /// bypassing the throttle. Useful after the user edits preferences.
+  Future<void> reconcileFoodPreferencesFromRemote(String userId) async {
+    _prefsReconciledAt.remove(userId);
+    await _reconcileFoodPreferencesIfStale(userId);
   }
 
   /// Pull custom foods from Supabase and cache locally
@@ -646,81 +724,6 @@ class UserRepository with SyncableRepository {
 
   // SUPABASE SYNC METHODS
 
-  /// Sync local user data with Supabase and return updated user
-  Future<UserProfile> syncUserWithSupabase(
-    String deviceId,
-    UserProfile localUser,
-  ) async {
-    try {
-      // Convert user profile to JSON for Supabase
-      final userData = {
-        'gender': localUser.gender.name,
-        'birthday': localUser.birthday.toIso8601String().split(
-          'T',
-        )[0], // Date only
-        'height_feet': localUser.heightFeet,
-        'height_inches': localUser.heightInches,
-        'weight_pounds': localUser.weightPounds,
-        'runs_with_water_bottle': localUser.runsWithWaterBottle,
-        'food_preferences': {}, // TODO: Implement food preferences sync
-        'gut_training_level': localUser.gutTraining.name,
-        'onboarding_completed': true,
-        'app_version': '1.0.0', // TODO: Get from package info
-      };
-
-      // Use the upsert function from SQL script
-      final response = await supabase.rpc(
-        'upsert_user_by_device_id',
-        params: {'p_device_id': deviceId, 'p_user_data': userData},
-      );
-
-      if (response != null) {
-        // Convert response back to UserProfile
-        final updatedUser = _parseUserFromSupabase(response, deviceId);
-
-        // Update local cache
-        await saveUserProfile(updatedUser);
-
-        return updatedUser;
-      } else {
-        return localUser;
-      }
-    } catch (e, stackTrace) {
-      // Log error but don't throw - continue with local data
-      await sentry.reportNetworkError(
-        e,
-        url: 'supabase:upsert_user_by_device_id',
-        method: 'RPC',
-        stackTrace: stackTrace,
-      );
-      return localUser;
-    }
-  }
-
-  /// Get user from Supabase by device ID
-  Future<UserProfile?> getUserFromSupabase(String deviceId) async {
-    try {
-      final response = await supabase.rpc(
-        'get_user_by_device_id',
-        params: {'p_device_id': deviceId},
-      );
-
-      if (response != null) {
-        return _parseUserFromSupabase(response, deviceId);
-      } else {
-        return null;
-      }
-    } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
-        e,
-        url: 'supabase:get_user_by_device_id',
-        method: 'RPC',
-        stackTrace: stackTrace,
-      );
-      return null;
-    }
-  }
-
   /// Fetch user profile from Supabase by ID and save to local DB
   /// Used when signing in to an existing account to sync profile
   Future<UserProfile?> fetchAndSaveRemoteProfile(String userId) async {
@@ -824,13 +827,20 @@ class UserRepository with SyncableRepository {
         }
       }
 
-      // Use mergeMode to preserve local preferences that server doesn't have
-      // This prevents data loss when server has stale or incomplete data
+      // REPLACE local with the server snapshot (mergeMode: false). The server
+      // is authoritative here, and merging was the bug: it left stale local
+      // rows (e.g. a food now "liked" remotely but still "dislike" locally, or
+      // an avoid set from an older app version) in place, so the plan pipeline
+      // kept shipping a disliked list that contradicted the user's own likes.
+      // The empty-guard above already protects against wiping local when the
+      // server returns nothing due to an RLS/network/timing issue, so reaching
+      // here means we have a real, non-empty server snapshot to mirror.
       await saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
-        mergeMode: true, // Merge with existing local data instead of replacing
+        mergeMode:
+            false, // Replace local cache with the authoritative server set
       );
       return preferences;
     } catch (e, stackTrace) {
@@ -844,47 +854,31 @@ class UserRepository with SyncableRepository {
     }
   }
 
-  /// Create new user in Supabase (called after onboarding)
+  /// Create/sync a user row in Supabase (called after onboarding and on fresh
+  /// login).
+  ///
+  /// Writes directly to the `users` table via [UserProfile.toJson()] — the
+  /// same path used by [_upsertUserProfileToSupabase]. The legacy
+  /// `upsert_user_by_device_id` RPC this used to call never existed in the
+  /// deployed schema, so every call threw PGRST202 and silently fell back to a
+  /// local-only save — meaning fresh-login profiles were never persisted
+  /// remotely. See Sentry MEALVANA-ENDURANCE-3W.
   Future<UserProfile> createUserInSupabase(
     String deviceId,
     UserProfile userProfile,
   ) async {
     try {
-      final userData = {
-        'gender': userProfile.gender.name,
-        'birthday': userProfile.birthday.toIso8601String().split('T')[0],
-        'height_feet': userProfile.heightFeet,
-        'height_inches': userProfile.heightInches,
-        'weight_pounds': userProfile.weightPounds,
-        'runs_with_water_bottle': userProfile.runsWithWaterBottle,
-        'food_preferences': {}, // TODO: Add food preferences
-        'gut_training_level': userProfile.gutTraining.name,
-        'onboarding_completed': true,
-        'app_version': '1.0.0',
-      };
-
-      final response = await supabase.rpc(
-        'upsert_user_by_device_id',
-        params: {'p_device_id': deviceId, 'p_user_data': userData},
-      );
-
-      if (response != null) {
-        final createdUser = _parseUserFromSupabase(response, deviceId);
-        await saveUserProfile(createdUser);
-        return createdUser;
-      } else {
-        // Fallback to local save if Supabase fails
-        await saveUserProfile(userProfile);
-        return userProfile;
-      }
+      await supabase.from('users').upsert(userProfile.toJson());
+      await saveUserProfile(userProfile);
+      return userProfile;
     } catch (e, stackTrace) {
       await sentry.reportNetworkError(
         e,
-        url: 'supabase:upsert_user_by_device_id',
-        method: 'RPC',
+        url: 'supabase:users.upsert',
+        method: 'UPSERT',
         stackTrace: stackTrace,
       );
-      // Fallback to local save
+      // Fallback to local save so onboarding/login still completes offline.
       await saveUserProfile(userProfile);
       return userProfile;
     }
@@ -951,6 +945,13 @@ class UserRepository with SyncableRepository {
       lastName: userData['last_name'] as String?,
       // Contact information
       email: userData['email'] as String?,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: userData['weight_pounds_updated_at'] != null
+          ? DateTime.tryParse(userData['weight_pounds_updated_at'] as String)
+          : null,
+      bodyFatPctUpdatedAt: userData['body_fat_pct_updated_at'] != null
+          ? DateTime.tryParse(userData['body_fat_pct_updated_at'] as String)
+          : null,
     );
   }
 

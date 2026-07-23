@@ -61,11 +61,7 @@ class UserContextRecord {
 
 /// Message record
 class MessageRecord {
-  const MessageRecord({
-    required this.message,
-    this.level,
-    this.tags,
-  });
+  const MessageRecord({required this.message, this.level, this.tags});
 
   final String message;
   final SentryLevel? level;
@@ -92,12 +88,14 @@ class RecordingSentryReporter implements SentryReporter {
     String? context,
     Map<String, String>? tags,
   }) async {
-    capturedExceptions.add(ExceptionRecord(
-      error: error,
-      stackTrace: stackTrace,
-      context: context,
-      tags: tags,
-    ));
+    capturedExceptions.add(
+      ExceptionRecord(
+        error: error,
+        stackTrace: stackTrace,
+        context: context,
+        tags: tags,
+      ),
+    );
   }
 
   @override
@@ -108,16 +106,19 @@ class RecordingSentryReporter implements SentryReporter {
     int? statusCode,
     StackTrace? stackTrace,
   }) async {
-    capturedExceptions.add(ExceptionRecord(
-      error: error,
-      stackTrace: stackTrace,
-      context: 'edge_function',
-      tags: {
-        'function_name': functionName,
-        if (statusCode != null) 'status_code': statusCode.toString(),
-        if (responseTime != null) 'response_time_ms': responseTime.inMilliseconds.toString(),
-      },
-    ));
+    capturedExceptions.add(
+      ExceptionRecord(
+        error: error,
+        stackTrace: stackTrace,
+        context: 'edge_function',
+        tags: {
+          'function_name': functionName,
+          if (statusCode != null) 'status_code': statusCode.toString(),
+          if (responseTime != null)
+            'response_time_ms': responseTime.inMilliseconds.toString(),
+        },
+      ),
+    );
   }
 
   @override
@@ -127,15 +128,17 @@ class RecordingSentryReporter implements SentryReporter {
     String? table,
     StackTrace? stackTrace,
   }) async {
-    capturedExceptions.add(ExceptionRecord(
-      error: error,
-      stackTrace: stackTrace,
-      context: 'database',
-      tags: {
-        if (operation != null) 'operation': operation,
-        if (table != null) 'table': table,
-      },
-    ));
+    capturedExceptions.add(
+      ExceptionRecord(
+        error: error,
+        stackTrace: stackTrace,
+        context: 'database',
+        tags: {
+          if (operation != null) 'operation': operation,
+          if (table != null) 'table': table,
+        },
+      ),
+    );
   }
 
   @override
@@ -147,16 +150,18 @@ class RecordingSentryReporter implements SentryReporter {
     Duration? timeout,
     StackTrace? stackTrace,
   }) async {
-    capturedExceptions.add(ExceptionRecord(
-      error: error,
-      stackTrace: stackTrace,
-      context: 'network',
-      tags: {
-        if (url != null) 'url': url,
-        if (method != null) 'method': method,
-        if (statusCode != null) 'status_code': statusCode.toString(),
-      },
-    ));
+    capturedExceptions.add(
+      ExceptionRecord(
+        error: error,
+        stackTrace: stackTrace,
+        context: 'network',
+        tags: {
+          if (url != null) 'url': url,
+          if (method != null) 'method': method,
+          if (statusCode != null) 'status_code': statusCode.toString(),
+        },
+      ),
+    );
   }
 
   @override
@@ -166,12 +171,14 @@ class RecordingSentryReporter implements SentryReporter {
     bool? onboardingCompleted,
     String? gutTrainingLevel,
   }) async {
-    userContexts.add(UserContextRecord(
-      deviceId: deviceId,
-      appVersion: appVersion,
-      onboardingCompleted: onboardingCompleted,
-      gutTrainingLevel: gutTrainingLevel,
-    ));
+    userContexts.add(
+      UserContextRecord(
+        deviceId: deviceId,
+        appVersion: appVersion,
+        onboardingCompleted: onboardingCompleted,
+        gutTrainingLevel: gutTrainingLevel,
+      ),
+    );
   }
 
   @override
@@ -186,12 +193,14 @@ class RecordingSentryReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, dynamic>? data,
   }) {
-    breadcrumbs.add(BreadcrumbRecord(
-      message: message,
-      category: category,
-      level: level,
-      data: data,
-    ));
+    breadcrumbs.add(
+      BreadcrumbRecord(
+        message: message,
+        category: category,
+        level: level,
+        data: data,
+      ),
+    );
   }
 
   @override
@@ -200,11 +209,7 @@ class RecordingSentryReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
   }) async {
-    messages.add(MessageRecord(
-      message: message,
-      level: level,
-      tags: tags,
-    ));
+    messages.add(MessageRecord(message: message, level: level, tags: tags));
   }
 
   @override

@@ -99,14 +99,17 @@ void main() {
       // Pre-seed database with completed user using raw insert
       final testId = 'test-completed-user';
       final testDeviceId = 'device-completed-123';
+      final testAuthUserId = '11111111-1111-1111-1111-111111111111';
 
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: testId,
               deviceId: testDeviceId,
-              authUserId: const Value(null),
-              authProvider: const Value('anonymous'),
-              isAnonymous: const Value(true),
+              authUserId: Value(testAuthUserId),
+              authProvider: const Value('email'),
+              isAnonymous: const Value(false),
               gender: const Value('female'),
               birthday: Value(DateTime(1994, 6, 15)),
               heightFeet: const Value(5),
@@ -127,8 +130,10 @@ void main() {
         'onboarding_completed': true,
       });
 
-      // Verify user was inserted
-      final userProfile = await database.userDao.getCurrentUserProfile();
+      // App startup resolves the signed-in user from their auth id.
+      final userProfile = await database.userDao.getCurrentUserProfile(
+        currentAuthUserId: testAuthUserId,
+      );
 
       logTestResult('user_profile', userProfile?.id);
       logTestResult('onboarding_completed', userProfile?.onboardingCompleted);
@@ -158,14 +163,17 @@ void main() {
       // Pre-seed database with incomplete user
       final testId = 'test-incomplete-user';
       final testDeviceId = 'device-incomplete-456';
+      final testAuthUserId = '22222222-2222-2222-2222-222222222222';
 
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: testId,
               deviceId: testDeviceId,
-              authUserId: const Value(null),
-              authProvider: const Value('anonymous'),
-              isAnonymous: const Value(true),
+              authUserId: Value(testAuthUserId),
+              authProvider: const Value('email'),
+              isAnonymous: const Value(false),
               gender: const Value('male'),
               birthday: Value(DateTime(1990, 1, 1)),
               heightFeet: const Value(6),
@@ -186,8 +194,10 @@ void main() {
         'onboarding_completed': false,
       });
 
-      // Verify user was inserted
-      final userProfile = await database.userDao.getCurrentUserProfile();
+      // App startup resolves the signed-in user from their auth id.
+      final userProfile = await database.userDao.getCurrentUserProfile(
+        currentAuthUserId: testAuthUserId,
+      );
 
       logTestResult('user_profile', userProfile?.id);
       logTestResult('onboarding_completed', userProfile?.onboardingCompleted);

@@ -10,7 +10,19 @@ import {
   garminTimestampToDateString,
   garminTimestampToISO,
 } from "./mappers.ts";
+import { isEnduranceSportType } from "./types.ts";
 import type { GarminActivitySummary } from "./types.ts";
+
+/** Postgres unique-violation error code surfaced by PostgREST. */
+const PG_UNIQUE_VIOLATION = "23505";
+
+/**
+ * Postgres "invalid text representation" error code — surfaced when
+ * inserting a value that isn't a member of a target enum type. Used to
+ * detect an `activity_type_enum` that hasn't been migrated to include
+ * 'other' yet, so we can degrade gracefully instead of a hard failure.
+ */
+const PG_INVALID_ENUM_VALUE = "22P02";
 
 type GarminActivityTiming = Pick<
   GarminActivitySummary,
@@ -171,12 +183,18 @@ export function buildGarminCompletionUpdate(
     updateFields.distance_meters = distanceMeters;
   }
 
+  // Reconcile the *displayed* mileage to what actually happened. When Garmin
+  // completes a planned activity we must replace the planned distance with the
+  // synced activity's actual distance (feature request 390e3fdb…6916): a run
+  // that was started and immediately stopped reports ~0 mi and must not keep
+  // showing the planned 12 mi (which also inflates any distance-derived
+  // calorie estimate). We only overwrite when Garmin actually reported a
+  // distance (a number, including 0). When Garmin omits distance entirely
+  // (e.g. some indoor activities) we leave the planned value untouched rather
+  // than zeroing out a legitimate workout.
   if (derivedDistanceMiles !== null) {
     updateFields.actual_distance_miles = derivedDistanceMiles;
-  }
-
-  if (typeof mappedActivity.distance_miles === "number") {
-    updateFields.distance_miles = mappedActivity.distance_miles;
+    updateFields.distance_miles = derivedDistanceMiles;
   }
 
   if (typeof mappedActivity.average_pace_minutes_per_mile === "number") {
@@ -198,5 +216,102 @@ export function buildGarminCompletionUpdate(
       mappedActivity.swimming_pace_per_100m_seconds;
   }
 
+  if (typeof mappedActivity.garmin_device_name === "string") {
+    updateFields.garmin_device_name = mappedActivity.garmin_device_name;
+  }
+
   return updateFields;
+}
+
+export type GarminInsertOutcome =
+  | { kind: "inserted"; activityId: string }
+  | { kind: "duplicate" } // another push already inserted this summaryId
+  | { kind: "skipped_non_endurance"; sportType: string }
+  | { kind: "skipped_enum_not_ready"; sportType: string }
+  | { kind: "skipped_no_summary_id" }
+  | { kind: "error"; error: unknown };
+
+/**
+ * Insert a new completed activity for a Garmin upload that has no matching
+ * planned activity. Returns "inserted" only when WE created the row — the
+ * caller should fire a OneSignal push exactly when the outcome is
+ * "inserted" so concurrent webhooks don't double-notify.
+ *
+ * Idempotency: relies on the UNIQUE (user_id, garmin_summary_id) index
+ * (migration 20260506200000). On 23505 we report "duplicate" so the caller
+ * skips the notification.
+ *
+ * Sport gating: endurance sports (run / bike / swim / triathlon / duathlon /
+ * multisport) get auto-created with full nutrition-plan context. Everything
+ * else Garmin reports (strength, hiking, walking, yoga, etc.) maps to the
+ * generic "other" import-only bucket via [mapGarminSportType] and is now
+ * ALSO auto-created — for visibility/deletion in the activity list, never
+ * with a nutrition plan. Garmin's "transition" legs (T1/T2 within a
+ * multisport activity) are still skipped — they aren't a standalone
+ * activity a user would want listed.
+ */
+export async function insertGarminActivityIfMissing(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  activity: GarminActivitySummary,
+  // deno-lint-ignore no-explicit-any
+  mappedActivity: Record<string, any>,
+): Promise<GarminInsertOutcome> {
+  const sportType = String(mappedActivity.activity_type ?? "");
+  const isImportOnlyOther = sportType === "other";
+  if (!isEnduranceSportType(sportType) && !isImportOnlyOther) {
+    return { kind: "skipped_non_endurance", sportType };
+  }
+
+  const summaryId = activity.summaryId ??
+    (activity as { activityId?: string }).activityId;
+  if (!summaryId) {
+    return { kind: "skipped_no_summary_id" };
+  }
+
+  const completionFields = buildGarminCompletionUpdate(activity, mappedActivity);
+
+  // Merge: mapped row supplies user_id / activity_type / title /
+  // scheduled_date_time / sport metrics; completion fields supply status,
+  // completed_at, last_synced_at, etc. Completion fields win on overlap.
+  const insertRow: Record<string, unknown> = {
+    ...mappedActivity,
+    ...completionFields,
+    garmin_summary_id: String(summaryId),
+    // Server-created — no client-side upload queue entry needed.
+    needs_upload: false,
+  };
+
+  const { data, error } = await supabase
+    .from("activities")
+    .insert(insertRow)
+    .select("id")
+    .single();
+
+  if (error) {
+    if ((error as { code?: string }).code === PG_UNIQUE_VIOLATION) {
+      return { kind: "duplicate" };
+    }
+    // The 'other' activity_type_enum value may not have been migrated onto
+    // this database yet (rollout ordering: this code can deploy before the
+    // `ALTER TYPE activity_type_enum ADD VALUE 'other'` migration runs).
+    // Degrade to a skip instead of surfacing a 500 to Garmin's webhook.
+    if (
+      isImportOnlyOther &&
+      (error as { code?: string }).code === PG_INVALID_ENUM_VALUE
+    ) {
+      console.warn(
+        `[garmin] 'other' activity_type not yet supported by this database's activity_type_enum — skipping import until the enum migration lands.`,
+        error,
+      );
+      return { kind: "skipped_enum_not_ready", sportType };
+    }
+    return { kind: "error", error };
+  }
+
+  const id = (data as { id?: string } | null)?.id;
+  if (!id) {
+    return { kind: "error", error: new Error("Insert returned no id") };
+  }
+  return { kind: "inserted", activityId: id };
 }

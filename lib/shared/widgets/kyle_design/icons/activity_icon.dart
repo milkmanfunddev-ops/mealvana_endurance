@@ -29,38 +29,31 @@ class KyleActivityIcon extends ConsumerWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        iconData,
-        size: size * 0.5,
-        color: icColor,
-      ),
+      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+      child: Icon(iconData, size: size * 0.5, color: icColor),
     );
   }
 
   IconData _getIconForActivityType(KyleActivityType type) {
     switch (type) {
       case KyleActivityType.running:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       case KyleActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case KyleActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case KyleActivityType.triathlon:
-        return FontAwesomeIcons.medal;
+        return FontAwesomeIcons.medal.data;
       case KyleActivityType.strength:
-        return FontAwesomeIcons.dumbbell;
+        return FontAwesomeIcons.dumbbell.data;
       case KyleActivityType.yoga:
-        return FontAwesomeIcons.spa;
+        return FontAwesomeIcons.spa.data;
       case KyleActivityType.hiking:
-        return FontAwesomeIcons.personHiking;
+        return FontAwesomeIcons.personHiking.data;
       case KyleActivityType.walking:
-        return FontAwesomeIcons.personWalking;
+        return FontAwesomeIcons.personWalking.data;
       case KyleActivityType.other:
-        return FontAwesomeIcons.circle;
+        return FontAwesomeIcons.circle.data;
     }
   }
 }
@@ -129,7 +122,9 @@ class KyleActivityTypeSelectorIcon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bgColor = isSelected ? AppColors.electrolyte : AppColors.electrolyte.withOpacity(0.2);
+    final bgColor = isSelected
+        ? AppColors.electrolyte
+        : AppColors.electrolyte.withOpacity(0.2);
     final icColor = isSelected ? AppColors.textLight : AppColors.electrolyte;
 
     return GestureDetector(
@@ -158,23 +153,23 @@ class KyleActivityTypeSelectorIcon extends ConsumerWidget {
   IconData _getIconForActivityType(KyleActivityType type) {
     switch (type) {
       case KyleActivityType.running:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       case KyleActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case KyleActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case KyleActivityType.triathlon:
-        return FontAwesomeIcons.medal;
+        return FontAwesomeIcons.medal.data;
       case KyleActivityType.strength:
-        return FontAwesomeIcons.dumbbell;
+        return FontAwesomeIcons.dumbbell.data;
       case KyleActivityType.yoga:
-        return FontAwesomeIcons.spa;
+        return FontAwesomeIcons.spa.data;
       case KyleActivityType.hiking:
-        return FontAwesomeIcons.personHiking;
-      case KyleActivityType.walking:  
-        return FontAwesomeIcons.personWalking;
+        return FontAwesomeIcons.personHiking.data;
+      case KyleActivityType.walking:
+        return FontAwesomeIcons.personWalking.data;
       case KyleActivityType.other:
-        return FontAwesomeIcons.circle;
+        return FontAwesomeIcons.circle.data;
     }
   }
 }

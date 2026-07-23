@@ -73,12 +73,25 @@ class FinalSurgeTransformer {
 
   static const _uuid = Uuid();
 
-  /// Supported workout types that we import
+  /// Workout types with dedicated nutrition-plan handling. Anything else
+  /// (Strength, Cross Training, Recovery/Rehab, etc.) is still imported, but
+  /// as a generic [ActivityType.other] — see [_nonActivityTypes] for the
+  /// small set of workout type names that represent no physical activity at
+  /// all and are never imported.
   static const supportedTypes = ['Run', 'Walk', 'Bike', 'Swim'];
+
+  /// Workout type names that represent no actual physical activity (e.g. a
+  /// rest day placeholder in the training plan). These are never imported —
+  /// not even as [ActivityType.other] — because there is nothing to show.
+  static const _nonActivityTypes = ['Rest Day'];
 
   /// Transform a Final Surge workout JSON to a Mealvana Activity
   ///
-  /// Returns null if the workout type is not supported (e.g., Rest Day).
+  /// Returns null only when the workout type represents no physical activity
+  /// (e.g. Rest Day) or when the type name is missing entirely. Workout types
+  /// outside [supportedTypes] (Strength, Cross Training, Recovery/Rehab, Yoga,
+  /// etc.) are still imported as a generic [ActivityType.other] rather than
+  /// silently dropped.
   /// When [structuredData] is provided (from HasStructuredWorkout=true workouts),
   /// uses it for precise time-weighted intensity distribution calculation.
   FinalSurgeTransformResult? transform(
@@ -100,8 +113,14 @@ class FinalSurgeTransformer {
 
     final workoutTypeName = workout['WorkoutTypeName'] as String?;
 
-    // Filter out unsupported workout types
-    if (workoutTypeName == null || !supportedTypes.contains(workoutTypeName)) {
+    // Missing type name or a non-activity placeholder (e.g. Rest Day) — no
+    // physical activity occurred, nothing to import.
+    if (workoutTypeName == null || workoutTypeName.trim().isEmpty) {
+      return null;
+    }
+    if (_nonActivityTypes.any(
+      (t) => t.toLowerCase() == workoutTypeName.toLowerCase(),
+    )) {
       return null;
     }
 
@@ -255,7 +274,11 @@ class FinalSurgeTransformer {
     return '${date}_$type'.hashCode.toString();
   }
 
-  /// Map Final Surge workout type to Mealvana ActivityType
+  /// Map Final Surge workout type to Mealvana ActivityType.
+  ///
+  /// Unrecognized types (Strength, Cross Training, Recovery/Rehab, Yoga,
+  /// etc.) map to [ActivityType.other] — imported for visibility/deletion,
+  /// but never misclassified as a run.
   ActivityType _mapActivityType(String workoutTypeName) {
     switch (workoutTypeName.toLowerCase()) {
       case 'run':
@@ -266,7 +289,7 @@ class FinalSurgeTransformer {
       case 'swim':
         return ActivityType.swimming;
       default:
-        return ActivityType.running;
+        return ActivityType.other;
     }
   }
 
@@ -394,6 +417,10 @@ class FinalSurgeTransformer {
       case ActivityType.brick:
         // Multi-sport and brick default to running for now
         return FinalSurgeDefaults.runningDurationMinutes;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — no nutrition-plan
+        // default is applicable; leave duration unset.
+        return null;
     }
   }
 
@@ -423,6 +450,10 @@ class FinalSurgeTransformer {
       case ActivityType.multisport:
       case ActivityType.brick:
         return FinalSurgeDefaults.runningDurationMinutes;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — no nutrition-plan
+        // default is applicable; leave duration unset.
+        return null;
     }
   }
 
@@ -519,6 +550,10 @@ class FinalSurgeTransformer {
       case ActivityType.brick:
         // Multi-sport and brick default to running for now
         return FinalSurgeDefaults.runningDistanceMiles;
+      case ActivityType.other:
+        // Import-only, unsupported activity type — no nutrition-plan
+        // default is applicable; leave distance unset.
+        return null;
     }
   }
 

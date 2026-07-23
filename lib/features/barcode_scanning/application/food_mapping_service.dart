@@ -16,7 +16,10 @@ class FoodMappingService {
 
   /// Convert an ApiFoodProduct from barcode scanning to the app's Food model
   /// Checks database for existing food data and uses proper categories
-  Future<Food> mapToFood(ApiFoodProduct apiProduct, {double? assumedServingGrams}) async {
+  Future<Food> mapToFood(
+    ApiFoodProduct apiProduct, {
+    double? assumedServingGrams,
+  }) async {
     // First check if we already have this food by barcode
     final barcode = apiProduct.barcode;
     if (barcode.isNotEmpty) {
@@ -28,10 +31,13 @@ class FoodMappingService {
     }
 
     // Check if we have it by name in the database
-    final existingByName = await _foodRepository.getFoodByName(apiProduct.productName);
+    final existingByName = await _foodRepository.getFoodByName(
+      apiProduct.productName,
+    );
 
     // Use API's serving size if available, otherwise use default
-    final servingGrams = apiProduct.servingGrams ?? assumedServingGrams ?? 100.0;
+    final servingGrams =
+        apiProduct.servingGrams ?? assumedServingGrams ?? 100.0;
 
     // Calculate nutritional values for the serving
     final nutritionalValues = apiProduct.calculateForServing(servingGrams);
@@ -46,12 +52,15 @@ class FoodMappingService {
       // Serving information - use database values if available
       servingAmount: 1.0, // Always 1.0 in simplified approach
       displayName: existingByName?.displayName ?? apiProduct.displayName,
-      displayNamePlural: existingByName?.displayNamePlural ?? '${apiProduct.displayName}s',
+      displayNamePlural:
+          existingByName?.displayNamePlural ?? '${apiProduct.displayName}s',
       // Legacy fields for compatibility
       servingUnit: 'servings',
       servingUnitPlural: 'servings',
       servingQualifier: null,
-      servingSize: apiProduct.servingSize ?? '${servingGrams.toStringAsFixed(servingGrams == servingGrams.toInt() ? 0 : 1)}g',
+      servingSize:
+          apiProduct.servingSize ??
+          '${servingGrams.toStringAsFixed(servingGrams == servingGrams.toInt() ? 0 : 1)}g',
 
       // Nutritional information (per serving)
       carbsPerServing: nutritionalValues.carbohydrates,
@@ -66,17 +75,18 @@ class FoodMappingService {
       potassiumMg: null,
 
       // Product type - use from existing food, then OFF-detected type, then 'import'
-      productTypeId: existingByName?.productTypeId
-          ?? apiProduct.suggestedProductType
-          ?? 'import',
+      productTypeId:
+          existingByName?.productTypeId ??
+          apiProduct.suggestedProductType ??
+          'import',
 
       // Suitability based on database categories if we found the food
       beforeRunSuitable: await _getBeforeRunSuitability(existingByName),
       duringRunSuitable: await _getDuringRunSuitability(existingByName),
       runPortable: false, // Not in our schema - always false
-      requiresPreparation: false, // Most packaged foods don't require preparation
+      requiresPreparation:
+          false, // Most packaged foods don't require preparation
       aidStationAvailable: false, // Conservative default
-
       // Use existing serving limits if available
       maxServingsBefore: existingByName?.maxServingsBefore ?? 2,
       maxServingsDuring: existingByName?.maxServingsDuring ?? 1,
@@ -88,7 +98,10 @@ class FoodMappingService {
     if (existingFood == null) return false;
 
     final categories = await _foodRepository.getFoodCategories(existingFood.id);
-    return categories.contains(1); // category_id = 1 for before_run
+    // getFoodCategories returns category strings ("before_run"/"during_run"/
+    // "after_run"), not ids — comparing against ints always returned false and
+    // silently disabled before-run suitability for every known food.
+    return categories.contains('before_run');
   }
 
   /// Get during run suitability from database categories
@@ -96,12 +109,16 @@ class FoodMappingService {
     if (existingFood == null) return false;
 
     final categories = await _foodRepository.getFoodCategories(existingFood.id);
-    return categories.contains(2); // category_id = 2 for during_run
+    // See _getBeforeRunSuitability: categories are strings, not ids.
+    return categories.contains('during_run');
   }
 
   /// Convert FoodItem from repository to Food domain model
   /// Merges existing database data with fresh nutritional data from API
-  Food _convertFoodItemToFood(FoodItem existingFood, ApiFoodProduct apiProduct) {
+  Food _convertFoodItemToFood(
+    FoodItem existingFood,
+    ApiFoodProduct apiProduct,
+  ) {
     // Use fresh nutritional data from API if available
     final servingGrams = apiProduct.servingGrams ?? 100.0;
     final nutritionalValues = apiProduct.calculateForServing(servingGrams);
@@ -115,14 +132,16 @@ class FoodMappingService {
 
       // Use database display names
       displayName: existingFood.displayName ?? apiProduct.displayName,
-      displayNamePlural: existingFood.displayNamePlural ?? '${apiProduct.displayName}s',
+      displayNamePlural:
+          existingFood.displayNamePlural ?? '${apiProduct.displayName}s',
 
       // Serving information
       servingAmount: 1.0,
       servingUnit: 'servings',
       servingUnitPlural: 'servings',
       servingQualifier: null,
-      servingSize: apiProduct.servingSize ?? '${servingGrams.toStringAsFixed(0)}g',
+      servingSize:
+          apiProduct.servingSize ?? '${servingGrams.toStringAsFixed(0)}g',
 
       // Use fresh nutritional data from API
       carbsPerServing: nutritionalValues.carbohydrates,
@@ -172,7 +191,6 @@ class FoodMappingService {
 
     return null;
   }
-
 }
 
 @riverpod

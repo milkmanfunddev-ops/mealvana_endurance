@@ -4,8 +4,9 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/intensity_c
 
 void main() {
   group('IntensityCompositeBar', () {
-    testWidgets('renders with correct proportions for balanced distribution',
-        (WidgetTester tester) async {
+    testWidgets('renders with correct proportions for balanced distribution', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         const MaterialApp(
@@ -30,8 +31,9 @@ void main() {
       expect(containerFinder, findsWidgets);
     });
 
-    testWidgets('renders with 100% conversational (green only)',
-        (WidgetTester tester) async {
+    testWidgets('renders with 100% conversational (green only)', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         const MaterialApp(
@@ -57,14 +59,14 @@ void main() {
 
       // Verify only one Expanded widget (single segment)
       final row = tester.widget<Row>(rowFinder);
-      final expandedWidgets =
-          row.children.whereType<Expanded>().toList();
+      final expandedWidgets = row.children.whereType<Expanded>().toList();
       expect(expandedWidgets.length, 1);
       expect(expandedWidgets[0].flex, 100);
     });
 
-    testWidgets('renders with 100% tempo (yellow only)',
-        (WidgetTester tester) async {
+    testWidgets('renders with 100% tempo (yellow only)', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         const MaterialApp(
@@ -86,14 +88,14 @@ void main() {
 
       final rowFinder = find.byType(Row);
       final row = tester.widget<Row>(rowFinder);
-      final expandedWidgets =
-          row.children.whereType<Expanded>().toList();
+      final expandedWidgets = row.children.whereType<Expanded>().toList();
       expect(expandedWidgets.length, 1);
       expect(expandedWidgets[0].flex, 100);
     });
 
-    testWidgets('renders with equal distribution (33/33/34)',
-        (WidgetTester tester) async {
+    testWidgets('renders with equal distribution (33/33/34)', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         const MaterialApp(
@@ -115,8 +117,7 @@ void main() {
 
       final rowFinder = find.byType(Row);
       final row = tester.widget<Row>(rowFinder);
-      final expandedWidgets =
-          row.children.whereType<Expanded>().toList();
+      final expandedWidgets = row.children.whereType<Expanded>().toList();
       expect(expandedWidgets.length, 3);
 
       // Verify flex values match percentages
@@ -125,8 +126,9 @@ void main() {
       expect(expandedWidgets[2].flex, 34); // all-out
     });
 
-    testWidgets('has correct colors for each segment',
-        (WidgetTester tester) async {
+    testWidgets('has correct colors for each segment', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         const MaterialApp(
@@ -146,15 +148,13 @@ void main() {
       // Assert - find containers with specific colors
       final rowFinder = find.byType(Row);
       final row = tester.widget<Row>(rowFinder);
-      final expandedWidgets =
-          row.children.whereType<Expanded>().toList();
+      final expandedWidgets = row.children.whereType<Expanded>().toList();
 
       // Verify we have 3 segments
       expect(expandedWidgets.length, 3);
 
       // Verify colors (green, yellow, red)
-      final conversationalContainer =
-          expandedWidgets[0].child as Container;
+      final conversationalContainer = expandedWidgets[0].child as Container;
       expect(
         conversationalContainer.color,
         const Color(0xFF4ADE80), // Green
@@ -239,8 +239,9 @@ void main() {
       expect(container.constraints?.maxHeight, customHeight);
     });
 
-    testWidgets('handles edge case with zero segments gracefully',
-        (WidgetTester tester) async {
+    testWidgets('handles edge case with zero segments gracefully', (
+      WidgetTester tester,
+    ) async {
       // Arrange - This represents a special case where user hasn't set any values yet
       // We'll allow (0,0,100) as a valid state
       await tester.pumpWidget(

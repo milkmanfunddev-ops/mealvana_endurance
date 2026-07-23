@@ -1,0 +1,36 @@
+{
+  "description": "Gut training low (0.7× multiplier) — running 90 min. Reduced carb targets reflecting 70% of moderate baseline. Tests conservative fueling path.",
+  "solver": "rule",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: rule solver is non-deterministic at this target (38g carbs, 500mg sodium). Some runs pick energy_chews_mini_pack as primary carb (80mg+100mg sodium = ~400mg, borderline at delta=100mg floor), others pick carb_drink_mix (80mg from half-serving, leaving insufficient headroom for electrolytes, delivering 370mg sodium, delta=130mg > 100mg floor). The real catalog has 5 competing primary-carb candidates with nearly equal preference scores; tie-breaking is order-dependent. Solver non-determinism exposed by real catalog's richer food pool vs the synthetic 8-food set.",
+  "athlete": {
+    "weight_kg": 70,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 90,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 38,
+      "sodium_mg": 500,
+      "water_ml": 700
+    },
+    "post_run": {
+      "carbs_g": 55,
+      "protein_g": 24,
+      "sodium_mg": 650,
+      "water_ml": 750
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

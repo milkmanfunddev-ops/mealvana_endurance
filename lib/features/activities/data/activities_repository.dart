@@ -117,6 +117,12 @@ class ActivitiesRepository with SyncableRepository {
         stackTrace: stackTrace,
         data: {'userId': userId},
       );
+      await _sentry.reportNetworkError(
+        e,
+        url: 'supabase/activities',
+        method: 'SELECT',
+        stackTrace: stackTrace,
+      );
       return SyncResult.failed(e.toString());
     }
   }
@@ -355,6 +361,12 @@ class ActivitiesRepository with SyncableRepository {
         error: e,
         stackTrace: stackTrace,
         data: {'userId': userId},
+      );
+      await _sentry.reportNetworkError(
+        e,
+        url: 'supabase/activities',
+        method: 'UPSERT',
+        stackTrace: stackTrace,
       );
       return UploadResult.failed(e.toString());
     }
@@ -864,7 +876,27 @@ class ActivitiesRepository with SyncableRepository {
   /// Fetch a single activity from Supabase and upsert it locally,
   /// preserving any dirty local changes. Used to pick up coach-made
   /// updates (e.g. nutrition plans) without a full sync.
+  ///
+  /// Skips the remote fetch entirely when the local row is dirty
+  /// (`needsUpload == true`): a dirty row means the local copy is ahead of
+  /// remote (e.g. a nutrition plan was just created offline-first but not yet
+  /// uploaded), so pulling the older remote row would only risk transiently
+  /// shadowing the local changes. `_upsertRemoteActivitiesPreservingDirty`
+  /// also guards this, but returning early closes the timing window between
+  /// the dirty write and the sync upload.
   Future<void> refreshActivityFromRemote(String activityId) async {
+    final localRow = await (_database.select(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+    if (localRow?.needsUpload == true) {
+      _logger.debug(
+        'Skipping remote refresh for dirty local activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'activityId': activityId},
+      );
+      return;
+    }
+
     final response = await _supabase
         .from('activities')
         .select()
@@ -963,6 +995,49 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// Get recent completed activities of a given sport, most-recent-first.
+  ///
+  /// Backs the post-workout carbs/hr baseline: returns the user's completed
+  /// activities of [activityType] ordered by completion time (newest first),
+  /// excluding soft-deleted rows, brick-archived rows, and [excludeActivityId]
+  /// (the session being reviewed). Caller filters/aggregates fuel data.
+  Future<List<domain.Activity>> getRecentCompletedActivitiesBySport(
+    String userId,
+    ActivityType activityType, {
+    String? excludeActivityId,
+    int limit = 12,
+  }) async {
+    try {
+      final query = _database.select(_database.activitiesTable)
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.activityType.equals(activityType.name) &
+              tbl.status.equals('completed') &
+              tbl.deletedAt.isNull(),
+        )
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.completedAt)])
+        // Fetch one extra so excluding the current activity still yields `limit`.
+        ..limit(limit + 1);
+
+      final rows = await query.get();
+      final activities = rows
+          .map(_mapper.fromDriftRow)
+          .where((a) => a.id != excludeActivityId)
+          .take(limit)
+          .toList();
+      return activities;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get recent completed activities by sport',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Insert a new activity directly (used by sync services)
   ///
   /// Unlike createActivity, this method doesn't immediately upload to Supabase.
@@ -982,6 +1057,31 @@ class ActivitiesRepository with SyncableRepository {
         );
         if (existing != null) {
           final merged = _mergeProviderUpdate(existing, activity);
+          return await updateActivityFromProvider(merged);
+        }
+
+        // Cross-origin dedup: no provider-keyed row exists, but the user may
+        // have created this same run in-app (which has no provider linkage).
+        // Reconcile the provider import onto that row instead of inserting a
+        // duplicate (Bug 385e3fdb).
+        final fingerprintMatch = await findActivityByFingerprint(
+          userId: activity.userId,
+          activityType: activity.activityType,
+          scheduledDate: activity.scheduledDateTime,
+          distanceMiles: activity.distanceMiles,
+        );
+        if (fingerprintMatch != null) {
+          final merged = _mergeProviderUpdate(fingerprintMatch, activity);
+          _logger.info(
+            'Reconciled provider workout onto user-created activity '
+            '(cross-origin dedup)',
+            context: 'ACTIVITIES_REPOSITORY',
+            data: {
+              'localActivityId': fingerprintMatch.id,
+              'provider': provider,
+              'providerWorkoutId': providerWorkoutId,
+            },
+          );
           return await updateActivityFromProvider(merged);
         }
       }
@@ -1075,6 +1175,75 @@ class ActivitiesRepository with SyncableRepository {
     return bestMatch != null ? _mapper.fromDriftRow(bestMatch) : null;
   }
 
+  /// Find an existing *user-created* activity (no provider linkage) that matches
+  /// an incoming provider workout by fingerprint: same activity type, scheduled
+  /// within ±1 day, and distance within 10%.
+  ///
+  /// This powers cross-origin deduplication: a run created in-app has
+  /// `synced_from_provider`/`provider_workout_id` both null, so when the same
+  /// physical run is later completed and synced back from Garmin/Final Surge it
+  /// would otherwise be inserted as a second row. The provider-key lookup
+  /// ([_findActivityByProviderKey]) can't catch this because the in-app row has
+  /// no provider key. We only ever match rows that have NO provider linkage —
+  /// provider-synced rows are reconciled via the provider-key path, never by
+  /// fingerprint — so this can't accidentally collapse two distinct provider
+  /// imports together.
+  ///
+  /// The scheduled-time window is computed tz-naively (local day bounds), matching
+  /// how `scheduled_date_time` is stored (tz-naive) elsewhere in the codebase.
+  Future<domain.Activity?> findActivityByFingerprint({
+    required String userId,
+    required ActivityType activityType,
+    required DateTime scheduledDate,
+    double? distanceMiles,
+  }) async {
+    final day = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+    );
+    final lowerBound = day.subtract(const Duration(days: 1));
+    // Exclusive upper bound covering the whole of scheduledDate + 1 day.
+    final upperBound = day.add(const Duration(days: 2));
+
+    final query = _database.select(_database.activitiesTable)
+      ..where(
+        (tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
+            tbl.activityType.equals(activityType.name) &
+            tbl.deletedAt.isNull() &
+            tbl.scheduledDateTime.isBiggerOrEqualValue(lowerBound) &
+            tbl.scheduledDateTime.isSmallerThanValue(upperBound),
+      )
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
+
+    final rows = await query.get();
+    for (final row in rows) {
+      // Only match user-created rows (no provider linkage).
+      final hasProviderLink =
+          row.providerWorkoutId != null && row.providerWorkoutId!.isNotEmpty;
+      if (hasProviderLink) {
+        continue;
+      }
+
+      // If both distances are known, require them within 10%.
+      if (distanceMiles != null && distanceMiles > 0) {
+        final localDistance = row.distanceMiles;
+        if (localDistance == null || localDistance <= 0) {
+          continue;
+        }
+        final pctDiff = (localDistance - distanceMiles).abs() / distanceMiles;
+        if (pctDiff > 0.10) {
+          continue;
+        }
+      }
+
+      return _mapper.fromDriftRow(row);
+    }
+
+    return null;
+  }
+
   /// Merge latest provider data into an existing activity while preserving
   /// local-only fields (nutrition plan, completion, reminders, brick metadata).
   domain.Activity _mergeProviderUpdate(
@@ -1116,6 +1285,14 @@ class ActivitiesRepository with SyncableRepository {
       actualDistanceMiles: existing.actualDistanceMiles,
       actualDurationMinutes: existing.actualDurationMinutes,
       nutritionPlanData: existing.nutritionPlanData,
+      // Preserve the locally-logged fuel data; provider imports never carry it.
+      fuelLogData: existing.fuelLogData,
+
+      // Adopt provider device/summary identifiers so the surviving row shows
+      // the device badge (Activity.hasGarminData), falling back to whatever the
+      // existing row already had.
+      garminSummaryId: incoming.garminSummaryId ?? existing.garminSummaryId,
+      garminDeviceName: incoming.garminDeviceName ?? existing.garminDeviceName,
 
       // preserve local metadata
       createdAt: existing.createdAt,
@@ -1520,6 +1697,9 @@ class ActivitiesRepository with SyncableRepository {
         break;
       case 'final_surge':
         variants.addAll(const ['finalsurge', 'final surge']);
+        break;
+      case 'vdot':
+        variants.addAll(const ['v.o2', 'v02', 'vo2', 'vdoto2']);
         break;
       default:
         break;

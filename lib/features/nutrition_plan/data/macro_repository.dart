@@ -42,7 +42,17 @@ abstract class MacroRepository {
   Future<MacroTargets?> getCachedMacroTargets();
 
   /// Get cached macro targets scoped to a specific activity ID.
-  Future<MacroTargets?> getCachedMacroTargetsForActivity(String activityId);
+  ///
+  /// [expectedActivityType] guards the one-time legacy → scoped migration: if
+  /// the global cache holds macros for a different sport (e.g. cycling cache
+  /// before a run is created), the cached blob is NOT copied into this
+  /// activity's slot. Pass the activity's type whenever it's known to prevent
+  /// cross-sport template corruption (issue #18). When null, the legacy
+  /// migration is skipped entirely — safer default than silent corruption.
+  Future<MacroTargets?> getCachedMacroTargetsForActivity(
+    String activityId, {
+    ActivityType? expectedActivityType,
+  });
 
   /// Update specific macro values
   Future<MacroTargets> updateMacroTargets(
@@ -122,6 +132,16 @@ class MacroRepositoryImpl implements MacroRepository {
     required String gutTraining,
     required int age,
     required String gender,
+    // Optional sweat profile — defaults mirror edge function behavior so
+    // existing callers that don't pass a profile still get reasonable
+    // output. Callers with a UserProfile should pass all five.
+    String sweatRateCategory = 'medium',
+    String sweatSodiumCat = 'average',
+    double? tempC,
+    double? humidityPct,
+    bool isIndoor = false,
+    double? knownSweatRateMlPerHour,
+    double? knownSodiumConcMgPerL,
   }) async {
     final offlineResult = OfflineMacroCalculator.calculateMacros(
       weight: weight,
@@ -138,7 +158,69 @@ class MacroRepositoryImpl implements MacroRepository {
       gender: gender,
     );
 
-    final targets = _mapApiResponseToMacroTargets(offlineResult['macros']);
+    var targets = _mapApiResponseToMacroTargets(offlineResult['macros']);
+
+    // Overlay spec-compliant hydration/sodium from the new offline methods.
+    // The legacy calculateMacros still drives carbs/protein/metrics; we
+    // replace only the hydration/sodium fields it produced from the
+    // pre-spec formulas.
+    final weightKg = weightUnit.toLowerCase() == 'kg'
+        ? weight
+        : weight * 0.45359237;
+    final durationMin = (targets.metrics.durationMin).toDouble();
+
+    final preHydration = OfflineMacroCalculator.calculatePreWorkoutHydration(
+      bodyWeightKg: weightKg,
+      workoutDurationMin: durationMin,
+      timeBeforeWorkoutMin: timeBeforeRunMin,
+      tempC: tempC,
+    );
+
+    final duringHydration =
+        OfflineMacroCalculator.calculateDuringWorkoutHydration(
+          durationMin: durationMin,
+          weightKg: weightKg,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          tempC: tempC,
+          humidityPct: humidityPct,
+          isIndoor: isIndoor,
+          sport: 'running',
+          knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+          knownSodiumConcMgPerL: knownSodiumConcMgPerL,
+        );
+
+    targets = targets.copyWith(
+      preRun: PreRunMacros(
+        carbsG: targets.preRun.carbsG,
+        proteinG: targets.preRun.proteinG,
+        fatCapG: targets.preRun.fatCapG,
+        fluidsMl: preHydration.fluidMl.toDouble(),
+        sodiumMg: preHydration.sodiumMg.toDouble(),
+        fluidsLowMl: preHydration.fluidLowMl.toDouble(),
+        fluidsHighMl: preHydration.fluidHighMl.toDouble(),
+        sodiumLowMg: preHydration.sodiumLowMg.toDouble(),
+        sodiumHighMg: preHydration.sodiumHighMg.toDouble(),
+      ),
+      duringRun: targets.duringRun.copyWith(
+        fluidRateMlPerH: duringHydration.hydrationRateMlph.toDouble(),
+        fluidTotalMl: duringHydration.hydrationTotalMl.toDouble(),
+        sodiumRateMgPerH: duringHydration.sodiumRateMgph.toDouble(),
+        sodiumTotalMg: duringHydration.sodiumTotalMg.toDouble(),
+        effectiveSweatRateLPerH: duringHydration.effectiveSweatRateLph,
+        sodiumConcMgPerL: duringHydration.sodiumConcMgPerL,
+        replacementPercent: duringHydration.replacementPct,
+        floorMlPerH: duringHydration.floorMlHr,
+        ceilingMlPerH: duringHydration.ceilingMlHr,
+        safetyFlags: duringHydration.safetyFlags,
+        isTested: duringHydration.isTested,
+        isTestedSodium: knownSodiumConcMgPerL != null,
+        tempC: tempC,
+        humidityPct: humidityPct,
+        isIndoor: isIndoor,
+      ),
+    );
+
     await saveMacroTargets(targets);
     return targets;
   }
@@ -153,6 +235,7 @@ class MacroRepositoryImpl implements MacroRepository {
         fatCapG: (macros['pre_run_fat_g_cap'] as num).toDouble(),
         fluidsMl: (macros['pre_run_water_ml'] as num).toDouble(),
         sodiumMg: (macros['pre_run_sodium_mg'] as num).toDouble(),
+        hydrationTier: (macros['pre_run_hydration_tier'] as num?)?.toInt(),
       ),
       duringRun: DuringRunMacros(
         carbRateGPerH: (macros['during_rate_g_per_h'] as num).toDouble(),
@@ -238,8 +321,9 @@ class MacroRepositoryImpl implements MacroRepository {
 
   @override
   Future<MacroTargets?> getCachedMacroTargetsForActivity(
-    String activityId,
-  ) async {
+    String activityId, {
+    ActivityType? expectedActivityType,
+  }) async {
     final normalizedActivityId = activityId.trim();
     if (normalizedActivityId.isEmpty) {
       return getCachedMacroTargets();
@@ -262,6 +346,21 @@ class MacroRepositoryImpl implements MacroRepository {
 
     final legacyCached = await getCachedMacroTargets();
     if (legacyCached == null) {
+      await _prefs.setBool(migrationFlag, true);
+      return null;
+    }
+
+    // Sport guard (issue #18): the global cache is sport-agnostic and may
+    // hold a different sport's plan than this activity. Without this check
+    // a Run created right after a Cycling plan was generated would inherit
+    // cycling templates (e.g. Bar + Sports Drink + Water), silently. Refuse
+    // the copy when sports don't match — the caller will regenerate and
+    // overwrite the scoped slot with the correct sport's targets.
+    //
+    // When expectedActivityType is null (caller doesn't know), we also
+    // refuse the copy: silent corruption is worse than one regeneration.
+    if (expectedActivityType == null ||
+        legacyCached.activityType != expectedActivityType) {
       await _prefs.setBool(migrationFlag, true);
       return null;
     }

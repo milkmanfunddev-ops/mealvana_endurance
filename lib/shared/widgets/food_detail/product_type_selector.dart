@@ -78,8 +78,9 @@ const Set<String> beverageProductTypes = {
 };
 
 /// Set of valid product type values for the dropdown
-final Set<String> validProductTypes =
-    productTypeOptions.map((o) => o.value).toSet();
+final Set<String> validProductTypes = productTypeOptions
+    .map((o) => o.value)
+    .toSet();
 
 /// Normalize a product type value to one the dropdown can display.
 /// Unknown values (capsule, quick_carbs, etc.) fall back to 'import'.
@@ -139,7 +140,7 @@ class ProductTypeSelector extends StatelessWidget {
             child: DropdownButton<String>(
               value: selectedProductType,
               isExpanded: true,
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.chevronDown,
                 size: AppIconSizes.chevron,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

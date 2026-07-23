@@ -8,8 +8,12 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, validationError, serverError } from '../_shared/responses.ts';
 import { createServiceClient } from '../_shared/supabase-client.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -125,4 +129,4 @@ serve(async (req) => {
     console.error('Unexpected error:', error);
     return serverError(error);
   }
-});
+}));

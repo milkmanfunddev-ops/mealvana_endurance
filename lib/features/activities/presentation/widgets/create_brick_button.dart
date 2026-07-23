@@ -9,10 +9,7 @@ import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 /// Appears when 2+ activities of different sports exist on the same day.
 /// Tapping enters selection mode to choose activities for brick creation.
 class CreateBrickButton extends ConsumerWidget {
-  const CreateBrickButton({
-    super.key,
-    required this.onPressed,
-  });
+  const CreateBrickButton({super.key, required this.onPressed});
 
   final VoidCallback onPressed;
 
@@ -25,7 +22,7 @@ class CreateBrickButton extends ConsumerWidget {
         height: 44, // Ensure minimum touch target height
         child: KyleSecondaryButtonSmall(
           text: "Create Brick",
-          icon: FontAwesomeIcons.link,
+          icon: FontAwesomeIcons.link.data,
           onPressed: onPressed,
           variant: SecondaryButtonVariant.orange,
         ),

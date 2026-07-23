@@ -6,10 +6,7 @@ import 'food_item_data.dart';
 
 /// Represents a 15-minute slot within an hour.
 class TimeSlot {
-  const TimeSlot({
-    required this.hourIndex,
-    required this.slotIndex,
-  });
+  const TimeSlot({required this.hourIndex, required this.slotIndex});
 
   /// 0-based hour (0 = Hour 1, 1 = Hour 2, etc.)
   final int hourIndex;
@@ -35,9 +32,9 @@ class TimeSlot {
   }
 
   Map<String, dynamic> toJson() => {
-        'hourIndex': hourIndex,
-        'slotIndex': slotIndex,
-      };
+    'hourIndex': hourIndex,
+    'slotIndex': slotIndex,
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -115,12 +112,12 @@ class TimeSlotAssignment {
   }
 
   Map<String, dynamic> toJson() => {
-        'foodItemId': foodItemId,
-        'timeSlot': timeSlot.toJson(),
-        'isSipThroughout': isSipThroughout,
-        if (adjustedQuantity != null) 'adjustedQuantity': adjustedQuantity,
-        if (timingCategory != null) 'timingCategory': timingCategory!.name,
-      };
+    'foodItemId': foodItemId,
+    'timeSlot': timeSlot.toJson(),
+    'isSipThroughout': isSipThroughout,
+    if (adjustedQuantity != null) 'adjustedQuantity': adjustedQuantity,
+    if (timingCategory != null) 'timingCategory': timingCategory!.name,
+  };
 
   @override
   String toString() =>
@@ -129,10 +126,7 @@ class TimeSlotAssignment {
 
 /// Container for all by-hour assignment data for a during-activity section.
 class ByHourData {
-  const ByHourData({
-    required this.durationMinutes,
-    required this.assignments,
-  });
+  const ByHourData({required this.durationMinutes, required this.assignments});
 
   /// Total duration of the during phase in minutes
   final int durationMinutes;
@@ -170,25 +164,18 @@ class ByHourData {
   /// Get global sip-throughout assignments (hourIndex == -1).
   /// These are drinks and electrolytes that apply across all hours.
   List<TimeSlotAssignment> get globalSipAssignments {
-    return assignments
-        .where((a) => a.timeSlot.hourIndex == -1)
-        .toList();
+    return assignments.where((a) => a.timeSlot.hourIndex == -1).toList();
   }
 
   /// Get assignments for a specific hour (excludes global sip items)
   List<TimeSlotAssignment> assignmentsForHour(int hourIndex) {
-    return assignments
-        .where((a) => a.timeSlot.hourIndex == hourIndex)
-        .toList()
-      ..sort(
-          (a, b) => a.timeSlot.slotIndex.compareTo(b.timeSlot.slotIndex));
+    return assignments.where((a) => a.timeSlot.hourIndex == hourIndex).toList()
+      ..sort((a, b) => a.timeSlot.slotIndex.compareTo(b.timeSlot.slotIndex));
   }
 
   /// Get assignments for a specific time slot
   List<TimeSlotAssignment> assignmentsForSlot(TimeSlot slot) {
-    return assignments
-        .where((a) => a.timeSlot == slot)
-        .toList();
+    return assignments.where((a) => a.timeSlot == slot).toList();
   }
 
   ByHourData copyWith({
@@ -211,9 +198,9 @@ class ByHourData {
   }
 
   Map<String, dynamic> toJson() => {
-        'durationMinutes': durationMinutes,
-        'assignments': assignments.map((a) => a.toJson()).toList(),
-      };
+    'durationMinutes': durationMinutes,
+    'assignments': assignments.map((a) => a.toJson()).toList(),
+  };
 
   @override
   String toString() =>

@@ -16,6 +16,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -30,19 +31,47 @@ import {
   type MacroInputV4,
 } from "./single-sport.ts";
 import { calculateBrickMacrosV4 } from "./brick-workout.ts";
-import { calculatePreWorkoutTargets, selectPreWorkoutFoods } from "./pre-workout.ts";
+import {
+  applyPreWorkoutHydrationOverlay,
+  calculatePreWorkoutHydration,
+  calculatePreWorkoutTargets,
+  selectPreWorkoutFoods,
+} from "./pre-workout.ts";
 import { classifyEnvironment } from "../_shared/nutrition/sweat-hydration.ts";
+import { fetchUserPinnedTemplateIds } from "../_shared/nutrition/pins.ts";
+import { createServiceClient } from "../_shared/supabase-client.ts";
 
 // ============================================================================
 // EDGE FUNCTION HANDLER
 // ============================================================================
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
   try {
     const input: MacroInputV4 = await req.json();
+
+    // Food preferences (liked / disliked) are consumed again as of
+    // 2026-07-21 — parity with the 2026-07-08 re-enable that covered the
+    // plan function's solvers but never reached this function's Algorithm C.
+    // Safe against the failure mode behind the 2026-07-03 rip-out (a stale
+    // disliked list collapsing the pool to an empty plan) because Algorithm C
+    // now degrades softly: an all-disliked phase redistributes its budget and
+    // emits shortfalls (#15), Pass 1.5 universal fallback foods only gate on
+    // dislikes + headroom, and liked foods are a scoring boost, never a
+    // filter. Diet + allergy remain separate, hard inputs.
+    input.liked_foods = input.liked_foods ?? [];
+    input.disliked_foods = input.disliked_foods ?? [];
+
+    // Client opt-in for the ephemeral default-formula safety net on the
+    // before phase (formula-first flip, plan Phase 2 #5). Threaded to
+    // `selectPreWorkoutFoods` so an unpinned before phase can tag its selected
+    // system formula as ephemeral. Old clients omit it → byte-identical.
+    const emitEphemeralDefault = input.emit_ephemeral_default_formula === true;
 
     // Validate required fields
     if (!input.weight) return validationError("Missing required field: weight");
@@ -112,6 +141,16 @@ serve(async (req: Request) => {
       `📦 Loaded templates: ${templates.food.length} food, ${templates.drink.length} drink, ${templates.electrolyte.length} electrolyte`,
     );
 
+    // Load the user's active formula pins (before-phase scope). Used to
+    // override candidate selection in `selectPreWorkoutFoods`. Empty when
+    // device_id is absent or the user has no active pins — yields byte-
+    // identical pre-pin behavior. Formula Kit PR 2 substep 5b-followup.
+    const supabaseForPins = createServiceClient();
+    const userPins = await fetchUserPinnedTemplateIds(
+      supabaseForPins,
+      input.device_id,
+    );
+
     // Calculate macros
     if (activityType === "brick") {
       const weightKg = toKg(input.weight, input.weight_unit);
@@ -120,13 +159,34 @@ serve(async (req: Request) => {
         input.humidity_pct ?? null,
       );
 
-      const preTargets = calculatePreWorkoutTargets(
+      const preTargetsLegacy = calculatePreWorkoutTargets(
         weightKg,
         input.hours_before,
         input.is_fasted,
-        input.sweat_sodium,
+        input.sweat_sodium ?? "average",
         envLabel,
       );
+
+      // Spec-compliant pre-workout hydration overlay. Total workout duration
+      // is the sum of brick segment durations (drives the <60 min gate).
+      const totalDurationMin = (input.brick_segments ?? []).reduce(
+        (sum, s) => sum + (s.duration_minutes ?? 0),
+        0,
+      );
+      const preHydration = calculatePreWorkoutHydration({
+        bodyWeightKg: weightKg,
+        workoutDurationMin: totalDurationMin,
+        timeBeforeWorkoutMin: input.hours_before * 60,
+        tempC: input.temp_c ?? null,
+      });
+      // Apply hydration overlay regardless of is_fasted — fasted only affects
+      // carbs/protein/fat, not fluid/sodium. Spec's pre-workout gate is
+      // duration-/temp-based, not fasted status.
+      const preTargets = applyPreWorkoutHydrationOverlay(
+        preTargetsLegacy,
+        preHydration,
+      );
+
       const diet = input.diet || "none";
       const preSelections = selectPreWorkoutFoods(
         preTargets,
@@ -138,12 +198,17 @@ serve(async (req: Request) => {
         input.liked_foods ?? [],
         input.disliked_foods ?? [],
         input.allergies ?? [],
+        userPins.beforePinIds,
+        emitEphemeralDefault,
       );
 
       const brickMacros = calculateBrickMacrosV4(input, preTargets);
       const brickMacrosWithSelections = {
         ...brickMacros,
         pre_run_selections: preSelections,
+        pre_run_hydration_tier: preHydration.tier,
+        pre_run_hydration_gate_triggered: preHydration.gate_triggered,
+        pre_run_hydration_message: preHydration.message,
       };
 
       console.log("✅ V4 brick macros calculated successfully:", {
@@ -157,7 +222,12 @@ serve(async (req: Request) => {
       return jsonResponse({ success: true, macros: brickMacrosWithSelections });
     }
 
-    const macros = await calculateMacrosV4(input, templates);
+    const macros = await calculateMacrosV4(
+      input,
+      templates,
+      userPins.beforePinIds,
+      emitEphemeralDefault,
+    );
 
     console.log("✅ V4 macros calculated successfully:", {
       activity_type: macros.activity_type,
@@ -174,4 +244,4 @@ serve(async (req: Request) => {
     console.error("❌ Error in generate-macros-v4:", error);
     return serverError(error);
   }
-});
+}));

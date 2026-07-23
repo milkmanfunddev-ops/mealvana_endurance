@@ -44,6 +44,7 @@ class CyclingTabContent extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ActivityNameField(
+          key: const ValueKey('activity_create.workout_name_field'),
           value: formState.activityTitle,
           onChanged: controller.updateActivityTitle,
           hint: 'e.g., Long Ride',
@@ -82,6 +83,7 @@ class CyclingTabContent extends ConsumerWidget {
 
         // Time before Ride
         KylePlusMinusControl(
+          key: const ValueKey('activity_create.fueling_window_control'),
           label: 'Pre-Ride Fueling Window',
           value: formState.preRideMinutes,
           onChanged: controller.updatePreRideMinutes,

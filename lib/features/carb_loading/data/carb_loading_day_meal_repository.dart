@@ -14,12 +14,12 @@ class CarbLoadingDayMealRepository {
   final AppDatabase _database;
 
   /// Get all meals for a specific carb loading day
-  Future<List<domain.CarbLoadingDayMeal>> getMealsByDay(String carbLoadingDayId) async {
+  Future<List<domain.CarbLoadingDayMeal>> getMealsByDay(
+    String carbLoadingDayId,
+  ) async {
     final query = _database.select(_database.carbLoadingDayMealsTable)
       ..where((tbl) => tbl.carbLoadingDayId.equals(carbLoadingDayId))
-      ..orderBy([
-        (tbl) => OrderingTerm(expression: tbl.mealTypeId),
-      ]);
+      ..orderBy([(tbl) => OrderingTerm(expression: tbl.mealTypeId)]);
 
     final meals = await query.get();
     return meals.map((meal) => _convertToDayMealDomain(meal)).toList();
@@ -31,9 +31,11 @@ class CarbLoadingDayMealRepository {
     int mealTypeId,
   ) async {
     final query = _database.select(_database.carbLoadingDayMealsTable)
-      ..where((tbl) =>
-          tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-          tbl.mealTypeId.equals(mealTypeId));
+      ..where(
+        (tbl) =>
+            tbl.carbLoadingDayId.equals(carbLoadingDayId) &
+            tbl.mealTypeId.equals(mealTypeId),
+      );
 
     final meals = await query.get();
     return meals.map((meal) => _convertToDayMealDomain(meal)).toList();
@@ -60,7 +62,9 @@ class CarbLoadingDayMealRepository {
     final carbsConsumed = quantity * carbsPerServing;
     final now = DateTime.now();
 
-    await _database.into(_database.carbLoadingDayMealsTable).insert(
+    await _database
+        .into(_database.carbLoadingDayMealsTable)
+        .insert(
           CarbLoadingDayMealsTableCompanion.insert(
             carbLoadingDayId: carbLoadingDayId,
             mealTypeId: mealTypeId,
@@ -75,14 +79,17 @@ class CarbLoadingDayMealRepository {
         );
 
     // Get the inserted meal by querying the latest one for this day/meal type
-    final meal = await (_database.select(_database.carbLoadingDayMealsTable)
-          ..where((tbl) =>
-              tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-              tbl.mealTypeId.equals(mealTypeId) &
-              tbl.carbLoadingFoodId.equals(carbLoadingFoodId))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
-          ..limit(1))
-        .getSingle();
+    final meal =
+        await (_database.select(_database.carbLoadingDayMealsTable)
+              ..where(
+                (tbl) =>
+                    tbl.carbLoadingDayId.equals(carbLoadingDayId) &
+                    tbl.mealTypeId.equals(mealTypeId) &
+                    tbl.carbLoadingFoodId.equals(carbLoadingFoodId),
+              )
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+              ..limit(1))
+            .getSingle();
 
     return _convertToDayMealDomain(meal);
   }
@@ -99,7 +106,9 @@ class CarbLoadingDayMealRepository {
     final carbsConsumed = quantity * carbsPerServing;
     final now = DateTime.now();
 
-    await _database.into(_database.carbLoadingDayMealsTable).insert(
+    await _database
+        .into(_database.carbLoadingDayMealsTable)
+        .insert(
           CarbLoadingDayMealsTableCompanion.insert(
             carbLoadingDayId: carbLoadingDayId,
             mealTypeId: mealTypeId,
@@ -114,14 +123,17 @@ class CarbLoadingDayMealRepository {
         );
 
     // Get the inserted meal by querying the latest one for this day/meal type
-    final meal = await (_database.select(_database.carbLoadingDayMealsTable)
-          ..where((tbl) =>
-              tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-              tbl.mealTypeId.equals(mealTypeId) &
-              tbl.carbLoadingUserFoodId.equals(carbLoadingUserFoodId))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
-          ..limit(1))
-        .getSingle();
+    final meal =
+        await (_database.select(_database.carbLoadingDayMealsTable)
+              ..where(
+                (tbl) =>
+                    tbl.carbLoadingDayId.equals(carbLoadingDayId) &
+                    tbl.mealTypeId.equals(mealTypeId) &
+                    tbl.carbLoadingUserFoodId.equals(carbLoadingUserFoodId),
+              )
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+              ..limit(1))
+            .getSingle();
 
     return _convertToDayMealDomain(meal);
   }
@@ -134,9 +146,9 @@ class CarbLoadingDayMealRepository {
   }) async {
     final carbsConsumed = newQuantity * carbsPerServing;
 
-    await (_database.update(_database.carbLoadingDayMealsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .write(
+    await (_database.update(
+      _database.carbLoadingDayMealsTable,
+    )..where((tbl) => tbl.id.equals(id))).write(
       CarbLoadingDayMealsTableCompanion(
         quantity: Value(newQuantity),
         carbsConsumed: Value(carbsConsumed),
@@ -144,18 +156,18 @@ class CarbLoadingDayMealRepository {
       ),
     );
 
-    final meal = await (_database.select(_database.carbLoadingDayMealsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .getSingle();
+    final meal = await (_database.select(
+      _database.carbLoadingDayMealsTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingle();
 
     return _convertToDayMealDomain(meal);
   }
 
   /// Remove a meal
   Future<void> removeMeal(String id) async {
-    await (_database.delete(_database.carbLoadingDayMealsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .go();
+    await (_database.delete(
+      _database.carbLoadingDayMealsTable,
+    )..where((tbl) => tbl.id.equals(id))).go();
   }
 
   /// Remove all meals for a specific day and meal type
@@ -163,10 +175,11 @@ class CarbLoadingDayMealRepository {
     String carbLoadingDayId,
     int mealTypeId,
   ) async {
-    await (_database.delete(_database.carbLoadingDayMealsTable)
-          ..where((tbl) =>
+    await (_database.delete(_database.carbLoadingDayMealsTable)..where(
+          (tbl) =>
               tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-              tbl.mealTypeId.equals(mealTypeId)))
+              tbl.mealTypeId.equals(mealTypeId),
+        ))
         .go();
   }
 
@@ -176,7 +189,9 @@ class CarbLoadingDayMealRepository {
     required String carbLoadingUserFoodId,
     required double newCarbsPerServing,
   }) async {
-    print('🔍 Looking for meals with carbLoadingUserFoodId: $carbLoadingUserFoodId');
+    print(
+      '🔍 Looking for meals with carbLoadingUserFoodId: $carbLoadingUserFoodId',
+    );
 
     // Get all meals that use this user food
     final mealsQuery = _database.select(_database.carbLoadingDayMealsTable)
@@ -186,7 +201,9 @@ class CarbLoadingDayMealRepository {
 
     print('🔍 Found ${meals.length} meals to update');
     for (final meal in meals) {
-      print('  - Meal ${meal.id}: ${meal.foodDisplayName} (qty: ${meal.quantity}, old carbs: ${meal.carbsConsumed})');
+      print(
+        '  - Meal ${meal.id}: ${meal.foodDisplayName} (qty: ${meal.quantity}, old carbs: ${meal.carbsConsumed})',
+      );
     }
 
     // Update each meal's carbsConsumed
@@ -196,9 +213,9 @@ class CarbLoadingDayMealRepository {
 
       print('  → Updating meal ${meal.id}: $oldCarbs g → $newCarbsConsumed g');
 
-      await (_database.update(_database.carbLoadingDayMealsTable)
-            ..where((tbl) => tbl.id.equals(meal.id)))
-          .write(
+      await (_database.update(
+        _database.carbLoadingDayMealsTable,
+      )..where((tbl) => tbl.id.equals(meal.id))).write(
         CarbLoadingDayMealsTableCompanion(
           carbsConsumed: Value(newCarbsConsumed),
           updatedAt: Value(DateTime.now()),
@@ -225,9 +242,11 @@ class CarbLoadingDayMealRepository {
     int mealTypeId,
   ) async {
     final query = _database.select(_database.carbLoadingDayMealsTable)
-      ..where((tbl) =>
-          tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-          tbl.mealTypeId.equals(mealTypeId));
+      ..where(
+        (tbl) =>
+            tbl.carbLoadingDayId.equals(carbLoadingDayId) &
+            tbl.mealTypeId.equals(mealTypeId),
+      );
 
     final meals = await query.get();
     return meals.fold<double>(0.0, (sum, meal) => sum + meal.carbsConsumed);
@@ -251,9 +270,9 @@ class CarbLoadingDayMealRepository {
 
     final carbsConsumed = quantity * carbsPerServing;
 
-    await (_database.update(_database.carbLoadingDayMealsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .write(
+    await (_database.update(
+      _database.carbLoadingDayMealsTable,
+    )..where((tbl) => tbl.id.equals(id))).write(
       CarbLoadingDayMealsTableCompanion(
         carbLoadingFoodId: Value(carbLoadingFoodId),
         carbLoadingUserFoodId: Value(carbLoadingUserFoodId),
@@ -264,9 +283,9 @@ class CarbLoadingDayMealRepository {
       ),
     );
 
-    final meal = await (_database.select(_database.carbLoadingDayMealsTable)
-          ..where((tbl) => tbl.id.equals(id)))
-        .getSingle();
+    final meal = await (_database.select(
+      _database.carbLoadingDayMealsTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingle();
 
     return _convertToDayMealDomain(meal);
   }
@@ -274,14 +293,17 @@ class CarbLoadingDayMealRepository {
   /// Bulk add meals to a day
   Future<List<domain.CarbLoadingDayMeal>> bulkAddMeals({
     required String carbLoadingDayId,
-    required List<({
-      int mealTypeId,
-      String? carbLoadingFoodId,
-      String? carbLoadingUserFoodId,
-      String foodDisplayName,
-      int quantity,
-      double carbsPerServing,
-    })> meals,
+    required List<
+      ({
+        int mealTypeId,
+        String? carbLoadingFoodId,
+        String? carbLoadingUserFoodId,
+        String foodDisplayName,
+        int quantity,
+        double carbsPerServing,
+      })
+    >
+    meals,
   }) async {
     return await _database.transaction(() async {
       final createdMeals = <domain.CarbLoadingDayMeal>[];
@@ -290,7 +312,9 @@ class CarbLoadingDayMealRepository {
       for (final meal in meals) {
         final carbsConsumed = meal.quantity * meal.carbsPerServing;
 
-        await _database.into(_database.carbLoadingDayMealsTable).insert(
+        await _database
+            .into(_database.carbLoadingDayMealsTable)
+            .insert(
               CarbLoadingDayMealsTableCompanion.insert(
                 carbLoadingDayId: carbLoadingDayId,
                 mealTypeId: meal.mealTypeId,
@@ -305,13 +329,16 @@ class CarbLoadingDayMealRepository {
             );
 
         // Get the inserted meal
-        final createdMeal = await (_database.select(_database.carbLoadingDayMealsTable)
-              ..where((tbl) =>
-                  tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-                  tbl.mealTypeId.equals(meal.mealTypeId))
-              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
-              ..limit(1))
-            .getSingle();
+        final createdMeal =
+            await (_database.select(_database.carbLoadingDayMealsTable)
+                  ..where(
+                    (tbl) =>
+                        tbl.carbLoadingDayId.equals(carbLoadingDayId) &
+                        tbl.mealTypeId.equals(meal.mealTypeId),
+                  )
+                  ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+                  ..limit(1))
+                .getSingle();
 
         createdMeals.add(_convertToDayMealDomain(createdMeal));
       }
@@ -321,9 +348,7 @@ class CarbLoadingDayMealRepository {
   }
 
   /// Convert Drift entity to domain model
-  domain.CarbLoadingDayMeal _convertToDayMealDomain(
-    CarbLoadingDayMeal meal,
-  ) {
+  domain.CarbLoadingDayMeal _convertToDayMealDomain(CarbLoadingDayMeal meal) {
     return domain.CarbLoadingDayMeal.fromDatabase(
       id: meal.id,
       carbLoadingDayId: meal.carbLoadingDayId,
@@ -339,14 +364,17 @@ class CarbLoadingDayMealRepository {
   }
 
   /// Watch meals for a specific day (for real-time updates)
-  Stream<List<domain.CarbLoadingDayMeal>> watchMealsByDay(String carbLoadingDayId) {
+  Stream<List<domain.CarbLoadingDayMeal>> watchMealsByDay(
+    String carbLoadingDayId,
+  ) {
     return (_database.select(_database.carbLoadingDayMealsTable)
           ..where((tbl) => tbl.carbLoadingDayId.equals(carbLoadingDayId))
-          ..orderBy([
-            (tbl) => OrderingTerm(expression: tbl.mealTypeId),
-          ]))
+          ..orderBy([(tbl) => OrderingTerm(expression: tbl.mealTypeId)]))
         .watch()
-        .map((meals) => meals.map((meal) => _convertToDayMealDomain(meal)).toList());
+        .map(
+          (meals) =>
+              meals.map((meal) => _convertToDayMealDomain(meal)).toList(),
+        );
   }
 
   /// Watch meals for a specific meal type on a day (for real-time updates)
@@ -354,12 +382,16 @@ class CarbLoadingDayMealRepository {
     String carbLoadingDayId,
     int mealTypeId,
   ) {
-    return (_database.select(_database.carbLoadingDayMealsTable)
-          ..where((tbl) =>
+    return (_database.select(_database.carbLoadingDayMealsTable)..where(
+          (tbl) =>
               tbl.carbLoadingDayId.equals(carbLoadingDayId) &
-              tbl.mealTypeId.equals(mealTypeId)))
+              tbl.mealTypeId.equals(mealTypeId),
+        ))
         .watch()
-        .map((meals) => meals.map((meal) => _convertToDayMealDomain(meal)).toList());
+        .map(
+          (meals) =>
+              meals.map((meal) => _convertToDayMealDomain(meal)).toList(),
+        );
   }
 }
 

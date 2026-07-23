@@ -53,7 +53,9 @@ void main() {
         expect(find.text('PRECISE'), findsOneWidget);
       });
 
-      testWidgets('defaults to estimate mode with preset chips', (tester) async {
+      testWidgets('defaults to estimate mode with preset chips', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildWidget(value: testDistribution));
 
         // Should show preset chips, not sliders
@@ -61,7 +63,9 @@ void main() {
         expect(find.byType(IntensityZoneSlider), findsNothing);
       });
 
-      testWidgets('tapping a preset chip sets the distribution', (tester) async {
+      testWidgets('tapping a preset chip sets the distribution', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildWidget(value: testDistribution));
 
         // Tap "Easy Run" chip
@@ -70,7 +74,10 @@ void main() {
 
         expect(changedValues, isNotEmpty);
         final adjusted = changedValues.last;
-        expect(adjusted, WorkoutPresetData.presetDistributions[WorkoutPreset.easy]);
+        expect(
+          adjusted,
+          WorkoutPresetData.presetDistributions[WorkoutPreset.easy],
+        );
       });
 
       testWidgets('shows sport-specific chip labels', (tester) async {
@@ -90,7 +97,9 @@ void main() {
     });
 
     group('precise mode', () {
-      testWidgets('renders all three zone sliders in precise mode', (tester) async {
+      testWidgets('renders all three zone sliders in precise mode', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildWidget(value: testDistribution));
         await switchToPreciseMode(tester);
 
@@ -126,27 +135,32 @@ void main() {
       expect(bar.allOutPct, 10);
     });
 
-    testWidgets('adjusting conversational slider triggers proportional adjustment',
-        (tester) async {
-      await tester.pumpWidget(buildWidget(value: testDistribution));
-      await switchToPreciseMode(tester);
+    testWidgets(
+      'adjusting conversational slider triggers proportional adjustment',
+      (tester) async {
+        await tester.pumpWidget(buildWidget(value: testDistribution));
+        await switchToPreciseMode(tester);
 
-      final slider = find.byType(Slider).first;
-      expect(slider, findsOneWidget);
+        final slider = find.byType(Slider).first;
+        expect(slider, findsOneWidget);
 
-      await tester.drag(slider, const Offset(50, 0));
-      await tester.pumpAndSettle();
+        await tester.drag(slider, const Offset(50, 0));
+        await tester.pumpAndSettle();
 
-      expect(changedValues, isNotEmpty);
-      final adjusted = changedValues.last;
+        expect(changedValues, isNotEmpty);
+        final adjusted = changedValues.last;
 
-      expect(adjusted.conversationalPct, isNot(70));
-      expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
-          100);
-    });
+        expect(adjusted.conversationalPct, isNot(70));
+        expect(
+          adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+          100,
+        );
+      },
+    );
 
-    testWidgets('adjusting tempo slider triggers proportional adjustment',
-        (tester) async {
+    testWidgets('adjusting tempo slider triggers proportional adjustment', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
       await switchToPreciseMode(tester);
 
@@ -159,12 +173,15 @@ void main() {
       expect(changedValues, isNotEmpty);
       final adjusted = changedValues.last;
 
-      expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
-          100);
+      expect(
+        adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+        100,
+      );
     });
 
-    testWidgets('adjusting allOut slider triggers proportional adjustment',
-        (tester) async {
+    testWidgets('adjusting allOut slider triggers proportional adjustment', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
       await switchToPreciseMode(tester);
 
@@ -177,8 +194,10 @@ void main() {
       expect(changedValues, isNotEmpty);
       final adjusted = changedValues.last;
 
-      expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
-          100);
+      expect(
+        adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+        100,
+      );
     });
 
     testWidgets('composite bar updates when value changes', (tester) async {
@@ -215,10 +234,7 @@ void main() {
 
     testWidgets('disabled state prevents callbacks', (tester) async {
       await tester.pumpWidget(
-        buildWidget(
-          value: testDistribution,
-          enabled: false,
-        ),
+        buildWidget(value: testDistribution, enabled: false),
       );
 
       // In estimate mode, try tapping a chip
@@ -230,10 +246,7 @@ void main() {
 
     testWidgets('disabled state dims colors in precise mode', (tester) async {
       await tester.pumpWidget(
-        buildWidget(
-          value: testDistribution,
-          enabled: false,
-        ),
+        buildWidget(value: testDistribution, enabled: false),
       );
 
       // Switch to precise mode - toggle should still be tappable when disabled
@@ -245,8 +258,9 @@ void main() {
       expect(chips.enabled, false);
     });
 
-    testWidgets('text field editing in zone slider triggers adjustment',
-        (tester) async {
+    testWidgets('text field editing in zone slider triggers adjustment', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
       await switchToPreciseMode(tester);
 
@@ -260,11 +274,15 @@ void main() {
       expect(changedValues, isNotEmpty);
       final adjusted = changedValues.last;
 
-      expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
-          100);
+      expect(
+        adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+        100,
+      );
     });
 
-    testWidgets('multiple rapid adjustments maintain sum = 100', (tester) async {
+    testWidgets('multiple rapid adjustments maintain sum = 100', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
       await switchToPreciseMode(tester);
 
@@ -289,8 +307,9 @@ void main() {
       }
     });
 
-    testWidgets('proportional adjustment algorithm works correctly',
-        (tester) async {
+    testWidgets('proportional adjustment algorithm works correctly', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
 
       final distribution = testDistribution;
@@ -301,23 +320,27 @@ void main() {
       expect(adjusted.allOutPct, 7);
     });
 
-    testWidgets('edge case: adjusting to 0% redistributes to other zones',
-        (tester) async {
+    testWidgets('edge case: adjusting to 0% redistributes to other zones', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
 
-      final adjusted =
-          testDistribution.adjustProportionally(conversationalPct: 0);
+      final adjusted = testDistribution.adjustProportionally(
+        conversationalPct: 0,
+      );
 
       expect(adjusted.conversationalPct, 0);
       expect(adjusted.tempoPct + adjusted.allOutPct, 100);
     });
 
-    testWidgets('edge case: adjusting to 100% sets others to 0',
-        (tester) async {
+    testWidgets('edge case: adjusting to 100% sets others to 0', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget(value: testDistribution));
 
-      final adjusted =
-          testDistribution.adjustProportionally(conversationalPct: 100);
+      final adjusted = testDistribution.adjustProportionally(
+        conversationalPct: 100,
+      );
 
       expect(adjusted.conversationalPct, 100);
       expect(adjusted.tempoPct, 0);
@@ -325,8 +348,11 @@ void main() {
     });
 
     group('mode switching', () {
-      testWidgets('switching from estimate to precise preserves values', (tester) async {
-        final easyDist = WorkoutPresetData.presetDistributions[WorkoutPreset.easy]!;
+      testWidgets('switching from estimate to precise preserves values', (
+        tester,
+      ) async {
+        final easyDist =
+            WorkoutPresetData.presetDistributions[WorkoutPreset.easy]!;
         await tester.pumpWidget(buildWidget(value: easyDist));
 
         // Switch to precise
@@ -341,8 +367,11 @@ void main() {
         expect(bar.allOutPct, 2);
       });
 
-      testWidgets('switching back to estimate highlights matching preset', (tester) async {
-        final easyDist = WorkoutPresetData.presetDistributions[WorkoutPreset.easy]!;
+      testWidgets('switching back to estimate highlights matching preset', (
+        tester,
+      ) async {
+        final easyDist =
+            WorkoutPresetData.presetDistributions[WorkoutPreset.easy]!;
         await tester.pumpWidget(buildWidget(value: easyDist));
 
         // Switch to precise then back to estimate

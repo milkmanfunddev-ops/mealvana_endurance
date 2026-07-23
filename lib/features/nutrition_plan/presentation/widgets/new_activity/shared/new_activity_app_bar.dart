@@ -26,12 +26,14 @@ class NewActivityAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       centerTitle: true,
       title: Text(
+        key: const ValueKey('activity_create.title'),
         'Create New Activity Plan',
         style: AppTextStyles.sectionTitle.copyWith(
           color: isDark ? AppColors.cream : AppColors.blackberry,
         ),
       ),
       leading: CustomAppBarBackButton(
+        key: const ValueKey('activity_create.back_button'),
         iconColor: isDark ? AppColors.cream : AppColors.blackberry,
         backgroundColor: (isDark ? AppColors.cream : AppColors.blackberry)
             .withValues(alpha: 0.1),

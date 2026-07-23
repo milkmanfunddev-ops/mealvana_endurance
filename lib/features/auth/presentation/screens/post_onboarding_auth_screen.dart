@@ -437,7 +437,11 @@ class _PostOnboardingAuthScreenState
 
     return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context, isLoading: asyncState.isLoading),
+      appBar: _buildAppBar(
+        context,
+        isLoading: asyncState.isLoading,
+        isLogin: isLogin,
+      ),
       contentWidth: AdaptiveContentWidth.narrow,
       body: Stack(
         children: [
@@ -451,6 +455,9 @@ class _PostOnboardingAuthScreenState
 
                 // Title
                 Text(
+                  key: ValueKey(
+                    isLogin ? 'login_options.title' : 'post_onboarding.title',
+                  ),
                   contentService.getValue(
                     isLogin ? 'auth.login.title' : 'auth.post_onboarding.title',
                     defaultValue: isLogin ? 'Log In' : 'Create Your Account',
@@ -466,6 +473,11 @@ class _PostOnboardingAuthScreenState
 
                 // Subtitle
                 Text(
+                  key: ValueKey(
+                    isLogin
+                        ? 'login_options.subtitle'
+                        : 'post_onboarding.subtitle',
+                  ),
                   contentService.getValue(
                     isLogin
                         ? 'auth.login.subtitle'
@@ -508,12 +520,17 @@ class _PostOnboardingAuthScreenState
                 // Apple Sign-In button (iOS/Android only)
                 if (!kIsWeb)
                   _buildOAuthButton(
+                    key: ValueKey(
+                      isLogin
+                          ? 'login_options.apple_button'
+                          : 'post_onboarding.apple_button',
+                    ),
                     context: context,
                     label: contentService.getValue(
                       'auth.post_onboarding.apple_button',
                       defaultValue: 'Continue with Apple',
                     ),
-                    icon: FontAwesomeIcons.apple,
+                    icon: FontAwesomeIcons.apple.data,
                     onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
                     isLoading: asyncState.isLoading,
                   ),
@@ -522,12 +539,17 @@ class _PostOnboardingAuthScreenState
 
                 // Google Sign-In button
                 _buildOAuthButton(
+                  key: ValueKey(
+                    isLogin
+                        ? 'login_options.google_button'
+                        : 'post_onboarding.google_button',
+                  ),
                   context: context,
                   label: contentService.getValue(
                     'auth.post_onboarding.google_button',
                     defaultValue: 'Continue with Google',
                   ),
-                  icon: FontAwesomeIcons.google,
+                  icon: FontAwesomeIcons.google.data,
                   onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
                   isLoading: asyncState.isLoading,
                 ),
@@ -536,6 +558,11 @@ class _PostOnboardingAuthScreenState
 
                 // Email button
                 KylePrimaryButton(
+                  key: ValueKey(
+                    isLogin
+                        ? 'login_options.email_button'
+                        : 'post_onboarding.email_button',
+                  ),
                   text: contentService.getValue(
                     isLogin
                         ? 'auth.login.email_button'
@@ -554,6 +581,7 @@ class _PostOnboardingAuthScreenState
                 // Skip button (only for signup mode)
                 if (!isLogin) ...[
                   TextButton(
+                    key: const ValueKey('create_account.skip_button'),
                     onPressed: asyncState.isLoading ? null : _handleSkip,
                     child: Text(
                       contentService.getValue(
@@ -625,6 +653,7 @@ class _PostOnboardingAuthScreenState
   PreferredSizeWidget _buildAppBar(
     BuildContext context, {
     bool isLoading = false,
+    bool isLogin = false,
   }) {
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -637,7 +666,21 @@ class _PostOnboardingAuthScreenState
           Opacity(
             opacity: isLoading ? 0.5 : 1.0,
             child: CustomAppBarBackButton(
-              onPressed: () => context.pop(),
+              key: ValueKey(
+                isLogin
+                    ? 'login_options.back_button'
+                    : 'create_account.back_button',
+              ),
+              onPressed: () {
+                // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be reached
+                // via context.go() (post-onboarding flow) as well as push(),
+                // so guard against GoError "There is nothing to pop".
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/main');
+                }
+              },
               enabled: !isLoading,
               margin: EdgeInsets.zero,
               iconColor: Theme.of(context).colorScheme.onSurface,
@@ -694,20 +737,23 @@ class _PostOnboardingAuthScreenState
           // Benefits title
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.circleCheck,
                 size: AppIconSizes.md,
                 color: AppColors.electrolyte,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                contentService.getValue(
-                  'auth.post_onboarding.benefits_card_title',
-                  defaultValue: 'Account Benefits',
-                ),
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 18,
+              Flexible(
+                child: Text(
+                  contentService.getValue(
+                    'auth.post_onboarding.benefits_card_title',
+                    defaultValue: 'Account Benefits',
+                  ),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -722,7 +768,7 @@ class _PostOnboardingAuthScreenState
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.check,
                     size: AppIconSizes.sm,
                     color: AppColors.electrolyte,
@@ -746,6 +792,7 @@ class _PostOnboardingAuthScreenState
   }
 
   Widget _buildOAuthButton({
+    Key? key,
     required BuildContext context,
     required String label,
     required IconData icon,
@@ -758,6 +805,7 @@ class _PostOnboardingAuthScreenState
       width: double.infinity,
       height: AppSizes.buttonHeightPrimary,
       child: ElevatedButton(
+        key: key,
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: isDark
@@ -790,10 +838,14 @@ class _PostOnboardingAuthScreenState
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    label,
-                    style: AppTextStyles.buttonPrimary.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.buttonPrimary.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],

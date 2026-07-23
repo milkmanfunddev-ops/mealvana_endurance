@@ -1,0 +1,5 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. Note the PascalCase, which is unique to this endpoint; every other VDOT O2 payload is camelCase. A robust client accepts either casing. Uploads require the 'write:upload-gps' scope.",
+  "Success": true,
+  "Message": "Workout uploaded."
+}

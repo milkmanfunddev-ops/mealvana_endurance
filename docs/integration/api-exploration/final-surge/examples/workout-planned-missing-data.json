@@ -1,0 +1,12 @@
+{
+  "WorkoutKey": "missing-12350",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=test&id=missing-12350",
+  "WorkoutDate": "2025-12-31T00:00:00",
+  "WorkoutTitle": "Run TBD",
+  "WorkoutDescription": null,
+  "WorkoutTypeName": "Run",
+  "WorkoutIcon": 1,
+  "PlannedTime": null,
+  "PlannedDistance": null,
+  "PlannedDistanceType": null
+}

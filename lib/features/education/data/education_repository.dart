@@ -19,8 +19,8 @@ class EducationRepository {
   const EducationRepository({
     required SupabaseClient supabase,
     required AppLogger logger,
-  })  : _supabase = supabase,
-        _logger = logger;
+  }) : _supabase = supabase,
+       _logger = logger;
 
   final SupabaseClient _supabase;
   final AppLogger _logger;
@@ -35,7 +35,9 @@ class EducationRepository {
           .order('sort_order', ascending: true);
 
       return (response as List<dynamic>)
-          .map((json) => EducationContent.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => EducationContent.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       _logger.warning('Failed to fetch education content: $e');

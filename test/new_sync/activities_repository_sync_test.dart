@@ -10,10 +10,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
+
 class MockAppDatabase extends Mock implements AppDatabase {}
+
 class MockAppLogger extends Mock implements AppLogger {}
+
 class MockSentryReporter extends Mock implements SentryReporter {}
-class MockActivityDeduplicationService extends Mock implements ActivityDeduplicationService {}
+
+class MockActivityDeduplicationService extends Mock
+    implements ActivityDeduplicationService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,23 +41,48 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Setup default logger behavior to avoid null errors
-    when(() => mockLogger.info(any(), context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.debug(any(), context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.error(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    )).thenReturn(null);
-    when(() => mockLogger.warning(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      data: any(named: 'data'),
-    )).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        statusCode: any(named: 'statusCode'),
+        timeout: any(named: 'timeout'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
 
     repository = ActivitiesRepository(
       supabase: mockSupabase,
@@ -95,10 +125,7 @@ void main() {
       expect(lastSync, isNotNull);
 
       // Should be within 1 second of the original time (accounting for serialization)
-      expect(
-        lastSync!.difference(now).abs().inSeconds,
-        lessThan(2),
-      );
+      expect(lastSync!.difference(now).abs().inSeconds, lessThan(2));
     });
 
     test('isStale returns false after recent sync', () async {
@@ -122,29 +149,36 @@ void main() {
   });
 
   group('syncFromRemote', () {
-    test('logs error and returns failure when Supabase throws exception', () async {
-      // Arrange
-      const userId = 'test-user-id';
+    test(
+      'logs error and returns failure when Supabase throws exception',
+      () async {
+        // Arrange
+        const userId = 'test-user-id';
 
-      // Mock Supabase to throw an exception
-      when(() => mockSupabase.from(any())).thenThrow(Exception('Network error'));
+        // Mock Supabase to throw an exception
+        when(
+          () => mockSupabase.from(any()),
+        ).thenThrow(Exception('Network error'));
 
-      // Act
-      final result = await repository.syncFromRemote(userId);
+        // Act
+        final result = await repository.syncFromRemote(userId);
 
-      // Assert
-      expect(result.success, isFalse);
-      expect(result.error, contains('Network error'));
+        // Assert
+        expect(result.success, isFalse);
+        expect(result.error, contains('Network error'));
 
-      // Verify error was logged
-      verify(() => mockLogger.error(
-        any(),
-        context: 'ACTIVITIES_REPOSITORY',
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      )).called(1);
-    });
+        // Verify error was logged
+        verify(
+          () => mockLogger.error(
+            any(),
+            context: 'ACTIVITIES_REPOSITORY',
+            error: any(named: 'error'),
+            stackTrace: any(named: 'stackTrace'),
+            data: any(named: 'data'),
+          ),
+        ).called(1);
+      },
+    );
   });
 
   group('uploadDirtyRecords', () {

@@ -23,12 +23,14 @@ class RecordingSentryReporter implements SentryReporter {
     String? context,
     Map<String, String>? tags,
   }) async {
-    criticalErrors.add(ErrorReport(
-      error: error,
-      stackTrace: stackTrace,
-      context: context,
-      tags: tags,
-    ));
+    criticalErrors.add(
+      ErrorReport(
+        error: error,
+        stackTrace: stackTrace,
+        context: context,
+        tags: tags,
+      ),
+    );
   }
 
   @override
@@ -39,13 +41,15 @@ class RecordingSentryReporter implements SentryReporter {
     int? statusCode,
     StackTrace? stackTrace,
   }) async {
-    edgeFunctionErrors.add(EdgeFunctionError(
-      functionName: functionName,
-      error: error,
-      responseTime: responseTime,
-      statusCode: statusCode,
-      stackTrace: stackTrace,
-    ));
+    edgeFunctionErrors.add(
+      EdgeFunctionError(
+        functionName: functionName,
+        error: error,
+        responseTime: responseTime,
+        statusCode: statusCode,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -55,12 +59,14 @@ class RecordingSentryReporter implements SentryReporter {
     String? table,
     StackTrace? stackTrace,
   }) async {
-    databaseErrors.add(DatabaseError(
-      error: error,
-      operation: operation,
-      table: table,
-      stackTrace: stackTrace,
-    ));
+    databaseErrors.add(
+      DatabaseError(
+        error: error,
+        operation: operation,
+        table: table,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -72,14 +78,16 @@ class RecordingSentryReporter implements SentryReporter {
     Duration? timeout,
     StackTrace? stackTrace,
   }) async {
-    networkErrors.add(NetworkError(
-      error: error,
-      url: url,
-      method: method,
-      statusCode: statusCode,
-      timeout: timeout,
-      stackTrace: stackTrace,
-    ));
+    networkErrors.add(
+      NetworkError(
+        error: error,
+        url: url,
+        method: method,
+        statusCode: statusCode,
+        timeout: timeout,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -89,12 +97,14 @@ class RecordingSentryReporter implements SentryReporter {
     bool? onboardingCompleted,
     String? gutTrainingLevel,
   }) async {
-    userContextCalls.add(UserContextCall(
-      deviceId: deviceId,
-      appVersion: appVersion,
-      onboardingCompleted: onboardingCompleted,
-      gutTrainingLevel: gutTrainingLevel,
-    ));
+    userContextCalls.add(
+      UserContextCall(
+        deviceId: deviceId,
+        appVersion: appVersion,
+        onboardingCompleted: onboardingCompleted,
+        gutTrainingLevel: gutTrainingLevel,
+      ),
+    );
   }
 
   @override
@@ -109,12 +119,14 @@ class RecordingSentryReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, dynamic>? data,
   }) {
-    breadcrumbs.add(Breadcrumb(
-      message: message,
-      category: category,
-      level: level,
-      data: data,
-    ));
+    breadcrumbs.add(
+      Breadcrumb(
+        message: message,
+        category: category,
+        level: level,
+        data: data,
+      ),
+    );
   }
 
   @override
@@ -123,11 +135,7 @@ class RecordingSentryReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
   }) async {
-    messages.add(MessageCapture(
-      message: message,
-      level: level,
-      tags: tags,
-    ));
+    messages.add(MessageCapture(message: message, level: level, tags: tags));
   }
 
   @override
@@ -240,11 +248,7 @@ class UserContextCall {
 }
 
 class MessageCapture {
-  const MessageCapture({
-    required this.message,
-    required this.level,
-    this.tags,
-  });
+  const MessageCapture({required this.message, required this.level, this.tags});
 
   final String message;
   final SentryLevel level;

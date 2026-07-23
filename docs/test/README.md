@@ -1,5 +1,26 @@
 # Testing Handbook (Repo Truth)
 
+## 📌 Latest status ledger (2026-07, READ FIRST)
+- **`coverage-status-2026-07.md`** — post-release/1.22.0 coverage push: layer-by-layer
+  state, the Patrol flavor model (flavor-aware launcher + creds, prod CI workflow),
+  the auto-discovery edge-fn runner, and the list of REAL bugs the suites currently
+  expose (do not "fix" those tests). Supersedes the status claims in the 2026-06 docs
+  below where they conflict.
+
+## 📋 Current Strategy & Plan (2026-06, START HERE)
+The authoritative, up-to-date testing docs (supersede the older `roadmap.md`,
+`testing-strategy-2026.md`, `current_progress.md`, and the `phase_*` files):
+- **`testing-strategy-comprehensive-2026.md`** — the canonical strategy (test pyramid, test types to add, Flutter web, Firebase Test Lab, CI, AI tooling, CodeRabbit + Sentry).
+- **`testing-build-plan-2026.md`** — the sequenced execution plan + **Progress Log (what's done / live-E2E findings / what remains)**. ← *latest status lives here.*
+- **`coverage-gaps-2026.md`** — grounded map of what is NOT yet tested (edge fns / Flutter services / widget / Patrol) + sequence to "test everything". ← *start here for new coverage.*
+- **`test-recommendations-2026.md`** — prioritized next tests (P0s) per layer.
+- **`BUGS_FOUND.md`** — bugs the suite has surfaced (all 17 from the 2026-06-25 sweep fixed).
+- **`NEED_FROM_LEE.md`** — items that need a human (Sentry token, dev publishable key, etc.).
+- **`testing-roadmap-2026.md`** — the Patrol + edge-fn coverage map.
+- **`edge-function-test-plan-2026.md`** — the nutrition-engine unit-test plan (failure modes, real-catalog reality-check).
+
+Current edge-fn suite: `supabase/functions/run-algorithm-tests.sh` (§1 = 15 deterministic groups; §2 = live E2E vs dev). Patrol flows: `integration_test/flows/`.
+
 ## Current State (Repo Truth)
 - Flutter test suites live under `test/` with heavy coverage in:
   - `test/new_sync/`
@@ -9,7 +30,7 @@
 - Migration and schema tests exist at `test/migrations/` and `test/generated_migrations/`.
 - Edge-function TypeScript tests currently live under `supabase/functions/**` (Deno test files).
 - CI test workflow is `.github/workflows/test.yml`.
-- Current local Dart test files in repo: 60 (`*_test.dart`).
+- Current test files: **139 Dart** (`*_test.dart`, incl. `test/smoke_tests` 8 + `test/seeded_tests` 5 + `integration_test/flows`) and **53 Deno** (`*.test.ts`).
 
 ## Source of Truth
 - Flutter tests: `test/`

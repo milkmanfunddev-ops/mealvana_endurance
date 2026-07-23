@@ -63,6 +63,7 @@ class _IntensityDistributionWidgetState
           children: [
             // Section label
             Text(
+              key: const ValueKey('activity_create.intensity_heading'),
               'INTENSITY',
               style: AppTextStyles.sectionTitle.copyWith(
                 fontSize: 14,
@@ -77,6 +78,7 @@ class _IntensityDistributionWidgetState
 
             // Estimate / Precise toggle
             _EstimatePreciseToggle(
+              key: const ValueKey('activity_create.intensity_mode_toggle'),
               mode: _mode,
               enabled: widget.enabled,
               onChanged: (mode) => setState(() => _mode = mode),
@@ -172,6 +174,7 @@ class _IntensityDistributionWidgetState
 /// as the app's segmented controls (15px radius, 2px border, 200ms animation).
 class _EstimatePreciseToggle extends StatelessWidget {
   const _EstimatePreciseToggle({
+    super.key,
     required this.mode,
     required this.enabled,
     required this.onChanged,

@@ -47,9 +47,9 @@ class CoachMessagesTable extends Table {
 
   @override
   List<String> get customConstraints => [
-        // Sender must be either the coach or the athlete in this conversation
-        "CHECK (sender_user_id IN (coach_user_id, athlete_user_id))",
-        // Message text must not be empty
-        "CHECK (length(trim(message_text)) > 0)",
-      ];
+    // Sender must be either the coach or the athlete in this conversation
+    "CHECK (sender_user_id IN (coach_user_id, athlete_user_id))",
+    // Message text must not be empty
+    "CHECK (length(trim(message_text)) > 0)",
+  ];
 }

@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
-
 /// Food icon for Kyle's design system
 /// 36px circular icon with Electrolyte background
 class KyleFoodIcon extends ConsumerWidget {
@@ -30,44 +29,37 @@ class KyleFoodIcon extends ConsumerWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        iconData,
-        size: size * 0.5,
-        color: icColor,
-      ),
+      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+      child: Icon(iconData, size: size * 0.5, color: icColor),
     );
   }
 
   IconData _getIconForFoodType(KyleFoodType type) {
     switch (type) {
       case KyleFoodType.energyBar:
-        return FontAwesomeIcons.bars;
+        return FontAwesomeIcons.bars.data;
       case KyleFoodType.gel:
-        return FontAwesomeIcons.jar;
+        return FontAwesomeIcons.jar.data;
       case KyleFoodType.drink:
-        return FontAwesomeIcons.bottleWater;
+        return FontAwesomeIcons.bottleWater.data;
       case KyleFoodType.fruit:
-        return FontAwesomeIcons.appleWhole;
+        return FontAwesomeIcons.appleWhole.data;
       case KyleFoodType.sandwich:
-        return FontAwesomeIcons.burger;
+        return FontAwesomeIcons.burger.data;
       case KyleFoodType.pasta:
-        return FontAwesomeIcons.bowlFood;
-      case KyleFoodType.rice: 
-        return FontAwesomeIcons.bowlRice;
+        return FontAwesomeIcons.bowlFood.data;
+      case KyleFoodType.rice:
+        return FontAwesomeIcons.bowlRice.data;
       case KyleFoodType.protein:
-        return FontAwesomeIcons.drumstickBite;
+        return FontAwesomeIcons.drumstickBite.data;
       case KyleFoodType.vegetable:
-        return FontAwesomeIcons.carrot;
+        return FontAwesomeIcons.carrot.data;
       case KyleFoodType.snack:
-        return FontAwesomeIcons.cookie;
+        return FontAwesomeIcons.cookie.data;
       case KyleFoodType.supplement:
-        return FontAwesomeIcons.pills;
+        return FontAwesomeIcons.pills.data;
       case KyleFoodType.other:
-        return FontAwesomeIcons.utensils;
+        return FontAwesomeIcons.utensils.data;
     }
   }
 }
@@ -137,7 +129,7 @@ class KyleFoodPreferenceIcon extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = _getColorsForPreference(preferenceLevel);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -147,10 +139,7 @@ class KyleFoodPreferenceIcon extends ConsumerWidget {
         decoration: BoxDecoration(
           color: colors.backgroundColor,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: colors.borderColor,
-            width: 2,
-          ),
+          border: Border.all(color: colors.borderColor, width: 2),
         ),
         child: Icon(
           _getIconForFoodType(foodType),
@@ -199,29 +188,29 @@ class KyleFoodPreferenceIcon extends ConsumerWidget {
   IconData _getIconForFoodType(KyleFoodType type) {
     switch (type) {
       case KyleFoodType.energyBar:
-        return FontAwesomeIcons.bars;
+        return FontAwesomeIcons.bars.data;
       case KyleFoodType.gel:
-        return FontAwesomeIcons.jar;
+        return FontAwesomeIcons.jar.data;
       case KyleFoodType.drink:
-        return FontAwesomeIcons.bottleWater;
+        return FontAwesomeIcons.bottleWater.data;
       case KyleFoodType.fruit:
-        return FontAwesomeIcons.appleWhole;
+        return FontAwesomeIcons.appleWhole.data;
       case KyleFoodType.sandwich:
-        return FontAwesomeIcons.burger;
+        return FontAwesomeIcons.burger.data;
       case KyleFoodType.pasta:
-        return FontAwesomeIcons.bowlFood;
+        return FontAwesomeIcons.bowlFood.data;
       case KyleFoodType.rice:
-        return FontAwesomeIcons.bowlRice;
+        return FontAwesomeIcons.bowlRice.data;
       case KyleFoodType.protein:
-        return FontAwesomeIcons.drumstickBite;
+        return FontAwesomeIcons.drumstickBite.data;
       case KyleFoodType.vegetable:
-        return FontAwesomeIcons.carrot;
+        return FontAwesomeIcons.carrot.data;
       case KyleFoodType.snack:
-        return FontAwesomeIcons.cookie;
+        return FontAwesomeIcons.cookie.data;
       case KyleFoodType.supplement:
-        return FontAwesomeIcons.pills;
+        return FontAwesomeIcons.pills.data;
       case KyleFoodType.other:
-        return FontAwesomeIcons.utensils;
+        return FontAwesomeIcons.utensils.data;
     }
   }
 }
@@ -244,11 +233,11 @@ enum KyleFoodType {
 
 /// Preference levels enum
 enum KylePreferenceLevel {
-  avoid,    // 0 - Dragonfruit
-  dislike,  // 1 - Orange
-  neutral,  // 2 - Electrolyte light
-  like,     // 3 - Electrolyte medium
-  love,     // 4 - Electrolyte full
+  avoid, // 0 - Dragonfruit
+  dislike, // 1 - Orange
+  neutral, // 2 - Electrolyte light
+  like, // 3 - Electrolyte medium
+  love, // 4 - Electrolyte full
 }
 
 /// Maps a product_type_id (from database) and/or food name to a [KyleFoodType].
@@ -296,7 +285,8 @@ KyleFoodType mapFoodType({String? productTypeId, String name = ''}) {
       lowerName.contains('pill') ||
       lowerName.contains('vitamin')) {
     return KyleFoodType.supplement;
-  } else if (lowerName.contains('waffle') || lowerName.contains('stroopwafel')) {
+  } else if (lowerName.contains('waffle') ||
+      lowerName.contains('stroopwafel')) {
     return KyleFoodType.snack;
   } else if (lowerName.contains('chew')) {
     return KyleFoodType.gel;

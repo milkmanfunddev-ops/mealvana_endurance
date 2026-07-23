@@ -35,14 +35,19 @@ class IntegrationModel {
   final String providerAthleteId;
   final String? providerAthleteName;
   final String? providerAthleteEmail;
+
   /// Athlete weight in kilograms (from Training Peaks profile)
   final double? providerAthleteWeightKg;
+
   /// Birth month in "YYYY-MM" format (from Training Peaks profile)
   final String? providerAthleteBirthMonth;
+
   /// Gender: 'm' for male, 'f' for female (from Training Peaks profile)
   final String? providerAthleteGender;
+
   /// Body fat percentage (from Garmin body composition API)
   final double? providerAthleteBodyFatPct;
+
   /// Serialized athlete zone data (HR, Speed, Power zones from Training Peaks)
   final String? athleteZonesJson;
   final bool isActive;
@@ -81,18 +86,22 @@ class IntegrationModel {
         return 'Strava';
       case 'garmin':
         return 'Garmin Connect';
+      case 'vdot':
+        return 'V.O2';
       default:
         return provider;
     }
   }
 
   /// Weight in pounds (converted from kg)
-  double? get providerAthleteWeightLbs =>
-      providerAthleteWeightKg != null ? providerAthleteWeightKg! * 2.20462 : null;
+  double? get providerAthleteWeightLbs => providerAthleteWeightKg != null
+      ? providerAthleteWeightKg! * 2.20462
+      : null;
 
   /// Birthday as DateTime (year only - defaults to Jan 1 since only birth year is used for calculations)
   DateTime? get providerAthleteBirthday {
-    if (providerAthleteBirthMonth == null || providerAthleteBirthMonth!.isEmpty) {
+    if (providerAthleteBirthMonth == null ||
+        providerAthleteBirthMonth!.isEmpty) {
       return null;
     }
     try {
@@ -140,10 +149,14 @@ class IntegrationModel {
       providerAthleteId: providerAthleteId ?? this.providerAthleteId,
       providerAthleteName: providerAthleteName ?? this.providerAthleteName,
       providerAthleteEmail: providerAthleteEmail ?? this.providerAthleteEmail,
-      providerAthleteWeightKg: providerAthleteWeightKg ?? this.providerAthleteWeightKg,
-      providerAthleteBirthMonth: providerAthleteBirthMonth ?? this.providerAthleteBirthMonth,
-      providerAthleteGender: providerAthleteGender ?? this.providerAthleteGender,
-      providerAthleteBodyFatPct: providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
+      providerAthleteWeightKg:
+          providerAthleteWeightKg ?? this.providerAthleteWeightKg,
+      providerAthleteBirthMonth:
+          providerAthleteBirthMonth ?? this.providerAthleteBirthMonth,
+      providerAthleteGender:
+          providerAthleteGender ?? this.providerAthleteGender,
+      providerAthleteBodyFatPct:
+          providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
       athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
@@ -165,7 +178,8 @@ enum IntegrationProvider {
   finalSurge('final_surge', 'Final Surge'),
   trainingPeaks('training_peaks', 'TrainingPeaks'),
   strava('strava', 'Strava'),
-  garmin('garmin', 'Garmin Connect');
+  garmin('garmin', 'Garmin Connect'),
+  vdot('vdot', 'V.O2');
 
   const IntegrationProvider(this.value, this.displayName);
 
@@ -174,8 +188,8 @@ enum IntegrationProvider {
 
   static IntegrationProvider? fromValue(String value) {
     return IntegrationProvider.values.cast<IntegrationProvider?>().firstWhere(
-          (p) => p?.value == value,
-          orElse: () => null,
-        );
+      (p) => p?.value == value,
+      orElse: () => null,
+    );
   }
 }

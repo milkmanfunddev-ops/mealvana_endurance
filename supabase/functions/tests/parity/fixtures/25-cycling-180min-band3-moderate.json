@@ -1,0 +1,44 @@
+{
+  "description": "Cycling ~180 min (band [60,90] g/h carbs) — moderate gut, 3-hour ride. Tests template solver with Bar + Gel + Sports Drink + Water (150-240 bracket).",
+  "solver": "template",
+  "athlete": {
+    "weight_kg": 85,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 180,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 110,
+      "sodium_mg": 1500,
+      "water_ml": 1800
+    },
+    "post_run": {
+      "carbs_g": 85,
+      "protein_g": 36,
+      "sodium_mg": 1100,
+      "water_ml": 1300
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null,
+  "templateFixture": {
+    "template_number": 8,
+    "name": "Bar + Gel + Sports Drink + Water",
+    "activity_types": ["cycling"],
+    "duration_brackets": ["150-240 min"],
+    "gut_training_levels": ["moderate", "high"],
+    "component_food_names": ["energy_bar", "energy_gel", "water", "sports_drink"],
+    "component_carb_ratios": { "energy_bar": 0.35, "energy_gel": 0.35, "sports_drink": 0.3 },
+    "primary_to_secondary_ratio": "1:1"
+  }
+}

@@ -28,7 +28,8 @@ class GlobalSipSectionWidget extends StatelessWidget {
   final Color sectionColor;
 
   /// Called to adjust a sip item's quantity by delta.
-  final void Function(String foodId, TimeSlot slot, double delta) onAdjustSlotQuantity;
+  final void Function(String foodId, TimeSlot slot, double delta)
+  onAdjustSlotQuantity;
 
   /// Called to unassign a food from the global sip section.
   final void Function(String foodId, TimeSlot slot) onUnassignFood;
@@ -48,9 +49,7 @@ class GlobalSipSectionWidget extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: AppRadius.smRadius,
         color: sectionColor.withValues(alpha: 0.04),
-        border: Border.all(
-          color: sectionColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: sectionColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,11 +62,7 @@ class GlobalSipSectionWidget extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.water_drop,
-                  size: 16,
-                  color: sectionColor,
-                ),
+                Icon(Icons.water_drop, size: 16, color: sectionColor),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   'SIP THROUGHOUT',
@@ -135,7 +130,8 @@ class GlobalSipSectionWidget extends StatelessWidget {
                     child: GestureDetector(
                       onTap: onSelectFood != null
                           ? () => onSelectFood!(
-                              isSelected ? null : assignment.foodItemId)
+                              isSelected ? null : assignment.foodItemId,
+                            )
                           : null,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
@@ -152,8 +148,9 @@ class GlobalSipSectionWidget extends StatelessWidget {
                           children: [
                             if (isSelected)
                               Padding(
-                                padding:
-                                    const EdgeInsets.only(right: AppSpacing.xs),
+                                padding: const EdgeInsets.only(
+                                  right: AppSpacing.xs,
+                                ),
                                 child: Icon(
                                   Icons.touch_app,
                                   size: 14,
@@ -200,10 +197,9 @@ class GlobalSipSectionWidget extends StatelessWidget {
             child: Text(
               'Drag or tap to place in a specific hour',
               style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 fontSize: 10,
                 fontStyle: FontStyle.italic,
               ),

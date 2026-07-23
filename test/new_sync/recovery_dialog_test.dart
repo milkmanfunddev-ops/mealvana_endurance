@@ -31,11 +31,7 @@ void main() {
     Widget wrapWithScreenUtil(Widget child) {
       return ScreenUtilInit(
         designSize: const Size(390, 844),
-        builder: (context, _) => MaterialApp(
-          home: Scaffold(
-            body: child,
-          ),
-        ),
+        builder: (context, _) => MaterialApp(home: Scaffold(body: child)),
       );
     }
 
@@ -70,8 +66,9 @@ void main() {
       expect(find.text('Discard'), findsOneWidget);
     });
 
-    testWidgets('returns upload choice when upload button is tapped',
-        (tester) async {
+    testWidgets('returns upload choice when upload button is tapped', (
+      tester,
+    ) async {
       RecoveryChoice? result;
 
       await tester.pumpWidget(
@@ -109,8 +106,9 @@ void main() {
       expect(result, RecoveryChoice.upload);
     });
 
-    testWidgets('returns discard choice when discard button is tapped',
-        (tester) async {
+    testWidgets('returns discard choice when discard button is tapped', (
+      tester,
+    ) async {
       RecoveryChoice? result;
 
       await tester.pumpWidget(
@@ -148,8 +146,9 @@ void main() {
       expect(result, RecoveryChoice.discard);
     });
 
-    testWidgets('formats repository names correctly for single repository',
-        (tester) async {
+    testWidgets('formats repository names correctly for single repository', (
+      tester,
+    ) async {
       final singleRepoBackup = DirtyRecordBackup(
         backupCreatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         appVersion: '1.12.1',
@@ -172,8 +171,9 @@ void main() {
       expect(find.textContaining('1 (Activities)'), findsOneWidget);
     });
 
-    testWidgets('formats repository names correctly for multiple repositories',
-        (tester) async {
+    testWidgets('formats repository names correctly for multiple repositories', (
+      tester,
+    ) async {
       final multiRepoBackup = DirtyRecordBackup(
         backupCreatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         appVersion: '1.12.1',
@@ -243,7 +243,9 @@ void main() {
       );
 
       await tester.pumpWidget(
-        wrapWithScreenUtil(DirtyRecordRecoveryDialog(backup: singleRecordBackup)),
+        wrapWithScreenUtil(
+          DirtyRecordRecoveryDialog(backup: singleRecordBackup),
+        ),
       );
       await tester.pumpAndSettle();
 

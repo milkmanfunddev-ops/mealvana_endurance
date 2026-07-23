@@ -3,18 +3,17 @@ import '../../../../theme/kyle_design/app_colors.dart';
 
 /// Progress bar for the onboarding flow showing completion across segments
 ///
-/// Displays 4 segments representing:
+/// Displays 3 segments representing:
 /// 1. Profile (user info)
 /// 2. Sports + Details (sport selection and sport-specific preferences)
 /// 3. Diet + Allergies (dietary preference and allergen selection)
-/// 4. Food Preferences (food likes/dislikes)
 ///
 /// Matches Figma design specification with 8px height and spacing.
 class OnboardingProgressBar extends StatelessWidget {
   const OnboardingProgressBar({
     super.key,
     required this.currentSegment,
-    this.totalSegments = 4,
+    this.totalSegments = 3,
     this.height = 8.0,
     this.spacing = 8.0,
   });
@@ -22,7 +21,7 @@ class OnboardingProgressBar extends StatelessWidget {
   /// Current active segment (1-indexed)
   final int currentSegment;
 
-  /// Total number of segments (default: 4)
+  /// Total number of segments (default: 3)
   final int totalSegments;
 
   /// Height of each segment bar
@@ -98,8 +97,7 @@ class _ProgressSegment extends StatelessWidget {
 enum OnboardingSegment {
   profile(1),
   sportsDetails(2),
-  dietAllergies(3),
-  foodPreferences(4);
+  dietAllergies(3);
 
   const OnboardingSegment(this.value);
   final int value;

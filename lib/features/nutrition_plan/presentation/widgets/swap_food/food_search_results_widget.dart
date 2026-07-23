@@ -50,7 +50,8 @@ class FoodSearchResultsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasNoResults = searchResults.isEmpty &&
+    final hasNoResults =
+        searchResults.isEmpty &&
         userFoods.isEmpty &&
         catalogResults.isEmpty &&
         !isSearchingCatalog;
@@ -62,10 +63,12 @@ class FoodSearchResultsWidget extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.magnifyingGlass,
                 size: AppIconSizes.xl,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -92,16 +95,20 @@ class FoodSearchResultsWidget extends StatelessWidget {
             onToggle: onMyFoodsSectionToggle,
           ),
           if (isMyFoodsExpanded)
-            ...userFoods.map((food) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: FoodCardWidget(
-                food: food,
-                isUserFood: isUserFood(food),
-                onTap: () => onFoodTap(food),
-                onLongPress: onFoodLongPress != null ? () => onFoodLongPress!(food) : null,
-                onEdit: onFoodEdit != null ? () => onFoodEdit!(food) : null,
+            ...userFoods.map(
+              (food) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: FoodCardWidget(
+                  food: food,
+                  isUserFood: isUserFood(food),
+                  onTap: () => onFoodTap(food),
+                  onLongPress: onFoodLongPress != null
+                      ? () => onFoodLongPress!(food)
+                      : null,
+                  onEdit: onFoodEdit != null ? () => onFoodEdit!(food) : null,
+                ),
               ),
-            )),
+            ),
           const SizedBox(height: AppSpacing.md),
         ],
         // Search Results header
@@ -116,16 +123,20 @@ class FoodSearchResultsWidget extends StatelessWidget {
             ),
           ),
         // Search result food cards
-        ...searchResults.map((food) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: FoodCardWidget(
-            food: food,
-            isUserFood: isUserFood(food),
-            onTap: () => onFoodTap(food),
-            onLongPress: onFoodLongPress != null ? () => onFoodLongPress!(food) : null,
-            onEdit: onFoodEdit != null ? () => onFoodEdit!(food) : null,
+        ...searchResults.map(
+          (food) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: FoodCardWidget(
+              food: food,
+              isUserFood: isUserFood(food),
+              onTap: () => onFoodTap(food),
+              onLongPress: onFoodLongPress != null
+                  ? () => onFoodLongPress!(food)
+                  : null,
+              onEdit: onFoodEdit != null ? () => onFoodEdit!(food) : null,
+            ),
           ),
-        )),
+        ),
 
         // Product Catalog section
         CatalogSectionWidget(
@@ -137,10 +148,11 @@ class FoodSearchResultsWidget extends StatelessWidget {
         // Search OpenFoodFacts button at bottom of results
         if (showOpenFoodFactsButton && onSearchOpenFoodFacts != null)
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.md),
-            child: SearchOpenFoodFactsButton(
-              onPressed: onSearchOpenFoodFacts!,
+            padding: const EdgeInsets.only(
+              top: AppSpacing.sm,
+              bottom: AppSpacing.md,
             ),
+            child: SearchOpenFoodFactsButton(onPressed: onSearchOpenFoodFacts!),
           ),
       ],
     );
@@ -168,7 +180,7 @@ class _MyFoodsSectionHeader extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: Row(
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.solidHeart,
               size: AppIconSizes.sm,
               color: AppColors.dragonfruit,
@@ -201,8 +213,8 @@ class _MyFoodsSectionHeader extends StatelessWidget {
             const Spacer(),
             Icon(
               isExpanded
-                  ? FontAwesomeIcons.chevronUp
-                  : FontAwesomeIcons.chevronDown,
+                  ? FontAwesomeIcons.chevronUp.data
+                  : FontAwesomeIcons.chevronDown.data,
               size: AppIconSizes.sm,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -229,7 +241,8 @@ class OpenFoodFactsResultsWidget extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       itemCount: results.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final result = results[index];
         return _OpenFoodFactsCard(
@@ -246,10 +259,7 @@ class _OpenFoodFactsCard extends StatelessWidget {
   final dynamic result;
   final VoidCallback onTap;
 
-  const _OpenFoodFactsCard({
-    required this.result,
-    required this.onTap,
-  });
+  const _OpenFoodFactsCard({required this.result, required this.onTap});
 
   String _capitalize(String text) =>
       text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
@@ -265,30 +275,27 @@ class _OpenFoodFactsCard extends StatelessWidget {
           child: Row(
             children: [
               // Product image
-              Container(
+              SizedBox(
                 width: AppIconSizes.foodIcon,
                 height: AppIconSizes.foodIcon,
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.smRadius,
-                ),
                 child: result.imageUrl?.isNotEmpty == true
                     ? ClipRRect(
                         borderRadius: AppRadius.smRadius,
                         child: Image.network(
                           result.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            FontAwesomeIcons.utensils,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            size: AppIconSizes.controlIcon,
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              KyleFoodIcon(
+                                foodType: mapFoodType(
+                                  name: result.displayName ?? '',
+                                ),
+                              ),
                         ),
                       )
-                    : Icon(
-                        FontAwesomeIcons.utensils,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        size: AppIconSizes.controlIcon,
+                    // Branded fallback (matches the food icon on Activity
+                    // Detail) instead of a generic cutlery glyph.
+                    : KyleFoodIcon(
+                        foodType: mapFoodType(name: result.displayName ?? ''),
                       ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -318,7 +325,7 @@ class _OpenFoodFactsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.chevronRight,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: AppIconSizes.chevron,

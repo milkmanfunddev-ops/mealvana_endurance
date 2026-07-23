@@ -19,6 +19,7 @@ import '../../application/brick_macro_service.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../application/draft_activity_cleanup_service.dart';
 import '../../domain/nutrition_plan.dart';
+import '../../../formula_kit/domain/pin_decision.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -243,6 +244,10 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// without reading `state` (which is forbidden inside Riverpod lifecycle callbacks).
   String? _lastKnownActivityId;
 
+  /// Tracks the last-resolved userId so onDispose can pass it to cleanup
+  /// without touching `ref` after the provider is disposed.
+  String? _lastKnownUserId;
+
   String _resolveActivityOwnerId({
     required String currentUserId,
     String? forUserId,
@@ -292,9 +297,12 @@ class MacroTargetsController extends _$MacroTargetsController {
     });
 
     // ✨ DRAFT ACTIVITY CLEANUP (Andrea Bizzotto FOA Pattern)
-    // Register cleanup when provider is disposed to handle abandoned drafts
+    // Register cleanup when provider is disposed to handle abandoned drafts.
+    // Capture the service NOW (while ref is still alive) so the closure
+    // never touches ref after disposal.
+    final cleanupService = ref.read(draftActivityCleanupServiceProvider);
     ref.onDispose(() {
-      _scheduleCleanupIfNeeded();
+      _scheduleCleanupIfNeeded(cleanupService);
     });
 
     // Load content synchronously from in-memory cache
@@ -629,7 +637,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             paceTargetMinutesPerMile: paceMinutes,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
+            isFasted: isFasted,
             notes: 'Draft activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -654,6 +664,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
+                isFasted: isFasted,
                 notes: 'Draft activity - nutrition plan being generated',
               ),
             );
@@ -788,7 +799,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           distanceMiles: distanceMiles,
           paceMinutesPerMile:
               60.0 / speedMph, // Convert speed to pace equivalent
-          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+          gutTrainingLevel: user?.gutTraining.name ?? 'moderate',
         );
 
         // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
@@ -848,7 +859,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityTarget: intensityTarget,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
+            isFasted: isFasted,
             notes: 'Draft cycling activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -877,6 +890,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 cyclingSessionGoal: sessionGoal,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                isFasted: isFasted,
                 notes:
                     'Draft cycling activity - nutrition plan being generated',
               ),
@@ -1063,7 +1077,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           distanceMiles: distanceMiles,
           paceMinutesPerMile: approximatePaceMinPerMile,
-          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+          gutTrainingLevel: user?.gutTraining.name ?? 'moderate',
         );
 
         // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
@@ -1122,6 +1136,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
             notes: 'Draft swimming activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -1286,7 +1301,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId: activityId,
           distanceMiles: totalDistanceMiles,
           paceMinutesPerMile: 0.0, // Not applicable for brick
-          gutTrainingLevel: user?.gutTraining.name ?? 'medium',
+          gutTrainingLevel: user?.gutTraining.name ?? 'moderate',
         );
 
         // 🆕 CREATE DRAFT ACTIVITY IMMEDIATELY if activityId doesn't exist
@@ -1359,7 +1374,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
             timeBeforeMinutes: preActivityMinutes,
+            isFasted: isFasted,
             notes: 'Draft brick activity - nutrition plan being generated',
+            status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
         } else {
@@ -1395,6 +1412,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 brickMetadata: brickMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
+                isFasted: isFasted,
                 notes: 'Draft brick activity - nutrition plan being generated',
               ),
             );
@@ -1496,7 +1514,11 @@ class MacroTargetsController extends _$MacroTargetsController {
     final currentStateSnapshot = state.value;
     final activityId = currentStateSnapshot?.activityId;
     final cachedTargets = activityId != null && activityId.isNotEmpty
-        ? await repository.getCachedMacroTargetsForActivity(activityId)
+        ? await repository.getCachedMacroTargetsForActivity(
+            activityId,
+            expectedActivityType:
+                currentStateSnapshot?.macroTargets?.activityType,
+          )
         : await repository.getCachedMacroTargets();
 
     if (cachedTargets == null) return;
@@ -1567,7 +1589,10 @@ class MacroTargetsController extends _$MacroTargetsController {
     final repository = ref.read(macroRepositoryProvider);
     final activityId = state.value?.activityId;
     final cachedTargets = activityId != null && activityId.isNotEmpty
-        ? await repository.getCachedMacroTargetsForActivity(activityId)
+        ? await repository.getCachedMacroTargetsForActivity(
+            activityId,
+            expectedActivityType: state.value?.macroTargets?.activityType,
+          )
         : await repository.getCachedMacroTargets();
 
     if (cachedTargets == null) return;
@@ -1760,6 +1785,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     if (activityId != null && activityId.isNotEmpty) {
       macroTargets = await repository.getCachedMacroTargetsForActivity(
         activityId,
+        expectedActivityType: currentState?.macroTargets?.activityType,
       );
     }
     macroTargets ??= await repository.getCachedMacroTargets();
@@ -1815,6 +1841,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         final nutritionPlanService = ref.read(nutritionPlanServiceProvider);
         final currentStateValue = state.value;
         final userId = await ref.read(userIdProvider.future);
+        _lastKnownUserId = userId; // capture for onDispose cleanup
         final activityOwnerUserId = _resolveActivityOwnerId(
           currentUserId: userId,
           forUserId: currentStateValue?.forUserId,
@@ -1867,6 +1894,9 @@ class MacroTargetsController extends _$MacroTargetsController {
         final dislikedFoods = activityOwnerUserId.isNotEmpty
             ? await _authService.getDislikedFoods(activityOwnerUserId)
             : <String>[];
+        final willingToTryFoods = activityOwnerUserId.isNotEmpty
+            ? await _authService.getWillingToTryFoods(activityOwnerUserId)
+            : <String>[];
 
         // Try V2 template-based generation, falls back to V1 internally
         final nutritionPlan = await nutritionPlanService
@@ -1880,6 +1910,7 @@ class MacroTargetsController extends _$MacroTargetsController {
               allergies: allergies,
               likedFoods: likedFoods,
               dislikedFoods: dislikedFoods,
+              willingToTryFoods: willingToTryFoods,
               durationMinutes: resolvedDurationMinutes,
               gutTrainingLevel: userProfile?.gutTraining.name,
             );
@@ -1900,6 +1931,18 @@ class MacroTargetsController extends _$MacroTargetsController {
           },
         );
 
+        // Formula Kit PR 2 substep 7: fire one pin-outcome event per phase /
+        // sub-phase that carried a pin_decision. No-op when pins were not
+        // supplied to the algorithm (pin_decision absent on all sections).
+        if (currentStateValue?.activityId != null &&
+            currentStateValue!.activityId!.isNotEmpty) {
+          await _trackPinDecisions(
+            plan: nutritionPlan,
+            activityId: currentStateValue.activityId!,
+            deviceId: userProfile?.id ?? 'unknown',
+          );
+        }
+
         // activityId should ALWAYS exist now (created during macro generation as draft)
         String? finalActivityId = currentStateValue?.activityId;
 
@@ -1913,6 +1956,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Get the existing draft activity and update it
         try {
           final userId = await ref.read(userIdProvider.future);
+          _lastKnownUserId = userId; // capture for onDispose cleanup
           final activitiesService = ref.read(activitiesServiceProvider);
           final existingActivity = await activitiesService.getActivityById(
             activityOwnerUserId,
@@ -2064,6 +2108,110 @@ class MacroTargetsController extends _$MacroTargetsController {
     return createPlanResult.value?.activityId;
   }
 
+  /// Walks the generated plan and fires one `plan_used_pin` /
+  /// `plan_pin_fallthrough` analytics event per phase / sub-phase that
+  /// carried a [PinDecision]. Today only During sits at the section level;
+  /// Before pins live on each [BeforeSubPhase]. Formula Kit PR 2 substep 7.
+  Future<void> _trackPinDecisions({
+    required NutritionPlan plan,
+    required String activityId,
+    required String deviceId,
+  }) async {
+    for (final section in plan.sections) {
+      final phase = _phaseForSectionId(section.id);
+      final sectionDecision = section.pinDecision;
+      if (sectionDecision != null) {
+        await _emitPinEvent(
+          decision: sectionDecision,
+          activityId: activityId,
+          deviceId: deviceId,
+          phase: phase,
+          subPhase: null,
+        );
+      }
+
+      final subPhases = section.subPhases;
+      if (subPhases == null) continue;
+      for (final sub in subPhases) {
+        final subDecision = sub.pinDecision;
+        if (subDecision == null) continue;
+        await _emitPinEvent(
+          decision: subDecision,
+          activityId: activityId,
+          deviceId: deviceId,
+          phase: phase,
+          subPhase: sub.subPhaseType,
+        );
+      }
+    }
+  }
+
+  /// Normalizes plan section IDs (`before_run` / `during_run` / `after_run`)
+  /// to the analytics phase vocabulary (`before` / `during` / `after`) so
+  /// substep 7 events join cleanly with substep 8 events in Mixpanel.
+  /// Unknown IDs are passed through unchanged so future sections (e.g. brick
+  /// sub-sections) don't silently lose their phase tag.
+  @visibleForTesting
+  static String phaseForSectionId(String sectionId) =>
+      _phaseForSectionId(sectionId);
+
+  static String _phaseForSectionId(String sectionId) {
+    switch (sectionId) {
+      case 'before_run':
+        return 'before';
+      case 'during_run':
+        return 'during';
+      case 'after_run':
+        return 'after';
+      default:
+        return sectionId;
+    }
+  }
+
+  Future<void> _emitPinEvent({
+    required PinDecision decision,
+    required String activityId,
+    required String deviceId,
+    required String phase,
+    required String? subPhase,
+  }) async {
+    // Ephemeral decisions come from the server-side default-formula safety
+    // net, not a real user pin — they must NOT emit `plan_used_pin` (which
+    // implies a pin fired) or `plan_pin_fallthrough`. Skip silently so pin
+    // analytics stay byte-identical to pre-safety-net behavior. Formula-first
+    // flip, 2026-07-03.
+    if (decision.ephemeral) return;
+    if (decision.usedPin) {
+      final id = decision.pinnedTemplateId;
+      final name = decision.pinnedTemplateName;
+      // Defensive: edge fn guarantees id+name when used_pin=true, but a
+      // legacy persisted plan from before substep 9 may lack the name.
+      if (id == null || name == null) return;
+      await _analytics.trackPlanUsedPin(
+        deviceId: deviceId,
+        activityId: activityId,
+        templateId: id,
+        templateName: name,
+        phase: phase,
+        subPhase: subPhase,
+        pinSetSize: decision.pinSetSize,
+      );
+      return;
+    }
+    final reason = decision.fallthroughReason?.wireValue;
+    // No fall-through reason → pins weren't supplied for this phase. Skip
+    // silently rather than emitting a noise event.
+    if (reason == null) return;
+    await _analytics.trackPlanPinFallthrough(
+      deviceId: deviceId,
+      activityId: activityId,
+      phase: phase,
+      subPhase: subPhase,
+      reason: reason,
+      pinSetSize: decision.pinSetSize,
+    );
+  }
+
   Future<void> _verifyCoachRemotePlanVisibility({
     required String activityId,
     required String expectedOwnerUserId,
@@ -2138,28 +2286,25 @@ class MacroTargetsController extends _$MacroTargetsController {
     );
   }
 
-  /// Schedule cleanup of draft activity if provider is being disposed
-  /// This handles the case where user navigates away before finalizing the plan
+  /// Schedule cleanup of draft activity if provider is being disposed.
+  /// This handles the case where user navigates away before finalizing the plan.
   ///
-  /// NOTE: Uses [_lastKnownActivityId] instead of [state.value] because this
-  /// is called from ref.onDispose(), where accessing state is forbidden by Riverpod.
-  void _scheduleCleanupIfNeeded() async {
+  /// NOTE: Uses [_lastKnownActivityId] and [_lastKnownUserId] instead of
+  /// reading from state or ref, because this is called from ref.onDispose()
+  /// where both state access and ref.read() are forbidden by Riverpod.
+  /// The [cleanupService] is captured BEFORE disposal and passed in so the
+  /// closure contains zero ref access.
+  void _scheduleCleanupIfNeeded(DraftActivityCleanupService cleanupService) {
     final activityId = _lastKnownActivityId;
+    final userId = _lastKnownUserId;
 
-    // Get userId in a delayed Future (safe after disposal)
-    Future.delayed(const Duration(seconds: 2), () async {
-      try {
-        final userId = await ref.read(userIdProvider.future);
-        final cleanupService = ref.read(draftActivityCleanupServiceProvider);
+    // If no userId was ever resolved (user never got to macro generation),
+    // there is no draft to clean up.
+    if (activityId == null || activityId.isEmpty || userId == null) return;
 
-        await cleanupService.cleanupIfNeeded(
-          activityId: activityId ?? '',
-          userId: userId,
-        );
-      } catch (e) {
-        DebugLogger.error('Failed to schedule cleanup: $e');
-      }
-    });
+    // DraftActivityCleanupService.scheduleCleanup() owns the Future.delayed
+    // internally — no ref access here, safe after disposal.
+    cleanupService.scheduleCleanup(activityId: activityId, userId: userId);
   }
 
   /// Load user overrides for the edge function, applying sport-specific
@@ -2323,10 +2468,17 @@ class MacroTargetsController extends _$MacroTargetsController {
   }
 }
 
-/// Provider for DraftActivityCleanupService
-@riverpod
+/// Provider for DraftActivityCleanupService.
+///
+/// keepAlive so the service survives navigate-away (the [MacroTargetsController]
+/// schedules cleanup in its onDispose, and the timer must outlive that
+/// controller). Its own onDispose cancels any pending cleanup timers, which
+/// fires only at scope/app teardown — also keeping widget tests timer-clean.
+@Riverpod(keepAlive: true)
 DraftActivityCleanupService draftActivityCleanupService(Ref ref) {
-  return DraftActivityCleanupService(
+  final service = DraftActivityCleanupService(
     activitiesService: ref.read(activitiesServiceProvider),
   );
+  ref.onDispose(service.dispose);
+  return service;
 }

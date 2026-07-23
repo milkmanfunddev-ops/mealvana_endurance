@@ -15,6 +15,9 @@ migrate_working_dir/
 # Script data files (large exports, not for version control)
 scripts/data/
 
+# Patrol auto-generated bundle (regenerated on every `patrol test` run)
+patrol_test/
+
 # Environment variables (NEVER commit these!)
 .env
 .env.*
@@ -84,6 +87,10 @@ yarn-error.log*
 .npm
 .eslintcache
 
+# Supabase CLI scratch state (project-ref, version pins) — env-specific,
+# rewritten by `supabase link` etc. and should not be source-controlled.
+supabase/.temp/
+
 # Local testing and development
 test/local_edge_functions/node_modules/
 test/local_edge_functions/package-lock.json
@@ -107,3 +114,6 @@ tool/.training_peaks_token.json
 # Claude Code
 .claude/
 CLAUDE.md
+
+# Patrol regenerates this on every `patrol test` run (see its header: do not commit)
+integration_test/test_bundle.dart

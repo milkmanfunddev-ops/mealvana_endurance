@@ -1,0 +1,14 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-strength-001",
+      "activityType": "strength_training",
+      "activityName": "Leg Day",
+      "durationInSeconds": 1800,
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": 0
+    }
+  ]
+}

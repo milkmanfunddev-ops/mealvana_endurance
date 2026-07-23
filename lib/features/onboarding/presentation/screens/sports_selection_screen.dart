@@ -24,6 +24,7 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
     this.onContinue,
     this.onBack,
     this.onSportsChanged,
+    this.stepIndex,
   });
 
   /// Callback to advance to next page (optional for PageView mode)
@@ -31,6 +32,10 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null outside onboarding.
+  final int? stepIndex;
 
   /// Callback when sports selection changes (for PageView to rebuild pages)
   final void Function(Set<String>)? onSportsChanged;
@@ -57,7 +62,10 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
         .analytics
         .track(
           'screen_viewed',
-          properties: {'screen_name': 'Sports Selection Onboarding'},
+          properties: {
+            'screen_name': 'Sports Selection Onboarding',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
         );
   }
 
@@ -155,14 +163,16 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
               safeAreaBottom: false,
               padding: const EdgeInsets.all(20),
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Title
                     const Text(
+                      key: ValueKey('sport_selection.title'),
                       'Which sports do you train for?',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Sansita',
                         fontSize: 26,
@@ -177,6 +187,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
                     // Subtitle
                     const Text(
                       'We\'ll customize your nutrition plans for each sport.',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Apercu',
                         fontSize: 16,
@@ -191,6 +202,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
 
                     // Sport selection cards
                     FigmaCheckboxCard(
+                      key: const ValueKey('sport_selection.running_chip'),
                       label: 'Running',
                       isSelected: _selectedSports.contains('running'),
                       onTap: () => _toggleSport('running'),
@@ -199,6 +211,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
                     const SizedBox(height: 12),
 
                     FigmaCheckboxCard(
+                      key: const ValueKey('sport_selection.cycling_chip'),
                       label: 'Cycling',
                       isSelected: _selectedSports.contains('cycling'),
                       onTap: () => _toggleSport('cycling'),
@@ -207,6 +220,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
                     const SizedBox(height: 12),
 
                     FigmaCheckboxCard(
+                      key: const ValueKey('sport_selection.swimming_chip'),
                       label: 'Swimming',
                       isSelected: _selectedSports.contains('swimming'),
                       onTap: () => _toggleSport('swimming'),
@@ -222,6 +236,10 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
             onContinue: _continue,
             onBack: widget.onBack ?? () => context.pop(),
             canContinue: _selectedSports.isNotEmpty,
+            continueButtonKey: const ValueKey(
+              'sport_selection.continue_button',
+            ),
+            backButtonKey: const ValueKey('sport_selection.back_button'),
           ),
         ],
       ),

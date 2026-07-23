@@ -1,0 +1,15 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "activity-007",
+      "activityType": "running",
+      "durationInSeconds": 0,
+      "distanceInMeters": 0,
+      "averagePaceInMinutesPerKilometer": 0,
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": 0
+    }
+  ]
+}

@@ -125,6 +125,12 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
     }
   }
 
+  String _semanticLabel({required bool decrement}) {
+    final verb = decrement ? 'Decrease' : 'Increase';
+    final subject = widget.label ?? widget.unit ?? 'value';
+    return '$verb $subject';
+  }
+
   @override
   Widget build(BuildContext context) {
     final canIncrement =
@@ -152,9 +158,10 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: canDecrement ? _decrement : null,
               enabled: widget.enabled && canDecrement,
+              semanticLabel: _semanticLabel(decrement: true),
             ),
 
             const SizedBox(width: AppSpacing.xl),
@@ -201,9 +208,10 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
 
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: canIncrement ? _increment : null,
               enabled: widget.enabled && canIncrement,
+              semanticLabel: _semanticLabel(decrement: false),
             ),
           ],
         ),
@@ -218,11 +226,13 @@ class _ControlButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     required this.enabled,
+    required this.semanticLabel,
   });
 
   final IconData icon;
   final VoidCallback? onPressed;
   final bool enabled;
+  final String semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -233,28 +243,38 @@ class _ControlButton extends StatelessWidget {
     return SizedBox(
       width: AppSizes.controlSize,
       height: AppSizes.controlSize,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: enabled
-              ? Colors.orange
-              : Colors.orange.withOpacity(0.4),
-          disabledBackgroundColor: Colors.transparent,
-          disabledForegroundColor: Colors.orange.withOpacity(0.4),
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          side: BorderSide(
-            color: enabled ? Colors.orange : Colors.orange.withOpacity(0.4),
-            width: 2,
+      child: Tooltip(
+        message: semanticLabel,
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: enabled
+                ? Colors.orange
+                : Colors.orange.withOpacity(0.4),
+            disabledBackgroundColor: Colors.transparent,
+            disabledForegroundColor: Colors.orange.withOpacity(0.4),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            side: BorderSide(
+              color: enabled ? Colors.orange : Colors.orange.withOpacity(0.4),
+              width: 2,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.circularRadius,
+            ),
+            padding: EdgeInsets.zero,
           ),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.circularRadius),
-          padding: EdgeInsets.zero,
-        ),
-        child: Icon(
-          icon,
-          size: AppIconSizes.controlIcon,
-          color: enabled ? enabledIconColor : disabledIconColor,
+          child: Semantics(
+            label: semanticLabel,
+            button: true,
+            excludeSemantics: true,
+            child: Icon(
+              icon,
+              size: AppIconSizes.controlIcon,
+              color: enabled ? enabledIconColor : disabledIconColor,
+            ),
+          ),
         ),
       ),
     );
@@ -386,6 +406,12 @@ class _KylePlusMinusDecimalControlState
     }
   }
 
+  String _semanticLabel({required bool decrement}) {
+    final verb = decrement ? 'Decrease' : 'Increase';
+    final subject = widget.label ?? widget.unit ?? 'value';
+    return '$verb $subject';
+  }
+
   @override
   Widget build(BuildContext context) {
     final canIncrement =
@@ -413,9 +439,10 @@ class _KylePlusMinusDecimalControlState
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: canDecrement ? _decrement : null,
               enabled: widget.enabled && canDecrement,
+              semanticLabel: _semanticLabel(decrement: true),
             ),
 
             const SizedBox(width: AppSpacing.xl),
@@ -464,9 +491,10 @@ class _KylePlusMinusDecimalControlState
 
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: canIncrement ? _increment : null,
               enabled: widget.enabled && canIncrement,
+              semanticLabel: _semanticLabel(decrement: false),
             ),
           ],
         ),

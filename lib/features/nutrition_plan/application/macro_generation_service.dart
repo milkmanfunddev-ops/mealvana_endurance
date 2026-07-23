@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_target_overrides.dart';
 import '../domain/intensity_distribution.dart';
 import '../data/macro_repository.dart';
+import '../data/offline_macro_calculator.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../../shared/domain/activity_type.dart';
@@ -46,6 +50,9 @@ class MacroGenerationService {
     bool isFasted = false,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
+    // Optional treadmill/indoor-run flag. Default 'outdoor' preserves existing
+    // behavior for callers that don't yet surface the toggle.
+    String indoorOutdoor = 'outdoor',
   }) async {
     final requestData = await _buildRunningRequestData(
       distanceMiles: distanceMiles,
@@ -57,7 +64,11 @@ class MacroGenerationService {
       humidityPct: humidityPct,
       isFasted: isFasted,
       intensity: intensity,
+      indoorOutdoor: indoorOutdoor,
     );
+    // device_id is read by the edge function to look up active formula pins
+    // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+    requestData['device_id'] = deviceId;
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
@@ -121,6 +132,9 @@ class MacroGenerationService {
       isFasted: isFasted,
       intensity: intensity,
     );
+    // device_id is read by the edge function to look up active formula pins
+    // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+    requestData['device_id'] = deviceId;
     DebugLogger.info(
       '🚴 MACRO SERVICE: Request data built, calling edge function...',
     );
@@ -186,6 +200,9 @@ class MacroGenerationService {
       waterTempC: waterTempC,
       intensity: intensity,
     );
+    // device_id is read by the edge function to look up active formula pins
+    // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+    requestData['device_id'] = deviceId;
     DebugLogger.info(
       '🏊 MACRO SERVICE: Request data built, calling edge function...',
     );
@@ -236,6 +253,7 @@ class MacroGenerationService {
     double? humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    String indoorOutdoor = 'outdoor',
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
@@ -247,6 +265,20 @@ class MacroGenerationService {
     final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
     final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
     final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
+
+    // Sweat profile: read from UserProfile; map SweatSodiumCat → edge fn enum.
+    // 'medium' is accepted as an alias on the edge function side but we always
+    // send the canonical value ('low'|'average'|'high').
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+
+    // Known sweat-test overrides (null = use algorithmic estimate)
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
+
+    // Treadmill runs: callers pass indoorOutdoor='indoor'. The edge function
+    // applies the 1.30× sweat rate multiplier per spec when is_indoor=true.
+    final isIndoor = indoorOutdoor.toLowerCase() == 'indoor';
 
     return {
       'age': userMetrics['age'],
@@ -271,10 +303,15 @@ class MacroGenerationService {
       'time_before_run_min': timeBeforeRunMinutes,
       'gut_training': gutTraining.name,
       'carb_source': 'dual',
-      'sweat_sodium': 'medium',
-      'drink_sodium_mg_per_l': 500,
-      'optional_sweat_rate_lph': null,
-      'sweat_rate_category': sweatRateCat?.name ?? 'medium',
+      // Sweat profile (Phase 6: read from UserProfile instead of hardcoding)
+      'sweat_sodium': sweatSodiumValue,
+      'sweat_rate_category':
+          sweatRateCat?.name ?? userProfile?.sweatRate.name ?? 'medium',
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       'temp_c': temperatureC,
       'humidity_pct': humidityPct,
       ...preferencePayload,
@@ -306,6 +343,15 @@ class MacroGenerationService {
     final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
     final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
+    // Derive is_indoor from the indoorOutdoor form field.
+    final isIndoor = indoorOutdoor.toLowerCase() == 'indoor';
+
+    // Sweat profile: read from UserProfile.
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
+
     return {
       'activity_type': 'cycling',
       'age': userMetrics['age'],
@@ -329,6 +375,14 @@ class MacroGenerationService {
       // Legacy param
       'time_before_min': timeBeforeMinutes,
       'gut_training': userProfile?.gutTraining.name ?? 'moderate',
+      // Sweat profile (Phase 6: read from UserProfile instead of hardcoding)
+      'sweat_sodium': sweatSodiumValue,
+      'sweat_rate_category': userProfile?.sweatRate.name ?? 'medium',
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       if (elevationGainFt != null) 'elevation_gain_ft': elevationGainFt,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (sessionGoal != null) 'session_goal': sessionGoal,
@@ -359,6 +413,17 @@ class MacroGenerationService {
     final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
     final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+
+    // Open-water swims expose users to ambient air-temperature/humidity loads
+    // for warm-ups, transitions, and post-swim. Treat pool swims as indoor for
+    // sweat-rate purposes.
+    final isIndoor = poolOrOpenWater == 'pool';
+
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL = userProfile?.knownSodiumConcentrationMgPerLiter;
+
     return {
       'activity_type': 'swimming',
       'age': userMetrics['age'],
@@ -378,6 +443,14 @@ class MacroGenerationService {
         'zone_mid': zoneMid,
         'zone_high': zoneHigh,
       },
+      'gut_training': userProfile?.gutTraining.name ?? 'moderate',
+      'sweat_sodium': sweatSodiumValue,
+      'sweat_rate_category': userProfile?.sweatRate.name ?? 'medium',
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       // Legacy param
       'time_before_min': timeBeforeMinutes,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
@@ -416,6 +489,13 @@ class MacroGenerationService {
       payload['disliked_foods'] = dislikedFoods;
     }
 
+    final willingToTryFoods = await authService.getWillingToTryFoods(
+      userProfile.id,
+    );
+    if (willingToTryFoods.isNotEmpty) {
+      payload['willing_to_try_foods'] = willingToTryFoods;
+    }
+
     return payload;
   }
 
@@ -450,6 +530,12 @@ class MacroGenerationService {
       );
     }
 
+    // Opt in to the ephemeral default-formula safety net for the before phase
+    // (formula-first flip). This client keeps ephemeral pin decisions
+    // invisible in the pin banner + pin analytics, so it's safe to receive
+    // them; old clients omit this flag and get byte-identical telemetry.
+    requestData['emit_ephemeral_default_formula'] = true;
+
     DebugLogger.info(
       '🌐 EDGE FUNCTION: Calling generate-macros-v4 for ${expectedActivityType.name}...',
     );
@@ -457,57 +543,216 @@ class MacroGenerationService {
       '📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...',
     );
 
-    final response = await supabaseClient.functions.invoke(
-      'generate-macros-v4',
-      body: requestData,
-    );
-
-    DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
-
-    if (response.status >= 400) {
-      final data = response.data as Map<String, dynamic>?;
-      final errorMessage =
-          data?['message'] ?? 'Failed to generate macro targets';
-      DebugLogger.error(
-        '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
-      );
-      throw Exception(errorMessage);
-    }
-
-    final data = response.data as Map<String, dynamic>;
-    DebugLogger.info(
-      '📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}',
-    );
-
-    if (data['success'] != true) {
-      final errorMessage =
-          data['message'] ?? 'Failed to generate macro targets';
-      DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
-      throw Exception(errorMessage);
-    }
-
-    final macrosData = data['macros'] as Map<String, dynamic>;
-    final activityTypeString =
-        data['activity_type'] as String? ?? expectedActivityType.name;
-    DebugLogger.info(
-      '✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys',
-    );
-
+    Map<String, dynamic> macrosData;
     ActivityType activityType = expectedActivityType;
+    String calculationRule;
+
     try {
-      activityType = ActivityType.values.byName(activityTypeString);
-    } catch (e) {
-      DebugLogger.warning(
-        '⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType',
+      final response = await supabaseClient.functions.invoke(
+        'generate-macros-v4',
+        body: requestData,
       );
+
+      DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
+
+      if (response.status >= 400) {
+        final data = response.data as Map<String, dynamic>?;
+        final errorMessage =
+            data?['message'] ?? 'Failed to generate macro targets';
+        DebugLogger.error(
+          '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+        );
+        throw Exception(errorMessage);
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      DebugLogger.info(
+        '📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}',
+      );
+
+      if (data['success'] != true) {
+        final errorMessage =
+            data['message'] ?? 'Failed to generate macro targets';
+        DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
+        throw Exception(errorMessage);
+      }
+
+      macrosData = data['macros'] as Map<String, dynamic>;
+      final activityTypeString =
+          data['activity_type'] as String? ?? expectedActivityType.name;
+      DebugLogger.info(
+        '✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys',
+      );
+
+      try {
+        activityType = ActivityType.values.byName(activityTypeString);
+      } catch (e) {
+        DebugLogger.warning(
+          '⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType',
+        );
+      }
+
+      calculationRule =
+          macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function';
+    } on SocketException catch (e) {
+      DebugLogger.warning(
+        '📵 EDGE FUNCTION: Network unavailable (SocketException: $e) — using offline fallback',
+      );
+      macrosData = _computeOfflineMacros(requestData, expectedActivityType);
+      calculationRule = 'offline_fallback';
+    } on TimeoutException catch (e) {
+      DebugLogger.warning(
+        '⏱️ EDGE FUNCTION: Timeout ($e) — using offline fallback',
+      );
+      macrosData = _computeOfflineMacros(requestData, expectedActivityType);
+      calculationRule = 'offline_fallback';
+    } catch (e) {
+      // Re-check: if the error message suggests a host-lookup / network failure,
+      // fall back offline. Otherwise rethrow (HTTP 4xx / logic errors must propagate).
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('failed host lookup') ||
+          msg.contains('network is unreachable') ||
+          msg.contains('connection refused') ||
+          msg.contains('no address associated') ||
+          msg.contains('clientexception')) {
+        DebugLogger.warning(
+          '📵 EDGE FUNCTION: Network failure ($e) — using offline fallback',
+        );
+        macrosData = _computeOfflineMacros(requestData, expectedActivityType);
+        calculationRule = 'offline_fallback';
+      } else {
+        rethrow;
+      }
     }
 
     final macroTargets = _parseMacroTargets(macrosData, activityType);
     DebugLogger.info(
-      '✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal',
+      '✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal, rule: $calculationRule',
     );
 
+    if (calculationRule == 'offline_fallback') {
+      return MacroTargets(
+        id: macroTargets.id,
+        activityType: macroTargets.activityType,
+        preRun: macroTargets.preRun,
+        duringRun: macroTargets.duringRun,
+        postRun: macroTargets.postRun,
+        metrics: macroTargets.metrics,
+        calculationRule: 'offline_fallback',
+        timestamp: macroTargets.timestamp,
+        isUserModified: macroTargets.isUserModified,
+        modifiedFields: macroTargets.modifiedFields,
+        preRunSelections: null,
+        brickSegments: macroTargets.brickSegments,
+        brickPhaseTargets: macroTargets.brickPhaseTargets,
+      );
+    }
+
     return macroTargets;
+  }
+
+  /// Compute macro targets offline from the already-assembled [requestData].
+  ///
+  /// Dispatches to the correct [OfflineMacroCalculator] entry point based on
+  /// [activityType] and returns the raw macros map (same shape as the edge
+  /// function's `macros` object) so [_parseMacroTargets] can parse it unchanged.
+  Map<String, dynamic> _computeOfflineMacros(
+    Map<String, dynamic> requestData,
+    ActivityType activityType,
+  ) {
+    final weightKg = (requestData['weight'] as num?)?.toDouble() ?? 70.0;
+    final hoursBefore =
+        (requestData['hours_before'] as num?)?.toDouble() ?? 2.0;
+    final isFasted = requestData['is_fasted'] as bool? ?? false;
+    final gutTraining = requestData['gut_training'] as String? ?? 'moderate';
+    final sweatRateCategory =
+        requestData['sweat_rate_category'] as String? ?? 'medium';
+    final sweatSodiumCat = requestData['sweat_sodium'] as String? ?? 'average';
+    final tempC = (requestData['temp_c'] as num?)?.toDouble();
+    final humidityPct = (requestData['humidity_pct'] as num?)?.toDouble();
+    final isIndoor = requestData['is_indoor'] as bool? ?? false;
+    final knownSweatRateMlHr = (requestData['known_sweat_rate_ml_hr'] as num?)
+        ?.toDouble();
+    final knownSodiumConcMgL =
+        (requestData['known_sodium_concentration_mg_l'] as num?)?.toDouble();
+
+    switch (activityType) {
+      case ActivityType.running:
+        final distanceMiles =
+            (requestData['run_distance'] as num?)?.toDouble() ?? 0.0;
+        final paceMinPerMile =
+            (requestData['run_pace'] as num?)?.toDouble() ?? 10.0;
+        return OfflineMacroCalculator.calculateRunningMacros(
+          weightKg: weightKg,
+          distanceMiles: distanceMiles,
+          paceMinPerMile: paceMinPerMile,
+          hoursBefore: hoursBefore,
+          isFasted: isFasted,
+          gutTraining: gutTraining,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          tempC: tempC,
+          humidityPct: humidityPct,
+          isIndoor: isIndoor,
+          knownSweatRateMlPerHour: knownSweatRateMlHr,
+          knownSodiumConcMgPerL: knownSodiumConcMgL,
+        );
+
+      case ActivityType.cycling:
+        final distanceMiles =
+            (requestData['distance_miles'] as num?)?.toDouble() ?? 0.0;
+        final speedMph = (requestData['speed_mph'] as num?)?.toDouble() ?? 20.0;
+        final terrain = requestData['terrain'] as String? ?? 'flat';
+        return OfflineMacroCalculator.calculateCyclingMacros(
+          weightKg: weightKg,
+          distanceMiles: distanceMiles,
+          speedMph: speedMph,
+          terrain: terrain,
+          hoursBefore: hoursBefore,
+          isFasted: isFasted,
+          gutTraining: gutTraining,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          tempC: tempC,
+          humidityPct: humidityPct,
+          isIndoor: isIndoor,
+          knownSweatRateMlPerHour: knownSweatRateMlHr,
+          knownSodiumConcMgPerL: knownSodiumConcMgL,
+        );
+
+      case ActivityType.swimming:
+        final distanceMeters =
+            (requestData['distance_meters'] as num?)?.toInt() ?? 0;
+        final paceSecondsper100m =
+            (requestData['pace_per_100m_seconds'] as num?)?.toInt() ?? 120;
+        final poolOrOpenWater =
+            requestData['pool_or_open_water'] as String? ?? 'pool';
+        final waterTempC =
+            (requestData['water_temp_c'] as num?)?.toDouble() ?? 26.0;
+        return OfflineMacroCalculator.calculateSwimmingMacros(
+          weightKg: weightKg,
+          distanceMeters: distanceMeters,
+          paceSecondsper100m: paceSecondsper100m,
+          poolOrOpenWater: poolOrOpenWater,
+          hoursBefore: hoursBefore,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          waterTempC: waterTempC,
+          knownSweatRateMlPerHour: knownSweatRateMlHr,
+          knownSodiumConcMgPerL: knownSodiumConcMgL,
+        );
+
+      default:
+        // Brick/unknown — brick workouts have their own edge function path.
+        return OfflineMacroCalculator.calculateRunningMacros(
+          weightKg: weightKg,
+          distanceMiles: 0,
+          paceMinPerMile: 10,
+          hoursBefore: hoursBefore,
+          isFasted: isFasted,
+          gutTraining: gutTraining,
+        );
+    }
   }
 
   MacroTargets _parseMacroTargets(
@@ -537,6 +782,7 @@ class MacroGenerationService {
         sodiumHighMg: _toDoubleOrNull(macrosData['pre_run_sodium_high_mg']),
         fluidsLowMl: _toDoubleOrNull(macrosData['pre_run_water_low_ml']),
         fluidsHighMl: _toDoubleOrNull(macrosData['pre_run_water_high_ml']),
+        hydrationTier: (macrosData['pre_run_hydration_tier'] as num?)?.toInt(),
       ),
       preRunSelections: _toMapListOrNull(macrosData['pre_run_selections']),
       duringRun: () {
@@ -590,6 +836,27 @@ class MacroGenerationService {
           rawBandHighGPerH: _toDoubleOrNull(
             macrosData['during_raw_band_high_g_per_h'],
           ),
+          // Hydration/sodium derivation fields (Phase 6 — read from edge fn response)
+          effectiveSweatRateLPerH: _toDoubleOrNull(
+            macrosData['effective_sweat_rate_lph'],
+          ),
+          sodiumConcMgPerL: macrosData['sodium_conc_mg_per_l'] != null
+              ? _toDouble(macrosData['sodium_conc_mg_per_l']).round()
+              : null,
+          replacementPercent: _toDoubleOrNull(macrosData['replacement_pct']),
+          floorMlPerH: macrosData['floor_ml_hr'] != null
+              ? _toDouble(macrosData['floor_ml_hr']).round()
+              : null,
+          ceilingMlPerH: macrosData['ceiling_ml_hr'] != null
+              ? _toDouble(macrosData['ceiling_ml_hr']).round()
+              : null,
+          safetyFlags: _toStringList(macrosData['safety_flags']),
+          isTested: macrosData['is_tested'] as bool? ?? false,
+          isTestedSodium: macrosData['is_tested_sodium'] as bool? ?? false,
+          // Environment echo fields
+          tempC: _toDoubleOrNull(macrosData['temp_c']),
+          humidityPct: _toDoubleOrNull(macrosData['humidity_pct']),
+          isIndoor: macrosData['is_indoor'] as bool?,
         );
       }(),
       postRun: PostRunMacros(
@@ -706,6 +973,11 @@ class MacroGenerationService {
       }
     }
     return results;
+  }
+
+  List<String> _toStringList(dynamic value) {
+    if (value is! List) return const [];
+    return value.map((e) => e.toString()).toList();
   }
 
   Future<void> _cacheMacroTargets(

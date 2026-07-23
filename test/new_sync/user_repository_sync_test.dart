@@ -81,16 +81,19 @@ void main() {
       expect(diff.inSeconds, lessThan(2));
     });
 
-    test('SharedPreferences key follows pattern {repositoryKey}_last_sync', () async {
-      final now = DateTime.now();
-      await repository.setLastSyncTime(now);
+    test(
+      'SharedPreferences key follows pattern {repositoryKey}_last_sync',
+      () async {
+        final now = DateTime.now();
+        await repository.setLastSyncTime(now);
 
-      final prefs = await SharedPreferences.getInstance();
-      final key = '${repository.repositoryKey}_last_sync';
+        final prefs = await SharedPreferences.getInstance();
+        final key = '${repository.repositoryKey}_last_sync';
 
-      expect(prefs.containsKey(key), isTrue);
-      expect(prefs.getString(key), isNotNull);
-    });
+        expect(prefs.containsKey(key), isTrue);
+        expect(prefs.getString(key), isNotNull);
+      },
+    );
 
     // Integration tests for syncFromRemote and uploadDirtyRecords
     // will be added once we have proper test infrastructure with
@@ -117,7 +120,11 @@ void main() {
       expect(UserRepository, isNotNull);
 
       // Verify compile-time mixin implementation by checking the test passes
-      expect(true, isTrue, reason: 'UserRepository compiles with SyncableRepository mixin');
+      expect(
+        true,
+        isTrue,
+        reason: 'UserRepository compiles with SyncableRepository mixin',
+      );
     });
 
     test('SyncableRepository methods are available on UserRepository', () {

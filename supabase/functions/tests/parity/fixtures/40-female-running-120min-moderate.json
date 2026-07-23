@@ -1,0 +1,34 @@
+{
+  "description": "Female athlete (62kg) — running 120 min, moderate gut. Lower body weight produces proportionally smaller carb + fluid targets. Tests solver with compact-volume targets.",
+  "solver": "rule",
+  "athlete": {
+    "weight_kg": 62,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 55,
+      "sodium_mg": 800,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 55,
+      "protein_g": 22,
+      "sodium_mg": 650,
+      "water_ml": 750
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

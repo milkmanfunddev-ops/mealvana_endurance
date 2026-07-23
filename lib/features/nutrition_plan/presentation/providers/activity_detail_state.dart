@@ -37,7 +37,8 @@ class ActivityDetailState {
   final bool isSaving;
   final bool isCompleting;
   final bool hasUnsavedChanges; // Tracks if nutrition plan has been modified
-  final bool isNewActivity; // True if this is the first time viewing after creation
+  final bool
+  isNewActivity; // True if this is the first time viewing after creation
   final String? eventName; // Event name from linked event (reverse lookup)
   final String? error;
   final bool hasStaleDuringTarget;
@@ -87,8 +88,7 @@ class ActivityDetailState {
       staleDuringTargetMessage:
           staleDuringTargetMessage ?? this.staleDuringTargetMessage,
       isFuelLogMode: isFuelLogMode ?? this.isFuelLogMode,
-      fuelLogData:
-          clearFuelLogData ? null : (fuelLogData ?? this.fuelLogData),
+      fuelLogData: clearFuelLogData ? null : (fuelLogData ?? this.fuelLogData),
       fuelLogViewMode: fuelLogViewMode ?? this.fuelLogViewMode,
     );
   }

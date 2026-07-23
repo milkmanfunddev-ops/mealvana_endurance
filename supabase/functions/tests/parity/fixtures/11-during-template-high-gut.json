@@ -1,0 +1,33 @@
+{
+  "description": "Athlete (78kg) with high gut training and a 2-hour ride. Tests the during-template solver with a catalog of templates, verifying the template wins over rule/LP fallback.",
+  "athlete": {
+    "weight_kg": 78,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 120,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 90,
+      "sodium_mg": 1200,
+      "water_ml": 1400
+    },
+    "post_run": {
+      "carbs_g": 75,
+      "protein_g": 32,
+      "sodium_mg": 900,
+      "water_ml": 900
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

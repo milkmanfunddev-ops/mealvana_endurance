@@ -6,7 +6,7 @@ import '../providers/survey_controller.dart';
 import 'survey_page_1.dart';
 import 'survey_page_2.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 /// Main survey screen that handles navigation between survey pages
 class SurveyScreen extends ConsumerStatefulWidget {

@@ -1,0 +1,79 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. The actual HTTP 200 body of GET {apiBase}/v1/vdot-workouts/{from}/{to} is the bare JSON ARRAY under 'response' below; this wrapper exists only to carry the annotations.",
+  "_request": {
+    "method": "GET",
+    "url": "https://api.vdoto2.com/v1/vdot-workouts/2026-05-20/2026-07-04",
+    "headers": {
+      "Authorization": "Bearer <ACCESS_TOKEN>",
+      "Accept": "application/json"
+    },
+    "_maxRangeDays": 60,
+    "_note": "Dates are YYYY-MM-DD, zero-padded. A window longer than 60 days must be split into chunked requests and the results de-duplicated by eventId."
+  },
+  "response": [
+    {
+      "eventId": "78edbf80-30ef-40ba-ac93-d8661ebb2b49",
+      "eventName": "Easy Run",
+      "eventDate": "2026-06-01T00:00:00",
+      "eventType": "easyPace",
+      "status": "planned",
+      "plannedTime": 4620,
+      "plannedDistance": 15449,
+      "steps": []
+    },
+    {
+      "eventId": "c1f4a2b9-77de-4c31-9b60-2ea5f3c88101",
+      "eventName": "Quality Session",
+      "eventDate": "2026-06-03T00:00:00",
+      "eventType": "qualitySession",
+      "status": "planned",
+      "plannedTime": 3600,
+      "plannedDistance": 12000,
+      "steps": [
+        { "type": "step", "intensity": "warmup", "duration": { "type": "time", "value": 900 }, "order": 1 },
+        {
+          "type": "repeatStep",
+          "repeatValue": 6,
+          "order": 2,
+          "steps": [
+            { "type": "step", "intensity": "interval", "duration": { "type": "distance", "value": 800 },
+              "target": { "type": "speed", "valueLow": 4.55, "valueHigh": 4.79 }, "order": 1 },
+            { "type": "step", "intensity": "recovery", "duration": { "type": "time", "value": 120 }, "order": 2 }
+          ]
+        },
+        { "type": "step", "intensity": "cooldown", "duration": { "type": "time", "value": 600 }, "order": 3 }
+      ]
+    },
+    {
+      "eventId": "9b2c7de1-4a55-4f80-b0d3-6c1e9a2f7742",
+      "eventName": null,
+      "eventDate": "2026-06-04T00:00:00",
+      "eventType": "crossTraining",
+      "status": "planned",
+      "crossTrainingType": "bike",
+      "crossTrainingEffort": "moderate",
+      "plannedTime": 3600,
+      "steps": []
+    },
+    {
+      "eventId": "aa11bb22-cc33-4d44-8e55-ff6677889900",
+      "eventName": "Long Run",
+      "eventDate": "2026-06-07T00:00:00",
+      "eventType": "easyPace",
+      "status": "completed",
+      "plannedTime": 7200,
+      "plannedDistance": 24140,
+      "steps": []
+    },
+    {
+      "eventId": "bb22cc33-dd44-4e55-9f66-001122334455",
+      "eventName": "Lower Body Strength",
+      "eventDate": "2026-06-06T00:00:00",
+      "eventType": "crossTraining",
+      "status": "planned",
+      "crossTrainingType": "strength",
+      "plannedTime": 2700,
+      "steps": []
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "courseId": 30626618,
+  "courseName": "example gravel cycling",
+  "distance": 8561.08,
+  "elevationGain": 115.27,
+  "elevationLoss": 4.44,
+  "activityType": "GRAVEL_CYCLING",
+  "coordinateSystem": "WGS84",
+  "geoPoints": [
+    { "latitude": 46.425274, "longitude": 11.685595, "elevation": 1300.0 },
+    { "latitude": 46.426752, "longitude": 11.684781, "elevation": 1300.0 },
+    { "latitude": 46.429178, "longitude": 11.685780, "elevation": 1300.4 },
+    {
+      "latitude": 46.474929,
+      "longitude": 11.745668,
+      "elevation": 0.0,
+      "distance": 13698.295,
+      "information": {
+        "name": "water",
+        "coursePointType": "WATER"
+      }
+    }
+  ]
+}

@@ -74,16 +74,21 @@ class Recipe {
       instructions: List<String>.from(json['instructions'] as List),
       prepTimeMinutes: json['prepTimeMinutes'] as int,
       servings: json['servings'] as int,
-      type: RecipeType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => RecipeType.general,
+      type: RecipeType.fromWire(json['type'] as String? ?? ''),
+      nutrition: RecipeNutrition.fromJson(
+        json['nutrition'] as Map<String, dynamic>,
       ),
-      nutrition: RecipeNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
       imageUrl: json['imageUrl'] as String?,
-      tags: json['tags'] != null ? List<String>.from(json['tags'] as List) : null,
+      tags: json['tags'] != null
+          ? List<String>.from(json['tags'] as List)
+          : null,
       isFavorite: json['isFavorite'] as bool? ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
     );
   }
 
@@ -96,7 +101,7 @@ class Recipe {
       'instructions': instructions,
       'prepTimeMinutes': prepTimeMinutes,
       'servings': servings,
-      'type': type.name,
+      'type': type.wireValue,
       'nutrition': nutrition.toJson(),
       'imageUrl': imageUrl,
       'tags': tags,
@@ -174,12 +179,64 @@ class RecipeNutrition {
   }
 
   @override
-  String toString() => 'RecipeNutrition(calories: $calories, carbs: ${carbohydratesGrams}g)';
+  String toString() =>
+      'RecipeNutrition(calories: $calories, carbs: ${carbohydratesGrams}g)';
 }
 
 enum RecipeType {
-  preRun,
-  duringRun,
-  postRun,
-  general,
+  breakfast,
+  mains,
+  snacks,
+  workoutFuel,
+  recovery;
+
+  /// The string value stored in Supabase / Drift (snake_case for multi-word).
+  String get wireValue {
+    switch (this) {
+      case RecipeType.breakfast:
+        return 'breakfast';
+      case RecipeType.mains:
+        return 'mains';
+      case RecipeType.snacks:
+        return 'snacks';
+      case RecipeType.workoutFuel:
+        return 'workout_fuel';
+      case RecipeType.recovery:
+        return 'recovery';
+    }
+  }
+
+  /// Human-readable label for display in filter chips and UI.
+  String get displayLabel {
+    switch (this) {
+      case RecipeType.breakfast:
+        return 'Breakfast';
+      case RecipeType.mains:
+        return 'Mains';
+      case RecipeType.snacks:
+        return 'Snacks';
+      case RecipeType.workoutFuel:
+        return 'Workout Fuel';
+      case RecipeType.recovery:
+        return 'Recovery';
+    }
+  }
+
+  /// Parse a wire value from Supabase/Drift. Unknown values fall back to [mains].
+  static RecipeType fromWire(String value) {
+    switch (value) {
+      case 'breakfast':
+        return RecipeType.breakfast;
+      case 'mains':
+        return RecipeType.mains;
+      case 'snacks':
+        return RecipeType.snacks;
+      case 'workout_fuel':
+        return RecipeType.workoutFuel;
+      case 'recovery':
+        return RecipeType.recovery;
+      default:
+        return RecipeType.mains;
+    }
+  }
 }

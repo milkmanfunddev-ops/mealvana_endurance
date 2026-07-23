@@ -22,8 +22,6 @@ import {
   ADDON_GAP_THRESHOLD,
   DIVERSITY_BAND,
   DIVERSITY_FLOOR,
-  RANDOM_PICK_MARGIN,
-  RANDOM_PICK_LIMIT,
   normalizeToken,
 } from './pre-workout-constants.ts';
 
@@ -33,14 +31,6 @@ import {
 
 function snapToHalf(value: number): number {
   return Math.round(value * 2) / 2;
-}
-
-/** Cryptographically secure random integer in [0, max). */
-function secureRandomInt(max: number): number {
-  if (max <= 1) return 0;
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return array[0] % max;
 }
 
 function wouldExceedHighs(
@@ -90,10 +80,20 @@ export function scoreFormula(
   state: PlanState,
   dislikedSet: Set<string>,
   likedFoods: string[] = [],
+  /**
+   * When true, bypass the [min_servings, max_servings] clamp so the scaling
+   * factor can exceed the template's normal range. Used for pinned-template
+   * honoring per the locked Formula Kit policy ("if the pinned formula needs
+   * 3× to hit carb target, ship 3×"). When false (default), behavior is
+   * identical to pre-pin v3.
+   */
+  bypassScaleClamp = false,
 ): ScoredFormula {
   // Calculate ideal servings directly
   const ideal = carbTarget / template.carbs_per_serving;
-  const clamped = Math.max(template.min_servings, Math.min(template.max_servings, ideal));
+  const clamped = bypassScaleClamp
+    ? Math.max(0, ideal)
+    : Math.max(template.min_servings, Math.min(template.max_servings, ideal));
   const servings = snapToHalf(clamped);
 
   let carbs = templateCarbs(template, servings);
@@ -233,15 +233,15 @@ export function pickBestFormula(
     const resultSodium = state.sodium_delivered + candidate.sodium;
     const resultFluid = state.fluid_delivered + candidate.fluid;
 
+    // Pass 1 optimizes for carb fit + protein fit + athlete preference only.
+    // Sodium/fluid delivery is handled by Pass 2 (pickDrink) and Pass 3
+    // (pickElectrolyte), which have their own gap-closing scoring. Rewarding
+    // sodium/fluid gap-closing here caused meal-phase picks like Potato + Salt
+    // to consume the entire session sodium budget, starving downstream passes
+    // and triggering the cascade into the no-water bug. (#25)
     const carbErr = carbTarget > 0 ? candidate.gap / carbTarget : 0;
     const proteinErr = state.protein_target > 0
       ? Math.abs(resultProtein - state.protein_target) / state.protein_target
-      : 0;
-    const sodiumErr = state.sodium_target > 0
-      ? Math.abs(resultSodium - state.sodium_target) / state.sodium_target
-      : 0;
-    const fluidErr = state.fluid_target > 0
-      ? Math.abs(resultFluid - state.fluid_target) / state.fluid_target
       : 0;
 
     const carbOverPenalty = state.carbs_target > 0 && resultCarbs > state.carbs_high
@@ -256,29 +256,38 @@ export function pickBestFormula(
     const proteinUnderPenalty = state.protein_target > 0 && resultProtein < state.protein_low
       ? ((state.protein_low - resultProtein) / state.protein_target) * 3
       : 0;
+    // Over-cap penalties remain as safety fallback tiebreakers — they only
+    // fire when safePool was empty and the algorithm fell back to scoring
+    // over-cap candidates. In that degenerate path we still prefer the
+    // least-over option. Under-cap penalties were removed: being below
+    // sodium_low is what pickElectrolyte exists to rescue.
     const sodiumOverPenalty = state.sodium_target > 0 && resultSodium > state.sodium_high
       ? ((resultSodium - state.sodium_high) / state.sodium_target) * 8
-      : 0;
-    const sodiumUnderPenalty = state.sodium_target > 0 && resultSodium < state.sodium_low
-      ? ((state.sodium_low - resultSodium) / state.sodium_target) * 2
       : 0;
     const fluidOverPenalty = state.fluid_target > 0 && resultFluid > state.fluid_high
       ? ((resultFluid - state.fluid_high) / state.fluid_target) * 6
       : 0;
-    const fluidUnderPenalty = state.fluid_target > 0 && resultFluid < state.fluid_low
-      ? ((state.fluid_low - resultFluid) / state.fluid_target) * 2
-      : 0;
 
-    const baseScore = carbErr + proteinErr + sodiumErr + fluidErr +
+    const baseScore = carbErr + proteinErr +
       carbOverPenalty + carbUnderPenalty + proteinOverPenalty + proteinUnderPenalty +
-      sodiumOverPenalty + sodiumUnderPenalty + fluidOverPenalty + fluidUnderPenalty;
+      sodiumOverPenalty + fluidOverPenalty;
     scoredPool.push({ candidate, score: baseScore });
   }
 
-  scoredPool.sort((a, b) => a.score - b.score);
-  const bestScore = scoredPool[0].score;
-  const margin = Math.max(0.03, bestScore * RANDOM_PICK_MARGIN);
-  const randomPool = scoredPool.filter((c) => c.score <= bestScore + margin)
-    .slice(0, RANDOM_PICK_LIMIT);
-  return randomPool[secureRandomInt(randomPool.length)].candidate;
+  // Sort by score ascending; break ties deterministically by template id.
+  // The original implementation kept the top-N within RANDOM_PICK_MARGIN of
+  // the best score and picked one at random for "slight variety among
+  // near-equal safe candidates." That randomization made byte-identical
+  // inputs produce different outputs — caught as the #33 test flake in
+  // pre-workout-pinned.test.ts, but the same nondeterminism leaks to users
+  // (two replays of the same workout could pick different templates).
+  // PreWorkoutTemplate has no selection_priority column, so we use the
+  // UUID id as the deterministic secondary key. Variety still comes from
+  // upstream — different workouts yield different scores naturally.
+  scoredPool.sort((a, b) => {
+    const dScore = a.score - b.score;
+    if (dScore !== 0) return dScore;
+    return a.candidate.template.id.localeCompare(b.candidate.template.id);
+  });
+  return scoredPool[0].candidate;
 }

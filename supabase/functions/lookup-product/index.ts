@@ -1,182 +1,22 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+
+// Shared food-source clients. These used to live inline in this file (806
+// lines); they were extracted 2026-07-16 so the barcode path and the text-search
+// path share one definition of each source instead of drifting apart.
+import { detectProductType } from '../_shared/food_sources/product_type.ts';
+import { lookupUsda } from '../_shared/food_sources/usda.ts';
+import { fetchOffProduct, offImage } from '../_shared/food_sources/off.ts';
+import {
+  lookupNutritionCache,
+  cacheNutritionProduct,
+} from '../_shared/food_sources/cache.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
-// ============================================================================
-// Product Type Detection from OFF data
-// ============================================================================
-
-/**
- * Detect our app's product_type from OpenFoodFacts data using a 3-stage
- * strategy: taxonomy tags → brand + name heuristics → name keywords.
- *
- * Returns a product_type_enum value or null if we can't determine it.
- */
-function detectProductType(
-  categoryTags: string[] | null,
-  brandsTags: string[] | null,
-  productName: string | null,
-  genericName: string | null,
-): string | null {
-  const tags = new Set((categoryTags ?? []).map(t => t.toLowerCase()));
-  const brands = new Set((brandsTags ?? []).map(b => b.toLowerCase()));
-  const name = (productName ?? '').toLowerCase();
-  const generic = (genericName ?? '').toLowerCase();
-  const nameAndGeneric = `${name} ${generic}`;
-
-  // ── Stage 1: OFF taxonomy tag matching ──
-  // These are real tags observed in OFF API responses
-
-  // Energy gels (en:energy-gel, en:energy-gels, plus localized variants)
-  if (tags.has('en:energy-gel') || tags.has('en:energy-gels')
-      || tags.has('de:energiegel') || tags.has('de:sportgel')
-      || tags.has('fr:gel')) {
-    return 'gel';
-  }
-
-  // Energy/protein bars
-  if (tags.has('en:energy-bars') || tags.has('en:protein-energy-bars')) return 'bar';
-  if (tags.has('en:protein-bars') || tags.has('en:cereal-bars')) return 'bar';
-
-  // Protein powders / recovery
-  if (tags.has('en:protein-powders')) return 'recovery_shake';
-
-  // Sports drinks (specific tags)
-  if (tags.has('en:sports-drink') || tags.has('en:sports-drinks')
-      || tags.has('en:dietary-drink-for-sport')) {
-    return 'sports_drink';
-  }
-
-  // Electrolyte-specific drinks
-  if (tags.has('en:electrolyte-drink') || tags.has('en:electrolyte-drink-mix')
-      || tags.has('en:electrolytes')) {
-    return 'electrolyte_only';
-  }
-
-  // Sports nutrition (ambiguous - needs brand/name context in stage 2)
-  const isSportsNutrition = tags.has('en:sports-nutrition');
-
-  // Dehydrated beverages (drink mixes, but broad - needs context)
-  const isDehydratedBev = tags.has('en:dehydrated-beverages')
-    || tags.has('en:dried-products-to-be-rehydrated');
-
-  // Waffles (could be regular or sports - needs context)
-  const isWaffle = tags.has('en:waffles') || tags.has('en:stuffed-waffles')
-    || tags.has('en:stuffed-wafers') || tags.has('en:caramel-stuffed-wafers');
-
-  // ── Stage 2: Brand-aware detection ──
-  // Known sports nutrition brands where product type can be inferred
-
-  // GU Energy
-  if (brands.has('gu') || brands.has('gu-energy') || brands.has('gu-energy-stroopwafel')) {
-    if (nameAndGeneric.includes('stroopwafel') || nameAndGeneric.includes('waffle')) return 'waffle';
-    if (nameAndGeneric.includes('chew') || nameAndGeneric.includes('chews')) return 'chew';
-    if (nameAndGeneric.includes('drink mix') || nameAndGeneric.includes('roctane drink')) return 'drink_mix';
-    return 'gel'; // GU's primary product
-  }
-
-  // Maurten
-  if (brands.has('maurten')) {
-    if (nameAndGeneric.includes('drink mix')) return 'drink_mix';
-    return 'gel';
-  }
-
-  // SIS (Science in Sport)
-  if (brands.has('sis') || brands.has('si-s') || brands.has('science-in-sport')) {
-    if (nameAndGeneric.includes('hydro') || nameAndGeneric.includes('electrolyte')) return 'electrolyte_only';
-    if (nameAndGeneric.includes('drink') || nameAndGeneric.includes('powder')) return 'drink_mix';
-    return 'gel';
-  }
-
-  // Clif
-  if (brands.has('clif') || brands.has('clif-bar') || brands.has('clif-bar-and-company')) {
-    if (nameAndGeneric.includes('bloks') || nameAndGeneric.includes('blok')
-        || nameAndGeneric.includes('chew') || nameAndGeneric.includes('shot')) return 'chew';
-    return 'bar';
-  }
-
-  // Honey Stinger
-  if (brands.has('honey-stinger')) {
-    if (nameAndGeneric.includes('waffle') || nameAndGeneric.includes('stroopwafel')) return 'waffle';
-    if (nameAndGeneric.includes('gel')) return 'gel';
-    if (nameAndGeneric.includes('chew')) return 'chew';
-    return 'bar'; // default for their bars
-  }
-
-  // Electrolyte brands (all products are electrolytes)
-  if (brands.has('nuun') || brands.has('saltstick') || brands.has('saltstick-fastchews')
-      || brands.has('lmnt')) {
-    return 'electrolyte_only';
-  }
-
-  // Drink mix brands
-  if (brands.has('tailwind')) return 'drink_mix';
-  if (brands.has('skratch-labs')) {
-    if (nameAndGeneric.includes('chew')) return 'chew';
-    if (nameAndGeneric.includes('bar') || nameAndGeneric.includes('cookie')) return 'bar';
-    return 'drink_mix';
-  }
-  if (brands.has('liquid-iv') || brands.has('liquid-i-v')) return 'drink_mix';
-  if (brands.has('drip-drop') || brands.has('drip-drop-hydration-inc')) return 'drink_mix';
-
-  // Sports drink brands
-  if (brands.has('gatorade') || brands.has('powerade')) {
-    if (nameAndGeneric.includes('chew')) return 'chew';
-    if (nameAndGeneric.includes('powder') || nameAndGeneric.includes('mix')) return 'drink_mix';
-    return 'sports_drink';
-  }
-
-  // Recovery/protein brands
-  if (brands.has('optimum-nutrition') || brands.has('vega') || brands.has('orgain')
-      || brands.has('garden-of-life')) {
-    return 'recovery_shake';
-  }
-
-  // Spring Energy
-  if (brands.has('spring-energy')) return 'gel';
-
-  // Now resolve ambiguous tags with name context
-  if (isSportsNutrition) {
-    if (nameAndGeneric.includes('gel')) return 'gel';
-    if (nameAndGeneric.includes('bar')) return 'bar';
-    if (nameAndGeneric.includes('drink') || nameAndGeneric.includes('mix')) return 'drink_mix';
-    if (nameAndGeneric.includes('chew')) return 'chew';
-  }
-
-  if (isDehydratedBev) {
-    if (nameAndGeneric.includes('electrolyte') || nameAndGeneric.includes('hydration')) return 'drink_mix';
-    if (nameAndGeneric.includes('sport') || nameAndGeneric.includes('endurance')) return 'drink_mix';
-  }
-
-  if (isWaffle) {
-    if (nameAndGeneric.includes('energy') || nameAndGeneric.includes('stroopwafel')) return 'waffle';
-    // Regular waffles - don't assign a sports type
-  }
-
-  // ── Stage 3: Product name keyword fallback ──
-  // Catches unbranded or untagged products
-
-  const KEYWORD_MAP: Array<{ keywords: string[]; type: string }> = [
-    { keywords: ['energy gel', 'gel pack', 'energy gel with'], type: 'gel' },
-    { keywords: ['energy chew', 'shot bloks', 'energy chews', 'fuel chews'], type: 'chew' },
-    { keywords: ['stroopwafel', 'energy waffle'], type: 'waffle' },
-    { keywords: ['drink mix', 'endurance fuel', 'hydration mix', 'sport drink mix', 'electrolyte powder'], type: 'drink_mix' },
-    { keywords: ['electrolyte tablet', 'hydration tablet', 'effervescent electrolyte'], type: 'electrolyte_only' },
-    { keywords: ['recovery shake', 'protein shake', 'whey protein', 'protein powder'], type: 'recovery_shake' },
-    { keywords: ['energy bar', 'protein bar', 'fuel bar'], type: 'bar' },
-    { keywords: ['sports drink', 'isotonic drink', 'thirst quencher'], type: 'sports_drink' },
-  ];
-
-  for (const { keywords, type } of KEYWORD_MAP) {
-    if (keywords.some(kw => nameAndGeneric.includes(kw))) return type;
-  }
-
-  return null; // Can't determine - user picks from dropdown, defaults to 'import'
-}
 
 /**
  * Look up a catalog variant by barcode using the catalog_items view
@@ -267,7 +107,10 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
   }
 }
 
-serve(async (req)=>{
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+Deno.serve(withSentry(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -314,30 +157,74 @@ serve(async (req)=>{
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      console.log('ℹ️ Lookup Product - Not in catalog, falling through to OFF');
+      console.log('ℹ️ Lookup Product - Not in catalog, checking nutrition cache');
+    }
+
+    // ── Priority 0.5: nutrition_products cache (prior USDA/OFF hits) ──
+    // Served from our own DB → zero external calls for anything scanned before.
+    if (requestData.barcode) {
+      const cacheResult = await lookupNutritionCache(requestData.barcode);
+      if (cacheResult) {
+        console.log('✅ Lookup Product - Cache hit (nutrition_products):', {
+          product_name: (cacheResult.product as any).product_name,
+          origin: (cacheResult.product as any).api_source,
+        });
+        return new Response(JSON.stringify({
+          success: true,
+          product: cacheResult.product,
+          source: cacheResult.source,
+          message: 'Product found via nutrition cache',
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('ℹ️ Lookup Product - Cache miss, falling through to USDA/OFF');
     }
 
     let productData = null;
     let source = '';
-    // Priority 1: Try barcode lookup if available
+
+    // ── Priority 1: barcode → USDA + Open Food Facts IN PARALLEL ──
+    // USDA (public-domain, resale-safe) is preferred for nutrition; OFF is both
+    // the nutrition fallback and the image source (USDA has no images). We need
+    // the OFF result either way, so fire both concurrently to cut latency — same
+    // number of calls, less wall-clock than doing them one after the other.
     if (requestData.barcode) {
-      console.log('🔍 Lookup Product - Attempting barcode lookup:', requestData.barcode);
-      try {
-        const barcodeResponse = await fetch(`https://world.openfoodfacts.org/api/v0/product/${requestData.barcode}.json`);
-        if (barcodeResponse.ok) {
-          const barcodeData = await barcodeResponse.json();
-          if (barcodeData.status === 1 && barcodeData.product) {
-            productData = barcodeData.product;
-            source = 'barcode';
-            console.log('✅ Lookup Product - Found via barcode');
-          }
-        }
-      } catch (error) {
-        console.error('⚠️ Lookup Product - Barcode lookup failed:', error);
-      // Continue to try Open Food Facts ID if available
+      console.log('🔍 Lookup Product - Parallel USDA + OFF lookup:', requestData.barcode);
+      const [usdaResult, offProduct] = await Promise.all([
+        lookupUsda(requestData.barcode),
+        fetchOffProduct(requestData.barcode),
+      ]);
+
+      // Prefer USDA nutrition; borrow the product image from OFF.
+      if (usdaResult) {
+        (usdaResult.product as any).image_url = offImage(offProduct);
+        console.log('✅ Lookup Product - Found via USDA FDC:', {
+          product_name: (usdaResult.product as any).product_name,
+          has_nutrition: !!(usdaResult.product as any).calories_per_serving,
+          has_image: !!(usdaResult.product as any).image_url,
+        });
+        cacheNutritionProduct(usdaResult.product, 'usda_fdc', requestData.barcode);
+        return new Response(JSON.stringify({
+          success: true,
+          product: usdaResult.product,
+          source: usdaResult.source,
+          message: 'Product found via USDA FoodData Central',
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // USDA miss → fall back to the OFF product we already fetched in parallel.
+      if (offProduct) {
+        productData = offProduct;
+        source = 'barcode';
+        console.log('✅ Lookup Product - Found via OFF (USDA miss)');
       }
     }
-    // Priority 2: Try Open Food Facts ID if barcode failed or not provided
+    // Priority 2: Open Food Facts ID (only when no barcode was provided)
     if (!productData && requestData.open_food_facts_id) {
       console.log('🔍 Lookup Product - Attempting Open Food Facts ID lookup:', requestData.open_food_facts_id);
       try {
@@ -417,6 +304,9 @@ serve(async (req)=>{
       source: source,
       has_nutrition: !!(cleanedProduct.calories_per_100g || cleanedProduct.calories_per_serving)
     });
+    if (cleanedProduct.barcode) {
+      cacheNutritionProduct(cleanedProduct, 'open_food_facts', String(cleanedProduct.barcode));
+    }
     return new Response(JSON.stringify({
       success: true,
       product: cleanedProduct,
@@ -444,4 +334,4 @@ serve(async (req)=>{
       }
     });
   }
-});
+}));

@@ -19,8 +19,18 @@ class NotificationService {
   static String? _pendingRemoteUserId;
   static String? _lastSyncedRemoteUserId;
   static void Function(String activityId, String? type)? _navigationHandler;
+  static Future<void> Function(DateTime date)? _dailyMacroCacheInvalidator;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
+
+  /// Registers a callback invoked when a Garmin activity-upload notification
+  /// carries a [scheduled_date]. The callback should invalidate the macro
+  /// cache for that date so the next calculation re-runs with fresh data.
+  static void setDailyMacroCacheInvalidator(
+    Future<void> Function(DateTime date)? invalidator,
+  ) {
+    _dailyMacroCacheInvalidator = invalidator;
+  }
 
   static void configure(
     AnalyticsTracker tracker, {
@@ -112,6 +122,18 @@ class NotificationService {
         event.notification.display();
       });
 
+      // Trigger registerForRemoteNotifications and refresh the APNs token.
+      // OneSignal v5.x does not auto-register on iOS — without this call the
+      // SDK will sit on a stale (or missing) token even when iOS permission
+      // is already granted, and OneSignal eventually flags the subscription
+      // invalid_identifier:true after APNs rejects a delivery. fallbackToSettings
+      // is false so previously-denied users don't get hijacked into Settings.
+      try {
+        await OneSignal.Notifications.requestPermission(false);
+      } catch (e) {
+        debugPrint('OneSignal requestPermission failed: $e');
+      }
+
       _isOneSignalInitialized = true;
       await _syncRemotePushUserIdentity();
     } catch (e) {
@@ -120,6 +142,16 @@ class NotificationService {
   }
 
   static void _handleRemoteNotificationData(Map<String, dynamic> data) {
+    // Cache invalidation: if the notification carries a scheduled_date,
+    // invalidate the macro cache for that date before navigating.
+    final scheduledDateStr = data['scheduled_date']?.toString();
+    if (scheduledDateStr != null && scheduledDateStr.isNotEmpty) {
+      final scheduledDate = DateTime.tryParse(scheduledDateStr);
+      if (scheduledDate != null) {
+        _dailyMacroCacheInvalidator?.call(scheduledDate);
+      }
+    }
+
     final payload = data['payload']?.toString();
     if (payload != null && payload.isNotEmpty) {
       _handleNotificationPayload(payload);
@@ -308,6 +340,20 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >();
+      // Mirror the grant into OneSignal so it registers for remote
+      // notifications and uploads the APNs token. Without this, OneSignal
+      // can stay on a stale token and APNs will eventually reject pushes,
+      // causing OneSignal to flag the subscription invalid_identifier:true.
+      // fallbackToSettings is true here because this method is called from
+      // explicit user-driven flows (settings screen, onboarding) where
+      // bouncing to Settings on prior denial is the expected UX.
+      if (_isOneSignalInitialized) {
+        try {
+          await OneSignal.Notifications.requestPermission(true);
+        } catch (e) {
+          debugPrint('OneSignal requestPermission (explicit) failed: $e');
+        }
+      }
       if (iosPlugin != null) {
         return await iosPlugin.requestPermissions(
               alert: true,
@@ -451,12 +497,16 @@ class NotificationService {
   }
 
   /// Shows an immediate local notification when a completed activity
-  /// is uploaded from Garmin (or another push-based provider).
+  /// is uploaded from Garmin Connect (or another push-based provider).
+  ///
+  /// [provider] should be the human-readable provider label used in the
+  /// notification body (e.g. "Garmin Connect"). The default matches
+  /// Garmin's brand-compliant full name — never use an abbreviation.
   static Future<void> showActivityUploadedNotification({
     required String activityId,
     required String title,
     required DateTime activityDate,
-    String provider = 'Garmin',
+    String provider = 'Garmin Connect',
   }) async {
     if (!_isInitialized) {
       await initialize();

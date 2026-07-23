@@ -9,18 +9,19 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/domain/calendar_day_indicators.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 
 /// Screen showing detailed view of an athlete for coaches
 class AthleteDetailScreen extends ConsumerStatefulWidget {
   final String relationshipId;
 
-  const AthleteDetailScreen({
-    super.key,
-    required this.relationshipId,
-  });
+  const AthleteDetailScreen({super.key, required this.relationshipId});
 
   @override
-  ConsumerState<AthleteDetailScreen> createState() => _AthleteDetailScreenState();
+  ConsumerState<AthleteDetailScreen> createState() =>
+      _AthleteDetailScreenState();
 }
 
 class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
@@ -59,7 +60,11 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                 ? null
                 : () {
                     ref
-                        .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+                        .read(
+                          athleteDetailControllerProvider(
+                            widget.relationshipId,
+                          ).notifier,
+                        )
                         .refresh();
                   },
           ),
@@ -99,7 +104,11 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
             ElevatedButton.icon(
               onPressed: () {
                 ref
-                    .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+                    .read(
+                      athleteDetailControllerProvider(
+                        widget.relationshipId,
+                      ).notifier,
+                    )
                     .refresh();
               },
               icon: const Icon(Icons.refresh),
@@ -111,10 +120,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    AthleteDetailState state,
-  ) {
+  Widget _buildContent(BuildContext context, AthleteDetailState state) {
     return DefaultTabController(
       length: 4,
       child: Column(
@@ -125,18 +131,12 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
           // Tab bar
           TabBar(
             tabs: [
-              const Tab(
-                icon: Icon(Icons.person),
-                text: 'Profile',
-              ),
+              const Tab(icon: Icon(Icons.person), text: 'Profile'),
               Tab(
                 icon: const Icon(Icons.calendar_today),
                 text: 'Events (${state.events.length})',
               ),
-              Tab(
-                icon: const Icon(Icons.restaurant),
-                text: 'Carb Loading',
-              ),
+              Tab(icon: const Icon(Icons.restaurant), text: 'Carb Loading'),
               Tab(
                 icon: const Icon(Icons.directions_run),
                 text: 'Activities (${state.activities.length})',
@@ -170,7 +170,8 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
     if (athleteProfile != null) {
       athleteName = athleteProfile.displayName;
     } else {
-      athleteName = relationship.athleteDisplayName ??
+      athleteName =
+          relationship.athleteDisplayName ??
           'Athlete ${relationship.athleteUserId.substring(0, 8)}...';
     }
 
@@ -240,6 +241,11 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
   Widget _buildProfileTab(BuildContext context, AthleteDetailState state) {
     final theme = Theme.of(context);
     final profile = state.athleteProfile;
+    // Coach views an athlete's profile using the COACH's own unit
+    // preference (unitSystemProvider resolves to the logged-in user).
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     if (profile == null) {
       return _buildEmptyView(
@@ -282,11 +288,18 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                 _buildProfileRow('Birthday', _formatDate(profile.birthday)),
                 _buildProfileRow(
                   'Height',
-                  '${profile.heightFeet}\'${profile.heightInches}"',
+                  UnitFormatter.formatHeight(
+                    profile.heightFeet,
+                    profile.heightInches,
+                    useMetric: useMetric,
+                  ),
                 ),
                 _buildProfileRow(
                   'Weight',
-                  '${profile.weightPounds.toStringAsFixed(1)} lbs',
+                  UnitFormatter.formatWeight(
+                    profile.weightPounds,
+                    useMetric: useMetric,
+                  ),
                 ),
               ],
             ),
@@ -303,7 +316,10 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.fitness_center, color: theme.colorScheme.primary),
+                    Icon(
+                      Icons.fitness_center,
+                      color: theme.colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Training Preferences',
@@ -346,8 +362,10 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.directions_bike,
-                          color: theme.colorScheme.primary),
+                      Icon(
+                        Icons.directions_bike,
+                        color: theme.colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Cycling Details',
@@ -446,9 +464,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w400,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w400),
             ),
           ),
         ],
@@ -467,8 +483,9 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
       return _isSameDay(activity.scheduledDateTime, _selectedDate);
     }).toList();
     // Sort by time (ascending) so morning activities appear before afternoon
-    selectedDateActivities.sort((a, b) =>
-        a.scheduledDateTime.compareTo(b.scheduledDateTime));
+    selectedDateActivities.sort(
+      (a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime),
+    );
 
     return Column(
       children: [
@@ -521,10 +538,13 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          context.push('/plan', extra: {
-                            'activityId': activity.id,
-                            'isCoachView': true,
-                          });
+                          context.push(
+                            '/plan',
+                            extra: {
+                              'activityId': activity.id,
+                              'isCoachView': true,
+                            },
+                          );
                         },
                       ),
                     );
@@ -537,7 +557,8 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
 
   /// Build day indicators map for the calendar from athlete data
   Map<DateTime, Set<DayIndicatorType>> _buildDayIndicatorsMap(
-      AthleteDetailState state) {
+    AthleteDetailState state,
+  ) {
     final map = <DateTime, Set<DayIndicatorType>>{};
 
     // Add activity indicators
@@ -635,9 +656,9 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
             leading: const Icon(Icons.event),
             title: Text(event.eventName ?? 'Unnamed Event'),
             subtitle: Text(
-              event.eventDate != null 
-                ? _formatDate(event.eventDate!)
-                : 'No Date',
+              event.eventDate != null
+                  ? _formatDate(event.eventDate!)
+                  : 'No Date',
             ),
           ),
         );
@@ -663,7 +684,9 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
         return Card(
           child: ListTile(
             leading: const Icon(Icons.restaurant_menu),
-            title: Text('${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}'),
+            title: Text(
+              '${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}',
+            ),
             subtitle: Text(
               '${plan.dailyCarbTargetG}g carbs/day • ${plan.dailyServingsTarget} servings',
             ),
@@ -679,7 +702,6 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
       },
     );
   }
-
 
   Widget _buildEmptyView(
     BuildContext context,
@@ -715,7 +737,10 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
     return '${date.month}/${date.day}/${date.year}';
   }
 
-  Widget _buildCreateWorkoutFab(BuildContext context, AthleteDetailState state) {
+  Widget _buildCreateWorkoutFab(
+    BuildContext context,
+    AthleteDetailState state,
+  ) {
     return FloatingActionButton(
       onPressed: () => _showCreateWorkoutMenu(context, state),
       tooltip: 'Create Workout',
@@ -733,9 +758,9 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
             const SizedBox(height: 16),
             Text(
               'Create Workout for Athlete',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const Divider(),
             ListTile(
@@ -744,9 +769,10 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
               subtitle: const Text('Create a training activity'),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push('/distancepacegut', extra: {
-                  'forUserId': state.relationship.athleteUserId,
-                });
+                context.push(
+                  '/distancepacegut',
+                  extra: {'forUserId': state.relationship.athleteUserId},
+                );
               },
             ),
             ListTile(
@@ -755,9 +781,10 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
               subtitle: const Text('Create a race or event'),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push('/events/create', extra: {
-                  'forUserId': state.relationship.athleteUserId,
-                });
+                context.push(
+                  '/events/create',
+                  extra: {'forUserId': state.relationship.athleteUserId},
+                );
               },
             ),
             const SizedBox(height: 16),

@@ -1,0 +1,16 @@
+{
+  "WorkoutKey": "e888d59a-d496-4b58-a569-a1294c0a831e",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=test&id=e888d59a-d496-4b58-a569-a1294c0a831e",
+  "WorkoutDate": "2025-12-24T00:00:00",
+  "WorkoutTitle": "Easy Recovery",
+  "WorkoutDescription": "@ 9:12 - 10:01\n\nNice and easy",
+  "WorkoutTypeName": "Run",
+  "WorkoutSubTypeName": null,
+  "WorkoutCompleted": false,
+  "WorkoutIcon": 1,
+  "PlannedTime": 2700,
+  "PlannedDistance": 5.0,
+  "PlannedDistanceType": "mi",
+  "PlannedPace": null,
+  "PlannedPaceType": null
+}

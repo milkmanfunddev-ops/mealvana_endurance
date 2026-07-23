@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/nutrition_plan_mapper.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/macro_shortfall.dart';
 
 void main() {
   group('NutritionPlanMapper brick ranges', () {
@@ -139,6 +140,112 @@ void main() {
       expect(t2Section.sodiumHighTarget, 110);
       expect(t2Section.fluidsLowTarget, 85);
       expect(t2Section.fluidsHighTarget, 115);
+    });
+  });
+
+  group('NutritionPlanMapper during-phase shortfalls', () {
+    Map<String, dynamic> planJson({List<dynamic>? shortfalls}) {
+      return {
+        'plan_id': 'plan_1',
+        'plan_name': 'Run Plan',
+        'plan_data': {
+          'plan': {
+            'before': <dynamic>[],
+            'during': {
+              'foods': <dynamic>[],
+              if (shortfalls != null) 'shortfalls': shortfalls,
+            },
+            'after': <dynamic>[],
+          },
+        },
+      };
+    }
+
+    test('parses during-phase shortfalls into the domain model', () {
+      final plan = NutritionPlanMapper.fromSupabaseJson(
+        planJson(
+          shortfalls: [
+            {
+              'macro': 'carbs',
+              'delivered': 45,
+              'target': 60,
+              'unit': 'g',
+              'reason': 'all_disliked',
+            },
+            {
+              'macro': 'sodium',
+              'delivered': 350.5,
+              'target': 500,
+              'unit': 'mg',
+              'reason': 'template_constraint',
+            },
+          ],
+        ),
+      );
+
+      final during = plan.sections.firstWhere((s) => s.id == 'during_run');
+      expect(during.shortfalls, hasLength(2));
+
+      final carbs = during.shortfalls.first;
+      expect(carbs.macro, ShortfallMacro.carbs);
+      expect(carbs.delivered, 45);
+      expect(carbs.target, 60);
+      expect(carbs.unit, 'g');
+      expect(carbs.reason, ShortfallReason.allDisliked);
+
+      final sodium = during.shortfalls[1];
+      expect(sodium.macro, ShortfallMacro.sodium);
+      expect(sodium.delivered, 350.5);
+      expect(sodium.reason, ShortfallReason.templateConstraint);
+    });
+
+    test('absent shortfalls key parses to empty without crashing', () {
+      final plan = NutritionPlanMapper.fromSupabaseJson(planJson());
+
+      final during = plan.sections.firstWhere((s) => s.id == 'during_run');
+      expect(during.shortfalls, isEmpty);
+    });
+
+    test('malformed shortfall entries are skipped without crashing', () {
+      final plan = NutritionPlanMapper.fromSupabaseJson(
+        planJson(shortfalls: ['not-a-map', 42]),
+      );
+
+      final during = plan.sections.firstWhere((s) => s.id == 'during_run');
+      expect(during.shortfalls, isEmpty);
+    });
+
+    test('shortfalls survive a local persistence round-trip', () {
+      // Local Drift persistence stores plan.toJson() and rehydrates via
+      // NutritionPlanMapper.fromJson -> PlanSection.fromJson, so shortfalls
+      // must round-trip through section JSON to survive reload — the same
+      // convention BeforeSubPhase.shortfalls already follows.
+      final plan = NutritionPlanMapper.fromSupabaseJson(
+        planJson(
+          shortfalls: [
+            {
+              'macro': 'fluid',
+              'delivered': 400,
+              'target': 750,
+              'unit': 'ml',
+              'reason': 'no_diet_match',
+            },
+          ],
+        ),
+      );
+
+      final rehydrated = NutritionPlanMapper.fromJson(
+        NutritionPlanMapper.toJson(plan),
+      );
+
+      final during = rehydrated.sections.firstWhere(
+        (s) => s.id == 'during_run',
+      );
+      expect(during.shortfalls.single.macro, ShortfallMacro.fluid);
+      expect(during.shortfalls.single.delivered, 400);
+      expect(during.shortfalls.single.target, 750);
+      expect(during.shortfalls.single.unit, 'ml');
+      expect(during.shortfalls.single.reason, ShortfallReason.noDietMatch);
     });
   });
 }

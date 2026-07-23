@@ -41,25 +41,28 @@ class TemplateScalingService {
 
   /// Scale a section's food items by a ratio
   static PlanSection _scaleSection(PlanSection section, double ratio) {
-    final scaledFoodItems =
-        section.foodItems.map((food) => _scaleFood(food, ratio)).toList();
+    final scaledFoodItems = section.foodItems
+        .map((food) => _scaleFood(food, ratio))
+        .toList();
 
     List<BeforeSubPhase>? scaledSubPhases;
     if (section.hasSubPhases) {
       scaledSubPhases = section.subPhases!
-          .map((sp) => BeforeSubPhase(
-                subPhaseType: sp.subPhaseType,
-                foodItems: sp.foodItems
-                    .map((food) => _scaleFood(food, ratio))
-                    .toList(),
-                carbsTarget: sp.carbsTarget,
-                proteinTarget: sp.proteinTarget,
-                fatTarget: sp.fatTarget,
-                sodiumTarget: sp.sodiumTarget,
-                fluidsTarget: sp.fluidsTarget,
-                templateId: sp.templateId,
-                templateName: sp.templateName,
-              ))
+          .map(
+            (sp) => BeforeSubPhase(
+              subPhaseType: sp.subPhaseType,
+              foodItems: sp.foodItems
+                  .map((food) => _scaleFood(food, ratio))
+                  .toList(),
+              carbsTarget: sp.carbsTarget,
+              proteinTarget: sp.proteinTarget,
+              fatTarget: sp.fatTarget,
+              sodiumTarget: sp.sodiumTarget,
+              fluidsTarget: sp.fluidsTarget,
+              templateId: sp.templateId,
+              templateName: sp.templateName,
+            ),
+          )
           .toList();
     }
 
@@ -120,10 +123,8 @@ class TemplateScalingService {
       if (scaledQuantity < 0.5) scaledQuantity = 0.5;
     }
 
-    final actualRatio =
-        quantityNum > 0 ? scaledQuantity / quantityNum : ratio;
-    final scaledInfo =
-        _scaleNutritionalInfo(food.nutritionalInfo, actualRatio);
+    final actualRatio = quantityNum > 0 ? scaledQuantity / quantityNum : ratio;
+    final scaledInfo = _scaleNutritionalInfo(food.nutritionalInfo, actualRatio);
 
     final quantityStr = scaledQuantity == scaledQuantity.roundToDouble()
         ? scaledQuantity.round().toString()
@@ -173,14 +174,11 @@ class TemplateScalingService {
     if (info == null) return null;
 
     return NutritionalInfo(
-      calories:
-          info.calories != null ? (info.calories! * ratio).round() : null,
+      calories: info.calories != null ? (info.calories! * ratio).round() : null,
       carbs: info.carbs != null ? (info.carbs! * ratio).round() : null,
-      protein:
-          info.protein != null ? (info.protein! * ratio).round() : null,
+      protein: info.protein != null ? (info.protein! * ratio).round() : null,
       fat: info.fat != null ? (info.fat! * ratio).round() : null,
-      sodium:
-          info.sodium != null ? (info.sodium! * ratio).round() : null,
+      sodium: info.sodium != null ? (info.sodium! * ratio).round() : null,
       sugar: info.sugar != null ? (info.sugar! * ratio).round() : null,
       fluids: info.fluids != null ? info.fluids! * ratio : null,
     );

@@ -5,3 +5,11 @@
 PRODUCT_BUNDLE_IDENTIFIER = com.milkman.mealvanaendurance.dev
 BUNDLE_DISPLAY_NAME = Mealvana Endurance Dev
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+
+// Force the modern unified distribution identity name. Apple deprecated
+// the IOS_DISTRIBUTION cert type — only DISTRIBUTION ("Apple Distribution")
+// can be created today. Without this override, xcodebuild's exportArchive
+// looks for a legacy "iOS Distribution" cert and errors out at IPA export
+// even though the archive itself signs fine.
+CODE_SIGN_IDENTITY = Apple Distribution
+CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution

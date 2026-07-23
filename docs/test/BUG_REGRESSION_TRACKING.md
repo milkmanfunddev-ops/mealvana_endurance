@@ -69,31 +69,46 @@
 
 ## High Priority Bugs (Functionality)
 
-### BUG-005: [Title]
-- **Status:** 🔴 Needs Test Coverage
-- **Priority:** High
-- **Description:**
-- **Expected:**
-- **Actual:**
-- **Test Account Setup:**
-- **Verification Method:**
-- **Screenshots:**
-- **Notes:**
+### NOTE-005 (NOT A BUG): test@test.com / test is a PROD account, not dev
+- **Status:** ℹ️ Resolved — test-infrastructure note, not an app defect
+- **Discovered:** 2026-06-13 (live re-walk, build 1.20.0+1, iPhone 15 Pro Max sim, dev flavor)
+- **What happened:** Logging in with `test@test.com` / `test` against the **dev**
+  build returns "Login failed. Please check your credentials."
+- **Why it's expected:** Those credentials belong to the **prod** Supabase
+  project. The dev build talks to dev Supabase, where that account does not exist.
+- **Impact on the test suite (real, actionable):** `auth_flow_test.dart` hard-codes
+  `test@test.com` / `test`. Run against a dev build it will fail. Options:
+    1. Point the login test at a **dev-seeded** account, OR
+    2. Prefer the **onboarding signup** path for the dev smoke test — it creates
+       a fresh dev user every run and needs no pre-seeded account. See
+       `integration_test/flows/onboarding_signup_flow_test.dart` (added 2026-06-13).
+- **Action:** Decide per-environment which credentials each login test uses, or
+  gate `auth_flow_test.dart` to prod-only CI lanes.
 
 ---
 
 ## Medium Priority Bugs (UX Issues)
 
-### BUG-006: [Title]
-- **Status:** 🔴 Needs Test Coverage
+### BUG-006: Primary buttons un-tappable while soft keyboard is visible (mobile-mcp / synthetic taps)
+- **Status:** 🟡 Characterized — guidance for test harness
 - **Priority:** Medium
-- **Description:**
-- **Expected:**
-- **Actual:**
-- **Test Account Setup:**
-- **Verification Method:**
-- **Screenshots:**
-- **Notes:**
+- **Discovered:** 2026-06-13 (live re-walk, build 1.20.0+1)
+- **Description:** When the iOS soft keyboard is open, a synthetic
+  coordinate tap on a primary button below the keyboard fold (e.g. email-login
+  "Log In") falls through and refocuses a text field instead of activating the
+  button. Dismissing the keyboard first (tap "done") makes the same tap fire
+  correctly. This is the root cause of the prior audit's "Log In button
+  un-tappable" note in `screen_audit/SUMMARY.md` — it was NOT a missing key.
+- **Expected:** Tapping the visible button activates it.
+- **Actual:** Tap is swallowed; keyboard stays / field refocuses.
+- **Impact:** Affects mobile-mcp-driven walks only. The Patrol/integration_test
+  suite is immune because `find.byKey()` + `tester.tap()` bypass hit-testing and
+  `tester.testTextInput` dismisses the keyboard deterministically.
+- **Verification Method:** N/A (harness guidance). In mobile-mcp walks, always
+  dismiss the keyboard (tap keyboard "done") before tapping a primary CTA.
+- **Notes:** Reinforces that the real test suite must be `find.byKey`-driven,
+  not coordinate-driven. The ValueKey instrumentation PR (all 14 areas) is the
+  correct foundation.
 
 ---
 

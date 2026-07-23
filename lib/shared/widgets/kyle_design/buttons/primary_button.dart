@@ -37,9 +37,7 @@ class KylePrimaryButton extends ConsumerWidget {
           disabledBackgroundColor: Colors.orange.withOpacity(0.4),
           elevation: 0,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
           textStyle: AppTextStyles.buttonPrimary,
         ),
@@ -139,9 +137,7 @@ class KylePrimaryIconButton extends ConsumerWidget {
           disabledBackgroundColor: AppColors.orange.withOpacity(0.4),
           elevation: 0,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.circularRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.circularRadius),
           padding: EdgeInsets.zero,
         ),
         child: isLoading
@@ -155,11 +151,7 @@ class KylePrimaryIconButton extends ConsumerWidget {
                   ),
                 ),
               )
-            : Icon(
-                icon,
-                size: size * 0.5,
-                color: AppColors.textLight,
-              ),
+            : Icon(icon, size: size * 0.5, color: AppColors.textLight),
       ),
     );
   }

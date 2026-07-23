@@ -27,6 +27,8 @@ extension ActivityTypeToKyle on ActivityType {
         return KyleActivityType.other;
       case ActivityType.brick:
         return KyleActivityType.triathlon; // Map brick to triathlon for now
+      case ActivityType.other:
+        return KyleActivityType.other;
     }
   }
 }
@@ -71,7 +73,9 @@ class ActivityHeroCard extends ConsumerWidget {
             decoration: BoxDecoration(
               borderRadius: AppRadius.cardRadius,
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Column(
@@ -98,7 +102,9 @@ class ActivityHeroCard extends ConsumerWidget {
                           Text(
                             subtitle,
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -106,7 +112,7 @@ class ActivityHeroCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                
+
                 // Action button
                 if (showActionButton && actionButtonText != null) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -149,7 +155,10 @@ class TodaysActivityCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       child: Material(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.cardRadius,
@@ -159,9 +168,11 @@ class TodaysActivityCard extends ConsumerWidget {
           decoration: BoxDecoration(
             borderRadius: AppRadius.cardRadius,
             border: Border.all(
-              color: isCompleted 
+              color: isCompleted
                   ? AppColors.electrolyte.withValues(alpha: 0.3)
-                  : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  : Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -190,21 +201,23 @@ class TodaysActivityCard extends ConsumerWidget {
                         Text(
                           subtitle,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
                   if (isCompleted)
-                    Icon(
+                    FaIcon(
                       FontAwesomeIcons.circleCheck,
                       color: AppColors.electrolyte,
                       size: AppIconSizes.controlIcon,
                     ),
                 ],
               ),
-              
+
               // Action buttons
               if (!isCompleted) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -217,10 +230,7 @@ class TodaysActivityCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    KyleTertiaryButton(
-                      text: 'Skip',
-                      onPressed: onSkip,
-                    ),
+                    KyleTertiaryButton(text: 'Skip', onPressed: onSkip),
                   ],
                 ),
               ],
@@ -252,7 +262,10 @@ class UpcomingEventCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       child: Material(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.cardRadius,
@@ -265,7 +278,9 @@ class UpcomingEventCard extends ConsumerWidget {
             decoration: BoxDecoration(
               borderRadius: AppRadius.cardRadius,
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -278,7 +293,7 @@ class UpcomingEventCard extends ConsumerWidget {
                     color: AppColors.electrolyte.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.calendar,
                     size: AppIconSizes.activityIcon * 0.5,
                     color: AppColors.electrolyte,
@@ -308,7 +323,7 @@ class UpcomingEventCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // Date badge
                 Container(
                   padding: const EdgeInsets.symmetric(

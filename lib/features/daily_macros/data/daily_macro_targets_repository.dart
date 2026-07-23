@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../domain/daily_macro_targets.dart';
 import '../domain/enums.dart';
 
@@ -14,35 +16,110 @@ DailyMacroTargetsRepository dailyMacroTargetsRepository(Ref ref) {
   return DailyMacroTargetsRepository(
     database: ref.read(appDatabaseProvider),
     supabase: Supabase.instance.client,
+    sentry: ref.read(sentryReporterProvider),
   );
 }
 
 class DailyMacroTargetsRepository {
-  const DailyMacroTargetsRepository({
+  DailyMacroTargetsRepository({
     required AppDatabase database,
     required SupabaseClient supabase,
-  })  : _database = database,
-        _supabase = supabase;
+    SentryReporter sentry = const NoopSentryReporter(),
+  }) : _database = database,
+       _supabase = supabase,
+       _sentry = sentry;
 
   final AppDatabase _database;
   final SupabaseClient _supabase;
+  final SentryReporter _sentry;
+  bool _reportedRemoteSaveFailureThisSession = false;
+
+  /// Algorithm version this client expects. Cached rows from older versions
+  /// are treated as misses so the next read recalculates with the current
+  /// pipeline (e.g., picks up Garmin source attribution introduced in v5).
+  static const String _expectedAlgorithmVersion = 'v5.0.0';
 
   /// Get cached macro targets for a specific date
-  Future<DailyMacroTargets?> getCachedForDate(String userId, DateTime date) async {
+  Future<DailyMacroTargets?> getCachedForDate(
+    String userId,
+    DateTime date,
+  ) async {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
-    final results = await _database.customSelect(
-      'SELECT * FROM daily_macro_targets WHERE user_id = ? AND target_date = ? LIMIT 1',
-      variables: [
-        Variable.withString(userId),
-        Variable.withInt(normalizedDate.millisecondsSinceEpoch),
-      ],
-    ).get();
+    final results = await _database
+        .customSelect(
+          'SELECT * FROM daily_macro_targets WHERE user_id = ? AND target_date = ? LIMIT 1',
+          variables: [
+            Variable.withString(userId),
+            Variable.withInt(normalizedDate.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
 
     if (results.isEmpty) return null;
 
     final row = results.first;
+    final cachedVersion = row.read<String>('algorithm_version');
+    if (cachedVersion != _expectedAlgorithmVersion) {
+      // Stale cache — drop it so the caller recalculates fresh.
+      await invalidateForDate(userId, normalizedDate);
+      return null;
+    }
     return _mapRowToDomain(row);
+  }
+
+  /// Batched variant of [getCachedForDate] for the 7-day window starting at
+  /// [startOfWeek].
+  ///
+  /// Fetches the whole week in ONE query instead of one-per-day, eliminating
+  /// the week-overview N+1 (Sentry MEALVANA-ENDURANCE-DEV-4C / DEV-49). Applies
+  /// the same algorithm-version staleness check as [getCachedForDate], dropping
+  /// stale rows so the caller recalculates them.
+  ///
+  /// Returns a map keyed by the row's normalized `target_date`
+  /// (millisecondsSinceEpoch) for O(1) per-day lookup.
+  Future<Map<int, DailyMacroTargets>> getCachedForWeek(
+    String userId,
+    DateTime startOfWeek,
+  ) async {
+    final normalizedStart = DateTime(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+    );
+    final normalizedEnd = normalizedStart.add(const Duration(days: 6));
+
+    final results = await _database
+        .customSelect(
+          '''SELECT * FROM daily_macro_targets
+         WHERE user_id = ? AND target_date >= ? AND target_date <= ?''',
+          variables: [
+            Variable.withString(userId),
+            Variable.withInt(normalizedStart.millisecondsSinceEpoch),
+            Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
+
+    final map = <int, DailyMacroTargets>{};
+    final staleDates = <DateTime>[];
+    for (final row in results) {
+      final targetMillis = row.read<int>('target_date');
+      final cachedVersion = row.read<String>('algorithm_version');
+      if (cachedVersion != _expectedAlgorithmVersion) {
+        staleDates.add(DateTime.fromMillisecondsSinceEpoch(targetMillis));
+        continue;
+      }
+      map[targetMillis] = _mapRowToDomain(row);
+    }
+
+    // Drop stale-version rows so the next calc refreshes them (mirrors the
+    // single-date path in getCachedForDate).
+    for (final date in staleDates) {
+      await invalidateForDate(userId, date);
+    }
+
+    return map;
   }
 
   /// Save macro targets to local Drift database
@@ -85,12 +162,31 @@ class DailyMacroTargetsRepository {
   /// Save macro targets to Supabase
   Future<void> saveToRemote(DailyMacroTargets targets) async {
     try {
-      await _supabase.from('daily_macro_targets').upsert(
-        targets.toJson(),
-        onConflict: 'user_id,target_date',
-      );
+      await _supabase
+          .from('daily_macro_targets')
+          .upsert(targets.toJson(), onConflict: 'user_id,target_date');
     } catch (e) {
-      // Don't rethrow - remote save failures shouldn't block the UI
+      // Don't rethrow - remote save failures shouldn't block the UI. Do make
+      // them visible: RLS/user-id mismatches previously disappeared here and
+      // made remote cache health impossible to diagnose.
+      _sentry.addBreadcrumb(
+        message: 'Daily macro remote save failed',
+        category: 'daily_macros.remote_cache',
+        level: SentryLevel.warning,
+        data: {'error_type': e.runtimeType.toString()},
+      );
+      if (!_reportedRemoteSaveFailureThisSession) {
+        _reportedRemoteSaveFailureThisSession = true;
+        await _sentry.captureMessage(
+          'Daily macro remote save failed',
+          level: SentryLevel.warning,
+          tags: {
+            'component': 'daily_macros',
+            'operation': 'remote_cache_save',
+            'error_type': e.runtimeType.toString(),
+          },
+        );
+      }
     }
   }
 
@@ -100,19 +196,25 @@ class DailyMacroTargetsRepository {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final normalizedStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final normalizedStart = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
     final normalizedEnd = DateTime(endDate.year, endDate.month, endDate.day);
 
-    final results = await _database.customSelect(
-      '''SELECT * FROM daily_macro_targets
+    final results = await _database
+        .customSelect(
+          '''SELECT * FROM daily_macro_targets
          WHERE user_id = ? AND target_date >= ? AND target_date <= ?
          ORDER BY target_date ASC''',
-      variables: [
-        Variable.withString(userId),
-        Variable.withInt(normalizedStart.millisecondsSinceEpoch),
-        Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
-      ],
-    ).get();
+          variables: [
+            Variable.withString(userId),
+            Variable.withInt(normalizedStart.millisecondsSinceEpoch),
+            Variable.withInt(normalizedEnd.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
 
     return results.map(_mapRowToDomain).toList();
   }
@@ -127,10 +229,52 @@ class DailyMacroTargetsRepository {
     );
   }
 
-  /// Invalidate all cached records for a user.
-  /// Called when activities change (create/update/delete/import) since
-  /// adjacent-day context (yesterday TSS, tomorrow load) means any activity
-  /// change can affect multiple days' macro calculations.
+  /// Invalidate the cached records for a specific set of days, in one statement.
+  ///
+  /// This is the scoped alternative to [invalidateAllForUser]: an activity edit
+  /// only staleness-affects a bounded window of days (see
+  /// `macroDatesToInvalidate` in `domain/macro_cache_invalidation.dart`), so
+  /// there's no reason to discard the user's whole cache. No-op on an empty set.
+  Future<void> invalidateDates(String userId, Iterable<DateTime> dates) async {
+    // Normalize to midnight — rows are keyed by midnight, and a caller may hand
+    // us a timestamped date (or one nudged off midnight by a DST shift).
+    final epochDays = <int>{
+      for (final d in dates)
+        DateTime(d.year, d.month, d.day).millisecondsSinceEpoch,
+    };
+    if (epochDays.isEmpty) return;
+
+    // Chunk the IN list rather than binding one variable per day. Defensive, not
+    // a fix for an observed crash: the sqlite3 we bundle allows 32766 variables,
+    // and even a multi-year provider import lands well under that. But the
+    // SQLite-guaranteed floor is 999, so a build change (system sqlite, another
+    // platform) could start throwing here — and a throw means invalidation is
+    // skipped and the user silently reads STALE macros, which is the worst way
+    // for this to fail. Cheap insurance against that.
+    const chunkSize = 400;
+    final days = epochDays.toList(growable: false);
+    for (var start = 0; start < days.length; start += chunkSize) {
+      final chunk = days.sublist(
+        start,
+        (start + chunkSize).clamp(0, days.length),
+      );
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+      await _database.customStatement(
+        'DELETE FROM daily_macro_targets '
+        'WHERE user_id = ? AND target_date IN ($placeholders)',
+        [userId, ...chunk],
+      );
+    }
+  }
+
+  /// Invalidate ALL cached records for a user — every date, for all time.
+  ///
+  /// Blunt instrument, kept as an escape hatch (e.g. an algorithm-version bump
+  /// or a corrupted cache). Do NOT use it for ordinary activity edits: prefer
+  /// [invalidateDates] with `macroDatesToInvalidate`, which drops only the days
+  /// whose inputs actually moved. Wiping everything means every date the user
+  /// later opens is a cache miss — an edge-function round trip each, and no
+  /// macros at all while offline.
   Future<void> invalidateAllForUser(String userId) async {
     await _database.customStatement(
       'DELETE FROM daily_macro_targets WHERE user_id = ?',
@@ -142,7 +286,9 @@ class DailyMacroTargetsRepository {
     return DailyMacroTargets(
       id: row.read<String>('id'),
       userId: row.read<String>('user_id'),
-      targetDate: DateTime.fromMillisecondsSinceEpoch(row.read<int>('target_date')),
+      targetDate: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('target_date'),
+      ),
       carbG: row.read<double>('carb_g'),
       protG: row.read<double>('prot_g'),
       fatG: row.read<double>('fat_g'),
@@ -155,8 +301,12 @@ class DailyMacroTargetsRepository {
       ea: row.readNullable<double>('ea'),
       eaStatus: EaStatus.fromDbValue(row.readNullable<String>('ea_status')),
       algorithmVersion: row.read<String>('algorithm_version'),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('created_at')),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('updated_at')),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('created_at'),
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('updated_at'),
+      ),
     );
   }
 }

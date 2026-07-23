@@ -13,6 +13,22 @@ import {
 } from './types.ts';
 
 /**
+ * Normalize Garmin's deviceName field. Garmin uses the literal string
+ * "unknown" when the device model isn't identified — persisting that
+ * would violate the brand guidelines and produce "Garmin unknown"
+ * attribution strings. Drop it so the client falls back to
+ * "Garmin Connect".
+ */
+export function normalizeGarminDeviceName(
+  deviceName?: string | null,
+): string | null {
+  const trimmed = deviceName?.trim();
+  if (!trimmed) return null;
+  if (trimmed.toLowerCase() === 'unknown') return null;
+  return trimmed;
+}
+
+/**
  * Map a Garmin activity type string to our sport type.
  * Falls back to 'other' for unknown types.
  */
@@ -72,7 +88,10 @@ export function mapGarminActivityToActivity(
     activity_type: sportType,
     title: garminActivity.activityName || `Garmin ${sportType}`,
     scheduled_date_time: scheduledDateTime,
-    duration_minutes: durationMinutes > 0 ? durationMinutes : null,
+    // Zero is a valid duration (e.g. an abandoned/0.0-mi run pushed from
+    // Garmin) and must overwrite the planned value. Guard against NaN
+    // (missing durationInSeconds) via >= 0, which excludes NaN.
+    duration_minutes: durationMinutes >= 0 ? durationMinutes : null,
     distance_meters: garminActivity.distanceInMeters ?? null,
     synced_from_provider: 'garmin',
     provider_workout_id: garminActivity.summaryId,
@@ -80,16 +99,26 @@ export function mapGarminActivityToActivity(
     average_heart_rate: garminActivity.averageHeartRateInBeatsPerMinute ?? null,
     max_heart_rate: garminActivity.maxHeartRateInBeatsPerMinute ?? null,
     calories_burned: garminActivity.activeKilocalories ?? null,
+    // Persist the Garmin device model so the app can render the
+    // "Garmin [device model]" attribution required by Garmin's
+    // Developer API Brand Guidelines. Garmin sends "unknown" when
+    // the device model isn't identified — drop it so the client
+    // falls back to "Garmin Connect" cleanly.
+    garmin_device_name: normalizeGarminDeviceName(garminActivity.deviceName),
   };
 
   // Add sport-specific fields (using actual column names)
   if (sportType === 'running') {
-    if (garminActivity.averagePaceInMinutesPerKilometer) {
+    // Use != null (not truthiness) so a real 0 actual value overwrites the
+    // planned distance/pace instead of being dropped.
+    if (garminActivity.averagePaceInMinutesPerKilometer != null) {
       // Convert min/km to min/mile
       activity.average_pace_minutes_per_mile =
         garminActivity.averagePaceInMinutesPerKilometer * 1.60934;
     }
-    if (garminActivity.distanceInMeters) {
+    // Include an explicit 0 (started-and-stopped run) so it overwrites a stale
+    // planned distance; only skip when Garmin omitted distance entirely.
+    if (typeof garminActivity.distanceInMeters === 'number') {
       activity.distance_miles = garminActivity.distanceInMeters / 1609.34;
     }
   }

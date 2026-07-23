@@ -11,6 +11,8 @@ import '../../../content/domain/content_keys.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../formula_kit/application/formula_library_controller.dart';
+import '../../application/onboarding_formula_pin_service.dart';
 import '../../application/onboarding_service.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
@@ -312,6 +314,11 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.info(
         '🎉 Allergies - Save operation completed without errors',
       );
+      // Invalidate the Formula Library so it picks up the new user.allergies
+      // on next watch. The controller's build() reads user.allergies once and
+      // caches it; without this invalidation, the library keeps showing
+      // formulas the user is allergic to until the next cold start.
+      ref.invalidate(formulaLibraryControllerProvider);
     }
 
     return !state.hasError;
@@ -579,11 +586,28 @@ class OnboardingController extends _$OnboardingController {
     DebugLogger.info(
       '📦 Starting batch save of all onboarding data (authProvider: $authProvider, isAnonymous: $isAnonymous)',
     );
+
+    // Guard the invalid state where the user reached the post-onboarding screen
+    // without a cached profile (e.g. the app was relaunched mid-onboarding and
+    // the in-memory cache was lost). Previously this threw inside
+    // AsyncValue.guard, surfacing as an AsyncError that the Sentry
+    // ProviderObserver reported (MEALVANA-ENDURANCE-DEV-4M). There is nothing to
+    // save and retrying can't help, so fail cleanly and let the caller route the
+    // user back to finish onboarding.
+    if (_cachedUserProfileData == null) {
+      DebugLogger.info(
+        '⚠️ saveAllOnboardingData: no cached user profile — cannot create '
+        'user; returning failure without throwing.',
+      );
+      state = const AsyncData(null);
+      return false;
+    }
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       // 1. Create user profile
-      if (_cachedUserProfileData != null) {
+      {
         final data = _cachedUserProfileData!;
         // Auto-populate email from Supabase auth if not manually provided
         final cachedEmail = (data['email'] as String?)?.trim();
@@ -612,8 +636,6 @@ class OnboardingController extends _$OnboardingController {
           unitSystem: data['unitSystem'] as UnitSystem? ?? UnitSystem.imperial,
         );
         DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
-      } else {
-        throw Exception('No user profile data cached');
       }
 
       final userId = _currentUser!.id;
@@ -662,6 +684,31 @@ class OnboardingController extends _$OnboardingController {
       if (_cachedAllergies != null) {
         await _onboardingService.saveAllergies(userId, _cachedAllergies!);
         DebugLogger.info('✅ Allergies saved');
+      }
+
+      // 4.5. Auto-pin default system formulas for the user's primary sport so
+      // a new user starts out formula-first with owned, editable formulas
+      // (plan Phase 1 #3). Best-effort — the service swallows failures so it
+      // can never block onboarding; the generation-time ephemeral safety net
+      // covers anyone this skips.
+      {
+        final diet =
+            (_cachedDietaryPreference != null &&
+                _cachedDietaryPreference != DietaryPreference.none)
+            ? _cachedDietaryPreference!.dbValue
+            : null;
+        final allergies =
+            _cachedAllergies?.map((a) => a.dbValue).toList(growable: false) ??
+            const <String>[];
+        await ref
+            .read(onboardingFormulaPinServiceProvider)
+            .autoPinDefaults(
+              userId: userId,
+              selectedSports: cachedSelectedSports,
+              diet: diet,
+              allergies: allergies,
+            );
+        DebugLogger.info('✅ Default formulas auto-pin attempted');
       }
 
       // 5. Save food preferences

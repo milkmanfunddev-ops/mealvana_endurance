@@ -1,0 +1,8 @@
+{
+  "_comment": "GET /API/v1/ProfileInfo. NOT the athlete profile - it is partner-scoped key/value storage. uniqueid (max 200 chars) and profile (max 3000 chars) are null until a partner application writes to this endpoint via POST /API/v1/ProfileInfo. Note this endpoint uses ErrorDescription, not ErrorMessage.",
+  "uniqueid": null,
+  "profile": null,
+  "Success": true,
+  "ErrorNumber": null,
+  "ErrorDescription": null
+}

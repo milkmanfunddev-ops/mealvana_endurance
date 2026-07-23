@@ -25,8 +25,17 @@ class AppConfig {
     required this.garminClientId,
     required this.garminClientSecret,
     required this.garminRedirectUri,
+    required this.vdotClientId,
+    required this.vdotClientSecret,
+    required this.vdotUseSandbox,
     required this.devModeEnabled,
     required this.appEnvironment,
+    required this.revenueCatApiKeyApple,
+    required this.revenueCatApiKeyGoogle,
+    required this.aiCreditsEnabled,
+    this.describeMealEnabled = false,
+    this.coachInsightsEnabled = false,
+    this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
   });
@@ -36,6 +45,14 @@ class AppConfig {
   final String supabaseAnonKey;
   final String supabasePublishableKey;
   final String supabaseSecretKey;
+
+  /// The client-facing key for `Supabase.initialize`. Prefers the new
+  /// publishable key (`sb_publishable_…`) when present, falling back to the
+  /// legacy anon JWT — so the legacy anon key can eventually be disabled once
+  /// every build ships the publishable key.
+  String get supabaseClientKey => supabasePublishableKey.isNotEmpty
+      ? supabasePublishableKey
+      : supabaseAnonKey;
 
   // Sentry configuration
   final String sentryDsn;
@@ -69,9 +86,68 @@ class AppConfig {
   final String garminClientSecret;
   final String garminRedirectUri;
 
+  // V.O2 (VDOT) integration
+  final String vdotClientId;
+  final String vdotClientSecret;
+  final bool vdotUseSandbox;
+
+  /// Base host for the V.O2 OAuth authorize/token endpoints.
+  ///
+  /// Note: VDOT documents `app.sandbox.vdoto2.com` as the sandbox OAuth host,
+  /// but that hostname does not resolve in DNS (verified 2026-05-18). Only
+  /// `app.vdoto2.com` exists. The sandbox toggle only switches the API base.
+  String get vdotAuthBaseUrl => 'https://app.vdoto2.com';
+
+  /// Base host for the V.O2 REST API.
+  String get vdotApiBaseUrl => vdotUseSandbox
+      ? 'https://api.sandbox.vdoto2.com'
+      : 'https://api.vdoto2.com';
+
   // Environment configuration
   final bool devModeEnabled;
   final String appEnvironment; // 'dev' or 'prod'
+
+  /// Opt-in: send real analytics from dev builds to the dev Mixpanel project
+  /// ("Mealvana Endurance Dev") instead of the no-op tracker. Verification
+  /// sandbox only — prod remains the analysis target.
+  final bool analyticsDevEnabled;
+
+  // RevenueCat (AI Credit Packs)
+  final String revenueCatApiKeyApple;
+  final String revenueCatApiKeyGoogle;
+
+  /// Feature flag controlling AI credit purchasing UI.
+  ///
+  /// Default false — the paywall and balance chip are hidden until explicitly
+  /// enabled via the `AI_CREDITS_ENABLED=true` env var.
+  final bool aiCreditsEnabled;
+
+  /// Release gate for text/photo meal analysis entry points.
+  ///
+  /// Defaults off in every real build so an omitted environment variable
+  /// cannot accidentally expose a metered AI feature.
+  final bool describeMealEnabled;
+
+  /// Release gate for Formula Kit coach insights.
+  ///
+  /// Defaults off for the same fail-closed cost protection as
+  /// [describeMealEnabled].
+  final bool coachInsightsEnabled;
+
+  /// Platform-appropriate RevenueCat public API key.
+  ///
+  /// Returns the Apple key on iOS/macOS and the Google key on Android.
+  /// Empty string on web or when the keys have not been configured.
+  String get revenueCatApiKey {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return revenueCatApiKeyApple;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return revenueCatApiKeyGoogle;
+    }
+    return ''; // Web / other platforms: RC not supported
+  }
 
   // Feature flags / debug settings
   final bool enableDebugLogging;
@@ -125,6 +201,8 @@ class AppConfig {
             ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
             : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
       ),
+      analyticsDevEnabled:
+          dotenv.get('ANALYTICS_DEV_ENABLED', fallback: 'false') == 'true',
       oneSignalAppId: dotenv.get('ONESIGNAL_APP_ID', fallback: ''),
 
       // Wiredash (User Feedback) configuration
@@ -173,6 +251,29 @@ class AppConfig {
       garminClientSecret: dotenv.get('GARMIN_CLIENT_SECRET', fallback: ''),
       garminRedirectUri: dotenv.get('GARMIN_REDIRECT_URI', fallback: ''),
 
+      // V.O2 (VDOT) integration
+      vdotClientId: dotenv.get('VDOT_CLIENT_ID', fallback: 'mealvana'),
+      vdotClientSecret: dotenv.get('VDOT_CLIENT_SECRET', fallback: ''),
+      // Default to sandbox during development; flip to production once registered.
+      vdotUseSandbox:
+          dotenv.get('VDOT_USE_SANDBOX', fallback: 'true') == 'true',
+
+      // RevenueCat (AI Credit Packs)
+      revenueCatApiKeyApple: dotenv.get(
+        'REVENUECAT_API_KEY_APPLE',
+        fallback: '',
+      ),
+      revenueCatApiKeyGoogle: dotenv.get(
+        'REVENUECAT_API_KEY_GOOGLE',
+        fallback: '',
+      ),
+      aiCreditsEnabled:
+          dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
+      describeMealEnabled:
+          dotenv.get('DESCRIBE_MEAL_ENABLED', fallback: 'false') == 'true',
+      coachInsightsEnabled:
+          dotenv.get('COACH_INSIGHTS_ENABLED', fallback: 'false') == 'true',
+
       // Debug settings
       enableDebugLogging: kDebugMode,
       enableSentryProfiling: !kDebugMode, // Disabled in debug due to iOS crash
@@ -202,8 +303,17 @@ class AppConfig {
     String? garminClientId,
     String? garminClientSecret,
     String? garminRedirectUri,
+    String? vdotClientId,
+    String? vdotClientSecret,
+    bool vdotUseSandbox = true,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
+    String revenueCatApiKeyApple = '',
+    String revenueCatApiKeyGoogle = '',
+    bool aiCreditsEnabled = false,
+    bool describeMealEnabled = true,
+    bool coachInsightsEnabled = true,
+    bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
   }) {
@@ -230,8 +340,17 @@ class AppConfig {
       garminClientSecret: garminClientSecret ?? 'test-garmin-secret',
       garminRedirectUri:
           garminRedirectUri ?? 'com.milkman.mealvanaendurance://callback',
+      vdotClientId: vdotClientId ?? 'test-vdot-client-id',
+      vdotClientSecret: vdotClientSecret ?? 'test-vdot-secret',
+      vdotUseSandbox: vdotUseSandbox,
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,
+      revenueCatApiKeyApple: revenueCatApiKeyApple,
+      revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
+      aiCreditsEnabled: aiCreditsEnabled,
+      describeMealEnabled: describeMealEnabled,
+      coachInsightsEnabled: coachInsightsEnabled,
+      analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
     );
@@ -324,6 +443,12 @@ class AppConfig {
 
       // Analytics configuration
       mixpanelProjectToken: effectiveMixpanelToken,
+      analyticsDevEnabled:
+          const String.fromEnvironment(
+            'ANALYTICS_DEV_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
       oneSignalAppId: oneSignalAppId,
 
       // Wiredash (User Feedback)
@@ -376,6 +501,50 @@ class AppConfig {
         'GARMIN_REDIRECT_URI',
         defaultValue: '',
       ),
+
+      // V.O2 (VDOT) configuration - read from dart-define for web builds
+      vdotClientId: const String.fromEnvironment(
+        'VDOT_CLIENT_ID',
+        defaultValue: 'mealvana',
+      ),
+      vdotClientSecret: const String.fromEnvironment(
+        'VDOT_CLIENT_SECRET',
+        defaultValue: '',
+      ),
+      vdotUseSandbox:
+          const String.fromEnvironment(
+            'VDOT_USE_SANDBOX',
+            defaultValue: 'true',
+          ) ==
+          'true',
+
+      // RevenueCat (AI Credit Packs)
+      revenueCatApiKeyApple: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_APPLE',
+        defaultValue: '',
+      ),
+      revenueCatApiKeyGoogle: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_GOOGLE',
+        defaultValue: '',
+      ),
+      aiCreditsEnabled:
+          const String.fromEnvironment(
+            'AI_CREDITS_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
+      describeMealEnabled:
+          const String.fromEnvironment(
+            'DESCRIBE_MEAL_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
+      coachInsightsEnabled:
+          const String.fromEnvironment(
+            'COACH_INSIGHTS_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,

@@ -15,7 +15,8 @@ import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets
@@ -73,7 +74,17 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       title: Row(
         children: [
           CustomAppBarBackButton(
-            onPressed: () => context.pop(),
+            key: const ValueKey('adjust_macros.back_button'),
+            onPressed: () {
+              // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+              // "There is nothing to pop" when this screen is reached
+              // without a poppable route on the stack.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/main');
+              }
+            },
             margin: EdgeInsets.zero,
             iconColor: Theme.of(context).colorScheme.onSurface,
             backgroundColor: Theme.of(
@@ -82,6 +93,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
+            key: const ValueKey('adjust_macros.title'),
             state?.adjustMacrosTitle ?? 'Adjust Your Macros',
             style: AppTextStyles.sectionTitle.copyWith(
               fontSize: 17,
@@ -140,6 +152,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       child: Column(
         children: [
           Text(
+            key: const ValueKey('adjust_macros.activity_summary'),
             activityTypeText,
             style: AppTextStyles.sectionTitle.copyWith(
               fontSize: 20,
@@ -178,6 +191,8 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         pace: pace,
         totalBurn: totalBurn,
         backgroundColor: Colors.transparent,
+        paceStatKey: const ValueKey('adjust_macros.pace_stat'),
+        burnStatKey: const ValueKey('adjust_macros.calories_stat'),
       ),
     );
   }
@@ -191,6 +206,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final brickFormState = ref.watch(brickInputControllerProvider);
     final segmentInputs = brickFormState.segmentInputs;
     final sportOrder = brickFormState.sportOrder;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     // Filter to only selected sports in order
     final orderedSelectedSports = sportOrder
@@ -237,14 +255,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
               break;
             case 'cycling':
               final speed = input.speedMph ?? 15.0;
-              pace = '${speed.toStringAsFixed(1)} mph';
+              pace = UnitFormatter.formatSpeed(speed, useMetric: useMetric);
               sportLabel = 'BIKE';
               break;
             case 'running':
               final paceMin = input.paceMinutesPerMile ?? 9.0;
-              final minutes = paceMin.floor();
-              final seconds = ((paceMin - minutes) * 60).round();
-              pace = '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
+              pace = UnitFormatter.formatPace(
+                paceMin,
+                unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+              );
               sportLabel = 'RUN';
               break;
             default:
@@ -366,6 +385,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         children: [
           Expanded(
             child: KyleSecondaryButton(
+              key: const ValueKey('adjust_macros.edit_macros_button'),
               text: 'Edit Macros',
               onPressed: () =>
                   _showEditMacrosDialog(context, ref, state, macros),
@@ -376,6 +396,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: KyleSecondaryButton(
+              key: const ValueKey('adjust_macros.reset_all_button'),
               text: state.resetAllButton,
               onPressed: () => _handleResetAll(context, ref),
               isFullWidth: true,
@@ -395,6 +416,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: KylePrimaryButton(
+        key: const ValueKey('adjust_macros.create_plan_button'),
         text: state.createPlanButton,
         onPressed: () => _handleCreatePlan(context, ref),
         isFullWidth: true,
@@ -407,6 +429,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           CircularProgressIndicator(color: AppColors.orange),
           const SizedBox(height: AppSpacing.md),
@@ -422,40 +445,47 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              FontAwesomeIcons.triangleExclamation,
-              size: 48,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(
+            FontAwesomeIcons.triangleExclamation,
+            size: 48,
+            color: AppColors.dragonfruit,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Error loading macros',
+            style: AppTextStyles.sectionTitle.copyWith(
               color: AppColors.dragonfruit,
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Error loading macros',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: AppColors.dragonfruit,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            error.toString(),
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              error.toString(),
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            KyleSecondaryButton(
-              text: 'Go Back',
-              onPressed: () => context.pop(),
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          KyleSecondaryButton(
+            text: 'Go Back',
+            onPressed: () {
+              // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+              // "There is nothing to pop" from the error-state Go Back button.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/main');
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -466,8 +496,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.circleInfo,
               size: 48,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -491,7 +522,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             const SizedBox(height: AppSpacing.lg),
             KyleSecondaryButton(
               text: 'Go Back',
-              onPressed: () => context.pop(),
+              onPressed: () {
+                // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+                // "There is nothing to pop" from the no-data-state Go Back button.
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/main');
+                }
+              },
             ),
           ],
         ),

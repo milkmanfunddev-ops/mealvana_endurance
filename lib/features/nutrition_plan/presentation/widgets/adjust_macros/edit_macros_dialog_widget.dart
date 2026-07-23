@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../providers/macro_targets_controller.dart';
 import '../../../domain/macro_targets.dart' as domain;
-import '../../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 /// Edit Macros Dialog
 /// Allows user to manually edit all macro targets
@@ -20,28 +20,52 @@ class EditMacrosDialogWidget extends ConsumerStatefulWidget {
   final bool useMetric;
 
   @override
-  ConsumerState<EditMacrosDialogWidget> createState() => _EditMacrosDialogWidgetState();
+  ConsumerState<EditMacrosDialogWidget> createState() =>
+      _EditMacrosDialogWidgetState();
 }
 
-class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget> {
+class _EditMacrosDialogWidgetState
+    extends ConsumerState<EditMacrosDialogWidget> {
   late Map<String, TextEditingController> _controllers;
 
   @override
   void initState() {
     super.initState();
     _controllers = {
-      'preCarbs': TextEditingController(text: widget.macros.preRun.carbsG.round().toString()),
-      'duringCarbs': TextEditingController(text: widget.macros.duringRun.carbTotalG.round().toString()),
-      'postCarbs': TextEditingController(text: widget.macros.postRun.carbsG.round().toString()),
-      'preProtein': TextEditingController(text: widget.macros.preRun.proteinG.round().toString()),
+      'preCarbs': TextEditingController(
+        text: widget.macros.preRun.carbsG.round().toString(),
+      ),
+      'duringCarbs': TextEditingController(
+        text: widget.macros.duringRun.carbTotalG.round().toString(),
+      ),
+      'postCarbs': TextEditingController(
+        text: widget.macros.postRun.carbsG.round().toString(),
+      ),
+      'preProtein': TextEditingController(
+        text: widget.macros.preRun.proteinG.round().toString(),
+      ),
       'duringProtein': TextEditingController(text: '0'),
-      'postProtein': TextEditingController(text: widget.macros.postRun.proteinG.round().toString()),
-      'preFluids': TextEditingController(text: widget.macros.preRun.fluidsMl.round().toString()),
-      'duringFluids': TextEditingController(text: widget.macros.duringRun.fluidTotalMl.round().toString()),
-      'postFluids': TextEditingController(text: widget.macros.postRun.fluidsMl.round().toString()),
-      'preSodium': TextEditingController(text: widget.macros.preRun.sodiumMg.round().toString()),
-      'duringSodium': TextEditingController(text: widget.macros.duringRun.sodiumTotalMg.round().toString()),
-      'postSodium': TextEditingController(text: widget.macros.postRun.sodiumMg.round().toString()),
+      'postProtein': TextEditingController(
+        text: widget.macros.postRun.proteinG.round().toString(),
+      ),
+      'preFluids': TextEditingController(
+        text: widget.macros.preRun.fluidsMl.round().toString(),
+      ),
+      'duringFluids': TextEditingController(
+        text: widget.macros.duringRun.fluidTotalMl.round().toString(),
+      ),
+      'postFluids': TextEditingController(
+        text: widget.macros.postRun.fluidsMl.round().toString(),
+      ),
+      'preSodium': TextEditingController(
+        text: widget.macros.preRun.sodiumMg.round().toString(),
+      ),
+      'duringSodium': TextEditingController(
+        text: widget.macros.duringRun.sodiumTotalMg.round().toString(),
+      ),
+      'postSodium': TextEditingController(
+        text: widget.macros.postRun.sodiumMg.round().toString(),
+      ),
     };
   }
 
@@ -55,10 +79,12 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
 
   @override
   Widget build(BuildContext context) {
-    final fluidLabel = 'FLUIDS (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})';
+    final fluidLabel =
+        'FLUIDS (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})';
 
     return AlertDialog(
       title: Text(
+        key: const ValueKey('edit_macros.title'),
         'Edit Macro Targets',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -68,23 +94,45 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildMacroSection('CARBS (g)', 'preCarbs', 'duringCarbs', 'postCarbs'),
+            _buildMacroSection(
+              'CARBS (g)',
+              'preCarbs',
+              'duringCarbs',
+              'postCarbs',
+            ),
             const SizedBox(height: AppSpacing.md),
-            _buildMacroSection('PROTEIN (g)', 'preProtein', 'duringProtein', 'postProtein'),
+            _buildMacroSection(
+              'PROTEIN (g)',
+              'preProtein',
+              'duringProtein',
+              'postProtein',
+            ),
             const SizedBox(height: AppSpacing.md),
-            _buildMacroSection(fluidLabel, 'preFluids', 'duringFluids', 'postFluids'),
+            _buildMacroSection(
+              fluidLabel,
+              'preFluids',
+              'duringFluids',
+              'postFluids',
+            ),
             const SizedBox(height: AppSpacing.md),
-            _buildMacroSection('SODIUM (mg)', 'preSodium', 'duringSodium', 'postSodium'),
+            _buildMacroSection(
+              'SODIUM (mg)',
+              'preSodium',
+              'duringSodium',
+              'postSodium',
+            ),
           ],
         ),
       ),
       actions: [
         KyleSecondaryButton(
+          key: const ValueKey('edit_macros.cancel_button'),
           text: 'Cancel',
           onPressed: () => Navigator.of(context).pop(),
         ),
         const SizedBox(height: AppSpacing.lg),
         KylePrimaryButton(
+          key: const ValueKey('edit_macros.save_button'),
           text: 'Save Changes',
           onPressed: _saveChanges,
         ),
@@ -92,7 +140,12 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
     );
   }
 
-  Widget _buildMacroSection(String label, String preKey, String duringKey, String postKey) {
+  Widget _buildMacroSection(
+    String label,
+    String preKey,
+    String duringKey,
+    String postKey,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -118,6 +171,50 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
   }
 
   Widget _buildTextField(String label, String key) {
+    // Derive the ValueKey from the controller key string.
+    // e.g. 'preCarbs' -> 'edit_macros.carbs_pre_field'
+    final String fieldKeyStr;
+    switch (key) {
+      case 'preCarbs':
+        fieldKeyStr = 'edit_macros.carbs_pre_field';
+        break;
+      case 'duringCarbs':
+        fieldKeyStr = 'edit_macros.carbs_during_field';
+        break;
+      case 'postCarbs':
+        fieldKeyStr = 'edit_macros.carbs_post_field';
+        break;
+      case 'preProtein':
+        fieldKeyStr = 'edit_macros.protein_pre_field';
+        break;
+      case 'duringProtein':
+        fieldKeyStr = 'edit_macros.protein_during_field';
+        break;
+      case 'postProtein':
+        fieldKeyStr = 'edit_macros.protein_post_field';
+        break;
+      case 'preFluids':
+        fieldKeyStr = 'edit_macros.fluids_pre_field';
+        break;
+      case 'duringFluids':
+        fieldKeyStr = 'edit_macros.fluids_during_field';
+        break;
+      case 'postFluids':
+        fieldKeyStr = 'edit_macros.fluids_post_field';
+        break;
+      case 'preSodium':
+        fieldKeyStr = 'edit_macros.sodium_pre_field';
+        break;
+      case 'duringSodium':
+        fieldKeyStr = 'edit_macros.sodium_during_field';
+        break;
+      case 'postSodium':
+        fieldKeyStr = 'edit_macros.sodium_post_field';
+        break;
+      default:
+        fieldKeyStr = 'edit_macros.${key}_field';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -130,6 +227,7 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
         ),
         const SizedBox(height: 4),
         TextField(
+          key: ValueKey(fieldKeyStr),
           controller: _controllers[key],
           keyboardType: TextInputType.number,
           style: AppTextStyles.bodyLarge,
@@ -139,9 +237,7 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
               horizontal: 8,
               vertical: 8,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
       ],
@@ -186,10 +282,7 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
     } catch (e) {
       // Show error
       if (mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          'Invalid input: ${e.toString()}',
-        );
+        MealvanaSnackbar.showError(context, 'Invalid input: ${e.toString()}');
       }
     }
   }

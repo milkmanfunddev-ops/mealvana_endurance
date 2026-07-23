@@ -1,7 +1,8 @@
 /**
  * Generate Nutrition Plan V3 Edge Function
  *
- * Algorithm C pre-workout food selection with rule-based during and LP-based after phases.
+ * Pre-workout uses Algorithm C food selection; during and after both run a
+ * template solver as the primary path with rule-based / LP fallbacks.
  *
  * Pre-workout (before) phase:
  * - Algorithm C from generate-macros-v4 (scoring/stacking/drink/electrolyte)
@@ -9,26 +10,28 @@
  * - Transformed to V2's BeforePhaseResult shape
  *
  * During phase:
- * - Rule-based solver with LP fallback
+ * - during_workout_templates solver → rule-based solver → LP fallback
  *
  * After phase:
- * - LP solver with greedy fallback
+ * - post_workout_templates solver → LP fallback
  *
  * Brick workouts:
  * - Multi-segment with transitions (T1, T2)
  *
  * Module structure:
  * - types.ts: PlanInputV2, LPPhaseResult interfaces
- * - by-hour-apportionment.ts: deprecated server-side by-hour placement
- * - during-phase.ts: rule-based during + electrolyte post-processing
- * - lp-phase.ts: LP solver orchestration (after phase + LP fallback)
+ * - during-phase.ts: during-workout template + rule solver + gap-fill closing pass
+ * - after-phase.ts: post-workout template solver + LP fallback
+ * - lp-phase.ts: LP solver orchestration (after phase only)
  * - validation.ts: phase result validation
  * - brick-handler.ts: brick workout multi-segment handler
  * - before-phase.ts: Algorithm C transformation layer
+ * - plan-generation-log.ts: per-plan targets-vs-delivered ledger
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -46,12 +49,17 @@ import {
 import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
-import { generateLPPhase } from "./lp-phase.ts";
+import { generateAfterPhase } from "./after-phase.ts";
+import {
+  buildPlanGenerationLogRow,
+  insertPlanGenerationLog,
+} from "./plan-generation-log.ts";
 import {
   flattenBeforeFoods,
   validatePhaseResultAgainstTargets,
 } from "./validation.ts";
 import { handleBrickPlan } from "./brick-handler.ts";
+import { fetchUserPinnedTemplateIds } from "../_shared/nutrition/pins.ts";
 
 // ============================================================================
 // Timing Helpers
@@ -82,7 +90,11 @@ async function timeAsync<T>(
 // Main Handler
 // ============================================================================
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. initSentry() is a no-op when
+// SENTRY_DSN is not configured so this never crashes the function.
+initSentry();
+
+serve(withSentry(async (req) => {
   const requestStart = performance.now();
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -115,6 +127,58 @@ serve(async (req) => {
     console.log(
       `[PLAN-V3] Full input: pre_run={carbs_g: ${input.macro_targets?.pre_run?.carbs_g}, protein_g: ${input.macro_targets?.pre_run?.protein_g}, water_ml: ${input.macro_targets?.pre_run?.water_ml}, sodium_mg: ${input.macro_targets?.pre_run?.sodium_mg}}, during_run={carbs_g: ${input.macro_targets?.during_run?.carbs_g}, sodium_mg: ${input.macro_targets?.during_run?.sodium_mg}, water_ml: ${input.macro_targets?.during_run?.water_ml}}, post_run={carbs_g: ${input.macro_targets?.post_run?.carbs_g}, protein_g: ${input.macro_targets?.post_run?.protein_g}, sodium_mg: ${input.macro_targets?.post_run?.sodium_mg}, water_ml: ${input.macro_targets?.post_run?.water_ml}}, duration_minutes=${input.duration_minutes}, gut_training_level=${input.gut_training_level}, dietary_preference=${input.dietary_preference}`,
     );
+    // DIAGNOSTIC: log the full preference payload the client sent. Empty plans
+    // have been traced to a bogus disliked_foods list (foods the user actually
+    // likes arriving as disliked) that collapses the candidate pool. This makes
+    // the exact payload visible so we can confirm the client-side source.
+    const likedIn = input.liked_foods ?? [];
+    const willingIn = input.willing_to_try_foods ?? [];
+    const dislikedIn = input.disliked_foods ?? [];
+    console.log(
+      `[PLAN-V3-PREFS] liked(${likedIn.length})=[${likedIn.join(", ")}] | ` +
+        `willing(${willingIn.length})=[${willingIn.join(", ")}] | ` +
+        `disliked(${dislikedIn.length})=[${dislikedIn.join(", ")}]`,
+    );
+    // Guardrail: a disliked list that overlaps the user's own liked/willing
+    // foods is self-contradictory and a strong signal of a stale/incorrect
+    // client preference cache. Surface it loudly rather than silently shipping
+    // an under-fuelled plan.
+    const likedWillingSet = new Set(
+      [...likedIn, ...willingIn].map((f) => String(f).toLowerCase()),
+    );
+    const contradictory = dislikedIn
+      .map((f) => String(f).toLowerCase())
+      .filter((f) => likedWillingSet.has(f));
+    if (contradictory.length > 0) {
+      console.warn(
+        `[PLAN-V3-PREFS] WARNING: ${contradictory.length} food(s) are marked BOTH disliked and liked/willing — likely a stale client preference cache: [${
+          contradictory.join(", ")
+        }]`,
+      );
+    }
+
+    // Food preferences (liked / disliked / willing-to-try) ARE consumed again
+    // as of 2026-07-08 (re-enabled after the 2026-07-03 rip-out), but only by
+    // the free-form selectors: the default-formula/template tier and the
+    // rule/LP solvers. The pinned personal-formula path stays preference-blind —
+    // an explicit pin always overrides preferences.
+    //
+    // Dislikes are treated SOFTLY, which is what makes re-enabling safe against
+    // the failure mode that caused the rip-out (a stale/bogus disliked list
+    // collapsing the candidate pool to an empty plan):
+    //   - the template + rule solvers deprioritize/skip disliked foods but
+    //     tolerate a *reported* macro shortfall (allowPreferenceShortfall)
+    //     instead of returning null, and
+    //   - the LP last-resort ignores preferences entirely,
+    // so preferences can never produce "no plan" — worst case they nudge food
+    // choice and surface a shortfall. The client also now scopes the
+    // preferences UI to endurance/fuel foods, keeping the signal relevant.
+    // Diet + allergy remain SEPARATE, hard inputs (`dietary_preference`,
+    // `allergies`) and are unaffected. The contradiction guardrail above stays
+    // as a stale-cache canary.
+    input.liked_foods = likedIn;
+    input.willing_to_try_foods = willingIn;
+    input.disliked_foods = dislikedIn;
 
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
@@ -133,11 +197,23 @@ serve(async (req) => {
       );
     }
 
-    // Brick workouts: route to dedicated handler
+    // Fetch Formula Kit pins for this user (all scopes). When the user
+    // has no pins (or no row for this device), all Sets are empty and
+    // behavior is byte-identical to pre-pin v3. Errors inside the fetcher
+    // already degrade to empty sets, so plan generation is never blocked
+    // by a pins-query failure. Formula Kit PR 2 substep 5b; plumbed through
+    // the brick handler 2026-07-21 (was deferred in v1 — triathletes' pins
+    // were silently ignored).
+    const userPins = await timeAsync(
+      "fetch_user_pins",
+      () => fetchUserPinnedTemplateIds(supabase, input.device_id),
+    );
+
+    // Brick workouts: route to dedicated handler.
     if (activityType === "brick") {
       const response = await timeAsync(
         "brick_total",
-        () => handleBrickPlan(supabase, input, planId),
+        () => handleBrickPlan(supabase, input, planId, userPins),
       );
       console.log(
         `[PLAN-V3-TIMING] request_total completed in ${
@@ -151,7 +227,15 @@ serve(async (req) => {
     const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise
       .all([
         // Before: Algorithm C
-        timeAsync("before_phase", () => generateBeforePhaseV3(supabase, input)),
+        timeAsync(
+          "before_phase",
+          () =>
+            generateBeforePhaseV3(supabase, {
+              ...input,
+              pinned_food_template_ids: userPins.beforePinIds,
+              personal_formula_pins: userPins.personalFormulas,
+            }),
+        ),
 
         // During: template solver → rule solver → LP fallback
         input.macro_targets.during_run
@@ -170,28 +254,46 @@ serve(async (req) => {
                 input.dietary_preference,
                 input.gut_training_level,
                 input.duration_minutes,
+                userPins.duringPinIds,
+                // `pinsActive` = true when the user has any pin anywhere
+                // (Before, During, or After). Drives `pin_decision`
+                // emission on the During section even when the user has
+                // zero During-scope pins, so the activity-detail banner can
+                // render a row for the During phase. Without this, the
+                // scenario-4 bug (Before-only pinned → banner skips
+                // During) returns. Formula Kit PR 2 #18, extended to
+                // include After in PR 3 substep 7.
+                userPins.beforePinIds.size + userPins.duringPinIds.size +
+                    userPins.afterPinIds.size > 0,
+                userPins.personalFormulas,
+                input.emit_ephemeral_default_formula === true,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
 
-        // After: LP-based
+        // After: template solver → LP fallback
         input.macro_targets.post_run
           ? timeAsync(
             "after_phase",
             () =>
-              generateLPPhase(
+              generateAfterPhase(
                 supabase,
-                "after",
                 input.macro_targets.post_run,
                 activityType,
                 input.liked_foods,
                 input.willing_to_try_foods,
                 input.disliked_foods,
                 input.device_id,
-                undefined,
-                undefined,
                 input.allergies,
                 input.dietary_preference,
+                userPins.afterPinIds,
+                // Same all-scopes pinsActive flag as During — keeps the
+                // banner row-consistent when the user has pins only in
+                // other scopes. Formula Kit PR 3 substep 7.
+                userPins.beforePinIds.size + userPins.duringPinIds.size +
+                    userPins.afterPinIds.size > 0,
+                userPins.personalFormulas,
+                input.emit_ephemeral_default_formula === true,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -262,6 +364,35 @@ serve(async (req) => {
     if (duringPhaseResult.template_metadata) {
       duringResponse.template_metadata = duringPhaseResult.template_metadata;
     }
+    if (
+      duringPhaseResult.shortfalls &&
+      duringPhaseResult.shortfalls.length > 0
+    ) {
+      duringResponse.shortfalls = duringPhaseResult.shortfalls;
+    }
+    if (duringPhaseResult.pin_decision) {
+      duringResponse.pin_decision = duringPhaseResult.pin_decision;
+    }
+
+    // Build the after response so post-workout template metadata + shortfalls
+    // flow to the client the same way the during phase does. When the LP
+    // fallback ran, template_metadata is absent and the client falls back to
+    // the plain food list — backwards compatible with older clients.
+    const afterResponse: Record<string, unknown> = {
+      foods: afterPhaseResult.foods,
+    };
+    if (afterPhaseResult.template_metadata) {
+      afterResponse.template_metadata = afterPhaseResult.template_metadata;
+    }
+    if (
+      afterPhaseResult.shortfalls &&
+      afterPhaseResult.shortfalls.length > 0
+    ) {
+      afterResponse.shortfalls = afterPhaseResult.shortfalls;
+    }
+    if (afterPhaseResult.pin_decision) {
+      afterResponse.pin_decision = afterPhaseResult.pin_decision;
+    }
 
     const response: Record<string, unknown> = {
       success: true,
@@ -269,7 +400,19 @@ serve(async (req) => {
       plan: {
         before: beforeResult,
         during: duringResponse,
+        // Older clients read `after` as a flat FoodResult[]; serve the metadata
+        // alongside under a separate key so we don't break that contract.
         after: afterPhaseResult.foods,
+        after_metadata: afterResponse.template_metadata ?? null,
+        ...(afterResponse.shortfalls
+          ? { after_shortfalls: afterResponse.shortfalls }
+          : {}),
+        // Formula Kit PR 3 substep 9: After-phase pin telemetry rides as a
+        // sibling key (same pattern as after_metadata) instead of nesting
+        // under `after`, which older clients read as a flat array.
+        ...(afterResponse.pin_decision
+          ? { after_pin_decision: afterResponse.pin_decision }
+          : {}),
       },
       macro_targets: {
         ...input.macro_targets,
@@ -304,6 +447,31 @@ serve(async (req) => {
       }ms`,
     );
 
+    // Ledger: record targets vs delivered for failure-rate analytics.
+    // Best-effort — insertPlanGenerationLog never throws. Runs after the
+    // response via waitUntil when the runtime provides it.
+    const ledgerWrite = insertPlanGenerationLog(
+      supabase,
+      buildPlanGenerationLogRow({
+        planId,
+        input,
+        activityType,
+        beforeFoods: flattenBeforeFoods(
+          beforeResult as Record<string, { foods?: FoodResult[] }>,
+        ),
+        duringResult: duringPhaseResult,
+        afterResult: afterPhaseResult,
+        warnings,
+      }),
+    );
+    // deno-lint-ignore no-explicit-any
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (typeof runtime?.waitUntil === "function") {
+      runtime.waitUntil(ledgerWrite);
+    } else {
+      await ledgerWrite;
+    }
+
     return jsonResponse(response);
   } catch (error) {
     console.error("[PLAN-V3] Error:", error);
@@ -314,4 +482,4 @@ serve(async (req) => {
     );
     return serverError(error, true);
   }
-});
+}));

@@ -31,8 +31,22 @@ import {
   type ElectrolyteBounds,
 } from './during-utils.ts';
 
+export interface RuleSolverShortfall {
+  macro: 'carbs' | 'sodium' | 'fluid';
+  delivered: number;
+  target: number;
+  unit: 'g' | 'mg' | 'ml';
+  reason: 'no_foods_available' | 'catalog_exhausted';
+}
+
 interface RuleSolverResult {
   foods: FoodResult[];
+  /** Emitted when the food pool is empty or a macro target cannot be met.
+   * Allows callers and clients to distinguish an empty-pool "no fueling available"
+   * from a legitimate zero-fuel phase (e.g. swimming). */
+  shortfalls?: RuleSolverShortfall[];
+  /** Plain-text warnings for logging / wire propagation. */
+  warnings?: string[];
 }
 
 // ============================================================================
@@ -53,8 +67,43 @@ export function generateDuringPhaseRuleBased(
   activityType: ActivityType,
 ): RuleSolverResult {
   if (foods.length === 0) {
-    console.log('[DURING-RULES] No foods available');
-    return { foods: [] };
+    // Emit a structured signal so the caller can distinguish "no foods" from a
+    // legitimate zero-fuel phase (e.g. swimming returns {foods:[]} intentionally).
+    const emptyShortfalls: RuleSolverShortfall[] = [];
+    if (targets.carbs_g > 0) {
+      emptyShortfalls.push({
+        macro: 'carbs',
+        delivered: 0,
+        target: targets.carbs_g,
+        unit: 'g',
+        reason: 'no_foods_available',
+      });
+    }
+    if (targets.sodium_mg > 0) {
+      emptyShortfalls.push({
+        macro: 'sodium',
+        delivered: 0,
+        target: targets.sodium_mg,
+        unit: 'mg',
+        reason: 'no_foods_available',
+      });
+    }
+    if (targets.water_ml > 0) {
+      emptyShortfalls.push({
+        macro: 'fluid',
+        delivered: 0,
+        target: targets.water_ml,
+        unit: 'ml',
+        reason: 'no_foods_available',
+      });
+    }
+    const warningMsg = `[DURING-RULES] Empty food pool — cannot meet any targets for ${activityType}`;
+    console.warn(warningMsg);
+    return {
+      foods: [],
+      shortfalls: emptyShortfalls,
+      warnings: [warningMsg],
+    };
   }
 
   const carbTarget = targets.carbs_g;
@@ -152,18 +201,33 @@ export function generateDuringPhaseRuleBased(
 
     if (remainingCarbs > 0 && sportsDrink.per_serving.carbs_g > 0) {
       let sdServings = remainingCarbs / sportsDrink.per_serving.carbs_g;
+
+      // When carbTarget < 15g the primary carb step was already skipped. For this
+      // degenerate low-target case, relax the carb upper bound so sports drink can
+      // still contribute one serving (any overshoot is within the parity 8g absolute
+      // floor). Pass Infinity as carbUpper so capServingsByUpperBounds doesn't block.
+      const effectiveCarbUpperForSD = carbTarget < 15 ? Number.POSITIVE_INFINITY : carbUpper;
       sdServings = capServingsByUpperBounds(
         sportsDrink,
         sdServings,
         carbsAssigned,
         sodiumAssigned,
         fluidAssigned,
-        carbUpper,
+        effectiveCarbUpperForSD,
         sodiumUpper,
         fluidUpper,
       );
 
-      if (sdServings > 0) {
+      // Guard: after clamping/rounding to min_servings, verify carbs still fit
+      // within the upper bound. Discrete foods (min_servings≥1) can round UP to
+      // their minimum, overshooting carbUpper on standard targets. Skip rather than
+      // overshoot.
+      //
+      // Exception: carbTarget < 15g — see effectiveCarbUpperForSD above.
+      const sdCarbsIfAdded = carbsAssigned + sportsDrink.per_serving.carbs_g * sdServings;
+      const sdWouldOvershoot = carbTarget >= 15 && sdCarbsIfAdded > carbUpper + 1e-6;
+
+      if (sdServings > 0 && !sdWouldOvershoot) {
         const sdResult = buildFoodResult(sportsDrink, sdServings);
         resultFoods.push(sdResult);
         carbsAssigned += sdResult.carbs_grams;
@@ -173,6 +237,56 @@ export function generateDuringPhaseRuleBased(
         console.log(
           `[DURING-RULES] Sports drink: ${sportsDrink.name} x${sdServings} = ${sdResult.carbs_grams}g carbs, ${sdResult.fluids_ml}ml fluid`
         );
+      } else if (sdServings > 0 && sdWouldOvershoot) {
+        console.log(
+          `[DURING-RULES] Sports drink skipped — min serving (${sdServings}x${sportsDrink.per_serving.carbs_g}g=` +
+          `${(sportsDrink.per_serving.carbs_g * sdServings).toFixed(0)}g) would push carbs above upper bound ` +
+          `(current=${carbsAssigned.toFixed(0)}g, upper=${carbUpper.toFixed(0)}g)`
+        );
+
+        // Fallback: if primary carb alone left us below carbLower and sports drink
+        // can hit the FULL target from scratch (without primary carb carbs),
+        // replace the approach: un-account primary carb contribution and use
+        // sports drink targeting the full carbTarget instead.
+        // This handles small-target indivisible-food scenarios (e.g. 30g target +
+        // 25g-indivisible gel → 25g/30g = 83% fails; but 2× 15g sports drink = 30g).
+        const carbLower = carbTarget * (MACRO_CONSTRAINT_RANGES.carbs.during?.min ?? 0.9);
+        const primaryCarbContribution = carbsAssigned - 0; // only primary carb contributed so far
+        const inPrimaryOnlyLow = primaryCarbContribution < carbLower;
+        if (inPrimaryOnlyLow && sportsDrink.per_serving.carbs_g > 0) {
+          // Try sports drink targeting the full carbTarget (ignoring prior primary allocation)
+          let sdFullServings = carbTarget / sportsDrink.per_serving.carbs_g;
+          sdFullServings = capServingsByUpperBounds(
+            sportsDrink,
+            sdFullServings,
+            0, // treat as if no prior carbs assigned (fresh path)
+            sodiumAssigned,
+            fluidAssigned,
+            carbUpper,
+            sodiumUpper,
+            fluidUpper,
+          );
+          const sdFullCarbsIfAdded = sportsDrink.per_serving.carbs_g * sdFullServings;
+          if (sdFullServings > 0 && sdFullCarbsIfAdded >= carbLower - 1e-6 && sdFullCarbsIfAdded <= carbUpper + 1e-6) {
+            // Remove the primary carb that was previously added to resultFoods and roll back its contribution
+            const primaryIndex = resultFoods.findIndex(f => f.food_id === primaryCarb?.id);
+            if (primaryIndex >= 0) {
+              const prev = resultFoods.splice(primaryIndex, 1)[0];
+              carbsAssigned -= prev.carbs_grams;
+              sodiumAssigned -= prev.sodium_mg;
+              fluidAssigned -= prev.fluids_ml;
+            }
+            const sdFullResult = buildFoodResult(sportsDrink, sdFullServings);
+            resultFoods.push(sdFullResult);
+            carbsAssigned += sdFullResult.carbs_grams;
+            sodiumAssigned += sdFullResult.sodium_mg;
+            fluidAssigned += sdFullResult.fluids_ml;
+            console.log(
+              `[DURING-RULES] Sports drink (full-target replace): ${sportsDrink.name} x${sdFullServings} = ` +
+              `${sdFullResult.carbs_grams}g carbs — replaced primary carb (was below carbLower at ${(primaryCarbContribution).toFixed(0)}g)`
+            );
+          }
+        }
       }
     }
   }
@@ -199,7 +313,9 @@ export function generateDuringPhaseRuleBased(
           sodiumUpper,
           fluidUpper,
         );
-        if (secServings > 0) {
+        // Guard: discrete min-serving rounding must not push carbs above upper bound
+        const secCarbsIfAdded = carbsAssigned + secondaryCarb.per_serving.carbs_g * secServings;
+        if (secServings > 0 && secCarbsIfAdded <= carbUpper + 1e-6) {
           const secResult = buildFoodResult(secondaryCarb, secServings);
           resultFoods.push(secResult);
           carbsAssigned += secResult.carbs_grams;
@@ -208,6 +324,11 @@ export function generateDuringPhaseRuleBased(
 
           console.log(
             `[DURING-RULES] Secondary carb: ${secondaryCarb.name} x${secServings} = ${secResult.carbs_grams}g carbs (deficit recovery)`
+          );
+        } else if (secServings > 0) {
+          console.log(
+            `[DURING-RULES] Secondary carb skipped — min serving would overshoot carb upper bound ` +
+            `(current=${carbsAssigned.toFixed(0)}g, upper=${carbUpper.toFixed(0)}g)`
           );
         }
       }
@@ -230,7 +351,9 @@ export function generateDuringPhaseRuleBased(
           sodiumUpper,
           fluidUpper,
         );
-        if (recoveryServings > 0) {
+        // Guard: min-serving rounding must not push carbs above upper bound
+        const recoveryCarbsIfAdded = carbsAssigned + anySportsDrink.per_serving.carbs_g * recoveryServings;
+        if (recoveryServings > 0 && recoveryCarbsIfAdded <= carbUpper + 1e-6) {
           const recoveryResult = buildFoodResult(anySportsDrink, recoveryServings);
           resultFoods.push(recoveryResult);
           carbsAssigned += recoveryResult.carbs_grams;

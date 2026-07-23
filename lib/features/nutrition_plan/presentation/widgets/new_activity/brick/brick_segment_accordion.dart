@@ -73,7 +73,9 @@ class BrickSegmentAccordion extends StatelessWidget {
             // Header with drag handle, title, and expand/collapse icon
             Semantics(
               button: true,
-              label: expanded ? 'Collapse $sport segment' : 'Expand $sport segment',
+              label: expanded
+                  ? 'Collapse $sport segment'
+                  : 'Expand $sport segment',
               child: InkWell(
                 onTap: onToggle,
                 borderRadius: BorderRadius.circular(12),
@@ -86,7 +88,7 @@ class BrickSegmentAccordion extends StatelessWidget {
                     children: [
                       // Drag handle (≡) - decorative since gesture is on whole card
                       ExcludeSemantics(
-                        child: Icon(
+                        child: FaIcon(
                           FontAwesomeIcons.gripVertical,
                           size: 20,
                           color: isDark
@@ -102,7 +104,9 @@ class BrickSegmentAccordion extends StatelessWidget {
                           child: Text(
                             '$order. $sport',
                             style: AppTextStyles.descriptor.copyWith(
-                              color: isDark ? AppColors.cream : AppColors.blackberry,
+                              color: isDark
+                                  ? AppColors.cream
+                                  : AppColors.blackberry,
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),
@@ -114,8 +118,8 @@ class BrickSegmentAccordion extends StatelessWidget {
                       ExcludeSemantics(
                         child: Icon(
                           expanded
-                              ? FontAwesomeIcons.chevronUp
-                              : FontAwesomeIcons.chevronDown,
+                              ? FontAwesomeIcons.chevronUp.data
+                              : FontAwesomeIcons.chevronDown.data,
                           size: 16,
                           color: isDark
                               ? AppColors.cream.withValues(alpha: 0.7)

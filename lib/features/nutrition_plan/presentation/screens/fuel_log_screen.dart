@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../../domain/carb_adjustment_level.dart';
 import '../../domain/fuel_log_data.dart';
 import '../providers/activity_detail_controller.dart';
 import '../providers/activity_detail_state.dart';
 import '../utils/activity_detail_helpers.dart';
 import '../widgets/fuel_log/fuel_log_feedback_section.dart';
+import '../widgets/fuel_log/fuel_log_no_plan_state.dart';
 import '../widgets/fuel_log/fuel_log_section_widget.dart';
 import '../widgets/fuel_log/fuel_log_success_overlay.dart';
 
@@ -106,23 +108,26 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: asyncState.isLoading
-                ? null
-                : () async {
-                    final state = asyncState.value;
-                    if (state != null) {
-                      await _completeFuelLog();
-                    }
-                  },
-            child: Text(
-              'Done',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.orange,
-                fontWeight: FontWeight.w700,
+          // Done is meaningful only when there's a plan to save against.
+          // The no-plan empty state surfaces its own close affordance.
+          if (asyncState.value?.nutritionPlan != null)
+            TextButton(
+              onPressed: asyncState.isLoading
+                  ? null
+                  : () async {
+                      final state = asyncState.value;
+                      if (state != null) {
+                        await _completeFuelLog();
+                      }
+                    },
+              child: Text(
+                'Done',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
@@ -178,12 +183,36 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
 
   Widget _buildContent(BuildContext context, ActivityDetailState state) {
     final plan = state.nutritionPlan;
+
+    // No-plan empty state: the activity arrived from a connected provider
+    // (typically Garmin) without a nutrition plan. The fuel-log surface still
+    // opens — both because the activity-upload push routes here, and so the
+    // user has a clear path to either generate a plan or just close out.
+    if (plan == null && state.activity != null && !state.isSaving) {
+      return FuelLogNoPlanState(
+        activity: state.activity!,
+        onGeneratePlan: _handleGeneratePlanFromEmptyState,
+        onClose: _closeWithoutSaving,
+      );
+    }
+
+    // Resolution order matters:
+    //  1. in-memory edits (active logging session),
+    //  2. the activity's saved fuel log (so after Save — when the in-memory
+    //     copy is cleared — the carbs/hr card shows the persisted actual
+    //     quantities instead of reverting to planned),
+    //  3. a fresh copy from the plan (first-time logging, no saved data).
     final fuelLog =
         state.fuelLogData ??
+        _tryLoadStoredFuelLog(state.activity?.fuelLogData) ??
         (plan != null ? FuelLogData.fromNutritionPlan(plan) : null);
     if (plan == null || fuelLog == null) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    // Show Garmin attribution when the activity displays Garmin-sourced data,
+    // including TP/FS-planned workouts completed by a Garmin push.
+    final hasGarminData = state.activity?.hasGarminData ?? false;
 
     return SingleChildScrollView(
       padding: AppSpacing.screenPaddingHorizontal,
@@ -191,12 +220,23 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.lg),
+          if (hasGarminData) ...[
+            // Required by Garmin Developer API Brand Guidelines whenever
+            // screens display data derived from a Garmin Connect upload.
+            GarminAttributionMessage(
+              deviceName: state.activity?.garminDeviceName,
+              subject: 'Workout calories and duration',
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           _buildFuelLogSections(context, state, fuelLog),
           const SizedBox(height: AppSpacing.md),
           FuelLogFeedbackSection(
             initialRating: _fuelLogRating,
             initialNutritionRating: _fuelLogNutritionRating,
             initialNotes: _fuelLogNotes,
+            activity: state.activity,
+            fuelLog: fuelLog,
             duringCarbRateGPerH:
                 ActivityDetailHelpers.computeDuringCarbRateGPerH(
                   activity: state.activity,
@@ -257,15 +297,13 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
           title: sectionTitle,
           items: sectionItems,
           sectionColor: sectionColor,
-          subPhaseGroups: subPhaseGroups?.map(
-            (k, v) => MapEntry(k, v.cast()),
-          ),
+          subPhaseGroups: subPhaseGroups?.map((k, v) => MapEntry(k, v.cast())),
           isViewOnly: false,
-          onIncrement: (foodId, secId) {
-            _controller().updateFuelLogItemQuantity(foodId, secId, 0.5);
+          onIncrement: (item) {
+            _controller().updateFuelLogItemQuantity(item, 0.5);
           },
-          onDecrement: (foodId, secId) {
-            _controller().updateFuelLogItemQuantity(foodId, secId, -0.5);
+          onDecrement: (item) {
+            _controller().updateFuelLogItemQuantity(item, -0.5);
           },
           onAddFood: () => _addFood(context, sectionId),
         ),
@@ -273,6 +311,18 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
     }
 
     return Column(children: sectionWidgets);
+  }
+
+  /// Deserialize the activity's saved fuel-log JSON, or null if absent/invalid.
+  /// Takes the raw map (not the [Activity]) so the screen needn't import the
+  /// activity domain type.
+  FuelLogData? _tryLoadStoredFuelLog(Map<String, dynamic>? raw) {
+    if (raw == null) return null;
+    try {
+      return FuelLogData.fromJson(raw);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _initializeFuelLogIfReady(ActivityDetailState state) {
@@ -354,6 +404,18 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
         'isCoachView': false,
       },
     );
+  }
+
+  /// Routes the user from the no-plan empty state into plan generation. The
+  /// fuel-log screen pops first (so we don't leave a stale fuel-log on the
+  /// stack); the activity detail screen owns the actual generate flow.
+  void _handleGeneratePlanFromEmptyState() {
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/plan', extra: {'activityId': widget.activityId});
+    }
   }
 
   Color _sectionColor(BuildContext context, String sectionId) {

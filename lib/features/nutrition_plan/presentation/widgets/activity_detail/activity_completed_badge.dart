@@ -59,7 +59,7 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        Icon(
+        FaIcon(
           FontAwesomeIcons.circleCheck,
           size: AppIconSizes.md,
           color: AppColors.electrolyte,
@@ -102,7 +102,9 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 3.0),
             child: Icon(
-              isFilled ? FontAwesomeIcons.solidStar : FontAwesomeIcons.star,
+              isFilled
+                  ? FontAwesomeIcons.solidStar.data
+                  : FontAwesomeIcons.star.data,
               size: 22,
               color: isFilled
                   ? AppColors.electrolyte
@@ -146,7 +148,7 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          FaIcon(
             FontAwesomeIcons.noteSticky,
             size: 14,
             color: Theme.of(context).colorScheme.onSurfaceVariant,

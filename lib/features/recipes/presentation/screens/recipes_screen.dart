@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/recipe.dart';
+
+import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../application/recipe_service.dart';
-import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/recipe.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});
@@ -16,7 +18,17 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
   List<Recipe> _recipes = [];
   List<Recipe> _filteredRecipes = [];
   bool _isLoading = true;
+  String? _errorMessage;
   RecipeType? _selectedType;
+
+  /// Chip display order: All, Breakfast, Mains, Snacks, Workout Fuel, Recovery.
+  static const List<RecipeType> _chipOrder = [
+    RecipeType.breakfast,
+    RecipeType.mains,
+    RecipeType.snacks,
+    RecipeType.workoutFuel,
+    RecipeType.recovery,
+  ];
 
   @override
   void initState() {
@@ -30,17 +42,43 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     super.dispose();
   }
 
-  Future<void> _loadRecipes() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadRecipes({bool force = false}) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
-      final recipes = await ref.read(recipeServiceProvider).getAllRecipes();
+      final service = ref.read(recipeServiceProvider);
+
+      // Hydrate the local cache on-demand (no-op when already fresh).
+      // The user must be authenticated to reach this screen, so currentUser
+      // should never be null here; fall back to empty string to satisfy the
+      // interface — the cache-empty guard in the repository will still force a
+      // remote fetch, which will succeed as long as the Supabase session is
+      // active.
+      final userId =
+          ref
+              .read(appExternalDepsProvider)
+              .supabaseClient
+              .auth
+              .currentUser
+              ?.id ??
+          '';
+      await service.ensureSynced(userId, force: force);
+
+      final recipes = await service.getAllRecipes();
+      if (!mounted) return;
       setState(() {
         _recipes = recipes;
         _filteredRecipes = recipes;
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Could not load recipes. Please try again.';
+      });
     }
   }
 
@@ -48,9 +86,11 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredRecipes = _recipes.where((recipe) {
-        final matchesSearch = recipe.name.toLowerCase().contains(query) ||
+        final matchesSearch =
+            recipe.name.toLowerCase().contains(query) ||
             recipe.description.toLowerCase().contains(query);
-        final matchesType = _selectedType == null || recipe.type == _selectedType;
+        final matchesType =
+            _selectedType == null || recipe.type == _selectedType;
         return matchesSearch && matchesType;
       }).toList();
     });
@@ -83,7 +123,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   onChanged: (_) => _filterRecipes(),
                 ),
                 const SizedBox(height: 16),
-                // Type filter
+                // Type filter chips: All, Breakfast, Mains, Snacks, Workout Fuel, Recovery
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -97,59 +137,73 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                         },
                       ),
                       const SizedBox(width: 8),
-                      ...RecipeType.values.map((type) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _FilterChip(
-                          label: _getTypeDisplayName(type),
-                          isSelected: _selectedType == type,
-                          onSelected: () {
-                            setState(() => _selectedType = type);
-                            _filterRecipes();
-                          },
+                      ..._chipOrder.map(
+                        (type) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _FilterChip(
+                            label: type.displayLabel,
+                            isSelected: _selectedType == type,
+                            onSelected: () {
+                              setState(() => _selectedType = type);
+                              _filterRecipes();
+                            },
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          // Recipes list
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredRecipes.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No recipes found',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _filteredRecipes.length,
-                        itemBuilder: (context, index) {
-                          final recipe = _filteredRecipes[index];
-                          return _RecipeCard(recipe: recipe);
-                        },
-                      ),
-          ),
+          // Recipes list / loading / error states
+          Expanded(child: _buildBody(context)),
         ],
       ),
     );
   }
 
-  String _getTypeDisplayName(RecipeType type) {
-    switch (type) {
-      case RecipeType.preRun:
-        return 'Pre-Run';
-      case RecipeType.duringRun:
-        return 'During Run';
-      case RecipeType.postRun:
-        return 'Post-Run';
-      case RecipeType.general:
-        return 'General';
+  Widget _buildBody(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
     }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage!,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.red[700]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadRecipes, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_filteredRecipes.isEmpty) {
+      return const Center(
+        child: Text('No recipes found', style: TextStyle(fontSize: 16)),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _loadRecipes(force: true),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _filteredRecipes.length,
+        itemBuilder: (context, index) {
+          final recipe = _filteredRecipes[index];
+          return _RecipeCard(recipe: recipe);
+        },
+      ),
+    );
   }
 }
 
@@ -196,23 +250,30 @@ class _RecipeCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Thumbnail image
+                  _RecipeThumbnail(
+                    imageUrl: recipe.imageUrl,
+                    type: recipe.type,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           recipe.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           recipe.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -242,7 +303,8 @@ class _RecipeCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _NutritionChip(
-                    label: '${recipe.nutrition.carbohydratesGrams.round()}g carbs',
+                    label:
+                        '${recipe.nutrition.carbohydratesGrams.round()}g carbs',
                     icon: Icons.grain,
                   ),
                   const SizedBox(width: 8),
@@ -261,23 +323,111 @@ class _RecipeCard extends StatelessWidget {
 
   IconData _getTypeIcon(RecipeType type) {
     switch (type) {
-      case RecipeType.preRun:
-        return Icons.schedule;
-      case RecipeType.duringRun:
-        return Icons.directions_run;
-      case RecipeType.postRun:
-        return Icons.restore;
-      case RecipeType.general:
+      case RecipeType.breakfast:
+        return Icons.free_breakfast;
+      case RecipeType.mains:
         return Icons.restaurant;
+      case RecipeType.snacks:
+        return Icons.cookie;
+      case RecipeType.workoutFuel:
+        return Icons.directions_run;
+      case RecipeType.recovery:
+        return Icons.restore;
     }
   }
 }
 
+/// Small rounded thumbnail (~56 px) shown beside each recipe card row.
+///
+/// Falls back to a category-coloured icon if the image URL is null or fails
+/// to load.  Uses [Image.network] with an [errorBuilder] — no extra package
+/// required.
+class _RecipeThumbnail extends StatelessWidget {
+  const _RecipeThumbnail({required this.imageUrl, required this.type});
+
+  final String? imageUrl;
+  final RecipeType type;
+
+  static const double _size = 56;
+
+  Color _categoryColor(BuildContext context) {
+    switch (type) {
+      case RecipeType.breakfast:
+        return Colors.orange.shade300;
+      case RecipeType.mains:
+        return Colors.teal.shade300;
+      case RecipeType.snacks:
+        return Colors.amber.shade300;
+      case RecipeType.workoutFuel:
+        return Colors.blue.shade300;
+      case RecipeType.recovery:
+        return Colors.purple.shade300;
+    }
+  }
+
+  IconData _categoryIcon() {
+    switch (type) {
+      case RecipeType.breakfast:
+        return Icons.free_breakfast;
+      case RecipeType.mains:
+        return Icons.restaurant;
+      case RecipeType.snacks:
+        return Icons.cookie;
+      case RecipeType.workoutFuel:
+        return Icons.directions_run;
+      case RecipeType.recovery:
+        return Icons.restore;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _categoryColor(context);
+
+    final placeholder = Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(_categoryIcon(), color: color, size: 28),
+    );
+
+    if (imageUrl == null) {
+      return placeholder;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        imageUrl!,
+        width: _size,
+        height: _size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => placeholder,
+        loadingBuilder: (_, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: _size,
+            height: _size,
+            color: color.withValues(alpha: 0.15),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _NutritionChip extends StatelessWidget {
-  const _NutritionChip({
-    required this.label,
-    required this.icon,
-  });
+  const _NutritionChip({required this.label, required this.icon});
 
   final String label;
   final IconData icon;
@@ -295,13 +445,7 @@ class _NutritionChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: Colors.grey[600]),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
     );

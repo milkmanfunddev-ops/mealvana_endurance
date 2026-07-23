@@ -30,7 +30,8 @@ class CarbLoadingUserFood {
   final double carbsPerServing;
   final String? imageAddress;
   final String? barcode; // If scanned
-  final String? sourceFoodId; // FK to foods table (if imported from nutrition plan)
+  final String?
+  sourceFoodId; // FK to foods table (if imported from nutrition plan)
   final String? sourceUserFoodId; // FK to user_foods (if imported)
   final bool isDeleted; // Soft delete
   final List<MealType> mealTypes;
@@ -124,7 +125,8 @@ class CarbLoadingUserFood {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
-      mealTypes: (json['meal_types'] as List<dynamic>?)
+      mealTypes:
+          (json['meal_types'] as List<dynamic>?)
               ?.map((id) => MealType.fromId(id as int))
               .toList() ??
           [],

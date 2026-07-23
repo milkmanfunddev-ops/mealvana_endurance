@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,8 +12,11 @@ import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/analytics/internal_user_service.dart';
+import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/performance_telemetry.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
@@ -21,6 +25,7 @@ import '../../settings/presentation/providers/settings_controller.dart';
 import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
+import '../../ai_credits/data/revenuecat_service.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -30,6 +35,11 @@ import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 class AppStartupService {
   AppStartupService(this.ref);
   final Ref ref;
+
+  /// Guards against double-initializing Mixpanel. Analytics can be initialized
+  /// from two places now: deferred startup (consent already on file) and
+  /// [initializeAnalyticsAfterConsent] (consent granted just now, mid-session).
+  bool _analyticsInitialized = false;
 
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
@@ -116,7 +126,10 @@ class AppStartupService {
 
           // Last resort: delete and recreate
           await db.close();
-          await AppDatabase.deleteAndResync();
+          await AppDatabase.deleteAndResync(
+            reason: 'startup_null_profile_recovery_failed',
+            oldSchemaVersion: db.schemaVersion,
+          );
           ref.invalidate(appDatabaseProvider);
 
           // Re-read the provider to trigger fresh database creation
@@ -175,7 +188,10 @@ class AppStartupService {
         await db.close();
 
         // Delete corrupted database files
-        await AppDatabase.deleteAndResync();
+        await AppDatabase.deleteAndResync(
+          reason: 'startup_database_health_check_failed',
+          oldSchemaVersion: db.schemaVersion,
+        );
 
         // Re-initialize with fresh database
         ref.invalidate(appDatabaseProvider);
@@ -202,7 +218,10 @@ class AppStartupService {
 
       // Last resort: try to recover from catastrophic failure
       try {
-        await AppDatabase.deleteAndResync();
+        await AppDatabase.deleteAndResync(
+          reason: 'startup_database_initialization_exception',
+          context: e.runtimeType.toString(),
+        );
         ref.invalidate(appDatabaseProvider);
       } catch (recoveryError) {
         _logger.error(
@@ -225,41 +244,145 @@ class AppStartupService {
     // Wait for first frame to render before initializing these services
     // This avoids Android DeviceInfoPlugin deadlock
     SchedulerBinding.instance.addPostFrameCallback((_) async {
+      // The provider (and its Ref) can be disposed before/while this deferred
+      // chain runs — e.g. a sign-out that tears down the scope during startup,
+      // or a test harness disposing the ProviderScope. Reading `ref` after that
+      // throws UnmountedRefException, so bail early and re-check `ref.mounted`
+      // before any post-async-gap `ref` use (including logging).
+      if (!ref.mounted) return;
       try {
         // 1. Initialize device info (safe after first frame)
-        await DeviceInfoService.instance.initialize();
+        await PerformanceTelemetry.measure(
+          'deferred.device_info',
+          DeviceInfoService.instance.initialize,
+        );
 
         // 2. Initialize analytics with device ID
-        await _initializeAnalytics();
+        await PerformanceTelemetry.measure(
+          'deferred.analytics',
+          _initializeAnalytics,
+        );
 
         // 3. Initialize local notifications and tap callbacks
-        await NotificationService.initialize();
+        await PerformanceTelemetry.measure(
+          'deferred.notifications',
+          NotificationService.initialize,
+        );
 
         // 4. Check user session for analytics identification
-        await checkUserSession();
+        await PerformanceTelemetry.measure(
+          'deferred.user_session',
+          checkUserSession,
+        );
 
         // 5. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
-        await _syncCoachStatus();
-      } catch (e, stackTrace) {
-        _logger.error(
-          'Deferred initialization failed',
-          context: 'DEFERRED_INIT',
-          error: e,
-          stackTrace: stackTrace,
+        await PerformanceTelemetry.measure(
+          'deferred.coach_status',
+          _syncCoachStatus,
         );
+
+        // 6. Initialize RevenueCat for AI credits.
+        // No-op unless aiCreditsEnabled + a RevenueCat key are configured.
+        await PerformanceTelemetry.measure(
+          'deferred.revenuecat',
+          _initializeRevenueCat,
+        );
+      } catch (e, stackTrace) {
+        // Skip logging if the scope was disposed mid-chain — `_logger` reads
+        // `ref` and would throw over the original error.
+        if (ref.mounted) {
+          _logger.error(
+            'Deferred initialization failed',
+            context: 'DEFERRED_INIT',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
         // Don't rethrow - app should continue even if deferred services fail
       }
     });
   }
 
+  /// Initialize analytics once the user has granted consent mid-session.
+  ///
+  /// The consent screen calls this after recording a grant. Without it, a user
+  /// who opts in on first run would send nothing until the next cold start:
+  /// deferred startup has already run and skipped analytics by then.
+  Future<void> initializeAnalyticsAfterConsent() async {
+    if (!ref.read(analyticsConsentProvider).allowsAnalytics) return;
+    // Device info is normally initialized by deferred startup ahead of us, but
+    // it is idempotent and analytics needs the device id below.
+    await DeviceInfoService.instance.initialize();
+    await _initializeAnalytics();
+
+    // Re-identify. Deferred startup already ran checkUserSession() — but it ran
+    // against the NoopAnalyticsTracker, so the identify call went nowhere. And
+    // _initializeAnalytics() only falls back to the device id when there is NO
+    // local profile, so a returning user who opts in mid-session would other-
+    // wise sit unidentified until the next cold start, splitting their events
+    // off from their profile.
+    await checkUserSession();
+  }
+
   /// Initialize analytics service with proper user identification
   /// Called after first frame to avoid Android DeviceInfoPlugin deadlock
   Future<void> _initializeAnalytics() async {
+    // CONSENT GATE. Nothing may reach Mixpanel until the user has said yes —
+    // this method both initializes the SDK and fires `app_opened`, so an
+    // ungated call is exactly the "SDK fires at launch before consent" pattern
+    // Apple rejects for. `unknown` (not yet asked) fails closed.
+    //
+    // `analyticsTrackerProvider` independently returns a NoopAnalyticsTracker
+    // without consent, so this is belt-and-braces — but it is the check that
+    // stops `Mixpanel.init` from ever being called.
+    if (!ref.read(analyticsConsentProvider).allowsAnalytics) {
+      _logger.info(
+        'Analytics initialization skipped — no consent on file',
+        context: 'ANALYTICS',
+      );
+      return;
+    }
+    if (_analyticsInitialized) return;
+    _analyticsInitialized = true;
+
     try {
       final deviceId = DeviceInfoService.instance.deviceId;
+
+      // Must resolve BEFORE Mixpanel starts: the internal flag is registered as
+      // a super property during initialize(), and events begin firing (see
+      // `app_opened` below) immediately after. Purely local — no network call.
+      //
+      // Prefs are passed so it can carry testers off the removed
+      // "Exclude this device from analytics" toggle onto `is_internal`, rather
+      // than silently starting to track them.
+      await InternalUserService.instance.initialize(
+        prefs: ref.read(sharedPreferencesProvider),
+      );
+
       await _analytics.initialize();
-      await _analytics.identifyUser(deviceId);
+
+      // Only identify with the anonymous device id when no local profile
+      // exists — checkUserSession() (deferred-init step 4) identifies the
+      // real user id. Unconditionally identifying with the device id first
+      // flip-flopped the Mixpanel distinct_id on every launch, which can
+      // split one user across two profiles whenever user.id != device id
+      // (authed accounts), breaking retention counts.
+      var hasLocalProfile = false;
+      try {
+        hasLocalProfile =
+            await ref
+                .read(appDatabaseProvider)
+                .userDao
+                .getCurrentUserProfile() !=
+            null;
+      } catch (_) {
+        // Lookup failure → treat as anonymous below.
+      }
+      if (!hasLocalProfile) {
+        await _analytics.identifyUser(deviceId);
+      }
+
       final config = ref.read(appConfigProvider);
       NotificationService.configure(
         _analytics,
@@ -277,6 +400,8 @@ class AppStartupService {
         },
       );
     } catch (e, stackTrace) {
+      // Allow a later attempt (e.g. the post-consent call) to retry.
+      _analyticsInitialized = false;
       _logger.error(
         'Analytics initialization failed',
         context: 'ANALYTICS',
@@ -284,6 +409,30 @@ class AppStartupService {
         stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if analytics fails
+    }
+  }
+
+  /// Initialize RevenueCat for the AI-credits feature.
+  ///
+  /// No-op unless [AppConfig.aiCreditsEnabled] is true and a RevenueCat key is
+  /// configured (see [RevenueCatService.configureIfPossible]). Identifies the
+  /// RevenueCat customer with the Supabase auth user id so purchase webhooks
+  /// credit the correct wallet (token_wallets.user_id == auth.users.id).
+  Future<void> _initializeRevenueCat() async {
+    try {
+      final revenueCat = ref.read(revenueCatServiceProvider);
+      await revenueCat.configureIfPossible();
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId != null && userId.isNotEmpty) {
+        await revenueCat.logIn(userId);
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'RevenueCat initialization failed',
+        context: 'DEFERRED_INIT',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -318,7 +467,11 @@ class AppStartupService {
       final supabaseUser = _supabase.auth.currentUser;
       final userId = supabaseUser?.id ?? 'anonymous';
 
-      await _sentry.setUserContext(deviceId: userId, appVersion: '1.1.0+8');
+      // Derive version dynamically so it stays accurate across releases.
+      final packageInfo = await PackageInfo.fromPlatform();
+      final appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+
+      await _sentry.setUserContext(deviceId: userId, appVersion: appVersion);
     } catch (e, stackTrace) {
       // Don't use Sentry to report Sentry initialization errors
       _logger.error(
@@ -344,7 +497,7 @@ class AppStartupService {
   Future<void> checkUserSession() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final user = await database.userDao.getCurrentUserProfile();
+      final user = await database.userDao.getLocalUserProfile();
 
       if (user != null) {
         // User exists locally - identify them properly in analytics

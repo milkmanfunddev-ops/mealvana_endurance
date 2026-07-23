@@ -19,7 +19,8 @@ class WeatherForecastsTable extends Table {
   IntColumn get humidityPct => integer()();
 
   // Metadata
-  BoolColumn get forecastAvailable => boolean().withDefault(const Constant(true))();
+  BoolColumn get forecastAvailable =>
+      boolean().withDefault(const Constant(true))();
   TextColumn get source => text()(); // 'forecast', 'historical', 'default'
 
   // Optional detailed weather data

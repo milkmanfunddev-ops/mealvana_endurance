@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Reusable section widget for a single sport's during-workout override fields.
 ///
-/// Displays carbs (g/hr), sodium (mg/hr), and fluids (ml/hr) with
-/// optional carb field disabling (e.g. swimming).
+/// Displays carbs (g/hr), sodium (mg/hr), and fluids (mL/hr or fl oz/hr,
+/// depending on the user's unit-system preference) with optional carb field
+/// disabling (e.g. swimming). The fluid controller's underlying value is
+/// owned/converted by the parent screen - this widget only renders the
+/// unit-aware label.
 class DuringSportOverrideSection extends StatelessWidget {
   const DuringSportOverrideSection({
     super.key,
@@ -15,6 +19,7 @@ class DuringSportOverrideSection extends StatelessWidget {
     required this.sodiumController,
     required this.fluidController,
     required this.onChanged,
+    required this.useMetric,
     this.carbsDisabled = false,
     this.showHighCarbRateWarning = false,
     this.highCarbRateWarningThreshold = 120,
@@ -27,6 +32,7 @@ class DuringSportOverrideSection extends StatelessWidget {
   final TextEditingController sodiumController;
   final TextEditingController fluidController;
   final VoidCallback onChanged;
+  final bool useMetric;
   final bool carbsDisabled;
   final bool showHighCarbRateWarning;
   final double highCarbRateWarningThreshold;
@@ -61,7 +67,11 @@ class DuringSportOverrideSection extends StatelessWidget {
           if (!carbsDisabled && showHighCarbRateWarning)
             _buildHighCarbRateWarning(context),
           _buildField(context, 'Sodium (mg/hr)', sodiumController),
-          _buildField(context, 'Fluids (ml/hr)', fluidController),
+          _buildField(
+            context,
+            'Fluids (${UnitFormatter.fluidUnitLabel(useMetric: useMetric)}/hr)',
+            fluidController,
+          ),
         ],
       ),
     );

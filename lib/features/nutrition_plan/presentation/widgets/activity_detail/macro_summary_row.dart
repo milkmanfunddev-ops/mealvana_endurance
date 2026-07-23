@@ -48,6 +48,7 @@ class MacroSummaryRow extends StatelessWidget {
   final bool proteinOverridden;
   final bool sodiumOverridden;
   final bool fluidsOverridden;
+
   /// Optional display labels for overrides (e.g., "120g/hr" for during carbs).
   final String? carbsOverrideLabel;
   final String? proteinOverrideLabel;
@@ -175,6 +176,7 @@ class MacroSummaryItem extends StatelessWidget {
   final int? low;
   final int? high;
   final bool isOverridden;
+
   /// Display label for the override value (e.g., "120g/hr").
   /// When null, falls back to showing "$target$unit".
   final String? overrideLabel;
@@ -196,7 +198,10 @@ class MacroSummaryItem extends StatelessWidget {
     final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     if (!_hasRange) {
-      // No range: show compact "actual/target unit" format
+      // No range provided. When target is 0 (spec says "no recommendation"),
+      // showing "actual/0 unit" reads as broken data — render just `actual unit`.
+      // Otherwise keep the compact "actual/target unit" format.
+      final showFlat = target == 0;
       return Column(
         children: [
           Row(
@@ -214,7 +219,7 @@ class MacroSummaryItem extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: '/$target$unit',
+                      text: showFlat ? unit : '/$target$unit',
                       style: AppTextStyles.dataNumber.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
@@ -312,11 +317,7 @@ class MacroSummaryItem extends StatelessWidget {
       onTap: () => _showOverrideSheet(context),
       child: Padding(
         padding: const EdgeInsets.only(left: 2, top: 1),
-        child: Icon(
-          Icons.info_outline_rounded,
-          size: 14,
-          color: iconColor,
-        ),
+        child: Icon(Icons.info_outline_rounded, size: 14, color: iconColor),
       ),
     );
   }

@@ -58,7 +58,38 @@ export type OurSportType =
   | 'triathlon'
   | 'duathlon'
   | 'multisport'
+  | 'transition'
   | 'other';
+
+/**
+ * Sport types Mealvana fuels and recalculates daily macros for.
+ * Garmin uploads outside this set (e.g. strength, hiking, walking, yoga —
+ * anything that maps to the generic 'other' bucket) are still imported as
+ * an [OurSportType] `'other'` activity for visibility/deletion, but never
+ * get a nutrition plan and never match/complete a planned activity — see
+ * [insertGarminActivityIfMissing] and `findMatchingPlannedActivity` in
+ * activity_completion.ts. Garmin's `'transition'` legs (T1/T2 within a
+ * multisport activity) are the one type still dropped entirely — they
+ * aren't a standalone activity a user would want listed.
+ *
+ * Triathlon/duathlon/multisport parents are included so the parent row
+ * still gets created; child legs share the parent's nutrition context.
+ */
+export const ENDURANCE_SPORT_TYPES: ReadonlySet<OurSportType> = new Set<
+  OurSportType
+>([
+  'running',
+  'cycling',
+  'swimming',
+  'triathlon',
+  'duathlon',
+  'multisport',
+]);
+
+export function isEnduranceSportType(sport: string | undefined | null): boolean {
+  if (!sport) return false;
+  return ENDURANCE_SPORT_TYPES.has(sport as OurSportType);
+}
 
 // ============================================================================
 // Garmin Activity Summary (Push payload)

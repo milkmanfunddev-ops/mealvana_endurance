@@ -11,8 +11,6 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart'
-    show Gender, GutTraining, GutTrainingLevel;
 
 import '../../helpers/fakes/recording_analytics_tracker.dart';
 import '../../helpers/fakes/recording_sentry_reporter.dart';
@@ -75,7 +73,9 @@ void main() {
       });
 
       // Insert user profile
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: testId,
               deviceId: testDeviceId,
@@ -98,7 +98,9 @@ void main() {
 
       logSection('Verifying user profile in database');
 
-      final userProfile = await database.userDao.getCurrentUserProfile();
+      final userProfile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(testId))).getSingleOrNull();
 
       logTestResult('user_id', userProfile?.id);
       logTestResult('gender', userProfile?.gender);
@@ -114,7 +116,7 @@ void main() {
 
       logAssertion(
         'Gender matches',
-        passed: userProfile?.gender == Gender.female,
+        passed: userProfile?.gender == 'female',
         reason: 'User-provided gender should be stored',
       );
 
@@ -126,15 +128,15 @@ void main() {
 
       logAssertion(
         'Gut training level matches',
-        passed: userProfile?.gutTrainingLevel == GutTrainingLevel.low,
+        passed: userProfile?.gutTrainingLevel == 'low',
         reason: 'User-selected gut training level should be stored',
       );
 
       expect(userProfile, isNotNull);
       expect(userProfile?.id, equals(testId));
-      expect(userProfile?.gender, equals(Gender.female));
+      expect(userProfile?.gender, equals('female'));
       expect(userProfile?.weightPounds, equals(140.0));
-      expect(userProfile?.gutTrainingLevel, equals(GutTrainingLevel.low));
+      expect(userProfile?.gutTrainingLevel, equals('low'));
       expect(userProfile?.onboardingCompleted, isFalse);
 
       logTestPass('User profile saved successfully');
@@ -147,7 +149,9 @@ void main() {
       final testDeviceId = 'device-sport-123';
 
       // Create initial user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: testId,
               deviceId: testDeviceId,
@@ -176,26 +180,28 @@ void main() {
       logSection('Updating gut training level to "high"');
 
       // Update gut training level
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(testId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(testId))).write(
         UserProfilesTableCompanion(
           gutTrainingLevel: const Value('high'),
           updatedAt: Value(DateTime.now()),
         ),
       );
 
-      final updatedProfile = await database.userDao.getCurrentUserProfile();
+      final updatedProfile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(testId))).getSingleOrNull();
 
       logTestResult('gut_training_level', updatedProfile?.gutTrainingLevel);
 
       logAssertion(
         'Gut training level updated',
-        passed: updatedProfile?.gutTrainingLevel == GutTrainingLevel.high,
+        passed: updatedProfile?.gutTrainingLevel == 'high',
         reason: 'Sport preference should be updatable',
       );
 
-      expect(updatedProfile?.gutTrainingLevel, equals(GutTrainingLevel.high));
+      expect(updatedProfile?.gutTrainingLevel, equals('high'));
 
       logTestPass('Sport preferences saved successfully');
     });
@@ -207,7 +213,9 @@ void main() {
       final deviceId = 'device-food-123';
 
       // Create user first
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -230,7 +238,8 @@ void main() {
 
       logTestSetup({
         'user_id': userId,
-        'preferences': 'Banana (like), Oatmeal (dislike), Gatorade (willing_to_try)',
+        'preferences':
+            'Banana (like), Oatmeal (dislike), Gatorade (willing_to_try)',
       });
 
       // Insert food preferences (IDs must be at least 36 chars - UUID format)
@@ -279,9 +288,9 @@ void main() {
 
       logSection('Verifying food preferences in database');
 
-      final savedPreferences = await (database.select(database.foodPreferencesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final savedPreferences = await (database.select(
+        database.foodPreferencesTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       logTestResult('preference_count', savedPreferences.length);
 
@@ -291,17 +300,28 @@ void main() {
         reason: 'All food preferences should be saved',
       );
 
-      final likedFoods =
-          savedPreferences.where((p) => p.preference == 'like').toList();
-      final dislikedFoods =
-          savedPreferences.where((p) => p.preference == 'dislike').toList();
-      final willingFoods =
-          savedPreferences.where((p) => p.preference == 'willing_to_try').toList();
+      final likedFoods = savedPreferences
+          .where((p) => p.preference == 'like')
+          .toList();
+      final dislikedFoods = savedPreferences
+          .where((p) => p.preference == 'dislike')
+          .toList();
+      final willingFoods = savedPreferences
+          .where((p) => p.preference == 'willing_to_try')
+          .toList();
 
-      logTestResult('liked_foods', likedFoods.map((f) => f.foodName).join(', '));
-      logTestResult('disliked_foods', dislikedFoods.map((f) => f.foodName).join(', '));
       logTestResult(
-          'willing_to_try', willingFoods.map((f) => f.foodName).join(', '));
+        'liked_foods',
+        likedFoods.map((f) => f.foodName).join(', '),
+      );
+      logTestResult(
+        'disliked_foods',
+        dislikedFoods.map((f) => f.foodName).join(', '),
+      );
+      logTestResult(
+        'willing_to_try',
+        willingFoods.map((f) => f.foodName).join(', '),
+      );
 
       expect(savedPreferences.length, equals(3));
       expect(likedFoods.length, equals(1));
@@ -321,7 +341,9 @@ void main() {
       final deviceId = 'device-complete-123';
 
       // Create user with incomplete onboarding
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -342,26 +364,28 @@ void main() {
             ),
           );
 
-      logTestSetup({
-        'user_id': userId,
-        'initial_onboarding_completed': false,
-      });
+      logTestSetup({'user_id': userId, 'initial_onboarding_completed': false});
 
       logSection('Marking onboarding as completed');
 
       // Mark onboarding as completed
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .write(
+      await (database.update(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).write(
         UserProfilesTableCompanion(
           onboardingCompleted: const Value(true),
           updatedAt: Value(DateTime.now()),
         ),
       );
 
-      final completedProfile = await database.userDao.getCurrentUserProfile();
+      final completedProfile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).getSingleOrNull();
 
-      logTestResult('onboarding_completed', completedProfile?.onboardingCompleted);
+      logTestResult(
+        'onboarding_completed',
+        completedProfile?.onboardingCompleted,
+      );
 
       logAssertion(
         'Onboarding marked as completed',
@@ -374,58 +398,61 @@ void main() {
       logTestPass('Onboarding completion verified');
     });
 
-    test('navigation progresses through onboarding screens correctly', () async {
-      logTestHeading('Onboarding - Navigation Flow');
+    test(
+      'navigation progresses through onboarding screens correctly',
+      () async {
+        logTestHeading('Onboarding - Navigation Flow');
 
-      // Test the navigation decision logic at different stages
-      logTestSetup({
-        'flow': 'Welcome → Profile → Sport Prefs → Food Prefs → Main',
-      });
+        // Test the navigation decision logic at different stages
+        logTestSetup({
+          'flow': 'Welcome → Profile → Sport Prefs → Food Prefs → Main',
+        });
 
-      logSection('Stage 1: No user (fresh install)');
-      const stage1HasUser = false;
-      const stage1Completed = false;
-      final stage1Route = _determineRoute(stage1HasUser, stage1Completed);
-      logTestResult('expected_route', stage1Route);
+        logSection('Stage 1: No user (fresh install)');
+        const stage1HasUser = false;
+        const stage1Completed = false;
+        final stage1Route = _determineRoute(stage1HasUser, stage1Completed);
+        logTestResult('expected_route', stage1Route);
 
-      logAssertion(
-        'Fresh install navigates to welcome',
-        passed: stage1Route == '/welcome',
-        reason: 'No user should start at welcome screen',
-      );
+        logAssertion(
+          'Fresh install navigates to welcome',
+          passed: stage1Route == '/welcome',
+          reason: 'No user should start at welcome screen',
+        );
 
-      expect(stage1Route, equals('/welcome'));
+        expect(stage1Route, equals('/welcome'));
 
-      logSection('Stage 2: User created, onboarding incomplete');
-      const stage2HasUser = true;
-      const stage2Completed = false;
-      final stage2Route = _determineRoute(stage2HasUser, stage2Completed);
-      logTestResult('expected_route', stage2Route);
+        logSection('Stage 2: User created, onboarding incomplete');
+        const stage2HasUser = true;
+        const stage2Completed = false;
+        final stage2Route = _determineRoute(stage2HasUser, stage2Completed);
+        logTestResult('expected_route', stage2Route);
 
-      logAssertion(
-        'Incomplete onboarding navigates to food preferences',
-        passed: stage2Route == '/onboarding/food-preferences',
-        reason: 'Incomplete onboarding continues to food preferences',
-      );
+        logAssertion(
+          'Incomplete onboarding navigates to food preferences',
+          passed: stage2Route == '/onboarding/food-preferences',
+          reason: 'Incomplete onboarding continues to food preferences',
+        );
 
-      expect(stage2Route, equals('/onboarding/food-preferences'));
+        expect(stage2Route, equals('/onboarding/food-preferences'));
 
-      logSection('Stage 3: Onboarding completed');
-      const stage3HasUser = true;
-      const stage3Completed = true;
-      final stage3Route = _determineRoute(stage3HasUser, stage3Completed);
-      logTestResult('expected_route', stage3Route);
+        logSection('Stage 3: Onboarding completed');
+        const stage3HasUser = true;
+        const stage3Completed = true;
+        final stage3Route = _determineRoute(stage3HasUser, stage3Completed);
+        logTestResult('expected_route', stage3Route);
 
-      logAssertion(
-        'Completed onboarding navigates to main',
-        passed: stage3Route == '/main',
-        reason: 'Completed onboarding enters main app',
-      );
+        logAssertion(
+          'Completed onboarding navigates to main',
+          passed: stage3Route == '/main',
+          reason: 'Completed onboarding enters main app',
+        );
 
-      expect(stage3Route, equals('/main'));
+        expect(stage3Route, equals('/main'));
 
-      logTestPass('Navigation flow verified');
-    });
+        logTestPass('Navigation flow verified');
+      },
+    );
   });
 }
 

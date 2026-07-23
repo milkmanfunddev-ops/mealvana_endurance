@@ -21,8 +21,7 @@ class AthletePairingCodesTable extends Table {
   DateTimeColumn get expiresAt => dateTime().named('expires_at')();
 
   /// Coach who used this code (null if unused)
-  TextColumn get usedByCoachId =>
-      text().nullable().named('used_by_coach_id')();
+  TextColumn get usedByCoachId => text().nullable().named('used_by_coach_id')();
 
   /// When the code was used (null if unused)
   DateTimeColumn get usedAt => dateTime().nullable().named('used_at')();
@@ -34,7 +33,5 @@ class AthletePairingCodesTable extends Table {
   String get tableName => 'athlete_pairing_codes';
 
   @override
-  List<String> get customConstraints => [
-        'UNIQUE(code)',
-      ];
+  List<String> get customConstraints => ['UNIQUE(code)'];
 }

@@ -1,0 +1,35 @@
+{
+  "description": "Average athlete (70kg) — vegetarian dietary preference. Tests solver under food-pool constraint pressure when meat-based foods are excluded.",
+  "knownFailure": false,
+  "knownFailureReason": "FIXED (bugs #3 + #7): The carb overshoot guard in during-rule-solver.ts now prevents sports drink from adding a minimum serving that would push carbs above carbUpper (1.1x target). This indirectly fixes the sodium gap too: with carbs no longer overshooting, the electrolyte scoring function can add tablets without a carb-overshoot penalty, delivering 700-1050mg sodium within the 15% parity tolerance.",
+  "athlete": {
+    "weight_kg": 70,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 90,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 55,
+      "sodium_mg": 800,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 60,
+      "protein_g": 25,
+      "sodium_mg": 700,
+      "water_ml": 600
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "vegetarian"
+  },
+  "pins": null
+}

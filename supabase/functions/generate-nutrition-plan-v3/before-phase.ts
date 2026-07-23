@@ -14,8 +14,26 @@
 
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import type { PreWorkoutPhaseResult, PreWorkoutTargets } from "../generate-macros-v4/types.ts";
-import { selectPreWorkoutFoods, splitTargets } from "../generate-macros-v4/pre-workout.ts";
-import type { BeforePhaseResult } from "../_shared/nutrition/templates/types.ts";
+import {
+  getActiveSubPhases,
+  selectPreWorkoutFoods,
+  splitTargets,
+} from "../generate-macros-v4/pre-workout.ts";
+import type {
+  BeforePhaseResult,
+  SubPhaseResult,
+} from "../_shared/nutrition/templates/types.ts";
+import { getSubPhaseTimingLabel } from "../_shared/nutrition/templates/pre-workout-targets.ts";
+import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
+import {
+  matchBeforePersonalFormulaForSlot,
+  personalFormulaToFoodResults,
+} from "../_shared/nutrition/personal-formula-pins.ts";
+import {
+  backfillPinnedFluidsAndSodium,
+  fluidSodiumDeficits,
+} from "../_shared/nutrition/pin-backfill.ts";
+import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 
 import { fetchPreWorkoutTemplates, fetchTemplateFoodsByName } from "./before-phase-db.ts";
 import { fetchUserFoodsForBefore, findSubstitutions } from "./before-phase-substitution.ts";
@@ -52,6 +70,15 @@ interface BeforePhaseInput {
   willing_to_try_foods?: string[];
   allergies?: string[];
   device_id?: string;
+  /** Pre-workout template ids the user has actively pinned. When in scope
+   * (template.time_window matches a sub_phase's window), bypasses all
+   * preference / diet / scale-clamp filters. Optional; omit or pass empty
+   * Set for pre-pin behavior. Formula Kit PR 2 substep 5b. */
+  pinned_food_template_ids?: Set<string>;
+  /** User's pinned personal formulas (any phase). In-scope before ones overlay
+   * their matching sub-phase slot after Algorithm C runs (per-slot, since the
+   * before phase can return meal + snack + top_up). Formula Kit personalization. */
+  personal_formula_pins?: PersonalFormulaPin[];
 }
 
 function inferMealType(hoursBefore: number, isFasted: boolean): string {
@@ -186,6 +213,7 @@ export async function generateBeforePhaseV3(
       input.liked_foods ?? [],
       input.disliked_foods ?? [],
       input.allergies,
+      input.pinned_food_template_ids,
     );
   }
 
@@ -224,6 +252,7 @@ export async function generateBeforePhaseV3(
         phaseResults,
         templateFoodsMap,
         userFoods,
+        input.disliked_foods,
       );
       console.log(
         `[PLAN-V3] Found ${substitutions.size} user food substitutions for before phase`,
@@ -262,6 +291,114 @@ export async function generateBeforePhaseV3(
     else if (phaseResult.phase === "snack") beforeResult.snack = subPhaseResult;
     else if (phaseResult.phase === "top_up") {
       beforeResult.top_up = subPhaseResult;
+    }
+  }
+
+  // 8. Overlay pinned personal formulas onto their matching sub-phase slot.
+  //
+  // A before personal formula carries a single timing tag (full_meal / snack /
+  // top_up). The before phase can emit up to three slots (meal + snack +
+  // top_up) for a long-lead-time plan, so honoring is PER-SLOT, not a
+  // whole-phase early return like during/after:
+  //   • anything pinned for an active sub-phase replaces that slot's foods
+  //     (honored unconditionally — its components carry their own macros);
+  //   • a sub-phase with no matching pin stays algorithmic;
+  //   • a pin whose timing isn't an active sub-phase this plan doesn't fire;
+  //   • an untagged before pin is skipped (timing is required).
+  const personalPins = input.personal_formula_pins;
+  if (personalPins && personalPins.length > 0) {
+    const activeSlots = getActiveSubPhases(input.hours_before);
+    // Essential foods (water/salt) for the fluid/sodium backfill — fetched
+    // once, lazily, only when some slot's pinned formula runs short.
+    let essentialsPool: Awaited<ReturnType<typeof getEssentialFoods>> | null =
+      null;
+    for (const slot of activeSlots) {
+      const formula = matchBeforePersonalFormulaForSlot(personalPins, slot);
+      if (!formula) continue;
+      const slotTargets = phaseTargetsMap.get(slot) ?? {
+        carbs_g: 0,
+        protein_g: 0,
+        fat_g: 0,
+        sodium_mg: 0,
+        water_ml: 0,
+      };
+      // Scale the formula's components uniformly to the slot's carb target
+      // (decided 2026-06-12: all phases scale; authored quantities are the
+      // formula's composition ratio, not exact amounts).
+      let foods = personalFormulaToFoodResults(
+        formula,
+        getSubPhaseTimingLabel(slot, input.hours_before),
+        slotTargets.carbs_g,
+      );
+      if (foods.length === 0) {
+        // Matched pin, but the formula rendered zero components (e.g. an
+        // empty/corrupt `components` array on the pinned row) — previously
+        // this silently fell through to the algorithmic selection with no
+        // trace in logs or the wire response (item 12, 2026-07-04). Surface
+        // it on both channels so it's actually debuggable/visible to the
+        // client's pin banner.
+        console.warn(
+          `[PLAN-V3] Before ${slot}: pinned personal formula "${formula.name}" ` +
+            `(${formula.id}) matched scope but rendered 0 components — ` +
+            `keeping algorithmic selection for this slot`,
+        );
+        const existing = slot === "meal"
+          ? beforeResult.meal
+          : slot === "snack"
+          ? beforeResult.snack
+          : beforeResult.top_up;
+        if (existing) {
+          existing.pin_decision = {
+            used_pin: false,
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: "personal_formula_empty",
+            pin_set_size: 1,
+          };
+        }
+        continue; // empty formula → keep algorithmic
+      }
+
+      // Failsafe: backfill fluids/sodium up to the slot's targets — the
+      // overlay bypasses Algorithm C's fill steps (see pin-backfill.ts).
+      const deficits = fluidSodiumDeficits(foods, slotTargets);
+      if (deficits.needsBackfill) {
+        // Before phase has no activity axis — essential foods (water/salt)
+        // are activity-independent anyway.
+        essentialsPool ??= await getEssentialFoods(supabase, "running", "before");
+        foods = backfillPinnedFluidsAndSodium(
+          foods,
+          slotTargets,
+          essentialsPool,
+          getSubPhaseTimingLabel(slot, input.hours_before),
+          `[PLAN-V3] Before ${slot}`,
+        );
+      }
+
+      const pinnedSubPhase: SubPhaseResult = {
+        sub_phase_type: slot,
+        targets: slotTargets,
+        foods,
+        template_id: formula.id,
+        template_name: formula.name,
+        pin_decision: {
+          used_pin: true,
+          pinned_template_id: formula.id,
+          pinned_template_name: formula.name,
+          fallthrough_reason: null,
+          pin_set_size: 1,
+        },
+      };
+
+      if (slot === "meal") beforeResult.meal = pinnedSubPhase;
+      else if (slot === "snack") beforeResult.snack = pinnedSubPhase;
+      else if (slot === "top_up") beforeResult.top_up = pinnedSubPhase;
+
+      console.log(
+        `[PLAN-V3] Before ${slot}: honoring pinned personal formula ` +
+          `"${formula.name}" (${foods.length} components, scaled to ` +
+          `${slotTargets.carbs_g}g carbs), overlaying slot`,
+      );
     }
   }
 

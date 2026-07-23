@@ -48,10 +48,13 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                 children: [
                   // Food icon
                   KyleFoodIcon(
-                    foodType: mapFoodType(productTypeId: widget.food.productTypeId, name: widget.food.name),
+                    foodType: mapFoodType(
+                      productTypeId: widget.food.productTypeId,
+                      name: widget.food.name,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  
+
                   // Food info
                   Expanded(
                     child: Column(
@@ -67,18 +70,20 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                         Text(
                           widget.food.servingSize,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   // Expand/collapse icon
                   Icon(
-                    _isExpanded 
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                    _isExpanded
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: AppIconSizes.chevron,
                   ),
@@ -86,7 +91,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
               ),
             ),
           ),
-          
+
           // Expanded content
           if (_isExpanded) ...[
             const Divider(height: 1),
@@ -119,7 +124,9 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: AppRadius.smRadius,
       ),
       child: Column(
@@ -186,13 +193,10 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
     required Color color,
   }) {
     return Column(
-      children: [ 
+      children: [
         Text(
           value,
-          style: AppTextStyles.dataNumber.copyWith(
-            color: color,
-            fontSize: 20,
-          ),
+          style: AppTextStyles.dataNumber.copyWith(color: color, fontSize: 20),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
@@ -217,10 +221,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
         const SizedBox(width: AppSpacing.md),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.orange,
-              width: 2,
-            ),
+            border: Border.all(color: Colors.orange, width: 2),
             borderRadius: AppRadius.buttonRadius,
           ),
           child: Row(
@@ -237,14 +238,14 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                     horizontal: AppSpacing.sm,
                     vertical: AppSpacing.xs,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.minus,
                     size: AppIconSizes.controlIcon,
                     color: AppColors.orange,
                   ),
                 ),
               ),
-              
+
               // Quantity display
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -259,7 +260,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                   ),
                 ),
               ),
-              
+
               // Increase button
               InkWell(
                 onTap: () => _updateQuantity(0.5),
@@ -271,7 +272,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                     horizontal: AppSpacing.sm,
                     vertical: AppSpacing.xs,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.plus,
                     size: AppIconSizes.controlIcon,
                     color: AppColors.orange,
@@ -314,10 +315,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
       widget.onQuantityChanged!(newQuantity);
     }
   }
-
 }
-
-
 
 /// Mock DisplayFoodItem class for demonstration
 class DisplayFoodItem {

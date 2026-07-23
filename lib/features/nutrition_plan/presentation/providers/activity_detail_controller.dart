@@ -10,11 +10,14 @@ import '../../domain/food_item_data.dart';
 import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_sync_service.dart';
+import '../../application/macro_generation_service.dart';
+import '../../application/brick_macro_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../application/resolved_during_target_resolver.dart';
 import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
@@ -83,16 +86,25 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // Sync this specific activity from Supabase before reading local Drift.
     // This ensures coach-created nutrition plans are visible immediately.
-    try {
-      final repo = ref.read(activitiesRepositoryProvider);
-      await repo.refreshActivityFromRemote(activityId);
-    } catch (e) {
-      // Non-fatal: fall back to local data if network unavailable
-      _logger.warning(
-        'Could not sync activity from remote; using local data',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
-      );
+    //
+    // Skip when opening a just-created activity (`isNewActivity`): the plan was
+    // written locally moments ago and has almost certainly not synced to remote
+    // yet, so a remote pull here can only surface a staler (plan-less) copy and
+    // transiently render "No nutrition plan yet". The local row is authoritative
+    // in that case. (`refreshActivityFromRemote` also skips dirty rows, but this
+    // avoids the round-trip entirely on the hot create→view path.)
+    if (!isNewActivity) {
+      try {
+        final repo = ref.read(activitiesRepositoryProvider);
+        await repo.refreshActivityFromRemote(activityId);
+      } catch (e) {
+        // Non-fatal: fall back to local data if network unavailable
+        _logger.warning(
+          'Could not sync activity from remote; using local data',
+          context: 'ACTIVITY_DETAIL_CONTROLLER',
+          error: e,
+        );
+      }
     }
 
     final activity = await _activitiesService.getActivityById(
@@ -175,6 +187,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       final macroRepo = ref.read(macroRepositoryProvider);
       macroTargets = await macroRepo.getCachedMacroTargetsForActivity(
         activityId,
+        expectedActivityType: activity.activityType,
       );
     } catch (e) {
       _logger.warning('Failed to load activity-scoped macro targets: $e');
@@ -265,6 +278,132 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
       ref.invalidateSelf();
     }
+  }
+
+  /// Re-run macro generation for this activity using the latest UserProfile.
+  ///
+  /// Called after an inline sweat-profile edit so that the new
+  /// `knownSweatRateMlPerHour` / `knownSodiumConcentrationMgPerLiter` /
+  /// `sweatSodium` values from UserProfile are forwarded to the edge function
+  /// and the returned derivation fields (`effectiveSweatRateLPerH`,
+  /// `sodiumConcMgPerL`, etc.) are stored in the cached `MacroTargets`.
+  ///
+  /// Environment inputs (`tempC`, `humidityPct`, `isIndoor`) are recovered
+  /// from the echo fields already stored on `DuringRunMacros` in the current
+  /// `MacroTargets`. If not present (legacy plan), they default to null / false.
+  Future<void> regeneratePlan() async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final activity = currentState.activity;
+    if (activity == null) return;
+
+    final user = await _authService.getCurrentUser();
+    if (user == null) return;
+    final deviceId = user.id;
+
+    // Recover environment echo from existing stored MacroTargets.
+    final storedDuring = currentState.macroTargets?.duringRun;
+    final tempC = storedDuring?.tempC;
+    final humidityPct = storedDuring?.humidityPct;
+    final isIndoor = storedDuring?.isIndoor ?? false;
+
+    final analytics = ref.read(analyticsTrackerProvider);
+    final macroRepo = ref.read(macroRepositoryProvider);
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+
+    try {
+      MacroTargets? freshTargets;
+
+      if (activity.activityType == ActivityType.brick) {
+        final brickService = BrickMacroService(
+          supabaseClient: supabaseClient,
+          macroRepository: macroRepo,
+          authService: _authService,
+          analytics: analytics,
+        );
+        final segments = currentState.macroTargets?.brickSegments;
+        final segmentOrder = segments?.map((s) => s.sport).toList() ?? const [];
+        if (segments != null && segments.isNotEmpty) {
+          freshTargets = await brickService.generateBrickMacros(
+            activityId: activityId,
+            deviceId: deviceId,
+            segments: segments,
+            segmentOrder: segmentOrder,
+            isFasted: activity.isFasted,
+            preActivityMinutes: activity.timeBeforeMinutes ?? 60,
+          );
+        }
+      } else if (activity.activityType == ActivityType.running) {
+        final macroService = MacroGenerationService(
+          supabaseClient: supabaseClient,
+          macroRepository: macroRepo,
+          authService: _authService,
+          analytics: analytics,
+        );
+        final distanceMiles = activity.distanceMiles ?? 5.0;
+        final paceMinPerMile = activity.paceTargetMinutesPerMile ?? 9.0;
+        freshTargets = await macroService.generateRunningMacros(
+          activityId: activityId,
+          deviceId: deviceId,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: paceMinPerMile,
+          timeBeforeRunMinutes: activity.timeBeforeMinutes ?? 60,
+          gutTraining: user.gutTraining,
+          sweatRateCat: user.sweatRate,
+          temperatureC: tempC,
+          humidityPct: humidityPct,
+          indoorOutdoor: isIndoor ? 'indoor' : 'outdoor',
+          isFasted: activity.isFasted,
+        );
+      } else if (activity.activityType == ActivityType.cycling) {
+        final macroService = MacroGenerationService(
+          supabaseClient: supabaseClient,
+          macroRepository: macroRepo,
+          authService: _authService,
+          analytics: analytics,
+        );
+        final distanceMiles = activity.distanceMiles ?? 20.0;
+        final speedMph = activity.cyclingSpeedMph ?? 15.0;
+        final indoorOutdoor = isIndoor
+            ? 'indoor'
+            : (activity.cyclingIndoorOutdoor ?? 'outdoor');
+        freshTargets = await macroService.generateCyclingMacros(
+          activityId: activityId,
+          deviceId: deviceId,
+          distanceMiles: distanceMiles,
+          speedMph: speedMph,
+          terrain: activity.cyclingTerrain ?? 'flat',
+          indoorOutdoor: indoorOutdoor,
+          timeBeforeMinutes: activity.timeBeforeMinutes ?? 60,
+          elevationGainFt: activity.cyclingElevationGainFt,
+          temperatureC: tempC,
+          humidityPct: humidityPct,
+          isFasted: activity.isFasted,
+        );
+      }
+
+      if (freshTargets != null) {
+        await macroRepo.saveMacroTargetsForActivity(activityId, freshTargets);
+        _logger.info(
+          'regeneratePlan: fresh MacroTargets saved for activity',
+          context: 'ACTIVITY_DETAIL_CONTROLLER',
+          data: {
+            'activityId': activityId,
+            'activityType': activity.activityType.name,
+          },
+        );
+      }
+    } catch (e) {
+      _logger.warning(
+        'regeneratePlan failed; falling back to forceRefresh',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+    }
+
+    // Always invalidate so UI picks up the updated MacroTargets.
+    ref.invalidateSelf();
   }
 
   /// Save activity and any nutrition plan changes
@@ -1455,6 +1594,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         _createFoodItemData(food, customAmount: customAmount),
       ],
     );
+
+    _trackAnalytics('food_added', {
+      'food_name': food?.name,
+      'food_id': food?.id,
+      'section': category,
+      'quantity': customAmount,
+    });
   }
 
   /// Delete a food item from the nutrition plan
@@ -2083,6 +2229,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         activityId: activityId,
       );
 
+      // Invalidate the activities list so dashboards/timelines that watch it
+      // (fuel timeline, daily macros, calendar) drop this activity's card
+      // immediately instead of showing it until their next unrelated rebuild.
+      ref.invalidate(activitiesControllerProvider);
+
       _trackAnalytics('activity_deleted', {
         'activity_id': activityId,
         'deleted_from': 'activity_detail_screen',
@@ -2120,7 +2271,14 @@ class ActivityDetailController extends _$ActivityDetailController {
   // FUEL LOG METHODS
   // ============================================================================
 
-  /// Enter fuel log mode: build FuelLogData from the current nutrition plan.
+  /// Enter fuel log mode.
+  ///
+  /// Prefers a previously-saved fuel log (`activity.fuelLogData`) so revisiting
+  /// an already-logged workout restores the user's actual quantities. Only when
+  /// there is no saved log do we seed a fresh one from the plan (every item's
+  /// `actualQuantity = plannedQuantity`). Seeding fresh on every entry was the
+  /// root cause of the "reopening resets my edits / shows an inconsistent
+  /// carbs/hr" report — the saved actual quantities were discarded on re-entry.
   void enterFuelLogMode() {
     final currentState = state.value;
     if (currentState == null) return;
@@ -2128,7 +2286,15 @@ class ActivityDetailController extends _$ActivityDetailController {
     final plan = currentState.nutritionPlan;
     if (plan == null) return;
 
-    final fuelLogData = FuelLogData.fromNutritionPlan(plan);
+    _trackAnalytics('fuel_log_started', {
+      'activity_id': activityId,
+      'has_existing_fuel_log':
+          _parseSavedFuelLog(currentState.activity) != null,
+    });
+
+    final fuelLogData =
+        _parseSavedFuelLog(currentState.activity) ??
+        FuelLogData.fromNutritionPlan(plan);
 
     state = AsyncData(
       currentState.copyWith(isFuelLogMode: true, fuelLogData: fuelLogData),
@@ -2146,17 +2312,21 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Adjust a fuel log item's actual quantity by delta.
-  void updateFuelLogItemQuantity(
-    String foodId,
-    String sectionId,
-    double delta,
-  ) {
+  ///
+  /// Matches on foodId + sectionId + subPhaseType + isAdded. FuelLogItem has
+  /// no unique id, and foodId + sectionId alone is ambiguous: the same food
+  /// can sit in a sub-phase group AND in the "Added" bucket (or in two
+  /// sub-phases), so the looser match updated every copy on one +/- tap.
+  void updateFuelLogItemQuantity(FuelLogItem target, double delta) {
     final currentState = state.value;
     final fuelLog = currentState?.fuelLogData;
     if (fuelLog == null) return;
 
     final updatedItems = fuelLog.items.map((item) {
-      if (item.foodId == foodId && item.sectionId == sectionId) {
+      if (item.foodId == target.foodId &&
+          item.sectionId == target.sectionId &&
+          item.subPhaseType == target.subPhaseType &&
+          item.isAdded == target.isAdded) {
         final step = item.isIndivisible ? 1.0 : 0.5;
         // Use step-aligned delta so indivisible items move by whole units
         final alignedDelta = delta < 0 ? -step : step;
@@ -2192,6 +2362,10 @@ class ActivityDetailController extends _$ActivityDetailController {
       subPhaseType: subPhaseType,
       plannedQuantity: 0, // Not in original plan
       actualQuantity: quantity,
+      // food.nutritionalInfo was built for `quantity` units; without this
+      // reference an added item's macros can never be scaled (planned is 0)
+      // and it contributes nothing to carbs/hr or coach reports.
+      nutritionReferenceQuantity: quantity,
       name: food.name,
       displayName: food.displayName,
       displayNamePlural: food.displayNamePlural,
@@ -2206,6 +2380,34 @@ class ActivityDetailController extends _$ActivityDetailController {
     state = AsyncData(
       currentState!.copyWith(fuelLogData: fuelLog.addItem(newItem)),
     );
+  }
+
+  /// Add a raw food (from the swap/add-food flow) to the in-memory fuel log.
+  ///
+  /// Used when ADD FOOD is tapped while fuel logging: the fuel log screen
+  /// renders from state.fuelLogData, so the write must land there — not in
+  /// the nutrition plan (bug 3a3e3fdb). When [category] carries no
+  /// ':subPhase' suffix the item keeps a null subPhaseType; sections with
+  /// sub-phases render those in a trailing "Added" bucket. We deliberately
+  /// do NOT invent a sub-phase, to avoid skewing downstream timing/carb
+  /// analysis.
+  void addFoodToFuelLogFromRawFood(
+    dynamic food,
+    String category, {
+    double? customAmount,
+  }) {
+    final foodItemData = _createFoodItemData(food, customAmount: customAmount);
+    final parts = category.split(':');
+    addFoodToFuelLog(
+      foodItemData,
+      parts[0],
+      subPhaseType: parts.length > 1 ? parts[1] : null,
+    );
+
+    _trackAnalytics('food_added_to_fuel_log', {
+      'food_name': food?.name,
+      'section': category,
+    });
   }
 
   /// Update feedback fields on the in-memory fuel log.
@@ -2294,7 +2496,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         // Reload activity to get updated data
         ref.invalidateSelf();
 
+        // Carry the just-saved activity forward so any display that resolves
+        // fuel data from `activity.fuelLogData` (e.g. the carbs/hr card after
+        // the in-memory fuelLogData is cleared) shows the edited values
+        // immediately, instead of briefly reverting to planned quantities
+        // until invalidateSelf's reload resolves.
         return currentState.copyWith(
+          activity: completedActivity,
           isCompleting: false,
           isFuelLogMode: false,
           clearFuelLogData: true,
@@ -2310,7 +2518,18 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Save edits to an already-completed activity's fuel log.
-  Future<void> updateExistingFuelLog() async {
+  ///
+  /// Unlike [saveFuelLogAndComplete] this does **not** re-stamp `completedAt` /
+  /// `status` or re-push feedback to TrainingPeaks — it's an edit of an
+  /// activity that was already completed, so the original completion time and
+  /// state are preserved. Any edited feedback ([overallSatisfaction],
+  /// [nutritionRating], [textNotes]) is folded into both the fuel-log snapshot
+  /// and the activity's completion fields.
+  Future<void> updateExistingFuelLog({
+    int? overallSatisfaction,
+    int? nutritionRating,
+    String? textNotes,
+  }) async {
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
     if (currentState.fuelLogData == null) return;
@@ -2324,8 +2543,20 @@ class ActivityDetailController extends _$ActivityDetailController {
           throw Exception('Cannot update fuel log: user not authenticated');
         }
 
-        final updatedActivity = currentState.activity!.copyWith(
-          fuelLogData: currentState.fuelLogData!.toJson(),
+        // Fold any edited feedback into the fuel-log snapshot.
+        final base = currentState.fuelLogData!;
+        final updatedFuelLog = base.copyWith(
+          overallSatisfaction: overallSatisfaction ?? base.overallSatisfaction,
+          nutritionRating: nutritionRating ?? base.nutritionRating,
+          notes: textNotes ?? base.notes,
+        );
+
+        final activity = currentState.activity!;
+        final updatedActivity = activity.copyWith(
+          fuelLogData: updatedFuelLog.toJson(),
+          completionRating: overallSatisfaction ?? activity.completionRating,
+          nutritionRating: nutritionRating ?? activity.nutritionRating,
+          completionNotes: textNotes ?? activity.completionNotes,
         );
 
         await _activitiesService.updateActivity(
@@ -2334,7 +2565,12 @@ class ActivityDetailController extends _$ActivityDetailController {
         );
 
         ref.invalidateSelf();
-        return currentState.copyWith(isSaving: false);
+        return currentState.copyWith(
+          activity: updatedActivity,
+          isSaving: false,
+          isFuelLogMode: false,
+          clearFuelLogData: true,
+        );
       } catch (error) {
         _logger.error('Error updating fuel log', error: error);
         rethrow;
@@ -2367,18 +2603,26 @@ class ActivityDetailController extends _$ActivityDetailController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    final rawData = currentState.activity?.fuelLogData;
-    if (rawData == null) return;
+    final fuelLog = _parseSavedFuelLog(currentState.activity);
+    if (fuelLog == null) return;
+    state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
+  }
 
+  /// Deserialize an activity's saved `fuelLogData` JSON into a [FuelLogData],
+  /// or return null when there is none / it can't be parsed. Shared by
+  /// [enterFuelLogMode] and [loadExistingFuelLog] so both honour saved edits.
+  FuelLogData? _parseSavedFuelLog(Activity? activity) {
+    final rawData = activity?.fuelLogData;
+    if (rawData == null) return null;
     try {
-      final fuelLog = FuelLogData.fromJson(rawData);
-      state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
+      return FuelLogData.fromJson(rawData);
     } catch (e) {
       _logger.warning(
-        'Failed to parse fuel log data',
+        'Failed to parse saved fuel log; falling back to plan defaults',
         context: 'ACTIVITY_DETAIL_CONTROLLER',
         error: e,
       );
+      return null;
     }
   }
 

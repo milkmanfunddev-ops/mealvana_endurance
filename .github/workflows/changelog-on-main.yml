@@ -1,0 +1,46 @@
+# On merge to main, generate a user-facing changelog entry from the merged
+# commits (via Claude) and publish it to Sanity, which the me_website_new landing
+# page renders. See scripts/changelog/generate_and_publish.mjs.
+#
+# Requires repo secrets (Settings → Secrets and variables → Actions):
+#   ANTHROPIC_API_KEY    — for note generation
+#   SANITY_WRITE_TOKEN   — Sanity token with write access to project sigrvh1t
+#   VERCEL_DEPLOY_HOOK   — (optional) deploy-hook URL to rebuild the landing page
+#
+# This workflow only fires once it is present on `main` (GitHub runs push
+# workflows from the branch they live on).
+
+name: Changelog → landing page
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: changelog-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Generate + publish changelog
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          FROM_REF: ${{ github.event.before }}
+          TO_REF: ${{ github.sha }}
+        run: node scripts/changelog/generate_and_publish.mjs

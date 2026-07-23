@@ -18,6 +18,8 @@ class FoodSearchBar extends StatelessWidget {
     this.hintText = 'Search foods...',
     this.showClearButton = false,
     this.onClear,
+    this.onTapOutside,
+    this.fieldKey,
   });
 
   final TextEditingController controller;
@@ -31,6 +33,15 @@ class FoodSearchBar extends StatelessWidget {
   final bool showClearButton;
   final VoidCallback? onClear;
 
+  /// Optional callback fired when the user taps outside the search field
+  /// while it's focused (e.g. to dismiss the keyboard after tapping a result
+  /// elsewhere on screen). Defaults to null (unchanged legacy behavior).
+  final void Function(PointerDownEvent)? onTapOutside;
+
+  /// Optional key applied to the inner [TextField] so integration tests can
+  /// target the input directly (e.g. ValueKey('add_food.search_field')).
+  final Key? fieldKey;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -39,7 +50,9 @@ class FoodSearchBar extends StatelessWidget {
         SizedBox(
           height: AppSizes.inputHeight,
           child: TextField(
+            key: fieldKey,
             controller: controller,
+            onTapOutside: onTapOutside,
             onChanged: (value) {
               // For real-time search filtering (not API search)
               if (onChanged != null) {
@@ -68,7 +81,7 @@ class FoodSearchBar extends StatelessWidget {
                 children: [
                   // Barcode button
                   IconButton(
-                    icon: Icon(
+                    icon: FaIcon(
                       FontAwesomeIcons.barcode,
                       color: AppColors.orange,
                       size: AppIconSizes.controlIcon,
@@ -84,11 +97,12 @@ class FoodSearchBar extends StatelessWidget {
                       child: Container(
                         width: 36,
                         height: 36,
+                        alignment: Alignment.center,
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: FaIcon(
                           FontAwesomeIcons.magnifyingGlass,
                           size: AppIconSizes.controlIcon,
                           color: AppColors.blackberry,
@@ -100,7 +114,7 @@ class FoodSearchBar extends StatelessWidget {
                   // Filter button (only show for preferences screen)
                   if (showFilters)
                     IconButton(
-                      icon: Icon(
+                      icon: FaIcon(
                         FontAwesomeIcons.filter,
                         color: filtersEnabled
                             ? AppColors.orange
@@ -125,10 +139,7 @@ class FoodSearchBar extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: AppRadius.inputRadius,
-                borderSide: const BorderSide(
-                  color: AppColors.orange,
-                  width: 2,
-                ),
+                borderSide: const BorderSide(color: AppColors.orange, width: 2),
               ),
             ),
           ),
@@ -140,7 +151,7 @@ class FoodSearchBar extends StatelessWidget {
           Center(
             child: TextButton.icon(
               onPressed: onClear,
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.xmark,
                 size: AppIconSizes.sm,
                 color: AppColors.orange,

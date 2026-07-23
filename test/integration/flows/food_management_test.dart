@@ -65,7 +65,9 @@ void main() {
       final deviceId = 'device-update-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -90,7 +92,9 @@ void main() {
       final prefId = '00000000-0000-0000-0000-000000000020';
 
       // Insert initial preference (like)
-      await database.into(database.foodPreferencesTable).insert(
+      await database
+          .into(database.foodPreferencesTable)
+          .insert(
             FoodPreferencesTableCompanion.insert(
               id: prefId,
               userId: userId,
@@ -112,9 +116,9 @@ void main() {
       logSection('Updating preference from like to dislike');
 
       // Update preference
-      await (database.update(database.foodPreferencesTable)
-            ..where((t) => t.id.equals(prefId)))
-          .write(
+      await (database.update(
+        database.foodPreferencesTable,
+      )..where((t) => t.id.equals(prefId))).write(
         FoodPreferencesTableCompanion(
           preference: const Value('dislike'),
           preferenceLevel: const Value(1),
@@ -122,9 +126,9 @@ void main() {
         ),
       );
 
-      final updatedPref = await (database.select(database.foodPreferencesTable)
-            ..where((t) => t.id.equals(prefId)))
-          .getSingle();
+      final updatedPref = await (database.select(
+        database.foodPreferencesTable,
+      )..where((t) => t.id.equals(prefId))).getSingle();
 
       logTestResult('preference', updatedPref.preference);
       logTestResult('preference_level', updatedPref.preferenceLevel);
@@ -156,7 +160,9 @@ void main() {
       final foodId = '00000000-0000-0000-0000-000000000021';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -185,7 +191,9 @@ void main() {
       });
 
       // Insert custom food
-      await database.into(database.userFoodsTable).insert(
+      await database
+          .into(database.userFoodsTable)
+          .insert(
             UserFoodsTableCompanion.insert(
               id: foodId,
               deviceId: deviceId,
@@ -193,7 +201,9 @@ void main() {
               name: 'Homemade Energy Balls',
               displayName: const Value('Homemade Energy Balls'),
               displayNamePlural: const Value('Homemade Energy Balls'),
-              description: const Value('Custom energy snack with dates and nuts'),
+              description: const Value(
+                'Custom energy snack with dates and nuts',
+              ),
               servingAmount: const Value(1.0),
               servingUnit: const Value('ball'),
               caloriesPerServing: const Value(120),
@@ -208,14 +218,17 @@ void main() {
 
       logSection('Verifying custom food in database');
 
-      final customFoods = await (database.select(database.userFoodsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final customFoods = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       logTestResult('custom_food_count', customFoods.length);
       logTestResult('food_name', customFoods.first.name);
       logTestResult('carbs_per_serving', customFoods.first.carbsPerServing);
-      logTestResult('calories_per_serving', customFoods.first.caloriesPerServing);
+      logTestResult(
+        'calories_per_serving',
+        customFoods.first.caloriesPerServing,
+      );
 
       logAssertion(
         'Custom food created',
@@ -231,7 +244,8 @@ void main() {
 
       logAssertion(
         'Nutritional values stored',
-        passed: customFoods.first.carbsPerServing == 25.0 &&
+        passed:
+            customFoods.first.carbsPerServing == 25.0 &&
             customFoods.first.caloriesPerServing == 120,
         reason: 'Nutritional data should be preserved',
       );
@@ -251,7 +265,9 @@ void main() {
       final deviceId = 'device-retrieve-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -272,10 +288,7 @@ void main() {
             ),
           );
 
-      logTestSetup({
-        'user_id': userId,
-        'food_count': 3,
-      });
+      logTestSetup({'user_id': userId, 'food_count': 3});
 
       // Insert multiple user foods (IDs must be at least 36 chars - UUID format)
       await database.batch((batch) {
@@ -325,9 +338,9 @@ void main() {
 
       logSection('Retrieving all user foods');
 
-      final userFoods = await (database.select(database.userFoodsTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final userFoods = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
       logTestResult('user_food_count', userFoods.length);
       logTestResult('food_names', userFoods.map((f) => f.name).join(', '));
@@ -345,11 +358,14 @@ void main() {
       );
 
       expect(userFoods.length, equals(3));
-      expect(userFoods.map((f) => f.name).toList(), containsAll([
-        'Custom Protein Bar',
-        'Homemade Sports Drink',
-        'Trail Mix',
-      ]));
+      expect(
+        userFoods.map((f) => f.name).toList(),
+        containsAll([
+          'Custom Protein Bar',
+          'Homemade Sports Drink',
+          'Trail Mix',
+        ]),
+      );
 
       logTestPass('User foods retrieved successfully');
     });
@@ -361,7 +377,9 @@ void main() {
       final deviceId = 'device-willing-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -389,7 +407,9 @@ void main() {
       });
 
       // Insert willing_to_try preference (ID must be at least 36 chars - UUID format)
-      await database.into(database.foodPreferencesTable).insert(
+      await database
+          .into(database.foodPreferencesTable)
+          .insert(
             FoodPreferencesTableCompanion.insert(
               id: '00000000-0000-0000-0000-000000000040',
               userId: userId,
@@ -403,9 +423,9 @@ void main() {
 
       logSection('Verifying willing_to_try preference');
 
-      final preference = await (database.select(database.foodPreferencesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .getSingle();
+      final preference = await (database.select(
+        database.foodPreferencesTable,
+      )..where((t) => t.userId.equals(userId))).getSingle();
 
       logTestResult('preference', preference.preference);
       logTestResult('preference_level', preference.preferenceLevel);
@@ -428,7 +448,9 @@ void main() {
       final deviceId = 'device-multi-123';
 
       // Create user
-      await database.into(database.userProfilesTable).insert(
+      await database
+          .into(database.userProfilesTable)
+          .insert(
             UserProfilesTableCompanion.insert(
               id: userId,
               deviceId: deviceId,
@@ -451,7 +473,8 @@ void main() {
 
       logTestSetup({
         'user_id': userId,
-        'preferences': 'Banana (like), Gel (dislike), Gatorade (like), Oatmeal (dislike)',
+        'preferences':
+            'Banana (like), Gel (dislike), Gatorade (like), Oatmeal (dislike)',
       });
 
       // Insert multiple preferences (IDs must be at least 36 chars - UUID format)
@@ -508,20 +531,28 @@ void main() {
 
       logSection('Retrieving all preferences');
 
-      final allPreferences = await (database.select(database.foodPreferencesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
+      final allPreferences = await (database.select(
+        database.foodPreferencesTable,
+      )..where((t) => t.userId.equals(userId))).get();
 
-      final likedFoods =
-          allPreferences.where((p) => p.preference == 'like').toList();
-      final dislikedFoods =
-          allPreferences.where((p) => p.preference == 'dislike').toList();
+      final likedFoods = allPreferences
+          .where((p) => p.preference == 'like')
+          .toList();
+      final dislikedFoods = allPreferences
+          .where((p) => p.preference == 'dislike')
+          .toList();
 
       logTestResult('total_preferences', allPreferences.length);
       logTestResult('liked_count', likedFoods.length);
       logTestResult('disliked_count', dislikedFoods.length);
-      logTestResult('liked_foods', likedFoods.map((f) => f.foodName).join(', '));
-      logTestResult('disliked_foods', dislikedFoods.map((f) => f.foodName).join(', '));
+      logTestResult(
+        'liked_foods',
+        likedFoods.map((f) => f.foodName).join(', '),
+      );
+      logTestResult(
+        'disliked_foods',
+        dislikedFoods.map((f) => f.foodName).join(', '),
+      );
 
       logAssertion(
         'Four preferences stored',

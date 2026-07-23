@@ -1,0 +1,22 @@
+{
+  "_comment": "A COMPLETED ride. Note the unsuffixed fields (Distance, TotalTime, StartTime) rather than the *Planned variants. A minimal completed workout may carry NO Title. Distance 100000 = 100 km (METRES). TotalTime 1.25 = 1 hour 15 minutes (DECIMAL HOURS). The completed performance metrics below are TrainingPeaks' documented field names and are illustrative.",
+  "Distance": 100000,
+  "Id": 139283664,
+  "StartTime": "2026-07-22T12:57:59",
+  "TotalTime": 1.25,
+  "WorkoutType": "Bike",
+  "_completed_metrics_illustrative": {
+    "TssActual": 82.0,
+    "IF": 0.78,
+    "Calories": 1150,
+    "ElevationGain": 640,
+    "HeartRateAverage": 141,
+    "HeartRateMaximum": 172,
+    "PowerAverage": 198,
+    "NormalizedPower": 214,
+    "CadenceAverage": 87,
+    "VelocityAverage": 22.2,
+    "Rpe": 6,
+    "Feeling": 4
+  }
+}

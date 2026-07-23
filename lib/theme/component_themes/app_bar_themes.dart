@@ -11,30 +11,22 @@ class AppBarThemes {
       scrolledUnderElevation: 2,
       surfaceTintColor: colorScheme.surfaceTint,
       shadowColor: colorScheme.shadow,
-      
+
       // Title styling - Force Sansita font
       titleTextStyle: const TextStyle(
         fontFamily: 'Sansita',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: Colors.black, // Will be overridden by theme
-      ).copyWith(
-        color: colorScheme.onSurface,
-      ),
-      
+      ).copyWith(color: colorScheme.onSurface),
+
       // Center titles for consistent look
       centerTitle: true,
-      
+
       // Icon themes
-      iconTheme: IconThemeData(
-        color: colorScheme.onSurface,
-        size: 24,
-      ),
-      
-      actionsIconTheme: IconThemeData(
-        color: colorScheme.onSurface,
-        size: 24,
-      ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface, size: 24),
+
+      actionsIconTheme: IconThemeData(color: colorScheme.onSurface, size: 24),
     );
   }
 }

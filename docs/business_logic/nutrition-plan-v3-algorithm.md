@@ -1,156 +1,223 @@
-# Nutrition Plan V3 Algorithm Documentation
+# Generate Nutrition Plan V3: Algorithm Flow
 
-## Overview
+> Current implementation map for `generate-nutrition-plan-v3`, verified against the source on July 21, 2026.
 
-`generate-nutrition-plan-v3` is the **main production** edge function for generating personalized nutrition plans. It is invoked by `nutrition_plan_service.dart` (line 798).
+## What this function does
 
-The function takes macro targets (from `generate-macros-v4`) and user preferences, then selects specific foods for three phases: before, during, and after a workout.
+`generate-nutrition-plan-v3` is a **food-selection algorithm**. It does not calculate the athlete's macro targets. The normal app flow is:
 
-## Input Contract
+```text
+generate-macros-v4  ->  macro targets + pre-workout selections
+                              |
+                              v
+generate-nutrition-plan-v3  ->  actual foods for before, during, and after
+```
 
-Flutter sends a `PlanInputV2` object containing:
+The plan generator consumes:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `device_id` | string | User device identifier |
-| `activity_type` | string | "running", "cycling", "swimming", or "brick" |
-| `hours_before` | number | Hours before workout (determines meal type) |
-| `weight_kg` | number | User body weight |
-| `macro_targets.pre_run` | MacroTargets | Before-phase targets (carbs, protein, fat, sodium, water + low/high ranges) |
-| `macro_targets.during_run` | MacroTargets | During-phase targets |
-| `macro_targets.post_run` | MacroTargets | After-phase targets |
-| `dietary_preference` | string? | "vegan", "vegetarian", "gluten_free", etc. |
-| `allergies` | string[]? | Allergen list |
-| `liked_foods` | string[]? | Preferred foods |
-| `disliked_foods` | string[]? | Avoided foods |
-| `willing_to_try_foods` | string[]? | Neutral foods |
-| `duration_minutes` | number? | Activity duration |
-| `gut_training_level` | string? | "low", "moderate", "high" |
-| `brick_segments` | array? | Multi-sport segments for brick workouts |
+- target ranges for carbs, protein, sodium, and fluid;
+- workout type, duration, and gut-training level;
+- diet, allergies, and liked/willing/disliked foods;
+- user foods and Formula Kit pins; and
+- brick segments and transition targets, when applicable.
 
-## Before Phase: Algorithm C
+## Rendered overview
 
-**File:** `before-phase.ts` (orchestrator) + `before-phase-db.ts`, `before-phase-substitution.ts`, `before-phase-explosion.ts`
+The image below works in ordinary Markdown previews without Mermaid support. You can also [open the full-size SVG](./nutrition-plan-v3-flowchart.svg) directly in any web browser or use the [print-ready A3 PDF](../../output/pdf/generate-nutrition-plan-v3-flowchart.pdf).
 
-### Step 1: Determine Meal Type
-Based on `hours_before`:
-- >= 2.5 hours: `full_meal`
-- >= 1.0 hours: `snack`
-- < 1.0 hours: `top_up`
-- 0 carbs + 0 water: `fasted` (skip before phase entirely)
+![Generate Nutrition Plan V3 algorithm flowchart](./nutrition-plan-v3-flowchart.png)
 
-### Step 2: Build Targets
-Uses V4 macro ranges directly. Falls back to percentage-based ranges when low/high are missing:
-- Carbs: +/- 12.5%
-- Protein: +/- 15% (0 if top_up)
-- Sodium: +/- 15%
-- Water: +/- 15%
+## Main flowchart
 
-### Step 3: Fetch Templates
-Three parallel queries to `pre_workout_templates` table:
-- Food templates (meals, snacks)
-- Drink templates (sports drinks, water, etc.)
-- Electrolyte templates (tablets, drink mixes)
+```mermaid
+flowchart TD
+    A["Receive PlanInputV2"] --> B{"Required input valid?"}
+    B -- "No" --> C["Return HTTP 400"]
+    B -- "Yes" --> D["Apply user-overridden target ranges"]
+    D --> E{"Brick workout?"}
 
-### Step 4: Algorithm C Food Selection
-Calls `selectPreWorkoutFoods()` from `generate-macros-v4/pre-workout.ts`:
+    E -- "Yes" --> BRICK["Run the brick flow"]
+    BRICK --> R2["Return brick plan"]
 
-1. **Target splitting**: Divides overall targets into sub-phase budgets (meal/snack/top_up)
-2. **Template scoring**: Each template scored by how well it fills the carb target
-3. **Diversity band**: Picks from templates within 15% of best score (adds variety)
-4. **Stacking**: If primary food fills < 80% of carbs, a second food is stacked
-5. **Add-ons**: If > 10g carb gap remains, adds banana or sports drink
-6. **Drink selection**: Independent drink picked based on water target
-7. **Electrolyte selection**: Independent electrolyte picked based on sodium target
+    E -- "No" --> P["Fetch Before, During, and After pins"]
+    P --> PAR["Generate all three phases in parallel"]
 
-### Step 5: Component Explosion
-Templates are multi-component (e.g., "Toast + PB + Jam"). The explosion step:
-1. Fetches `template_foods` rows for all component names
-2. Splits template into individual FoodResult items per component
-3. Scales nutrition proportionally by component quantity
-4. Normalizes totals to match the template selection contract exactly
-5. Fixes residual rounding drift on the first component
+    PAR --> BF["BEFORE<br/>Use macro-v4 selections when supplied;<br/>otherwise run Algorithm C"]
+    PAR --> DU["DURING<br/>Personal formula -> template solver<br/>-> rule solver"]
+    PAR --> AF["AFTER<br/>Personal formula -> recovery template<br/>-> LP fallback"]
 
-### Step 6: User Food Substitution
-If user has custom foods (from barcode scanning or manual entry):
-1. Fetches `user_foods` where `product_type != 'import'` and suitable for before phase
-2. Matches by product_type compatibility (e.g., user's "gel" can replace template's "energy_gel")
-3. Requires carbs within 50% tolerance
-4. Picks closest carb profile match
-5. Never substitutes water or essential liquids
+    BF --> V["Validate final foods against target ranges"]
+    DU --> V
+    AF --> V
+    V --> W{"Anything outside a range?"}
+    W -- "Yes" --> WARN["Attach non-fatal warnings / shortfalls"]
+    W -- "No" --> RESP["Build response"]
+    WARN --> RESP
+    RESP --> LOG["Write best-effort plan-generation ledger"]
+    LOG --> R["Return plan, targets, metadata, and pin decisions"]
+```
 
-### Step 7: Sub-Phase Assembly
-Converts V4 `PreWorkoutPhaseResult[]` into V2's `BeforePhaseResult` shape:
-- `{ meal?: SubPhaseResult, snack?: SubPhaseResult, top_up?: SubPhaseResult }`
+The three single-sport phases run concurrently. A failure in a phase throws the whole request; a phase that merely misses a target range still returns a plan with warnings or shortfall metadata.
 
-## During Phase: Rule-Based Solver
+## Before-workout flow
 
-**File:** `during-phase.ts`
+```mermaid
+flowchart TD
+    A["Before targets"] --> B{"All targets are zero?"}
+    B -- "Yes" --> Z["Return an empty Before phase"]
+    B -- "No" --> C{"macro-v4 supplied pre_run_selections?"}
 
-### Primary Path: Rule Solver
-1. Fetches foods from `template_foods` for "during" phase
-2. Calls `generateDuringPhaseRuleBased()` from `during-rule-solver.ts`
-3. Rule solver picks foods sequentially: primary carb source -> sports drink -> water -> electrolytes
-4. Validates result against macro ranges
+    C -- "Yes" --> S["Reuse those selected templates"]
+    C -- "No" --> T["Load food, drink, and electrolyte templates"]
+    T --> AC["Algorithm C splits targets across active slots"]
+    AC --> PICK["For each slot: honor an in-scope template pin,<br/>or score, stack, and fill from eligible templates"]
+    PICK --> S
 
-### Fallback Path: LP Solver
-If rule solver result is out of range:
-1. Falls back to `generateLPPhase()` with "during" phase
-2. LP solver uses javascript-lp-solver library to optimize food selection
-3. Two-pass approach: LP focuses on carbs (sodium weight reduced to 0.05), then post-processing adds electrolytes for sodium deficit
+    S --> F["Load every selected template component"]
+    F --> U["Find compatible user-food substitutions"]
+    U --> X["Explode composite templates into individual foods"]
+    X --> O{"Pinned personal formula matches a slot?"}
+    O -- "Yes" --> PF["Replace that slot, scale to its carb target,<br/>and backfill fluid / sodium if needed"]
+    O -- "No" --> KEEP["Keep the algorithmic slot"]
+    PF --> OUT["Return meal / snack / top-up slots"]
+    KEEP --> OUT
+```
 
-### Swimming Exception
-Swimming activities return empty during phase (no nutrition during swim).
+Active slots depend on `hours_before`:
 
-### Imported User Food Sanitization
-If LP result is out of range and imported user foods are in the pool, retries without them to prevent extreme nutritional values from imported labels.
+| Time available | Slots produced |
+|---|---|
+| `>= 2.5 hours` | meal, snack, top-up |
+| `>= 1 hour` | snack, top-up |
+| `< 1 hour` | top-up |
 
-## After Phase: LP Solver
+Important details:
 
-**File:** `lp-phase.ts`
+- The live app normally sends `pre_run_selections` already chosen by `generate-macros-v4`. V3's own Algorithm C call is the fallback for a direct call or regeneration without those selections.
+- Diet and allergies are hard filters for normal selection. User likes, willingness, and dislikes influence free-form selection. An explicit in-scope pin wins over those filters by design.
+- A pinned personal formula overlays only its matching active slot; the other slots stay algorithmic.
 
-1. Fetches "after" phase foods from `template_foods`
-2. **Recovery food filtering**: Removes high-carb/zero-protein foods (drink mixes, gels) that are inappropriate for recovery
-3. Builds LP model with phase-specific optimization weights
-4. Solves LP model (maximize score = weighted sum of carb/protein/sodium/water fit + preference)
-5. Falls back to greedy algorithm if LP is infeasible
-6. **Imported user food retry**: Same sanitization logic as during phase
+## During-workout flow
 
-### LP Solver Details (lp-solver.ts)
-- Uses `javascript-lp-solver` library
-- Constraints: carb/protein/sodium/water ranges, max foods, max servings per food
-- Objective: maximize weighted score (carbs, preference, sodium, water, protein)
-- Post-solve: rounds to 0.5 serving increments, corrects macro drift
+```mermaid
+flowchart TD
+    A["During targets"] --> SW{"Swimming?"}
+    SW -- "Yes" --> EMPTY["Return no during-workout foods"]
+    SW -- "No" --> PP{"In-scope pinned personal formula?"}
 
-## Brick Workouts
+    PP -- "Yes" --> PFR["Render components and scale to carb target"]
+    PFR --> PFB["Backfill fluid / sodium when needed"]
+    PFB --> PS["Compute honest shortfalls<br/>(no system carb gap-fill)"]
+    PS --> OUT["Return foods + path + pin decision + shortfalls"]
 
-**File:** `brick-handler.ts`
+    PP -- "No" --> LOAD["Load templates and one shared constrained food pool"]
+    LOAD --> READY{"Positive duration and usable templates / foods?"}
+    READY -- "Yes" --> TS["Rank candidates and try the template solver"]
+    TS --> OK{"Template rendered and validated?"}
+    OK -- "Yes" --> CLOSE["Closing pass"]
+    OK -- "No" --> RULE["Run deterministic rule solver on the same pool"]
+    READY -- "No, but pool has foods" --> RULE
+    READY -- "No foods" --> NOFOOD["Return empty foods with shortfalls"]
+    RULE --> CLOSE
+    CLOSE --> GAP["Append carb gap-fill when below 90% of target,<br/>limited by gut-training caps"]
+    GAP --> SHORT["Compute shortfalls from final totals"]
+    SHORT --> OUT
+    NOFOOD --> OUT
+```
 
-Multi-sport workouts (swim/bike/run) with special handling:
+The key invariant after the July 21 refactor is:
 
-1. **Before phase**: Shared across all segments (same Algorithm C)
-2. **During phases**: Generated per-segment with sport-specific food pools
-3. **Transitions (T1, T2)**: Duration-based nutrition targets:
-   - Sprint (<90 min): no transition nutrition
-   - Olympic (90-180 min): water only (50ml)
-   - Half Ironman (180-420 min): T1=25g carbs, T2=10g carbs
-   - Ironman (420+ min): T1=30g carbs, T2=25g carbs
-4. **After phase**: Uses "running" activity type (brick recovery is run-like)
+> A During phase cannot leave the generator under target without reporting why in `shortfalls`.
 
-## Validation
+The template solver, rule solver, and carb gap-fill all use the same food pool. There is no During-phase LP fallback and no server-side by-hour scheduling; the server returns `by_hour_data: null` and the client handles placement.
 
-**File:** `validation.ts`
+## After-workout flow
 
-Every phase result is validated against macro ranges:
-- Uses V4-provided ranges when available (carbs_low_g/carbs_high_g)
-- Falls back to `MACRO_CONSTRAINT_RANGES` percentage-based ranges
-- Validation is **non-fatal**: out-of-range results produce warnings, not errors
-- Warnings are included in the response for client-side logging
+```mermaid
+flowchart TD
+    A["After targets"] --> PP{"In-scope pinned personal formula?"}
+    PP -- "Yes" --> PFR["Render components, scale to carb target,<br/>and backfill fluid / sodium"]
+    PFR --> OUT["Return recovery foods + pin decision"]
 
-## Known Limitations
+    PP -- "No" --> LOAD["Load active recovery templates and all required foods"]
+    LOAD --> FILTER["Keep templates compatible with activity,<br/>diet, allergies, and food availability"]
+    FILTER --> PIN{"In-scope system template pin?"}
+    PIN -- "Yes" --> PICKPIN["Pinned candidates win; rank multiple pins by priority"]
+    PIN -- "No" --> RANK["Rank by travel friendliness, then prep effort;<br/>randomly break an exact top tie"]
+    PICKPIN --> RENDER["Render the template's canonical servings"]
+    RANK --> RENDER
+    RENDER --> OK{"Complete template rendered?"}
+    OK -- "Yes" --> OUT
+    OK -- "No" --> LP["Run After-phase LP solver"]
+    LP --> SOLVED{"LP found a plan?"}
+    SOLVED -- "Yes" --> CHECK["Validate; optionally retry without imported user foods"]
+    SOLVED -- "No" --> GREEDY["Use greedy fallback"]
+    GREEDY --> CHECK
+    CHECK --> OUT
+```
 
-1. **Before phase optimizes primarily for carbs**: Protein and sodium are secondary in Algorithm C scoring, so they may slightly exceed ranges
-2. **LP rounding drift**: Continuous LP solutions rounded to 0.5 increments can overshoot small targets by up to 25%
-3. **During rule solver can't backtrack**: Sequential picks are final; if Step 1 overshoots, later steps can't compensate
-4. **Limited after-phase food pool**: Aggressive filtering can leave too few options for LP
-5. **By-hour apportionment is deprecated**: Server generates it but client creates empty buckets for user-driven placement
+The normal recovery-template path deliberately uses the template's authored serving sizes. It does not scale the portion to hit the macro targets. Macro targets are used when scaling a pinned personal formula and by the rare LP fallback.
+
+## Brick-workout branch
+
+```mermaid
+flowchart TD
+    A["Brick request"] --> B["Generate one shared Before phase"]
+    B --> LOOP["For each sport segment"]
+    LOOP --> D["Run the normal During flow with that segment's targets"]
+    D --> MORE{"Another segment follows?"}
+    MORE -- "Yes" --> T["Read T1 / T2 targets from the macro payload"]
+    T --> T0{"All transition targets are zero?"}
+    T0 -- "Yes" --> TE["Return an empty transition"]
+    T0 -- "No" --> TT["Try transition template 0"]
+    TT --> TOK{"Rendered?"}
+    TOK -- "No" --> TLP["Transition LP -> greedy fallback"]
+    TOK -- "Yes" --> NEXT["Continue to next segment"]
+    TLP --> NEXT
+    TE --> NEXT
+    NEXT --> LOOP
+    MORE -- "No" --> AFTER["Generate After foods with LP -> greedy fallback"]
+    AFTER --> V["Validate non-fatally and return segment,<br/>transition, and shortfall data"]
+```
+
+Brick-specific differences:
+
+- Formula Kit pins are not currently passed through the brick handler.
+- Transition targets come from the macro payload. If they are missing, the safety fallback is zero targets rather than hard-coded duration tiers.
+- Brick After uses the LP path directly rather than the normal recovery-template selector.
+
+## Selection precedence and safety rules
+
+1. **Personal formula pin:** highest priority; rendered as authored and scaled to the relevant carb target.
+2. **Pinned system template:** wins when it is in scope for the phase, activity, and duration.
+3. **System template:** preferred normal path.
+4. **Rule solver:** During fallback only.
+5. **LP, then greedy:** After fallback, and transition fallback for bricks.
+
+Across the algorithm:
+
+- user-overridden target bands are adjusted before selection;
+- normal template pools enforce diet and allergy compatibility;
+- pin decisions and skipped-pin reasons are returned for client explanation;
+- final range validation is non-fatal; and
+- the single-sport response ledger is best-effort and cannot block plan delivery.
+
+## Source map
+
+| Responsibility | Source |
+|---|---|
+| HTTP orchestration, parallel phases, response, ledger | [`index.ts`](../../supabase/functions/generate-nutrition-plan-v3/index.ts) |
+| Before orchestration and personal-formula overlay | [`before-phase.ts`](../../supabase/functions/generate-nutrition-plan-v3/before-phase.ts) |
+| Before component expansion | [`before-phase-explosion.ts`](../../supabase/functions/generate-nutrition-plan-v3/before-phase-explosion.ts) |
+| Before user-food substitution | [`before-phase-substitution.ts`](../../supabase/functions/generate-nutrition-plan-v3/before-phase-substitution.ts) |
+| Algorithm C selection and target splitting | [`pre-workout.ts`](../../supabase/functions/generate-macros-v4/pre-workout.ts) |
+| During orchestration and closing-pass invariant | [`during-phase.ts`](../../supabase/functions/generate-nutrition-plan-v3/during-phase.ts) |
+| During template solver | [`during-template-solver.ts`](../../supabase/functions/_shared/nutrition/during-template-solver.ts) |
+| During rule fallback | [`during-rule-solver.ts`](../../supabase/functions/_shared/nutrition/during-rule-solver.ts) |
+| During carb gap-fill | [`during-gap-fill.ts`](../../supabase/functions/_shared/nutrition/during-gap-fill.ts) |
+| After orchestration | [`after-phase.ts`](../../supabase/functions/generate-nutrition-plan-v3/after-phase.ts) |
+| Recovery-template selection and rendering | [`post-template-solver.ts`](../../supabase/functions/_shared/nutrition/post-template-solver.ts) |
+| After LP fallback | [`lp-phase.ts`](../../supabase/functions/generate-nutrition-plan-v3/lp-phase.ts) |
+| Brick segments and transitions | [`brick-handler.ts`](../../supabase/functions/generate-nutrition-plan-v3/brick-handler.ts) |
+| Non-fatal phase validation | [`validation.ts`](../../supabase/functions/generate-nutrition-plan-v3/validation.ts) |
+| Analytics ledger | [`plan-generation-log.ts`](../../supabase/functions/generate-nutrition-plan-v3/plan-generation-log.ts) |

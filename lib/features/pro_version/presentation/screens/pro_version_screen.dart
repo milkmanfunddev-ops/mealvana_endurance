@@ -13,11 +13,13 @@ class ProVersionScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      key: const ValueKey('pro_version.screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          key: const ValueKey('pro_version.close_button'),
           icon: Icon(
             Icons.close,
             color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -40,23 +42,20 @@ class ProVersionScreen extends ConsumerWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.orange,
-                          AppColors.dragonfruit,
-                        ],
+                        colors: [AppColors.orange, AppColors.dragonfruit],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: isDark
-                        ? null
-                        : [
-                            BoxShadow(
-                              color: AppColors.orange.withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: AppColors.orange.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                     ),
                     child: Icon(
                       Icons.workspace_premium,
@@ -68,6 +67,7 @@ class ProVersionScreen extends ConsumerWidget {
 
                   // Title
                   Text(
+                    key: const ValueKey('pro_version.title'),
                     'Mealvana Pro',
                     style: AppTextStyles.h1.copyWith(
                       color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -100,7 +100,9 @@ class ProVersionScreen extends ConsumerWidget {
                   Text(
                     'Premium features are in development and will be available soon. Stay tuned for exciting updates!',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                      color: isDark
+                          ? AppColors.textDarkSecondary
+                          : AppColors.textLightSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -123,7 +125,8 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.science,
                 iconColor: AppColors.electrolyte,
                 title: 'Advanced Analytics',
-                description: 'Deep insights into your nutrition trends, performance metrics, and personalized recommendations.',
+                description:
+                    'Deep insights into your nutrition trends, performance metrics, and personalized recommendations.',
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -131,7 +134,8 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.qr_code_scanner,
                 iconColor: AppColors.orange,
                 title: 'Barcode Scanning',
-                description: 'Quickly add any food item by scanning its barcode with unlimited scans.',
+                description:
+                    'Quickly add any food item by scanning its barcode with unlimited scans.',
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -139,7 +143,8 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.restaurant_menu,
                 iconColor: AppColors.dragonfruit,
                 title: 'Custom Recipes',
-                description: 'Create, save, and share your own custom food items and recipe combinations.',
+                description:
+                    'Create, save, and share your own custom food items and recipe combinations.',
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -147,7 +152,8 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.sync,
                 iconColor: AppColors.electrolyte,
                 title: 'App Integrations',
-                description: 'Sync with TrainingPeaks, Final Surge, and other training platforms.',
+                description:
+                    'Sync with TrainingPeaks, Final Surge, V.O2, and other training platforms.',
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -155,16 +161,18 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.support_agent,
                 iconColor: AppColors.orange,
                 title: 'Premium Support',
-                description: 'Priority customer support with direct access to nutrition coaches.',
+                description:
+                    'Priority customer support with direct access to nutrition coaches.',
               ),
 
               const SizedBox(height: AppSpacing.xxxl),
 
               // Pricing Section
               BaseCard(
+                key: const ValueKey('pro_version.pricing_card'),
                 backgroundColor: isDark
-                  ? AppColors.blackberryLight.withValues(alpha: 0.5)
-                  : AppColors.surfaceLight,
+                    ? AppColors.blackberryLight.withValues(alpha: 0.5)
+                    : AppColors.surfaceLight,
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   children: [
@@ -177,7 +185,9 @@ class ProVersionScreen extends ConsumerWidget {
                     Text(
                       'Pricing Coming Soon',
                       style: AppTextStyles.h4.copyWith(
-                        color: isDark ? AppColors.textDark : AppColors.textLight,
+                        color: isDark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -185,7 +195,9 @@ class ProVersionScreen extends ConsumerWidget {
                     Text(
                       'We\'re finalizing the pricing details to ensure the best value for our athletes.',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                        color: isDark
+                            ? AppColors.textDarkSecondary
+                            : AppColors.textLightSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -226,7 +238,10 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.notifications_active,
                 onPressed: () {
                   // TODO: Implement notification signup
-                  MealvanaSnackbar.showSuccess(context, 'Notification system coming soon!');
+                  MealvanaSnackbar.showSuccess(
+                    context,
+                    'Notification system coming soon!',
+                  );
                 },
               ),
 
@@ -271,11 +286,7 @@ class _FeatureCard extends ConsumerWidget {
               color: iconColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 28,
-            ),
+            child: Icon(icon, color: iconColor, size: 28),
           ),
           const SizedBox(width: AppSpacing.md),
 
@@ -294,7 +305,9 @@ class _FeatureCard extends ConsumerWidget {
                 Text(
                   description,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                    color: isDark
+                        ? AppColors.textDarkSecondary
+                        : AppColors.textLightSecondary,
                   ),
                 ),
               ],

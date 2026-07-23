@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Medium.otf") format("opentype");font-weight:500;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
+@font-face{font-family:"Compadre";src:url("fonts/Compadre-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Compadre Wide";src:url("fonts/Compadre-Wide.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Sansita";src:url("fonts/Sansita-Bold.ttf") format("truetype");font-weight:700;font-display:swap;}
+:root{--me-blackberry:rgb(56,22,51);--me-cream:rgb(248,246,235);--me-orange:rgb(247,139,20);--me-electrolyte:rgb(28,249,207);--me-dragonfruit:rgb(220,37,151);}
+</style>
+</helmet>
+<div style="background:var(--me-blackberry);flex:0 0 auto;">
+  <div style="height:34px;display:flex;align-items:center;justify-content:space-between;padding:10px 22px 0;font-family:'Apercu',sans-serif;font-size:13px;font-weight:500;color:var(--me-cream);">
+    <span>9:41</span>
+    <span style="font-size:11px;letter-spacing:1px;">&#9679;&#9679;&#9679;&#9679;&#9679; 5G</span>
+  </div>
+
+  <div style="position:relative;padding:14px 20px 6px;">
+    <div style="display:flex;justify-content:center;gap:26px;align-items:baseline;">
+      <div style="font-family:'Compadre Wide',Georgia,serif;font-size:18px;letter-spacing:0.12em;color:var(--me-cream);border-bottom:2px solid var(--me-cream);padding-bottom:5px;">BY WEEK</div>
+      <div style="font-family:'Compadre Wide',Georgia,serif;font-size:18px;letter-spacing:0.12em;color:rgba(248,246,235,0.5);padding-bottom:5px;">BY MONTH</div>
+    </div>
+    <div style="position:absolute;top:14px;right:20px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--me-cream)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 12px;">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--me-cream)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+    <div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:19px;color:var(--me-cream);">June 2026</div>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--me-cream)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:2px 8px 10px;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">S</span><span style="font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-cream);">14</span><span style="width:5px;height:5px;"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">M</span><span style="font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-cream);">15</span><span style="width:5px;height:5px;"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">T</span><span style="font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-cream);">16</span><span style="width:5px;height:5px;border-radius:50%;background:var(--me-electrolyte);"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">W</span><span style="position:relative;display:inline-flex;align-items:center;justify-content:center;font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-blackberry);"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:34px;background:var(--me-cream);border-radius:12px;"></span><span style="position:relative;">17</span></span><span style="width:5px;height:5px;border-radius:50%;background:var(--me-electrolyte);"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">T</span><span style="font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-cream);">18</span><span style="width:5px;height:5px;border-radius:50%;background:var(--me-electrolyte);"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">F</span><span style="font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-cream);">19</span><span style="width:5px;height:5px;"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);">S</span><span style="font-family:'Compadre',Georgia,serif;font-size:24px;color:var(--me-cream);">20</span><span style="width:5px;height:5px;border-radius:50%;background:var(--me-electrolyte);"></span></div>
+  </div>
+  <div style="height:1px;background:rgba(248,246,235,0.1);"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:260}}"></script>
+</body>
+</html>

@@ -69,13 +69,15 @@ class ActivityDetailActionButtons extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           KylePrimaryButton(
+            key: const ValueKey('plan_detail.save_workout_button'),
             text: state.isSaving ? 'Saving...' : 'Save Workout',
             onPressed: state.isSaving ? null : onSave,
           ),
           if (onSaveAsTemplate != null) ...[
             const SizedBox(height: AppSpacing.sm),
             KyleSecondaryButton(
-              text: 'Save as Template',
+              key: const ValueKey('plan_detail.save_template_button'),
+              text: 'Save as Routine',
               onPressed: state.isSaving ? null : onSaveAsTemplate,
               icon: Icons.bookmark_outline,
             ),

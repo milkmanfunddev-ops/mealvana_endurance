@@ -113,6 +113,7 @@ class FigmaFoodChipGrid extends StatelessWidget {
       runSpacing: 8,
       children: foods.map((food) {
         return FigmaFoodChip(
+          key: ValueKey('food_selection.chip_${food.id}'),
           label: food.name,
           isSelected: selectedFoodIds.contains(food.id),
           onTap: () => onFoodToggled(food.id),
@@ -168,10 +169,7 @@ class FigmaSelectedFoodsSection extends StatelessWidget {
 
 /// Data class for Figma food chip items
 class FigmaFoodChipItem {
-  const FigmaFoodChipItem({
-    required this.id,
-    required this.name,
-  });
+  const FigmaFoodChipItem({required this.id, required this.name});
 
   final String id;
   final String name;

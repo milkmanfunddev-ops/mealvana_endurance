@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/education_content.dart';
 import '../providers/education_controller.dart';
@@ -63,6 +64,7 @@ class EducationScreen extends ConsumerWidget {
                 children: [
                   // Title
                   Text(
+                    key: const ValueKey('learn.title'),
                     'Learn',
                     style: AppTextStyles.h1.copyWith(
                       color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -72,11 +74,13 @@ class EducationScreen extends ConsumerWidget {
 
                   // Free Videos section
                   _SectionHeader(
+                    key: const ValueKey('learn.mealvana_101_section'),
                     icon: FontAwesomeIcons.circlePlay,
                     title: 'Mealvana 101',
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
+                    key: const ValueKey('learn.mealvana_101_subtitle'),
                     'Free nutrition lessons for endurance athletes',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: isDark
@@ -94,11 +98,16 @@ class EducationScreen extends ConsumerWidget {
 
                   // Pro Videos section
                   _SectionHeader(
+                    key: const ValueKey('learn.pro_videos_section'),
                     icon: FontAwesomeIcons.crown,
                     title: 'Pro Videos',
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const ComingSoonSectionWidget(
+                  ComingSoonSectionWidget(
+                    key: const ValueKey('learn.pro_videos_card'),
+                    notifyButtonKey: const ValueKey(
+                      'learn.pro_videos_notify_button',
+                    ),
                     icon: FontAwesomeIcons.crown,
                     iconColor: AppColors.orange,
                     title: 'Premium Video Library',
@@ -110,11 +119,16 @@ class EducationScreen extends ConsumerWidget {
 
                   // Courses section
                   _SectionHeader(
+                    key: const ValueKey('learn.courses_section'),
                     icon: FontAwesomeIcons.bookOpen,
                     title: 'Courses',
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const ComingSoonSectionWidget(
+                  ComingSoonSectionWidget(
+                    key: const ValueKey('learn.courses_card'),
+                    notifyButtonKey: const ValueKey(
+                      'learn.courses_notify_button',
+                    ),
                     icon: FontAwesomeIcons.bookOpen,
                     iconColor: AppColors.electrolyte,
                     title: 'Structured Learning Paths',
@@ -136,9 +150,9 @@ class EducationScreen extends ConsumerWidget {
 
 /// Section header with icon and title
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.icon, required this.title});
+  const _SectionHeader({super.key, required this.icon, required this.title});
 
-  final IconData icon;
+  final FaIconData icon;
   final String title;
 
   @override
@@ -189,7 +203,12 @@ class _EmptySection extends StatelessWidget {
 }
 
 /// Horizontal scrolling list of video cards
-class _HorizontalVideoList extends StatelessWidget {
+///
+/// A `ConsumerWidget` purely so the card tap can reach the analytics tracker —
+/// this is the only live entry point into [VideoPlayerScreen] (the standalone
+/// `VideoCardWidget` and the `/learn/video` route are both dead code), so
+/// `education_video_opened` has to fire from here or not at all.
+class _HorizontalVideoList extends ConsumerWidget {
   const _HorizontalVideoList({required this.videos});
 
   final List<EducationContent> videos;
@@ -198,7 +217,7 @@ class _HorizontalVideoList extends StatelessWidget {
   static const double _cardHeight = 210.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Use a negative margin approach to let the list bleed to screen edges
     return SizedBox(
       height: _cardHeight,
@@ -212,16 +231,33 @@ class _HorizontalVideoList extends StatelessWidget {
           return SizedBox(
             width: _cardWidth,
             child: _CompactVideoCard(
+              key: ValueKey('learn.lesson_card_$index'),
               content: video,
               lessonNumber: index + 1,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => VideoPlayerScreen(
-                    title: video.displayTitle,
-                    videoUrl: video.videoUrl ?? '',
+              onTap: () {
+                try {
+                  ref
+                      .read(appExternalDepsProvider)
+                      .analytics
+                      .track(
+                        'education_video_opened',
+                        properties: {
+                          'video_id': video.id,
+                          'title': video.displayTitle,
+                          'lesson_number': index + 1,
+                        },
+                      );
+                } catch (_) {}
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => VideoPlayerScreen(
+                      contentId: video.id,
+                      title: video.displayTitle,
+                      videoUrl: video.videoUrl ?? '',
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           );
         },
@@ -233,6 +269,7 @@ class _HorizontalVideoList extends StatelessWidget {
 /// Compact video card for horizontal scrolling
 class _CompactVideoCard extends StatelessWidget {
   const _CompactVideoCard({
+    super.key,
     required this.content,
     required this.lessonNumber,
     required this.onTap,

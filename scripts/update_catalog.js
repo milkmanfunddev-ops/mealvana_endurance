@@ -328,28 +328,15 @@ function expandProduct(product) {
 // ---------------------------------------------------------------------------
 
 async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes) {
-  // Step 1: Upsert product rows
-  // Delete existing by shopify_product_id, then insert fresh
-  const shopifyProductIds = products.map((p) => p.shopify_product_id);
+  // Step 1: UPSERT product rows on shopify_product_id (NON-DESTRUCTIVE).
+  // Only Shopify-sourced columns are written, so classification columns
+  // (product_type_id, categories, allergens, is_electrolyte, activity_types,
+  // classification_source/_confidence) are PRESERVED across refreshes.
+  // Previously this delete+reinserted each product, which wiped all
+  // classification on every run (had to be re-applied by a separate script).
+  // Non-destructive upsert lets a scheduled refresh classify only NEW products.
+  const nowIso = new Date().toISOString();
 
-  if (shopifyProductIds.length > 0) {
-    try {
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/catalog_products?shopify_product_id=in.(${shopifyProductIds.map((id) => `"${id}"`).join(",")})`,
-        {
-          method: "DELETE",
-          headers: {
-            apikey: SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        },
-      );
-    } catch (_) {
-      // Ignore — rows may not exist yet
-    }
-  }
-
-  // Insert product rows
   const productRows = products.map((p) => ({
     shopify_product_id: p.shopify_product_id,
     handle: p.handle,
@@ -362,12 +349,14 @@ async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes
     shopify_updated_at: p.shopify_updated_at,
     // Ingredients will be set from enrichment if available
     ingredients: p._ingredients || null,
+    updated_at: nowIso,
   }));
 
   const insertedProducts = await supabaseRequest("catalog_products", {
     method: "POST",
     body: productRows,
-    prefer: "return=representation",
+    query: { on_conflict: "shopify_product_id" },
+    prefer: "resolution=merge-duplicates,return=representation",
   });
 
   // Build product ID lookup
@@ -376,13 +365,21 @@ async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes
     productIdMap.set(row.shopify_product_id, row.id);
   }
 
-  // Step 2: Insert variant rows
-  const variantRows = [];
+  // Step 2: UPSERT variant rows on shopify_variant_id (NON-DESTRUCTIVE).
+  // Split into two writes:
+  //   2a) base/Shopify columns — ALWAYS upserted (title, price, availability...).
+  //       Nutrition columns are intentionally EXCLUDED here so a run with no
+  //       fresh nutrition (e.g. FDA_API_KEY unset, or an enrichment miss) does
+  //       NOT null out previously-enriched nutrition.
+  //   2b) nutrition columns — upserted ONLY for variants this run actually
+  //       enriched (nutrition_source present).
+  const baseVariantRows = [];
+  const nutritionRows = [];
   for (const variant of enrichedVariants) {
     const catalogProductId = productIdMap.get(variant._shopify_product_id);
     if (!catalogProductId) continue;
 
-    // Deduplicate barcodes
+    // Deduplicate barcodes (within this run)
     if (variant.barcode) {
       if (globalSeenBarcodes.has(variant.barcode)) {
         variant.barcode = null;
@@ -391,7 +388,7 @@ async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes
       }
     }
 
-    variantRows.push({
+    baseVariantRows.push({
       catalog_product_id: catalogProductId,
       shopify_variant_id: variant.shopify_variant_id,
       variant_title: variant.variant_title,
@@ -402,33 +399,108 @@ async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes
       available_for_sale: variant.available_for_sale,
       image_url: variant.image_url,
       shopify_updated_at: variant.shopify_updated_at,
-      // Nutrition
-      calories_per_serving: variant.calories_per_serving ?? null,
-      carbs_g: variant.carbs_g ?? null,
-      protein_g: variant.protein_g ?? null,
-      fat_g: variant.fat_g ?? null,
-      sodium_mg: variant.sodium_mg ?? null,
-      serving_size: variant.serving_size ?? null,
-      serving_grams: variant.serving_grams ?? null,
-      caffeine_mg: variant.caffeine_mg ?? null,
-      sugar_g: variant.sugar_g ?? null,
-      fiber_g: variant.fiber_g ?? null,
-      servings_per_container: variant.servings_per_container ?? null,
-      nutrition_source: variant.nutrition_source ?? null,
-      nutrition_confidence: variant.nutrition_confidence ?? null,
-      nutrition_enriched_at: variant.nutrition_enriched_at ?? null,
       raw_payload: variant.raw_payload ?? null,
+      updated_at: nowIso,
     });
+
+    // Only write nutrition when this run produced it — preserves existing
+    // nutrition otherwise.
+    if (variant.nutrition_source) {
+      nutritionRows.push({
+        catalog_product_id: catalogProductId,
+        shopify_variant_id: variant.shopify_variant_id,
+        calories_per_serving: variant.calories_per_serving ?? null,
+        carbs_g: variant.carbs_g ?? null,
+        protein_g: variant.protein_g ?? null,
+        fat_g: variant.fat_g ?? null,
+        sodium_mg: variant.sodium_mg ?? null,
+        serving_size: variant.serving_size ?? null,
+        serving_grams: variant.serving_grams ?? null,
+        caffeine_mg: variant.caffeine_mg ?? null,
+        sugar_g: variant.sugar_g ?? null,
+        fiber_g: variant.fiber_g ?? null,
+        servings_per_container: variant.servings_per_container ?? null,
+        nutrition_source: variant.nutrition_source,
+        nutrition_confidence: variant.nutrition_confidence ?? null,
+        nutrition_enriched_at: variant.nutrition_enriched_at ?? null,
+      });
+    }
   }
 
-  if (variantRows.length > 0) {
+  // 2a) Base columns — always (preserves nutrition + any future variant-level flags).
+  if (baseVariantRows.length > 0) {
     await supabaseRequest("catalog_variants", {
       method: "POST",
-      body: variantRows,
+      body: baseVariantRows,
+      query: { on_conflict: "shopify_variant_id" },
+      prefer: "resolution=merge-duplicates",
     });
   }
 
-  return { productsInserted: insertedProducts.length, variantsInserted: variantRows.length };
+  // 2b) Nutrition columns — only for variants enriched this run.
+  if (nutritionRows.length > 0) {
+    await supabaseRequest("catalog_variants", {
+      method: "POST",
+      body: nutritionRows,
+      query: { on_conflict: "shopify_variant_id" },
+      prefer: "resolution=merge-duplicates",
+    });
+  }
+
+  return {
+    productsInserted: insertedProducts.length,
+    variantsInserted: baseVariantRows.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// D2. Deactivate products no longer in the feed (B1)
+// ---------------------------------------------------------------------------
+
+// Fraction of the catalog that, if "not seen" in a run, is treated as a bad or
+// partial fetch rather than genuine removals — deactivation is skipped above it.
+const ANTI_WIPEOUT_PCT = 0.1;
+
+// Marks variants of products NOT seen in this run as unavailable, so items that
+// left TheFeed stop surfacing. Returns counts for logging (kept OUT of `stats`,
+// which is spread into catalog_sync_runs and must only contain known columns).
+async function deactivateRemovedProducts(seenProductIds) {
+  const existing = await supabaseRequest("catalog_products", {
+    query: { select: "id,shopify_product_id" },
+  });
+  if (!Array.isArray(existing) || existing.length === 0) {
+    return { detected: 0, deactivated: 0, skipped: 0 };
+  }
+
+  const removed = existing.filter(
+    (p) => !seenProductIds.has(p.shopify_product_id),
+  );
+  if (removed.length === 0) {
+    console.log("   Removed products: none");
+    return { detected: 0, deactivated: 0, skipped: 0 };
+  }
+
+  const pct = removed.length / existing.length;
+  if (pct > ANTI_WIPEOUT_PCT) {
+    console.error(
+      `   ⚠️  ANTI-WIPEOUT: ${removed.length}/${existing.length} (${(pct * 100).toFixed(1)}%) products not seen this run — exceeds ${(ANTI_WIPEOUT_PCT * 100).toFixed(0)}% threshold. Skipping deactivation (likely a bad/partial fetch).`,
+    );
+    return { detected: removed.length, deactivated: 0, skipped: removed.length };
+  }
+
+  const removedIds = removed.map((p) => p.id);
+  const CHUNK = 50;
+  for (let i = 0; i < removedIds.length; i += CHUNK) {
+    const chunk = removedIds.slice(i, i + CHUNK);
+    await supabaseRequest("catalog_variants", {
+      method: "PATCH",
+      query: { catalog_product_id: `in.(${chunk.join(",")})` },
+      body: { available_for_sale: false, updated_at: new Date().toISOString() },
+      prefer: "return=minimal",
+    });
+  }
+  console.log(`   Removed products deactivated: ${removed.length}`);
+  return { detected: removed.length, deactivated: removed.length, skipped: 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -513,6 +585,11 @@ async function main() {
     const expanded = foodProducts.map(expandProduct);
     const totalVariants = expanded.reduce((sum, e) => sum + e.variantData.length, 0);
     console.log(`   Total variants: ${totalVariants}`);
+
+    // Set of products present in THIS fetch — used by B1 to deactivate the rest.
+    const seenProductIds = new Set(
+      expanded.map((e) => e.productData.shopify_product_id),
+    );
 
     // D. Enrich nutrition + upsert in batches
     const BATCH_SIZE = 20; // Products per batch (smaller because each has multiple variants)
@@ -625,6 +702,10 @@ async function main() {
       }
     }
 
+    // D2. Deactivate products that are no longer in the feed (B1).
+    console.log("\n🧹 Checking for removed products...");
+    const removal = await deactivateRemovedProducts(seenProductIds);
+
     // E. Update sync run as completed
     await updateSyncRun(syncRun.id, {
       status: "completed",
@@ -634,6 +715,9 @@ async function main() {
     });
 
     console.log("\n✅ Import complete!");
+    console.log(
+      `   Removed products: detected ${removal.detected}, deactivated ${removal.deactivated}, skipped ${removal.skipped}`,
+    );
     console.log(`   Products fetched: ${stats.total_products_fetched}`);
     console.log(`   Variants imported: ${stats.variants_imported}`);
     console.log(`   Variants skipped: ${stats.variants_skipped}`);

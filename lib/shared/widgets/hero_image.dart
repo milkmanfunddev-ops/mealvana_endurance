@@ -39,10 +39,7 @@ class HeroImage extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
           border: showBorder
-              ? Border.all(
-                  color: AppTheme.primary600,
-                  width: borderThickness,
-                )
+              ? Border.all(color: AppTheme.primary600, width: borderThickness)
               : null,
           boxShadow: showBorder
               ? [
@@ -66,7 +63,9 @@ class HeroImage extends StatelessWidget {
                 ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(radius - (showBorder ? borderThickness / 2 : 0)),
+          borderRadius: BorderRadius.circular(
+            radius - (showBorder ? borderThickness / 2 : 0),
+          ),
           child: Stack(
             children: [
               // Main Image
@@ -78,7 +77,9 @@ class HeroImage extends StatelessWidget {
                     return Container(
                       decoration: BoxDecoration(
                         color: AppTheme.baseCream,
-                        borderRadius: BorderRadius.circular(radius - (showBorder ? borderThickness / 2 : 0)),
+                        borderRadius: BorderRadius.circular(
+                          radius - (showBorder ? borderThickness / 2 : 0),
+                        ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -102,13 +103,15 @@ class HeroImage extends StatelessWidget {
                   },
                 ),
               ),
-              
+
               // Gradient overlay for better text visibility if needed
               if (showBorder)
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(radius - (showBorder ? borderThickness / 2 : 0)),
+                      borderRadius: BorderRadius.circular(
+                        radius - (showBorder ? borderThickness / 2 : 0),
+                      ),
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -121,7 +124,7 @@ class HeroImage extends StatelessWidget {
                     ),
                   ),
                 ),
-              
+
               // Tap indicator
               if (onTap != null)
                 Positioned(
@@ -211,10 +214,7 @@ class LargeHeroImage extends StatelessWidget {
 
 /// Compact hero image variant for cards
 class CompactHeroImage extends StatelessWidget {
-  const CompactHeroImage({
-    super.key,
-    this.onTap,
-  });
+  const CompactHeroImage({super.key, this.onTap});
 
   final VoidCallback? onTap;
 

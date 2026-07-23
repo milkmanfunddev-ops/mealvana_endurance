@@ -26,8 +26,9 @@ class ChatMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            isFromCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isFromCurrentUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Avatar for received messages
@@ -56,8 +57,12 @@ class ChatMessageBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: isFromCurrentUser
-                    ? (isDark ? AppColors.blackberryLight : AppColors.orange.withOpacity(0.15))
-                    : (isDark ? AppColors.inputBackground : AppColors.surfaceLightSecondary),
+                    ? (isDark
+                          ? AppColors.blackberryLight
+                          : AppColors.orange.withOpacity(0.15))
+                    : (isDark
+                          ? AppColors.inputBackground
+                          : AppColors.surfaceLightSecondary),
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -134,7 +139,9 @@ class ChatMessageBubble extends StatelessWidget {
   }
 
   Widget _buildStatusIcon(bool isDark) {
-    final color = isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final color = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
 
     switch (message.status) {
       case MessageStatus.sending:
@@ -147,11 +154,7 @@ class ChatMessageBubble extends StatelessWidget {
           ),
         );
       case MessageStatus.sent:
-        return Icon(
-          Icons.done,
-          size: 14,
-          color: color,
-        );
+        return Icon(Icons.done, size: 14, color: color);
       case MessageStatus.failed:
         return const Icon(
           Icons.error_outline,
@@ -182,7 +185,7 @@ class ChatMessageBubble extends StatelessWidget {
         'Thursday',
         'Friday',
         'Saturday',
-        'Sunday'
+        'Sunday',
       ];
       return '${dayNames[date.weekday - 1]} $time';
     } else {

@@ -29,10 +29,7 @@ import '../screens/event_detail_screen.dart';
 class UpcomingEventCardKyle extends ConsumerWidget {
   final ({Event event, DateTime eventDate})? upcomingEventData;
 
-  const UpcomingEventCardKyle({
-    super.key,
-    required this.upcomingEventData,
-  });
+  const UpcomingEventCardKyle({super.key, required this.upcomingEventData});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,18 +44,21 @@ class UpcomingEventCardKyle extends ConsumerWidget {
           color: isDark ? AppColors.blackberryLight : Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: (isDark ? AppColors.cream : AppColors.blackberry)
-                .withValues(alpha: 0.1),
+            color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+              alpha: 0.1,
+            ),
             width: 1,
           ),
         ),
         child: InkWell(
+          key: const ValueKey('calendar.create_event_card'),
           onTap: () async {
-            final result = await Navigator.of(context).push<Map<String, dynamic>>(
-              MaterialPageRoute(
-                builder: (context) => const EventFormScreen(),
-              ),
-            );
+            final result = await Navigator.of(context)
+                .push<Map<String, dynamic>>(
+                  MaterialPageRoute(
+                    builder: (context) => const EventFormScreen(),
+                  ),
+                );
 
             // Navigate to event detail screen if event was created successfully
             if (result != null && result['success'] == true) {
@@ -66,9 +66,8 @@ class UpcomingEventCardKyle extends ConsumerWidget {
               if (createdEventId is String && context.mounted) {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => EventDetailScreen(
-                      eventId: createdEventId,
-                    ),
+                    builder: (context) =>
+                        EventDetailScreen(eventId: createdEventId),
                   ),
                 );
               }
@@ -88,7 +87,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                         .withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.calendarDay,
                     color: isDark ? AppColors.cream : AppColors.blackberry,
                     size: 16,
@@ -105,8 +104,9 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                         style: TextStyle(
                           fontFamily: 'Compadre',
                           fontSize: 16,
-                          color: (isDark ? AppColors.cream : AppColors.blackberry)
-                              .withValues(alpha: 0.7),
+                          color:
+                              (isDark ? AppColors.cream : AppColors.blackberry)
+                                  .withValues(alpha: 0.7),
                           height: 1.3,
                         ),
                       ),
@@ -147,18 +147,18 @@ class UpcomingEventCardKyle extends ConsumerWidget {
         color: isDark ? AppColors.blackberryLight : Colors.white,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.1),
+          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+            alpha: 0.1,
+          ),
           width: 1,
         ),
       ),
       child: InkWell(
+        key: ValueKey('calendar.event_card_${event.id}'),
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => EventDetailScreen(
-                eventId: event.id,
-              ),
+              builder: (context) => EventDetailScreen(eventId: event.id),
             ),
           );
         },
@@ -171,11 +171,12 @@ class UpcomingEventCardKyle extends ConsumerWidget {
               Container(
                 width: 36,
                 height: 36,
+                alignment: Alignment.center,
                 decoration: const BoxDecoration(
                   color: AppColors.electrolyte,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: const FaIcon(
                   FontAwesomeIcons.trophy,
                   color: AppColors.blackberry,
                   size: 16,
@@ -205,7 +206,8 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                       style: TextStyle(
                         fontFamily: 'Apercu',
                         fontSize: 10,
-                        color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.5),
+                        color: (isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.5),
                         fontWeight: FontWeight.w400,
                         height: 1.3,
                       ),
@@ -231,8 +233,11 @@ class UpcomingEventCardKyle extends ConsumerWidget {
     // Compare dates at day level only, ignoring time components
     final today = DateTime.now();
     final todayDateOnly = DateTime(today.year, today.month, today.day);
-    final eventDateOnly =
-        DateTime(eventDate.year, eventDate.month, eventDate.day);
+    final eventDateOnly = DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+    );
     final daysDifference = eventDateOnly.difference(todayDateOnly).inDays;
 
     if (daysDifference < 0) {

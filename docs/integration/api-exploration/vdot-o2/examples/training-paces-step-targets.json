@@ -1,0 +1,48 @@
+{
+  "_comment": "Reconstructed from the VDOT O2 wiki reference — not a captured vendor payload. Documents the steps[].target structure, which is VDOT O2's per-step pace/HR prescription. Each leaf step may carry a 'target'.",
+  "_unitsWarning": "Units for target.type == 'speed' are NOT VERIFIED. meters/second is the likely convention (plannedDistance is meters, plannedTime is seconds), but there is no captured payload to confirm it. heartRate is bpm; swimStroke and exercise encodings are undocumented.",
+  "_targetTypes": ["speed", "heartRate", "swimStroke", "exercise"],
+
+  "steps": [
+    {
+      "_case": "Pace band on an interval (valueLow / valueHigh).",
+      "type": "step",
+      "intensity": "interval",
+      "duration": { "type": "distance", "value": 800 },
+      "target": { "type": "speed", "valueLow": 4.55, "valueHigh": 4.79 },
+      "order": 1
+    },
+    {
+      "_case": "Single-point pace target (value).",
+      "type": "step",
+      "intensity": "active",
+      "duration": { "type": "time", "value": 1200 },
+      "target": { "type": "speed", "value": 4.0 },
+      "order": 2
+    },
+    {
+      "_case": "Heart-rate band in bpm.",
+      "type": "step",
+      "intensity": "active",
+      "duration": { "type": "time", "value": 1800 },
+      "target": { "type": "heartRate", "valueLow": 145, "valueHigh": 155 },
+      "order": 3
+    },
+    {
+      "_case": "Swim-stroke target.",
+      "type": "step",
+      "intensity": "active",
+      "duration": { "type": "distance", "value": 400 },
+      "target": { "type": "swimStroke", "value": 1 },
+      "order": 4
+    },
+    {
+      "_case": "Strength exercise with an exerciseName and an exercise target.",
+      "type": "step",
+      "exerciseName": "Back Squat",
+      "duration": { "type": "time", "value": 600 },
+      "target": { "type": "exercise", "value": 3 },
+      "order": 5
+    }
+  ]
+}

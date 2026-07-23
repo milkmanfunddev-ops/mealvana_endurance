@@ -51,8 +51,7 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
       // Only delete all preferences if NOT in merge mode
       // In merge mode, we upsert individual items to preserve local data
       if (!mergeMode) {
-        batch.deleteWhere(
-            foodPreferencesTable, (f) => f.userId.equals(userId));
+        batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
       }
 
       // Insert/update preferences using upsert
@@ -131,16 +130,17 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
 
   /// Get food preference levels (0-4 scale) for a user
   Future<Map<String, int>> getUserFoodPreferenceLevels(String userId) async {
-    final rows = await (select(foodPreferencesTable)
-          ..where((f) => f.userId.equals(userId)))
-        .get();
+    final rows = await (select(
+      foodPreferencesTable,
+    )..where((f) => f.userId.equals(userId))).get();
 
     if (rows.isEmpty) {
       // Fallback to legacy JSON metadata in user profile
-      final profile = await (select(userProfilesTable)
-            ..where((u) => u.id.equals(userId))
-            ..limit(1))
-          .getSingleOrNull();
+      final profile =
+          await (select(userProfilesTable)
+                ..where((u) => u.id.equals(userId))
+                ..limit(1))
+              .getSingleOrNull();
 
       if (profile == null) return {};
 
@@ -160,7 +160,8 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
     final levels = <String, int>{};
     for (final row in rows) {
       final normalizedLevel =
-          (row.preferenceLevel ?? _defaultSliderLevel(_parsePreference(row.preference)))
+          (row.preferenceLevel ??
+                  _defaultSliderLevel(_parsePreference(row.preference)))
               .clamp(0, 4)
               .toInt();
       levels[row.foodName] = normalizedLevel;
@@ -185,15 +186,28 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
     return results.map((r) => r.foodName).toList();
   }
 
+  /// Get willing-to-try foods for a user
+  Future<List<String>> getWillingToTryFoods(String userId) async {
+    final query = select(foodPreferencesTable)
+      ..where(
+        (f) => f.userId.equals(userId) & f.preference.equals('willing_to_try'),
+      );
+    final results = await query.get();
+    return results.map((r) => r.foodName).toList();
+  }
+
   /// Remove food preferences by source
   ///
   /// Used when allergies or dietary preferences are removed to undo auto-avoids
   /// [source] - The source to match (e.g., 'allergy:gluten', 'dietary:vegan')
   /// Returns the number of preferences removed
-  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
-    return await (delete(foodPreferencesTable)
-          ..where((f) =>
-              f.userId.equals(userId) & f.preferenceSource.equals(source)))
+  Future<int> removeFoodPreferencesBySource(
+    String userId,
+    String source,
+  ) async {
+    return await (delete(foodPreferencesTable)..where(
+          (f) => f.userId.equals(userId) & f.preferenceSource.equals(source),
+        ))
         .go();
   }
 

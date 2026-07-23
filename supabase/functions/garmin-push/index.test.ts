@@ -20,6 +20,12 @@ import {
   mapGarminDailySummary,
   mapGarminSleepSummary,
 } from '../_shared/garmin/mappers.ts';
+import {
+  insertGarminActivityIfMissing,
+} from '../_shared/garmin/activity_completion.ts';
+import {
+  isEnduranceSportType,
+} from '../_shared/garmin/types.ts';
 import type {
   GarminPushNotification,
   GarminActivitySummary,
@@ -657,6 +663,267 @@ describe('garmin-push Edge Function', () => {
       assertEquals(push.dailies!.length, 1);
       assertEquals(push.sleeps!.length, 1);
     });
+  });
+});
+
+// ============================================================================
+// Endurance Sport Allowlist
+// ============================================================================
+
+describe('Endurance Sport Allowlist', () => {
+  it('accepts core endurance sport types', () => {
+    assertEquals(isEnduranceSportType('running'), true);
+    assertEquals(isEnduranceSportType('cycling'), true);
+    assertEquals(isEnduranceSportType('swimming'), true);
+    assertEquals(isEnduranceSportType('triathlon'), true);
+    assertEquals(isEnduranceSportType('duathlon'), true);
+    assertEquals(isEnduranceSportType('multisport'), true);
+  });
+
+  it('rejects non-endurance and unmapped types', () => {
+    assertEquals(isEnduranceSportType('other'), false);
+    assertEquals(isEnduranceSportType('transition'), false);
+    assertEquals(isEnduranceSportType('hiking'), false);
+    assertEquals(isEnduranceSportType('strength_training'), false);
+    assertEquals(isEnduranceSportType(''), false);
+    assertEquals(isEnduranceSportType(undefined), false);
+    assertEquals(isEnduranceSportType(null), false);
+  });
+});
+
+// ============================================================================
+// Auto-create on no-match (insertGarminActivityIfMissing)
+// ============================================================================
+
+/**
+ * Minimal supabase-shaped stub that records the insert payload and returns
+ * a canned response. Mirrors the chain shape used by insertGarminActivityIfMissing:
+ *   client.from(table).insert(row).select(cols).single()
+ */
+function buildSupabaseInsertStub(
+  // deno-lint-ignore no-explicit-any
+  response: { data: any; error: any },
+): {
+  // deno-lint-ignore no-explicit-any
+  client: any;
+  // deno-lint-ignore no-explicit-any
+  capturedRow: () => Record<string, any> | null;
+  insertCallCount: () => number;
+} {
+  // deno-lint-ignore no-explicit-any
+  let captured: Record<string, any> | null = null;
+  let calls = 0;
+  const client = {
+    from: (_table: string) => ({
+      // deno-lint-ignore no-explicit-any
+      insert: (row: Record<string, any>) => {
+        calls++;
+        captured = row;
+        return {
+          select: (_cols: string) => ({
+            single: () => Promise.resolve(response),
+          }),
+        };
+      },
+    }),
+  };
+  return {
+    client,
+    capturedRow: () => captured,
+    insertCallCount: () => calls,
+  };
+}
+
+describe('insertGarminActivityIfMissing', () => {
+  const TEST_USER = '550e8400-e29b-41d4-a716-446655440000';
+
+  it('inserts a completed activity for a no-match endurance push', async () => {
+    const activity = fixtures.swimmingActivityPush.activities![0];
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    const stub = buildSupabaseInsertStub({
+      data: { id: 'new-activity-uuid' },
+      error: null,
+    });
+
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    assertEquals(outcome.kind, 'inserted');
+    if (outcome.kind === 'inserted') {
+      assertEquals(outcome.activityId, 'new-activity-uuid');
+    }
+
+    const row = stub.capturedRow();
+    assertExists(row);
+    assertEquals(row!.user_id, TEST_USER);
+    assertEquals(row!.activity_type, 'swimming');
+    assertEquals(row!.status, 'completed');
+    assertEquals(row!.synced_from_provider, 'garmin');
+    assertEquals(row!.garmin_summary_id, 'act-swim-001');
+    assertEquals(row!.needs_upload, false);
+    // Completion fields from buildGarminCompletionUpdate must be applied.
+    assertExists(row!.completed_at);
+    assertExists(row!.last_synced_at);
+    assertExists(row!.garmin_last_synced_at);
+  });
+
+  it('reports duplicate when the unique constraint is violated', async () => {
+    const activity = fixtures.runningActivityPush.activities![0];
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    const stub = buildSupabaseInsertStub({
+      data: null,
+      error: { code: '23505', message: 'duplicate key value' },
+    });
+
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    assertEquals(outcome.kind, 'duplicate');
+    assertEquals(stub.insertCallCount(), 1);
+  });
+
+  it('imports unsupported (non-endurance) sports as ActivityType.other', async () => {
+    const activity: GarminActivitySummary = {
+      userId: 'garmin-user-abc',
+      userAccessToken: 'token-xyz',
+      summaryId: 'act-strength-001',
+      activityType: 'strength_training', // maps to "other"
+      activityName: 'Leg Day',
+      durationInSeconds: 1800,
+      startTimeInSeconds: 1711584000,
+      startTimeOffsetInSeconds: 0,
+    };
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    assertEquals(mapped.activity_type, 'other');
+
+    const stub = buildSupabaseInsertStub({
+      data: { id: 'new-other-activity-uuid' },
+      error: null,
+    });
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    // Import-only bucket: still auto-created, just never matched to a
+    // planned activity (findMatchingPlannedActivity refuses 'other').
+    assertEquals(outcome.kind, 'inserted');
+    if (outcome.kind === 'inserted') {
+      assertEquals(outcome.activityId, 'new-other-activity-uuid');
+    }
+    const row = stub.capturedRow();
+    assertExists(row);
+    assertEquals(row!.activity_type, 'other');
+    assertEquals(row!.title, 'Leg Day');
+    assertEquals(stub.insertCallCount(), 1);
+  });
+
+  it('skips Garmin "transition" legs without inserting', async () => {
+    const activity: GarminActivitySummary = {
+      userId: 'garmin-user-abc',
+      userAccessToken: 'token-xyz',
+      summaryId: 'act-transition-001',
+      activityType: 'transition',
+      durationInSeconds: 120,
+      startTimeInSeconds: 1711584000,
+      startTimeOffsetInSeconds: 0,
+    };
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    assertEquals(mapped.activity_type, 'transition');
+
+    const stub = buildSupabaseInsertStub({
+      data: { id: 'should-not-be-used' },
+      error: null,
+    });
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    assertEquals(outcome.kind, 'skipped_non_endurance');
+    if (outcome.kind === 'skipped_non_endurance') {
+      assertEquals(outcome.sportType, 'transition');
+    }
+    assertEquals(stub.insertCallCount(), 0);
+  });
+
+  it('degrades to skipped_enum_not_ready when the DB enum lacks "other"', async () => {
+    const activity: GarminActivitySummary = {
+      userId: 'garmin-user-abc',
+      userAccessToken: 'token-xyz',
+      summaryId: 'act-hiking-001',
+      activityType: 'hiking', // maps to "other"
+      durationInSeconds: 3600,
+      startTimeInSeconds: 1711584000,
+      startTimeOffsetInSeconds: 0,
+    };
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    assertEquals(mapped.activity_type, 'other');
+
+    const stub = buildSupabaseInsertStub({
+      data: null,
+      error: {
+        code: '22P02',
+        message: 'invalid input value for enum activity_type_enum: "other"',
+      },
+    });
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    assertEquals(outcome.kind, 'skipped_enum_not_ready');
+    if (outcome.kind === 'skipped_enum_not_ready') {
+      assertEquals(outcome.sportType, 'other');
+    }
+    assertEquals(stub.insertCallCount(), 1);
+  });
+
+  it('skips when summaryId is missing', async () => {
+    const activity = {
+      ...fixtures.runningActivityPush.activities![0],
+      summaryId: '',
+    } as GarminActivitySummary;
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    const stub = buildSupabaseInsertStub({
+      data: { id: 'unused' },
+      error: null,
+    });
+
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    assertEquals(outcome.kind, 'skipped_no_summary_id');
+    assertEquals(stub.insertCallCount(), 0);
+  });
+
+  it('reports error on non-23505 db failure', async () => {
+    const activity = fixtures.cyclingActivityPush.activities![0];
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+    const stub = buildSupabaseInsertStub({
+      data: null,
+      error: { code: '23502', message: 'null violates not-null constraint' },
+    });
+
+    const outcome = await insertGarminActivityIfMissing(
+      stub.client,
+      activity,
+      mapped,
+    );
+
+    assertEquals(outcome.kind, 'error');
   });
 });
 

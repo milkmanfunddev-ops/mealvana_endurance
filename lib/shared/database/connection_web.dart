@@ -6,7 +6,7 @@ import 'package:drift/wasm.dart';
 /// Requires sqlite3.wasm and drift_worker.js in the web/ folder.
 ///
 /// See: https://drift.simonbinder.eu/platforms/web/
-LazyDatabase openNativeConnection() {
+QueryExecutor openNativeConnection() {
   return LazyDatabase(() async {
     final result = await WasmDatabase.open(
       databaseName: 'mealvana_db',

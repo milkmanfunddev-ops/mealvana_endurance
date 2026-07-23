@@ -94,9 +94,28 @@ export function calculateNEAT(
   return rmr * neat_factor;
 }
 
+// Fat intake bounds per kg bodyweight. The floor protects essential-fat needs
+// and hormone health; the ceiling prevents the residual fat-from-TDEE formula
+// from producing absurd values on high-session days where most session energy
+// is supplied by stored glycogen and fat oxidation, not food eaten that day.
+// Athletes don't replace race-day expenditure in real-time, so intake < TDEE
+// is expected and physiologically normal.
+const FAT_FLOOR_G_PER_KG = 0.8;
+const FAT_CEILING_G_PER_KG = 1.5;
+
+function clampFat(fat_from_tdee: number, weight_kg: number): number {
+  const floor = FAT_FLOOR_G_PER_KG * weight_kg;
+  const ceiling = FAT_CEILING_G_PER_KG * weight_kg;
+  return Math.max(floor, Math.min(ceiling, fat_from_tdee));
+}
+
 /**
  * Calculate TDEE with iterative TEF convergence
  * Solves circular dependency: TDEE → fat → intake → TEF → TDEE
+ *
+ * Fat is bounded by [0.8, 1.5] g/kg. When session expenditure is high enough
+ * that residual fat would exceed the ceiling, the ceiling is applied and the
+ * resulting intake will be less than TDEE — informational TDEE stays accurate.
  */
 export function calculateTDEE(
   rmr: number,
@@ -110,7 +129,6 @@ export function calculateTDEE(
   fat_g: number;
   tef: number;
 } {
-  const fat_floor = 0.8 * weight_kg;
   let tef = 0;
   const max_passes = 5;
 
@@ -120,9 +138,9 @@ export function calculateTDEE(
     // Calculate TDEE with current TEF
     const tdee = rmr + neat + tef + session_kcal;
 
-    // Calculate fat from TDEE
+    // Calculate fat from TDEE, clamped to physiological intake bounds
     const fat_from_tdee = (tdee - carb_g * 4 - prot_g * 4) / 9;
-    const fat = Math.max(fat_from_tdee, fat_floor);
+    const fat = clampFat(fat_from_tdee, weight_kg);
 
     // Calculate intake and new TEF
     const intake = carb_g * 4 + prot_g * 4 + fat * 9;
@@ -135,9 +153,9 @@ export function calculateTDEE(
     if (delta < 10) {
       // Converged - calculate final values
       const final_tdee = rmr + neat + tef + session_kcal;
-      const final_fat = Math.max(
+      const final_fat = clampFat(
         (final_tdee - carb_g * 4 - prot_g * 4) / 9,
-        fat_floor,
+        weight_kg,
       );
 
       return {
@@ -150,9 +168,9 @@ export function calculateTDEE(
 
   // Should converge before max_passes, but return final result anyway
   const final_tdee = rmr + neat + tef + session_kcal;
-  const final_fat = Math.max(
+  const final_fat = clampFat(
     (final_tdee - carb_g * 4 - prot_g * 4) / 9,
-    fat_floor,
+    weight_kg,
   );
 
   return {

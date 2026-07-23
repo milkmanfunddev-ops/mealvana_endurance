@@ -67,7 +67,9 @@ class _BrickPhaseBreakdownState extends State<BrickPhaseBreakdown> {
                   ),
                 ),
                 Icon(
-                  _isExpanded ? FontAwesomeIcons.chevronUp : FontAwesomeIcons.chevronDown,
+                  _isExpanded
+                      ? FontAwesomeIcons.chevronUp.data
+                      : FontAwesomeIcons.chevronDown.data,
                   size: 14,
                   color: AppColors.orange,
                 ),
@@ -103,7 +105,11 @@ class _BrickPhaseBreakdownState extends State<BrickPhaseBreakdown> {
     return phaseWidgets;
   }
 
-  Widget _buildPhaseRow(BuildContext context, String phaseId, BrickPhaseData data) {
+  Widget _buildPhaseRow(
+    BuildContext context,
+    String phaseId,
+    BrickPhaseData data,
+  ) {
     final phaseName = _getPhaseDisplayName(phaseId);
     final phaseNote = _getPhaseNote(phaseId, data);
 
@@ -116,7 +122,9 @@ class _BrickPhaseBreakdownState extends State<BrickPhaseBreakdown> {
           style: AppTextStyles.sectionTitle.copyWith(
             fontSize: 12,
             letterSpacing: 1.2,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 6),
@@ -140,7 +148,9 @@ class _BrickPhaseBreakdownState extends State<BrickPhaseBreakdown> {
               fontFamily: 'Apercu',
               fontSize: 12,
               fontStyle: FontStyle.italic,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -189,7 +199,8 @@ class _BrickPhaseBreakdownState extends State<BrickPhaseBreakdown> {
 
   String? _getPhaseNote(String phaseId, BrickPhaseData data) {
     // Swimming phase typically has 0 carbs
-    if (phaseId.contains('swim') || (data.carbsG == 0 && phaseId.startsWith('during'))) {
+    if (phaseId.contains('swim') ||
+        (data.carbsG == 0 && phaseId.startsWith('during'))) {
       return '(no eating during swim)';
     }
     return null;

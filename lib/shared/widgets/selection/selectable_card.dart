@@ -74,10 +74,7 @@ class SelectableCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.sm),
                 child: emoji != null
-                    ? Text(
-                        emoji!,
-                        style: const TextStyle(fontSize: 24),
-                      )
+                    ? Text(emoji!, style: const TextStyle(fontSize: 24))
                     : Icon(
                         icon,
                         size: 24,
@@ -96,7 +93,9 @@ class SelectableCard extends StatelessWidget {
                   Text(
                     label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                       color: effectiveEnabled
                           ? AppColors.textLight
                           : AppColors.inactive,
@@ -116,7 +115,10 @@ class SelectableCard extends StatelessWidget {
             ),
 
             // Checkbox indicator
-            _CheckboxIndicator(isSelected: isSelected, enabled: effectiveEnabled),
+            _CheckboxIndicator(
+              isSelected: isSelected,
+              enabled: effectiveEnabled,
+            ),
           ],
         ),
       ),
@@ -125,10 +127,7 @@ class SelectableCard extends StatelessWidget {
 }
 
 class _CheckboxIndicator extends StatelessWidget {
-  const _CheckboxIndicator({
-    required this.isSelected,
-    required this.enabled,
-  });
+  const _CheckboxIndicator({required this.isSelected, required this.enabled});
 
   final bool isSelected;
   final bool enabled;
@@ -150,11 +149,7 @@ class _CheckboxIndicator extends StatelessWidget {
         ),
       ),
       child: isSelected
-          ? const Icon(
-              Icons.check,
-              size: 16,
-              color: Colors.white,
-            )
+          ? const Icon(Icons.check, size: 16, color: Colors.white)
           : null,
     );
   }

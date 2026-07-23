@@ -42,6 +42,7 @@ deno test --allow-net --allow-env supabase/functions/generate-macros-v4/index.te
 - App-invoked set in docs matches extracted usage from `lib/** functions.invoke(...)`.
 
 ## Related Docs
+- [`Generate Nutrition Plan V3: Algorithm Flow`](./nutrition-plan-v3-algorithm.md)
 - `/docs/deployment/README.md`
 - `/docs/test/README.md`
 - `/docs/technical/edge-functions/README.md`

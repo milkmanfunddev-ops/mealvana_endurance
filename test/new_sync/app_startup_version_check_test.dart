@@ -8,6 +8,7 @@ import 'package:mealvana_endurance/features/app_startup/application/app_startup_
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_service.dart';
 import 'package:mealvana_endurance/shared/services/version_check_service.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/privacy/privacy_region_service.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
@@ -37,6 +38,8 @@ class MockUserDao extends Mock implements UserDao {}
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
 
+class MockPrivacyRegionService extends Mock implements PrivacyRegionService {}
+
 /// Integration test for version check during app startup
 ///
 /// Tests:
@@ -55,6 +58,7 @@ void main() {
     late MockAppDatabase mockDatabase;
     late MockUserDao mockUserDao;
     late MockSharedPreferences mockSharedPreferences;
+    late MockPrivacyRegionService mockPrivacyRegionService;
     late ProviderContainer container;
 
     setUp(() {
@@ -68,6 +72,14 @@ void main() {
       mockDatabase = MockAppDatabase();
       mockUserDao = MockUserDao();
       mockSharedPreferences = MockSharedPreferences();
+      mockPrivacyRegionService = MockPrivacyRegionService();
+
+      // AppStartup.build reads privacyRegionServiceProvider and calls
+      // ensureResolved() (which touches the network on a cold cache); stub it to
+      // a no-op so startup stays hermetic.
+      when(
+        () => mockPrivacyRegionService.ensureResolved(),
+      ).thenAnswer((_) async {});
 
       // Setup default mocks
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
@@ -94,7 +106,10 @@ void main() {
         ),
       ).thenReturn(null);
       when(
-        () => mockVersionCheckService.performSchemaResync(any()),
+        () => mockVersionCheckService.performSchemaResync(
+          any(),
+          targetSchemaVersion: any(named: 'targetSchemaVersion'),
+        ),
       ).thenAnswer((_) async => true);
       when(() => mockDatabase.userDao).thenReturn(mockUserDao);
       when(
@@ -121,6 +136,9 @@ void main() {
           ),
           appStartupServiceProvider.overrideWithValue(mockAppStartupService),
           appExternalDepsProvider.overrideWithValue(mockAppExternalDeps),
+          privacyRegionServiceProvider.overrideWithValue(
+            mockPrivacyRegionService,
+          ),
         ],
       );
     });
@@ -163,6 +181,9 @@ void main() {
             ),
           ),
           appDatabaseProvider.overrideWithValue(mockDatabase),
+          privacyRegionServiceProvider.overrideWithValue(
+            mockPrivacyRegionService,
+          ),
         ],
       );
 
@@ -228,7 +249,10 @@ void main() {
           ),
         );
         when(
-          () => mockVersionCheckService.performSchemaResync(any()),
+          () => mockVersionCheckService.performSchemaResync(
+            any(),
+            targetSchemaVersion: any(named: 'targetSchemaVersion'),
+          ),
         ).thenAnswer((_) async => false);
 
         // Act
@@ -286,6 +310,9 @@ void main() {
             ),
           ),
           appDatabaseProvider.overrideWithValue(mockDatabase),
+          privacyRegionServiceProvider.overrideWithValue(
+            mockPrivacyRegionService,
+          ),
         ],
       );
 

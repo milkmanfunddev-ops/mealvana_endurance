@@ -76,11 +76,7 @@ class BrickValidationErrorDialog extends StatelessWidget {
                 color: AppColors.error.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: AppIconSizes.xl,
-                color: AppColors.error,
-              ),
+              child: Icon(icon, size: AppIconSizes.xl, color: AppColors.error),
             ),
 
             const SizedBox(height: AppSpacing.lg),

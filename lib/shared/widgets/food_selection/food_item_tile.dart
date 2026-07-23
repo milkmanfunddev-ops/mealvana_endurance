@@ -44,7 +44,9 @@ class FoodItemTile extends StatelessWidget {
     return AnimatedOpacity(
       opacity: isAvoided ? 0.5 : 1.0,
       duration: const Duration(milliseconds: 200),
-      child: showPreference ? _buildPreferenceItem() : _buildSimpleItem(context),
+      child: showPreference
+          ? _buildPreferenceItem()
+          : _buildSimpleItem(context),
     );
   }
 
@@ -100,8 +102,8 @@ class FoodItemTile extends StatelessWidget {
                       _capitalize(food.displayName ?? food.name),
                       style: AppTextStyles.foodTitle.copyWith(
                         color: isAvoided
-                          ? AppColors.dragonfruit
-                          : Theme.of(context).colorScheme.onSurface,
+                            ? AppColors.dragonfruit
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     if (food.carbsPerServing != null) ...[
@@ -113,7 +115,8 @@ class FoodItemTile extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (food.servingSize != null && food.servingSize!.isNotEmpty) ...[
+                    if (food.servingSize != null &&
+                        food.servingSize!.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
                         'Serving: ${food.servingSize}',
@@ -142,7 +145,7 @@ class FoodItemTile extends StatelessWidget {
               if (showEditButton && onEdit != null) ...[
                 IconButton(
                   onPressed: onEdit,
-                  icon: Icon(
+                  icon: FaIcon(
                     FontAwesomeIcons.penToSquare,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: AppIconSizes.sm,
@@ -158,7 +161,7 @@ class FoodItemTile extends StatelessWidget {
               ],
 
               // Action indicator
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.circlePlus,
                 color: isAvoided ? AppColors.dragonfruit : AppColors.orange,
                 size: AppIconSizes.md,
@@ -176,88 +179,112 @@ class FoodItemTile extends StatelessWidget {
 
     // Map generic foods to specific icons
     if (name.contains('apple') && !name.contains('applesauce')) {
-      return FontAwesomeIcons.appleWhole;
+      return FontAwesomeIcons.appleWhole.data;
     } else if (name.contains('applesauce') || name.contains('purée')) {
-      return FontAwesomeIcons.bottleDroplet;
+      return FontAwesomeIcons.bottleDroplet.data;
     } else if (name.contains('bagel')) {
-      return FontAwesomeIcons.breadSlice;
+      return FontAwesomeIcons.breadSlice.data;
     } else if (name.contains('banana')) {
-      return FontAwesomeIcons.appleWhole;
+      return FontAwesomeIcons.appleWhole.data;
     } else if (name.contains('berr')) {
-      return FontAwesomeIcons.bowlFood;
+      return FontAwesomeIcons.bowlFood.data;
     } else if (name.contains('chocolate milk')) {
-      return FontAwesomeIcons.bottleWater;
+      return FontAwesomeIcons.bottleWater.data;
     } else if (name.contains('coconut water')) {
-      return FontAwesomeIcons.bottleWater;
+      return FontAwesomeIcons.bottleWater.data;
     } else if (name.contains('coffee')) {
-      return FontAwesomeIcons.mugHot;
+      return FontAwesomeIcons.mugHot.data;
     } else if (name.contains('date')) {
-      return FontAwesomeIcons.appleWhole;
+      return FontAwesomeIcons.appleWhole.data;
     } else if (name.contains('electrolyte drink mix')) {
-      return FontAwesomeIcons.flask;
+      return FontAwesomeIcons.flask.data;
     } else if (name.contains('electrolyte tablet')) {
-      return FontAwesomeIcons.pills;
+      return FontAwesomeIcons.pills.data;
     } else if (name.contains('energy bar')) {
-      return FontAwesomeIcons.bars;
+      return FontAwesomeIcons.bars.data;
     } else if (name.contains('energy chew')) {
-      return FontAwesomeIcons.candyCane;
+      return FontAwesomeIcons.candyCane.data;
     } else if (name.contains('energy waffle') || name.contains('stroopwafel')) {
-      return FontAwesomeIcons.cookie;
+      return FontAwesomeIcons.cookie.data;
     } else if (name.contains('fig bar')) {
-      return FontAwesomeIcons.bars;
+      return FontAwesomeIcons.bars.data;
     } else if (name.contains('gel')) {
-      return FontAwesomeIcons.droplet;
+      return FontAwesomeIcons.droplet.data;
     } else if (name.contains('oatmeal')) {
-      return FontAwesomeIcons.bowlFood;
+      return FontAwesomeIcons.bowlFood.data;
     } else if (name.contains('orange juice')) {
-      return FontAwesomeIcons.glassWater;
+      return FontAwesomeIcons.glassWater.data;
     } else if (name.contains('peanut butter')) {
-      return FontAwesomeIcons.jar;
+      return FontAwesomeIcons.jar.data;
     } else if (name.contains('pickle juice')) {
-      return FontAwesomeIcons.vial;
+      return FontAwesomeIcons.vial.data;
     } else if (name.contains('pretzel')) {
-      return FontAwesomeIcons.bowlFood;
+      return FontAwesomeIcons.bowlFood.data;
     } else if (name.contains('protein bar')) {
-      return FontAwesomeIcons.bars;
+      return FontAwesomeIcons.bars.data;
     } else if (name.contains('protein powder')) {
-      return FontAwesomeIcons.jar;
+      return FontAwesomeIcons.jar.data;
     } else if (name.contains('protein shake')) {
-      return FontAwesomeIcons.bottleWater;
+      return FontAwesomeIcons.bottleWater.data;
     } else if (name.contains('salt packet')) {
-      return FontAwesomeIcons.bagShopping;
+      return FontAwesomeIcons.bagShopping.data;
     } else if (name.contains('sports drink mix')) {
-      return FontAwesomeIcons.flask;
+      return FontAwesomeIcons.flask.data;
     } else if (name.contains('sports drink')) {
-      return FontAwesomeIcons.bottleWater;
+      return FontAwesomeIcons.bottleWater.data;
     } else if (name.contains('toast')) {
-      return FontAwesomeIcons.breadSlice;
+      return FontAwesomeIcons.breadSlice.data;
     } else if (name.contains('trail mix')) {
-      return FontAwesomeIcons.bowlFood;
+      return FontAwesomeIcons.bowlFood.data;
     } else if (name.contains('water')) {
-      return FontAwesomeIcons.bottleWater;
+      return FontAwesomeIcons.bottleWater.data;
     } else if (name.contains('yogurt')) {
-      return FontAwesomeIcons.bowlFood;
+      return FontAwesomeIcons.bowlFood.data;
     }
 
     // Check if this is likely a user-imported food
     final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
+      'apple',
+      'applesauce',
+      'purée',
+      'bagel',
+      'banana',
+      'berr',
+      'chocolate milk',
+      'coconut water',
+      'coffee',
+      'date',
+      'electrolyte drink',
+      'electrolyte tablet',
+      'energy bar',
+      'energy chew',
+      'energy waffle',
+      'stroopwafel',
+      'fig bar',
+      'gel',
+      'oatmeal',
+      'orange juice',
+      'peanut butter',
+      'pickle juice',
+      'pretzel',
+      'protein bar',
+      'protein powder',
+      'protein shake',
+      'salt packet',
+      'sports drink',
+      'toast',
+      'trail mix',
+      'water',
+      'yogurt',
     ];
 
     // If none of the generic food keywords match, it's likely user-imported
     if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
-      return FontAwesomeIcons.userPen;
+      return FontAwesomeIcons.userPen.data;
     }
 
     // Default fallback icon
-    return FontAwesomeIcons.utensils;
+    return FontAwesomeIcons.utensils.data;
   }
 
   /// Get the background color for the food icon
@@ -265,14 +292,38 @@ class FoodItemTile extends StatelessWidget {
     final name = foodName.toLowerCase();
 
     final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
+      'apple',
+      'applesauce',
+      'purée',
+      'bagel',
+      'banana',
+      'berr',
+      'chocolate milk',
+      'coconut water',
+      'coffee',
+      'date',
+      'electrolyte drink',
+      'electrolyte tablet',
+      'energy bar',
+      'energy chew',
+      'energy waffle',
+      'stroopwafel',
+      'fig bar',
+      'gel',
+      'oatmeal',
+      'orange juice',
+      'peanut butter',
+      'pickle juice',
+      'pretzel',
+      'protein bar',
+      'protein powder',
+      'protein shake',
+      'salt packet',
+      'sports drink',
+      'toast',
+      'trail mix',
+      'water',
+      'yogurt',
     ];
 
     // User-imported foods get orange color

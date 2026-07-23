@@ -129,10 +129,16 @@ class UserFoodCrudService {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'USER_FOOD_CRUD',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'create', 'recordId': foodId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:user_foods:create', method: 'UPSERT', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:user_foods:create',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }());
     } catch (e) {
@@ -222,10 +228,16 @@ class UserFoodCrudService {
             _logger.warning(
               'Immediate upload failed; record stays dirty for retry',
               context: 'USER_FOOD_CRUD',
-              error: e, stackTrace: stackTrace,
+              error: e,
+              stackTrace: stackTrace,
               data: {'operation': 'update', 'recordId': foodId},
             );
-            _sentry.reportNetworkError(e, url: 'supabase:user_foods:update', method: 'UPDATE', stackTrace: stackTrace);
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:user_foods:update',
+              method: 'UPDATE',
+              stackTrace: stackTrace,
+            );
           }
         }());
       }
@@ -263,10 +275,16 @@ class UserFoodCrudService {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'USER_FOOD_CRUD',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'delete', 'recordId': foodId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:user_foods:delete', method: 'UPDATE', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:user_foods:delete',
+            method: 'UPDATE',
+            stackTrace: stackTrace,
+          );
         }
       }());
     } catch (e) {

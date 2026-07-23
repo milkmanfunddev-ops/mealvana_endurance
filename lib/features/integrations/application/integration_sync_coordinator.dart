@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../activities/data/activities_repository.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../presentation/providers/connect_training_controller.dart';
 import '../presentation/providers/integrations_providers.dart';
 
@@ -10,8 +12,8 @@ part 'integration_sync_coordinator.g.dart';
 
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///
-/// Purpose-built for external provider sync (Final Surge, Training Peaks).
-/// NOT part of the SyncCoordinator dependency graph because integration
+/// Purpose-built for external provider sync (Final Surge, Training Peaks,
+/// V.O2). NOT part of the SyncCoordinator dependency graph because integration
 /// sync has no dirty-record upload concept.
 ///
 /// Design:
@@ -50,6 +52,12 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
   /// Failures are logged silently with a 5-minute cooldown.
   /// Returns true if any provider actually synced (not skipped).
   Future<bool> ensureIntegrationsSynced(String userId) async {
+    // Hydrate integration rows from Supabase first so that, after a Drift
+    // schema resync (which wipes the local DB), we restore OAuth tokens
+    // before iterating providers. Without this, getActiveIntegrationsForUser
+    // returns empty and the user gets silently disconnected.
+    await _ensureIntegrationsRowsSynced(userId);
+
     final integrations = await ref
         .read(integrationsRepositoryProvider)
         .getActiveIntegrationsForUser(userId);
@@ -63,6 +71,26 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       if (didSync) anySynced = true;
     }
     return anySynced;
+  }
+
+  /// Run the SyncCoordinator pass for the 'integrations' repository so any
+  /// dirty local rows are pushed and any remote rows are hydrated locally.
+  /// Best-effort — failures are logged inside SyncCoordinator and ignored.
+  Future<void> _ensureIntegrationsRowsSynced(String userId) async {
+    try {
+      final repo = ref.read(integrationsRepositoryProvider);
+      await ref
+          .read(syncCoordinatorProvider.notifier)
+          .ensureSynced('integrations', userId, repository: repo);
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Integration row sync failed; continuing with local data',
+        context: 'INTEGRATION_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+    }
   }
 
   /// Called from ActivitiesController.forceRefresh() - bypasses staleness.
@@ -131,7 +159,9 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       final controller = ref.read(connectTrainingControllerProvider.notifier);
       if (controller.isSyncingProvider(provider)) {
         if (kDebugMode) {
-          print('🔄 Integration sync skipped ($provider) - manual sync in progress');
+          print(
+            '🔄 Integration sync skipped ($provider) - manual sync in progress',
+          );
         }
         return;
       }
@@ -152,9 +182,14 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           await service.syncWorkouts(userId);
           break;
         case 'training_peaks':
-          final service =
-              await ref.read(trainingPeaksSyncServiceProvider.future);
+          final service = await ref.read(
+            trainingPeaksSyncServiceProvider.future,
+          );
           await service.syncAll(userId);
+          break;
+        case 'vdot':
+          final service = ref.read(vdotSyncServiceProvider);
+          await service.syncWorkouts(userId);
           break;
         case 'garmin':
           // Garmin is push-only — no client-side sync needed.
@@ -175,6 +210,43 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       // Success: update timestamp, clear failure tracking
       await _setLastSyncTime(provider, DateTime.now());
       _lastFailedAttempt.remove(provider);
+
+      // Immediately push freshly-synced dirty activities to Supabase.
+      // Only applies to client-side-writing providers; Garmin is push-only
+      // and writes nothing locally.
+      if (provider == 'final_surge' ||
+          provider == 'training_peaks' ||
+          provider == 'vdot') {
+        try {
+          final uploadResult = await ref
+              .read(activitiesRepositoryProvider)
+              .uploadDirtyRecords(userId);
+          if (kDebugMode) {
+            if (uploadResult.success) {
+              print(
+                '☁️  Integration sync uploaded ${uploadResult.count} dirty records for $provider',
+              );
+            } else {
+              print(
+                '⚠️  Integration sync upload had no records or failed for $provider: ${uploadResult.error}',
+              );
+            }
+          }
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Post-sync upload of dirty activities failed for $provider (best-effort)',
+            context: 'INTEGRATION_SYNC',
+            error: e,
+            stackTrace: stackTrace,
+            data: {'userId': userId, 'provider': provider},
+          );
+          if (kDebugMode) {
+            print(
+              '⚠️  Integration sync upload failed for $provider (best-effort): $e',
+            );
+          }
+        }
+      }
 
       if (kDebugMode) {
         print('✅ Integration sync complete for $provider');
@@ -197,6 +269,20 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     } finally {
       _syncingNow.remove(provider);
     }
+  }
+
+  /// Record that [provider] was just synced through another path (e.g. the
+  /// manual "Sync Now" / connect flow in ConnectTrainingController, which calls
+  /// the sync service directly rather than going through this coordinator).
+  ///
+  /// Without this, a manual sync leaves the coordinator's staleness clock
+  /// untouched, so the very next `ensureIntegrationsSynced` (triggered when the
+  /// manual sync invalidates the calendar/activities providers and they
+  /// rebuild) sees the provider as stale and runs a full SECOND sync back to
+  /// back. Stamping the timestamp here makes that follow-up sync skip.
+  Future<void> markProviderSynced(String provider) async {
+    await _setLastSyncTime(provider, DateTime.now());
+    _lastFailedAttempt.remove(provider);
   }
 
   /// Get the last sync time from SharedPreferences

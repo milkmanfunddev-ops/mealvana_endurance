@@ -12,9 +12,11 @@ class PreferencesService {
   final SharedPreferences _prefs;
 
   // Keys
-  static const String _keyHasCompletedInitialSurvey = 'has_completed_initial_survey';
+  static const String _keyHasCompletedInitialSurvey =
+      'has_completed_initial_survey';
   static const String _keyTpWritebackEnabled = 'tp_writeback_enabled';
-  static const String _keyTpWritebackPremiumBlocked = 'tp_writeback_premium_blocked';
+  static const String _keyTpWritebackPremiumBlocked =
+      'tp_writeback_premium_blocked';
 
   /// Check if user has completed the initial survey after first activity creation
   bool get hasCompletedInitialSurvey {
@@ -46,6 +48,50 @@ class PreferencesService {
 
   Future<void> setTpWritebackPremiumBlocked(bool blocked) async {
     await _prefs.setBool(_keyTpWritebackPremiumBlocked, blocked);
+  }
+
+  // ─── Garmin Connect Banner ───
+
+  static const String _keyGarminBannerDismissed = 'garmin_banner_dismissed';
+
+  /// Whether the user has permanently dismissed the Garmin Connect banner.
+  bool get garminBannerDismissed =>
+      _prefs.getBool(_keyGarminBannerDismissed) ?? false;
+
+  /// Persist banner dismissal. Once set, the banner never shows again
+  /// unless app data is cleared.
+  Future<void> dismissGarminBanner() async {
+    await _prefs.setBool(_keyGarminBannerDismissed, true);
+  }
+
+  // ─── Jade Baseline Tip Banner ───
+
+  static const String _keyJadeBaselineTipDismissed =
+      'jade_baseline_tip_dismissed';
+
+  /// Whether the user has dismissed the one-time baseline-logging tutorial
+  /// copy on the Jade coach banner.  Once true, the banner shows the default
+  /// "has baseline" copy instead of the tutorial variant.
+  bool get jadeBaselineTipDismissed =>
+      _prefs.getBool(_keyJadeBaselineTipDismissed) ?? false;
+
+  /// Persist dismissal of the Jade baseline tutorial copy.
+  Future<void> dismissJadeBaselineTip() async {
+    await _prefs.setBool(_keyJadeBaselineTipDismissed, true);
+  }
+
+  // ─── Fuel Timeline Tracking ───
+
+  static const String _keyFuelTrackingEnabled = 'fuel_tracking_enabled';
+
+  /// Whether calorie/macro tracking is shown on the Fuel Timeline (default ON).
+  /// When off, the energy dashboard is hidden and meal cards drop their macro
+  /// line — a "log without numbers" mode. Global, persisted across sessions.
+  bool get fuelTrackingEnabled =>
+      _prefs.getBool(_keyFuelTrackingEnabled) ?? true;
+
+  Future<void> setFuelTrackingEnabled(bool enabled) async {
+    await _prefs.setBool(_keyFuelTrackingEnabled, enabled);
   }
 
   /// Clear all preferences (useful for testing or logout)

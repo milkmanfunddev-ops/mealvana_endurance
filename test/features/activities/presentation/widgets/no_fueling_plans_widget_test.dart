@@ -7,11 +7,7 @@ void main() {
   group('NoFuelingPlansWidget', () {
     testWidgets('displays calendar icon', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: NoFuelingPlansWidget(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: NoFuelingPlansWidget())),
       );
 
       // Should show calendar icon
@@ -24,11 +20,7 @@ void main() {
 
     testWidgets('displays correct text content', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: NoFuelingPlansWidget(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: NoFuelingPlansWidget())),
       );
 
       // Should show main title
@@ -38,13 +30,11 @@ void main() {
       expect(find.text('Tap + to fuel your next workout'), findsOneWidget);
     });
 
-    testWidgets('orange subtitle uses AppColors.orange', (WidgetTester tester) async {
+    testWidgets('orange subtitle uses AppColors.orange', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: NoFuelingPlansWidget(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: NoFuelingPlansWidget())),
       );
 
       // Find the orange text widget
@@ -59,11 +49,7 @@ void main() {
 
     testWidgets('uses Apercu font for title', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: NoFuelingPlansWidget(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: NoFuelingPlansWidget())),
       );
 
       // Find the title text widget
@@ -76,13 +62,11 @@ void main() {
       expect(titleText.style?.fontFamily, 'Apercu');
     });
 
-    testWidgets('subtitle is bold with larger font', (WidgetTester tester) async {
+    testWidgets('subtitle is bold with larger font', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: NoFuelingPlansWidget(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: NoFuelingPlansWidget())),
       );
 
       // Find the subtitle text widget
@@ -99,11 +83,7 @@ void main() {
 
     testWidgets('layout is centered', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: NoFuelingPlansWidget(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: NoFuelingPlansWidget())),
       );
 
       // Should have a Column with centered alignment

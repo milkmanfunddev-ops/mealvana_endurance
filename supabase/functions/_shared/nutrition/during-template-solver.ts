@@ -29,6 +29,21 @@ import {
   fillElectrolytes,
 } from "./during-utils.ts";
 
+/**
+ * True when the food matches one of the user's disliked food identifiers.
+ * Tolerant of either food.id or food.name being the matched key — production
+ * uses food.name, tests sometimes use food.id, both are checked.
+ */
+function isFoodDisliked(
+  food: { id?: string | null; name?: string | null },
+  dislikedFoods?: Set<string>,
+): boolean {
+  if (!dislikedFoods || dislikedFoods.size === 0) return false;
+  const id = food.id ?? "";
+  const name = food.name ?? "";
+  return dislikedFoods.has(id) || dislikedFoods.has(name);
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -60,15 +75,56 @@ export interface FoodWithConstraints extends Food {
   sodium_top_up_eligible?: boolean | null;
 }
 
+/**
+ * Macro shortfall reported when the algorithm couldn't fully satisfy a target
+ * because viable foods were filtered out by user preferences (dislikes,
+ * allergens, diet exclusions). The plan is still produced — the shortfall
+ * tells the UI to render a guidance card naming the gap and suggesting
+ * alternatives. Different from a true validation failure (returns null).
+ */
+export interface MacroShortfall {
+  macro: "carbs" | "sodium" | "fluid" | "protein" | "caffeine";
+  delivered: number;
+  target: number;
+  unit: "g" | "mg" | "ml";
+  reason:
+    | "all_disliked"
+    | "no_diet_match"
+    | "all_templates_filtered"
+    | "template_constraint";
+}
+
 export interface TemplateSolverResult {
   foods: FoodResult[];
   template_id: string;
   template_number: number;
   template_name: string;
   template_formula: string;
+  /** Present when one or more macro targets were not fully met due to
+   * preference/diet filtering. Empty/absent on a clean fit. */
+  shortfalls?: MacroShortfall[];
 }
 
 export type GutTrainingLevel = "low" | "moderate" | "high";
+
+/**
+ * Coerce an untrusted gut-training value to a valid {@link GutTrainingLevel}.
+ *
+ * The client may omit the field (null profile at generation time) or send a
+ * legacy invalid literal (`'medium'` shipped in 1.21.1). Both used to disable
+ * the whole template/formula tier: a falsy value failed the solver guard, and
+ * a truthy-but-invalid one matched no template's `gut_training_levels` and
+ * silently fell through to the rule solver (bug 3a3e3fdb, Critical).
+ * `moderate` is the physiological middle ground and the long-standing default
+ * elsewhere in the engine (brick handler, by-hour apportionment).
+ */
+export function normalizeGutTrainingLevel(
+  level: string | null | undefined,
+): GutTrainingLevel {
+  return level === "low" || level === "moderate" || level === "high"
+    ? level
+    : "moderate";
+}
 
 // ============================================================================
 // Duration Bracket Matching
@@ -142,6 +198,34 @@ function mapActivityTypeForTemplate(activityType: ActivityType): string[] {
  * - +5 for each willing-to-try food in component_food_names
  * - Ties broken by template_number (lower = simpler = preferred)
  */
+/**
+ * Returns the subset of `templates` that are active, pinned, AND in scope for
+ * the given workout (activity_type × duration_bracket), sorted by
+ * template_number. Shared between the pin-override path inside
+ * `selectTemplateCandidates` and the `pin_set_size` analytics field surfaced
+ * on `pin_decision`. Returns [] when no pins match scope.
+ *
+ * Formula Kit PR 2 substep 7.
+ */
+export function filterPinnedTemplatesInScope(
+  templates: DuringWorkoutTemplate[],
+  activityType: ActivityType,
+  durationMinutes: number,
+  pinnedTemplateIds: Set<string>,
+): DuringWorkoutTemplate[] {
+  const mappedActivities = mapActivityTypeForTemplate(activityType);
+  const durationBracket = getDurationBracket(durationMinutes);
+  return templates
+    .filter(
+      (t) =>
+        t.is_active &&
+        pinnedTemplateIds.has(t.id) &&
+        t.activity_types.some((at) => mappedActivities.includes(at)) &&
+        t.duration_brackets.includes(durationBracket),
+    )
+    .sort((a, b) => a.template_number - b.template_number);
+}
+
 export function selectTemplateCandidates(
   templates: DuringWorkoutTemplate[],
   activityType: ActivityType,
@@ -153,6 +237,17 @@ export function selectTemplateCandidates(
   dislikedFoods?: Set<string>,
   allergies?: string[],
   dietaryPreference?: string,
+  /**
+   * Set of during_workout_template ids the user has actively pinned. When a
+   * pinned template matches the current activity_type × duration_bracket
+   * scope, it overrides candidate selection: allergen / diet / gut-training /
+   * food-availability / preference filters are all bypassed for this call.
+   * Per locked Formula Kit policy (2026-05-21, revised 2026-05-22): in-scope
+   * pins are honored unconditionally — pins even bypass gut training.
+   * When undefined or empty, behavior is byte-identical to pre-pin v3.
+   * Formula Kit PR 2 substep 5a.
+   */
+  pinnedTemplateIds?: Set<string>,
 ): DuringWorkoutTemplate[] {
   const mappedActivities = mapActivityTypeForTemplate(activityType);
   const durationBracket = getDurationBracket(durationMinutes);
@@ -165,6 +260,30 @@ export function selectTemplateCandidates(
     }), ` +
       `duration=${durationMinutes}min (bracket=${durationBracket}), gut=${gutTrainingLevel}`,
   );
+
+  // Pin override: when the user has pins matching this workout's scope
+  // (activity_type × duration_bracket), they take over candidate selection —
+  // bypassing allergen / diet / gut-training / food-availability filters and
+  // the preference-score sort. Multiple pinned templates are returned in
+  // template_number order so the caller's solver-retry loop tries them
+  // deterministically. When zero pins match this scope, we fall through to
+  // the normal candidate-selection path (no fallthrough_reason returned here
+  // — that's surfaced by the caller).
+  if (pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0) {
+    const pinnedInScope = filterPinnedTemplatesInScope(
+      templates,
+      activityType,
+      durationMinutes,
+      pinnedTemplateIds,
+    );
+    if (pinnedInScope.length > 0) {
+      console.log(
+        `[DURING-TEMPLATE] Pin override active: ${pinnedInScope.length} pinned template(s) in scope ` +
+          `(activity=${activityType}, duration=${durationBracket}), bypassing all filters`,
+      );
+      return pinnedInScope;
+    }
+  }
 
   type ScoredTemplate = { template: DuringWorkoutTemplate; score: number };
   const candidates: ScoredTemplate[] = [];
@@ -373,7 +492,7 @@ function clampAndRound(
   return Math.max(0, Math.min(upperBound, clamped));
 }
 
-function maxAllowedServingsForDuration(
+export function maxAllowedServingsForDuration(
   food: FoodWithConstraints,
   durationHours: number,
   gutTrainingLevel: GutTrainingLevel,
@@ -412,7 +531,7 @@ function servingCandidatesForFood(
   return [...values].sort((a, b) => a - b);
 }
 
-function addOrUpdateFoodResult(
+export function addOrUpdateFoodResult(
   foods: FoodResult[],
   food: FoodWithConstraints,
   servings: number,
@@ -520,6 +639,13 @@ function generateDuringPhaseTemplateBySearch(
   targets: MacroTargets,
   durationMinutes: number,
   gutTrainingLevel: GutTrainingLevel,
+  dislikedFoods?: Set<string>,
+  // When true, this template was selected by an explicit pin override. A pin
+  // must win even when the ingredient's max-per-hour cap prevents fully meeting
+  // the macro target — so accept a best-effort result and report the shortfall
+  // instead of returning null. Decoupled from dislikedFoods (bug: pinned
+  // drink-only formula not scheduled for sub-90-min runs).
+  pinOverride?: boolean,
 ): TemplateSolverResult | null {
   const carbRatios = template.component_carb_ratios ?? {};
   const durationHours = durationMinutes / 60;
@@ -581,11 +707,15 @@ function generateDuringPhaseTemplateBySearch(
       Math.min(waterFood.max_servings, maxWaterByFluid),
     )
     : [0];
+  // Sodium top-up pool — exclude disliked items so the fill never silently
+  // adds a food the user marked as disliked. If filtering empties the pool we
+  // accept the sodium shortfall rather than forcing an unwanted food (issue
+  // #14). The macro-shortfall pathway (phase.shortfalls) reports the gap.
   const electrolytePool: FoodWithConstraints[] = [];
   for (const [, food] of foodsByName) {
-    if (isSodiumTopUpFood(food)) {
-      electrolytePool.push(food);
-    }
+    if (!isSodiumTopUpFood(food)) continue;
+    if (isFoodDisliked(food, dislikedFoods)) continue;
+    electrolytePool.push(food);
   }
 
   let bestFoods: FoodResult[] | null = null;
@@ -668,14 +798,27 @@ function generateDuringPhaseTemplateBySearch(
   };
   recurse(0);
 
-  if (!bestFoods || bestIssues.length > 0) {
-    if (bestIssues.length > 0) {
-      console.log(
-        `[DURING-TEMPLATE-SEARCH] Best candidate failed validation: ${
-          bestIssues.join("; ")
-        }`,
-      );
-    }
+  // Accept the best candidate even if macro validation fails when EITHER:
+  //  - the user has dislikes (the shortfall is a known consequence of their
+  //    preferences, not an algorithmic failure), OR
+  //  - this template was pin-selected (an explicit pin must win even if an
+  //    ingredient's max-per-hour cap can't fully meet the target).
+  // The shortfalls field tells the UI to render guidance instead of silently
+  // dropping the phase. Absent both, any validation failure is genuine
+  // (template doesn't fit constraints) and should still return null so the
+  // next-best template is tried.
+  const allowShortfall = (!!dislikedFoods && dislikedFoods.size > 0) ||
+    !!pinOverride;
+
+  if (!bestFoods) {
+    return null;
+  }
+  if (bestIssues.length > 0 && !allowShortfall) {
+    console.log(
+      `[DURING-TEMPLATE-SEARCH] Best candidate failed validation: ${
+        bestIssues.join("; ")
+      }`,
+    );
     return null;
   }
 
@@ -687,13 +830,81 @@ function generateDuringPhaseTemplateBySearch(
       `fluid=${totals.water_ml.toFixed(0)}ml/${targets.water_ml}ml`,
   );
 
+  const shortfalls = collectShortfalls(totals, targets, dislikedFoods);
+
   return {
     foods: bestFoods,
     template_id: template.id,
     template_number: template.template_number,
     template_name: template.name,
     template_formula: template.formula,
+    ...(shortfalls.length > 0 && { shortfalls }),
   };
+}
+
+/**
+ * Compute per-macro shortfalls for a phase result.
+ *
+ * Emits a shortfall whenever a macro is delivered below the 90% threshold,
+ * regardless of whether user dislikes are present. This ensures the client
+ * always receives a signal when a phase cannot meet its targets — not just
+ * when the cause is preference-driven.
+ *
+ * The `reason` field indicates the likely cause:
+ *   - "all_disliked" : shortfall is traceable to disliked foods in the pool
+ *   - "template_constraint" : shortfall is from catalog/template limits
+ *     (dislikes not involved or not the primary cause)
+ *
+ * Threshold: shortfall is emitted when delivered < 90% of target. Above that
+ * the gap is small enough to be noise.
+ */
+export function collectShortfalls(
+  totals: { carbs_g: number; sodium_mg: number; water_ml: number },
+  targets: MacroTargets,
+  dislikedFoods?: Set<string>,
+): MacroShortfall[] {
+  const out: MacroShortfall[] = [];
+  const SHORTFALL_THRESHOLD = 0.9;
+  const hasDislikedCause = !!dislikedFoods && dislikedFoods.size > 0;
+  // The flag floor is the RANGE LOW when the targets carry one — delivery
+  // anywhere inside the acceptable range is not a gap, even when it misses
+  // the point target (reported 2026-07-22: sodium inside its range was
+  // flagged as a "sodium gap"). The 90%-of-target floor remains only as the
+  // fallback for callers that pass no range.
+  const sodiumFloor = targets.sodium_low_mg ??
+    targets.sodium_mg * SHORTFALL_THRESHOLD;
+  if (targets.sodium_mg > 0 && totals.sodium_mg < sodiumFloor) {
+    out.push({
+      macro: "sodium",
+      delivered: Math.round(totals.sodium_mg),
+      target: targets.sodium_mg,
+      unit: "mg",
+      reason: hasDislikedCause ? "all_disliked" : "template_constraint",
+    });
+  }
+  const carbFloor = targets.carbs_low_g ??
+    targets.carbs_g * SHORTFALL_THRESHOLD;
+  if (targets.carbs_g > 0 && totals.carbs_g < carbFloor) {
+    out.push({
+      macro: "carbs",
+      delivered: Math.round(totals.carbs_g),
+      target: targets.carbs_g,
+      unit: "g",
+      reason: hasDislikedCause ? "all_disliked" : "template_constraint",
+    });
+  }
+  const fluidFloor = targets.water_low_ml ??
+    targets.water_ml * SHORTFALL_THRESHOLD;
+  if (targets.water_ml > 0 && totals.water_ml < fluidFloor) {
+    out.push({
+      macro: "fluid",
+      delivered: Math.round(totals.water_ml),
+      target: targets.water_ml,
+      unit: "ml",
+      reason: hasDislikedCause ? "all_disliked" : "template_constraint",
+    });
+  }
+  return out;
 }
 
 // ============================================================================
@@ -716,6 +927,10 @@ export function generateDuringPhaseTemplate(
   targets: MacroTargets,
   durationMinutes: number,
   gutTrainingLevel: GutTrainingLevel,
+  dislikedFoods?: Set<string>,
+  // See generateDuringPhaseTemplateBySearch: a pin-selected template accepts a
+  // reported macro shortfall rather than returning null.
+  pinOverride?: boolean,
 ): TemplateSolverResult | null {
   const carbTarget = targets.carbs_g;
   const sodiumTarget = targets.sodium_mg;
@@ -749,6 +964,8 @@ export function generateDuringPhaseTemplate(
     targets,
     durationMinutes,
     gutTrainingLevel,
+    dislikedFoods,
+    pinOverride,
   );
   if (optimizedResult) {
     return optimizedResult;
@@ -1034,12 +1251,12 @@ export function generateDuringPhaseTemplate(
   }
 
   // ---- STEP 6: Fill sodium gap with electrolytes ----
-  // Gather all electrolyte foods from the pool
+  // Gather all electrolyte foods from the pool, excluding dislikes (issue #14).
   const electrolytePool: FoodWithConstraints[] = [];
   for (const [, food] of foodsByName) {
-    if (isSodiumTopUpFood(food)) {
-      electrolytePool.push(food);
-    }
+    if (!isSodiumTopUpFood(food)) continue;
+    if (isFoodDisliked(food, dislikedFoods)) continue;
+    electrolytePool.push(food);
   }
 
   if (electrolytePool.length > 0) {
@@ -1113,7 +1330,13 @@ export function generateDuringPhaseTemplate(
       `fluid=${totals.water_ml.toFixed(0)}ml/${fluidTarget}ml`,
   );
 
-  if (validationIssues.length > 0) {
+  // Same shortfall escape hatch as the search path: with dislikes present OR a
+  // pin override, accept the partial result and report shortfalls to the UI
+  // rather than dropping the phase entirely.
+  const allowShortfall = (!!dislikedFoods && dislikedFoods.size > 0) ||
+    !!pinOverride;
+
+  if (validationIssues.length > 0 && !allowShortfall) {
     console.warn(
       `[DURING-TEMPLATE] VALIDATION FAILED: ${
         validationIssues.join("; ")
@@ -1126,11 +1349,14 @@ export function generateDuringPhaseTemplate(
     "[DURING-TEMPLATE] VALIDATION PASSED: All macros within constraint ranges",
   );
 
+  const shortfalls = collectShortfalls(totals, targets, dislikedFoods);
+
   return {
     foods: resultFoods,
     template_id: template.id,
     template_number: template.template_number,
     template_name: template.name,
     template_formula: template.formula,
+    ...(shortfalls.length > 0 && { shortfalls }),
   };
 }

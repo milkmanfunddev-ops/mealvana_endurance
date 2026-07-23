@@ -22,8 +22,9 @@ void main() {
       expect(find.text('By Pace'), findsOneWidget);
     });
 
-    testWidgets('shows "By Duration" as selected when value is byDuration',
-        (tester) async {
+    testWidgets('shows "By Duration" as selected when value is byDuration', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -35,20 +36,19 @@ void main() {
         ),
       );
 
-      // Find the containers with orange background (selected state)
-      final selectedButton = find.byWidgetPredicate((widget) {
-        if (widget is AnimatedContainer) {
-          final decoration = widget.decoration as BoxDecoration?;
-          return decoration?.color == AppColors.orange;
-        }
-        return false;
-      });
+      // The selected option renders as an orange thumb (DecoratedBox) that
+      // animates to the left when "By Duration" is selected.
+      final thumb = _orangeThumbFinder();
+      expect(thumb, findsOneWidget);
+      expect(_thumbAlignment(tester), Alignment.centerLeft);
 
-      expect(selectedButton, findsOneWidget);
+      // The selected label uses bold (w700) weight.
+      expect(_labelFontWeight(tester, 'By Duration'), FontWeight.w700);
     });
 
-    testWidgets('shows "By Pace" as selected when value is byPace',
-        (tester) async {
+    testWidgets('shows "By Pace" as selected when value is byPace', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -60,20 +60,19 @@ void main() {
         ),
       );
 
-      // Find the containers with orange background (selected state)
-      final selectedButton = find.byWidgetPredicate((widget) {
-        if (widget is AnimatedContainer) {
-          final decoration = widget.decoration as BoxDecoration?;
-          return decoration?.color == AppColors.orange;
-        }
-        return false;
-      });
+      // The selected option renders as an orange thumb that animates to the
+      // right when "By Pace" is selected.
+      final thumb = _orangeThumbFinder();
+      expect(thumb, findsOneWidget);
+      expect(_thumbAlignment(tester), Alignment.centerRight);
 
-      expect(selectedButton, findsOneWidget);
+      // The selected label uses bold (w700) weight.
+      expect(_labelFontWeight(tester, 'By Pace'), FontWeight.w700);
     });
 
-    testWidgets('calls onChanged when tapping unselected option',
-        (tester) async {
+    testWidgets('calls onChanged when tapping unselected option', (
+      tester,
+    ) async {
       DurationPaceMode? changedValue;
 
       await tester.pumpWidget(
@@ -94,8 +93,9 @@ void main() {
       expect(changedValue, DurationPaceMode.byPace);
     });
 
-    testWidgets('does not call onChanged when tapping selected option',
-        (tester) async {
+    testWidgets('does not call onChanged when tapping selected option', (
+      tester,
+    ) async {
       var callCount = 0;
 
       await tester.pumpWidget(
@@ -207,17 +207,57 @@ void main() {
         ),
       );
 
-      // Find the containers with disabled color
-      final disabledButtons = find.byWidgetPredicate((widget) {
-        if (widget is AnimatedContainer) {
-          final decoration = widget.decoration as BoxDecoration?;
-          // Disabled buttons should not have orange background
-          return decoration?.color != AppColors.orange;
-        }
-        return false;
-      });
+      // Disabled state dims the whole control via an Opacity wrapper (0.6).
+      final dimmed = find.byWidgetPredicate(
+        (widget) => widget is Opacity && widget.opacity == 0.6,
+      );
+      expect(dimmed, findsOneWidget);
+    });
 
-      expect(disabledButtons, findsAtLeastNWidgets(2));
+    testWidgets('shows full opacity when enabled', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DurationPaceToggle(
+              value: DurationPaceMode.byDuration,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      // Enabled state renders at full opacity.
+      final fullOpacity = find.byWidgetPredicate(
+        (widget) => widget is Opacity && widget.opacity == 1.0,
+      );
+      expect(fullOpacity, findsOneWidget);
     });
   });
+}
+
+/// Finds the orange animated thumb (DecoratedBox) that marks the selected
+/// segment in [DurationPaceToggle]'s underlying pill slider.
+Finder _orangeThumbFinder() {
+  return find.byWidgetPredicate((widget) {
+    if (widget is DecoratedBox) {
+      final decoration = widget.decoration;
+      return decoration is BoxDecoration &&
+          decoration.color == AppColors.orange;
+    }
+    return false;
+  });
+}
+
+/// Reads the alignment of the slider's [AnimatedAlign] thumb so we can assert
+/// which side is currently selected.
+Alignment _thumbAlignment(WidgetTester tester) {
+  final align = tester.widget<AnimatedAlign>(find.byType(AnimatedAlign));
+  return align.alignment as Alignment;
+}
+
+/// Returns the font weight applied to a segment label, used to confirm the
+/// selected segment renders bold.
+FontWeight? _labelFontWeight(WidgetTester tester, String label) {
+  final text = tester.widget<Text>(find.text(label));
+  return text.style?.fontWeight;
 }

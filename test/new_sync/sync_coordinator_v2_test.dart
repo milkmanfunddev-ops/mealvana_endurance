@@ -17,10 +17,7 @@ class MockRepository implements SyncableRepository {
   bool shouldThrowOnSync = false;
   bool shouldThrowOnUpload = false;
 
-  MockRepository({
-    required this.repositoryKey,
-    this.dependencies = const [],
-  });
+  MockRepository({required this.repositoryKey, this.dependencies = const []});
 
   @override
   Future<bool> isStale() async {
@@ -149,7 +146,11 @@ void main() {
       // Sync activities (which depends on users)
       // Note: In real usage, we'd pass both repos, but for Phase 2.2
       // we're just testing the logic with one repo at a time
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       await coordinator.ensureSynced(
         'activities',
         'user-123',
@@ -277,7 +278,11 @@ void main() {
       }
 
       // Sync in correct dependency order
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       await coordinator.ensureSynced(
         'carb_loading_plans',
         'user-123',

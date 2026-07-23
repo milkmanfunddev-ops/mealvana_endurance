@@ -4,14 +4,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
-import '../../../calendar/domain/event_subtype.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
-import '../../../../shared/domain/activity_type.dart';
+import '../../application/nutrition_plan_navigation.dart';
 import '../../domain/event.dart';
 import '../providers/events_controller.dart';
 
@@ -60,48 +59,11 @@ class EventActionButtonsCard extends ConsumerWidget {
               } else {
                 // No activity linked yet - navigate to create new plan
                 // We pass BOTH activityId (if exists) and eventId
-
-                final scheduledDateTime =
-                    activity?.scheduledDateTime ??
-                    (event.startTime != null
-                        ? DateTime.parse(event.startTime!)
-                        : DateTime.now());
-
-                final activityType = _getActivityTypeForNavigation(event);
-                final distanceMiles =
-                    activity?.distanceMiles ?? _getEventDistanceMiles(event);
-                final eventSubtype = _getEventSubtype(event);
-
-                final extras = <String, dynamic>{
-                  'initialDate': scheduledDateTime,
-                  'distance': distanceMiles,
-                  'goalPace': event.goalPaceMinutesPerMile,
-                  'activityId':
-                      activity?.id, // Pass existing activity ID if any
-                  'eventId':
-                      event.id, // Pass event ID to link back after creation
-                  'activityType': activityType,
-                  'initialTitle': event.eventName,
-                  'eventName':
-                      event.eventName, // Pass event name for activity title
-                  if (forUserId != null) 'forUserId': forUserId,
-                };
-
-                // For brick events, pass individual leg distances from EventSubtype
-                if (activityType == 'brick' && eventSubtype != null) {
-                  if (eventSubtype.swimDistanceMeters != null) {
-                    extras['brickSwimDistanceMeters'] =
-                        eventSubtype.swimDistanceMeters;
-                  }
-                  if (eventSubtype.bikeDistanceMiles != null) {
-                    extras['brickBikeDistanceMiles'] =
-                        eventSubtype.bikeDistanceMiles;
-                  }
-                  if (eventSubtype.runDistanceMiles != null) {
-                    extras['brickRunDistanceMiles'] =
-                        eventSubtype.runDistanceMiles;
-                  }
-                }
+                final extras = buildNutritionPlanExtras(
+                  event: event,
+                  activity: activity,
+                  forUserId: forUserId,
+                );
 
                 context.push('/distance-pace-gut-entry', extra: extras);
               }
@@ -110,14 +72,15 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? 'View Nutrition Plan'
                 : 'Create Nutrition Plan',
             icon: hasLinkedNutritionPlan
-                ? FontAwesomeIcons.eye
-                : FontAwesomeIcons.plus,
+                ? FontAwesomeIcons.eye.data
+                : FontAwesomeIcons.plus.data,
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
           // Create or Edit Carb Loading Plan Button
           KyleSecondaryButton(
+            key: const ValueKey('event_details.carb_loading_button'),
             onPressed: () => _handleCarbLoadingPlanAction(
               context,
               ref,
@@ -129,19 +92,20 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? 'Edit Carb Loading Plan'
                 : 'Create Carb Loading Plan',
             icon: event.hasCarbLoading
-                ? FontAwesomeIcons.pen
-                : FontAwesomeIcons.plus,
+                ? FontAwesomeIcons.pen.data
+                : FontAwesomeIcons.plus.data,
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
           // Race Day Checklist Button
           KyleSecondaryButton(
+            key: const ValueKey('event_details.checklist_button'),
             onPressed: () {
               context.push('/events/$eventId/checklist');
             },
             text: 'Race Day Checklist',
-            icon: FontAwesomeIcons.listCheck,
+            icon: FontAwesomeIcons.listCheck.data,
           ),
 
           // const SizedBox(height: AppSpacing.md),
@@ -156,47 +120,6 @@ class EventActionButtonsCard extends ConsumerWidget {
           // ),
         ],
       ),
-    );
-  }
-
-  double? _getEventDistanceMiles(Event event) {
-    if (event.eventSubtype == null) return null;
-
-    // Look up the EventSubtype to get distance information
-    final eventSubtype = EventSubtype.findByName(
-      event.eventType.dbValue,
-      event.eventSubtype!,
-    );
-
-    return eventSubtype?.totalDistanceMiles;
-  }
-
-  /// Map event type to the correct NewActivityScreen tab
-  ///
-  /// Single-sport events map directly; multi-sport events (triathlon,
-  /// duathlon, multisport) map to the brick tab.
-  String _getActivityTypeForNavigation(Event event) {
-    switch (event.eventType) {
-      case ActivityType.running:
-        return 'running';
-      case ActivityType.cycling:
-        return 'cycling';
-      case ActivityType.swimming:
-        return 'swimming';
-      case ActivityType.triathlon:
-      case ActivityType.duathlon:
-      case ActivityType.multisport:
-      case ActivityType.brick:
-        return 'brick';
-    }
-  }
-
-  /// Look up the EventSubtype for this event (if available)
-  EventSubtype? _getEventSubtype(Event event) {
-    if (event.eventSubtype == null) return null;
-    return EventSubtype.findByName(
-      event.eventType.dbValue,
-      event.eventSubtype!,
     );
   }
 
@@ -344,5 +267,4 @@ class EventActionButtonsCard extends ConsumerWidget {
       }
     }
   }
-
 }

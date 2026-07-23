@@ -27,6 +27,7 @@ import type {
   DuringWorkoutTemplate,
   FoodWithConstraints,
 } from "./during-template-solver.ts";
+import type { PostWorkoutTemplate } from "./post-template-solver.ts";
 
 /**
  * Resolve composite activity types to their constituent sports for
@@ -94,6 +95,22 @@ export async function getTemplateFoodsForPhase(
   allowNonDefaultDuring: boolean = false,
   allergies?: string[],
   dietaryPreference?: string,
+  /** Food names that are components of the user's in-scope pinned templates.
+   * Per the honor-pin policy, these foods bypass dislike / allergen / diet
+   * filters so the pinned template can be rendered even when its ingredients
+   * conflict with the user's general preferences. Empty/undefined preserves
+   * pre-pin behavior. Formula Kit PR 3 (After-phase parity with the During
+   * `getTemplateFoodsForDuringWithConstraints` pattern, PR 2 5c). */
+  pinnedComponentNames?: Set<string>,
+  /** Additional component food names that must be pulled into the SQL fetch
+   * even when they sit outside the phase's category/activity scope, WITHOUT
+   * any filter bypass — they still face dislike/allergen/diet filtering at
+   * STEP 4. Used by the after-phase no-pin path so pantry foods referenced
+   * by post-workout templates (peanut_butter, jam, milk, granola, etc.) are
+   * available to the template renderer even when their `template_foods.
+   * categories` only includes `before_run`. Fixes #36 — the no-pin half of
+   * the architectural gap addressed for the pin path by PR 3 #35. */
+  extraComponentNames?: Set<string>,
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -168,6 +185,67 @@ export async function getTemplateFoodsForPhase(
     console.log(
       `[TMPL-FOODS-${phase.toUpperCase()}] Found ${templateFoods.length} template foods for ${activityType}`,
     );
+  }
+
+  // STEP 1b: SQL-widening for component foods that sit outside the phase's
+  // category/activity scope. Without this, the categorically-filtered fetch
+  // above misses pantry foods (e.g. Berries categorized only as `before_run`
+  // but used by After templates), the template renderer sees missing
+  // components, and either drops the template silently or — for pinned
+  // templates — the honor-pin bypass at STEP 4 has nothing to bypass.
+  //
+  // Two sets of names get widened in:
+  //   - `pinnedComponentNames` — components of in-scope pinned templates.
+  //     These additionally bypass dislike/allergen/diet at STEP 4.
+  //   - `extraComponentNames`  — any component the caller wants reachable
+  //     even when out of scope (e.g. all post-template components in the
+  //     no-pin After path). Still subject to STEP 4 filters.
+  // Fixes PR 3 #35 (pin half) and #36 (no-pin half).
+  const widenNames = new Set<string>();
+  for (const n of pinnedComponentNames ?? []) widenNames.add(n);
+  for (const n of extraComponentNames ?? []) widenNames.add(n);
+  if (widenNames.size > 0) {
+    const existingNames = new Set(
+      templateFoods.map((f) => f.name as string),
+    );
+    const missingWidenNames = [...widenNames].filter(
+      (n) => !existingNames.has(n),
+    );
+    if (missingWidenNames.length > 0) {
+      let extraData: Record<string, unknown>[] | null = null;
+      let extraError: { message?: string } | null = null;
+      {
+        const { data, error } = await supabase
+          .from("template_foods")
+          .select(selectWithDefaultDuring)
+          .eq("is_active", true)
+          .in("name", missingWidenNames);
+        extraData = data as Record<string, unknown>[] | null;
+        extraError = error;
+      }
+      if (extraError && extraError.message?.includes("default_during")) {
+        const fallback = await supabase
+          .from("template_foods")
+          .select(selectWithoutDefaultDuring)
+          .eq("is_active", true)
+          .in("name", missingWidenNames);
+        extraData = fallback.data as Record<string, unknown>[] | null;
+        extraError = fallback.error;
+      }
+      if (extraError) {
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Error widening fetch for out-of-scope components:`,
+          extraError,
+        );
+      } else if (extraData && extraData.length > 0) {
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Widening: fetched ${extraData.length} out-of-scope component foods (${
+            missingWidenNames.join(", ")
+          })`,
+        );
+        templateFoods = templateFoods.concat(extraData);
+      }
+    }
   }
 
   // STEP 2: Get user foods for this phase (same as food-queries.ts)
@@ -270,7 +348,9 @@ export async function getTemplateFoodsForPhase(
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   // STEP 4: Filter and transform to Food interface
-  return allEntries
+  const totalCandidates = allEntries.length;
+  let dislikeExcludedCount = 0;
+  const filteredFoods = allEntries
     .filter(({ data: f, isUserFood }) => {
       const isDisliked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
@@ -291,23 +371,37 @@ export async function getTemplateFoodsForPhase(
       const userFoodProductType = f.product_type as string | null;
       const isImportedUserFood = isUserFood &&
         (userFoodProductType == null || userFoodProductType === "import");
+      const isElectrolyte = f.is_electrolyte === true;
+      // Honor-pin bypass: foods that are components of an in-scope pinned
+      // template skip dislike/allergen/diet filters. Without this, a user who
+      // pins a template containing a generally-disliked or allergen-bearing
+      // food (e.g. chocolate milk marked disliked) would have that component
+      // silently stripped from the food pool, and the template renderer would
+      // return null → fall back to LP. See #35 / PR 3 substep 9 follow-up.
+      const isPinnedComponent =
+        pinnedComponentNames?.has(f.name as string) ?? false;
 
-      // Never filter out user foods or essential foods (e.g. water) as disliked
-      if (isDisliked && !isUserFood && !isEssential) {
+      // Filter disliked foods. Essentials (e.g. water/salt) bypass this so the
+      // solver always has a fallback for safety-critical hydration. Electrolyte
+      // *products* (capsules, drinks, powders) get NO essential-bypass — user
+      // preference dominates so we don't ship a plan featuring foods they hate.
+      if (
+        isDisliked && !isPinnedComponent &&
+        !(isEssential && !isElectrolyte)
+      ) {
+        dislikeExcludedCount++;
         console.log(
           `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
         );
         return false;
       }
-      if (isDisliked && isUserFood) {
-        console.log(
-          `[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`,
-        );
-      }
 
       // Allergen filtering — exclude template foods whose allergens overlap with user's allergies
       // Essential foods (water, salt) and user-created foods bypass allergen filtering
-      if (allergiesLower.length > 0 && !isUserFood && !isEssential) {
+      if (
+        allergiesLower.length > 0 && !isUserFood && !isEssential &&
+        !isPinnedComponent
+      ) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
           allergiesLower.includes(a.toLowerCase())
@@ -323,7 +417,7 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Allergen-based diet filtering (for -free diets like gluten-free, dairy-free, peanut-free)
-      if (dietPrefLower && !isUserFood && !isEssential) {
+      if (dietPrefLower && !isUserFood && !isEssential && !isPinnedComponent) {
         const dietExcludedAllergens: string[] = [];
         if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
           dietExcludedAllergens.push("gluten");
@@ -352,7 +446,7 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Dietary preference filtering — exclude foods whose excluded_diets contains user's dietary preference
-      if (dietPrefLower && !isUserFood && !isEssential) {
+      if (dietPrefLower && !isUserFood && !isEssential && !isPinnedComponent) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
         const isDietExcluded = excludedDiets.some((d: string) =>
           d.toLowerCase() === dietPrefLower
@@ -492,6 +586,21 @@ export async function getTemplateFoodsForPhase(
           : ((f.product_type as string) ?? undefined),
       };
     });
+
+  // Guardrail: if the disliked filter removed most of the candidate pool, the
+  // phase will almost certainly under-fuel (no carb sources survive). This is
+  // the signature of a bad/stale disliked list rather than genuine preference.
+  // Surface it instead of silently returning a near-empty pool.
+  if (totalCandidates > 0 && dislikeExcludedCount / totalCandidates >= 0.5) {
+    console.warn(
+      `[TMPL-FILTER-DISLIKED] WARNING: dislike filter removed ${dislikeExcludedCount}/${totalCandidates} ` +
+        `candidate foods (${Math.round((dislikeExcludedCount / totalCandidates) * 100)}%) for phase=${phase}, ` +
+        `activity=${activityType}. ${filteredFoods.length} foods remain. A disliked list this large usually ` +
+        `indicates a stale client preference cache — verify the [PLAN-V3-PREFS] payload.`,
+    );
+  }
+
+  return filteredFoods;
 }
 
 /**
@@ -501,9 +610,11 @@ export async function getTemplateElectrolyteFoods(
   supabase: SupabaseClient,
   likedFoods?: string[],
   willingToTryFoods?: string[],
+  dislikedFoods?: string[],
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
+  const dislikedSet = buildPreferenceSet(dislikedFoods);
 
   const { data: electrolytes, error } = await supabase
     .from("template_foods")
@@ -528,6 +639,18 @@ export async function getTemplateElectrolyteFoods(
 
   return (electrolytes || [])
     .filter((e: Record<string, unknown>) => {
+      // Always exclude disliked electrolytes — user preference for these dominates.
+      const isDisliked = matchesPreference(
+        e as { id?: string; name?: string; display_name?: string | null },
+        dislikedSet,
+      );
+      if (isDisliked) {
+        console.log(
+          `[TMPL-ELECTROLYTES] Excluding disliked electrolyte: ${e.name}`,
+        );
+        return false;
+      }
+
       if (e.is_essential === true) return true;
 
       const isLiked = matchesPreference(
@@ -902,6 +1025,12 @@ export async function getTemplateFoodsForDuringWithConstraints(
   deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
+  /** Food names that are components of the user's pinned during-templates.
+   * Per the honor-pin policy, these foods bypass dislike / allergen / diet
+   * filters so the pinned template can be assembled even when its ingredients
+   * conflict with the user's general preferences. Empty/undefined preserves
+   * pre-pin behavior. Formula Kit PR 2 substep 5c. */
+  pinnedComponentNames?: Set<string>,
 ): Promise<FoodWithConstraints[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -917,9 +1046,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
     }, activity: ${activityType}`,
   );
 
-  const { data, error } = await supabase
-    .from("template_foods")
-    .select(`
+  const constraintColumns = `
       id, name, display_name, display_name_plural, image_address, description,
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
@@ -930,7 +1057,11 @@ export async function getTemplateFoodsForDuringWithConstraints(
       allergens, excluded_diets,
       max_per_hr_low, max_per_hr_moderate, max_per_hr_high, min_increment,
       sodium_top_up_eligible
-    `)
+    `;
+
+  const { data, error } = await supabase
+    .from("template_foods")
+    .select(constraintColumns)
     .eq("is_active", true)
     .filter("categories", "ov", categoryFilter)
     .or(activityFilter);
@@ -940,10 +1071,45 @@ export async function getTemplateFoodsForDuringWithConstraints(
     return [];
   }
 
-  const templateFoods = (data ?? []) as Record<string, unknown>[];
+  let templateFoods = (data ?? []) as Record<string, unknown>[];
   console.log(
     `[TMPL-FOODS-DURING-CONSTRAINTS] Found ${templateFoods.length} template foods`,
   );
+
+  // SQL-widening for pinned-component foods that sit outside the during
+  // category/activity scope (mirrors getTemplateFoodsForPhase). The in-Deno
+  // filter bypass below only helps if the row actually made it into the
+  // query result. See PR 3 #35 follow-up #2.
+  if (pinnedComponentNames && pinnedComponentNames.size > 0) {
+    const existingNames = new Set(
+      templateFoods.map((f) => f.name as string),
+    );
+    const missingPinnedNames = [...pinnedComponentNames].filter(
+      (n) => !existingNames.has(n),
+    );
+    if (missingPinnedNames.length > 0) {
+      const { data: extraData, error: extraError } = await supabase
+        .from("template_foods")
+        .select(constraintColumns)
+        .eq("is_active", true)
+        .in("name", missingPinnedNames);
+      if (extraError) {
+        console.log(
+          "[TMPL-FOODS-DURING-CONSTRAINTS] Error widening fetch for pinned components:",
+          extraError,
+        );
+      } else if (extraData && extraData.length > 0) {
+        console.log(
+          `[TMPL-FOODS-DURING-CONSTRAINTS] Widening: fetched ${extraData.length} pinned-component foods out of during/activity scope (${
+            missingPinnedNames.join(", ")
+          })`,
+        );
+        templateFoods = templateFoods.concat(
+          extraData as Record<string, unknown>[],
+        );
+      }
+    }
+  }
 
   const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
@@ -953,16 +1119,29 @@ export async function getTemplateFoodsForDuringWithConstraints(
       if (f.to_exclude_from_solver === true) return false;
 
       const isEssential = f.is_essential === true;
+      const isElectrolyte = f.is_electrolyte === true;
+      // Honor-pin bypass: foods that are components of an in-scope pinned
+      // template skip dislike/allergen/diet filters. Without this, a user who
+      // pins a template containing a generally-disliked or allergen-bearing
+      // food (e.g. stroopwafel marked disliked) would have that component
+      // silently stripped from the food pool, and the template solver would
+      // produce an output that omits the pinned hero food. See PR 2 5c.
+      const isPinnedComponent =
+        pinnedComponentNames?.has(f.name as string) ?? false;
 
-      // Disliked filter (keep essentials)
+      // Disliked filter. Essentials bypass for hydration safety, but electrolyte
+      // products do NOT — user preference for capsules/powders/drinks dominates.
       const isDisliked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
         dislikedSet,
       );
-      if (isDisliked && !isEssential) return false;
+      if (
+        isDisliked && !isPinnedComponent &&
+        !(isEssential && !isElectrolyte)
+      ) return false;
 
       // Allergen filter
-      if (allergiesLower.length > 0 && !isEssential) {
+      if (allergiesLower.length > 0 && !isEssential && !isPinnedComponent) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         if (
           foodAllergens.some((a) =>
@@ -972,7 +1151,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
       }
 
       // Diet filter
-      if (dietPrefLower && !isEssential) {
+      if (dietPrefLower && !isEssential && !isPinnedComponent) {
         // Allergen-based diet filtering
         const dietExcludedAllergens: string[] = [];
         if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
@@ -1074,3 +1253,55 @@ export function buildFoodsByNameMap(
   }
   return map;
 }
+
+/**
+ * Build a Map<food.name, Food> for the post-workout template solver
+ * (post solver works with the plain Food shape, not FoodWithConstraints).
+ */
+export function buildFoodMap(foods: Food[]): Map<string, Food> {
+  const map = new Map<string, Food>();
+  for (const food of foods) {
+    map.set(food.name, food);
+  }
+  return map;
+}
+
+// ============================================================================
+// Post-Workout Template Queries
+// ============================================================================
+
+/**
+ * Fetch all active post_workout_templates from the database.
+ */
+export async function getPostWorkoutTemplates(
+  supabase: SupabaseClient,
+): Promise<PostWorkoutTemplate[]> {
+  const { data, error } = await supabase
+    .from("post_workout_templates")
+    .select(`
+      id, template_number, name, formula, portions,
+      activity_types, component_food_names, component_ratios,
+      default_servings, target_carb_protein_ratio,
+      allergens, excluded_diets,
+      travel_friendliness, flavor_profile, prep_effort, protein_anchor,
+      carb_sources, selection_priority,
+      notes, is_active
+    `)
+    .eq("is_active", true)
+    .order("template_number");
+
+  if (error) {
+    console.log(
+      "[PWT-QUERY] Error fetching post_workout_templates:",
+      error,
+    );
+    return [];
+  }
+
+  const templates = (data ?? []) as PostWorkoutTemplate[];
+  console.log(
+    `[PWT-QUERY] Fetched ${templates.length} active post-workout templates`,
+  );
+  return templates;
+}
+

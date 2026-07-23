@@ -278,10 +278,12 @@ void main() {
       });
 
       test('updateRequired fields are immutable', () {
-        const result = VersionCheckResult.updateRequired(
-          currentVersion: '1.0.0',
-          requiredVersion: '1.5.0',
-        ) as VersionCheckUpdateRequired;
+        const result =
+            VersionCheckResult.updateRequired(
+                  currentVersion: '1.0.0',
+                  requiredVersion: '1.5.0',
+                )
+                as VersionCheckUpdateRequired;
 
         expect(result.currentVersion, '1.0.0');
         expect(result.requiredVersion, '1.5.0');
@@ -289,10 +291,12 @@ void main() {
       });
 
       test('resyncRequired fields are immutable', () {
-        const result = VersionCheckResult.resyncRequired(
-          localSchemaVersion: 2,
-          remoteSchemaVersion: 3,
-        ) as VersionCheckResyncRequired;
+        const result =
+            VersionCheckResult.resyncRequired(
+                  localSchemaVersion: 2,
+                  remoteSchemaVersion: 3,
+                )
+                as VersionCheckResyncRequired;
 
         expect(result.localSchemaVersion, 2);
         expect(result.remoteSchemaVersion, 3);

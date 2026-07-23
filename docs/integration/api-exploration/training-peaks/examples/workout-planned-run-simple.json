@@ -1,0 +1,13 @@
+{
+  "_comment": "A PLANNED run with no Structure and no IFPlanned. TotalTimePlanned 2.0 = 120 minutes (DECIMAL HOURS). DistancePlanned 24000.0 = 24 km (METRES). This is typical of a basic-athlete workout, since TSSPlanned/IFPlanned/Tags are nulled for non-premium accounts.",
+  "Id": 345678906,
+  "WorkoutDay": "2026-01-28T00:00:00",
+  "WorkoutType": "Run",
+  "Title": "Long Endurance Run",
+  "Description": "Build aerobic base",
+  "TotalTimePlanned": 2.0,
+  "DistancePlanned": 24000.0,
+  "TSSPlanned": null,
+  "IFPlanned": null,
+  "Structure": null
+}

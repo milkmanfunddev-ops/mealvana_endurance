@@ -1,0 +1,43 @@
+{
+  "description": "Template solver — running >240 min (300 min), high gut. Gel + Sports Drink + Water template for ultra bracket. Tests template path at extreme duration.",
+  "solver": "template",
+  "athlete": {
+    "weight_kg": 78,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 300,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 180,
+      "sodium_mg": 2000,
+      "water_ml": 2500
+    },
+    "post_run": {
+      "carbs_g": 100,
+      "protein_g": 40,
+      "sodium_mg": 1500,
+      "water_ml": 2000
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null,
+  "templateFixture": {
+    "template_number": 10,
+    "name": "Gel + Sports Drink + Water (Ultra)",
+    "activity_types": ["running"],
+    "duration_brackets": ["> 240 min"],
+    "gut_training_levels": ["moderate", "high"],
+    "component_food_names": ["energy_gel", "sports_drink", "water"],
+    "component_carb_ratios": { "energy_gel": 0.6, "sports_drink": 0.4 }
+  }
+}

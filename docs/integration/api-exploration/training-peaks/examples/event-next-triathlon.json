@@ -1,0 +1,21 @@
+{
+  "_comment": "GET /v2/events/next. The endpoint may return a SINGLE OBJECT or an ARRAY of events. A 404 means 'no upcoming events' and is NOT an error. See the EventType value list under POST /v2/events in endpoints.md.",
+  "Id": 123456,
+  "AthleteId": 54321,
+  "EventDate": "2026-10-12T00:00:00",
+  "EventType": "Triathlon",
+  "Name": "Ironman Kona",
+  "Description": "World Championship",
+  "WorkoutIds": [789, 790, 791],
+  "Goals": [
+    { "GoalType": "Distance", "Value": 140.1, "Unit": "Miles" },
+    { "GoalType": "Time",     "Value": 7.85,  "Unit": "Hours" },
+    { "GoalType": "Place",    "Value": 10,    "Unit": null },
+    { "GoalType": "Pr",       "Value": true,  "Unit": null }
+  ],
+  "_gotchas": {
+    "Pr_is_a_boolean": "GoalType 'Pr' carries Value: true/false, a boolean - not a number like the other goal types.",
+    "goal_units": "Distance goals are typically in Miles, Time goals in Hours; Place and Pr have Unit: null.",
+    "workout_ids_int64": "WorkoutIds are Int64 identifiers of workouts linked to the event."
+  }
+}

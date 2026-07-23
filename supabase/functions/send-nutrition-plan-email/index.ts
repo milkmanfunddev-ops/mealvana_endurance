@@ -1,8 +1,17 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_DHjg7ayY_PmqLvMtUm7W5GXJaugAtQn93';
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+
+// Read from the RESEND_API_KEY Supabase secret (set on dev+prod 2026-07-01;
+// value also in secrets/resend.env). No hardcoded fallback — a missing secret
+// should surface as a Resend 401, not silently use a stale key.
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // const FROM_EMAIL = 'onboarding@resend.dev'; // Will change to support@mealvana.io after DNS verification
 const FROM_EMAIL = 'support@mealvana.io'; // Will change to support@mealvana.io after DNS verification
-serve(async (req)=>{
+
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req) => {
   // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -156,4 +165,4 @@ serve(async (req)=>{
       }
     });
   }
-});
+}));

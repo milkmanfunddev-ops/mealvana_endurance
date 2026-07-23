@@ -5,14 +5,7 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 ///
 /// Each preset maps to a fixed [IntensityDistribution] representing
 /// the typical zone distribution for that workout type.
-enum WorkoutPreset {
-  easy,
-  long,
-  tempo,
-  intervals,
-  racePace,
-  recovery,
-}
+enum WorkoutPreset { easy, long, tempo, intervals, racePace, recovery }
 
 /// Data class providing preset distributions and sport-specific labels.
 class WorkoutPresetData {

@@ -94,6 +94,7 @@ class WorkoutDetailsWidget extends StatelessWidget {
       children: [
         // Section Title
         Text(
+          key: const ValueKey('activity_create.details_heading'),
           'WORKOUT DETAILS',
           style: AppTextStyles.sectionTitle.copyWith(
             fontSize: 14,
@@ -106,6 +107,7 @@ class WorkoutDetailsWidget extends StatelessWidget {
 
         // Distance Input
         _DistanceInput(
+          key: const ValueKey('activity_create.distance_field'),
           distance: distance,
           distanceUnit: distanceUnit,
           onChanged: onDistanceChanged,
@@ -138,6 +140,10 @@ class WorkoutDetailsWidget extends StatelessWidget {
             secondValue: estimatedDuration?.inMinutes.remainder(60),
             isDark: isDark,
             enabled: enabled,
+            firstFieldKey: const ValueKey('activity_create.duration_hr_field'),
+            secondFieldKey: const ValueKey(
+              'activity_create.duration_mins_field',
+            ),
             onChanged: onDurationChanged == null
                 ? null
                 : (hours, minutes) {
@@ -180,6 +186,7 @@ class WorkoutDetailsWidget extends StatelessWidget {
 /// Distance input field with unit display
 class _DistanceInput extends StatefulWidget {
   const _DistanceInput({
+    super.key,
     required this.distance,
     required this.distanceUnit,
     required this.onChanged,
@@ -474,6 +481,8 @@ class _DualSegmentField extends StatefulWidget {
     required this.enabled,
     this.trailingUnit,
     this.onChanged,
+    this.firstFieldKey,
+    this.secondFieldKey,
   });
 
   final String label;
@@ -487,6 +496,8 @@ class _DualSegmentField extends StatefulWidget {
   final bool isDark;
   final bool enabled;
   final void Function(int first, int second)? onChanged;
+  final Key? firstFieldKey;
+  final Key? secondFieldKey;
 
   @override
   State<_DualSegmentField> createState() => _DualSegmentFieldState();
@@ -646,6 +657,7 @@ class _DualSegmentFieldState extends State<_DualSegmentField> {
               child: _InputShell(
                 isDark: widget.isDark,
                 child: TextField(
+                  key: widget.firstFieldKey,
                   controller: _firstController,
                   focusNode: _firstFocus,
                   enabled: widget.enabled && widget.onChanged != null,
@@ -679,6 +691,7 @@ class _DualSegmentFieldState extends State<_DualSegmentField> {
               child: _InputShell(
                 isDark: widget.isDark,
                 child: TextField(
+                  key: widget.secondFieldKey,
                   controller: _secondController,
                   focusNode: _secondFocus,
                   enabled: widget.enabled && widget.onChanged != null,

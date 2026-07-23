@@ -12,7 +12,8 @@ class BrickException implements Exception {
   final String? code;
 
   @override
-  String toString() => 'BrickException: $message${code != null ? ' (code: $code)' : ''}';
+  String toString() =>
+      'BrickException: $message${code != null ? ' (code: $code)' : ''}';
 }
 
 /// Thrown when brick validation fails (e.g., not enough sports, same day requirement)
@@ -119,12 +120,20 @@ class BrickUngroupException extends BrickException {
 
 /// Thrown when macro generation for brick fails
 class BrickMacroGenerationException extends BrickException {
-  const BrickMacroGenerationException(super.message, {super.code, this.originalError, this.statusCode});
+  const BrickMacroGenerationException(
+    super.message, {
+    super.code,
+    this.originalError,
+    this.statusCode,
+  });
 
   final Object? originalError;
   final int? statusCode;
 
-  factory BrickMacroGenerationException.edgeFunctionError(String message, {int? statusCode}) {
+  factory BrickMacroGenerationException.edgeFunctionError(
+    String message, {
+    int? statusCode,
+  }) {
     return BrickMacroGenerationException(
       'Edge function error: $message',
       code: 'EDGE_FUNCTION_ERROR',

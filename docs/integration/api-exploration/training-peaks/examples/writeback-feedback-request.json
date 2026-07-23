@@ -1,0 +1,25 @@
+{
+  "_comment": "PUT /v2/workouts/plan/123456789 that appends a SECOND delimited text block to Description alongside an existing one. Because PUT is a full-object replace, appending means reading the current Description, concatenating the new block, and writing the whole object back. Distinct delimiters let multiple blocks coexist in one Description.",
+  "_body": {
+    "Id": 123456789,
+    "AthleteId": 54321,
+    "WorkoutDay": "2026-07-21T00:00:00",
+    "StartTimePlanned": "2026-07-21T06:30:00",
+    "WorkoutType": "Run",
+    "Title": "Track Intervals",
+    "Description": "4x1000m with recoveries\n\n---\n[Notes]\nAppended note line 1\n[/Notes]\n\n---\n[Feedback]\nRating: 4/5\nNotes: Felt strong through the intervals\n[/Feedback]",
+    "TotalTimePlanned": 0.75,
+    "DistancePlanned": 8000.0,
+    "TSSPlanned": 65.0,
+    "IFPlanned": 0.95,
+    "Tags": ["quality", "track"],
+    "Structure": null
+  },
+  "_appended_block_only": [
+    "---",
+    "[Feedback]",
+    "Rating: 4/5",
+    "Notes: Felt strong through the intervals",
+    "[/Feedback]"
+  ]
+}

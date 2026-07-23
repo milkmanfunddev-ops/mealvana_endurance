@@ -74,13 +74,21 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
               const SizedBox(height: 12),
               _buildTimePicker(),
               const SizedBox(height: 12),
-              _buildField('Duration (min)', _durationController,
-                  keyboardType: TextInputType.number, hint: 'e.g., 60'),
+              _buildField(
+                'Duration (min)',
+                _durationController,
+                keyboardType: TextInputType.number,
+                hint: 'e.g., 60',
+              ),
               const SizedBox(height: 12),
-              _buildField('Distance (mi)', _distanceController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  hint: 'e.g., 10.0'),
+              _buildField(
+                'Distance (mi)',
+                _distanceController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                hint: 'e.g., 10.0',
+              ),
             ],
           ),
         ),
@@ -88,8 +96,10 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel',
-              style: TextStyle(color: AppColors.textDarkSecondary)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.textDarkSecondary),
+          ),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -118,7 +128,8 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
         hintText: hint,
         labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
         hintStyle: TextStyle(
-            color: AppColors.textDarkSecondary.withValues(alpha: 0.5)),
+          color: AppColors.textDarkSecondary.withValues(alpha: 0.5),
+        ),
         filled: true,
         fillColor: AppColors.blackberryDark,
         border: OutlineInputBorder(
@@ -153,10 +164,12 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
           style: const TextStyle(color: AppColors.cream, fontSize: 14),
           items: ActivityType.values
               .where((t) => t != ActivityType.brick)
-              .map((t) => DropdownMenuItem(
-                    value: t.dbValue,
-                    child: Text(t.displayName),
-                  ))
+              .map(
+                (t) => DropdownMenuItem(
+                  value: t.dbValue,
+                  child: Text(t.displayName),
+                ),
+              )
               .toList(),
           onChanged: (val) {
             if (val != null) setState(() => _activityType = val);
@@ -252,12 +265,14 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
       _scheduledTime.minute,
     );
 
-    Navigator.of(context).pop(CreateActivityResult(
-      title: title,
-      activityType: _activityType,
-      scheduledDateTime: scheduledDateTime,
-      durationMinutes: int.tryParse(_durationController.text),
-      distanceMiles: double.tryParse(_distanceController.text),
-    ));
+    Navigator.of(context).pop(
+      CreateActivityResult(
+        title: title,
+        activityType: _activityType,
+        scheduledDateTime: scheduledDateTime,
+        durationMinutes: int.tryParse(_durationController.text),
+        distanceMiles: double.tryParse(_distanceController.text),
+      ),
+    );
   }
 }

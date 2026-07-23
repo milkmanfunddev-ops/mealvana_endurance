@@ -1,0 +1,36 @@
+{
+  "description": "Running <60 min (band [0,30] g/h carbs) — light gut, sub-threshold intensity. Sport ceiling: run 70 g/h; band cap ~30 g total.",
+  "solver": "rule",
+  "knownFailure": true,
+  "knownFailureReason": "CONFIRMED on real dev catalog: rule solver selects Energy Gel×0.5 + Sports Drink×0.5 + Water×1 but delivers only 78mg sodium vs 200mg target (delta=122mg, above 100mg absolute floor). The real catalog has 8 high-sodium sources in during_run (electrolyte_drink_mix 400mg, electrolyte_packet 510mg, pickle_juice_shot 940mg, etc.) but the electrolyte top-up logic does not fire at low-volume targets — sodium scoring threshold skips add-on when primary carb load is small (1 gel equivalent). Algorithm gap confirmed in production catalog: not a catalog limitation.",
+  "athlete": {
+    "weight_kg": 65,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 45,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 20,
+      "sodium_mg": 200,
+      "water_ml": 350
+    },
+    "post_run": {
+      "carbs_g": 40,
+      "protein_g": 18,
+      "sodium_mg": 400,
+      "water_ml": 500
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

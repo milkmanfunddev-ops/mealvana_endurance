@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/utils/food_display_utils.dart' as food_utils;
+import '../../providers/activity_detail_controller.dart';
 import '../../providers/activity_detail_state.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../application/macro_explanation_service.dart';
@@ -139,6 +140,7 @@ class _NutritionSectionsBuilderState
         showSwipeHint: widget.consumeSwipeHint(),
         enableSectionHeroes: widget.enableSectionHeroes,
         heroTagSeed: widget.heroTagSeed,
+        onRegenerate: _buildRegenCallback(),
       );
     }
 
@@ -186,8 +188,12 @@ class _NutritionSectionsBuilderState
           sectionColor = AppColors.orange;
         }
 
-        // Generate sport-specific title using ActivityType
-        final sectionTitle = activityType.getSectionTitle(category);
+        // Short phase label for this page only (avoids "During Run" wrapping
+        // to two lines on narrow phones). The sport-specific title returned
+        // by ActivityType.getSectionTitle() is still used by other
+        // consumers (e.g. templates, coach view) — intentionally not
+        // changed here.
+        final sectionTitle = _shortPhaseLabel(category);
 
         // Use BeforePhaseWidget for before sections with sub-phases (V2 template plans)
         if (category == 'before_run' && section.hasSubPhases) {
@@ -200,6 +206,7 @@ class _NutritionSectionsBuilderState
                 sectionColor: sectionColor,
                 sectionTitle: sectionTitle.toUpperCase(),
                 useImperial: useImperial,
+                planId: widget.state.activity?.id,
                 onSwapFood: widget.onSwapFood,
                 onDeleteFood: widget.onDeleteFood,
                 onUpdateQuantity: widget.onUpdateQuantity,
@@ -232,6 +239,7 @@ class _NutritionSectionsBuilderState
                 proteinOverrideLabel: null,
                 sodiumOverrideLabel: null,
                 fluidsOverrideLabel: null,
+                onRegenerate: _buildRegenCallback(),
               ),
             ),
           );
@@ -249,6 +257,7 @@ class _NutritionSectionsBuilderState
                 sectionColor: sectionColor,
                 sectionTitle: sectionTitle.toUpperCase(),
                 category: category,
+                planId: widget.state.activity?.id,
                 durationMinutes: durationMinutes,
                 useImperial: useImperial,
                 activityType: activityType,
@@ -287,6 +296,7 @@ class _NutritionSectionsBuilderState
                 carbsOverrideLabel: duringOverrideLabel,
                 sodiumOverrideLabel: null,
                 fluidsOverrideLabel: null,
+                onRegenerate: _buildRegenCallback(),
               ),
             ),
           );
@@ -383,6 +393,10 @@ class _NutritionSectionsBuilderState
     String? fluidsOverrideLabel,
   }) {
     final isExpanded = _expandedSections[category] ?? false;
+    // Post-workout recovery is treated as a trigger, not a macro-dosing event,
+    // so we hide carbs/protein/sodium/fluid targets for the after section.
+    // The food list below remains the canonical portion.
+    final isAfterSection = category.toLowerCase().contains('after');
 
     final foodSummary = section.foodItems
         .map(_buildCollapsedFoodSummaryLabel)
@@ -409,65 +423,34 @@ class _NutritionSectionsBuilderState
             section,
           ),
           const SizedBox(height: AppSpacing.md),
-          MacroSummaryRow(
-            foods: section.foodItems,
-            section: section,
-            category: category,
-            useImperial: useImperial,
-            carbsLow: carbsLow,
-            carbsHigh: carbsHigh,
-            proteinLow: proteinLow,
-            proteinHigh: proteinHigh,
-            sodiumLow: sodiumLow,
-            sodiumHigh: sodiumHigh,
-            fluidsLow: fluidsLow,
-            fluidsHigh: fluidsHigh,
-            carbsOverridden: carbsOverridden,
-            proteinOverridden: proteinOverridden,
-            sodiumOverridden: sodiumOverridden,
-            fluidsOverridden: fluidsOverridden,
-            carbsOverrideLabel: carbsOverrideLabel,
-            proteinOverrideLabel: proteinOverrideLabel,
-            sodiumOverrideLabel: sodiumOverrideLabel,
-            fluidsOverrideLabel: fluidsOverrideLabel,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          // Collapsible food list
-          InkWell(
-            onTap: () {
-              setState(() {
-                _expandedSections[category] = !isExpanded;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Row(
-                children: [
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_down
-                        : Icons.keyboard_arrow_right,
-                    color: sectionColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      foodSummary,
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+          if (!isAfterSection) ...[
+            MacroSummaryRow(
+              foods: section.foodItems,
+              section: section,
+              category: category,
+              useImperial: useImperial,
+              carbsLow: carbsLow,
+              carbsHigh: carbsHigh,
+              proteinLow: proteinLow,
+              proteinHigh: proteinHigh,
+              sodiumLow: sodiumLow,
+              sodiumHigh: sodiumHigh,
+              fluidsLow: fluidsLow,
+              fluidsHigh: fluidsHigh,
+              carbsOverridden: carbsOverridden,
+              proteinOverridden: proteinOverridden,
+              sodiumOverridden: sodiumOverridden,
+              fluidsOverridden: fluidsOverridden,
+              carbsOverrideLabel: carbsOverrideLabel,
+              proteinOverrideLabel: proteinOverrideLabel,
+              sodiumOverrideLabel: sodiumOverrideLabel,
+              fluidsOverrideLabel: fluidsOverrideLabel,
             ),
-          ),
-          if (isExpanded) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          // Food list: collapsible by default; expanded inline for the after
+          // section since it has no macro summary above to scan past.
+          if (isAfterSection) ...[
             ...section.foodItems.asMap().entries.map((entry) {
               final index = entry.key;
               final food = entry.value;
@@ -491,9 +474,75 @@ class _NutritionSectionsBuilderState
             }),
             const SizedBox(height: AppSpacing.md),
             KyleAddFoodButton(
+              key: ValueKey('plan_detail.${category}_add_food_button'),
               text: 'ADD FOOD',
               onPressed: () => widget.onAddFood(category),
             ),
+          ] else ...[
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _expandedSections[category] = !isExpanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    Icon(
+                      isExpanded
+                          ? Icons.keyboard_arrow_down
+                          : Icons.keyboard_arrow_right,
+                      color: sectionColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        foodSummary,
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (isExpanded) ...[
+              const SizedBox(height: AppSpacing.sm),
+              ...section.foodItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final food = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index < section.foodItems.length - 1
+                        ? AppSpacing.sm
+                        : 0,
+                  ),
+                  child: DismissibleFoodItem(
+                    food: food,
+                    category: category,
+                    onSwap: () =>
+                        widget.onSwapFood(food.id, food.name, category),
+                    onDelete: () => widget.onDeleteFood(food.id, category),
+                    onQuantityChange: (newQuantity) =>
+                        widget.onUpdateQuantity(food.id, category, newQuantity),
+                    showSwipeHint: widget.consumeSwipeHint(),
+                    useImperial: useImperial,
+                  ),
+                );
+              }),
+              const SizedBox(height: AppSpacing.md),
+              KyleAddFoodButton(
+                key: ValueKey('plan_detail.${category}_add_food_button'),
+                text: 'ADD FOOD',
+                onPressed: () => widget.onAddFood(category),
+              ),
+            ],
           ],
         ],
       ),
@@ -529,7 +578,7 @@ class _NutritionSectionsBuilderState
     return '${food_utils.formatQuantity(qty)} $label';
   }
 
-  IconData _getSportIcon(ActivityType activityType) {
+  FaIconData _getSportIcon(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.cycling:
         return FontAwesomeIcons.personBiking;
@@ -559,6 +608,7 @@ class _NutritionSectionsBuilderState
       children: [
         Expanded(
           child: Text(
+            key: ValueKey('plan_detail.${category}_section'),
             title,
             style: AppTextStyles.sectionTitle.copyWith(
               color: sectionColor,
@@ -588,6 +638,8 @@ class _NutritionSectionsBuilderState
                   sportLabel: activityType.displayName,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  planId: widget.state.activity?.id,
+                  onRegenerate: _buildRegenCallback(),
                 );
               },
             ),
@@ -596,9 +648,42 @@ class _NutritionSectionsBuilderState
     );
   }
 
+  /// Builds a callback that triggers a plan regen for the current activity.
+  ///
+  /// Passed to [PhaseExplanationSheet] so that inline sweat-profile edits can
+  /// immediately refresh the plan without the user dismissing and re-opening.
+  ///
+  /// Uses [ActivityDetailController.regeneratePlan] which re-calls the edge
+  /// function with the latest UserProfile values (including newly-saved
+  /// `knownSweatRateMlPerHour` / `knownSodiumConcentrationMgPerLiter`),
+  /// unlike [ActivityDetailController.forceRefresh] which only reloads the
+  /// already-stored plan from the database.
+  VoidCallback? _buildRegenCallback() {
+    final activityId = widget.state.activity?.id;
+    if (activityId == null) return null;
+    return () {
+      ref
+          .read(
+            activityDetailControllerProvider(activityId: activityId).notifier,
+          )
+          .regeneratePlan();
+    };
+  }
+
   double _getBodyWeightKg(double? weightPounds) {
     if (weightPounds == null || weightPounds <= 0) return 70.0;
     return weightPounds * 0.453592;
+  }
+
+  /// Short "Before"/"During"/"After" heading used only on this screen so the
+  /// section title never wraps to two lines on narrow phones (e.g. "During
+  /// Run"). Brick section titles are unaffected — they render via
+  /// `section.title` in `BrickNutritionSections`, not this path.
+  String _shortPhaseLabel(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('during')) return 'During';
+    if (lower.contains('after')) return 'After';
+    return 'Before';
   }
 
   ExplanationPhase _categoryToPhase(String category) {

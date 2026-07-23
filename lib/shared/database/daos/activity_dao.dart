@@ -20,8 +20,9 @@ class ActivityDao extends DatabaseAccessor<AppDatabase>
     required String activityId,
     required String planData,
   }) async {
-    await (update(activitiesTable)..where((tbl) => tbl.id.equals(activityId)))
-        .write(
+    await (update(
+      activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
       ActivitiesTableCompanion(
         nutritionPlanData: Value(planData),
         needsUpload: const Value(true),
@@ -33,8 +34,9 @@ class ActivityDao extends DatabaseAccessor<AppDatabase>
 
   /// Clear the nutrition plan fields for an activity.
   Future<void> clearActivityNutritionPlan(String activityId) async {
-    await (update(activitiesTable)..where((tbl) => tbl.id.equals(activityId)))
-        .write(
+    await (update(
+      activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
       const ActivitiesTableCompanion(
         nutritionPlanData: Value(null),
         needsUpload: Value(true),
@@ -60,5 +62,4 @@ class ActivityDao extends DatabaseAccessor<AppDatabase>
       ..limit(1);
     return await query.getSingleOrNull();
   }
-
 }

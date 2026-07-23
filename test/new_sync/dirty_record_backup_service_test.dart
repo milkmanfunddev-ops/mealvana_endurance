@@ -302,10 +302,7 @@ void main() {
           appVersion: '1.0.0',
           schemaVersion: 1,
           userId: 'user-1',
-          dirtyRecords: {
-            'activities': [],
-            'events': [],
-          },
+          dirtyRecords: {'activities': [], 'events': []},
           uploadErrors: [],
         );
 
