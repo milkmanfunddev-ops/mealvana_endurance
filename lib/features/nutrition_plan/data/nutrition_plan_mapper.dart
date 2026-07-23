@@ -533,6 +533,8 @@ class NutritionPlanMapper {
     // 2. During segments + interleaved transitions
     final duringSegmentsData =
         plan['during_segments'] as Map<String, dynamic>? ?? {};
+    final duringSegmentShortfalls =
+        plan['during_segment_shortfalls'] as Map<String, dynamic>? ?? {};
     final transitionsData = plan['transitions'] as Map<String, dynamic>? ?? {};
 
     // Build segment targets map from phases.during_segments
@@ -574,6 +576,14 @@ class NutritionPlanMapper {
                 FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>),
           )
           .toList();
+      final segmentShortfalls =
+          (duringSegmentShortfalls[segmentOrder] as List<dynamic>? ?? const [])
+              .whereType<Map>()
+              .map(
+                (entry) =>
+                    MacroShortfall.fromJson(Map<String, dynamic>.from(entry)),
+              )
+              .toList();
 
       sections.add(
         PlanSection(
@@ -590,6 +600,7 @@ class NutritionPlanMapper {
           sodiumHighTarget: (segTargets?['sodium_high_mg'] as num?)?.toDouble(),
           fluidsLowTarget: (segTargets?['water_low_ml'] as num?)?.toDouble(),
           fluidsHighTarget: (segTargets?['water_high_ml'] as num?)?.toDouble(),
+          shortfalls: segmentShortfalls,
         ),
       );
 

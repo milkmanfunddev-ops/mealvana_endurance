@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
@@ -17,6 +18,7 @@ import '../../data/macro_repository.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/brick_macro_service.dart';
 import '../../application/nutrition_plan_service.dart';
+import '../../application/nutrition_plan_generation_audit.dart';
 import '../../application/draft_activity_cleanup_service.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../../formula_kit/domain/pin_decision.dart';
@@ -1823,6 +1825,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     state = AsyncData(currentState.copyWith(isCreatingPlan: true));
 
     final modifiedFieldsCount = _countModifiedFields(resolvedMacroTargets);
+    NutritionPlanGenerationResult? generationResult;
+    var targetMisses = <NutritionPlanTargetMiss>[];
 
     // Track plan creation start
     await _analytics.timeEvent('nutrition_plan_created_from_adjusted_macros');
@@ -1899,21 +1903,24 @@ class MacroTargetsController extends _$MacroTargetsController {
             : <String>[];
 
         // Try V2 template-based generation, falls back to V1 internally
-        final nutritionPlan = await nutritionPlanService
-            .generatePlanFromMacrosV2(
-              macroTargets: resolvedMacroTargets,
-              hoursBefore: hoursBefore,
-              weightKg: weightKg,
-              activityId: currentStateValue?.activityId,
-              userId: activityOwnerUserId,
-              dietaryPreference: dietaryPreference,
-              allergies: allergies,
-              likedFoods: likedFoods,
-              dislikedFoods: dislikedFoods,
-              willingToTryFoods: willingToTryFoods,
-              durationMinutes: resolvedDurationMinutes,
-              gutTrainingLevel: userProfile?.gutTraining.name,
-            );
+        generationResult = await nutritionPlanService.generatePlanFromMacrosV2(
+          macroTargets: resolvedMacroTargets,
+          hoursBefore: hoursBefore,
+          weightKg: weightKg,
+          activityId: currentStateValue?.activityId,
+          userId: activityOwnerUserId,
+          dietaryPreference: dietaryPreference,
+          allergies: allergies,
+          likedFoods: likedFoods,
+          dislikedFoods: dislikedFoods,
+          willingToTryFoods: willingToTryFoods,
+          durationMinutes: resolvedDurationMinutes,
+          gutTrainingLevel: userProfile?.gutTraining.name,
+        );
+        final nutritionPlan = generationResult!.plan;
+        targetMisses = NutritionPlanGenerationAudit.findUnexplainedMisses(
+          nutritionPlan,
+        );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)
         await _analytics.track(
@@ -2086,6 +2093,15 @@ class MacroTargetsController extends _$MacroTargetsController {
     });
 
     state = createPlanResult;
+    await _reportPlanGenerationOutcome(
+      generationResult: generationResult,
+      targetMisses: targetMisses,
+      operationError: createPlanResult.error,
+      activityType: resolvedMacroTargets.activityType,
+      targetsWereAdjusted: modifiedFieldsCount > 0,
+      isCoachFlow:
+          currentState.forUserId != null && currentState.forUserId!.isNotEmpty,
+    );
     if (createPlanResult.hasError) {
       appLogger.error(
         'Create nutrition plan failed',
@@ -2106,6 +2122,63 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     // Return the activityId from the successful updated state
     return createPlanResult.value?.activityId;
+  }
+
+  Future<void> _reportPlanGenerationOutcome({
+    required NutritionPlanGenerationResult? generationResult,
+    required List<NutritionPlanTargetMiss> targetMisses,
+    required Object? operationError,
+    required ActivityType activityType,
+    required bool targetsWereAdjusted,
+    required bool isCoachFlow,
+  }) async {
+    final usedFallback = generationResult?.usedFallback ?? false;
+    if (operationError == null && !usedFallback && targetMisses.isEmpty) {
+      return;
+    }
+
+    final outcome = operationError != null
+        ? 'plan_generation_failed'
+        : usedFallback
+        ? 'plan_fallback_used'
+        : 'plan_target_miss';
+
+    try {
+      await ref
+          .read(appExternalDepsProvider)
+          .sentry
+          .captureMessage(
+            'Nutrition plan generation anomaly',
+            level: operationError != null
+                ? SentryLevel.error
+                : SentryLevel.warning,
+            tags: {
+              'component': 'nutrition_plan_generation',
+              'outcome': outcome,
+              'activity_type': activityType.name,
+              'generation_source':
+                  generationResult?.source.name ?? 'unavailable',
+              'target_miss_count': targetMisses.length.toString(),
+              'targets_adjusted': targetsWereAdjusted.toString(),
+              'coach_flow': isCoachFlow.toString(),
+            },
+            extra: {
+              if (generationResult?.primaryError != null)
+                'primary_generation_error': generationResult!.primaryError,
+              if (operationError != null)
+                'operation_error': operationError.toString(),
+              if (targetMisses.isNotEmpty)
+                'target_misses': targetMisses
+                    .map((miss) => miss.toJson())
+                    .toList(),
+            },
+            fingerprint: ['nutrition-plan-generation', outcome],
+          );
+    } catch (error) {
+      DebugLogger.warning(
+        'Failed to send nutrition plan generation diagnostic: $error',
+      );
+    }
   }
 
   /// Walks the generated plan and fires one `plan_used_pin` /

@@ -232,6 +232,7 @@ Return your answer as structured JSON matching the requested schema.`,
         model: DESCRIBE_MEAL_MODEL,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
+        costUsd,
       }),
     );
     // deno-lint-ignore no-explicit-any

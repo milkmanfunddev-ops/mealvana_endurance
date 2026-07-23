@@ -248,4 +248,57 @@ void main() {
       expect(during.shortfalls.single.reason, ShortfallReason.noDietMatch);
     });
   });
+
+  test('maps brick segment shortfalls onto their section', () {
+    final plan = NutritionPlanMapper.fromSupabaseJson({
+      'plan_id': 'brick_plan',
+      'plan_name': 'Brick Plan',
+      'plan_data': {
+        'plan': {
+          'before': <String, dynamic>{},
+          'during_segments': {'1': <dynamic>[]},
+          'during_segment_shortfalls': {
+            '1': [
+              {
+                'macro': 'carbs',
+                'delivered': 40,
+                'target': 80,
+                'unit': 'g',
+                'reason': 'template_constraint',
+              },
+            ],
+          },
+          'transitions': <String, dynamic>{},
+          'after': <dynamic>[],
+        },
+        'macro_targets': {
+          'pre_run': <String, dynamic>{},
+          'during_run': <String, dynamic>{},
+          'post_run': <String, dynamic>{},
+          'phases': {
+            'during_segments': [
+              {
+                'segment_order': 1,
+                'sport': 'cycling',
+                'carbs_g': 80,
+                'sodium_mg': 0,
+                'water_ml': 0,
+              },
+            ],
+            'transitions': <dynamic>[],
+          },
+        },
+      },
+    });
+
+    final segment = plan.sections.singleWhere(
+      (section) => section.id == 'during_segment_1',
+    );
+    expect(segment.shortfalls, hasLength(1));
+    expect(segment.shortfalls.single.macro, ShortfallMacro.carbs);
+    expect(
+      segment.shortfalls.single.reason,
+      ShortfallReason.templateConstraint,
+    );
+  });
 }

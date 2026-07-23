@@ -134,8 +134,18 @@ class RecordingSentryReporter implements SentryReporter {
     String message, {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   }) async {
-    messages.add(MessageCapture(message: message, level: level, tags: tags));
+    messages.add(
+      MessageCapture(
+        message: message,
+        level: level,
+        tags: tags,
+        extra: extra,
+        fingerprint: fingerprint,
+      ),
+    );
   }
 
   @override
@@ -248,9 +258,17 @@ class UserContextCall {
 }
 
 class MessageCapture {
-  const MessageCapture({required this.message, required this.level, this.tags});
+  const MessageCapture({
+    required this.message,
+    required this.level,
+    this.tags,
+    this.extra,
+    this.fingerprint,
+  });
 
   final String message;
   final SentryLevel level;
   final Map<String, String>? tags;
+  final Map<String, dynamic>? extra;
+  final List<String>? fingerprint;
 }

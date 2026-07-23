@@ -1654,10 +1654,12 @@ class _AiTabState extends ConsumerState<_AiTab> {
     final picker = ImagePicker();
     XFile? file;
     try {
+      // 1000px keeps enough detail for food recognition while trimming ~30%
+      // off the image's share of model input tokens vs 1200px.
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1200,
+        maxWidth: 1000,
       );
     } catch (_) {
       if (mounted) {

@@ -14,15 +14,16 @@ export const JADE_MODEL: string =
   Deno.env.get('JADE_MODEL') ?? 'anthropic/claude-sonnet-4.6';
 
 /**
- * Per-modality overrides for the meal-analysis experiment. They intentionally
- * fall back to JADE_MODEL so existing deployments keep their current quality
- * until a cheaper model has passed an accuracy evaluation.
+ * Per-modality models for meal analysis. Both are structured-extraction tasks
+ * (generateObject against MealAnalysisSchema), which Haiku handles at ~1/3 the
+ * cost of Sonnet. Raise back to JADE_MODEL via the env override if extraction
+ * quality regresses.
  */
 export const DESCRIBE_MEAL_MODEL: string =
-  Deno.env.get('DESCRIBE_MEAL_MODEL') ?? JADE_MODEL;
+  Deno.env.get('DESCRIBE_MEAL_MODEL') ?? 'anthropic/claude-haiku-4.5';
 
 export const ANALYZE_MEAL_PHOTO_MODEL: string =
-  Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL') ?? JADE_MODEL;
+  Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL') ?? 'anthropic/claude-haiku-4.5';
 
 /**
  * Model for short, latency-sensitive, low-stakes copy — currently the Formula

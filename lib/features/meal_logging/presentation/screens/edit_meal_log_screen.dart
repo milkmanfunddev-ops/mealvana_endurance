@@ -170,8 +170,8 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   }
 
   /// Re-capture the meal photo and replace the current items with a fresh Jade
-  /// AI analysis. Mirrors the capture flow in [PhotoCaptureScreen] but updates
-  /// this log in place instead of creating a new one. The replacement only
+  /// AI analysis. Mirrors the photo capture flow in the Log a Meal screen but
+  /// updates this log in place instead of creating a new one. The replacement only
   /// happens after the user confirms, and the edit is held in memory until
   /// "Save changes" — so the unsaved-changes guard still protects it.
   Future<void> _rescanPhoto() async {
@@ -184,10 +184,12 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     final picker = ImagePicker();
     XFile? file;
     try {
+      // 1000px keeps enough detail for food recognition while trimming ~30%
+      // off the image's share of model input tokens vs 1200px.
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1200,
+        maxWidth: 1000,
       );
     } catch (_) {
       if (mounted) {

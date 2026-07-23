@@ -191,7 +191,7 @@ class NutritionPlanService {
   /// Pre-workout phase uses Algorithm C selections from macro generation.
   /// During phase uses the template solver with rule/LP fallback in the Edge
   /// Function. After phase uses the LP solver.
-  Future<NutritionPlan> generatePlanFromMacrosV2({
+  Future<NutritionPlanGenerationResult> generatePlanFromMacrosV2({
     required MacroTargets macroTargets,
     required double hoursBefore,
     required double weightKg,
@@ -459,7 +459,10 @@ class NutritionPlanService {
         );
       }
 
-      return plan;
+      return NutritionPlanGenerationResult(
+        plan: plan,
+        source: NutritionPlanGenerationSource.edge,
+      );
     } catch (e, stackTrace) {
       _logger.error(
         '❌ [V3-FAILED] V3 edge function failed. Error: $e',
@@ -468,13 +471,20 @@ class NutritionPlanService {
         stackTrace: stackTrace,
       );
 
-      return _generateLocalFallbackPlanFromMacros(
+      final fallbackPlan = await _generateLocalFallbackPlanFromMacros(
         macroTargets: macroTargets,
         hoursBefore: hoursBefore,
         activityId: activityId,
         userId: userId,
         durationMinutes: durationMinutes,
         gutTrainingLevel: gutTrainingLevel,
+      );
+      return NutritionPlanGenerationResult(
+        plan: fallbackPlan,
+        source: fallbackPlan.id.startsWith('client-plan-')
+            ? NutritionPlanGenerationSource.clientFallback
+            : NutritionPlanGenerationSource.genericFallback,
+        primaryError: e.toString(),
       );
     }
   }
@@ -807,3 +817,19 @@ class NutritionPlanService {
 final nutritionPlanServiceProvider = Provider<NutritionPlanService>((ref) {
   return NutritionPlanService(ref);
 });
+
+enum NutritionPlanGenerationSource { edge, clientFallback, genericFallback }
+
+class NutritionPlanGenerationResult {
+  const NutritionPlanGenerationResult({
+    required this.plan,
+    required this.source,
+    this.primaryError,
+  });
+
+  final NutritionPlan plan;
+  final NutritionPlanGenerationSource source;
+  final String? primaryError;
+
+  bool get usedFallback => source != NutritionPlanGenerationSource.edge;
+}

@@ -29,6 +29,8 @@ export interface AiUsageRow {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** Actual USD charge reported by the AI Gateway (null when unavailable). */
+  costUsd?: number | null;
 }
 
 /**
@@ -70,6 +72,7 @@ export async function logAiUsage(
       model: row.model,
       input_tokens: row.inputTokens ?? 0,
       output_tokens: row.outputTokens ?? 0,
+      cost_usd: row.costUsd ?? null,
     });
     if (error) {
       console.error(
