@@ -15,7 +15,9 @@ If you read nothing else, read these two:
    "which of their fields fill which of these columns."
 2. The **Capability matrix** below — what each provider can and cannot give us.
 
-Then go to whichever provider you care about.
+Then go to whichever provider you care about. For the non-workout side — athlete name, email,
+height, weight, race calendar — [athlete-profile-fields.md](./athlete-profile-fields.md) is the
+cross-provider routing table.
 
 | Provider | Folder | Model | Docs |
 |---|---|---|---|
