@@ -759,13 +759,14 @@ workflows:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
 
+    # Manual-only trigger. A push to `main` no longer auto-cuts a prod App
+    # Store release (Lee, 2026-07-23) — prod releases come from `release/*`
+    # (see prod-ios). The user-facing changelog on endurance.mealvana.io is
+    # published independently by .github/workflows/changelog-on-main.yml
+    # (a GitHub Action, not Codemagic), which is unaffected. Re-enable by
+    # restoring `events: [push]` + the `main` branch pattern.
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
       - *write_dotenv_files
@@ -876,13 +877,14 @@ workflows:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
 
+    # Manual-only trigger. A push to `main` no longer auto-cuts a prod Play
+    # release (Lee, 2026-07-23) — prod releases come from `release/*` (see
+    # prod-android). The endurance.mealvana.io changelog is published
+    # independently by .github/workflows/changelog-on-main.yml (a GitHub
+    # Action, not Codemagic). Re-enable by restoring `events: [push]` + the
+    # `main` branch pattern.
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
       - *write_dotenv_files
