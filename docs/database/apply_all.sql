@@ -412,8 +412,34 @@ CREATE TABLE IF NOT EXISTS public.ai_usage (
   model          TEXT NOT NULL,   -- provider/model string actually used
   input_tokens   INT NOT NULL DEFAULT 0,
   output_tokens  INT NOT NULL DEFAULT 0,
+  cost_usd       NUMERIC,         -- actual USD charge from the AI Gateway (null if unreported)
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Added 2026-07-23 (applied to DEV + PROD): durable per-request cost, so
+-- accounting no longer depends on Mixpanel cost_usd event props.
+ALTER TABLE public.ai_usage ADD COLUMN IF NOT EXISTS cost_usd NUMERIC;
+
+-- Per-user accounting view (DEV + PROD, applied 2026-07-23). One row per
+-- (user, function, model): calls, tokens, summed USD cost. security_invoker
+-- so the underlying RLS still applies to non-service-role callers; query as
+-- service role (DataGrip) for the full cross-user report.
+CREATE OR REPLACE VIEW public.ai_usage_per_user
+WITH (security_invoker = true) AS
+SELECT
+  u.user_id,
+  au.email,
+  u.function_name,
+  u.model,
+  count(*)                            AS calls,
+  sum(u.input_tokens)                 AS input_tokens,
+  sum(u.output_tokens)                AS output_tokens,
+  round(sum(u.cost_usd)::numeric, 4)  AS cost_usd,
+  min(u.created_at)                   AS first_call,
+  max(u.created_at)                   AS last_call
+FROM public.ai_usage u
+LEFT JOIN auth.users au ON au.id = u.user_id
+GROUP BY u.user_id, au.email, u.function_name, u.model;
 
 CREATE INDEX IF NOT EXISTS ai_usage_user_created
   ON public.ai_usage (user_id, created_at DESC);
