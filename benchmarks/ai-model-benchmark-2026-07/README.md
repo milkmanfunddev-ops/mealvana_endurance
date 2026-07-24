@@ -22,8 +22,8 @@ Consumers under test: `supabase/functions/analyze-meal-photo` (image path) and
   no resize** — the Anthropic vision API rejects HEIC). These are the **source** for both
   image arms; the harness produces the compressed (~1000px) and uncompressed variants from
   them per the benchmark's compression factor.
-- `descriptions/` — **still needed** (see below): the 10 long + 10 short text descriptions
-  for the `describe-meal` path.
+- `descriptions/descriptions.json` — the 10 long + 10 short text descriptions for the
+  `describe-meal` path (draft, ready to edit).
 
 ## Image manifest
 
@@ -51,8 +51,7 @@ Consumers under test: `supabase/functions/analyze-meal-photo` (image path) and
 - The full-res JPEGs (~1.6–2.8 MB) are under the API limit but are **source**, not the final
   arms — the harness owns resizing to compressed (~1000px) vs uncompressed.
 
-## Still needed (to complete the asset set)
+## Status
 
-- **10 long descriptions + 10 short descriptions** → drop into `descriptions/` as
-  `long-01.txt … long-10.txt` and `short-01.txt … short-10.txt` (or a single JSON). These feed
-  the `describe-meal` text path. Not yet supplied.
+Asset set complete: 11 images (`images/` + `originals/`) and 20 text descriptions
+(`descriptions/descriptions.json`). Ready for the harness. Descriptions are a draft — edit before the run.
