@@ -1,7 +1,7 @@
 # App Store submission bundle — Mealvana Endurance
 
-**Status: FINAL — ready to submit** (prepared 2026-07-21; icon added 2026-07-22)
-The full listing bundle for the next submission: the **6-panel screenshot set**, the **metadata copy**
+**Status: FINAL — ready to submit** (prepared 2026-07-21; icon added 2026-07-22; opening panels refreshed 2026-07-25)
+The full listing bundle for the next submission: the **8-panel screenshot set**, the **metadata copy**
 (`LISTING_COPY.md`), and the **refreshed app icon** (`app-icon-1024.png`). Apply all three together.
 
 ## The set (upload in this order)
@@ -9,12 +9,20 @@ The **first 3 show inside search results**, so order matters — lead with the h
 
 | # | File | Headline | Screen |
 |---|------|----------|--------|
-| 1 | `1_your-fueling.png` | "Your training is dialed. Is your fueling?" | brand hook · reads plans from TrainingPeaks / Final Surge / VDOT / Garmin |
-| 2 | `2_know-your-numbers.png` | "Know your numbers" | pre/during/post nutritional targets |
-| 3 | `3_build-your-kit.png` | "Build your kit" | Formula Library (dietitian-curated) |
-| 4 | `4_train-your-gut.png` | "Train your gut" | carbs/hr trend — "In Baseline, highest intake yet" |
-| 5 | `5_log-any-product.png` | "Log any product, fast" | 60k+ searchable/scannable products |
-| 6 | `6_ace-your-race.png` | "Ace your race" | race event · carb-loading · race-day checklist |
+| 1 | `1_training-dialed.png` | "Your training is dialed." | brand hook, panel 1 of 2 — collage, no device |
+| 2 | `2_your-fueling.png` | "Is your fueling?" | brand hook, panel 2 of 2 — collage, no device |
+| 3 | `3_fuel-your-day.png` | — (no caption) | day timeline — intake vs. burned, swim/bike with pre·during·recovery fuel, logged meals |
+| 4 | `4_know-your-numbers.png` | "Know your numbers" | pre/during/post nutritional targets |
+| 5 | `5_build-your-kit.png` | "Build your kit" | Formula Library (dietitian-curated) |
+| 6 | `6_train-your-gut.png` | "Train your gut" | carbs/hr trend — "In Baseline, highest intake yet" |
+| 7 | `7_log-any-product.png` | "Log any product, fast" | 60k+ searchable/scannable products |
+| 8 | `8_ace-your-race.png` | "Ace your race" | race event · carb-loading · race-day checklist |
+
+> ⚠️ **The opening changed — re-check the first-3 rationale before submitting.** Panels 1–2 now split
+> the old single-panel hook across a two-panel spread, so the search-result preview is *hook · hook ·
+> timeline* rather than *hook · numbers · kit*. That spends two of the three visible slots on the
+> headline and pushes "Know your numbers" out of the preview. Deliberate if the spread is the bet;
+> worth a second look if it isn't. Panel 3 carries no caption — it's the only silent panel in the set.
 
 ## App icon (proposed) — `app-icon-1024.png`
 The refreshed icon: a **bolder cream mark on the orange→plum gradient**, replacing the thin line-art
