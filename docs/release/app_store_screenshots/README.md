@@ -32,9 +32,11 @@ that was illegible at search-thumbnail size (a prime suspect in the low search t
 - **Confirm it reads at 60px** before shipping — that small-size legibility is the entire point.
 - Strong first **Product Page Optimization (A/B)** candidate once live: new icon vs. current.
 
-## Specs — ⚠️ verify before upload
-- **Dimensions: 1284 × 2778** (portrait). That's the **6.5"** iPhone size.
-- Apple's current large-iPhone requirement is **6.9"/6.7" = 1290 × 2796** (or 1320 × 2868). **Confirm the required size in App Store Connect** — if it wants 1290 × 2796, these need a trivial resize (they're the same aspect ratio, so it's a clean scale, no re-crop).
+## Specs — ✅ verified against App Store Connect (2026-07)
+- **Dimensions: 1284 × 2778** (portrait) — the **6.5"** iPhone size. **Accepted as-is; no resize needed.**
+- App Store Connect states the accepted sizes are **1242 × 2688, 2688 × 1242, 1284 × 2778, or 2778 × 1284**.
+  This supersedes the earlier note in this file claiming 1290 × 2796 was required — that was wrong for
+  this display class. Nothing in the set needs rescaling.
 - Localization: **en-US**.
 
 ## Notes for submission (Lee)
