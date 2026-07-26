@@ -5,7 +5,8 @@ The full listing bundle for the next submission: the **8-panel screenshot set**,
 (`LISTING_COPY.md`), and the **refreshed app icon** (`app-icon-1024.png`). Apply all three together.
 
 ## The set (upload in this order)
-The **first 3 show inside search results**, so order matters — lead with the hook, the core value, and the differentiator.
+Current set lives in **`2026-07-25_v1.23_8-panel/`** (see *Versioning* below). The **first 3 show
+inside search results**, so order matters — lead with the hook, the core value, and the differentiator.
 
 | # | File | Headline | Screen |
 |---|------|----------|--------|
@@ -41,8 +42,32 @@ that was illegible at search-thumbnail size (a prime suspect in the low search t
 
 ## Notes for submission (Lee)
 - These **replace the older raw screenshots** in `../release_screenshots/` (welcome/macros/carb-loading etc.) — the old set was un-captioned app grabs; do not re-use them.
-- Screenshots are only half the listing update. The matching **metadata** (keywords, subtitle, description, promotional text) is drafted in the ops repo: `ops/data/analytics/aso-ship-list.md`. Pull both for the same submission.
-- Update this folder each time the set is refreshed; keep it as the source of truth (version the folder if you keep old sets).
+- Screenshots are only half the listing update. The matching **metadata** (keywords, subtitle, description, promotional text) is drafted in the analytics repo: `analytics/data/analytics/aso-ship-list.md`. Pull both for the same submission.
+- Refresh by copying the newest dated folder to a new one and editing the copy — see **Versioning & measurement traceability** below.
+
+## Versioning & measurement traceability
+Screenshots are an ASO **intervention we measure** (did a set move tap-through / page conversion?),
+so every set that was live for any period stays recoverable *and* browsable. Sets are archived by
+**date + version**; the newest folder is the working set:
+
+- `2026-07-25_v1.23_8-panel/` — current (staged in v1.23.0)
+- `2026-07-21_v1.23-draft_6-panel/` — the superseded 6-panel draft
+
+**Rules**
+- **Never overwrite or delete an archived set** — each dated folder is immutable. To refresh, copy the
+  newest folder to a new `YYYY-MM-DD_v<version>_<label>/` and edit the copy.
+- **Tag on ship**: `aso-screenshots-v<appversion>` (e.g. `aso-screenshots-v1.23.0`) — the permanent ref
+  the analytics changelog points at.
+- **Descriptive, stable filenames on upload** (`1_training-dialed.png`, never
+  `simulator_screenshot_<uuid>.png`): App Store Connect stores the name you upload, and it flows into the
+  analytics listing snapshot, making that JSON self-documenting.
+
+**How it's measured** (analytics repo, resolved via `$ANALYTICS_ROOT` in `workspace.env`):
+- `analytics/data/analytics/aso-changelog.csv` — the screenshot change is one row; its `asset_location`
+  points back here by tag.
+- `analytics/data/appstore/listing/listing-<date>.json` — records each live screenshot's `fileName` +
+  Apple `checksum`, so a snapshot diff detects and timestamps a swap without storing the image.
+- Method + full workflow: `analytics/data/analytics/CHANGE-MEASUREMENT.md`.
 
 ## Provenance
-Designed in Claude Design from real-device app captures, as the deliverable of the ASO / top-of-funnel effort. Tracked in Notion: **Marketing & Growth → 🍎 App Store Listing Lab**. Caption story and rationale live there and in `ops/data/analytics/aso-audit-2026-07-16.md`.
+Designed in Claude Design from real-device app captures, as the deliverable of the ASO / top-of-funnel effort. Tracked in Notion: **Marketing & Growth → 🍎 App Store Listing Lab**. Caption story and rationale live there and in `analytics/data/analytics/aso-audit-2026-07-16.md`.
