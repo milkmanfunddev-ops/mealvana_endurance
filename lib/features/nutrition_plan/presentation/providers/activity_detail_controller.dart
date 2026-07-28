@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
 import '../../../activities/application/activities_service.dart';
+import '../../domain/macro_shortfall.dart';
 import '../../domain/macro_targets.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
@@ -1412,6 +1414,60 @@ class ActivityDetailController extends _$ActivityDetailController {
     return _foodOpsService.createFoodItemData(food, customAmount: customAmount);
   }
 
+  @visibleForTesting
+  static List<MacroShortfall> recomputeShortfalls(
+    List<FoodItemData> updatedItems,
+    PlanSection section,
+  ) {
+    int totalCarbs = 0;
+    int totalSodium = 0;
+    double totalFluids = 0;
+
+    for (final food in updatedItems) {
+      if (food.nutritionalInfo != null) {
+        totalCarbs += food.nutritionalInfo!.carbs ?? 0;
+        totalSodium += food.nutritionalInfo!.sodium ?? 0;
+        totalFluids += food.nutritionalInfo!.fluids ?? 0;
+      }
+    }
+
+    final result = <MacroShortfall>[];
+    for (final shortfall in section.shortfalls) {
+      final double floor;
+      final num delivered;
+
+      switch (shortfall.macro) {
+        case ShortfallMacro.sodium:
+          floor = section.sodiumLowTarget ??
+              (section.sodiumTarget ?? 0) * 0.9;
+          delivered = totalSodium;
+        case ShortfallMacro.carbs:
+          floor = section.carbsLowTarget ??
+              (section.carbsTarget ?? 0) * 0.9;
+          delivered = totalCarbs;
+        case ShortfallMacro.fluid:
+          floor = section.fluidsLowTarget ??
+              (section.fluidsTarget ?? 0) * 0.9;
+          delivered = totalFluids;
+        default:
+          result.add(shortfall);
+          continue;
+      }
+
+      if (delivered < floor) {
+        result.add(MacroShortfall(
+          macro: shortfall.macro,
+          delivered: delivered,
+          target: shortfall.target,
+          unit: shortfall.unit,
+          reason: shortfall.reason,
+        ));
+      }
+    }
+
+    return result;
+  }
+
   /// Unified method to modify food items in a nutrition plan section.
   ///
   /// This consolidates add, swap, and delete operations to ensure consistent
@@ -1498,6 +1554,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           return section.copyWith(
             foodItems: updatedItems,
             byHourData: updatedByHour,
+            shortfalls: recomputeShortfalls(updatedItems, section),
           );
         }
         return section;
