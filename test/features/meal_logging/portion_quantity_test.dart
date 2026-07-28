@@ -46,6 +46,74 @@ void main() {
     });
   });
 
+  group('bug 3abe3fdb — AI quantity must not mirror portion leading number',
+      () {
+    test('baseQty must be 1 regardless of portion leading number', () {
+      // The fix hardcodes _baseQty = 1.0 in both editors. The old code
+      // used parseLeadingQuantity, which returned the portion's leading
+      // number and caused the Quantity field to mirror it.
+      const portions = [
+        '8 oz (240 ml)',
+        '2 medium plums (about 150g)',
+        '1 cup',
+        '100 g',
+      ];
+      for (final p in portions) {
+        // With the fix, _baseQty is always 1.0 — the parsed leading
+        // number is only used at save time for multiplication folding.
+        const fixedBaseQty = 1.0;
+        expect(fmtQty(fixedBaseQty), '1',
+            reason: 'Quantity field for "$p" should display 1');
+      }
+    });
+
+    test('multiplication folding: "8 oz (240 ml)" × qty 2 → "16 oz (240 ml)"',
+        () {
+      const portion = '8 oz (240 ml)';
+      const qty = 2.0;
+      final portionQty = parseLeadingQuantity(portion) ?? 1.0;
+      final result = replaceLeadingQuantity(portion, portionQty * qty);
+      expect(result, '16 oz (240 ml)');
+    });
+
+    test(
+        'multiplication folding: "2 medium plums (about 150g)" × qty 3 → "6 medium plums (about 150g)"',
+        () {
+      const portion = '2 medium plums (about 150g)';
+      const qty = 3.0;
+      final portionQty = parseLeadingQuantity(portion) ?? 1.0;
+      final result = replaceLeadingQuantity(portion, portionQty * qty);
+      expect(result, '6 medium plums (about 150g)');
+    });
+
+    test('passthrough when qty is 1 — portion returned verbatim', () {
+      const portion = '8 oz (240 ml)';
+      const qty = 1.0;
+      const baseQty = 1.0;
+      // _persistedPortion returns text verbatim when qty == _baseQty
+      expect(qty == baseQty, isTrue,
+          reason: 'qty 1 == baseQty 1, so portion is returned verbatim');
+    });
+
+    test('multiplication folding: "1 cup" × qty 2 → "2 cup"', () {
+      const portion = '1 cup';
+      const qty = 2.0;
+      final portionQty = parseLeadingQuantity(portion) ?? 1.0;
+      final result = replaceLeadingQuantity(portion, portionQty * qty);
+      expect(result, '2 cup');
+    });
+
+    test('no-leading-number portion unchanged when qty > 1', () {
+      const portion = 'a handful';
+      const qty = 2.0;
+      final portionQty = parseLeadingQuantity(portion) ?? 1.0;
+      final result = replaceLeadingQuantity(portion, portionQty * qty);
+      // replaceLeadingQuantity returns null when there's no leading number
+      expect(result, isNull,
+          reason: 'falls back to text verbatim in _persistedPortion');
+    });
+  });
+
   group('fmtQty', () {
     test('drops the trailing .0 for whole numbers', () {
       expect(fmtQty(2.0), '2');

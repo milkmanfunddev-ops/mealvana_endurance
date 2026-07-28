@@ -172,7 +172,7 @@ class _EditItemDialogState extends State<_EditItemDialog> {
     _fatCtrl = TextEditingController(text: item.fatG.toStringAsFixed(1));
     _sodiumCtrl = TextEditingController(text: item.sodiumMg.toStringAsFixed(0));
 
-    _baseQty = parseLeadingQuantity(item.portion) ?? 1.0;
+    _baseQty = 1.0;
     _baseCal = item.calories.toDouble();
     _baseCarb = item.carbG;
     _baseProt = item.proteinG;
@@ -217,7 +217,8 @@ class _EditItemDialogState extends State<_EditItemDialog> {
     final text = _portionCtrl.text.trim();
     final qty = double.tryParse(_qtyCtrl.text.trim());
     if (qty == null || qty <= 0 || qty == _baseQty) return text;
-    return replaceLeadingQuantity(text, qty) ?? text;
+    final portionQty = parseLeadingQuantity(text) ?? 1.0;
+    return replaceLeadingQuantity(text, portionQty * qty) ?? text;
   }
 
   void _save() {
