@@ -270,7 +270,7 @@ _ElecPick? _pickBestElectrolyte(
   const maxSupplementServings = 4.0;
 
   final baselineSodiumScore = sodiumTarget > 0
-      ? (max(0.0, sodiumLower - currentSodium) +
+      ? (max(0.0, sodiumTarget - currentSodium) +
                 max(0.0, currentSodium - sodiumUpper)) /
             sodiumTarget
       : 0.0;
@@ -310,7 +310,7 @@ _ElecPick? _pickBestElectrolyte(
       if (carbs > carbUpper + 1e-9) continue;
 
       final sodiumPenalty = sodiumTarget > 0
-          ? (max(0.0, sodiumLower - sodium) +
+          ? (max(0.0, sodiumTarget - sodium) +
                     max(0.0, sodium - sodiumUpper) * 2) /
                 sodiumTarget
           : 0.0;
@@ -342,7 +342,7 @@ _ElecPick? _pickBestElectrolyte(
 
       if (best == null ||
           score < best.score - 1e-9 ||
-          (score.abs() < best.score.abs() + 1e-9 &&
+          ((score - best.score).abs() < 1e-9 &&
               (sodiumTarget - sodium).abs() <
                   (sodiumTarget - best.sodiumAfter).abs())) {
         best = candidate;
@@ -412,7 +412,9 @@ class ClientDuringPhaseSolver {
     final carbUpper = carbTarget > 0 ? carbTarget * 1.1 : double.infinity;
     final sodiumUpper = sodiumTarget > 0 ? sodiumTarget * 1.1 : double.infinity;
     final fluidUpper = fluidTarget > 0 ? fluidTarget * 1.1 : double.infinity;
-    final sodiumLower = sodiumTarget > 0 ? sodiumTarget * 0.9 : 0.0;
+    final sodiumLower = sodiumTarget > 0
+        ? (targets.sodiumLowMg ?? sodiumTarget * 0.8)
+        : 0.0;
 
     final isRunning = activityType == ActivityType.running;
     final isCycling = activityType == ActivityType.cycling;
@@ -715,8 +717,8 @@ class ClientDuringPhaseSolver {
           fluidAssigned = firstPick.fluidAfter;
           carbsAssigned = firstPick.carbsAfter;
 
-          // Second pass: if sodium is still below lower bound
-          if (sodiumAssigned < sodiumLower) {
+          // Second pass: if sodium is still below target
+          if (sodiumAssigned < sodiumTarget) {
             final secondPool = cat.electrolyte
                 .where((e) => e.id != firstPick.food.id)
                 .toList();
