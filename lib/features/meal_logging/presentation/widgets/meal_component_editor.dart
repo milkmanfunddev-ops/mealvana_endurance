@@ -274,7 +274,7 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
       text: item.sodiumMg?.toStringAsFixed(0) ?? '',
     );
 
-    _baseQty = parseLeadingQuantity(item.portion) ?? 1.0;
+    _baseQty = 1.0;
     _baseCal = item.calories;
     _baseCarb = item.carbG;
     _baseProt = item.proteinG;
@@ -330,7 +330,8 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     final text = _portionCtrl.text.trim();
     final qty = double.tryParse(_qtyCtrl.text.trim());
     if (qty == null || qty <= 0 || qty == _baseQty) return text;
-    return replaceLeadingQuantity(text, qty) ?? text;
+    final portionQty = parseLeadingQuantity(text) ?? 1.0;
+    return replaceLeadingQuantity(text, portionQty * qty) ?? text;
   }
 
   void _save() {
