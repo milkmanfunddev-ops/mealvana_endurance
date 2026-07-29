@@ -741,13 +741,6 @@ void main() {
                   'Before carbs',
                 );
                 assertMacroInRange(
-                  beforeSums['protein']!,
-                  (preTargets['protein_g'] as num).toDouble(),
-                  0.9,
-                  1.1,
-                  'Before protein',
-                );
-                assertMacroInRange(
                   beforeSums['sodium']!,
                   (preTargets['sodium_mg'] as num).toDouble(),
                   0.85,
@@ -820,13 +813,6 @@ void main() {
                   0.9,
                   1.1,
                   'After carbs',
-                );
-                assertMacroInRange(
-                  afterSums['protein']!,
-                  (postTargets['protein_g'] as num).toDouble(),
-                  0.9,
-                  1.1,
-                  'After protein',
                 );
                 assertMacroInRange(
                   afterSums['sodium']!,
@@ -950,13 +936,6 @@ void main() {
               'Before carbs',
             );
             assertMacroInRange(
-              sums['protein']!,
-              (v4Macros['pre_run_protein_g'] as num).toDouble(),
-              0.9,
-              1.1,
-              'Before protein',
-            );
-            assertMacroInRange(
               sums['sodium']!,
               (v4Macros['pre_run_sodium_mg'] as num).toDouble(),
               0.85,
@@ -1016,13 +995,6 @@ void main() {
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
             getAfterShortfalls(plan),
             'After carbs',
-          );
-          assertMacroInRange(
-            sums['protein']!,
-            (v4Macros['post_run_protein_g'] as num).toDouble(),
-            0.9,
-            1.1,
-            'After protein',
           );
           assertMacroInRange(
             sums['sodium']!,
@@ -1111,13 +1083,6 @@ void main() {
             1.1,
             'Before carbs',
           );
-          assertMacroInRange(
-            sums['protein']!,
-            (v4Macros['pre_run_protein_g'] as num).toDouble(),
-            0.9,
-            1.1,
-            'Before protein',
-          );
         }
 
         final duringFoods = getDuringFoods(plan);
@@ -1146,13 +1111,6 @@ void main() {
             (v4Macros['post_run_carbs_g'] as num).toDouble(),
             getAfterShortfalls(plan),
             'After carbs',
-          );
-          assertMacroInRange(
-            sums['protein']!,
-            (v4Macros['post_run_protein_g'] as num).toDouble(),
-            0.9,
-            1.1,
-            'After protein',
           );
         }
 

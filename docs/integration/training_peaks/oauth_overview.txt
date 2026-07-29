@@ -1,0 +1,111 @@
+OAuth
+Micah Condon edited this page on Aug 18 · 22 revisions
+API Authentication & Authorization
+TrainingPeaks API uses the OAuth 2.0 protocol for authentication and authorization. Each application is assigned a client_id and client_secret and scopes that are authorized on the platform. Your application can then request authorization for a user. Once the user has granted authorization, the system will issue short lived per user access and refresh tokens. The access token is used by your application to make requests until it expires and the refresh token is used to get an un updated access token.
+
+There are many OAuth2 client libraries available for you to use in your application.
+
+IMPORTANT: The TrainingPeaks platform calls (OAuth and API) are resricted to HTTPS requiring all all communication must be done over a secure SSL channel. HTTP requests made over a non-secure will return a HTTP 302 redirect to HTTPS.
+
+OAuth URLs
+System	Type	URL	Purpose
+Sandbox	Authorize	https://oauth.sandbox.trainingpeaks.com/OAuth/Authorize	Being the authorize flow
+Token Exchange	https://oauth.sandbox.trainingpeaks.com/oauth/token	Exchange a code for a token
+Deauthorize	https://oauth.sandbox.trainingpeaks.com/oauth/deauthorize	Remove user authorizations
+Production	Authorize	https://oauth.trainingpeaks.com/OAuth/Authorize	Being the authorize flow
+Token Exchange	https://oauth.trainingpeaks.com/oauth/token	Exchange a code for a token
+Deauthorize	https://oauth.trainingpeaks.com/oauth/deauthorize	Remove user authorizations
+Authenticating Your Application on Behalf of a User
+To access resources on behalf of a user, your application needs to get explicit permission from the user via a 3-legged authentication flow:
+
+Redirect the user via GET request to the TrainingPeaks authorize endpoint with following parameters. Each of the parameter values should be urlencoded.
+
+Parameter	Value
+response_type	Must have the value code to obtain the authorization code
+client_id	Unique application identifier obtained from TrainingPeaks
+scope	Space delimited list of permissions requested (see API documentation required scopes for method calls). You cannot request more scopes than your client has been allowed. If you do the authorize request will succeed, but the token request will fail with invalid_grant.
+redirect_uri	URI where to redirect the user after permission is granted.
+For example, if your oauth information is below:  
+client_id: my_client_identifier    
+scopes: workouts:read athlete:profile  
+redirect_uri: https://test_url.com/callback  
+
+GET request to the authorize endpoint should look like:  
+
+GET https://oauth.sandbox.trainingpeaks.com/OAuth/Authorize?response_type=code&client_id=my_client_identifier&scope=workouts%3Aread%20athlete%3Aprofile&redirect_uri=https%3A%2F%2Ftest_url.com%2Fcallback 
+If the user is not logged in, they will be asked to enter their username and password, and upon successful login the workflow will continue.
+
+The user will be prompted with a screen to approve the scopes you application is requesting.
+
+Once the user has approved the requested scopes, the request will be redirected back to the redirect_uri passed with the authorization code as a URL query parameter.
+
+Example: http://example_site.com/access?code=ABC123.
+The authorization code returned expires in 60 minutes or the next step will fail.
+Important: the code passed to your application will be url encoded and typically must be url decoded before being passed in the next step.
+The last step is for your application to exchange the authorization code for access and refresh tokens. The application must make an HTTPS POST request to the token URL passing the following parameters in the body. The content-type needs to be application/x-www-form-urlencoded:
+
+Parameter	Value
+client_id	Unique application identifier obtained from TrainingPeaks
+grant_type	must have the value authorization_code to exchange the token
+code	The authorization code previously returned
+redirect_uri	URI must match the redirect_uri used in the initial step
+client_secret	Unique client secret obtained from TrainingPeaks
+invalid_request errors
+- If you receive an invalid_request error message during this step, then the most likely causes are:
+- incorrect content-type encoding
+- missing or incorrect parameters
+- incorrect grant_type
+- redirect_uri does not exactly match the redirect_uri that was used in step 1
+- incorrect client_secret
+- expired code (if you are making the token request some time after receiving the initial code)
+The TrainingPeaks OAuth server will return a JSON object with the access token, refresh token, access token expiration in seconds, and the granted scopes. The response will looks similar to the following:
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+{
+    "access_token" : "gAAAAMYien...",
+    "token_type" : "bearer",
+    "expires_in" : 600,
+    "refresh_token" : "i7ne!IAAA...",
+    "scope": "scopes granted"
+}
+The access token should be used in Authorization header to access the Partners API endpoints.
+Authorization: bearer {access_token_here}
+
+Refreshing an Access Token
+Access tokens are short lived and will expire after a brief period. When the token is granted the expires_in value contains the number of seconds the token is valid from issue. Using an expired access token will result in the API call returning an HTTP 401 Unauthorized response. Once expired your application will need to make a request using the access token and refresh token to get a new valid token.
+
+To refresh an access token make an HTTP POST call to the token endpoint passing the following application/x-www-form-urlencoded parameters:
+
+Parameter	Value
+client_id	Unique application identifier obtained from TrainingPeaks
+client_secret	Unique client secret obtained from TrainingPeaks
+grant_type	Grant type must have the value refresh_token. i.e grant_type=refresh_token
+refresh_token	The refresh token received when the token was issued
+Successful execution of this call is a HTTP 200 response containing the new access token in the same format as the previous token. A HTTP 400 response may be returned if the user revokes authorization for your application, which will require re-authentication of your application for the user using the previously described flow.
+
+Integration Tips
+Token Scopes
+Scopes that may be requested when obtaining an access token will be limited based on your application configuration assigned to you by TrainingPeaks. Attempting to request more scopes than allowed will result an HTTP 400 response and no token being issued.
+
+Scopes are not inclusive. For example workouts:details does not imply or include workouts:read.
+
+Tools
+If you are using curl to test Oauth flow, please use -d option for POST instead of --data-urlencode, and pass pre-urlencoded value to code and redirect_uri
+Here's a curl example:
+
+curl \
+    -k \
+    -d "client_id=${client_id}" \
+    -d "client_secret=${client_secret}" \
+    -d "code=${url_encoded_code}" \
+    -d "redirect_uri=${url_encoded_redirect_uri}" \
+    -d "grant_type=authorization_code" \
+    https://oauth.sandbox.trainingpeaks.com/oauth/token
+Creating test users in sandbox
+Our sandbox environment will be refreshed over the weekend, so please be aware that the accounts created in sandbox will be removed at the same time.
+
+To create a new athlete, please go to https://home.sandbox.trainingpeaks.com/signup?partner={clientIdentifier}
+To create a new coach, please go to https://home.sandbox.trainingpeaks.com/coach/signup?partner={clientIdentifier}
+Deauthorization
+If you need to deauthorize a user you can POST a request to the deauthorize endpoint. Include the authorization header with the bearer token as you would with any other authenticated api request.

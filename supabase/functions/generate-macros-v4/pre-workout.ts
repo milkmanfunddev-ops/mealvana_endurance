@@ -83,9 +83,12 @@ function wouldExceedHighs(
   addSodium: number,
   addFluid: number,
 ): boolean {
+  // Protein is intentionally NOT considered (decided 2026-07-29: protein is
+  // not a solver constraint anywhere; the addProtein param is kept so call
+  // sites stay unchanged).
+  void addProtein;
   return (
     (state.carbs_delivered + addCarbs) > (state.carbs_high + 1e-6) ||
-    (state.protein_delivered + addProtein) > (state.protein_high + 1e-6) ||
     (state.sodium_delivered + addSodium) > (state.sodium_high + 1e-6) ||
     (state.fluid_delivered + addFluid) > (state.fluid_high + 1e-6)
   );

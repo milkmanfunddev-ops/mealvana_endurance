@@ -80,20 +80,8 @@ export function buildLPModel(
     }
   }
 
-  // Protein constraints — use V4-provided ranges when available
-  if ((phase === 'before' || phase === 'after') && targets.protein_g) {
-    if (targets.protein_low_g != null && targets.protein_high_g != null) {
-      model.constraints.protein = { min: targets.protein_low_g, max: targets.protein_high_g };
-    } else {
-      const proteinBounds = MACRO_CONSTRAINT_RANGES.protein[phase];
-      if (proteinBounds) {
-        model.constraints.protein = {
-          min: targets.protein_g * proteinBounds.min,
-          max: targets.protein_g * proteinBounds.max,
-        };
-      }
-    }
-  }
+  // Protein is intentionally NOT constrained (decided 2026-07-29: protein is
+  // not a solver consideration in any phase).
 
   // Sodium constraints — use V4-provided ranges when available
   if (targets.sodium_mg > 0) {
@@ -170,10 +158,8 @@ export function buildLPModel(
     // Add weighted macro contributions
     score += weights.carbs * food.per_serving.carbs_g;
 
-    // Add protein scoring for before and after phases
-    if ((phase === 'before' || phase === 'after') && weights.protein) {
-      score += weights.protein * food.per_serving.protein_g;
-    }
+    // Protein is intentionally NOT scored (decided 2026-07-29: protein is
+    // not a solver consideration in any phase).
 
     // Add sodium consideration (uses effectiveWeights to allow per-phase overrides)
     if (effectiveWeights.sodium) {
@@ -330,6 +316,36 @@ export function solveLPModel(
       model,
       totals
     );
+
+    // Final gate: serving rounding (indivisible items are forced up to a whole
+    // serving) can push totals past the model's own constraint band even after
+    // drift correction. A solution that still violates its constraints beyond
+    // a 5% rounding tolerance is not a solution — reject it so the caller
+    // falls back to the greedy solver (range standard, 2026-07-29).
+    const ROUNDING_TOL = 0.05;
+    const violations: string[] = [];
+    const checkBand = (
+      name: string,
+      value: number,
+      band?: { min?: number; max?: number },
+    ) => {
+      if (!band) return;
+      if (band.max != null && value > band.max * (1 + ROUNDING_TOL)) {
+        violations.push(`${name}=${value.toFixed(1)} > max ${band.max}`);
+      }
+      if (band.min != null && band.min > 0 && value < band.min * (1 - ROUNDING_TOL)) {
+        violations.push(`${name}=${value.toFixed(1)} < min ${band.min}`);
+      }
+    };
+    checkBand('carbs', correctedTotals.carbs_g, model.constraints.carbs);
+    checkBand('sodium', correctedTotals.sodium_mg, model.constraints.sodium);
+    checkBand('water', correctedTotals.water_ml, model.constraints.water);
+    if (violations.length > 0) {
+      console.log(
+        `[LP-SOLVER] Rejecting rounded solution — violates constraints: ${violations.join('; ')}`,
+      );
+      return null;
+    }
 
     return {
       foods: finalFoods,

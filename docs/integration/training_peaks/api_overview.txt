@@ -1,0 +1,34 @@
+TrainingPeaks Public API
+Upcoming API Changes and Maintenance
+See the Maintenance and Outages page for planned maintenance.
+
+API Overview
+The TrainingPeaks public API was designed to allow authenticated external third parties access to data in TrainingPeaks. To use the API you will need the application credentials given to you by TrainingPeaks. All requests to the API require a valid OAuth token, which identifies the application and the user account that the application is accessing data on behalf of.
+
+OAuth Documentation
+API Documentation
+TrainingPeaks Media Kit
+API Requests
+A valid access token is requires for every API request. Requests must be made over an HTTPS connection and include an Authorization header of type Bearer with your access token value.
+
+POST /v3/file HTTP/1.1
+Host: api.sandbox.trainingpeaks.com
+Content-Type: application/json
+Authorization: Bearer gAAAAMYien...
+Accept: application/json
+User-Agent: [Name of your application or client_identifier]/[version number]
+Note the space between Bearer and the token.
+
+API requests are made using JSON data passing a Content-Type of application/json and Accept header of application/json. By default all API requests will return JSON data.
+
+Test and Production Systems
+TrainingPeaks provides a test system, called sandbox, for testing before going to production. The sandbox system is a stable environment that differs from the production system in very minor ways, mostly hardware resources. The sandbox system database is refreshed from production each weekend and code is updated continuously being released to production.
+
+To access either the test or production systems, you will need a valid TrainingPeaks account. The API can be found at the following URLs: System URL
+
+Sandbox
+https://api.sandbox.trainingpeaks.com
+Production
+https://api.trainingpeaks.com
+API Responses
+The API will respond to requests using HTTP status codes. Please refer to API Response Codes

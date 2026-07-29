@@ -867,15 +867,6 @@ describe("Strict E2E — Running Before Phase", () => {
         0.20,
       );
       strictAssertAbsolute(
-        sums.protein,
-        macroTargets.pre_run.protein_low_g,
-        macroTargets.pre_run.protein_high_g,
-        macroTargets.pre_run.protein_g,
-        ranges.protein,
-        `${athlete.name} - Before Protein`,
-        0.35,
-      );
-      strictAssertAbsolute(
         sums.sodium,
         macroTargets.pre_run.sodium_low_mg,
         macroTargets.pre_run.sodium_high_mg,
@@ -1041,15 +1032,6 @@ describe("Strict E2E — Running After Phase", () => {
         AFTER_TOL,
       );
       afterTriggerDesignCheck(
-        sums.protein,
-        macroTargets.post_run.protein_low_g,
-        macroTargets.post_run.protein_high_g,
-        macroTargets.post_run.protein_g,
-        ranges.protein,
-        `${athlete.name} - After Protein`,
-        AFTER_TOL,
-      );
-      afterTriggerDesignCheck(
         sums.sodium,
         macroTargets.post_run.sodium_low_mg,
         macroTargets.post_run.sodium_high_mg,
@@ -1106,15 +1088,6 @@ describe("Strict E2E — Brick Workouts", () => {
         macroTargets.pre_run.carbs_g,
         beforeRanges.carbs,
         `${athlete.name} - Before Carbs`,
-        BRICK_BEFORE_TOL,
-      );
-      strictAssertAbsolute(
-        beforeSums.protein,
-        macroTargets.pre_run.protein_low_g,
-        macroTargets.pre_run.protein_high_g,
-        macroTargets.pre_run.protein_g,
-        beforeRanges.protein,
-        `${athlete.name} - Before Protein`,
         BRICK_BEFORE_TOL,
       );
       strictAssertAbsolute(
@@ -1215,15 +1188,6 @@ describe("Strict E2E — Brick Workouts", () => {
         BRICK_AFTER_TOL,
       );
       strictAssertAbsolute(
-        afterSums.protein,
-        macroTargets.post_run.protein_low_g,
-        macroTargets.post_run.protein_high_g,
-        macroTargets.post_run.protein_g,
-        afterRanges.protein,
-        `${athlete.name} - After Protein`,
-        BRICK_AFTER_TOL,
-      );
-      strictAssertAbsolute(
         afterSums.sodium,
         macroTargets.post_run.sodium_low_mg,
         macroTargets.post_run.sodium_high_mg,
@@ -1274,14 +1238,6 @@ describe("Strict E2E — Screenshot Regressions", () => {
       macroTargets.pre_run.carbs_g,
       RANGES.before.carbs,
       "run_7.4_57_7_45 before carbs",
-    );
-    strictAssertAbsolute(
-      before.protein,
-      macroTargets.pre_run.protein_low_g,
-      macroTargets.pre_run.protein_high_g,
-      macroTargets.pre_run.protein_g,
-      RANGES.before.protein,
-      "run_7.4_57_7_45 before protein",
     );
     strictAssertAbsolute(
       before.sodium,
@@ -1341,14 +1297,6 @@ describe("Strict E2E — Screenshot Regressions", () => {
       macroTargets.post_run.carbs_g,
       RANGES.after.carbs,
       "run_7.4_57_7_45 after carbs",
-    );
-    afterTriggerDesignCheck(
-      after.protein,
-      macroTargets.post_run.protein_low_g,
-      macroTargets.post_run.protein_high_g,
-      macroTargets.post_run.protein_g,
-      RANGES.after.protein,
-      "run_7.4_57_7_45 after protein",
     );
     afterTriggerDesignCheck(
       after.sodium,

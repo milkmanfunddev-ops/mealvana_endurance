@@ -1,0 +1,62 @@
+create table public.pre_workout_formulas
+(
+    id                  uuid                     default gen_random_uuid() not null
+        primary key,
+    name                text                                               not null,
+    base_category       text                                               not null,
+    time_window         text                                               not null
+        constraint pre_workout_formulas_time_window_check
+            check (time_window = ANY (ARRAY ['< 30 min'::text, '30-90 min'::text, '1.5-3 hours'::text])),
+    digestion_speed     text                                               not null
+        constraint pre_workout_formulas_digestion_speed_check
+            check (digestion_speed = ANY (ARRAY ['Fast'::text, 'Medium'::text])),
+    allergens           text[]                   default '{}'::text[],
+    serving_unit        text                                               not null,
+    min_servings        numeric                  default 1                 not null
+        constraint pre_workout_formulas_min_servings_check
+            check (min_servings >= (1)::numeric),
+    max_servings        numeric                                            not null,
+    plus_banana         boolean                  default false             not null,
+    plus_sports_drink   boolean                  default false             not null,
+    notes               text,
+    is_active           boolean                  default true              not null,
+    created_at          timestamp with time zone default now()             not null,
+    updated_at          timestamp with time zone default now()             not null,
+    carbs_per_serving   numeric                  default 25                not null,
+    protein_per_serving numeric                  default 0                 not null,
+    fat_per_serving     numeric                  default 0                 not null,
+    sodium_mg           numeric                  default 0                 not null,
+    constraint pre_workout_formulas_check
+        check (max_servings >= min_servings)
+);
+
+comment on table public.pre_workout_formulas is 'Pre-workout nutrition formulas for personalized fueling recommendations based on timing, athlete weight, and preferences';
+
+comment on column public.pre_workout_formulas.carbs_per_serving is 'Carbohydrates in grams per 1x serving';
+
+comment on column public.pre_workout_formulas.protein_per_serving is 'Protein in grams per 1x serving';
+
+comment on column public.pre_workout_formulas.fat_per_serving is 'Fat in grams per 1x serving';
+
+comment on column public.pre_workout_formulas.sodium_mg is 'Sodium in milligrams per 1x serving';
+
+alter table public.pre_workout_formulas
+    owner to postgres;
+
+create index idx_pre_workout_formulas_time_window
+    on public.pre_workout_formulas (time_window)
+    where (is_active = true);
+
+create index idx_pre_workout_formulas_base_category
+    on public.pre_workout_formulas (base_category)
+    where (is_active = true);
+
+create index idx_pre_workout_formulas_allergens
+    on public.pre_workout_formulas using gin (allergens);
+
+grant delete, insert, references, select, trigger, truncate, update on public.pre_workout_formulas to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on public.pre_workout_formulas to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on public.pre_workout_formulas to service_role;
+

@@ -541,9 +541,8 @@ export function strictAssertMacrosInRange(
   };
 
   check('carbs', totals.carbs_g, targets.carbs_g, ranges.carbs ?? defaultRange);
-  if (targets.protein_g && targets.protein_g > 0) {
-    check('protein', totals.protein_g, targets.protein_g, ranges.protein ?? defaultRange);
-  }
+  // Protein is intentionally not checked — it is not a solver consideration
+  // in any phase (decided 2026-07-29).
   check('sodium', totals.sodium_mg, targets.sodium_mg, ranges.sodium ?? defaultRange);
   check('water', totals.water_ml, targets.water_ml, ranges.water ?? defaultRange);
 

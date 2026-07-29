@@ -237,7 +237,7 @@ describe('LP Solver — After Phase Infeasibility', () => {
     // Analyze the model constraints
     const constraints = model.constraints;
     assertExists(constraints.carbs, 'Should have carb constraints');
-    assertExists(constraints.protein, 'Should have protein constraints');
+    assertEquals(constraints.protein, undefined, 'Protein must NOT be constrained (2026-07-29)');
     assertExists(constraints.sodium, 'Should have sodium constraints');
     assertExists(constraints.water, 'Should have water constraints');
 
@@ -345,7 +345,7 @@ describe('LP Solver — Constraint Sensitivity', () => {
     assertEquals(model.constraints.water!.min, targets.water_ml * 0.7, 'Water min should be 70% of target');
   });
 
-  it('should add protein constraints for before and after phases only', async () => {
+  it('should never add protein constraints (protein is not a solver consideration)', async () => {
     const foods = makeAfterFoods();
     const targets = makeTargets({ carbs_g: 50, protein_g: 20, sodium_mg: 400, water_ml: 500 });
 
@@ -357,8 +357,8 @@ describe('LP Solver — Constraint Sensitivity', () => {
 
     await logs.writeToFile('lp-constraint-protein-phases', `Protein constraints by phase`);
 
-    assertExists(afterModel.constraints.protein, 'After phase should have protein constraints');
-    assertEquals(duringModel.constraints.protein, undefined, 'During phase should NOT have protein constraints');
+    assertEquals(afterModel.constraints.protein, undefined, 'After phase must NOT have protein constraints');
+    assertEquals(duringModel.constraints.protein, undefined, 'During phase must NOT have protein constraints');
   });
 });
 
