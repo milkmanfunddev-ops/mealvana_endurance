@@ -148,14 +148,22 @@ Future<bool> _generateRunPlanWithWindow(
     workoutName,
   );
   await _fillField($, const ValueKey('activity_create.distance_field'), '10');
+  // Secondary input depends on the Duration/Pace toggle's mode. Fill it when
+  // Duration mode is active, but treat it as BEST-EFFORT: the form derives a
+  // valid duration from distance × the selected pace by default, and H5 only
+  // depends on the pre-workout WINDOW (below), not the run duration.
   const durHrKey = ValueKey('activity_create.duration_hr_field');
   if ($(durHrKey).exists) {
-    await _fillField($, durHrKey, '1');
-    await _fillField(
-      $,
-      const ValueKey('activity_create.duration_mins_field'),
-      '0',
-    );
+    try {
+      await _fillField($, durHrKey, '1');
+      await _fillField(
+        $,
+        const ValueKey('activity_create.duration_mins_field'),
+        '0',
+      );
+    } on Exception catch (_) {
+      // Fall back to the form's derived default duration.
+    }
   }
 
   // Fasted must be OFF or the pre-workout occasions are all zeroed. The form
@@ -166,7 +174,7 @@ Future<bool> _generateRunPlanWithWindow(
   // Floor it (the minus button clamps at 0 and becomes a no-op ElevatedButton),
   // then step up. Each step is 15 min (running_tab_content.dart: value ± 15).
   FocusManager.instance.primaryFocus?.unfocus();
-  await $.pump(const Duration(milliseconds: 400));
+  await $.pump(const Duration(milliseconds: 800));
   await _ensureVisibleInForm(
     $,
     const ValueKey('activity_create.fueling_window_minus'),
@@ -219,8 +227,11 @@ Future<void> _fillField(
   ValueKey<String> key,
   String text,
 ) async {
+  // Dismiss the prior field's keyboard (it overlays lower fields and makes them
+  // un-hit-testable) and give it time to fully animate out before we scroll to
+  // or measure the visibility of the next field.
   FocusManager.instance.primaryFocus?.unfocus();
-  await $.pump(const Duration(milliseconds: 500));
+  await $.pump(const Duration(milliseconds: 800));
   await _ensureVisibleInForm($, key);
   await $(key).enterText(text, settlePolicy: SettlePolicy.noSettle);
   await $.pump(const Duration(milliseconds: 200));
@@ -235,12 +246,11 @@ Future<void> _ensureVisibleInForm(
   PatrolIntegrationTester $,
   ValueKey<String> key,
 ) async {
-  try {
-    await $(key).waitUntilVisible(timeout: const Duration(seconds: 3));
-  } on Exception {
-    await $(key).scrollTo(
-      view: find.byType(SingleChildScrollView).first,
-      settleBetweenScrollsTimeout: const Duration(seconds: 1),
-    );
-  }
+  // Blind scrollTo (no pinned view). The create form is a single vertical
+  // SingleChildScrollView (new_activity_screen.dart:601) with NO horizontal
+  // scrollables, so Patrol scrolls the correct one on its own. An earlier
+  // version pinned `view: find.byType(SingleChildScrollView).first`, which
+  // grabbed a wrong nested view and failed to reveal below-the-fold controls
+  // (duration field, fueling-window stepper).
+  await $(key).scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1));
 }
