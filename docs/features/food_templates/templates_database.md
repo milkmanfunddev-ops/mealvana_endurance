@@ -92,7 +92,7 @@
 ## During-Run Templates
 
 **Target**: 30-90 g/hr depending on duration and gut training
-**Research Source**: `/docs/food_templates/research/during_run_research.md`
+**Research Source**: `/docs/features/food_templates/research/during_run_research.md`
 
 | Template Name | Foods | Carbs/hr | Best For | Notes |
 |---------------|-------|----------|----------|-------|
@@ -114,7 +114,7 @@
 ## During-Bike Templates
 
 **Target**: 60-120 g/hr depending on duration and gut training
-**Research Source**: `/docs/food_templates/research/during_bike_research.md`
+**Research Source**: `/docs/features/food_templates/research/during_bike_research.md`
 
 | Template Name | Foods | Carbs/hr | Best For | Notes |
 |---------------|-------|----------|----------|-------|
@@ -136,7 +136,7 @@
 ## During-Swim Templates
 
 **Target**: Context-dependent (pool practice vs marathon swimming)
-**Research Source**: `/docs/food_templates/research/during_swim_research.md`
+**Research Source**: `/docs/features/food_templates/research/during_swim_research.md`
 
 **Note**: Standard triathlon swims (including Ironman 2.4 mile) do NOT require during-swim fueling. These templates are for:
 1. Pool practice breaks (>1 hour workouts)
@@ -166,8 +166,8 @@
 ## Post-Workout Recovery Templates
 
 **Target**: 1.0-1.2 g/kg carbs + 20-40g protein within 0-30 min
-**Research Source**: `/docs/food_templates/research/post_workout_research.md`
-**Full Plan & Research**: `/docs/food_templates/research/post_workout_templates_plan.md`
+**Research Source**: `/docs/features/food_templates/research/post_workout_research.md`
+**Full Plan & Research**: `/docs/features/food_templates/research/post_workout_templates_plan.md`
 **DB Table**: `post_workout_templates` (20 templates)
 **New Foods Migration**: `20260408100000_post_workout_template_foods.sql`
 **Templates Migration**: `20260408200000_post_workout_templates.sql`
@@ -221,7 +221,7 @@
 ## T1 Transition Templates (Swim → Bike)
 
 **Target**: 10-30g carbs, consumable in 10-45 seconds
-**Research Source**: `/docs/food_templates/research/transition_research.md`
+**Research Source**: `/docs/features/food_templates/research/transition_research.md`
 
 | Template Name | Foods | Carbs | Time | Best For |
 |---------------|-------|-------|------|----------|
@@ -237,7 +237,7 @@
 ## T2 Transition Templates (Bike → Run)
 
 **Target**: 5-25g carbs, GI-safe for running
-**Research Source**: `/docs/food_templates/research/transition_research.md`
+**Research Source**: `/docs/features/food_templates/research/transition_research.md`
 
 | Template Name | Foods | Carbs | Time | Best For |
 |---------------|-------|-------|------|----------|

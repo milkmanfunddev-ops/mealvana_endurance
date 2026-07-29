@@ -7,8 +7,8 @@
   ⎿  Read supabase/functions/_shared/nutrition/during-utils.ts (392 lines)
   ⎿  Referenced file supabase/migrations/20260406200000_create_during_workout_templates.sql
   ⎿  Read supabase/migrations/20260406100000_add_during_template_constraint_columns.sql (91 lines)
-  ⎿  Referenced file docs/during_workout_templates/notes.md
-  ⎿  Read docs/during_workout_templates/during_workout_product_max_unit_constraints.md (106 lines)
+  ⎿  Referenced file docs/features/during_workout_templates/notes.md
+  ⎿  Read docs/features/during_workout_templates/during_workout_product_max_unit_constraints.md (106 lines)
   ⎿  Plan file referenced (~/.claude/plans/swift-tumbling-lampson.md)
 
   Read 1 file (ctrl+o to expand)

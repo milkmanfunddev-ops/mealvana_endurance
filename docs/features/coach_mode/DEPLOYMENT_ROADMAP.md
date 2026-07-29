@@ -402,10 +402,10 @@ class ModeToggleWidget extends ConsumerWidget {
 
 | Document | Purpose |
 |----------|---------|
-| `/docs/coach_mode/README.md` | Complete feature documentation |
+| `/docs/features/coach_mode/README.md` | Complete feature documentation |
 | `/docs/features/coach_mode/schema_analysis.md` | Database schema and RLS policies |
 | `/docs/web_mode/SETUP.md` | Web deployment setup guide |
-| `/docs/coach_mode/DEPLOYMENT_ROADMAP.md` | This document |
+| `/docs/features/coach_mode/DEPLOYMENT_ROADMAP.md` | This document |
 
 ---
 

@@ -7,7 +7,7 @@ _Generated 2026-04-20. Merges four parallel research streams: design spec extrac
 ## 0. Executive Summary
 
 ### The goal
-Replace the current hydration/sodium bottom-sheet content on the activity details screen with a richly-structured, citation-backed transparency UI matching the designs in `/docs/sodium_hydration/screenshots/`, for single-sport, brick, and race workouts — pre- and during-workout — with proper handling of "known rate" (sweat-test) overrides, T1/T2 transitions, redistribution, and short-workout gates.
+Replace the current hydration/sodium bottom-sheet content on the activity details screen with a richly-structured, citation-backed transparency UI matching the designs in `/docs/features/sodium_hydration/screenshots/`, for single-sport, brick, and race workouts — pre- and during-workout — with proper handling of "known rate" (sweat-test) overrides, T1/T2 transitions, redistribution, and short-workout gates.
 
 ### What's actually broken today
 1. **Algorithm is wrong.** Every single formula in `_shared/nutrition/sweat-hydration.ts` + `generate-macros-v4/single-sport.ts` + `pre-workout.ts` + `brick-workout.ts` diverges from the new spec: base sweat rates are legacy values (0.75/1.25/2.0 instead of 0.90/1.28/1.66), replacement % is flat 75% regardless of duration, humidity is **read into an `_`-prefixed arg and ignored**, there's no indoor multiplier, no 2% BW floor, no GI ceiling, no short-workout gate, no T1/T2 transition rule (300 ml fixed), no run→bike redistribution, and sodium is calculated independently as 60% of loss instead of being derived from fluid volume × concentration.
@@ -23,7 +23,7 @@ Replace the current hydration/sodium bottom-sheet content on the activity detail
 
 ---
 
-## 1. Design Specification (from `/docs/sodium_hydration/` + screenshots)
+## 1. Design Specification (from `/docs/features/sodium_hydration/` + screenshots)
 
 ### 1.1 Bottom-sheet structure (universal chrome)
 

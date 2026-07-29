@@ -4,14 +4,14 @@
 /// if we can edit/delete workout comments (not just create them).
 ///
 /// Usage:
-///   dart run tools/tp_comment_discovery.dart <refresh_token>
+///   dart run tool/tp_comment_discovery.dart <refresh_token>
 ///
 /// The script will:
 /// 1. Refresh the token to get a valid access token
 /// 2. Fetch upcoming workouts to find a test workout
 /// 3. POST a test comment
 /// 4. Try GET/PUT/DELETE on comments
-/// 5. Log all results to docs/tp_write/api_discovery_results.md
+/// 5. Log all results to docs/integration/tp_write/api_discovery_results.md
 ///
 /// IMPORTANT: Uses PRODUCTION API (not sandbox) to test real behavior.
 /// The test comment will be cleaned up if DELETE works.
@@ -85,7 +85,7 @@ Map<String, String> jsonAuthHeaders(String accessToken) => {
 
 Future<void> main(List<String> args) async {
   if (args.isEmpty) {
-    print('Usage: dart run tools/tp_comment_discovery.dart <refresh_token>');
+    print('Usage: dart run tool/tp_comment_discovery.dart <refresh_token>');
     print('');
     print('To get your refresh token, add this to training_peaks_oauth_service.dart');
     print('in refreshTokenIfNeeded(), after line 213:');
@@ -401,7 +401,7 @@ Post: 30g protein, 60g carb
 }
 
 Future<void> _writeResults() async {
-  final file = File('docs/tp_write/api_discovery_results.md');
+  final file = File('docs/integration/tp_write/api_discovery_results.md');
   await file.writeAsString(_results.toString());
   print('\n\nResults written to: ${file.path}');
 }

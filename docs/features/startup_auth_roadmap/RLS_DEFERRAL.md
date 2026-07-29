@@ -142,8 +142,8 @@ create policy "Users can create own profile"
 
 ## References
 
-- Main Roadmap: `/docs/startup_auth_roadmap/README.md`
-- Implementation Plan: `/docs/startup_auth_roadmap/IMPLEMENTATION_ROADMAP.md`
+- Main Roadmap: `/docs/features/startup_auth_roadmap/README.md`
+- Implementation Plan: `/docs/features/startup_auth_roadmap/IMPLEMENTATION_ROADMAP.md`
 - Phase 3 Details: See IMPLEMENTATION_ROADMAP.md Phase 3 section
 - Database Schema: `/database_schemas/v1/schema.sql`
 

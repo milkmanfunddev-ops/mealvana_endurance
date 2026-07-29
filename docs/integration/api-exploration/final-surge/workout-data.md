@@ -259,7 +259,7 @@ durations in seconds):
 ```
 
 The full multi-repeat vendor example is in
-`docs/final_surge/Final-Surge-Partner-API-Uploads.pdf`.
+`docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf`.
 
 A simplified illustrative sample using a `Steps` / `Duration` / `IntensityTarget` shape is
 also kept at

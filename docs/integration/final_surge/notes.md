@@ -3,7 +3,7 @@
 **Last Updated**: December 5, 2025
 **Project Status**: Implementation Planning - User Decisions Finalized
 **Owner**: TBD
-**Related Integration**: [TrainingPeaks](/Users/leemartin/development/mealvana_endurance/docs/training_peaks/README.md) (parallel integration)
+**Related Integration**: [TrainingPeaks](/Users/leemartin/development/mealvana_endurance/docs/integration/training_peaks/README.md) (parallel integration)
 
 ---
 
@@ -1600,9 +1600,9 @@ bool isLikelyRace(FinalSurgeWorkout workout) {
 ## 10. References
 
 ### Documentation
-- [Final Surge Partner API PDF](/Users/leemartin/development/mealvana_endurance/docs/final_surge/Final-Surge-Partner-API-Uploads.pdf)
+- [Final Surge Partner API PDF](/Users/leemartin/development/mealvana_endurance/docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf)
 - [Test Script](/Users/leemartin/development/mealvana_endurance/tool/final_surge_api_test.dart)
-- [TrainingPeaks Integration README](/Users/leemartin/development/mealvana_endurance/docs/training_peaks/README.md)
+- [TrainingPeaks Integration README](/Users/leemartin/development/mealvana_endurance/docs/integration/training_peaks/README.md)
 - [Mealvana FOA Architecture](/Users/leemartin/development/mealvana_endurance/docs/technical/foa-architecture.md)
 
 ### External Resources

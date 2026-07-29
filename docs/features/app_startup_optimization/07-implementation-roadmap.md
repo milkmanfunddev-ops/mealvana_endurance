@@ -695,7 +695,7 @@ void main() {
 ## Checklist Summary
 
 ### Before Starting
-- [ ] Review all documentation in `/docs/app_startup/`
+- [ ] Review all documentation in `/docs/features/app_startup_optimization/`
 - [ ] Understand current sync architecture
 - [ ] Set up test environment
 

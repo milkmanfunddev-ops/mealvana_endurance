@@ -58,8 +58,14 @@ export function greedyFallback(
     const carbsA = a.per_serving.carbs_g;
     const carbsB = b.per_serving.carbs_g;
 
-    // Protein is intentionally not part of the ranking (decided 2026-07-29:
-    // protein is not a solver consideration in any phase).
+    // Protein counts in the ranking ONLY for the after-phase fallback
+    // (decided 2026-07-29): its job is to approximate a curated recovery
+    // snack. Before/during rank by carbs alone.
+    if (phase === "after") {
+      const proteinA = a.per_serving.protein_g;
+      const proteinB = b.per_serving.protein_g;
+      return carbsB + proteinB - (carbsA + proteinA);
+    }
     return carbsB - carbsA;
   });
 
@@ -78,6 +84,10 @@ export function greedyFallback(
   const carbHigh = prioritizeCarbTarget
     ? defaultCarbHigh
     : (targets.carbs_high_g ?? defaultCarbHigh);
+  const proteinHigh = phase === "after"
+    ? (targets.protein_high_g ??
+      (proteinTarget > 0 ? proteinTarget * 1.2 : Number.POSITIVE_INFINITY))
+    : Number.POSITIVE_INFINITY;
   const sodiumHigh = targets.sodium_high_mg ??
     (sodiumTarget > 0 ? sodiumTarget * 1.25 : Number.POSITIVE_INFINITY);
   const waterHigh = targets.water_high_ml ??
@@ -93,19 +103,27 @@ export function greedyFallback(
       totals.sodium_mg + food.per_serving.sodium_mg > sodiumHigh;
     const wouldOvershootWater = waterTarget > 0 &&
       totals.water_ml + food.per_serving.water_ml > waterHigh;
+    const wouldOvershootProtein = phase === "after" && proteinTarget > 0 &&
+      totals.protein_g + food.per_serving.protein_g > proteinHigh;
 
     // Skip foods that would cause major overshoots
     // Carbs check is critical: prevents high-carb user foods from dominating
     // recovery plans (e.g. 80g carb drink mix in a 52-78g carb budget).
+    // Exception (after only): when protein is critically unmet, allow
+    // low-carb protein foods through (e.g. Protein Shake with 5g carbs).
+    const proteinCriticallyUnmetSkip = phase === "after" && proteinTarget > 0 &&
+      totals.protein_g < proteinTarget * 0.7;
+
     console.log(
       `[GREEDY-FALLBACK] Considering: ${food.name} (pref=${food.preference_score}) | ` +
         `per_serving: carbs=${food.per_serving.carbs_g}g, protein=${food.per_serving.protein_g}g, ` +
         `sodium=${food.per_serving.sodium_mg}mg, water=${food.per_serving.water_ml}ml`,
     );
 
-    // Protein guardrails removed (decided 2026-07-29: protein is not a solver
-    // consideration in any phase).
-    if (wouldOvershootCarbs && totals.carbs_g > carbsTarget * 0.7) {
+    if (
+      wouldOvershootCarbs && totals.carbs_g > carbsTarget * 0.7 &&
+      !proteinCriticallyUnmetSkip
+    ) {
       console.log(
         `[GREEDY-FALLBACK] SKIP ${food.name}: carb overshoot (current=${
           totals.carbs_g.toFixed(0)
@@ -129,18 +147,29 @@ export function greedyFallback(
       );
       continue;
     }
+    if (wouldOvershootProtein && totals.protein_g > proteinTarget * 0.9) {
+      console.log(
+        `[GREEDY-FALLBACK] SKIP ${food.name}: protein overshoot (current=${
+          totals.protein_g.toFixed(0)
+        }g, target=${proteinTarget}g)`,
+      );
+      continue;
+    }
 
     // Calculate needed servings based on primary targets
     let neededServings = 0;
 
-    if (phase === "after") {
-      // For after-run, fill carbs then hydration then sodium (protein is not
-      // a solver consideration - decided 2026-07-29).
+    if (phase === "after" && proteinTarget > 0) {
+      // After-phase fallback approximates a curated recovery snack:
+      // protein first, then carbs, hydration, sodium (2026-07-29).
+      const proteinDeficit = Math.max(0, proteinTarget - totals.protein_g);
       const carbsDeficit = Math.max(0, carbsTarget - totals.carbs_g);
       const sodiumDeficit = Math.max(0, sodiumTarget - totals.sodium_mg);
       const waterDeficit = Math.max(0, waterTarget - totals.water_ml);
 
-      if (carbsDeficit > 0 && food.per_serving.carbs_g > 0) {
+      if (proteinDeficit > 0 && food.per_serving.protein_g > 0) {
+        neededServings = Math.ceil(proteinDeficit / food.per_serving.protein_g);
+      } else if (carbsDeficit > 0 && food.per_serving.carbs_g > 0) {
         neededServings = Math.ceil(carbsDeficit / food.per_serving.carbs_g);
       } else if (waterDeficit > 0 && food.per_serving.water_ml > 0) {
         // Once carbs/protein are close, explicitly fill hydration.
@@ -160,8 +189,12 @@ export function greedyFallback(
     // Reduce servings if it would cause major overshoots
     if (neededServings > 0) {
       // Check carb overshoot potential — cap servings so carbs stay within target.
+      // After only: when protein is critically unmet, relax the carb ceiling
+      // to 1.5x so protein-rich foods like Protein Shake (5g carbs) still fit.
       if (carbsTarget > 0 && food.per_serving.carbs_g > 0) {
-        const carbMaxMultiplier = 1.2;
+        const proteinCriticallyUnmet = phase === "after" && proteinTarget > 0 &&
+          totals.protein_g < proteinTarget * 0.7;
+        const carbMaxMultiplier = proteinCriticallyUnmet ? 1.5 : 1.2;
         const allowedCarbCap = Number.isFinite(carbHigh)
           ? Math.min(carbHigh, carbsTarget * carbMaxMultiplier)
           : carbsTarget * carbMaxMultiplier;
@@ -217,8 +250,19 @@ export function greedyFallback(
         }
       }
 
-      // Protein overshoot cap removed (protein is not a solver
-      // consideration — decided 2026-07-29).
+      // Protein serving cap (after-phase fallback only)
+      if (phase === "after" && proteinTarget > 0 && food.per_serving.protein_g > 0) {
+        const maxProteinServingsRaw = (proteinHigh - totals.protein_g) /
+          food.per_serving.protein_g;
+        if (maxProteinServingsRaw <= 0) {
+          neededServings = 0;
+        } else {
+          const maxProteinServings = food.is_indivisible
+            ? Math.floor(maxProteinServingsRaw)
+            : floorToIncrement(maxProteinServingsRaw);
+          neededServings = Math.min(neededServings, Math.max(0, maxProteinServings));
+        }
+      }
     }
 
     // Cap servings at reasonable amounts
@@ -271,12 +315,14 @@ export function greedyFallback(
       totals.sodium_mg += food.per_serving.sodium_mg * neededServings;
       totals.water_ml += food.per_serving.water_ml * neededServings;
 
-      // Stop if we've met carb and water targets (protein not considered)
+      // Stop when carb/water (and, after only, protein) targets are met
       const carbsMet = totals.carbs_g >= carbsTarget * 0.9;
+      const proteinMet = phase !== "after" || proteinTarget <= 0 ||
+        totals.protein_g >= proteinTarget * 0.7;
       const waterStopMultiplier = phase === "after" ? 0.85 : 0.7;
       const waterMet = waterTarget <= 0 ||
         totals.water_ml >= waterTarget * waterStopMultiplier;
-      if (carbsMet && waterMet) break;
+      if (carbsMet && proteinMet && waterMet) break;
     }
   }
 

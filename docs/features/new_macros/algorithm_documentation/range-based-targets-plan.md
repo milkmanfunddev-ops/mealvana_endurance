@@ -183,7 +183,7 @@ New range fields are additive — the existing `sodium_mg` and `hydration_ml` mi
 
 ## Part 5: Documentation Updates
 
-### Files to Update in `/docs/new_macros/algorithm_documentation/`
+### Files to Update in `/docs/features/new_macros/algorithm_documentation/`
 
 | File | Changes |
 |------|---------|
@@ -191,7 +191,7 @@ New range fields are additive — the existing `sodium_mg` and `hydration_ml` mi
 | `improvement_suggestions.md` | Mark sodium suggestions #1, #3, #5 as resolved by range approach |
 | `research-notes.md` | Add sodium dead zone research findings |
 
-### Files to Update in `/docs/new_macros/`
+### Files to Update in `/docs/features/new_macros/`
 
 | File | Changes |
 |------|---------|

@@ -341,7 +341,7 @@ lib/
 
 ## References
 
-- Design: `/docs/new_intensity/new_intensity.png`
+- Design: `/docs/features/new_intensity/new_intensity.png`
 - Existing intensity dropdown: `lib/features/nutrition_plan/presentation/widgets/new_activity/cycling_tab_content.dart`
 - Kyle input components: `lib/shared/widgets/kyle_design/inputs/`
 - Activities table: `lib/shared/database/tables/activities_table.dart`

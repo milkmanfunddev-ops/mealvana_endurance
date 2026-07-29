@@ -308,7 +308,7 @@ Personalized nutrition plans for endurance athletes - runners, cyclists, swimmer
 - Users can request data deletion
 - Privacy policy: [Your Supabase URL]
 
-See full details: `/docs/android/google-play-submission.md`
+See full details: `/docs/features/android/google-play-submission.md`
 
 ---
 
@@ -446,12 +446,12 @@ isShrinkResources = false
 
 ## 📚 Documentation References
 
-- **Technical Requirements**: `/docs/android/technical-requirements.md`
-- **Implementation Roadmap**: `/docs/android/implementation-roadmap.md`
-- **Notification Guide**: `/docs/android/notification-implementation.md`
-- **Build Configuration**: `/docs/android/build-configuration.md`
-- **Play Store Submission**: `/docs/android/google-play-submission.md`
-- **Main README**: `/docs/android/README.md`
+- **Technical Requirements**: `/docs/features/android/technical-requirements.md`
+- **Implementation Roadmap**: `/docs/features/android/implementation-roadmap.md`
+- **Notification Guide**: `/docs/features/android/notification-implementation.md`
+- **Build Configuration**: `/docs/features/android/build-configuration.md`
+- **Play Store Submission**: `/docs/features/android/google-play-submission.md`
+- **Main README**: `/docs/features/android/README.md`
 
 ---
 
@@ -471,4 +471,4 @@ All the hard technical implementation is done. The notification system (biggest 
 
 ---
 
-**Questions?** Refer to the comprehensive documentation in `/docs/android/` or ask for clarification on any step.
+**Questions?** Refer to the comprehensive documentation in `/docs/features/android/` or ask for clarification on any step.

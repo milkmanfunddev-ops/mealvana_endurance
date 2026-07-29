@@ -93,9 +93,9 @@ Read these to go deeper than this reference. Credentials are redacted throughout
 
 | Source | What it documents |
 |---|---|
-| `docs/final_surge/Final-Surge-Partner-API-Uploads.pdf` | The authoritative Final Surge Partner API vendor document (auth, ProfileInfo, uploads, UpcomingWorkouts, LoginToken, and the structured-workout object) |
+| `docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf` | The authoritative Final Surge Partner API vendor document (auth, ProfileInfo, uploads, UpcomingWorkouts, LoginToken, and the structured-workout object) |
 | `lib/features/integrations/data/final_surge_api_client.dart` | The live REST surface — exact URLs, headers, query params, and response shapes for the OAuth, UpcomingWorkouts, Workouts, Workout/{key}, and structured-workout calls |
 | `lib/features/integrations/application/final_surge_transformer.dart` | Field-level semantics and units for the workout object (e.g. `PlannedTime` is in seconds; pace conventions) |
 | `test/fixtures/final_surge_fixtures.dart` | Real captured request/response payload shapes |
 | `tool/final_surge_api_test.dart` | A standalone CLI probe (`auth`, `workouts`, `workout`, `daterange`, `profile`, `compare`) that exercises each endpoint |
-| `test/integration/final_surge_api_test.dart` | Live-API integration checks asserting response structure and units |
+| `test/manual_live/final_surge_api_test.dart` | Live-API integration checks asserting response structure and units |

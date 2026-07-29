@@ -147,9 +147,9 @@ Pace is **not** returned by the API; it must be derived from distance and time.
 This reference is grounded in the sources below; read them for deeper detail.
 
 - **TrainingPeaks' own API guide** (transcribed from the [Partner API wiki](https://github.com/TrainingPeaks/PartnersAPI/wiki)):
-  `docs/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md`
-- OAuth environment/credential setup notes: `docs/training_peaks/README.md`,
-  `docs/training_peaks/WEB_OAUTH_SETUP.md`, `docs/training_peaks/TRAININGPEAKS_API_IMPLEMENTATION.md`
+  `docs/integration/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md`
+- OAuth environment/credential setup notes: `docs/integration/training_peaks/README.md`,
+  `docs/integration/training_peaks/WEB_OAUTH_SETUP.md`, `docs/integration/training_peaks/TRAININGPEAKS_API_IMPLEMENTATION.md`
 - A working API client (endpoint shapes, headers, error mapping):
   `lib/features/integrations/data/training_peaks_api_client.dart`
 - Field semantics and the decoded `Structure` model:

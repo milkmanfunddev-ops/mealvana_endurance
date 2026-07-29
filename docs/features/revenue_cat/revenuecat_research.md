@@ -2123,7 +2123,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 - **RevenueCat Docs**: https://www.revenuecat.com/docs
 - **Flutter SDK**: https://www.revenuecat.com/docs/getting-started/installation/flutter
 - **API Reference**: https://www.revenuecat.com/reference/basic
-- **Webhook Events**: https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields
+- **Webhook Events**: https://www.revenuecat.com/docs/_archived/integrations/webhooks/event-types-and-fields
 
 ### Community & Support
 - **RevenueCat Community**: https://community.revenuecat.com

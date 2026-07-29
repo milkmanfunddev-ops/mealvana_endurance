@@ -107,13 +107,16 @@ class ClientGreedySolver {
 
       // Stop if targets approximately met
       final carbsMet = carbsTarget <= 0 || totals.carbsG >= carbsTarget * 0.9;
-      // Protein is intentionally not a stop criterion (decided 2026-07-29:
-      // protein is not a solver consideration in any phase).
+      // Protein is a stop criterion only for the after-phase fallback.
+      final proteinTarget = targets.proteinG;
+      final proteinMet = phase != 'after' ||
+          proteinTarget <= 0 ||
+          totals.proteinG >= proteinTarget * 0.7;
       final waterMet = waterTarget <= 0 || totals.fluidMl >= waterTarget * 0.7;
       final sodiumTarget = targets.sodiumMg;
       final sodiumMet =
           sodiumTarget <= 0 || totals.sodiumMg >= sodiumTarget * 0.9;
-      if (carbsMet && waterMet && sodiumMet) break;
+      if (carbsMet && proteinMet && waterMet && sodiumMet) break;
     }
 
     return selections;
@@ -125,8 +128,11 @@ class ClientGreedySolver {
     if (a.preferenceScore != b.preferenceScore) {
       return b.preferenceScore - a.preferenceScore;
     }
-    // Secondary: carb efficiency. Protein is intentionally not part of the
-    // ranking (decided 2026-07-29: protein is not a solver consideration).
+    // Secondary: macro efficiency. Protein counts ONLY for the after-phase
+    // fallback (2026-07-29): it approximates a curated recovery snack.
+    if (phase == 'after') {
+      return (b.carbsG + b.proteinG).compareTo(a.carbsG + a.proteinG);
+    }
     return b.carbsG.compareTo(a.carbsG);
   }
 
@@ -148,8 +154,19 @@ class ClientGreedySolver {
         totals.sodiumMg + food.sodiumMg > sodiumTarget * 1.3;
     final wouldOvershootWater =
         waterTarget > 0 && totals.fluidMl + food.fluidMl > waterTarget * 1.3;
+    final proteinTarget = targets.proteinG;
+    final wouldOvershootProtein = phase == 'after' &&
+        proteinTarget > 0 &&
+        totals.proteinG + food.proteinG > proteinTarget * 1.3;
+    // After only: when protein is critically unmet, allow low-carb protein
+    // foods through (e.g. a protein shake).
+    final proteinCriticallyUnmet = phase == 'after' &&
+        proteinTarget > 0 &&
+        totals.proteinG < proteinTarget * 0.7;
 
-    if (wouldOvershootCarbs && totals.carbsG > carbsTarget * 0.7) {
+    if (wouldOvershootCarbs &&
+        totals.carbsG > carbsTarget * 0.7 &&
+        !proteinCriticallyUnmet) {
       return true;
     }
     if (wouldOvershootSodium && totals.sodiumMg > sodiumTarget * 0.7) {
@@ -158,7 +175,9 @@ class ClientGreedySolver {
     if (wouldOvershootWater && totals.fluidMl > waterTarget * 0.7) {
       return true;
     }
-    // Protein is intentionally not an overshoot criterion (2026-07-29).
+    if (wouldOvershootProtein && totals.proteinG > proteinTarget * 0.9) {
+      return true;
+    }
     return false;
   }
 
@@ -169,8 +188,19 @@ class ClientGreedySolver {
     required SolverTargets targets,
     required String phase,
   }) {
-    // All phases focus on carbs; protein is not a solver consideration
-    // (decided 2026-07-29).
+    if (phase == 'after' && targets.proteinG > 0) {
+      // After-phase fallback approximates a curated recovery snack:
+      // protein first, then carbs (2026-07-29).
+      final proteinDeficit = max(0.0, targets.proteinG - totals.proteinG);
+      final carbsDeficit = max(0.0, targets.carbsG - totals.carbsG);
+      if (proteinDeficit > 0 && food.proteinG > 0) {
+        return (proteinDeficit / food.proteinG).ceilToDouble();
+      } else if (carbsDeficit > 0 && food.carbsG > 0) {
+        return (carbsDeficit / food.carbsG).ceilToDouble();
+      }
+      return 0;
+    }
+    // Before/during focus on carbs; protein is never considered there.
     final carbsDeficit = max(0.0, targets.carbsG - totals.carbsG);
     if (carbsDeficit > 0 && food.carbsG > 0) {
       return (carbsDeficit / food.carbsG).ceilToDouble();
@@ -188,9 +218,13 @@ class ClientGreedySolver {
   }) {
     var capped = neededServings;
 
-    // Cap by carbs
+    // Cap by carbs. After only: relax the ceiling to 1.5x while protein is
+    // critically unmet so protein-rich low-carb foods still fit.
     if (targets.carbsG > 0 && food.carbsG > 0) {
-      const carbMultiplier = 1.2;
+      final proteinCriticallyUnmet = phase == 'after' &&
+          targets.proteinG > 0 &&
+          totals.proteinG < targets.proteinG * 0.7;
+      final carbMultiplier = proteinCriticallyUnmet ? 1.5 : 1.2;
       final maxCarbServings =
           (targets.carbsG * carbMultiplier - totals.carbsG) / food.carbsG;
       if (maxCarbServings <= 0) return 0;
@@ -211,7 +245,13 @@ class ClientGreedySolver {
       capped = min(capped, max(1.0, maxWaterServings));
     }
 
-    // Protein cap removed (protein is not a solver consideration, 2026-07-29).
+    // Cap by protein (after-phase fallback only)
+    if (phase == 'after' && targets.proteinG > 0 && food.proteinG > 0) {
+      final maxProteinServings =
+          (targets.proteinG * 1.2 - totals.proteinG) / food.proteinG;
+      if (maxProteinServings <= 0) return 0;
+      capped = min(capped, maxProteinServings);
+    }
     return capped;
   }
 

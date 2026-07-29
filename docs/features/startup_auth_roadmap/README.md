@@ -54,9 +54,9 @@ _Last updated: 2025-11-19_
 - Test on Android device/emulator
 
 **References:**
-- Configuration guide: `/docs/startup_auth_roadmap/NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md`
-- Status tracker: `/docs/startup_auth_roadmap/PHASE_2_STATUS.md`
-- Implementation details: `/docs/startup_auth_roadmap/phase_2_implementation.md`
+- Configuration guide: `/docs/features/startup_auth_roadmap/NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md`
+- Status tracker: `/docs/features/startup_auth_roadmap/PHASE_2_STATUS.md`
+- Implementation details: `/docs/features/startup_auth_roadmap/phase_2_implementation.md`
 
 ---
 

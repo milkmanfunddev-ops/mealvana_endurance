@@ -80,8 +80,24 @@ export function buildLPModel(
     }
   }
 
-  // Protein is intentionally NOT constrained (decided 2026-07-29: protein is
-  // not a solver consideration in any phase).
+  // Protein is a solver consideration ONLY in the after phase (decided
+  // 2026-07-29): the after LP/greedy runs solely as the fallback when no
+  // pinned formula and no curated post-workout template fits, and its job is
+  // to approximate a curated recovery snack — all of which carry protein.
+  // Before/during never constrain protein, and no test or warning gates on it.
+  if (phase === 'after' && targets.protein_g) {
+    if (targets.protein_low_g != null && targets.protein_high_g != null) {
+      model.constraints.protein = { min: targets.protein_low_g, max: targets.protein_high_g };
+    } else {
+      const proteinBounds = MACRO_CONSTRAINT_RANGES.protein[phase];
+      if (proteinBounds) {
+        model.constraints.protein = {
+          min: targets.protein_g * proteinBounds.min,
+          max: targets.protein_g * proteinBounds.max,
+        };
+      }
+    }
+  }
 
   // Sodium constraints — use V4-provided ranges when available
   if (targets.sodium_mg > 0) {
@@ -158,8 +174,11 @@ export function buildLPModel(
     // Add weighted macro contributions
     score += weights.carbs * food.per_serving.carbs_g;
 
-    // Protein is intentionally NOT scored (decided 2026-07-29: protein is
-    // not a solver consideration in any phase).
+    // Protein scoring only in the after-phase fallback (see the constraint
+    // note above) — never for before/during.
+    if (phase === 'after' && weights.protein) {
+      score += weights.protein * food.per_serving.protein_g;
+    }
 
     // Add sodium consideration (uses effectiveWeights to allow per-phase overrides)
     if (effectiveWeights.sodium) {
@@ -338,6 +357,7 @@ export function solveLPModel(
       }
     };
     checkBand('carbs', correctedTotals.carbs_g, model.constraints.carbs);
+    checkBand('protein', correctedTotals.protein_g, model.constraints.protein);
     checkBand('sodium', correctedTotals.sodium_mg, model.constraints.sodium);
     checkBand('water', correctedTotals.water_ml, model.constraints.water);
     if (violations.length > 0) {

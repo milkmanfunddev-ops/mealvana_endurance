@@ -77,7 +77,7 @@ Enable certified coaches and dietitians to manage multiple athletes via a Flutte
 - **Domain**: enduranceapp.mealvana.io
 - **Alternative**: Cloudflare Pages (unlimited bandwidth, free tier)
 
-> **Note**: Hosting decision made 2025-12-25. See `/docs/coach_mode/DEPLOYMENT_ROADMAP.md` for setup guide.
+> **Note**: Hosting decision made 2025-12-25. See `/docs/features/coach_mode/DEPLOYMENT_ROADMAP.md` for setup guide.
 
 ### Database Architecture
 Reference complete schema analysis at `/docs/features/coach_mode/schema_analysis.md`:
@@ -2601,8 +2601,8 @@ dart run drift_dev schema dump lib/shared/database/app_database.dart database_sc
 
 ### Resources
 
-- **Deployment Roadmap**: `/docs/coach_mode/DEPLOYMENT_ROADMAP.md`
-- **Implementation Checklist**: `/docs/coach_mode/IMPLEMENTATION_CHECKLIST.md`
+- **Deployment Roadmap**: `/docs/features/coach_mode/DEPLOYMENT_ROADMAP.md`
+- **Implementation Checklist**: `/docs/features/coach_mode/IMPLEMENTATION_CHECKLIST.md`
 - **Schema Analysis**: `/docs/features/coach_mode/schema_analysis.md`
 - **FOA Architecture**: `/docs/technical/foa-architecture.md`
 - **Web Mode Setup**: `/docs/web_mode/SETUP.md`

@@ -1032,7 +1032,7 @@ Before implementing OAuth features, the app initialization pattern MUST be refac
 - Result: GoRouter initializes immediately and handles OAuth deep links during app startup
 
 **Implementation Details:**
-- Full guide: `/docs/startup_auth_roadmap/phase_2_implementation.md` → "Architecture Refactor" section
+- Full guide: `/docs/features/startup_auth_roadmap/phase_2_implementation.md` → "Architecture Refactor" section
 - Andrea's documentation: `/docs/technical/andrea/andrea_initialization.txt` (lines 395-465)
 - Estimated time: 1 hour (must be completed before auth state listener)
 

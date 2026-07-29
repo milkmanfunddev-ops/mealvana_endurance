@@ -143,13 +143,13 @@ VersionCheckResult.updateRequired?
 ## Files Modified
 
 1. `lib/shared/core/app_router.dart` - Added force-upgrade route
-2. `docs/new_sync/checklist.md` - Marked task 1.4 complete
+2. `docs/features/new_sync/checklist.md` - Marked task 1.4 complete
 
 ## Files Created
 
 1. `lib/features/app_startup/presentation/screens/force_upgrade_screen.dart`
 2. `test/new_sync/force_upgrade_screen_test.dart`
-3. `docs/new_sync/notes/phase-1.4-force-upgrade-screen.md` (this file)
+3. `docs/features/new_sync/notes/phase-1.4-force-upgrade-screen.md` (this file)
 
 ## Commit Message
 

@@ -335,7 +335,7 @@ final userData = {
 
 ### Current State: DEVELOPMENT MODE (INSECURE)
 
-**Documentation**: `docs/startup_auth_roadmap/RLS_DEFERRAL.md`
+**Documentation**: `docs/features/startup_auth_roadmap/RLS_DEFERRAL.md`
 
 ```sql
 -- Current (Development) - INSECURE

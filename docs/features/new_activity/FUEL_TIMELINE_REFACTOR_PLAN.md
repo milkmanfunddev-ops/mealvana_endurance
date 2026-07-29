@@ -14,7 +14,7 @@
 
 Companion docs:
 - `FUEL_TIMELINE_SPEC.md` — exact design/behavior reproduction spec (built from clicking through the prototype).
-- Prototype: `docs/new_activity/New Activity page v9 - smaller dashboard footprint/`.
+- Prototype: `docs/features/new_activity/New Activity page v9 - smaller dashboard footprint/`.
 
 ---
 

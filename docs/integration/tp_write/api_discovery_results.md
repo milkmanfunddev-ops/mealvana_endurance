@@ -70,12 +70,12 @@ The Description field gives us full CRUD via `PUT /v2/workouts/plan/{workoutId}`
 
 ## Authenticated Testing (Deferred)
 
-Full authenticated testing (POST a real comment, GET to read it back, test Description PUT/revert) requires a fresh TP access token. The script at `tools/tp_comment_discovery.dart` is ready to run once a fresh refresh token is available. This would confirm:
+Full authenticated testing (POST a real comment, GET to read it back, test Description PUT/revert) requires a fresh TP access token. The script at `tool/tp_comment_discovery.dart` is ready to run once a fresh refresh token is available. This would confirm:
 1. What the GET comment response looks like (JSON structure, comment IDs)
 2. That Description PUT actually works end-to-end
 3. Whether comment IDs are returned on POST (useful for tracking even if we can't delete)
 
 To get a fresh token: run the app, trigger any TP sync, then run:
 ```bash
-dart run tools/tp_comment_discovery.dart <fresh_refresh_token>
+dart run tool/tp_comment_discovery.dart <fresh_refresh_token>
 ```

@@ -333,10 +333,10 @@ class PaywallController extends AsyncNotifier<PaywallState> {
 
 ### Internal Documentation
 
-- **This File**: `/docs/revenue_cat/README.md` - Overview and strategy
-- **Research Document**: `/docs/revenue_cat/revenuecat_research.md` - Comprehensive technical research
-- **Implementation Roadmap**: `/docs/revenue_cat/implementation_roadmap.md` - Step-by-step implementation guide
-- **Official Docs**: `/docs/revenue_cat/official_docs/` - RevenueCat reference materials
+- **This File**: `/docs/features/revenue_cat/README.md` - Overview and strategy
+- **Research Document**: `/docs/features/revenue_cat/revenuecat_research.md` - Comprehensive technical research
+- **Implementation Roadmap**: `/docs/features/revenue_cat/implementation_roadmap.md` - Step-by-step implementation guide
+- **Official Docs**: `/docs/features/revenue_cat/official_docs/` - RevenueCat reference materials
 
 ### External Resources
 
@@ -363,8 +363,8 @@ class PaywallController extends AsyncNotifier<PaywallState> {
 
 When Phase 4 begins, follow this sequence:
 
-1. **Read Implementation Roadmap**: `/docs/revenue_cat/implementation_roadmap.md`
-2. **Read Research Document**: `/docs/revenue_cat/revenuecat_research.md`
+1. **Read Implementation Roadmap**: `/docs/features/revenue_cat/implementation_roadmap.md`
+2. **Read Research Document**: `/docs/features/revenue_cat/revenuecat_research.md`
 3. **Set up App Store Connect**: Create subscription products
 4. **Create RevenueCat Account**: Configure project and API keys
 5. **Install Flutter SDK**: Add dependencies to pubspec.yaml
@@ -467,7 +467,7 @@ When Phase 4 begins, follow this sequence:
 
 1. ✅ **Complete Phase 2**: Email/OAuth authentication (REQUIRED before Phase 4)
 2. ✅ **Complete Phase 3**: Multi-device sync
-3. 🔜 **Review Implementation Roadmap**: Read `/docs/revenue_cat/implementation_roadmap.md`
+3. 🔜 **Review Implementation Roadmap**: Read `/docs/features/revenue_cat/implementation_roadmap.md`
 4. 🔜 **Set Up App Store Connect**: Create products and generate credentials
 5. 🔜 **Create RevenueCat Account**: Configure project
 6. 🔜 **Begin Implementation**: Follow roadmap steps
@@ -477,8 +477,8 @@ When Phase 4 begins, follow this sequence:
 ## Support & Questions
 
 **Internal**:
-- Refer to `/docs/revenue_cat/implementation_roadmap.md` for detailed steps
-- Refer to `/docs/revenue_cat/revenuecat_research.md` for technical details
+- Refer to `/docs/features/revenue_cat/implementation_roadmap.md` for detailed steps
+- Refer to `/docs/features/revenue_cat/revenuecat_research.md` for technical details
 - Consult `/docs/technical/foa-architecture.md` for architecture patterns
 
 **External**:

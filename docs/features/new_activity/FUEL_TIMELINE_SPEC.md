@@ -1,6 +1,6 @@
 # Fuel Timeline — Reproduction Spec (New Day / Activity Screen, v9)
 
-Source prototype: `docs/new_activity/New Activity page v9 - smaller dashboard footprint/`
+Source prototype: `docs/features/new_activity/New Activity page v9 - smaller dashboard footprint/`
 DeepCanvas (`.dc.html`) React prototype. Served + clicked through 2026-06-25.
 Canonical interactive file: `Fuel Timeline (standalone).html`. Readable source: `Fuel Timeline -standalone source-.html`.
 

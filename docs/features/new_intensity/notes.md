@@ -606,8 +606,8 @@ Before production deployment:
 
 ## File Locations Reference
 
-- Checklist: `/docs/new_intensity/implementation-checklist.md`
-- Design: `/docs/new_intensity/new_intensity.png`
+- Checklist: `/docs/features/new_intensity/implementation-checklist.md`
+- Design: `/docs/features/new_intensity/new_intensity.png`
 - Activities table: `/lib/shared/database/tables/activities_table.dart`
 - User profiles table: `/lib/shared/database/tables/user_profiles.dart`
 - Running tab: `/lib/features/nutrition_plan/presentation/widgets/new_activity/running_tab_content.dart`

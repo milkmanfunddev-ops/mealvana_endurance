@@ -59,12 +59,12 @@ This checklist tracks the expansion of our nutrition template system to cover al
 - [x] Add during-workout specific foods - 40 foods added to Notion
 - [x] Add post-workout recovery foods - included in batch
 - [x] Add transition-specific foods - included in batch
-- [x] 92 total new foods documented in `/docs/food_templates/foods_database.md`
+- [x] 92 total new foods documented in `/docs/features/food_templates/foods_database.md`
 - [x] 40 key foods added to Notion Foods Database
 - [ ] Add remaining 52 foods to Notion (deferred - lower priority items)
 
 ### Templates Database
-- [x] All 60 new templates documented in `/docs/food_templates/templates_database.md`
+- [x] All 60 new templates documented in `/docs/features/food_templates/templates_database.md`
 - [x] Created During-Workout Templates database in Notion (covers Run, Bike, Swim)
   - 12 During-Run templates added
   - 12 During-Bike templates added
@@ -80,31 +80,31 @@ This checklist tracks the expansion of our nutrition template system to cover al
 ## Research Summary (ALL COMPLETED ✓)
 
 ### 1. During Run Research ✓
-- **Location**: `/docs/food_templates/research/during_run_research.md`
+- **Location**: `/docs/features/food_templates/research/during_run_research.md`
 - **Templates**: 12 (Classic Marathon, Maurten High-Carb, Gel+Drink Combo, etc.)
 - **New Foods**: 27 (GU, Maurten, Huma, SIS, Spring Energy, Tailwind, etc.)
 - **Key Finding**: 60g/hr = ~11 min faster marathon finish time
 
 ### 2. During Bike Research ✓
-- **Location**: `/docs/food_templates/research/during_bike_research.md`
+- **Location**: `/docs/features/food_templates/research/during_bike_research.md`
 - **Templates**: 12 (Beginner Century, All-Liquid, Solid Food Lover, etc.)
 - **New Foods**: 18 (Rice cakes, high-carb drink mixes, savory options)
 - **Key Finding**: Solid foods work on bike unlike running; 80-120g/hr for trained athletes
 
 ### 3. During Swim Research ✓
-- **Location**: `/docs/food_templates/research/during_swim_research.md`
+- **Location**: `/docs/features/food_templates/research/during_swim_research.md`
 - **Templates**: 9 (4 pool practice, 5 marathon/ultra open water)
 - **New Foods**: 15 (Maltodextrin drinks, mini flapjacks, warm carb drinks)
 - **Key Finding**: Standard triathlon swims (even Ironman) do NOT need during-swim fueling
 
 ### 4. Post-Workout Research ✓
-- **Location**: `/docs/food_templates/research/post_workout_research.md`
+- **Location**: `/docs/features/food_templates/research/post_workout_research.md`
 - **Templates**: 14 (Chocolate Milk, Smoothies, Recovery Shakes, Meal Bowls, etc.)
 - **New Foods**: 20 (Tart cherry juice, Core Power, recovery proteins)
 - **Key Finding**: Chocolate milk validated by 20+ studies as effective as commercial recovery drinks
 
 ### 5. Transition Research ✓
-- **Location**: `/docs/food_templates/research/transition_research.md`
+- **Location**: `/docs/features/food_templates/research/transition_research.md`
 - **Templates**: 13 (6 T1, 7 T2)
 - **New Foods**: 12 (Caffeinated gels, flat cola, quick-consume options)
 - **Key Finding**: T2 is highest GI risk point; caffeine timing optimal at T2
@@ -165,12 +165,12 @@ This checklist tracks the expansion of our nutrition template system to cover al
 
 | File | Purpose |
 |------|---------|
-| `/docs/food_templates/README.md` | Overview and navigation |
-| `/docs/food_templates/checklist.md` | This file - progress tracking |
-| `/docs/food_templates/notes.md` | Nutrition guidelines reference |
-| `/docs/food_templates/foods_database.md` | All foods with nutrition data |
-| `/docs/food_templates/templates_database.md` | All 93 templates organized by category |
-| `/docs/food_templates/research/` | Research documents from web research agents |
+| `/docs/features/food_templates/README.md` | Overview and navigation |
+| `/docs/features/food_templates/checklist.md` | This file - progress tracking |
+| `/docs/features/food_templates/notes.md` | Nutrition guidelines reference |
+| `/docs/features/food_templates/foods_database.md` | All foods with nutrition data |
+| `/docs/features/food_templates/templates_database.md` | All 93 templates organized by category |
+| `/docs/features/food_templates/research/` | Research documents from web research agents |
 
 ---
 

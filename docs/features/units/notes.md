@@ -190,7 +190,7 @@ This document captures the findings from a comprehensive audit of unit handling 
 - `serving_size` - conversion notes like "1 waffle = 30 g" or "1 bottle = 11 fl oz (325 ml)"
 
 **Key Files:**
-- `/docs/foods.txt`
+- `/docs/_archived/data_dumps/foods.txt`
 - `/lib/features/nutrition_plan/domain/food_item_data.dart`
 
 ---

@@ -9,7 +9,7 @@ The template system provides pre-built meal/snack combinations for different fue
 ## Folder Structure
 
 ```
-/docs/food_templates/
+/docs/features/food_templates/
 ├── README.md                 # This file
 ├── checklist.md              # Progress tracking for template expansion
 ├── notes.md                  # Nutrition guidelines and science reference

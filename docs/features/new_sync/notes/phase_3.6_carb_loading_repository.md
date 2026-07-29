@@ -110,7 +110,7 @@ Successfully migrated the CarbLoadingRepository to implement the SyncableReposit
 
 - `lib/features/carb_loading/data/carb_loading_repository.dart`
 - `test/new_sync/carb_loading_repository_sync_test.dart` (created)
-- `docs/new_sync/checklist.md` (updated)
+- `docs/features/new_sync/checklist.md` (updated)
 
 ## Next Steps
 

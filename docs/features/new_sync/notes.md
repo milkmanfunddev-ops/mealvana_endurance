@@ -72,7 +72,7 @@ Created `test/new_sync/activities_repository_sync_test.dart` with 9 passing test
 
 - `lib/features/activities/data/activities_repository.dart` (+179 lines)
 - `test/new_sync/activities_repository_sync_test.dart` (new file, 159 lines)
-- `docs/new_sync/checklist.md` (updated Phase 3.1)
+- `docs/features/new_sync/checklist.md` (updated Phase 3.1)
 
 ### Commit
 
@@ -171,7 +171,7 @@ Created `test/new_sync/feedback_repository_sync_test.dart` with 13 passing tests
 
 - `lib/features/feedback/data/feedback_repository.dart` (+132 lines)
 - `test/new_sync/feedback_repository_sync_test.dart` (new file, 237 lines)
-- `docs/new_sync/checklist.md` (updated Phase 3.8)
+- `docs/features/new_sync/checklist.md` (updated Phase 3.8)
 
 ### Commit
 
@@ -307,8 +307,8 @@ Created `test/new_sync/coach_repository_sync_test.dart` with 7 passing tests:
 
 - `lib/features/coach_mode/data/coach_repository.dart` (+136 lines)
 - `test/new_sync/coach_repository_sync_test.dart` (new file, 119 lines)
-- `docs/new_sync/checklist.md` (updated Phase 3.9)
-- `docs/new_sync/notes.md` (this file)
+- `docs/features/new_sync/checklist.md` (updated Phase 3.9)
+- `docs/features/new_sync/notes.md` (this file)
 
 ### Commit
 
@@ -404,8 +404,8 @@ FutureOr<List<Activity>> build() async {
 ### Files Modified
 
 - `lib/features/activities/presentation/providers/activities_controller.dart` (simplified from 66 lines to 53 lines)
-- `docs/new_sync/checklist.md` (marked Phase 5.1 complete)
-- `docs/new_sync/notes.md` (this file)
+- `docs/features/new_sync/checklist.md` (marked Phase 5.1 complete)
+- `docs/features/new_sync/notes.md` (this file)
 
 ### Next Steps
 
@@ -472,8 +472,8 @@ FutureOr<List<Event>> build() async {
 ### Files Modified
 
 - `lib/features/events/presentation/providers/events_controller.dart` (+6 lines)
-- `docs/new_sync/checklist.md` (updated Phase 5.2)
-- `docs/new_sync/notes.md` (this file)
+- `docs/features/new_sync/checklist.md` (updated Phase 5.2)
+- `docs/features/new_sync/notes.md` (this file)
 
 ### Commit
 

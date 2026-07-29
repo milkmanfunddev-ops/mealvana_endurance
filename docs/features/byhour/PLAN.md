@@ -19,7 +19,7 @@ Add a "By Hour" view to during-activity phases (during_run, during_bike, during_
 ---
 
 ## Screenshots Reference
-See `/docs/byhour/screenshots/` for Figma designs:
+See `/docs/features/byhour/screenshots/` for Figma designs:
 1. **Summary view**: Flat food list with Summary/By Hour toggle
 2. **By Hour collapsed**: Hour rows with inline macro summary (cal, carbs, sodium)
 3. **By Hour expanded (Hour 1)**: 15-min timeline (:00, :15, :30, :45) with food items

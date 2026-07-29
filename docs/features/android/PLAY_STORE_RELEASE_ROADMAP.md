@@ -53,7 +53,7 @@ cat android/app/proguard-rules.pro | head -50
 ### 1.2 Documentation Updates (LLM Can Do)
 
 - [x] Create this roadmap document
-- [ ] Update `/docs/android/README.md` with current version (1.11.1+38)
+- [ ] Update `/docs/features/android/README.md` with current version (1.11.1+38)
 - [ ] Create testing checklist document
 - [ ] Document OAuth Client ID creation steps
 - [ ] Create Play Store asset specifications

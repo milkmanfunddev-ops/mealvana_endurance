@@ -145,7 +145,7 @@ grep -r "migration_v1_to_v2\|migration_v2_to_v3" lib/
 lib/shared/database/app_database.dart
 lib/shared/database/migrations/migration_v1_to_v2.dart (deleted)
 lib/shared/database/migrations/migration_v2_to_v3.dart (deleted)
-docs/new_sync/checklist.md
+docs/features/new_sync/checklist.md
 ```
 
 ## Commit
@@ -178,8 +178,8 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ## Documentation Updates
 
 **Updated:**
-- `docs/new_sync/checklist.md` - Marked 4.1 and 4.2 as DONE
-- `docs/new_sync/checklist.md` - Updated completion summary (Phase 4: 8/9 tasks)
+- `docs/features/new_sync/checklist.md` - Marked 4.1 and 4.2 as DONE
+- `docs/features/new_sync/checklist.md` - Updated completion summary (Phase 4: 8/9 tasks)
 
 **Not Updated (Future Work):**
 - `docs/technical/drift-migration-guide.md` - Will update after Phase 4.3

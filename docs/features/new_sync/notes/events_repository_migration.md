@@ -138,8 +138,8 @@ Following the roadmap, the next repository to migrate is:
 
 1. `lib/features/events/data/events_repository.dart` - Added SyncableRepository implementation
 2. `test/new_sync/events_repository_sync_test.dart` - Added 8 tests
-3. `docs/new_sync/checklist.md` - Updated task 3.3 to DONE
-4. `docs/new_sync/notes/events_repository_migration.md` - This file
+3. `docs/features/new_sync/checklist.md` - Updated task 3.3 to DONE
+4. `docs/features/new_sync/notes/events_repository_migration.md` - This file
 
 ## Verification
 

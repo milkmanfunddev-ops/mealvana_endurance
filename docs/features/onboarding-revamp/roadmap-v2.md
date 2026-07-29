@@ -136,7 +136,7 @@ This document outlines the complete redesign of the Mealvana Endurance onboardin
 | Allergies | 105:455 | [Link](https://www.figma.com/design/eA4HqttH0XBdJk0kSfcIWe/Endurance---Figma?node-id=105-455) |
 | Food Preferences | 147:1036 | [Link](https://www.figma.com/design/eA4HqttH0XBdJk0kSfcIWe/Endurance---Figma?node-id=147-1036) |
 
-Local screenshots saved in: `/docs/onboarding_revamp/screenshots/`
+Local screenshots saved in: `/docs/features/onboarding-revamp/screenshots/`
 
 ---
 
@@ -669,11 +669,11 @@ Add to `content_defaults.json`:
 
 ## References
 
-- [Existing Onboarding Docs](/docs/onboarding_revamp/README.md) - Previous implementation plan
-- [Design Specifications](/docs/onboarding_revamp/design-specifications.md) - Pixel-perfect specs
+- [Existing Onboarding Docs](/docs/features/onboarding-revamp/README.md) - Previous implementation plan
+- [Design Specifications](/docs/features/onboarding-revamp/design-specifications.md) - Pixel-perfect specs
 - [Production Schema](/docs/prod_schema.txt) - Current database schema
 - [FOA Architecture](/docs/technical/foa-architecture.md) - Architecture patterns
 
 ---
 
-*This roadmap supersedes the previous `/docs/onboarding_revamp/README.md` for implementation guidance. The old document is retained for reference.*
+*This roadmap supersedes the previous `/docs/features/onboarding-revamp/README.md` for implementation guidance. The old document is retained for reference.*

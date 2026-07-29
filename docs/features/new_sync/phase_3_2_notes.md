@@ -94,7 +94,7 @@ flutter test test/new_sync/user_repository_sync_test.dart
 - `/lib/features/auth/data/user_repository.dart` - Added SyncableRepository mixin
 - `/lib/shared/data/syncable_repository.dart` - Changed from abstract class to mixin
 - `/test/new_sync/user_repository_sync_test.dart` - New test file (12 tests)
-- `/docs/new_sync/checklist.md` - Updated Phase 3.2 status
+- `/docs/features/new_sync/checklist.md` - Updated Phase 3.2 status
 
 ## Commit Message
 

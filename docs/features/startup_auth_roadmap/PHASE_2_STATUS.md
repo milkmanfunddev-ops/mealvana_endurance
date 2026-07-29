@@ -218,7 +218,7 @@ Native Google Sign-In and Apple Sign-In **DO NOT work on iOS simulators** due to
 
 ## 📝 Documentation Created (2025-11-19)
 
-- ✅ Created `/docs/startup_auth_roadmap/NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md`
+- ✅ Created `/docs/features/startup_auth_roadmap/NATIVE_OAUTH_CONFIG_TROUBLESHOOTING.md`
   - Complete configuration guide
   - Common error scenarios
   - Simulator limitations documented

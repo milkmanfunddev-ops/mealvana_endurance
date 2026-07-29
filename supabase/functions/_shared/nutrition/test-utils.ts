@@ -503,14 +503,17 @@ export function formatSummary(totals: FoodNutrition, targets: MacroTargets): str
 
 /**
  * STRICT assertion: HARD FAIL if any macro falls outside the specified range.
- * Uses MACRO_CONSTRAINT_RANGES-style min/max ratios with a small rounding tolerance.
+ * Uses MACRO_CONSTRAINT_RANGES-style min/max ratios. The range IS the pass
+ * band — no extra tolerance (decided 2026-07-29: aim at the target, pass iff
+ * inside the range, fail outside it).
  * Throws an AssertionError with detailed diagnostics on failure.
  *
  * @param label - Test context label for error messages
  * @param totals - Actual nutrition totals from solver
  * @param targets - Target macros
  * @param ranges - Per-macro { min, max } ratio bounds (default: 90%-110%)
- * @param roundingTolerance - Extra tolerance for serving rounding (default: 5%)
+ * @param roundingTolerance - Extra widening of the band. Defaults to 0 and
+ *   should stay 0 — outside the range is a failure.
  */
 export function strictAssertMacrosInRange(
   label: string,
@@ -522,7 +525,7 @@ export function strictAssertMacrosInRange(
     sodium?: { min: number; max: number };
     water?: { min: number; max: number };
   } = {},
-  roundingTolerance = 0.05,
+  roundingTolerance = 0,
 ): void {
   const defaultRange = { min: 0.90, max: 1.10 };
   const failures: string[] = [];

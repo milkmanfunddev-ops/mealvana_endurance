@@ -4,7 +4,7 @@
 **Date:** 2026-06-03
 **Owner handoff:** This runbook is written so another Claude Code instance can execute it end-to-end.
 
-Companion doc: `docs/vdot/README.md` (architecture + full implementation status).
+Companion doc: `docs/integration/vdot/README.md` (architecture + full implementation status).
 
 ---
 

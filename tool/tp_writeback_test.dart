@@ -4,7 +4,7 @@
 /// Tests: token validity, scopes, GET vs PUT behavior.
 ///
 /// Usage:
-///   dart run tools/tp_writeback_test.dart <refresh_token>
+///   dart run tool/tp_writeback_test.dart <refresh_token>
 ///
 /// To get your refresh token, look for this line in the app logs during TP sync:
 ///   "Refresh token preview: xxxxx...xxxxx"
@@ -131,7 +131,7 @@ Future<void> testEndpoint(
 
 Future<void> main(List<String> args) async {
   if (args.isEmpty) {
-    print('Usage: dart run tools/tp_writeback_test.dart <refresh_token>');
+    print('Usage: dart run tool/tp_writeback_test.dart <refresh_token>');
     print('');
     print('To get your refresh token:');
     print('  1. Run the app and trigger a TP sync');

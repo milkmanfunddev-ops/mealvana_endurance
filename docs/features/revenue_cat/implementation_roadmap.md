@@ -1860,8 +1860,8 @@ On launch day, monitor closely:
 - **Guidelines**: https://developer.apple.com/app-store/review/guidelines/
 
 ### Internal Resources
-- **Research Doc**: `/docs/revenue_cat/revenuecat_research.md`
-- **Overview**: `/docs/revenue_cat/README.md`
+- **Research Doc**: `/docs/features/revenue_cat/revenuecat_research.md`
+- **Overview**: `/docs/features/revenue_cat/README.md`
 - **Architecture**: `/docs/technical/foa-architecture.md`
 - **Content Management**: `/docs/technical/content-management.md`
 

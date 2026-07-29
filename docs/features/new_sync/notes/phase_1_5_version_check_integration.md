@@ -128,14 +128,14 @@ All tests use proper Riverpod provider overrides:
 ```
 lib/features/app_startup/application/app_startup_provider.dart
 lib/shared/core/app_router.dart
-docs/new_sync/checklist.md
+docs/features/new_sync/checklist.md
 ```
 
 ## Files Created
 
 ```
 test/new_sync/app_startup_version_check_test.dart
-docs/new_sync/notes/phase_1_5_version_check_integration.md
+docs/features/new_sync/notes/phase_1_5_version_check_integration.md
 ```
 
 ## Test Results

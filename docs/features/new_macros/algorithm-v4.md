@@ -19,7 +19,7 @@ This document specifies the **implemented** nutrition algorithm as of v4, reflec
 **Research basis:**
 - ISSN Position Stand: Nutrient Timing (Kerksick et al. 2017)
 - Jeukendrup A. (2014). "A Step Towards Personalized Sports Nutrition"
-- Rachel/Xuan corrections documented in `/docs/new_macros/new_notes_rachel.md`
+- Rachel/Xuan corrections documented in `/docs/features/new_macros/new_notes_rachel.md`
 
 ---
 

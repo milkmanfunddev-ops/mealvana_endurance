@@ -16,10 +16,11 @@ interface MacroTotals {
   calories: number;
 }
 
-// Constraint names the corrector optimizes against. Protein is intentionally
-// absent — it is not a solver consideration in any phase (decided 2026-07-29),
-// so buildLPModel never emits a protein constraint.
-const MACRO_CONSTRAINT_NAMES = ['carbs', 'sodium', 'water'] as const;
+// Constraint names the corrector optimizes against. Protein appears here but
+// only after-phase models carry a protein constraint (decided 2026-07-29:
+// protein matters only in the after-phase fallback); for other phases the
+// bounds are absent and the term is skipped.
+const MACRO_CONSTRAINT_NAMES = ['carbs', 'protein', 'sodium', 'water'] as const;
 
 function getTotalForConstraint(totals: MacroTotals, name: string): number | null {
   switch (name) {

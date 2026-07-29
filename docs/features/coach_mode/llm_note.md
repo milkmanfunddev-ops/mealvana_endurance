@@ -267,10 +267,10 @@ CREATE POLICY "Athletes can update their invitations" ON coach_athlete_relations
 
 The following documentation already exists and has been updated:
 
-- `/docs/coach_mode/README.md` - Full implementation roadmap (updated with Vercel, free beta)
-- `/docs/coach_mode/DEPLOYMENT_ROADMAP.md` - Simplified ASAP timeline
-- `/docs/coach_mode/IMPLEMENTATION_CHECKLIST.md` - Step-by-step tasks
-- `/docs/coach_mode/STATUS.md` - Current implementation status
+- `/docs/features/coach_mode/README.md` - Full implementation roadmap (updated with Vercel, free beta)
+- `/docs/features/coach_mode/DEPLOYMENT_ROADMAP.md` - Simplified ASAP timeline
+- `/docs/features/coach_mode/IMPLEMENTATION_CHECKLIST.md` - Step-by-step tasks
+- `/docs/features/coach_mode/STATUS.md` - Current implementation status
 - `/docs/features/coach_mode/schema_analysis.md` - Complete database schema (2,000+ lines)
 
 ---

@@ -306,6 +306,6 @@ cd supabase/functions
 4. **Phase independence**: Each phase is optimized separately (no global optimization across phases)
 
 ## Related Documentation
-- **Macro Algorithm V3**: `/docs/new_macros/algorithm_documentation/macro-algorithm-v3.md`
-- **Pre-Workout Formulas Schema**: `/docs/pre_workout_formulas_schema.txt`
-- **Pre-Workout Formulas Data**: `/docs/pre_workout_formulas.txt`
+- **Macro Algorithm V3**: `/docs/features/new_macros/algorithm_documentation/macro-algorithm-v3.md`
+- **Pre-Workout Formulas Schema**: `/docs/_archived/data_dumps/pre_workout_formulas_schema.txt`
+- **Pre-Workout Formulas Data**: `/docs/_archived/data_dumps/pre_workout_formulas.txt`

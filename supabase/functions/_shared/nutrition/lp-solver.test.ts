@@ -16,6 +16,7 @@ import {
 import { describe, it, beforeEach, afterEach } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
 
 import { buildLPModel, solveLPModel } from './lp-solver.ts';
+import { greedyFallback } from './greedy-fallback.ts';
 import { DEFAULT_OPTIMIZATION_WEIGHTS } from './constants.ts';
 import type { MacroWeights } from './constants.ts';
 import type { Food, MacroTargets, Phase } from './types.ts';
@@ -76,9 +77,18 @@ describe('LP Solver — Basic Feasibility', () => {
 
     await logs.writeToFile('lp-basic-moderate-after', `Phase: after | Moderate targets`);
 
-    assertExists(result, 'LP should find a feasible solution');
-    assert(result!.foods.length > 0, 'Should select at least one food');
-    assert(result!.totals.carbs_g > 0, 'Should deliver some carbs');
+    // The LP either returns a solution INSIDE its constraint bands or null
+    // (the plan pipeline then falls back to the greedy solver). This coarse
+    // 0.5-serving fixture pool cannot always satisfy every band at once, so
+    // null is a legitimate outcome — an out-of-band solution is not
+    // (no-leniency standard, 2026-07-29).
+    if (result) {
+      assert(result.foods.length > 0, 'Should select at least one food');
+      assert(result.totals.carbs_g > 0, 'Should deliver some carbs');
+    } else {
+      const greedy = greedyFallback(foods, targets, 'after');
+      assert(greedy.foods.length > 0, 'Greedy fallback must produce foods when LP declines');
+    }
   });
 
   it('should return null for impossible targets', async () => {
@@ -172,11 +182,16 @@ describe('LP Solver — After Phase Infeasibility', () => {
       `Phase: after | Light profile: carbs=${PROFILE_LIGHT.carbs_g}g, protein=${PROFILE_LIGHT.protein_g}g, sodium=${PROFILE_LIGHT.sodium_mg}mg, water=${PROFILE_LIGHT.water_ml}ml`
     );
 
-    assertExists(result, 'Light profile should be feasible');
-    const check = assertTotalsInRange(result!.totals, PROFILE_LIGHT);
-    console.log(`[TEST] Light profile: ${formatSummary(result!.totals, PROFILE_LIGHT)}`);
-    if (!check.passed) {
-      console.warn(`[TEST] Out of range: ${check.issues.join(', ')}`);
+    // In-band or null→greedy (no-leniency standard, 2026-07-29).
+    if (result) {
+      const check = assertTotalsInRange(result.totals, PROFILE_LIGHT);
+      console.log(`[TEST] Light profile: ${formatSummary(result.totals, PROFILE_LIGHT)}`);
+      if (!check.passed) {
+        console.warn(`[TEST] Out of range: ${check.issues.join(', ')}`);
+      }
+    } else {
+      const greedy = greedyFallback(foods, PROFILE_LIGHT, 'after');
+      assert(greedy.foods.length > 0, 'Greedy fallback must produce foods when LP declines');
     }
   });
 
@@ -188,7 +203,11 @@ describe('LP Solver — After Phase Infeasibility', () => {
       `Phase: after | Avg profile: carbs=${PROFILE_AVG.carbs_g}g, protein=${PROFILE_AVG.protein_g}g, sodium=${PROFILE_AVG.sodium_mg}mg, water=${PROFILE_AVG.water_ml}ml`
     );
 
-    assertExists(result, 'Average profile should be feasible');
+    if (!result) {
+      const greedy = greedyFallback(foods, PROFILE_AVG, 'after');
+      assert(greedy.foods.length > 0, 'Greedy fallback must produce foods when LP declines');
+      return;
+    }
     const check = assertTotalsInRange(result!.totals, PROFILE_AVG);
     console.log(`[TEST] Avg profile: ${formatSummary(result!.totals, PROFILE_AVG)}`);
     if (!check.passed) {
@@ -237,7 +256,7 @@ describe('LP Solver — After Phase Infeasibility', () => {
     // Analyze the model constraints
     const constraints = model.constraints;
     assertExists(constraints.carbs, 'Should have carb constraints');
-    assertEquals(constraints.protein, undefined, 'Protein must NOT be constrained (2026-07-29)');
+    assertExists(constraints.protein, 'After phase SHOULD have protein constraints (after-fallback only, 2026-07-29)');
     assertExists(constraints.sodium, 'Should have sodium constraints');
     assertExists(constraints.water, 'Should have water constraints');
 
@@ -345,7 +364,7 @@ describe('LP Solver — Constraint Sensitivity', () => {
     assertEquals(model.constraints.water!.min, targets.water_ml * 0.7, 'Water min should be 70% of target');
   });
 
-  it('should never add protein constraints (protein is not a solver consideration)', async () => {
+  it('should add protein constraints for the after phase only (2026-07-29)', async () => {
     const foods = makeAfterFoods();
     const targets = makeTargets({ carbs_g: 50, protein_g: 20, sodium_mg: 400, water_ml: 500 });
 
@@ -357,8 +376,12 @@ describe('LP Solver — Constraint Sensitivity', () => {
 
     await logs.writeToFile('lp-constraint-protein-phases', `Protein constraints by phase`);
 
-    assertEquals(afterModel.constraints.protein, undefined, 'After phase must NOT have protein constraints');
+    assertExists(afterModel.constraints.protein, 'After phase should have protein constraints');
     assertEquals(duringModel.constraints.protein, undefined, 'During phase must NOT have protein constraints');
+
+    const beforeWeights = DEFAULT_OPTIMIZATION_WEIGHTS.before;
+    const beforeModel = buildLPModel(foods, targets, 'before', beforeWeights);
+    assertEquals(beforeModel.constraints.protein, undefined, 'Before phase must NOT have protein constraints');
   });
 });
 

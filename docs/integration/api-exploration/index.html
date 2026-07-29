@@ -394,11 +394,11 @@ files and vendor specs live at these paths in the repository:</p>
     <tr><td class="k">This reference</td><td><code>docs/integration/api-exploration/</code> — one folder per platform, plus this portal</td></tr>
     <tr><td class="k">Garmin spec</td><td><code>docs/integration/Activity_API-1.2.3.pdf</code>, <code>Health_API_1.2.2.pdf</code>, <code>Training_API_V2_1/Training_API_V2.pdf</code>, <code>Courses API_2/Courses_API.pdf</code>, <code>Women's_API_1.0.4.pdf</code>, <code>OAuth2PKCE_1.pdf</code></td></tr>
     <tr><td class="k">Garmin docs</td><td><code>docs/integration/api-exploration/garmin/*.md</code></td></tr>
-    <tr><td class="k">TrainingPeaks spec</td><td><code>docs/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></td></tr>
+    <tr><td class="k">TrainingPeaks spec</td><td><code>docs/integration/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></td></tr>
     <tr><td class="k">TrainingPeaks docs</td><td><code>docs/integration/api-exploration/training-peaks/*.md</code></td></tr>
-    <tr><td class="k">Final Surge spec</td><td><code>docs/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td></tr>
+    <tr><td class="k">Final Surge spec</td><td><code>docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td></tr>
     <tr><td class="k">Final Surge docs</td><td><code>docs/integration/api-exploration/final-surge/*.md</code></td></tr>
-    <tr><td class="k">VDOT O2 notes</td><td><code>docs/vdot/README.md</code>, <code>docs/vdot/NEXT_STEPS.md</code></td></tr>
+    <tr><td class="k">VDOT O2 notes</td><td><code>docs/integration/vdot/README.md</code>, <code>docs/integration/vdot/NEXT_STEPS.md</code></td></tr>
     <tr><td class="k">VDOT O2 docs</td><td><code>docs/integration/api-exploration/vdot-o2/*.md</code></td></tr>
     <tr><td class="k">Runna docs</td><td><code>docs/integration/api-exploration/runna/README.md</code></td></tr>
     <tr><td class="k">Runna implementation</td><td><code>runna_ics_client.dart</code>, <code>runna_ics_parser.dart</code>, <code>runna_transformer.dart</code>, and <code>runna_sync_service.dart</code></td></tr>
@@ -5070,9 +5070,9 @@ fields come back <code>null</code> (and are silently ignored on write). Detect p
 <p>This reference is grounded in the sources below; read them for deeper detail.</p>
 <ul>
 <li><strong>TrainingPeaks' own API guide</strong> (transcribed from the <a href="https://github.com/TrainingPeaks/PartnersAPI/wiki">Partner API wiki</a>):
-  <code>docs/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></li>
-<li>OAuth environment/credential setup notes: <code>docs/training_peaks/README.md</code>,
-  <code>docs/training_peaks/WEB_OAUTH_SETUP.md</code>, <code>docs/training_peaks/TRAININGPEAKS_API_IMPLEMENTATION.md</code></li>
+  <code>docs/integration/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></li>
+<li>OAuth environment/credential setup notes: <code>docs/integration/training_peaks/README.md</code>,
+  <code>docs/integration/training_peaks/WEB_OAUTH_SETUP.md</code>, <code>docs/integration/training_peaks/TRAININGPEAKS_API_IMPLEMENTATION.md</code></li>
 <li>A working API client (endpoint shapes, headers, error mapping):
   <code>lib/features/integrations/data/training_peaks_api_client.dart</code></li>
 <li>Field semantics and the decoded <code>Structure</code> model:
@@ -8567,7 +8567,7 @@ webhook / push mechanism. It is a pull-based calendar and file API.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>docs/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td>
+<td><code>docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td>
 <td>The authoritative Final Surge Partner API vendor document (auth, ProfileInfo, uploads, UpcomingWorkouts, LoginToken, and the structured-workout object)</td>
 </tr>
 <tr>
@@ -8587,7 +8587,7 @@ webhook / push mechanism. It is a pull-based calendar and file API.</p>
 <td>A standalone CLI probe (<code>auth</code>, <code>workouts</code>, <code>workout</code>, <code>daterange</code>, <code>profile</code>, <code>compare</code>) that exercises each endpoint</td>
 </tr>
 <tr>
-<td><code>test/integration/final_surge_api_test.dart</code></td>
+<td><code>test/manual_live/final_surge_api_test.dart</code></td>
 <td>Live-API integration checks asserting response structure and units</td>
 </tr>
 </tbody>
@@ -9731,7 +9731,7 @@ durations in seconds):</p>
 }
 </code></pre>
 <p>The full multi-repeat vendor example is in
-<code>docs/final_surge/Final-Surge-Partner-API-Uploads.pdf</code>.</p>
+<code>docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf</code>.</p>
 <p>A simplified illustrative sample using a <code>Steps</code> / <code>Duration</code> / <code>IntensityTarget</code> shape is
 also kept at
 <a href="#final-surge__examples" data-goto="final-surge__examples" data-anchor="ex-final-surge-structured-workout-json-fs-v1">examples/structured-workout-json-fs-v1.json</a>
@@ -11153,7 +11153,7 @@ responses are known:</p>
   object fields and the <code>steps[]</code> tree, including the <code>target</code> structure.</li>
 <li><code>lib/features/integrations/application/vdot_oauth_service.dart</code> — the OAuth
   flow, custom-scheme redirect, and <code>+</code>-in-code raw parsing.</li>
-<li><code>docs/vdot/README.md</code>, <code>docs/vdot/NEXT_STEPS.md</code> — project notes, live-endpoint
+<li><code>docs/integration/vdot/README.md</code>, <code>docs/integration/vdot/NEXT_STEPS.md</code> — project notes, live-endpoint
   probe results, and a summary of the VDOT O2 wiki.</li>
 </ul></div></article>
 <article class="doc" id="vdot-o2__authentication" hidden><div class="prose"><h1 id="vdot-o2-authentication">VDOT O2 — Authentication</h1>

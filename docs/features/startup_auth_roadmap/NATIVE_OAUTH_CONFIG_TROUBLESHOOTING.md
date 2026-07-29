@@ -605,8 +605,8 @@ flutter logs
 ## Support & Resources
 
 **Documentation:**
-- [Phase 2 Status](/docs/startup_auth_roadmap/PHASE_2_STATUS.md)
-- [Implementation Roadmap](/docs/startup_auth_roadmap/phase_2_implementation.md)
+- [Phase 2 Status](/docs/features/startup_auth_roadmap/PHASE_2_STATUS.md)
+- [Implementation Roadmap](/docs/features/startup_auth_roadmap/phase_2_implementation.md)
 - [Supabase Auth Docs](https://supabase.com/docs/guides/auth)
 
 **Code Locations:**

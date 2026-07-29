@@ -317,7 +317,7 @@ Tested all comment CRUD endpoint patterns against production API. Full results: 
 
 **Decision: Use Description field approach.** Comments are append-only (no edit/delete), making them unsuitable for nutrition plans that change. The description field gives us full CRUD via the workout plan PUT endpoint.
 
-**Discovery script** at `tools/tp_comment_discovery.dart` is available for authenticated testing when a fresh token is available (will confirm GET response structure and test Description PUT end-to-end).
+**Discovery script** at `tool/tp_comment_discovery.dart` is available for authenticated testing when a fresh token is available (will confirm GET response structure and test Description PUT end-to-end).
 
 ### Phase 1: Core Write-Back (MVP)
 

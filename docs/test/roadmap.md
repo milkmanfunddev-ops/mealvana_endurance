@@ -96,7 +96,7 @@ The plan is broken into phases so we can iterate while keeping risk-based focus.
 **Goal:** Implement comprehensive edge function testing using a three-tier strategy: local unit tests, local integration tests, and dev cloud E2E tests.
 
 ### 3.1 **Test Infrastructure Setup** ✅ COMPLETE
-- [x] Create the `test/local_edge_functions/` compatibility harness. It wraps the Deno runner in `supabase/functions/run-algorithm-tests.sh`.
+- [x] Create the `_archived/test/local_edge_functions/` compatibility harness. It wraps the Deno runner in `supabase/functions/run-algorithm-tests.sh`.
 - [x] Set up local Supabase seed data (`supabase/seed.sql`) with 10-15 test products for barcode testing
 - [x] Create JSON fixture structure for all test scenarios (20+ nutrition scenarios, barcode products, preferences)
 - [x] Configure test environment variables (`.env.local` for local Supabase, `.env.test_supabase` for dev)
@@ -107,7 +107,7 @@ The plan is broken into phases so we can iterate while keeping risk-based focus.
 Testing pure function logic without database dependencies:
 
 **generate-ai-nutrition-plan** ✅ COMPREHENSIVE COVERAGE (16 tests)
-- [x] **Business Logic Validation Suite** (`test/local_edge_functions/functions/generate-ai-nutrition-plan/business-logic.test.ts`)
+- [x] **Business Logic Validation Suite** (`_archived/test/local_edge_functions/functions/generate-ai-nutrition-plan/business-logic.test.ts`)
   - [x] Test preference scoring logic (liked=200, willing=80, neutral=20, disliked=excluded)
   - [x] Test food filtering (disliked foods never appear, essential foods override dislikes)
   - [x] Test essential food override behavior with detailed logging
@@ -289,7 +289,7 @@ To complete Phase 3, we need to extend the same comprehensive approach to other 
 
 - Supabase CLI setup: see Phase 0 steps.
 - Edge test commands:
-  - Edge function harness: `cd test/local_edge_functions && npm test`.
+  - Edge function harness: `cd _archived/test/local_edge_functions && npm test`.
   - Dart integration (cloud): `flutter test --tags edge --dart-define-from-file=.env.test_supabase`.
 - Drift migration test template: use `TestDatabaseUtils` utilities defined in `test/helpers/test_database.dart`.
 - Feature test entry point: `flutter test test/features/<feature>/...`.

@@ -294,8 +294,8 @@
 
 ## Research Sources
 
-- `/docs/food_templates/research/during_run_research.md` - 27 foods
-- `/docs/food_templates/research/during_bike_research.md` - 18 foods
-- `/docs/food_templates/research/during_swim_research.md` - 15 foods
-- `/docs/food_templates/research/post_workout_research.md` - 20 foods
-- `/docs/food_templates/research/transition_research.md` - 12 foods
+- `/docs/features/food_templates/research/during_run_research.md` - 27 foods
+- `/docs/features/food_templates/research/during_bike_research.md` - 18 foods
+- `/docs/features/food_templates/research/during_swim_research.md` - 15 foods
+- `/docs/features/food_templates/research/post_workout_research.md` - 20 foods
+- `/docs/features/food_templates/research/transition_research.md` - 12 foods
