@@ -111,7 +111,10 @@ class ClientGreedySolver {
       final proteinMet =
           proteinTarget <= 0 || totals.proteinG >= proteinTarget * 0.7;
       final waterMet = waterTarget <= 0 || totals.fluidMl >= waterTarget * 0.7;
-      if (carbsMet && proteinMet && waterMet) break;
+      final sodiumTarget = targets.sodiumMg;
+      final sodiumMet =
+          sodiumTarget <= 0 || totals.sodiumMg >= sodiumTarget * 0.9;
+      if (carbsMet && proteinMet && waterMet && sodiumMet) break;
     }
 
     return selections;

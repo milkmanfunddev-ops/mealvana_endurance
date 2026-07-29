@@ -129,6 +129,8 @@ class ClientPlanService {
       foodItems: duringItems,
       carbsTarget: during.carbTotalG,
       sodiumTarget: during.sodiumTotalMg,
+      sodiumLowTarget: during.sodiumLowMg,
+      sodiumHighTarget: during.sodiumHighMg,
       fluidsTarget: during.fluidTotalMl,
     );
 
@@ -327,6 +329,8 @@ class ClientPlanService {
         carbsG: macroTargets.duringRun.carbTotalG,
         sodiumMg: macroTargets.duringRun.sodiumTotalMg,
         fluidMl: macroTargets.duringRun.fluidTotalMl,
+        sodiumLowMg: macroTargets.duringRun.sodiumLowMg,
+        sodiumHighMg: macroTargets.duringRun.sodiumHighMg,
       );
 
       final selections = _duringSolver.solve(
