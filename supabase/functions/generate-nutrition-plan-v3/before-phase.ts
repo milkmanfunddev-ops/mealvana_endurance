@@ -36,6 +36,7 @@ import {
 import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 
 import { fetchPreWorkoutTemplates, fetchTemplateFoodsByName } from "./before-phase-db.ts";
+import { reconcileBeforePhaseAfterPins } from "./before-phase-reconcile.ts";
 import { fetchUserFoodsForBefore, findSubstitutions } from "./before-phase-substitution.ts";
 import { phaseResultToSubPhaseResult } from "./before-phase-explosion.ts";
 
@@ -306,6 +307,7 @@ export async function generateBeforePhaseV3(
   //   • a pin whose timing isn't an active sub-phase this plan doesn't fire;
   //   • an untagged before pin is skipped (timing is required).
   const personalPins = input.personal_formula_pins;
+  const pinnedSlots = new Set<"meal" | "snack" | "top_up">();
   if (personalPins && personalPins.length > 0) {
     const activeSlots = getActiveSubPhases(input.hours_before);
     // Essential foods (water/salt) for the fluid/sodium backfill — fetched
@@ -393,6 +395,7 @@ export async function generateBeforePhaseV3(
       if (slot === "meal") beforeResult.meal = pinnedSubPhase;
       else if (slot === "snack") beforeResult.snack = pinnedSubPhase;
       else if (slot === "top_up") beforeResult.top_up = pinnedSubPhase;
+      pinnedSlots.add(slot);
 
       console.log(
         `[PLAN-V3] Before ${slot}: honoring pinned personal formula ` +
@@ -400,6 +403,20 @@ export async function generateBeforePhaseV3(
           `${slotTargets.carbs_g}g carbs), overlaying slot`,
       );
     }
+  }
+
+  // 9. Reconcile the phase after pin overlays: Algorithm C sized the top_up's
+  // drink/electrolyte against ITS OWN meal + snack; when pins replaced those
+  // slots, the stale gap-fill can push the phase outside every range at once
+  // (bug 3abe3fdb754c818c93e8fbbd801dae8e). Trims non-pinned excess toward
+  // the targets and fills a carb-floor gap from the universal add-on pool.
+  if (pinnedSlots.size > 0) {
+    reconcileBeforePhaseAfterPins(
+      beforeResult,
+      targets,
+      pinnedSlots,
+      new Set(input.disliked_foods ?? []),
+    );
   }
 
   return beforeResult;

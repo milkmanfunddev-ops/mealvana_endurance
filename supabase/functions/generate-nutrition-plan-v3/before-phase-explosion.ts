@@ -171,7 +171,14 @@ function normalizeExplosionMacros(
   const proteinScale = rawTotals.protein > 0 ? selection.protein_g / rawTotals.protein : 1;
   const fatScale = rawTotals.fat > 0 ? selection.fat_g / rawTotals.fat : 1;
   const sodiumScale = rawTotals.sodium > 0 ? selection.sodium_mg / rawTotals.sodium : 1;
-  const fluidScale = rawTotals.fluid > 0 ? selection.fluid_ml / rawTotals.fluid : 1;
+  // Food-type template rows were never seeded with a parent-level fluid_ml
+  // (the column defaulted to 0), so scaling components to the parent's 0
+  // would erase real fluid (milk, cooked oatmeal). When the parent declares
+  // no fluid but the components carry some, trust the component sum.
+  const preserveComponentFluid = selection.fluid_ml <= 0 && rawTotals.fluid > 0;
+  const fluidScale = preserveComponentFluid
+    ? 1
+    : (rawTotals.fluid > 0 ? selection.fluid_ml / rawTotals.fluid : 1);
 
   for (const row of results) {
     row.carbs_grams = Math.round(row.carbs_grams * carbScale * 10) / 10;
@@ -207,9 +214,11 @@ function normalizeExplosionMacros(
     first.sodium_mg = Math.round(
       (first.sodium_mg + (selection.sodium_mg - normalizedTotals.sodium)) * 10,
     ) / 10;
-    first.fluids_ml = Math.round(
-      (first.fluids_ml + (selection.fluid_ml - normalizedTotals.fluid)) * 10,
-    ) / 10;
+    if (!preserveComponentFluid) {
+      first.fluids_ml = Math.round(
+        (first.fluids_ml + (selection.fluid_ml - normalizedTotals.fluid)) * 10,
+      ) / 10;
+    }
     first.calories = Math.round(
       (first.carbs_grams * 4) + (first.protein_grams * 4) + (first.fat_grams * 9),
     );
@@ -220,8 +229,49 @@ function normalizeExplosionMacros(
 // Add-on → FoodResult
 // ============================================================================
 
+const ADD_ON_DISPLAY: Record<
+  AddOn["type"],
+  {
+    name: string;
+    plural: string;
+    servingSize: string;
+    isDrink: boolean;
+  }
+> = {
+  banana: {
+    name: "Banana",
+    plural: "Bananas",
+    servingSize: "1 medium",
+    isDrink: false,
+  },
+  sports_drink: {
+    name: "Sports Drink",
+    plural: "cups Sports Drink",
+    servingSize: "1 cup (8 oz)",
+    isDrink: true,
+  },
+  dates: {
+    name: "Medjool Dates",
+    plural: "servings Medjool Dates",
+    servingSize: "2 dates",
+    isDrink: false,
+  },
+  applesauce: {
+    name: "Applesauce",
+    plural: "pouches Applesauce",
+    servingSize: "1 pouch (½ cup)",
+    isDrink: false,
+  },
+  raisins: {
+    name: "Raisins",
+    plural: "servings Raisins",
+    servingSize: "¼ cup",
+    isDrink: false,
+  },
+};
+
 export function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
-  const isBanana = addOn.type === "banana";
+  const display = ADD_ON_DISPLAY[addOn.type] ?? ADD_ON_DISPLAY.banana;
   const servings = addOn.servings ?? 1;
   return {
     food_id: `addon_${addOn.type}`,
@@ -232,11 +282,11 @@ export function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
     sodium_mg: addOn.sodium_mg,
     fluids_ml: addOn.fluid_ml,
     calories: Math.round(addOn.carbs_g * 4),
-    display_name: isBanana ? "Banana" : "Sports Drink",
-    display_name_plural: isBanana ? "Bananas" : "cups Sports Drink",
-    serving_size: isBanana ? "1 medium" : "1 cup (8 oz)",
+    display_name: display.name,
+    display_name_plural: display.plural,
+    serving_size: display.servingSize,
     timing,
-    is_drink: !isBanana,
+    is_drink: display.isDrink,
   };
 }
 
