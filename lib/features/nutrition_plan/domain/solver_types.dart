@@ -69,6 +69,10 @@ class SolverTargets {
     this.fluidMl = 0,
     this.sodiumLowMg,
     this.sodiumHighMg,
+    this.carbsLowG,
+    this.carbsHighG,
+    this.fluidLowMl,
+    this.fluidHighMl,
   });
 
   final double carbsG;
@@ -78,4 +82,8 @@ class SolverTargets {
   final double fluidMl;
   final double? sodiumLowMg;
   final double? sodiumHighMg;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double? fluidLowMl;
+  final double? fluidHighMl;
 }

@@ -726,12 +726,14 @@ void main() {
             reason:
                 'total sodium must not fall below the range floor (1818 mg)',
           );
+          // The capsule is 250 mg and indivisible, so the closest the solver
+          // can land is within one capsule of the point target.
           expect(
             totalSodium,
-            greaterThanOrEqualTo(targets.sodiumMg * 0.95),
+            greaterThanOrEqualTo(targets.sodiumMg - 250),
             reason:
-                'total sodium should reach within 5% of target (2272 mg), '
-                'got $totalSodium mg',
+                'total sodium should reach within one capsule (250 mg) of '
+                'target (2272 mg), got $totalSodium mg',
           );
         },
       );
@@ -787,7 +789,9 @@ void main() {
 
           final totalSodium =
               result.fold(0.0, (sum, s) => sum + s.sodiumMg);
-          final sodiumUpper = targets.sodiumMg * 1.1;
+          // The pass/fail bound is the real range ceiling, not a synthetic
+          // target × 1.1 band.
+          final sodiumUpper = targets.sodiumHighMg!;
 
           expect(
             totalSodium,

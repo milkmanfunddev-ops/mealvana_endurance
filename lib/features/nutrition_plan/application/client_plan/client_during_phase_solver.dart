@@ -267,8 +267,6 @@ _ElecPick? _pickBestElectrolyte(
   double carbUpper,
   String? gutTrainingLevel,
 ) {
-  const maxSupplementServings = 4.0;
-
   final baselineSodiumScore = sodiumTarget > 0
       ? (max(0.0, sodiumTarget - currentSodium) +
                 max(0.0, currentSodium - sodiumUpper)) /
@@ -293,9 +291,12 @@ _ElecPick? _pickBestElectrolyte(
     final isSupp = elec.productType == 'supplement' && !elec.isLiquid;
     final step = elec.isIndivisible ? 1.0 : 0.5;
     final start = elec.isIndivisible ? 1.0 : 0.5;
-    final maxCandidateServings = isSupp
-        ? min(gutMax, maxSupplementServings)
-        : gutMax;
+    // The food's own (gut-adjusted) max servings is the only hard cap — a
+    // synthetic 4-serving supplement ceiling used to stop the top-up below
+    // the range floor even when more capsules were allowed (bug 3abe3fdb).
+    // The capsulePenalty below still steers toward fewer capsules when a
+    // smaller count scores equally.
+    final maxCandidateServings = gutMax;
     for (double s = start; s <= maxCandidateServings + 1e-9; s += step) {
       candidates.add(s);
     }
@@ -408,12 +409,20 @@ class ClientDuringPhaseSolver {
     final sodiumTarget = targets.sodiumMg;
     final fluidTarget = targets.fluidMl;
 
-    // Generous upper bounds (mirrors the server's 1.1× default)
-    final carbUpper = carbTarget > 0 ? carbTarget * 1.1 : double.infinity;
-    final sodiumUpper = sodiumTarget > 0 ? sodiumTarget * 1.1 : double.infinity;
-    final fluidUpper = fluidTarget > 0 ? fluidTarget * 1.1 : double.infinity;
+    // Bounds come from the real calculated ranges when present; the ×1.1
+    // multipliers are only a fallback for callers that pass no range
+    // (mirrors the server's fallback in during-template-solver.ts).
+    final carbUpper = carbTarget > 0
+        ? (targets.carbsHighG ?? carbTarget * 1.1)
+        : double.infinity;
+    final sodiumUpper = sodiumTarget > 0
+        ? (targets.sodiumHighMg ?? sodiumTarget * 1.1)
+        : double.infinity;
+    final fluidUpper = fluidTarget > 0
+        ? (targets.fluidHighMl ?? fluidTarget * 1.1)
+        : double.infinity;
     final sodiumLower = sodiumTarget > 0
-        ? (targets.sodiumLowMg ?? sodiumTarget * 0.8)
+        ? (targets.sodiumLowMg ?? sodiumTarget * 0.9)
         : 0.0;
 
     final isRunning = activityType == ActivityType.running;

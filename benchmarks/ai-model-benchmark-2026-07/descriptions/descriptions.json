@@ -1,0 +1,27 @@
+{
+  "_note": "Benchmark text inputs for the describe-meal arm (2026-07 model-quality benchmark). Written to sound like an athlete recording a meal, not clean lab prompts. 10 long (detailed/chatty) + 10 short (terse quick-logs), spread across breakfast / lunch / dinner / snack and endurance-fueling moments. Vary on purpose: some exact grams/brands, some vague ('a big bowl', 'a handful'), some with self-corrections.",
+  "long": [
+    { "id": "long-01", "meal": "breakfast", "text": "Big bowl of oatmeal this morning before my run — about a cup of rolled oats cooked in water, then I stirred in a sliced banana, a heaping spoonful of peanut butter, a handful of blueberries and a drizzle of honey. Washed it down with a large black coffee." },
+    { "id": "long-02", "meal": "lunch", "text": "Grabbed a burrito bowl at Chipotle for lunch — brown rice, black beans, double chicken, the fajita veggies, a scoop of corn salsa, cheese and a bit of guac. Skipped the sour cream. Ate the whole thing, I was starving after this morning." },
+    { "id": "long-03", "meal": "dinner", "text": "Made salmon for dinner, maybe a 6 oz fillet, baked with a little olive oil and lemon. Had it with one medium roasted sweet potato and a big pile of roasted broccoli. Glass of white wine on the side." },
+    { "id": "long-04", "meal": "snack", "text": "Post-workout recovery shake — one scoop of vanilla whey blended with oat milk, a frozen banana and a spoon of almond butter. Pretty filling, I'd guess somewhere around 400 calories?" },
+    { "id": "long-05", "meal": "breakfast", "text": "Kept breakfast simple and carby before my long ride so my stomach wouldn't fight me — two slices of white toast with jam and honey, a banana, and a coffee with a splash of milk." },
+    { "id": "long-06", "meal": "lunch", "text": "Turkey sandwich for lunch — two slices of whole wheat, a few slices of deli turkey, lettuce, tomato, a little mayo and mustard. Had it with an apple and a small handful of pretzels." },
+    { "id": "long-07", "meal": "dinner", "text": "Carb loading before tomorrow's race so I went big — a huge bowl of spaghetti with marinara and some ground turkey mixed in, a couple pieces of garlic bread, and a side salad with italian dressing." },
+    { "id": "long-08", "meal": "breakfast", "text": "Weekend breakfast, made a veggie omelette with three eggs, spinach, mushrooms and a bit of feta, cooked in olive oil. On the side I had two slices of sourdough and half an avocado, plus a small orange juice." },
+    { "id": "long-09", "meal": "snack", "text": "Fueling on the bike — over the last hour I got through two Maurten gels and about half a Clif bar, and I've been sipping a bottle of Skratch the whole ride. Roughly, anyway, hard to track exactly while riding." },
+    { "id": "long-10", "meal": "dinner", "text": "Ordered Thai takeout — chicken pad thai, a pretty big portion, and we split some spring rolls. I'd say I ate about two-thirds of the pad thai and two of the spring rolls." }
+  ],
+  "short": [
+    { "id": "short-01", "meal": "breakfast", "text": "oatmeal w/ banana and peanut butter, black coffee" },
+    { "id": "short-02", "meal": "lunch", "text": "chipotle chicken bowl — brown rice, black beans, guac" },
+    { "id": "short-03", "meal": "dinner", "text": "grilled chicken breast, white rice, steamed green beans" },
+    { "id": "short-04", "meal": "snack", "text": "vanilla protein shake with a banana" },
+    { "id": "short-05", "meal": "snack", "text": "2 clif bars and a gatorade" },
+    { "id": "short-06", "meal": "lunch", "text": "turkey sandwich, apple, handful of pretzels" },
+    { "id": "short-07", "meal": "breakfast", "text": "greek yogurt with granola and blueberries" },
+    { "id": "short-08", "meal": "lunch", "text": "chicken caesar salad" },
+    { "id": "short-09", "meal": "dinner", "text": "cheeseburger and fries" },
+    { "id": "short-10", "meal": "snack", "text": "handful of almonds and an apple" }
+  ]
+}

@@ -128,10 +128,14 @@ class ClientPlanService {
           'Spread across the activity to hit ${during.carbRateGPerH.round()}g carbs/hr',
       foodItems: duringItems,
       carbsTarget: during.carbTotalG,
+      carbsLowTarget: during.carbsLowG,
+      carbsHighTarget: during.carbsHighG,
       sodiumTarget: during.sodiumTotalMg,
       sodiumLowTarget: during.sodiumLowMg,
       sodiumHighTarget: during.sodiumHighMg,
       fluidsTarget: during.fluidTotalMl,
+      fluidsLowTarget: during.fluidsLowMl,
+      fluidsHighTarget: during.fluidsHighMl,
     );
 
     final postSection = PlanSection(
@@ -331,6 +335,10 @@ class ClientPlanService {
         fluidMl: macroTargets.duringRun.fluidTotalMl,
         sodiumLowMg: macroTargets.duringRun.sodiumLowMg,
         sodiumHighMg: macroTargets.duringRun.sodiumHighMg,
+        carbsLowG: macroTargets.duringRun.carbsLowG,
+        carbsHighG: macroTargets.duringRun.carbsHighG,
+        fluidLowMl: macroTargets.duringRun.fluidsLowMl,
+        fluidHighMl: macroTargets.duringRun.fluidsHighMl,
       );
 
       final selections = _duringSolver.solve(
