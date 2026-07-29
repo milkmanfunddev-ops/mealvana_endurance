@@ -298,7 +298,13 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                             fontSize: 16,
                           ),
                         ),
-                        if (!isExpanded &&
+                        // Collapsed: always show the summary line. Expanded:
+                        // keep the curated template name visible so the
+                        // ingredient rows below read as one item
+                        // (bug 3abe3fdb754c8153).
+                        if ((!isExpanded ||
+                                (subPhase.templateName?.isNotEmpty ??
+                                    false)) &&
                             subPhase.templateSummary.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(

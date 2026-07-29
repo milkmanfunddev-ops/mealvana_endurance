@@ -55,10 +55,17 @@ class BeforeSubPhase {
     }
   }
 
-  /// Auto-generated summary of foods in this sub-phase (for collapsed display).
-  /// Shows food names only (no quantities) for a clean, scannable format.
+  /// Summary of this sub-phase for collapsed display.
+  ///
+  /// Prefers the curated template's own name ("Smoothie", "Oatmeal + Raisins")
+  /// so a multi-ingredient recommendation reads as one item; falls back to
+  /// joining the ingredient names when no curated name exists
+  /// (bug 3abe3fdb754c8153: the getter used to gate templateName behind an
+  /// empty-foodItems condition that never occurs, so the name was never shown).
   String get templateSummary {
-    if (foodItems.isEmpty) return templateName ?? '';
+    final name = templateName;
+    if (name != null && name.isNotEmpty) return name;
+    if (foodItems.isEmpty) return '';
     return foodItems
         .map((f) => _simplifyName(f.displayName ?? f.name))
         .join(' + ');
