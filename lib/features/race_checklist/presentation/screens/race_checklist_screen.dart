@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../events/application/nutrition_plan_navigation.dart';
 import '../../../events/presentation/providers/events_controller.dart';
 import '../providers/checklist_controller.dart';
@@ -227,7 +228,7 @@ class RaceChecklistScreen extends ConsumerWidget {
     return InkWell(
       key: itemKey,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: AppRadius.xsRadius,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: AppSpacing.xs,
@@ -445,14 +446,14 @@ class RaceChecklistScreen extends ConsumerWidget {
               return Dismissible(
                 key: Key(item.id),
                 direction: DismissDirection.endToStart,
-                background: Container(
+                // Radius matches the row's InkWell ([_buildChecklistItem]),
+                // which is the only rounding the foreground has.
+                background: SwipeActionBackground(
                   alignment: Alignment.centerRight,
+                  color: Theme.of(context).colorScheme.error,
+                  borderRadius: AppRadius.xsRadius,
                   padding: const EdgeInsets.only(right: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: FaIcon(
+                  icon: const FaIcon(
                     FontAwesomeIcons.trash,
                     color: Colors.white,
                     size: AppIconSizes.sm,
