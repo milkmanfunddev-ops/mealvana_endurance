@@ -173,18 +173,25 @@ Future<void> _returnToDashboard(PatrolIntegrationTester $) async {
     ValueKey('adjust_macros.back_button'),
     ValueKey('activity_create.back_button'),
   ];
-  for (var i = 0; i < 6; i++) {
+
+  for (var i = 0; i < 12; i++) {
     if ($(sentinel).exists) return;
-    var tapped = false;
+
+    // Settle for a beat before deciding to tap. After a delete the screen pops
+    // itself while an async write is still in flight, so the dashboard may be
+    // one frame away — tapping a back button in that window pops too far.
+    await $.pump(const Duration(milliseconds: 500));
+    if ($(sentinel).exists) return;
+
     for (final back in backButtons) {
       if ($(back).exists) {
-        await $(back).tap();
-        tapped = true;
+        // noSettle is essential: the delete keeps a spinner up, and a settling
+        // tap waits on it forever. That hung this flow for the full 10-minute
+        // test timeout on CI rather than failing an assertion.
+        await $(back).tap(settlePolicy: SettlePolicy.noSettle);
         break;
       }
     }
-    if (!tapped) break;
-    await $.pump(const Duration(milliseconds: 500));
   }
   await $(sentinel).waitUntilVisible(timeout: const Duration(seconds: 30));
 }

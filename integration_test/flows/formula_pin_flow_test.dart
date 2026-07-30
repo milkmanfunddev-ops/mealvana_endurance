@@ -68,7 +68,18 @@ void main() {
       }
 
       // ---- 1. Settings → Diet/Allergies/Formulas hub → Formula Library --
-      await $(const ValueKey('calendar.settings_button')).tap();
+      // The app starts on the FuelTimeline tab (index 0), whose header gear is
+      // `fuel_timeline.settings`. The generic `calendar.settings_button` only
+      // renders when `_currentIndex != 0` (tabs_screen.dart), so tapping it
+      // here waited forever on a widget that never exists — a 10-minute hang,
+      // not a failed assertion. noSettle because startup can hold a spinner.
+      await $(const ValueKey('fuel_timeline.settings')).waitUntilVisible(
+        timeout: const Duration(seconds: 20),
+      );
+      await $(const ValueKey('fuel_timeline.settings')).tap(
+        settlePolicy: SettlePolicy.noSettle,
+      );
+      await $.pump(const Duration(milliseconds: 300));
       await $(const ValueKey('settings.food_prefs_row')).waitUntilVisible(
         timeout: const Duration(seconds: 20),
       );
