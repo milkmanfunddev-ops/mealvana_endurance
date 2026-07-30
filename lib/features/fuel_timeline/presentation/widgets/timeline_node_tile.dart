@@ -5,11 +5,17 @@ import 'package:intl/intl.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../daily_macros/presentation/widgets/macro_palette.dart';
 import '../../../meal_logging/domain/meal_slot.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../domain/timeline_node.dart';
 import '../fuel_timeline_type.dart';
+
+/// Shared by [TimelineNodeTile._cardShell] and its swipe reveals, so the
+/// coloured background behind a swiped card is always the same shape as the
+/// card itself.
+const BorderRadius _kCardRadius = BorderRadius.all(Radius.circular(14));
 
 /// One row on the Fuel Timeline: the optional left time-rail + the node card.
 ///
@@ -25,11 +31,35 @@ class TimelineNodeTile extends ConsumerWidget {
     required this.trackingOn,
     this.onTap,
     this.onRemove,
+    this.selectionMode = false,
+    this.selectable = false,
+    this.selected = false,
+    this.legOrder,
+    this.onSelectToggle,
   });
 
   final TimelineNode node;
   final bool timelineOpen;
   final bool trackingOn;
+
+  /// Brick leg-picking is active (step 2 of the brick flow). While true the
+  /// row's normal tap/swipe contract is suspended: tapping a [selectable] row
+  /// toggles it into the brick instead of opening its detail surface.
+  final bool selectionMode;
+
+  /// This row may be picked as a brick leg. Rows that are not brick-eligible
+  /// (meals, races, strength work) stay visible but inert and dimmed.
+  final bool selectable;
+
+  /// This row is currently picked as a leg — draws the orange spine on the
+  /// rail, "a live preview of the brick" (Notion 3a7e3fdb, step 2).
+  final bool selected;
+
+  /// 1-based leg position, shown in place of the rail dot while picked.
+  final int? legOrder;
+
+  /// Toggle this row in/out of the brick selection.
+  final VoidCallback? onSelectToggle;
 
   /// Tap on the card: opens the edit-meal page, or the activity detail page.
   final VoidCallback? onTap;
@@ -112,13 +142,14 @@ class TimelineNodeTile extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: 16),
               child: Align(
                 alignment: Alignment.topCenter,
-                child: switch (node) {
+                child: _maybeSelectable(switch (node) {
                   MealNode(:final meal) => _mealCard(context, meal, onSurface),
                   WorkoutNode(:final activity) => _workoutCard(
                     context,
                     activity,
                     onSurface,
                     useMetric,
+                    surfaceBg,
                   ),
                   EventNode(:final event) => _eventCard(
                     context,
@@ -131,7 +162,7 @@ class TimelineNodeTile extends ConsumerWidget {
                     totalDays,
                     onSurface,
                   ),
-                },
+                }),
               ),
             ),
           ),
@@ -140,7 +171,29 @@ class TimelineNodeTile extends ConsumerWidget {
     );
   }
 
+  /// While leg-picking is active the card itself becomes the hit target:
+  /// eligible rows toggle, ineligible rows dim and swallow the tap so a
+  /// mis-tap can't navigate away mid-flow.
+  Widget _maybeSelectable(Widget card) {
+    if (!selectionMode) return card;
+    if (!selectable) {
+      return Opacity(opacity: 0.35, child: IgnorePointer(child: card));
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onSelectToggle,
+      // Absorb the card's own onTap/Dismissible so picking a leg can never
+      // open a detail page or delete the row.
+      child: IgnorePointer(child: card),
+    );
+  }
+
   Widget _rail(Color onSurface, Color dotColor, Color surfaceBg) {
+    // Picked legs get an orange spine on the rail — "a live preview of the
+    // brick" (Notion 3a7e3fdb, step 2). The spine replaces the hairline for
+    // this row only, so the rail stays continuous and simply thickens where
+    // the brick will be.
+    final spine = selectionMode && selected;
     return SizedBox(
       width: 16,
       child: Stack(
@@ -152,23 +205,88 @@ class TimelineNodeTile extends ConsumerWidget {
             top: 0,
             bottom: 0,
             child: Container(
-              width: 2,
-              color: onSurface.withValues(alpha: 0.22),
+              width: spine ? 4 : 2,
+              decoration: BoxDecoration(
+                color: spine
+                    ? AppColors.orange
+                    : onSurface.withValues(alpha: 0.22),
+                borderRadius: spine ? BorderRadius.circular(2) : null,
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 5),
-            child: Container(
-              width: 11,
-              height: 11,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: dotColor,
-                border: Border.all(color: surfaceBg, width: 2),
-              ),
-            ),
+            child: spine
+                ? _legBadge(surfaceBg)
+                : Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: dotColor,
+                      border: Border.all(color: surfaceBg, width: 2),
+                    ),
+                  ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// The in-card pick marker: a hollow circle when the row can be picked, the
+  /// filled orange leg number once it has been.
+  Widget _pickMarker(Color surfaceBg, Color onSurface) {
+    if (!selected) {
+      return Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: onSurface.withValues(alpha: 0.35),
+            width: 1.5,
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.orange,
+      ),
+      child: Text(
+        '${legOrder ?? ''}',
+        style: FtType.macroLine.copyWith(
+          fontSize: 11,
+          height: 1.0,
+          color: AppColors.blackberry,
+        ),
+      ),
+    );
+  }
+
+  /// The ordered leg marker (1 / 2 / 3) that stands in for the rail dot while
+  /// a row is picked.
+  Widget _legBadge(Color surfaceBg) {
+    return Container(
+      width: 16,
+      height: 16,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.orange,
+        border: Border.all(color: surfaceBg, width: 2),
+      ),
+      child: Text(
+        '${legOrder ?? ''}',
+        style: FtType.macroLine.copyWith(
+          fontSize: 9,
+          height: 1.0,
+          color: AppColors.blackberry,
+        ),
       ),
     );
   }
@@ -248,40 +366,20 @@ class TimelineNodeTile extends ConsumerWidget {
     );
   }
 
+  /// Radius matches [_cardShell] exactly so the reveal is card-shaped.
   Widget _swipeBackground({
     required Color color,
     required IconData icon,
     required String label,
     required Alignment alignment,
   }) {
-    final isLeft = alignment == Alignment.centerLeft;
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+    return SwipeActionBackground(
       alignment: alignment,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: isLeft
-            ? [
-                Icon(icon, color: AppColors.cream, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: FtType.itemName.copyWith(color: AppColors.cream),
-                ),
-              ]
-            : [
-                Text(
-                  label,
-                  style: FtType.itemName.copyWith(color: AppColors.cream),
-                ),
-                const SizedBox(width: 8),
-                Icon(icon, color: AppColors.cream, size: 20),
-              ],
-      ),
+      color: color.withValues(alpha: 0.9),
+      borderRadius: _kCardRadius,
+      icon: Icon(icon, color: AppColors.cream, size: 20),
+      label: label,
+      labelStyle: FtType.itemName.copyWith(color: AppColors.cream),
     );
   }
 
@@ -334,20 +432,37 @@ class TimelineNodeTile extends ConsumerWidget {
     dynamic activity,
     Color onSurface,
     bool useMetric,
+    Color surfaceBg,
   ) {
     final subtitle = _workoutSubtitle(activity, useMetric);
+    // While picking legs the card carries the choice itself: an empty circle
+    // when it can be picked, the orange leg number once it is. The card also
+    // drops its "Pre · During · Recovery fuel" line so the row reads as a
+    // choice rather than a workout summary.
+    final picking = selectionMode && selectable;
     final card = Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AppColors.orange.withValues(alpha: 0.1),
+        color: selected
+            ? AppColors.orange.withValues(alpha: 0.14)
+            : AppColors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.orange.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: selected
+              ? AppColors.orange
+              : AppColors.orange.withValues(alpha: 0.45),
+          width: selected ? 1.5 : 1,
+        ),
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Row(
           children: [
+            if (picking) ...[
+              _pickMarker(surfaceBg, onSurface),
+              const SizedBox(width: 10),
+            ],
             _iconCircle(
               AppColors.electrolyteDark,
               // Real activity-type icon (was hardcoded to the cycling icon
@@ -376,11 +491,13 @@ class TimelineNodeTile extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 5),
-                  Text(
-                    'Pre · During · Recovery fuel',
-                    style: FtType.macroLine.copyWith(color: AppColors.orange),
-                  ),
+                  if (!picking) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      'Pre · During · Recovery fuel',
+                      style: FtType.macroLine.copyWith(color: AppColors.orange),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -550,7 +667,7 @@ class TimelineNodeTile extends ConsumerWidget {
           : EdgeInsets.zero,
       decoration: BoxDecoration(
         color: fill,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: _kCardRadius,
         border: Border.all(color: borderColor),
       ),
       child: child,

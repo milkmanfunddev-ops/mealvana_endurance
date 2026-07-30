@@ -49,6 +49,16 @@ class BrickValidationException extends BrickException {
     );
   }
 
+  /// A selected activity is not one of the three triathlon disciplines.
+  /// Strength, foam rolling and other imported activities are not groupable
+  /// (Notion 3a7e3fdb — Xuan flagged the old behaviour as wrong).
+  factory BrickValidationException.ineligibleSport() {
+    return const BrickValidationException(
+      'Cannot create brick: only swim, bike and run activities can be grouped',
+      code: 'INELIGIBLE_SPORT',
+    );
+  }
+
   factory BrickValidationException.invalidSegmentOrder() {
     return const BrickValidationException(
       'Cannot create brick: segment order does not match selected activities',

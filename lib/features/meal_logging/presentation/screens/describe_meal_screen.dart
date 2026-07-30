@@ -6,6 +6,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../application/meal_ai_service.dart';
 
 /// Natural-language meal description screen.
@@ -158,13 +159,25 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Describe what you ate and Jade will estimate the macros.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark
-                          ? AppColors.cream.withValues(alpha: 0.65)
-                          : AppColors.blackberry.withValues(alpha: 0.65),
-                    ),
+                  // Prompt on the left, token balance on the right — the cost
+                  // of the action sits next to the description of it.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Describe what you ate and Jade will estimate the '
+                          'macros.',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isDark
+                                ? AppColors.cream.withValues(alpha: 0.65)
+                                : AppColors.blackberry.withValues(alpha: 0.65),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      const TokenPill(),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
@@ -184,10 +197,28 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
                         : null,
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  KylePrimaryButton(
-                    text: 'Analyze',
-                    isLoading: _isAnalyzing,
-                    onPressed: _isAnalyzing ? null : _analyze,
+                  // The Analyze button carries its own price: "Analyze 🍪 1".
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      KylePrimaryButton(
+                        text: 'Analyze',
+                        isLoading: _isAnalyzing,
+                        onPressed: _isAnalyzing ? null : _analyze,
+                      ),
+                      if (!_isAnalyzing)
+                        const IgnorePointer(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Reserve the label's width so the chip sits to
+                              // its right rather than over it.
+                              SizedBox(width: 76),
+                              TokenCostChip(),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],

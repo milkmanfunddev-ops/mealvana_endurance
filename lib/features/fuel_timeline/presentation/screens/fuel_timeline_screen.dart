@@ -7,19 +7,15 @@ import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../activities/domain/brick_eligibility.dart';
 import '../../../activities/domain/brick_exceptions.dart';
 import '../../../activities/presentation/navigation/open_activity_fuel.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../activities/presentation/providers/brick_actions_controller.dart';
 import '../../../activities/presentation/providers/brick_creation_available_provider.dart';
 import '../../../activities/presentation/providers/brick_selection_controller.dart';
-import '../../../activities/presentation/widgets/activity_card.dart';
-import '../../../activities/presentation/widgets/brick_confirmation_dialog.dart';
-import '../../../activities/presentation/widgets/brick_group_card.dart';
-import '../../../activities/presentation/widgets/brick_minimum_warning_dialog.dart';
 import '../../../activities/presentation/widgets/brick_ungroup_dialog.dart';
 import '../../../activities/presentation/widgets/brick_validation_error_dialog.dart';
-import '../../../activities/presentation/widgets/create_brick_button.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../calendar/presentation/providers/calendar_day_indicators_provider.dart';
 import '../../../events/presentation/screens/event_detail_screen.dart';
@@ -43,6 +39,7 @@ import '../widgets/energy_breakdown_sheet.dart';
 import '../widgets/energy_dashboard_card.dart';
 import '../widgets/fuel_filter_row.dart';
 import '../widgets/fuel_timeline_day_header.dart';
+import '../widgets/timeline_brick_tile.dart';
 import '../widgets/timeline_node_tile.dart';
 
 /// The unified daily "Fuel Timeline" screen — the new Nutrition tab.
@@ -175,14 +172,12 @@ class FuelTimelineScreen extends ConsumerWidget {
               100,
             ),
             children: [
-              // Brick grouping controls: "Create Brick" when the day has 2+
-              // activities of different sports, or Cancel/Confirm while in
-              // selection mode. Hidden under the Meals filter (no workouts
-              // visible to group).
-              if (view.filter.showsAddActivity)
-                _brickControls(context, ref, workoutNodes, selectedDate),
-              _addRow(context, ref, view, selectedDate),
-              for (final n in nodes) _tile(context, ref, n, view),
+              // Add row: Food · Activity · | · Brick. The Brick pill replaces
+              // the old standalone "Create Brick" button that sat above the
+              // adds and read like a third add action (Notion 3a7e3fdb).
+              _addRow(context, ref, view, workoutNodes, selectedDate),
+              for (final n in nodes)
+                _tile(context, ref, n, view, workoutNodes),
               if (nodes.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 40),
@@ -191,6 +186,10 @@ class FuelTimelineScreen extends ConsumerWidget {
             ],
           ),
         ),
+        // Leg-picking action bar (step 2): Cancel · Swap · Create Brick (n).
+        // Docked below the list so it stays reachable while scrolling the day.
+        if (ref.watch(brickSelectionControllerProvider).isSelectionMode)
+          _brickActionBar(context, ref),
       ],
     );
   }
@@ -201,9 +200,16 @@ class FuelTimelineScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     FuelTimelineViewState view,
+    List<WorkoutNode> workoutNodes,
     DateTime selectedDate,
   ) {
-    final addButtons = _addButtons(context, ref, view.filter, selectedDate);
+    // While picking legs the add row is replaced in place by the pick bar —
+    // the adds are not available mid-flow, and reusing the slot keeps the rail
+    // geometry identical so the timeline doesn't jump.
+    final picking = ref.watch(brickSelectionControllerProvider).isSelectionMode;
+    final addButtons = picking
+        ? _pickLegsBar(context, ref)
+        : _addButtons(context, ref, view.filter, workoutNodes, selectedDate);
     if (!view.timelineOpen) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -271,57 +277,59 @@ class FuelTimelineScreen extends ConsumerWidget {
     WidgetRef ref,
     TimelineNode node,
     FuelTimelineViewState view,
+    List<WorkoutNode> workoutNodes,
   ) {
+    final selectionState = ref.watch(brickSelectionControllerProvider);
+    final picking = selectionState.isSelectionMode;
+
     switch (node) {
       case MealNode(:final meal):
         return TimelineNodeTile(
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
+          selectionMode: picking,
           // Tap the meal → edit-meal page (where components can be edited and
           // swapped). Swipe either direction removes with Undo.
           onTap: () => context.push('/meal-log/edit', extra: {'log': meal}),
           onRemove: () => _deleteMealWithUndo(context, ref, meal),
         );
       case WorkoutNode(:final activity):
-        final selectionState = ref.watch(brickSelectionControllerProvider);
-        // Brick selection mode: workouts render as selectable activity cards
-        // (checkbox + 1/2/3 order badge), mirroring the old activities screen.
-        // Full-width (no time rail): these cards are designed for the full
-        // screen width and overflow inside the rail row.
-        if (selectionState.isSelectionMode) {
-          final selectionNotifier = ref.read(
-            brickSelectionControllerProvider.notifier,
-          );
-          return Padding(
-            // The card's own 12px bottom margin + 4 ≈ the tile row's 16px gap.
-            padding: const EdgeInsets.only(bottom: 4),
-            child: ActivityCard(
-              activity: activity,
-              isSelectionMode: true,
-              isSelected: selectionNotifier.isActivitySelected(activity.id),
-              selectionOrder: selectionNotifier.getSelectionOrder(activity.id),
-              onSelectionToggle: () =>
-                  selectionNotifier.toggleActivity(activity),
-            ),
+        // A created brick sits *inside* the timeline as an indented bracket —
+        // it takes one time-dot like any other row, so the rail is never cut
+        // (Notion 3a7e3fdb, problem A).
+        if (activity.isBrick) {
+          return TimelineBrickTile(
+            brick: activity,
+            timelineOpen: view.timelineOpen,
+            onOpenBrick: () => _handleViewCombinedBrick(context, activity),
+            onOpenLeg: (index) =>
+                _handleOpenBrickLeg(context, ref, activity, index),
+            onUngroup: () => _handleUngroupBrick(context, ref, activity),
+            onDelete: () => _handleDeleteBrick(context, ref, activity),
           );
         }
-        // Brick workouts render as the grouped brick card (segments +
-        // View Combined / Ungroup / Remove Segment / Delete), not a regular
-        // workout tile. Full-width for the same reason as above; delete goes
-        // through its own confirm dialog (it also deletes the nutrition
-        // plan), so no swipe-to-remove here.
-        if (activity.isBrick) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: BrickGroupCard(
-              brick: activity,
-              onUngroup: () => _handleUngroupBrick(context, ref, activity),
-              onViewCombined: () => _handleViewCombinedBrick(context, activity),
-              onRemoveSegment: (segmentIndex) =>
-                  _handleRemoveSegment(context, ref, activity, segmentIndex),
-              onDelete: () => _handleDeleteBrick(context, ref, activity),
-            ),
+        // Leg-picking: rows stay on the rail and simply become pickable, so
+        // the timeline never reflows mid-flow. Chosen rows get the orange
+        // spine — "a live preview of the brick".
+        if (picking) {
+          final notifier = ref.read(
+            brickSelectionControllerProvider.notifier,
+          );
+          final candidates = adjacentBrickCandidateIds(
+            workoutNodes
+                .map<Activity?>((n) => n.activity)
+                .toList(growable: false),
+          );
+          return TimelineNodeTile(
+            node: node,
+            timelineOpen: view.timelineOpen,
+            trackingOn: view.trackingOn,
+            selectionMode: true,
+            selectable: candidates.contains(activity.id),
+            selected: notifier.isActivitySelected(activity.id),
+            legOrder: notifier.getSelectionOrder(activity.id),
+            onSelectToggle: () => notifier.toggleActivity(activity),
           );
         }
         return TimelineNodeTile(
@@ -338,6 +346,7 @@ class FuelTimelineScreen extends ConsumerWidget {
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
+          selectionMode: picking,
           // Tap the race banner → the event detail page.
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
@@ -350,6 +359,7 @@ class FuelTimelineScreen extends ConsumerWidget {
           node: node,
           timelineOpen: view.timelineOpen,
           trackingOn: view.trackingOn,
+          selectionMode: picking,
           // Tap a carb-loading day → the carb loading day detail. Routing is
           // handled by the calendar's carb loading day card flow; here we just
           // surface it. A dedicated tap target is a follow-up.
@@ -414,77 +424,191 @@ class FuelTimelineScreen extends ConsumerWidget {
     );
   }
 
-  /// Brick grouping controls above the Add row (ported from the old
-  /// activities list screen): a "Create Brick" button when the selected day
-  /// has 2+ activities of different sports, replaced by Cancel / Confirm (n)
-  /// while selection mode is active.
-  Widget _brickControls(
-    BuildContext context,
-    WidgetRef ref,
-    List<WorkoutNode> workoutNodes,
-    DateTime selectedDate,
-  ) {
-    final dayActivities = workoutNodes
-        .map((n) => n.activity)
-        .toList(growable: false);
-    final selectionState = ref.watch(brickSelectionControllerProvider);
-    final isSelectionMode = selectionState.isSelectionMode;
-    final isBrickAvailable = ref.watch(
-      isBrickCreationAvailableProvider(
-        activities: dayActivities,
-        selectedDate: selectedDate,
+  /// Bottom clearance for anything docked below the timeline list.
+  ///
+  /// The tab bar is a *floating* pill (`Positioned(bottom: 16, height: 43)` in
+  /// [FloatingActionButtonsBar]) drawn in a Stack over this screen, so it does
+  /// not consume layout height — a docked panel that only respects the safe
+  /// area slides straight under it. 16 + 43 + a 12pt breathing gap.
+  static const double _dockedBottomInset = 71;
+
+  /// The docked LEG ORDER panel (step 2 → step 3).
+  ///
+  /// Shows the chosen legs as ordered chips with a Swap affordance, over a
+  /// full-width `Create Brick (n)` that commits directly — no confirm modal
+  /// (Notion 3a7e3fdb, step 3).
+  ///
+  /// Below two legs there is no order to set yet, so the slot holds the
+  /// instruction instead — the panel only earns its space once swapping and
+  /// creating are both real choices.
+  Widget _brickActionBar(BuildContext context, WidgetRef ref) {
+    final selection = ref.watch(brickSelectionControllerProvider);
+    final notifier = ref.read(brickSelectionControllerProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    final legs = selection.selectedActivities;
+    if (legs.length < 2) return _brickPickHint(context, onSurface);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        _dockedBottomInset,
       ),
-    );
-
-    if (!isSelectionMode && !isBrickAvailable) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (!isSelectionMode)
-            CreateBrickButton(
-              onPressed: () => ref
-                  .read(brickSelectionControllerProvider.notifier)
-                  .enterSelectionMode(),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.orange.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'LEG ORDER',
+                    style: FtType.eyebrow.copyWith(
+                      color: onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  key: const ValueKey('fuel_timeline.brick_swap'),
+                  // "Swap reverses leg order" — only meaningful with 2+ legs.
+                  onTap: legs.length >= 2 ? notifier.swapOrder : null,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.swap_horiz,
+                        size: 15,
+                        color: legs.length >= 2
+                            ? AppColors.electrolyte
+                            : onSurface.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Swap',
+                        style: FtType.pill.copyWith(
+                          color: legs.length >= 2
+                              ? AppColors.electrolyte
+                              : onSurface.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          if (isSelectionMode) ...[
-            // Flexible so the two buttons can shrink instead of overflowing
-            // on narrow widths (the button text ellipsizes gracefully).
-            Flexible(
-              child: KyleSecondaryButtonSmall(
-                text: 'Cancel',
-                onPressed: () => ref
-                    .read(brickSelectionControllerProvider.notifier)
-                    .exitSelectionMode(),
-                variant: SecondaryButtonVariant.light,
-              ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                for (var i = 0; i < legs.length; i++) ...[
+                  if (i > 0)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        size: 13,
+                        color: onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  Expanded(child: _legChip(legs[i], i + 1, onSurface)),
+                ],
+              ],
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: KyleSecondaryButtonSmall(
-                text: 'Confirm (${selectionState.selectedActivityIds.length})',
-                onPressed:
-                    ref
-                        .read(brickSelectionControllerProvider.notifier)
-                        .canCreateBrick()
-                    ? () => _handleConfirmSelection(context, ref)
-                    : null,
-                variant: SecondaryButtonVariant.orange,
-              ),
+            const SizedBox(height: 12),
+            KyleSecondaryButtonSmall(
+              key: const ValueKey('fuel_timeline.brick_create'),
+              text: 'Create Brick (${legs.length})',
+              onPressed: notifier.canCreateBrick()
+                  ? () => _handleConfirmSelection(context, ref)
+                  : null,
+              variant: SecondaryButtonVariant.orange,
             ),
-          ],
         ],
       ),
     );
   }
 
-  /// Handle Confirm in brick selection mode: confirmation dialog → create the
-  /// brick via [BrickActionsController] → exit selection mode. Mirrors the old
-  /// activities screen flow, including validation/creation error dialogs.
+  /// The step-2 instruction, occupying the LEG ORDER panel's slot until two
+  /// legs are picked: "Tap two or more activities to link into a brick."
+  Widget _brickPickHint(BuildContext context, Color onSurface) {
+    return Container(
+      // The parent Column is centre-aligned, so without this the box hugs its
+      // text instead of matching the LEG ORDER panel it stands in for.
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        _dockedBottomInset,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      decoration: BoxDecoration(
+        color: onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: onSurface.withValues(alpha: 0.12)),
+      ),
+      child: Text(
+        'Tap two or more activities to link into a brick',
+        textAlign: TextAlign.center,
+        style: FtType.addButton.copyWith(
+          color: onSurface.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
+  /// One ordered leg chip: `① RUN`.
+  Widget _legChip(Activity activity, int order, Color onSurface) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: onSurface.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.orange,
+            ),
+            child: Text(
+              '$order',
+              style: FtType.macroLine.copyWith(
+                fontSize: 10,
+                height: 1.0,
+                color: AppColors.blackberry,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              activity.activityType.displayName.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FtType.itemName.copyWith(color: onSurface),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Create the brick from the picked legs.
+  ///
+  /// Step 3 "commits directly — no modal", so there is no confirmation dialog
+  /// here any more; validation/creation *errors* still surface as dialogs.
   Future<void> _handleConfirmSelection(
     BuildContext context,
     WidgetRef ref,
@@ -493,13 +617,6 @@ class FuelTimelineScreen extends ConsumerWidget {
     final selectedActivities = List<Activity>.from(
       ref.read(brickSelectionControllerProvider).selectedActivities,
     );
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) =>
-          BrickConfirmationDialog(selectedActivities: selectedActivities),
-    );
-    if (confirmed != true || !context.mounted) return;
 
     // Show loading indicator before try block so catch blocks can dismiss it
     final loadingSnackbarController = MealvanaSnackbar.showLoading(
@@ -533,9 +650,42 @@ class FuelTimelineScreen extends ConsumerWidget {
       ref.invalidate(activitiesControllerProvider);
 
       dismissLoadingSnackbar();
+      // "✓ Brick created · Run → Swim   Undo" — creation commits directly with
+      // no confirm modal, so the toast carries the safety net instead. Undo
+      // ungroups, which is exactly the pre-create state.
+      final legs = selectedActivities
+          .map((a) => a.activityType.displayName)
+          .join(' → ');
+      final createdBrickId = ref
+          .read(activitiesControllerProvider)
+          .value
+          ?.firstWhere(
+            (a) =>
+                a.isBrick &&
+                (a.brickMetadata?.originalActivityIds ?? const []).contains(
+                  selectedActivities.first.id,
+                ),
+            orElse: () => selectedActivities.first,
+          )
+          .id;
       MealvanaSnackbar.showSuccess(
         context,
-        'Brick workout created successfully!',
+        'Brick created · $legs',
+        duration: const Duration(seconds: 5),
+        actionLabel: 'Undo',
+        onAction: () async {
+          if (createdBrickId == null) return;
+          try {
+            await ref
+                .read(brickActionsControllerProvider.notifier)
+                .ungroupBrick(createdBrickId);
+            ref.invalidate(activitiesControllerProvider);
+          } catch (_) {
+            if (context.mounted) {
+              MealvanaSnackbar.showError(context, 'Could not undo the brick');
+            }
+          }
+        },
       );
     } on BrickValidationException catch (e) {
       dismissLoadingSnackbar();
@@ -661,35 +811,19 @@ class FuelTimelineScreen extends ConsumerWidget {
     }
   }
 
-  /// Handle Remove Segment on a brick segment card. Removing down to 1 sport
-  /// isn't a brick anymore, so at 2 segments this offers to ungroup instead.
-  Future<void> _handleRemoveSegment(
+  /// Tap a leg inside the brick's bracket → that leg's fuel detail.
+  ///
+  /// A brick's fuel plan is one plan with a section per segment, so this opens
+  /// the combined plan where the leg's detail lives. Scrolling straight to the
+  /// tapped segment needs a focus parameter on the plan screen — a follow-up,
+  /// not something to fake with an argument the screen ignores.
+  void _handleOpenBrickLeg(
     BuildContext context,
     WidgetRef ref,
     Activity brick,
-    int segmentIndex,
-  ) async {
-    final segmentCount = brick.brickMetadata?.segments.length ?? 0;
-
-    // If removing this segment would leave only 1 sport, offer ungroup instead
-    if (segmentCount <= 2) {
-      final shouldUngroup = await showDialog<bool>(
-        context: context,
-        builder: (context) => const BrickMinimumWarningDialog(),
-      );
-      if (shouldUngroup == true && context.mounted) {
-        await _handleUngroupBrick(context, ref, brick);
-      }
-      return;
-    }
-
-    // If 3+ segments, remove segment is not yet implemented (parity with the
-    // old activities screen — BrickActionsController.removeSegmentFromBrick
-    // is still Phase 3.4).
-    MealvanaSnackbar.showInfo(
-      context,
-      'Remove segment feature not yet implemented',
-    );
+    int legIndex,
+  ) {
+    _handleViewCombinedBrick(context, brick);
   }
 
   /// Handle Delete on a brick group card: confirm (the nutrition plan goes
@@ -754,21 +888,84 @@ class FuelTimelineScreen extends ConsumerWidget {
     }
   }
 
+  /// Step 2's header, occupying the add row's slot: `⛓ Pick legs to link`
+  /// with Cancel on the right.
+  Widget _pickLegsBar(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.orange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.55)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.link, size: 14, color: AppColors.orange),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Pick legs to link',
+              style: FtType.addButton.copyWith(color: onSurface),
+            ),
+          ),
+          GestureDetector(
+            key: const ValueKey('fuel_timeline.brick_cancel'),
+            onTap: ref
+                .read(brickSelectionControllerProvider.notifier)
+                .exitSelectionMode,
+            child: Text(
+              'Cancel',
+              style: FtType.addButton.copyWith(
+                color: onSurface.withValues(alpha: 0.75),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The add row: `+ Food` · `+ Activity` · │ · `⛓ Brick`.
+  ///
+  /// Brick redesign (Notion 3a7e3fdb, step 1): "A third pill in the add row —
+  /// shorter labels make room, a divider and the chain icon keep it from
+  /// reading as another 'add'." The labels lost the word "Add" deliberately:
+  /// it buys the room, and together with the divider + chain icon it is what
+  /// stops Brick reading as a third add action.
   Widget _addButtons(
     BuildContext context,
     WidgetRef ref,
     FuelTimelineFilter filter,
+    List<WorkoutNode> workoutNodes,
     DateTime selectedDate,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+
+    // The Brick pill only appears when 2+ groupable workouts are adjacent, and
+    // never while leg-picking is already running.
+    final selection = ref.watch(brickSelectionControllerProvider);
+    final showBrick =
+        filter.showsAddActivity &&
+        !selection.isSelectionMode &&
+        ref.watch(
+          isBrickCreationAvailableProvider(
+            activities: workoutNodes
+                .map((n) => n.activity)
+                .toList(growable: false),
+            selectedDate: selectedDate,
+          ),
+        );
+
     return Row(
       children: [
         if (filter.showsAddFood)
           Expanded(
-            child: _dashedButton(
+            child: _pillButton(
               key: const ValueKey('fuel_timeline.add_food'),
-              label: '+ Add Food',
+              label: '+ Food',
               color: onSurface.withValues(alpha: 0.8),
               onTap: () => openLogMealScreen(
                 context,
@@ -781,9 +978,9 @@ class FuelTimelineScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         if (filter.showsAddActivity)
           Expanded(
-            child: _dashedButton(
+            child: _pillButton(
               key: const ValueKey('fuel_timeline.add_activity'),
-              label: '+ Add Activity',
+              label: '+ Activity',
               color: AppColors.orange,
               onTap: () {
                 ref
@@ -796,27 +993,73 @@ class FuelTimelineScreen extends ConsumerWidget {
               },
             ),
           ),
+        if (showBrick) ...[
+          // The divider is load-bearing: it separates "make something new"
+          // from "operate on what's already here".
+          const SizedBox(width: 8),
+          Container(
+            width: 1,
+            height: 20,
+            color: onSurface.withValues(alpha: 0.25),
+          ),
+          const SizedBox(width: 8),
+          _pillButton(
+            key: const ValueKey('fuel_timeline.create_brick'),
+            label: 'Brick',
+            color: onSurface.withValues(alpha: 0.8),
+            icon: Icons.link,
+            onTap: () => ref
+                .read(brickSelectionControllerProvider.notifier)
+                .enterSelectionMode(),
+          ),
+        ],
       ],
     );
   }
 
-  Widget _dashedButton({
+  Widget _pillButton({
     Key? key,
     required String label,
     required Color color,
     required VoidCallback onTap,
+    IconData? icon,
   }) {
     return GestureDetector(
       key: key,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: icon == null ? 6 : 11,
+        ),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
           border: Border.all(color: color.withValues(alpha: 0.45)),
         ),
-        child: Text(label, style: FtType.addButton.copyWith(color: color)),
+        // The add row sits to the RIGHT of the timeline rail, so three pills
+        // share only ~270pt on a 390pt screen. Labels must be allowed to
+        // ellipsize rather than force an overflow — at large text scales even
+        // "+ Activity" outgrows its share.
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 13, color: color),
+              const SizedBox(width: 5),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: FtType.addButton.copyWith(color: color),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

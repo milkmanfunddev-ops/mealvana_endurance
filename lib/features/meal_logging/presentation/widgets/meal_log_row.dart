@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/daily_macros/presentation/widgets/macro_palette.dart'
     show kMacroColorCarbs, kMacroColorFat, kMacroColorProtein;
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../domain/meal_favorite_match.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
@@ -69,8 +70,8 @@ class MealLogRow extends ConsumerWidget {
         onDelete();
         return false;
       },
-      background: _deleteBackground(Alignment.centerLeft),
-      secondaryBackground: _deleteBackground(Alignment.centerRight),
+      background: _deleteBackground(context, Alignment.centerLeft),
+      secondaryBackground: _deleteBackground(context, Alignment.centerRight),
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 4),
         child: InkWell(
@@ -163,16 +164,15 @@ class MealLogRow extends ConsumerWidget {
   }
 
   /// Delete-red swipe background, mirrored to whichever side is revealed.
-  Widget _deleteBackground(Alignment alignment) {
-    return Container(
+  /// Radius + margin mirror the foreground [Card] exactly (theme card shape,
+  /// `vertical: 4` margin) so the reveal never shows square corners.
+  Widget _deleteBackground(BuildContext context, Alignment alignment) {
+    return SwipeActionBackground(
       alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      color: AppColors.dragonfruit,
+      borderRadius: SwipeActionBackground.cardThemeRadius(context),
       margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.dragonfruit,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
+      icon: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
     );
   }
 }

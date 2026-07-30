@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/portion_quantity.dart';
 
@@ -67,35 +68,25 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
     widget.onComponentsChanged(List.unmodifiable(_items));
   }
 
+  /// Radius + margin mirror the foreground [Card] exactly (theme card shape,
+  /// `vertical: 4` margin) so the reveal never shows square corners.
   Widget _swipeBg(
+    BuildContext context,
     Color color,
     IconData icon,
     String label,
     Alignment alignment,
   ) {
-    final isLeft = alignment == Alignment.centerLeft;
-    final children = <Widget>[
-      Icon(icon, color: Colors.white, size: 20),
-      const SizedBox(width: 8),
-      Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ];
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+    return SwipeActionBackground(
       alignment: alignment,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: isLeft ? children : children.reversed.toList(),
+      color: color,
+      borderRadius: SwipeActionBackground.cardThemeRadius(context),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      icon: Icon(icon, color: Colors.white, size: 20),
+      label: label,
+      labelStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -159,6 +150,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                 ? DismissDirection.startToEnd
                 : DismissDirection.horizontal,
             background: _swipeBg(
+              context,
               theme.colorScheme.error,
               Icons.delete_outline,
               'Remove',
@@ -167,6 +159,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
             secondaryBackground: widget.onRequestSwap == null
                 ? null
                 : _swipeBg(
+                    context,
                     theme.colorScheme.primary,
                     Icons.swap_horiz,
                     'Swap',

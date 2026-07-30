@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 ///
 /// Colours are applied per use-site via `.copyWith(color:)` so the same style
 /// can render a cream label or an orange number. Sizes/weights mirror
-/// `docs/new_activity/FUEL_TIMELINE_SPEC.md`.
+/// `docs/features/new_activity/FUEL_TIMELINE_SPEC.md`.
 abstract final class FtType {
   static const _sansita = 'Sansita';
   static const _compadre = 'Compadre';

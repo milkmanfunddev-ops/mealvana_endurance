@@ -21,6 +21,7 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
@@ -1775,11 +1776,24 @@ class _AiTabState extends ConsumerState<_AiTab> {
             vertical: AppSpacing.md,
           ),
           children: [
-            Text(
-              'Describe what you ate and Jade will estimate the macros.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: textColor.withValues(alpha: 0.65),
-              ),
+            // Prompt on the left, token balance on the right — the cost of
+            // the action sits next to the description of it. This is the
+            // primary Describe surface (the Log a Meal tab); the standalone
+            // DescribeMealScreen carries the same pair.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Describe what you ate and Jade will estimate the macros.',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: textColor.withValues(alpha: 0.65),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                const TokenPill(),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             Form(
@@ -1804,10 +1818,26 @@ class _AiTabState extends ConsumerState<_AiTab> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            KylePrimaryButton(
-              text: 'Analyze',
-              isLoading: _isAnalyzing,
-              onPressed: _isAnalyzing ? null : _analyze,
+            // The Analyze button carries its own price.
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                KylePrimaryButton(
+                  text: 'Analyze',
+                  isLoading: _isAnalyzing,
+                  onPressed: _isAnalyzing ? null : _analyze,
+                ),
+                if (!_isAnalyzing)
+                  const IgnorePointer(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 76),
+                        TokenCostChip(),
+                      ],
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.lg),
             if (!kIsWeb)

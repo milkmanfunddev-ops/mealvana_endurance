@@ -11,7 +11,9 @@ import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../providers/activities_controller.dart';
 
@@ -94,7 +96,7 @@ class ActivityCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.blackberryLight : Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: AppRadius.cardRadius,
         border: Border.all(
           color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
             alpha: 0.1,
@@ -107,7 +109,7 @@ class ActivityCard extends ConsumerWidget {
         onTap: () => isSelectionMode
             ? onSelectionToggle?.call()
             : _handleTap(context, ref),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: AppRadius.cardRadius,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -129,16 +131,14 @@ class ActivityCard extends ConsumerWidget {
     );
   }
 
+  /// Radius + margin mirror [_buildCard] exactly so the reveal is card-shaped.
   Widget _buildDismissBackground(bool isDark, Alignment alignment) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.error,
-        borderRadius: BorderRadius.circular(15),
-      ),
+    return SwipeActionBackground(
       alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: const Icon(Icons.delete, color: Colors.white, size: 24),
+      color: AppColors.error,
+      borderRadius: AppRadius.cardRadius,
+      margin: const EdgeInsets.only(bottom: 12),
+      icon: const Icon(Icons.delete, color: Colors.white, size: 24),
     );
   }
 

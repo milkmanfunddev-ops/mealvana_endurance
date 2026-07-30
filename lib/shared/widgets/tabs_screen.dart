@@ -99,14 +99,20 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                   body,
                   if (_currentIndex != 0)
                     Positioned(
-                      top: MediaQuery.of(context).padding.top + 12,
-                      right: 16,
-                      child: GestureDetector(
+                      top: MediaQuery.of(context).padding.top,
+                      right: 4,
+                      child: IconButton(
                         key: const ValueKey('calendar.settings_button'),
-                        onTap: () => context.pushOnce('/settings'),
-                        child: FaIcon(
+                        onPressed: () => context.pushOnce('/settings'),
+                        tooltip: 'Settings',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        icon: FaIcon(
                           FontAwesomeIcons.gear,
-                          size: 18,
+                          size: 22,
                           color: isDark
                               ? AppColors.cream
                               : AppColors.blackberry,
@@ -135,21 +141,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             Positioned(
               top: MediaQuery.of(context).padding.top,
               right: 4,
-              child: Semantics(
-                button: true,
-                label: 'Settings',
-                child: GestureDetector(
-                  key: const ValueKey('calendar.settings_button'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => context.pushOnce('/settings'),
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: FaIcon(
-                      FontAwesomeIcons.gear,
-                      size: 18,
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                    ),
-                  ),
+              child: IconButton(
+                key: const ValueKey('calendar.settings_button'),
+                onPressed: () => context.pushOnce('/settings'),
+                tooltip: 'Settings',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: FaIcon(
+                  FontAwesomeIcons.gear,
+                  size: 22,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
               ),
             ),
