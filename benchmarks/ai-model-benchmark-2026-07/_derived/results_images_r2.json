@@ -1,0 +1,1816 @@
+[
+  {
+    "tag": "image|haiku|compressed|img-01|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.92,
+    "input_tokens": 2270,
+    "output_tokens": 220,
+    "analysis": {
+      "name": "Edamame",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Steamed Edamame",
+          "portion": "1.5 cups (approximately 200g)",
+          "calories": 189,
+          "carb_g": 13.0,
+          "protein_g": 18.4,
+          "fat_g": 8.6,
+          "sodium_mg": 350
+        }
+      ],
+      "totals": {
+        "calories": 189,
+        "carb_g": 13.0,
+        "protein_g": 18.4,
+        "fat_g": 8.6,
+        "sodium_mg": 350
+      },
+      "notes": "Steamed edamame (young soybeans in the pod) shown in a ceramic bowl. This is a protein-rich snack option popular with endurance athletes for its high protein and carbohydrate content relative to calories. The beans appear lightly salted based on visible seasoning."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-02|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.5,
+    "input_tokens": 2270,
+    "output_tokens": 283,
+    "analysis": {
+      "name": "Seared Salmon with Saut\u00e9ed Greens",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Seared Salmon Fillet",
+          "portion": "120g",
+          "calories": 280,
+          "carb_g": 0,
+          "protein_g": 34,
+          "fat_g": 15,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Saut\u00e9ed Dark Leafy Greens (Kale/Spinach)",
+          "portion": "150g",
+          "calories": 90,
+          "carb_g": 12,
+          "protein_g": 6,
+          "fat_g": 3,
+          "sodium_mg": 180
+        }
+      ],
+      "totals": {
+        "calories": 370,
+        "carb_g": 12,
+        "protein_g": 40,
+        "fat_g": 18,
+        "sodium_mg": 255
+      },
+      "notes": "Salmon appears to be pan-seared with minimal oil. Dark leafy greens (likely kale or spinach mixture) are saut\u00e9ed. Portion sizes estimated based on visible plating. This is a lean, protein-rich meal typical for an endurance athlete's lunch or light dinner."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-03|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.29,
+    "input_tokens": 2270,
+    "output_tokens": 177,
+    "analysis": {
+      "name": "Sesame Seed Burger",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Sesame Seed Burger",
+          "portion": "1 burger (approximately 200g)",
+          "calories": 520,
+          "carb_g": 42,
+          "protein_g": 28,
+          "fat_g": 24,
+          "sodium_mg": 890
+        }
+      ],
+      "totals": {
+        "calories": 520,
+        "carb_g": 42,
+        "protein_g": 28,
+        "fat_g": 24,
+        "sodium_mg": 890
+      },
+      "notes": "Burger appears to contain a beef patty, cheese slice, and what appears to be bacon or ham with sesame seed bun. Portion estimated as a standard restaurant-style burger. The exact condiments and toppings are partially obscured but appear minimal based on visible ingredients."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-04|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.67,
+    "input_tokens": 2270,
+    "output_tokens": 266,
+    "analysis": {
+      "name": "Fried Rice with Vegetables and Meat",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Fried Rice with Ground Meat, Peas, Corn, Pineapple, and Green Onions",
+          "portion": "2 cups",
+          "calories": 520,
+          "carb_g": 62,
+          "protein_g": 22,
+          "fat_g": 18,
+          "sodium_mg": 680
+        }
+      ],
+      "totals": {
+        "calories": 520,
+        "carb_g": 62,
+        "protein_g": 22,
+        "fat_g": 18,
+        "sodium_mg": 680
+      },
+      "notes": "This appears to be Thai or Asian-style fried rice with ground pork or beef, mixed vegetables including peas and corn, diced pineapple chunks, and fresh green onions. The rice appears to be cooked in oil with soy sauce. Portion estimated as approximately 2 cups based on the bowl size and typical serving. Confidence is medium due to difficulty in precisely determining the exact amount of oil used in cooking and the exact type and proportion of the ground meat."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-05|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.27,
+    "input_tokens": 2270,
+    "output_tokens": 205,
+    "analysis": {
+      "name": "Breakfast Sandwich with Spread",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "White Bread Sandwich with Peanut Butter",
+          "portion": "1 sandwich (2 slices)",
+          "calories": 380,
+          "carb_g": 38,
+          "protein_g": 14,
+          "fat_g": 18,
+          "sodium_mg": 450
+        }
+      ],
+      "totals": {
+        "calories": 380,
+        "carb_g": 38,
+        "protein_g": 14,
+        "fat_g": 18,
+        "sodium_mg": 450
+      },
+      "notes": "Classic breakfast sandwich made with two slices of white bread and peanut butter spread. The holiday setting in the background (Christmas tree visible) and time of day context suggest this is a breakfast meal. Portion estimated as a standard sandwich for an endurance athlete."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-06|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.26,
+    "input_tokens": 2270,
+    "output_tokens": 212,
+    "analysis": {
+      "name": "Boiled Potato with Skin",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Boiled Potato with Skin",
+          "portion": "1 medium potato (~150g)",
+          "calories": 110,
+          "carb_g": 26,
+          "protein_g": 2.5,
+          "fat_g": 0.1,
+          "sodium_mg": 55
+        }
+      ],
+      "totals": {
+        "calories": 110,
+        "carb_g": 26,
+        "protein_g": 2.5,
+        "fat_g": 0.1,
+        "sodium_mg": 55
+      },
+      "notes": "A single boiled potato with skin visible. The dark section appears to be the potato skin/peel. This is a simple starch-based food commonly eaten by endurance athletes for carbohydrate loading. Portion estimated as a medium potato based on hand size reference."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-07|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.27,
+    "input_tokens": 2270,
+    "output_tokens": 273,
+    "analysis": {
+      "name": "Scrambled Eggs with Spinach and Whole Wheat Toast",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Scrambled Eggs with Spinach",
+          "portion": "approximately 1 cup (3 large eggs with fresh spinach)",
+          "calories": 280,
+          "carb_g": 3,
+          "protein_g": 22,
+          "fat_g": 20,
+          "sodium_mg": 380
+        },
+        {
+          "name": "Whole Wheat Toast",
+          "portion": "1 slice",
+          "calories": 100,
+          "carb_g": 18,
+          "protein_g": 4,
+          "fat_g": 1.5,
+          "sodium_mg": 150
+        }
+      ],
+      "totals": {
+        "calories": 380,
+        "carb_g": 21,
+        "protein_g": 26,
+        "fat_g": 21.5,
+        "sodium_mg": 530
+      },
+      "notes": "Meal appears to be a classic breakfast with protein-rich scrambled eggs combined with fresh spinach for micronutrients, served on whole wheat toast. The portion of eggs appears generous, suitable for an endurance athlete. Confidence is medium due to inability to precisely determine egg quantity and toast thickness from the angle of the photo."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-08|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.63,
+    "input_tokens": 2270,
+    "output_tokens": 249,
+    "analysis": {
+      "name": "RXBAR Strawberry Protein Bar",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "RXBAR Strawberry (3 Egg Whites, 6 Almonds, 4 Cashews, 2 Dates)",
+          "portion": "1 bar (52g)",
+          "calories": 210,
+          "carb_g": 12,
+          "protein_g": 12,
+          "fat_g": 9,
+          "sodium_mg": 115
+        }
+      ],
+      "totals": {
+        "calories": 210,
+        "carb_g": 12,
+        "protein_g": 12,
+        "fat_g": 9,
+        "sodium_mg": 115
+      },
+      "notes": "RXBAR is a popular protein snack bar made with whole food ingredients. The bar provides a balanced macronutrient profile with 12g protein from egg whites and nuts, moderate carbs from dates, and healthy fats from almonds and cashews. Suitable as a pre/post-workout snack or midday energy boost for endurance athletes."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-09|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.96,
+    "input_tokens": 2270,
+    "output_tokens": 345,
+    "analysis": {
+      "name": "Lentil and Vegetable Salad with Tuna and Creamy Dressing",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Tuna and Lentil Salad with Creamy Dressing",
+          "portion": "1 bowl (approximately 350g)",
+          "calories": 420,
+          "carb_g": 28,
+          "protein_g": 38,
+          "fat_g": 16,
+          "sodium_mg": 680
+        },
+        {
+          "name": "Mixed Greens and Microgreens Base",
+          "portion": "2 cups (approximately 60g)",
+          "calories": 15,
+          "carb_g": 2,
+          "protein_g": 2,
+          "fat_g": 0.3,
+          "sodium_mg": 45
+        },
+        {
+          "name": "Corn (Fresh/Cooked)",
+          "portion": "0.5 cup (approximately 80g)",
+          "calories": 66,
+          "carb_g": 15,
+          "protein_g": 2,
+          "fat_g": 0.6,
+          "sodium_mg": 12
+        }
+      ],
+      "totals": {
+        "calories": 501,
+        "carb_g": 45,
+        "protein_g": 42,
+        "fat_g": 16.9,
+        "sodium_mg": 737
+      },
+      "notes": "This appears to be a composed salad featuring canned or fresh tuna mixed with cooked lentils, corn, and kalamata olives, dressed with what appears to be a mayonnaise-based or yogurt-based creamy dressing. Portions estimated for an adult; actual portions may vary. The microgreens and fresh herbs add nutritional value and freshness to the dish."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-10|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.76,
+    "input_tokens": 2270,
+    "output_tokens": 335,
+    "analysis": {
+      "name": "Roasted Brussels Sprouts with Beef and Rice",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Brown Rice",
+          "portion": "1 cup cooked",
+          "calories": 215,
+          "carb_g": 45,
+          "protein_g": 5,
+          "fat_g": 2,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Roasted Beef",
+          "portion": "4 oz",
+          "calories": 280,
+          "carb_g": 0,
+          "protein_g": 35,
+          "fat_g": 14,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Roasted Brussels Sprouts with Garlic",
+          "portion": "1.5 cups",
+          "calories": 165,
+          "carb_g": 15,
+          "protein_g": 6,
+          "fat_g": 8,
+          "sodium_mg": 180
+        }
+      ],
+      "totals": {
+        "calories": 660,
+        "carb_g": 60,
+        "protein_g": 46,
+        "fat_g": 24,
+        "sodium_mg": 260
+      },
+      "notes": "Meal appears to be a roasted vegetable and protein bowl with rice base. Brussels sprouts show caramelization from roasting. Portions estimated based on container size and typical adult serving. Beef appears to be a roasted or seared cut. Some oil or fat used in roasting vegetables is factored into macros."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-11|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 5.03,
+    "input_tokens": 1910,
+    "output_tokens": 466,
+    "analysis": {
+      "name": "Breakfast with Oatmeal, Banana, Dates, and Coffee",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Oatmeal with milk",
+          "portion": "1 cup cooked",
+          "calories": 150,
+          "carb_g": 27,
+          "protein_g": 5,
+          "fat_g": 3,
+          "sodium_mg": 100
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium",
+          "calories": 105,
+          "carb_g": 27,
+          "protein_g": 1.3,
+          "fat_g": 0.3,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Dates",
+          "portion": "4-5 pieces (~60g)",
+          "calories": 170,
+          "carb_g": 45,
+          "protein_g": 1.5,
+          "fat_g": 0.2,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Black coffee",
+          "portion": "1 cup (8 oz)",
+          "calories": 2,
+          "carb_g": 0.2,
+          "protein_g": 0.3,
+          "fat_g": 0,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Juice (appears to be grape or berry)",
+          "portion": "1 cup (8 oz)",
+          "calories": 140,
+          "carb_g": 33,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 20
+        }
+      ],
+      "totals": {
+        "calories": 567,
+        "carb_g": 132.2,
+        "protein_g": 8.1,
+        "fat_g": 3.5,
+        "sodium_mg": 128
+      },
+      "notes": "Solid pre-workout or post-recovery breakfast with good carbohydrate sources (oatmeal, banana, dates, juice) for energy. High carb-to-protein ratio suits endurance athletes. Portions estimated based on typical breakfast servings visible in the image."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-01|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 6.68,
+    "input_tokens": 2271,
+    "output_tokens": 221,
+    "analysis": {
+      "name": "Salted Edamame in Pods",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Edamame (steamed, salted, in pods)",
+          "portion": "~2 cups in pods (~150g shelled beans)",
+          "calories": 188,
+          "carb_g": 14.0,
+          "protein_g": 17.0,
+          "fat_g": 8.0,
+          "sodium_mg": 450
+        }
+      ],
+      "totals": {
+        "calories": 188,
+        "carb_g": 14.0,
+        "protein_g": 17.0,
+        "fat_g": 8.0,
+        "sodium_mg": 450
+      },
+      "notes": "Bowl of steamed edamame in pods with visible sea salt coating. Estimated as a generous snack portion (~2 cups pods) typical for an endurance athlete. Sodium estimate accounts for visible salting on pods. The shelled bean weight (~150g) is used for macro calculation. Portions are estimated from visual cues; actual weight not confirmed."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-02|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 6.4,
+    "input_tokens": 2271,
+    "output_tokens": 284,
+    "analysis": {
+      "name": "Salmon with Saut\u00e9ed Greens and Broccolini",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Baked/Pan-Seared Salmon Fillet",
+          "portion": "~4 oz (113g)",
+          "calories": 234,
+          "carb_g": 0,
+          "protein_g": 25,
+          "fat_g": 14,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Saut\u00e9ed Kale and Broccolini",
+          "portion": "~1.5 cups cooked",
+          "calories": 90,
+          "carb_g": 10,
+          "protein_g": 4,
+          "fat_g": 4,
+          "sodium_mg": 150
+        }
+      ],
+      "totals": {
+        "calories": 324,
+        "carb_g": 10,
+        "protein_g": 29,
+        "fat_g": 18,
+        "sodium_mg": 225
+      },
+      "notes": "Meal appears to be a lean, high-protein dinner well-suited for an endurance athlete. The greens appear to be a mix of saut\u00e9ed kale and broccolini, likely cooked with a small amount of oil. Sodium estimate is conservative as no sauce or heavy seasoning is visible. Carbohydrate content is low \u2014 athlete may want to pair with a starchy side for post-workout recovery."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-03|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 5.47,
+    "input_tokens": 2271,
+    "output_tokens": 226,
+    "analysis": {
+      "name": "Bacon Cheeseburger",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Bacon Cheeseburger (sesame bun, beef patty, bacon, melted cheese, mustard)",
+          "portion": "1 burger (~220g)",
+          "calories": 620,
+          "carb_g": 42.0,
+          "protein_g": 34.0,
+          "fat_g": 32.0,
+          "sodium_mg": 1050
+        }
+      ],
+      "totals": {
+        "calories": 620,
+        "carb_g": 42.0,
+        "protein_g": 34.0,
+        "fat_g": 32.0,
+        "sodium_mg": 1050
+      },
+      "notes": "Burger appears to be a single beef patty with bacon, melted white/yellow cheese, and mustard on a sesame seed bun. No visible sides or fries. Macros estimated for a typical restaurant-style bacon cheeseburger. Endurance athletes may want to pair this with additional carbohydrates for fueling needs."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-04|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 7.4,
+    "input_tokens": 2271,
+    "output_tokens": 316,
+    "analysis": {
+      "name": "Mung Bean and Rice Bowl (Indian-style Khichdi/Moong Sprouts Rice)",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Mung bean and vegetable rice bowl with basmati rice, sprouted/cooked mung beans, potato, peas, tomato, onion, cilantro, and spiced broth",
+          "portion": "1 large bowl (~2.5 cups)",
+          "calories": 520,
+          "carb_g": 88.0,
+          "protein_g": 22.0,
+          "fat_g": 8.0,
+          "sodium_mg": 620
+        }
+      ],
+      "totals": {
+        "calories": 520,
+        "carb_g": 88.0,
+        "protein_g": 22.0,
+        "fat_g": 8.0,
+        "sodium_mg": 620
+      },
+      "notes": "This appears to be an Indian-style khichdi or mung dal rice dish with basmati rice, cooked/sprouted mung beans, diced potato, green peas, tomato, onion, and fresh cilantro in a lightly spiced sauce. Portion estimated as a large single-serving bowl suitable for an endurance athlete. Confidence is medium due to uncertainty around exact oil/ghee content and precise portion depth in the bowl. This is a carbohydrate-rich meal with moderate plant-based protein \u2014 well-suited for post-training recovery or a pre-training lunch."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-05|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 6.01,
+    "input_tokens": 2271,
+    "output_tokens": 229,
+    "analysis": {
+      "name": "Smoked Salmon on Sourdough Bread",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Sourdough bread with smoked salmon",
+          "portion": "1 thick slice (~80g bread, ~50g smoked salmon)",
+          "calories": 280,
+          "carb_g": 32.0,
+          "protein_g": 18.0,
+          "fat_g": 6.5,
+          "sodium_mg": 780
+        }
+      ],
+      "totals": {
+        "calories": 280,
+        "carb_g": 32.0,
+        "protein_g": 18.0,
+        "fat_g": 6.5,
+        "sodium_mg": 780
+      },
+      "notes": "Appears to be a partially eaten open-faced or folded sandwich made with rustic sourdough bread and smoked salmon. Portion estimated for an endurance athlete. No visible spreads (cream cheese, butter) but may be present \u2014 sodium could be higher if cream cheese or additional condiments are included. Confidence is medium due to the bite already taken and angle of the photo making exact portions uncertain."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-06|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 5.49,
+    "input_tokens": 2271,
+    "output_tokens": 212,
+    "analysis": {
+      "name": "Cooked Purple Sweet Potato (half)",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cooked Purple Sweet Potato (half, skin on)",
+          "portion": "1 medium half (~150g)",
+          "calories": 130,
+          "carb_g": 30.0,
+          "protein_g": 2.5,
+          "fat_g": 0.2,
+          "sodium_mg": 55
+        }
+      ],
+      "totals": {
+        "calories": 130,
+        "carb_g": 30.0,
+        "protein_g": 2.5,
+        "fat_g": 0.2,
+        "sodium_mg": 55
+      },
+      "notes": "This appears to be a cooked/baked purple sweet potato (Okinawan or similar variety) cut in half, showing yellow-orange flesh with purple skin. Portions estimated for roughly half of a medium sweet potato (~150g). No added toppings or butter visible. Good source of complex carbohydrates for an endurance athlete."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-07|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 8.41,
+    "input_tokens": 2271,
+    "output_tokens": 391,
+    "analysis": {
+      "name": "Scrambled Eggs with Spinach on Whole Wheat Tortilla",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Scrambled eggs",
+          "portion": "3 large eggs, scrambled",
+          "calories": 210,
+          "carb_g": 1.5,
+          "protein_g": 18.0,
+          "fat_g": 14.0,
+          "sodium_mg": 210
+        },
+        {
+          "name": "Fresh baby spinach",
+          "portion": "1.5 cups (~45g)",
+          "calories": 10,
+          "carb_g": 1.5,
+          "protein_g": 1.2,
+          "fat_g": 0.2,
+          "sodium_mg": 35
+        },
+        {
+          "name": "Whole wheat tortilla",
+          "portion": "1 medium (about 8-inch)",
+          "calories": 130,
+          "carb_g": 22.0,
+          "protein_g": 4.0,
+          "fat_g": 3.0,
+          "sodium_mg": 280
+        },
+        {
+          "name": "Avocado (mashed, mixed with eggs)",
+          "portion": "~1/4 avocado (~40g)",
+          "calories": 64,
+          "carb_g": 3.4,
+          "protein_g": 0.8,
+          "fat_g": 5.9,
+          "sodium_mg": 3
+        }
+      ],
+      "totals": {
+        "calories": 414,
+        "carb_g": 28.4,
+        "protein_g": 24.0,
+        "fat_g": 23.1,
+        "sodium_mg": 528
+      },
+      "notes": "Meal appears to be scrambled eggs mixed with or topped alongside mashed avocado, served on a bed of fresh baby spinach on a whole wheat tortilla \u2014 a well-balanced, protein-rich breakfast well-suited for an endurance athlete. Portion estimates are moderate; avocado presence inferred from the yellow-green coloring mixed in with the eggs."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-08|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 5.64,
+    "input_tokens": 2271,
+    "output_tokens": 211,
+    "analysis": {
+      "name": "RXBAR Strawberry",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "RXBAR Strawberry Protein Bar",
+          "portion": "1 bar (52g)",
+          "calories": 210,
+          "carb_g": 24.0,
+          "protein_g": 12.0,
+          "fat_g": 9.0,
+          "sodium_mg": 260.0
+        }
+      ],
+      "totals": {
+        "calories": 210,
+        "carb_g": 24.0,
+        "protein_g": 12.0,
+        "fat_g": 9.0,
+        "sodium_mg": 260.0
+      },
+      "notes": "RXBAR Strawberry flavor, 1.8 oz (52g) bar. Key ingredients listed on packaging: 3 egg whites, 6 almonds, 4 cashews, 2 dates, and strawberry flavoring. A convenient whole-food protein snack ideal for pre/post-workout fueling for endurance athletes."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-09|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 11.25,
+    "input_tokens": 2271,
+    "output_tokens": 611,
+    "analysis": {
+      "name": "Tuna & Lentil Salad Bowl with Kalamata Olives and Creamy Dressing",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Arugula and mixed greens base",
+          "portion": "2 large handfuls (~60g)",
+          "calories": 15,
+          "carb_g": 2.0,
+          "protein_g": 1.5,
+          "fat_g": 0.2,
+          "sodium_mg": 20
+        },
+        {
+          "name": "Cooked black/beluga lentils",
+          "portion": "~150g cooked (~3/4 cup)",
+          "calories": 175,
+          "carb_g": 29.0,
+          "protein_g": 13.0,
+          "fat_g": 0.7,
+          "sodium_mg": 10
+        },
+        {
+          "name": "Canned tuna (in oil or water, drained)",
+          "portion": "~120g (~1 small can)",
+          "calories": 160,
+          "carb_g": 0.0,
+          "protein_g": 28.0,
+          "fat_g": 4.5,
+          "sodium_mg": 360
+        },
+        {
+          "name": "Kalamata olives",
+          "portion": "~10-12 olives (~60g)",
+          "calories": 85,
+          "carb_g": 4.5,
+          "protein_g": 0.6,
+          "fat_g": 7.5,
+          "sodium_mg": 560
+        },
+        {
+          "name": "Sweetcorn kernels",
+          "portion": "~80g (~1/2 cup)",
+          "calories": 70,
+          "carb_g": 15.0,
+          "protein_g": 2.5,
+          "fat_g": 0.5,
+          "sodium_mg": 15
+        },
+        {
+          "name": "Diced red and green bell peppers and other mixed vegetables",
+          "portion": "~80g",
+          "calories": 25,
+          "carb_g": 5.0,
+          "protein_g": 0.8,
+          "fat_g": 0.2,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Creamy dressing (likely tahini or Caesar-style)",
+          "portion": "~3 tbsp (~45ml)",
+          "calories": 135,
+          "carb_g": 3.0,
+          "protein_g": 2.5,
+          "fat_g": 12.5,
+          "sodium_mg": 270
+        }
+      ],
+      "totals": {
+        "calories": 665,
+        "carb_g": 58.5,
+        "protein_g": 48.9,
+        "fat_g": 26.1,
+        "sodium_mg": 1240
+      },
+      "notes": "This is a nutrient-dense, high-protein salad bowl well-suited for an endurance athlete's lunch. The lentils and corn provide sustained carbohydrates, tuna offers lean protein, and olives plus dressing contribute healthy fats. Sodium is moderate-to-high largely from olives and tuna. Portion estimates are moderate; actual lentil and tuna quantities may vary."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-10|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 7.96,
+    "input_tokens": 2271,
+    "output_tokens": 344,
+    "analysis": {
+      "name": "Meal Prep Bowl: Braised Beef, Rice & Roasted Brussels Sprouts",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Braised/Shredded Beef",
+          "portion": "~150g (5.3 oz)",
+          "calories": 310,
+          "carb_g": 2.0,
+          "protein_g": 36.0,
+          "fat_g": 17.0,
+          "sodium_mg": 480
+        },
+        {
+          "name": "White Rice (with braising juices)",
+          "portion": "~180g cooked (~1 cup)",
+          "calories": 240,
+          "carb_g": 52.0,
+          "protein_g": 4.5,
+          "fat_g": 1.0,
+          "sodium_mg": 200
+        },
+        {
+          "name": "Roasted Brussels Sprouts",
+          "portion": "~200g (~2 cups halved)",
+          "calories": 110,
+          "carb_g": 14.0,
+          "protein_g": 5.0,
+          "fat_g": 4.5,
+          "sodium_mg": 220
+        }
+      ],
+      "totals": {
+        "calories": 660,
+        "carb_g": 68.0,
+        "protein_g": 45.5,
+        "fat_g": 22.5,
+        "sodium_mg": 900
+      },
+      "notes": "Meal prep container with shredded braised beef (likely cooked with sauce/seasoning), white rice absorbing the braising liquid, and roasted Brussels sprouts lightly oiled. Portions estimated for an endurance athlete meal prep container. Sodium estimate is moderate assuming light seasoning; could be higher if soy-based marinade was used."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-11|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 9.89,
+    "input_tokens": 1911,
+    "output_tokens": 460,
+    "analysis": {
+      "name": "Oatmeal Breakfast with Dates, Banana, Coffee, and Juice",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cooked Oatmeal",
+          "portion": "1.5 cups (approx 350g cooked)",
+          "calories": 220,
+          "carb_g": 38.0,
+          "protein_g": 8.0,
+          "fat_g": 4.0,
+          "sodium_mg": 120
+        },
+        {
+          "name": "Medjool Dates",
+          "portion": "4 dates (approx 96g)",
+          "calories": 267,
+          "carb_g": 71.0,
+          "protein_g": 1.8,
+          "fat_g": 0.4,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium banana (approx 118g)",
+          "calories": 105,
+          "carb_g": 27.0,
+          "protein_g": 1.3,
+          "fat_g": 0.3,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Black Coffee",
+          "portion": "1 mug (approx 240ml)",
+          "calories": 5,
+          "carb_g": 0.0,
+          "protein_g": 0.3,
+          "fat_g": 0.0,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Dark Berry Juice (likely grape or berry blend)",
+          "portion": "1 glass (approx 240ml)",
+          "calories": 150,
+          "carb_g": 37.0,
+          "protein_g": 0.5,
+          "fat_g": 0.0,
+          "sodium_mg": 15
+        }
+      ],
+      "totals": {
+        "calories": 747,
+        "carb_g": 173.0,
+        "protein_g": 11.9,
+        "fat_g": 4.7,
+        "sodium_mg": 143
+      },
+      "notes": "Classic endurance athlete breakfast \u2014 high carbohydrate load suitable for pre-training or post-training recovery. Dates provide quick-release sugars; oatmeal offers sustained energy. Portions estimated from visible bowl size and date count. The dark beverage in the glass appears to be a berry or grape juice. Confidence is medium due to uncertain exact portion sizes and juice type."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-01|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 6.6,
+    "input_tokens": 2862,
+    "output_tokens": 231,
+    "analysis": {
+      "name": "Edamame",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Edamame (boiled, salted)",
+          "portion": "1.5 cups (about 180g)",
+          "calories": 189,
+          "carb_g": 13.5,
+          "protein_g": 18.6,
+          "fat_g": 8.4,
+          "sodium_mg": 480
+        }
+      ],
+      "totals": {
+        "calories": 189,
+        "carb_g": 13.5,
+        "protein_g": 18.6,
+        "fat_g": 8.4,
+        "sodium_mg": 480
+      },
+      "notes": "Edamame is a high-protein, plant-based snack ideal for endurance athletes. The portion shown appears to be approximately 1.5 cups of boiled, salted edamame pods. This provides a good balance of plant protein, carbohydrates for energy, and healthy fats. The sodium content reflects typical salt seasoning on boiled edamame."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-02|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.03,
+    "input_tokens": 2862,
+    "output_tokens": 299,
+    "analysis": {
+      "name": "Salmon with Saut\u00e9ed Greens",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cooked Salmon Fillet",
+          "portion": "4 oz (113g)",
+          "calories": 280,
+          "carb_g": 0,
+          "protein_g": 31,
+          "fat_g": 16,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Saut\u00e9ed Dark Leafy Greens",
+          "portion": "2 cups (150g)",
+          "calories": 95,
+          "carb_g": 8,
+          "protein_g": 6,
+          "fat_g": 4,
+          "sodium_mg": 180
+        }
+      ],
+      "totals": {
+        "calories": 375,
+        "carb_g": 8,
+        "protein_g": 37,
+        "fat_g": 20,
+        "sodium_mg": 255
+      },
+      "notes": "Plate contains a cooked salmon fillet (appears to be 4 oz based on visible size) and saut\u00e9ed dark leafy greens, likely kale or similar. The greens appear to be cooked in oil or butter. Portion estimates are typical for an athlete meal. Confidence is medium due to inability to precisely determine salmon weight and exact cooking fat content from the image."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-03|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.23,
+    "input_tokens": 2862,
+    "output_tokens": 203,
+    "analysis": {
+      "name": "Sesame Seed Burger with Bacon and Cheese",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Sesame Seed Burger with Bacon and Cheese",
+          "portion": "1 burger",
+          "calories": 620,
+          "carb_g": 42,
+          "protein_g": 38,
+          "fat_g": 32,
+          "sodium_mg": 1120
+        }
+      ],
+      "totals": {
+        "calories": 620,
+        "carb_g": 42,
+        "protein_g": 38,
+        "fat_g": 32,
+        "sodium_mg": 1120
+      },
+      "notes": "Classic cheeseburger with sesame seed bun, beef patty, cheese, and bacon visible. Portion appears to be a standard restaurant burger. Macros estimated based on typical burger composition with visible toppings."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-04|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.18,
+    "input_tokens": 2862,
+    "output_tokens": 271,
+    "analysis": {
+      "name": "Fried Rice with Meat and Vegetables",
+      "suggested_slot": "lunch",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Fried Rice with Ground Meat, Peas, Corn, Pineapple, and Scallions",
+          "portion": "1 bowl (approximately 2 cups)",
+          "calories": 520,
+          "carb_g": 58,
+          "protein_g": 22,
+          "fat_g": 18,
+          "sodium_mg": 850
+        }
+      ],
+      "totals": {
+        "calories": 520,
+        "carb_g": 58,
+        "protein_g": 22,
+        "fat_g": 18,
+        "sodium_mg": 850
+      },
+      "notes": "This appears to be a Thai-style fried rice with ground pork or beef, mixed vegetables (peas, corn, diced pineapple, red bell pepper), garnished with fresh scallions and cilantro. Portion estimated as a full serving bowl typical for an adult. The dish is cooked in oil which contributes to the fat content. Well-suited for a lunch meal for an endurance athlete providing balanced carbohydrates, protein, and fat."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-05|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 5.94,
+    "input_tokens": 2862,
+    "output_tokens": 230,
+    "analysis": {
+      "name": "Whole Wheat Sandwich with Cured Meat",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Whole Wheat Bread Sandwich with Cured Meat",
+          "portion": "1 sandwich",
+          "calories": 320,
+          "carb_g": 32,
+          "protein_g": 14,
+          "fat_g": 12,
+          "sodium_mg": 680
+        }
+      ],
+      "totals": {
+        "calories": 320,
+        "carb_g": 32,
+        "protein_g": 14,
+        "fat_g": 12,
+        "sodium_mg": 680
+      },
+      "notes": "Image shows a whole wheat sandwich with what appears to be sliced cured meat (possibly prosciutto or ham). The sandwich is held in hand with a Christmas tree visible in the background. Portion appears to be a single sandwich. Due to the angle and lighting, exact bread type and meat thickness are somewhat difficult to determine with complete certainty, hence medium confidence rating."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-06|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 3.79,
+    "input_tokens": 2862,
+    "output_tokens": 215,
+    "analysis": {
+      "name": "Boiled Potato",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Boiled Potato",
+          "portion": "1 medium potato (~150g)",
+          "calories": 110,
+          "carb_g": 26,
+          "protein_g": 2.5,
+          "fat_g": 0.1,
+          "sodium_mg": 55
+        }
+      ],
+      "totals": {
+        "calories": 110,
+        "carb_g": 26,
+        "protein_g": 2.5,
+        "fat_g": 0.1,
+        "sodium_mg": 55
+      },
+      "notes": "A single boiled potato with skin still partially attached. The potato appears to be freshly cooked and peeled. This is a simple, carbohydrate-rich food suitable for an endurance athlete as a side dish or light meal component. Portion estimated as a medium potato based on visible size relative to hand."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-07|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.16,
+    "input_tokens": 2862,
+    "output_tokens": 332,
+    "analysis": {
+      "name": "Egg Scramble with Spinach and Whole Wheat Wrap",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Scrambled Eggs",
+          "portion": "approximately 3 large eggs",
+          "calories": 270,
+          "carb_g": 3,
+          "protein_g": 21,
+          "fat_g": 21,
+          "sodium_mg": 210
+        },
+        {
+          "name": "Fresh Spinach Bed",
+          "portion": "approximately 2 cups fresh spinach",
+          "calories": 14,
+          "carb_g": 2.2,
+          "protein_g": 1.9,
+          "fat_g": 0.2,
+          "sodium_mg": 70
+        },
+        {
+          "name": "Whole Wheat Wrap/Tortilla",
+          "portion": "1 large wrap (~80g)",
+          "calories": 180,
+          "carb_g": 32,
+          "protein_g": 7,
+          "fat_g": 3.5,
+          "sodium_mg": 390
+        }
+      ],
+      "totals": {
+        "calories": 464,
+        "carb_g": 37.2,
+        "protein_g": 29.9,
+        "fat_g": 24.7,
+        "sodium_mg": 670
+      },
+      "notes": "Light, protein-rich breakfast meal typical for an endurance athlete. The scrambled eggs provide quality protein and fat for satiety, while the fresh spinach adds micronutrients and the whole wheat wrap provides complex carbohydrates for sustained energy. Portion estimates based on visible volume on plate."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-08|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.62,
+    "input_tokens": 2862,
+    "output_tokens": 221,
+    "analysis": {
+      "name": "RXBAR Strawberry Protein Bar",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "RXBAR Strawberry (3 Egg Whites, 6 Almonds, 4 Cashews, 2 Dates)",
+          "portion": "1 bar (52g)",
+          "calories": 210,
+          "carb_g": 12,
+          "protein_g": 12,
+          "fat_g": 9,
+          "sodium_mg": 85
+        }
+      ],
+      "totals": {
+        "calories": 210,
+        "carb_g": 12,
+        "protein_g": 12,
+        "fat_g": 9,
+        "sodium_mg": 85
+      },
+      "notes": "RXBAR is a whole-food protein bar made with egg whites as the primary protein source, supplemented with nuts and dates for carbohydrates and healthy fats. This is an ideal portable snack for endurance athletes."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-09|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 5.15,
+    "input_tokens": 2862,
+    "output_tokens": 254,
+    "analysis": {
+      "name": "Lentil and Vegetable Salad with Creamy Dressing",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Mixed Greens and Lentil Salad with Roasted Vegetables and Creamy Dressing",
+          "portion": "1 bowl (approximately 400g)",
+          "calories": 380,
+          "carb_g": 38,
+          "protein_g": 18,
+          "fat_g": 14,
+          "sodium_mg": 520
+        }
+      ],
+      "totals": {
+        "calories": 380,
+        "carb_g": 38,
+        "protein_g": 18,
+        "fat_g": 14,
+        "sodium_mg": 520
+      },
+      "notes": "This appears to be a composed salad featuring microgreens, cooked lentils (brown/green varieties), roasted beetroot, sweet corn, possibly some diced squash or carrot, and a creamy dressing (likely mayo or yogurt-based). The portion is generous and appropriate for a lunch meal for an endurance athlete. Macros estimated based on visible ingredients and typical preparation methods for this type of dish."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-10|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.61,
+    "input_tokens": 2862,
+    "output_tokens": 328,
+    "analysis": {
+      "name": "Roasted Brussels Sprouts with Beef and Rice",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Brown Rice",
+          "portion": "1 cup cooked",
+          "calories": 215,
+          "carb_g": 45,
+          "protein_g": 5,
+          "fat_g": 2,
+          "sodium_mg": 10
+        },
+        {
+          "name": "Lean Beef (roasted/braised)",
+          "portion": "4 oz",
+          "calories": 240,
+          "carb_g": 0,
+          "protein_g": 32,
+          "fat_g": 11,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Roasted Brussels Sprouts with Garlic",
+          "portion": "2 cups",
+          "calories": 185,
+          "carb_g": 24,
+          "protein_g": 8,
+          "fat_g": 8,
+          "sodium_mg": 120
+        }
+      ],
+      "totals": {
+        "calories": 640,
+        "carb_g": 69,
+        "protein_g": 45,
+        "fat_g": 21,
+        "sodium_mg": 205
+      },
+      "notes": "Meal appears to be a balanced lunch with roasted vegetables, lean protein, and whole grain. The brussels sprouts show caramelization indicating roasting with oil. Portion estimates based on visible volume in container; actual macros may vary depending on cooking oil used and exact beef cut."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-11|r2",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 4.62,
+    "input_tokens": 2754,
+    "output_tokens": 464,
+    "analysis": {
+      "name": "Breakfast with Oatmeal, Banana, Dates, Coffee, and Juice",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Oatmeal",
+          "portion": "1.5 cups cooked",
+          "calories": 300,
+          "carb_g": 54,
+          "protein_g": 10,
+          "fat_g": 5,
+          "sodium_mg": 150
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium",
+          "calories": 105,
+          "carb_g": 27,
+          "protein_g": 1.3,
+          "fat_g": 0.3,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Dates",
+          "portion": "3 whole Medjool dates",
+          "calories": 240,
+          "carb_g": 64,
+          "protein_g": 2,
+          "fat_g": 0.4,
+          "sodium_mg": 3
+        },
+        {
+          "name": "Black Coffee",
+          "portion": "1 cup (8 oz)",
+          "calories": 5,
+          "carb_g": 0,
+          "protein_g": 0.3,
+          "fat_g": 0,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Fruit Juice (likely grape or cranberry)",
+          "portion": "1 cup (8 oz)",
+          "calories": 140,
+          "carb_g": 34,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 30
+        }
+      ],
+      "totals": {
+        "calories": 790,
+        "carb_g": 179,
+        "protein_g": 13.6,
+        "fat_g": 5.7,
+        "sodium_mg": 189
+      },
+      "notes": "Breakfast meal composed of oatmeal as the primary carbohydrate source with banana and dates providing additional quick carbs and energy, ideal for an endurance athlete. Confidence is medium due to inability to precisely determine oatmeal portion size and juice type from the image."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-01|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 6.5,
+    "input_tokens": 2863,
+    "output_tokens": 218,
+    "analysis": {
+      "name": "Salted Edamame in Pods",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Edamame (steamed, salted, in pods)",
+          "portion": "~2 cups in pods (~150g shelled beans)",
+          "calories": 224,
+          "carb_g": 17.0,
+          "protein_g": 19.0,
+          "fat_g": 10.0,
+          "sodium_mg": 600
+        }
+      ],
+      "totals": {
+        "calories": 224,
+        "carb_g": 17.0,
+        "protein_g": 19.0,
+        "fat_g": 10.0,
+        "sodium_mg": 600
+      },
+      "notes": "Bowl appears to contain approximately 2 cups of edamame in pods with visible sea salt. Edamame is an excellent snack for endurance athletes \u2014 high in plant protein and moderate in complex carbs. Sodium estimate accounts for the visible salting on the pods. Shells are not eaten, so macros reflect only the beans inside."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-02|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 6.8,
+    "input_tokens": 2863,
+    "output_tokens": 286,
+    "analysis": {
+      "name": "Baked Salmon with Saut\u00e9ed Broccolini and Kale",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Baked Salmon Fillet",
+          "portion": "~5 oz (140g)",
+          "calories": 280,
+          "carb_g": 0,
+          "protein_g": 34,
+          "fat_g": 16,
+          "sodium_mg": 200
+        },
+        {
+          "name": "Saut\u00e9ed Broccolini and Kale",
+          "portion": "~1.5 cups cooked",
+          "calories": 80,
+          "carb_g": 8,
+          "protein_g": 4,
+          "fat_g": 4,
+          "sodium_mg": 150
+        }
+      ],
+      "totals": {
+        "calories": 360,
+        "carb_g": 8,
+        "protein_g": 38,
+        "fat_g": 20,
+        "sodium_mg": 350
+      },
+      "notes": "High-protein, low-carb meal well-suited for post-workout recovery. The greens appear to be a mix of broccolini and kale, lightly saut\u00e9ed with oil. Salmon looks pan-seared or oven-baked. Very low in carbohydrates \u2014 an endurance athlete may want to add a carb source (e.g. rice, sweet potato) to better support glycogen replenishment."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-03|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 7.56,
+    "input_tokens": 2863,
+    "output_tokens": 265,
+    "analysis": {
+      "name": "Bacon Cheeseburger",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Bacon Cheeseburger (sesame bun, beef patty, bacon, American cheese, mustard, pickled onions)",
+          "portion": "1 burger (~250g)",
+          "calories": 650,
+          "carb_g": 42.0,
+          "protein_g": 38.0,
+          "fat_g": 34.0,
+          "sodium_mg": 1050.0
+        }
+      ],
+      "totals": {
+        "calories": 650,
+        "carb_g": 42.0,
+        "protein_g": 38.0,
+        "fat_g": 34.0,
+        "sodium_mg": 1050.0
+      },
+      "notes": "This appears to be a bacon cheeseburger on a sesame seed bun with visible bacon, melted cheese (likely American), mustard, and what looks like pickled red onions. No visible side dishes or fries. Macros are estimated for a restaurant-style burger of moderate size. Sodium may be higher depending on condiments and bacon curing. Good protein source for recovery; consider pairing with a carb-rich side if this is a pre/post-training meal."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-04|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 8.09,
+    "input_tokens": 2863,
+    "output_tokens": 298,
+    "analysis": {
+      "name": "Khichdi / Mung Bean Rice Bowl",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Khichdi (rice, mung dal, potato, peas, tomato, spices, cilantro, oil)",
+          "portion": "Large bowl ~2.5 cups (500g)",
+          "calories": 520,
+          "carb_g": 88.0,
+          "protein_g": 20.0,
+          "fat_g": 10.0,
+          "sodium_mg": 680
+        }
+      ],
+      "totals": {
+        "calories": 520,
+        "carb_g": 88.0,
+        "protein_g": 20.0,
+        "fat_g": 10.0,
+        "sodium_mg": 680
+      },
+      "notes": "This appears to be a traditional Indian khichdi \u2014 a one-pot dish made with white basmati rice, whole or split mung dal (moong), diced potato, green peas, tomato, fresh cilantro, and savory spices cooked with oil or ghee. It's a moderate-calorie, carbohydrate-rich meal well-suited for endurance athletes for post-workout recovery or a lunch meal. Portion estimated as a large single-serving bowl (~500g). Sodium is estimated and could vary significantly depending on added salt. If ghee was used generously, fat could be higher (~14\u201316g)."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-05|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 7.96,
+    "input_tokens": 2863,
+    "output_tokens": 280,
+    "analysis": {
+      "name": "Smoked Salmon on Rustic Bread",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Rustic sourdough/artisan bread (partial piece, already bitten)",
+          "portion": "1 thick slice (~80g)",
+          "calories": 210,
+          "carb_g": 40.0,
+          "protein_g": 7.0,
+          "fat_g": 2.0,
+          "sodium_mg": 380
+        },
+        {
+          "name": "Smoked salmon",
+          "portion": "2\u20133 slices (~50g)",
+          "calories": 80,
+          "carb_g": 0.0,
+          "protein_g": 11.0,
+          "fat_g": 4.0,
+          "sodium_mg": 700
+        }
+      ],
+      "totals": {
+        "calories": 290,
+        "carb_g": 40.0,
+        "protein_g": 18.0,
+        "fat_g": 6.0,
+        "sodium_mg": 1080
+      },
+      "notes": "The sandwich appears to be a simple smoked salmon on rustic artisan bread, partially eaten. No visible spreads (cream cheese or butter) could be confirmed, though one may be present \u2014 estimate is conservative. Sodium is notably high due to the smoked salmon. Good pre- or post-training snack/breakfast option with a solid protein hit for an endurance athlete."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-06|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 5.93,
+    "input_tokens": 2863,
+    "output_tokens": 222,
+    "analysis": {
+      "name": "Baked Japanese Sweet Potato (Satsumaimo)",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Baked Japanese Sweet Potato (purple skin, yellow flesh)",
+          "portion": "1 medium potato (~200g)",
+          "calories": 172,
+          "carb_g": 40.0,
+          "protein_g": 2.6,
+          "fat_g": 0.2,
+          "sodium_mg": 68
+        }
+      ],
+      "totals": {
+        "calories": 172,
+        "carb_g": 40.0,
+        "protein_g": 2.6,
+        "fat_g": 0.2,
+        "sodium_mg": 68
+      },
+      "notes": "This appears to be a Japanese sweet potato (satsumaimo) with distinctive purple skin and pale yellow/cream flesh, shown split open. These are naturally sweeter and denser than orange-fleshed sweet potatoes. No toppings or butter visible. Good carbohydrate source for endurance athletes \u2014 easily digestible starch for glycogen replenishment."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-07|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 8.05,
+    "input_tokens": 2863,
+    "output_tokens": 314,
+    "analysis": {
+      "name": "Scrambled Eggs with Spinach on Tortilla",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Scrambled eggs",
+          "portion": "3 large eggs scrambled",
+          "calories": 210,
+          "carb_g": 1.5,
+          "protein_g": 18.0,
+          "fat_g": 14.0,
+          "sodium_mg": 310
+        },
+        {
+          "name": "Baby spinach",
+          "portion": "2 cups fresh",
+          "calories": 14,
+          "carb_g": 2.2,
+          "protein_g": 1.7,
+          "fat_g": 0.2,
+          "sodium_mg": 48
+        },
+        {
+          "name": "Whole wheat tortilla",
+          "portion": "1 medium (8-inch)",
+          "calories": 130,
+          "carb_g": 22.0,
+          "protein_g": 4.0,
+          "fat_g": 3.0,
+          "sodium_mg": 280
+        }
+      ],
+      "totals": {
+        "calories": 354,
+        "carb_g": 25.7,
+        "protein_g": 23.7,
+        "fat_g": 17.2,
+        "sodium_mg": 638
+      },
+      "notes": "Appears to be a light breakfast wrap base with scrambled eggs piled over fresh spinach on a whole wheat tortilla. The eggs look fluffy and lightly cooked \u2014 estimated 3 eggs. No visible added sauces or cheese. Possibly some avocado mixed in with the eggs given the slight green tint in spots; macros adjusted slightly but kept conservative."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-08|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 7.83,
+    "input_tokens": 2863,
+    "output_tokens": 207,
+    "analysis": {
+      "name": "RXBAR Strawberry",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "RXBAR Strawberry Protein Bar",
+          "portion": "1 bar (52g)",
+          "calories": 210,
+          "carb_g": 24.0,
+          "protein_g": 12.0,
+          "fat_g": 9.0,
+          "sodium_mg": 260.0
+        }
+      ],
+      "totals": {
+        "calories": 210,
+        "carb_g": 24.0,
+        "protein_g": 12.0,
+        "fat_g": 9.0,
+        "sodium_mg": 260.0
+      },
+      "notes": "RXBAR Strawberry flavor, 1.8 oz (52g) bar. Key ingredients per label: 3 egg whites, 6 almonds, 4 cashews, 2 dates. Good quick snack for an endurance athlete providing 12g protein and steady carbohydrates from whole food sources."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-09|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 11.8,
+    "input_tokens": 2863,
+    "output_tokens": 566,
+    "analysis": {
+      "name": "Tuna & Lentil Salad Bowl with Olives and Creamy Dressing",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Arugula/rocket base",
+          "portion": "2 large handfuls (~60g)",
+          "calories": 14,
+          "carb_g": 1.5,
+          "protein_g": 1.5,
+          "fat_g": 0.2,
+          "sodium_mg": 20
+        },
+        {
+          "name": "Cooked black/beluga lentils",
+          "portion": "~150g cooked",
+          "calories": 173,
+          "carb_g": 30.0,
+          "protein_g": 13.5,
+          "fat_g": 0.5,
+          "sodium_mg": 10
+        },
+        {
+          "name": "Canned tuna (in brine or oil)",
+          "portion": "~120g drained",
+          "calories": 160,
+          "carb_g": 0.0,
+          "protein_g": 28.0,
+          "fat_g": 4.5,
+          "sodium_mg": 400
+        },
+        {
+          "name": "Kalamata and mixed olives",
+          "portion": "~10 large olives (~80g)",
+          "calories": 100,
+          "carb_g": 3.0,
+          "protein_g": 0.8,
+          "fat_g": 10.0,
+          "sodium_mg": 560
+        },
+        {
+          "name": "Corn kernels",
+          "portion": "~60g",
+          "calories": 52,
+          "carb_g": 11.5,
+          "protein_g": 1.5,
+          "fat_g": 0.5,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Diced red pepper and tomato",
+          "portion": "~80g",
+          "calories": 20,
+          "carb_g": 4.0,
+          "protein_g": 0.8,
+          "fat_g": 0.1,
+          "sodium_mg": 10
+        },
+        {
+          "name": "Creamy dressing (likely mayo or tahini-based)",
+          "portion": "~3 tbsp (~45g)",
+          "calories": 180,
+          "carb_g": 3.0,
+          "protein_g": 1.5,
+          "fat_g": 18.0,
+          "sodium_mg": 300
+        }
+      ],
+      "totals": {
+        "calories": 699,
+        "carb_g": 53.0,
+        "protein_g": 47.6,
+        "fat_g": 33.8,
+        "sodium_mg": 1305
+      },
+      "notes": "High-protein, moderate-carb salad bowl well-suited for a post-training lunch. Lentils provide sustained energy and iron, tuna delivers lean protein, and olives/dressing add healthy fats. Sodium is moderately high due to olives and dressing \u2014 useful for electrolyte replenishment after endurance sessions."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-10|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 8.05,
+    "input_tokens": 2863,
+    "output_tokens": 291,
+    "analysis": {
+      "name": "Braised Beef with Rice and Roasted Brussels Sprouts",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Braised/Shredded Beef over White Rice",
+          "portion": "~150g beef, ~1.5 cups cooked rice",
+          "calories": 620,
+          "carb_g": 72,
+          "protein_g": 38,
+          "fat_g": 16,
+          "sodium_mg": 680
+        },
+        {
+          "name": "Roasted Brussels Sprouts (with oil/sauce)",
+          "portion": "~2 cups (~200g)",
+          "calories": 130,
+          "carb_g": 14,
+          "protein_g": 6,
+          "fat_g": 6,
+          "sodium_mg": 220
+        }
+      ],
+      "totals": {
+        "calories": 750,
+        "carb_g": 86,
+        "protein_g": 44,
+        "fat_g": 22,
+        "sodium_mg": 900
+      },
+      "notes": "Meal appears to be a meal-prepped container with braised/slow-cooked shredded beef (possibly with a savory sauce) over white rice, topped with roasted Brussels sprouts. Portions estimated for an endurance athlete's meal prep container (~1L glass container roughly 2/3 full). The beef appears well-caramelized with some sauce. Confidence is medium due to difficulty judging exact portion depths in the container."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-11|r2",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 10.03,
+    "input_tokens": 2755,
+    "output_tokens": 438,
+    "analysis": {
+      "name": "Oatmeal Breakfast with Banana, Dates, Coffee, and Juice",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cooked Oatmeal",
+          "portion": "1.5 cups (approx 350g cooked)",
+          "calories": 220,
+          "carb_g": 38.0,
+          "protein_g": 8.0,
+          "fat_g": 4.0,
+          "sodium_mg": 150
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium (approx 120g)",
+          "calories": 105,
+          "carb_g": 27.0,
+          "protein_g": 1.3,
+          "fat_g": 0.3,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Medjool Dates",
+          "portion": "4 dates (approx 96g)",
+          "calories": 267,
+          "carb_g": 71.0,
+          "protein_g": 1.8,
+          "fat_g": 0.4,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Black Coffee",
+          "portion": "1 cup (240ml)",
+          "calories": 5,
+          "carb_g": 0.0,
+          "protein_g": 0.3,
+          "fat_g": 0.0,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Dark Juice (likely grape or prune juice)",
+          "portion": "1 glass (approx 240ml)",
+          "calories": 170,
+          "carb_g": 42.0,
+          "protein_g": 1.0,
+          "fat_g": 0.0,
+          "sodium_mg": 20
+        }
+      ],
+      "totals": {
+        "calories": 767,
+        "carb_g": 178.0,
+        "protein_g": 12.4,
+        "fat_g": 4.7,
+        "sodium_mg": 178
+      },
+      "notes": "Classic endurance athlete breakfast with good carbohydrate loading from oatmeal, banana, dates, and juice. The dates appear to be Medjool variety based on size and texture. Juice color suggests grape or prune juice. Confidence is medium due to uncertain portion sizes and juice type."
+    }
+  }
+]

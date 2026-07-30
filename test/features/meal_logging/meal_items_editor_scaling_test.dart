@@ -173,6 +173,10 @@ void main() {
     expect(reported!.single.calories, 200);
   });
 
+  // Bug 3abe3fdb: Quantity used to be seeded from the portion's leading number,
+  // so "2 bagels" opened at Quantity 2 and a user "correcting" it to 1 silently
+  // halved the AI's macros. Quantity is now a multiplier on whatever the
+  // portion string already describes, and always opens at 1.
   testWidgets('fractional quantity scales down from the recognized portion', (
     tester,
   ) async {
@@ -202,14 +206,18 @@ void main() {
     await tester.tap(find.byTooltip('Edit'));
     await tester.pumpAndSettle();
 
-    // Recognized as 2 bagels; the user actually ate 1.
-    expect(_controllerText(tester, 'Quantity'), '2');
-    await tester.enterText(_fieldByLabel('Quantity'), '1');
+    // Opens at 1 = one serving of the stated "2 bagels" portion, whose macros
+    // are the AI's absolute numbers for that whole portion.
+    expect(_controllerText(tester, 'Quantity'), '1');
+    expect(_controllerText(tester, 'Calories'), '400');
+
+    // The user actually ate 1 of the 2 bagels → half the stated portion.
+    await tester.enterText(_fieldByLabel('Quantity'), '0.5');
     await tester.pump();
 
     expect(_controllerText(tester, 'Calories'), '200');
     expect(_controllerText(tester, 'Carbs (g)'), '40.0');
-    // Portion label keeps the recognized portion; Quantity says what was eaten.
+    // Portion label keeps the recognized portion; Quantity says how much of it.
     expect(_controllerText(tester, 'Portion'), '2 bagels');
   });
 
