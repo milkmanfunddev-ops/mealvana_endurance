@@ -197,6 +197,8 @@ class TimelineNodeTile extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
+              // Only one node is expanded at a time, so these keys stay unique.
+              key: const ValueKey('timeline_node.swap_button'),
               onPressed: onSwap,
               style: OutlinedButton.styleFrom(
                 foregroundColor: onSurface,
@@ -214,6 +216,7 @@ class TimelineNodeTile extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: OutlinedButton(
+              key: const ValueKey('timeline_node.remove_button'),
               onPressed: onRemove,
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.dragonfruit,

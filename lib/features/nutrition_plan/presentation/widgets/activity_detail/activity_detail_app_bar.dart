@@ -227,6 +227,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Show delete button for existing activities (including coach view)
       if (!isNewActivity)
         IconButton(
+          key: const ValueKey('plan_detail.delete_button'),
           icon: FaIcon(
             FontAwesomeIcons.trash,
             size: AppIconSizes.md,

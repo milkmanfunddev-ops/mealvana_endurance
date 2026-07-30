@@ -114,3 +114,8 @@ tool/.training_peaks_token.json
 # Claude Code
 .claude/
 CLAUDE.md
+
+# Patrol regenerates this on every `patrol test` run and the file itself
+# says "DO NOT COMMIT TO VERSION CONTROL". Tracking it means every local or CI
+# Patrol run leaves the tree dirty.
+integration_test/test_bundle.dart

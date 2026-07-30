@@ -1,215 +1,174 @@
-# Integration Tests
+# Integration Tests (Patrol)
 
-Real device/simulator integration tests for Mealvana Endurance using Flutter's `integration_test` package.
+End-to-end tests that drive the real app on a real iOS simulator using
+[Patrol](https://patrol.leancode.co/). Patrol wraps Flutter's `integration_test`
+with a native XCUITest host, which is what lets these tests survive permission
+dialogs, keyboards, and native sheets.
 
-## Quick Start
-
-```bash
-# Run all tests (auto-detects simulator)
-./integration_test/run_tests.sh
-
-# Run specific test
-./integration_test/run_tests.sh nutrition
-./integration_test/run_tests.sh event
-./integration_test/run_tests.sh settings
-./integration_test/run_tests.sh food
-```
-
-## Test Runner Script
-
-The `run_tests.sh` script automatically detects your iOS simulator, so you don't need to specify `-d "iPhone 15"` each time.
-
-```bash
-# Make executable (first time only)
-chmod +x integration_test/run_tests.sh
-
-# Run all tests
-./integration_test/run_tests.sh
-
-# Run individual tests
-./integration_test/run_tests.sh nutrition    # Nutrition Plan Flow
-./integration_test/run_tests.sh event        # Event Management Flow
-./integration_test/run_tests.sh settings     # Settings Flow
-./integration_test/run_tests.sh food         # Food Management Flow
-./integration_test/run_tests.sh onboarding   # Onboarding & Auth Flow
-./integration_test/run_tests.sh login        # Email Login Flow
-```
-
-## Manual Flutter Commands
-
-If you prefer using Flutter directly:
-
-```bash
-# Run all tests
-flutter test integration_test/test_runner.dart -d "iphone 15 pro max"
-
-# Run individual tests
-flutter test integration_test/flows/nutrition_plan_flow_test.dart -d "iphone 15 pro max"
-flutter test integration_test/flows/event_management_flow_test.dart -d "iphone 15 pro max"
-flutter test integration_test/flows/settings_flow_test.dart -d "iphone 15 pro max"
-flutter test integration_test/flows/food_management_flow_test.dart -d "iphone 15 pro max"
-
-# With verbose output
-flutter test integration_test/test_runner.dart -d "iphone 15 pro max" --reporter expanded
-```
-
-## Test Coverage
-
-| Flow | Description | File | Duration |
-|------|-------------|------|----------|
-| **Event Management** | Create, edit, delete events | `flows/event_management_flow_test.dart` | ~3-4 min |
-| **Nutrition Plan** | Create activity, generate plan, swap/delete foods | `flows/nutrition_plan_flow_test.dart` | ~3-5 min |
-| **Settings** | Profile, preferences, appearance | `flows/settings_flow_test.dart` | ~2-3 min |
-| **Food Management** | Food preference sliders, search | `flows/food_management_flow_test.dart` | ~2-3 min |
-| **Onboarding + Auth** | New user signup through email | `flows/onboarding_auth_flow_test.dart` | ~3-5 min |
-| **Email Login** | Existing user login with test@test.com | `flows/email_login_flow_test.dart` | ~2-3 min |
-
-**Full Suite Duration:** ~15-25 minutes
-
-## Directory Structure
-
-```
-integration_test/
-├── run_tests.sh               # Shell script runner (auto-detects device)
-├── test_runner.dart           # Main entry point for all tests
-├── README.md                  # This file
-├── helpers/
-│   ├── test_config.dart       # Test configuration and credentials
-│   └── test_helpers.dart      # WidgetTester extensions and utilities
-└── flows/                     # User flow integration tests
-    ├── event_management_flow_test.dart
-    ├── nutrition_plan_flow_test.dart
-    ├── settings_flow_test.dart
-    ├── food_management_flow_test.dart
-    ├── onboarding_auth_flow_test.dart
-    └── email_login_flow_test.dart
-```
-
-## App Screen Flow
-
-The tests follow the actual app screens:
-
-1. **Welcome Screen** → "Get Started" / "Log In"
-2. **Your Profile** → Gender, Birthday, Height, Weight
-3. **Sport Preferences** → Running/Cycling/Swimming, Gut Sensitivity, "Continue"
-4. **Food Preferences** → Sliders (Avoid ↔ Love), "Save Changes"
-5. **Create Account** → Apple/Google/Email, "Continue without signing in"
-6. **Calendar (Main)** → BY WEEK/BY MONTH, "CREATE AN EVENT", FAB
-7. **New Event** → Sport Category, Race Distance, Event Name, Location, Date
-8. **Event Details** → "Create Nutrition Plan", "Create Carb Loading Plan"
-9. **Create New Activity Plan** → Distance, Pace, Gut Training, "Generate Plan"
-10. **Adjust Your Macros** → PRE/DURING/POST table, "Create Plan"
-11. **Nutrition Plan** → "BEFORE RUN" section, food items, "+ ADD FOOD"
-12. **Settings** → Profile & Preferences, Appearance, Food Preferences
+> **`flutter test` cannot run these.** Patrol tests need `patrol test`, which
+> builds the XCUITest host and boots the simulator itself. Anything in this
+> directory that a `flutter test` command would accept is legacy.
 
 ## Prerequisites
 
-1. **iOS Simulator**: Tests run on iOS simulator
-   ```bash
-   # List available simulators
-   flutter devices
+1. **patrol_cli, pinned.** The unpinned latest (4.6.1) is *incompatible* with the
+   `patrol` package this repo resolves (4.6.1) and refuses to run. Use 4.4.0 —
+   see the [compatibility table](https://patrol.leancode.co/documentation/compatibility-table):
 
-   # Boot simulator if needed
-   open -a Simulator
+   ```bash
+   dart pub global activate patrol_cli 4.4.0
+   export PATH="$HOME/.pub-cache/bin:$PATH"
    ```
 
-2. **Dev Environment**: Tests run against dev Supabase instance
-   - Ensure `.env.dev.local` exists with proper credentials
+2. **A booted iOS 26.2 simulator.** Every device profile on the CI runner is
+   iOS 26.2; `iPhone 17 Pro` is the canonical target.
 
-3. **Test Account**: `test@test.com` / `test` must exist for login tests
+   ```bash
+   xcrun simctl boot "iPhone 17 Pro"
+   xcrun simctl bootstatus "iPhone 17 Pro"
+   ```
 
-## Test Configuration
+3. **`.env.dev.local`** with `SUPABASE_URL` / `SUPABASE_ANON_KEY` for the dev
+   project. It is bundled as a Flutter asset, so an empty file means the app
+   boots with no backend.
 
-Edit `helpers/test_config.dart` to customize:
+4. **`secrets/integration_test.env`** (gitignored) with the dev test account.
+   Without it every flow calls `markTestSkipped` and passes without testing
+   anything:
 
-```dart
-class TestConfig {
-  // Test account credentials
-  static const testEmail = 'test@test.com';
-  static const testPassword = 'test';
+   ```
+   INTEGRATION_TEST_EMAIL=test@test.com
+   INTEGRATION_TEST_PASSWORD=test
+   ```
 
-  // Timeouts
-  static const Duration shortTimeout = Duration(seconds: 10);
-  static const Duration mediumTimeout = Duration(seconds: 30);
-  static const Duration longTimeout = Duration(minutes: 2);
+## Running
 
-  // Test data
-  static const testUserProfile = TestUserProfile(...);
-  static const testActivity = TestActivityData(...);
-  static const testEvent = TestEventData(...);
-}
+```bash
+export PATH="$HOME/.pub-cache/bin:$PATH"
+
+# One flow
+patrol test \
+  --target integration_test/flows/meal_log_flow_test.dart \
+  --flavor dev \
+  --dart-define-from-file=secrets/integration_test.env \
+  -d "iPhone 17 Pro"
+
+# Every flow — ONE app build, all targets. Repeat --target; do not loop
+# `patrol test`, which rebuilds the Xcode host per file.
+patrol test \
+  --target integration_test/patrol_smoke_test.dart \
+  --target integration_test/flows/auth_flow_test.dart \
+  --target integration_test/flows/fuel_timeline_flow_test.dart \
+  --target integration_test/flows/meal_log_flow_test.dart \
+  --target integration_test/flows/activities_crud_flow_test.dart \
+  --target integration_test/flows/events_crud_flow_test.dart \
+  --target integration_test/flows/formula_pin_flow_test.dart \
+  --target integration_test/flows/formula_create_pin_flow_test.dart \
+  --target integration_test/flows/settings_persist_flow_test.dart \
+  --target integration_test/flows/integrations_connect_flow_test.dart \
+  --flavor dev \
+  --dart-define-from-file=secrets/integration_test.env \
+  -d "iPhone 17 Pro"
 ```
 
-## Test Helpers
+**`-t` is `--target`, not "entrypoint".** Passing `-t lib/main_dev.dart` (the
+`flutter test` idiom) makes patrol_cli reject the run with
+`target lib/main_dev.dart is invalid`.
 
-The `test_helpers.dart` provides extensions on `WidgetTester`:
+## Coverage
 
-```dart
-// Wait and settle
-await tester.settle();
-await tester.wait(Duration(seconds: 2));
+| Flow | What it exercises | File |
+|------|-------------------|------|
+| **Toolchain smoke** | App launches, first frame renders | `patrol_smoke_test.dart` |
+| **Auth** | Email login lands on the dashboard | `flows/auth_flow_test.dart` |
+| **Fuel Timeline** | Filter pills, tracking + time-rail toggles | `flows/fuel_timeline_flow_test.dart` |
+| **Meal logging** | `+ Add Food` → Manual tab → save → read → remove | `flows/meal_log_flow_test.dart` |
+| **Activities CRUD** | `+ Add Activity` → macro engine → plan → delete | `flows/activities_crud_flow_test.dart` |
+| **Events CRUD** | Create / read / delete an event | `flows/events_crud_flow_test.dart` |
+| **Formula pin** | Pin an existing formula | `flows/formula_pin_flow_test.dart` |
+| **Formula create + pin** | Build a formula, then pin it | `flows/formula_create_pin_flow_test.dart` |
+| **Settings persistence** | Settings survive a round-trip | `flows/settings_persist_flow_test.dart` |
+| **Integrations** | Connect-training OAuth entry points | `flows/integrations_connect_flow_test.dart` |
 
-// Tap by various selectors
-await tester.tapByKey('my_button');
-await tester.tapByText('Submit');
-await tester.tapByIcon(Icons.add);
+### Not in the batch
 
-// Enter text
-await tester.enterTextByHint('Email', 'test@test.com');
-await tester.enterTextByKey('password_field', 'password');
+* `flows/google_login_flow_test.dart` — drives the native Google OAuth sheet;
+  needs a real Google account and interactive consent.
+* `flows/onboarding_signup_flow_test.dart` — needs a clean install with no
+  session, which it cannot have once another flow has logged in. Run it against
+  a freshly-erased simulator (`xcrun simctl erase "iPhone 17 Pro"`).
 
-// Wait for widgets
-await tester.waitForWidget(find.text('Welcome'));
+### No AI surfaces
 
-// Scroll until visible
-await tester.scrollToFind(find.text('Settings'));
+Nothing here touches an LLM. The meal-log flow drives the log sheet's **Manual**
+tab, not **Describe** (the AI path). The activities flow uses the deterministic
+`generate-macros` edge function, not AI plan generation.
 
-// Screenshots (for debugging)
-await tester.screenshot('after_login');
-```
+## The dashboard changed — key names moved
 
-## Test Logging
+Activities + Nutrition merged into a single **Fuel Timeline** tab. The old
+`calendar.create_activity_fab` no longer exists anywhere in `lib/`. Current keys:
 
-Tests use `TestLogger` for structured output:
+| Purpose | Key |
+|---------|-----|
+| "am I authenticated / on the dashboard" sentinel | `fuel_timeline.settings` |
+| Dashboard tab | `bottom_nav.timeline_tab` |
+| Filter pills | `fuel_timeline.filter_{all,workout,meals}` |
+| Add a meal | `fuel_timeline.add_food` |
+| Add an activity | `fuel_timeline.add_activity` |
+| Log sheet root | `log_sheet.root` |
+| Log sheet tabs | `log_sheet.tab_{recent,favorites,search,describe,manual}` |
+| Manual entry fields | `manual_log.{name,calories,carbs,protein,fat,sodium,notes}_field` |
+| Manual entry save | `manual_log.save_button` |
+| Meal-slot chips | `slot_chip.{breakfast,lunch,dinner,snack}` |
+| Expanded meal actions | `timeline_node.{swap,remove}_button` |
 
-```dart
-TestLogger.logStep('Starting Login');       // Major step header
-TestLogger.logSubStep('Entering email...'); // Sub-step
-TestLogger.logSuccess('Login successful');  // Success message
-TestLogger.logError('Login failed');        // Error message
-TestLogger.logInfo('Skipping optional step'); // Info message
-```
+`+ Add Food` and `+ Add Activity` only render under certain filters
+(`showsAddFood` / `showsAddActivity`), so tap `fuel_timeline.filter_all` first.
+
+## Conventions
+
+* **Drive by `ValueKey`, never by visible text.** User-facing strings come from
+  ContentService and change without notice.
+* **Never `pumpAndSettle` at startup.** A persistent `CircularProgressIndicator`
+  makes it hang forever. Poll with `waitUntilVisible` or an explicit loop —
+  see `_ensureAuthenticated` in any flow.
+* **Unfocus before typing into the next field.** The keyboard overlays lower
+  fields and makes them un-hit-testable.
+* **Stamp created records** with `DateTime.now().millisecondsSinceEpoch` and
+  delete them at the end, so repeat CI runs neither collide nor accumulate rows
+  in the dev project.
+
+## CI
+
+`.github/workflows/tests-selfhosted.yml` runs everything on the M1 self-hosted
+runner on every push and PR:
+
+* job `unit-web-deno` — analyze, unit + widget tests, Deno algorithm tests, web e2e
+* job `integration-patrol-ios` — every flow above (runs *after* `unit-web-deno`;
+  the box has 8 GB of RAM and cannot do both at once without starving the runner
+  agent into a "lost communication" failure)
+
+Codemagic's `integration-tests` / `integration-test-quick` workflows are manual
+fallbacks only.
 
 ## Troubleshooting
 
-### No Simulator Found
-```bash
-# List available simulators
-flutter emulators
+| Symptom | Cause |
+|---------|-------|
+| `Version incompatibility detected!` | patrol_cli is not 4.4.0. Re-activate it pinned. |
+| `target lib/main_dev.dart is invalid` | `-t` was used as "entrypoint". Drop it. |
+| `Device iPhone … is not attached` | Simulator not booted, or the name does not exist locally (`xcrun simctl list devices available`). |
+| Every test reports "skipped" | `secrets/integration_test.env` missing or empty. |
+| Test hangs at launch | Something added a `pumpAndSettle` before auth. |
+| Runner job dies at exactly 10m00s | The M1 is out of disk/RAM and dropped its GitHub heartbeat. Free space; keep ≥25 GB. |
 
-# Launch a simulator
-flutter emulators --launch apple_ios_simulator
+## `flows/_legacy/`
 
-# Or open Simulator app
-open -a Simulator
-```
-
-### Test Timeout
-- Increase timeout in test: `timeout: const Timeout(Duration(minutes: 5))`
-- Check network connectivity to dev Supabase
-- Verify simulator is running properly
-
-### Widget Not Found
-- Add `await tester.pumpAndSettle()` before finding widget
-- Use `await tester.waitForWidget()` for async-loaded content
-- Check if widget is scrolled off-screen
-
-### Authentication Errors
-- Verify test account exists in dev Supabase
-- Check `.env.dev.local` has correct credentials
-- Ensure anonymous auth is enabled in Supabase
+Pre-Patrol tests written against `flutter test` and the pre-merge Calendar
+dashboard. They do not run and are kept for reference only.
 
 ## References
 
-- [Flutter Integration Testing](https://docs.flutter.dev/testing/integration-tests)
-- [integration_test package](https://pub.dev/packages/integration_test)
+- [Patrol docs](https://patrol.leancode.co/)
+- [Patrol compatibility table](https://patrol.leancode.co/documentation/compatibility-table)

@@ -48,12 +48,12 @@ void main() {
       // simulator), the calendar will be present and the welcome
       // keys absent. Skip the login walk in that case.
       final calendarPresent = find.byKey(
-        const ValueKey('calendar.create_activity_fab'),
+        const ValueKey('fuel_timeline.settings'),
       ).evaluate().isNotEmpty;
 
       if (calendarPresent) {
         // Already on calendar — nothing to assert beyond presence.
-        expect(find.byKey(const ValueKey('calendar.create_activity_fab')),
+        expect(find.byKey(const ValueKey('fuel_timeline.settings')),
             findsOneWidget);
         return;
       }
@@ -87,11 +87,12 @@ void main() {
 
       // Verify we landed on the calendar.
       expect(
-        find.byKey(const ValueKey('calendar.create_activity_fab')),
+        find.byKey(const ValueKey('fuel_timeline.settings')),
         findsOneWidget,
         reason:
-            'Expected calendar FAB after login. If this fails, dump the '
-            'tree with `debugDumpApp()` and check what screen we landed on.',
+            'Expected the Fuel Timeline dashboard after login. If this fails, '
+            'dump the tree with `debugDumpApp()` and check what screen we '
+            'landed on.',
       );
     },
     timeout: const Timeout(Duration(minutes: 3)),

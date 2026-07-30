@@ -71,7 +71,9 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(mealLogControllerProvider.notifier).logManualMeal(
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logManualMeal(
           name: _nameCtrl.text.trim(),
           slot: _slot,
           logDate: widget.logDate,
@@ -80,9 +82,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           proteinG: double.tryParse(_protCtrl.text),
           fatG: double.tryParse(_fatCtrl.text),
           sodiumMg: double.tryParse(_sodiumCtrl.text),
-          notes: _notesCtrl.text.trim().isEmpty
-              ? null
-              : _notesCtrl.text.trim(),
+          notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         );
 
     if (!mounted) return;
@@ -108,6 +108,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
 
           // Name
           TextFormField(
+            key: const ValueKey('manual_log.name_field'),
             controller: _nameCtrl,
             decoration: const InputDecoration(
               labelText: 'Meal name',
@@ -121,10 +122,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           const SizedBox(height: AppSpacing.md),
 
           // Slot selector
-          Text(
-            'Meal type',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+          Text('Meal type', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
           SlotChipSelector(
             selectedSlot: _slot,
@@ -132,17 +130,18 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          _numField('Calories (kcal)', _calCtrl),
+          _numField('Calories (kcal)', _calCtrl, 'calories'),
           const SizedBox(height: AppSpacing.sm),
-          _numField('Carbs (g)', _carbCtrl),
+          _numField('Carbs (g)', _carbCtrl, 'carbs'),
           const SizedBox(height: AppSpacing.sm),
-          _numField('Protein (g)', _protCtrl),
+          _numField('Protein (g)', _protCtrl, 'protein'),
           const SizedBox(height: AppSpacing.sm),
-          _numField('Fat (g)', _fatCtrl),
+          _numField('Fat (g)', _fatCtrl, 'fat'),
           const SizedBox(height: AppSpacing.md),
 
           // "Add more detail" toggle
           InkWell(
+            key: const ValueKey('manual_log.more_detail_toggle'),
             onTap: () => setState(() => _showExtra = !_showExtra),
             child: Row(
               children: [
@@ -162,9 +161,10 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           ),
           if (_showExtra) ...[
             const SizedBox(height: AppSpacing.sm),
-            _numField('Sodium (mg)', _sodiumCtrl),
+            _numField('Sodium (mg)', _sodiumCtrl, 'sodium'),
             const SizedBox(height: AppSpacing.sm),
             TextFormField(
+              key: const ValueKey('manual_log.notes_field'),
               controller: _notesCtrl,
               decoration: const InputDecoration(
                 labelText: 'Notes (optional)',
@@ -177,6 +177,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           const SizedBox(height: AppSpacing.xl),
 
           KylePrimaryButton(
+            key: const ValueKey('manual_log.save_button'),
             text: 'Save',
             isLoading: isLoading,
             onPressed: isLoading ? null : _submit,
@@ -193,8 +194,9 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
     );
   }
 
-  Widget _numField(String label, TextEditingController ctrl) {
+  Widget _numField(String label, TextEditingController ctrl, String keySlug) {
     return TextFormField(
+      key: ValueKey('manual_log.${keySlug}_field'),
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [

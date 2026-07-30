@@ -133,8 +133,8 @@ void main() {
 
 /// Returns true once the calendar is reachable (authenticated).
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
-  if ($(fab).exists) return true;
+  const sentinel = ValueKey('fuel_timeline.settings');
+  if ($(sentinel).exists) return true;
   if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
 
   await $(const ValueKey('welcome.log_in_button')).tap();
@@ -142,6 +142,6 @@ Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
   await $(const ValueKey('login.email_field')).enterText(_loginEmail);
   await $(const ValueKey('login.password_field')).enterText(_loginPassword);
   await $(const ValueKey('login.log_in_button')).tap();
-  await $(fab).waitUntilVisible(timeout: const Duration(seconds: 40));
-  return $(fab).exists;
+  await $(sentinel).waitUntilVisible(timeout: const Duration(seconds: 40));
+  return $(sentinel).exists;
 }

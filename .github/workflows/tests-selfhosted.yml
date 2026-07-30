@@ -7,46 +7,82 @@
 # Requires:
 #  - A self-hosted runner registered on the M1 with labels: [self-hosted, macOS, ARM64]
 #    (scripts/setup_m1_runner.sh sets this up).
-#  - Repo secrets DOTENV_ROOT / DOTENV_DEV_LOCAL / DOTENV_WEB_LOCAL (mirrors of the
-#    gitignored .env files; the Flutter app bundles the first two as assets and the
-#    web e2e reads .env.web.local). Added via `gh secret set`.
+#  - Repo secrets:
+#      DOTENV_ROOT / DOTENV_DEV_LOCAL   — mirrors of the gitignored .env files
+#                                         (bundled as Flutter assets)
+#      DOTENV_WEB_LOCAL                 — .env.web.local, must be valid JSON
+#                                         (flutter drive --dart-define-from-file)
+#      INTEGRATION_TEST_EMAIL/PASSWORD  — dev-project test account; without these
+#                                         every Patrol flow SELF-SKIPS instead of
+#                                         actually exercising the app.
 #
-# Until a runner is online, these jobs simply queue (pending) — they don't fail.
+# ---------------------------------------------------------------------------
+# WHY THIS WORKFLOW KEPT FAILING (2026-07, fixed here)
 #
-# Trigger model: this runs the FULL test suite on the M1 whenever a release/*
-# branch is in play — i.e. exactly when Codemagic is cutting a release build —
-# so testing happens on owned hardware in parallel with the Codemagic release.
-# `workflow_dispatch` also allows a manual run on the M1 without a PR/Codemagic
-# build (requires the workflow to exist on the default branch).
+#  1. Every failure was "The self-hosted runner lost communication with the
+#     server" at *exactly* 10m00s — GitHub's runner-offline timeout — while the
+#     steps themselves kept grinding for another 8+ minutes. The M1 has 8 GB RAM
+#     and was at 99% disk; `dart run build_runner build` (4k+ inputs) plus
+#     `flutter analyze` swapped the box hard enough that the runner agent missed
+#     its heartbeat. Preflight now hard-fails on low disk instead of thrashing.
+#  2. The Patrol job pinned `-d "iPhone 15 Pro Max"`, which does not exist on
+#     this machine (only iOS 26.2 devices are installed).
+#  3. The Patrol job passed `-t lib/main_dev.dart`. For patrol_cli, `-t` IS
+#     `--target`, so that registered main_dev.dart as a test target and the CLI
+#     bailed with `target lib/main_dev.dart is invalid`.
+#  4. `dart pub global activate patrol_cli` (unpinned) installs 4.6.1, which is
+#     incompatible with the `patrol: ^4.5.0` package resolved at 4.6.1. The CLI
+#     refuses to run. patrol_cli 4.4.0 is the compatible pairing.
 #
-# NOTE: for `push: release/**` to trigger, THIS FILE must exist on that release
-# branch. Release branches are cut from main/develop, so merge this workflow
-# into main (and/or develop) once — every future release/* branch inherits it.
+# Also: macOS `pmset sleep` was 1 minute on this box. Run once, with sudo:
+#     sudo pmset -a sleep 0 disksleep 0 womp 1
+# ---------------------------------------------------------------------------
+#
+# Trigger model: the full suite runs on EVERY push and PR. The whole point of
+# owning the hardware is that running everything costs nothing but wall-clock.
 name: Tests (self-hosted M1)
 
 on:
   push:
-    branches:
-      - 'release/**'
-      - 'ci/**'          # CI smoke branches — exercise the self-hosted runner
   pull_request:
-    branches:
-      - 'release/**'
   workflow_dispatch:
 
-# One in-flight run per ref; newer pushes cancel older.
+# One in-flight run per ref; newer pushes cancel older. Important on a single
+# self-hosted runner — otherwise pushes queue up behind each other.
 concurrency:
   group: tests-selfhosted-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Every installed simulator is iOS 26.2. Keep this in sync with the runner.
+  PATROL_DEVICE: iPhone 17 Pro
+  # patrol_cli 4.4.0 <-> patrol 4.6.x. See the compatibility table:
+  # https://patrol.leancode.co/documentation/compatibility-table
+  PATROL_CLI_VERSION: 4.4.0
+  # Below this the box swaps hard enough to kill the runner's heartbeat.
+  MIN_FREE_DISK_GB: 25
+
 jobs:
-  # Device-less suites — fast, reliable, no Xcode/emulator needed.
+  # Device-less suites — fast, reliable, no Xcode/simulator needed.
   unit-web-deno:
     name: Unit + Web e2e + Deno
     runs-on: [self-hosted, macOS, ARM64]
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - name: Preflight (keep awake, verify headroom)
+        run: |
+          set -euo pipefail
+          # Keep the Mac from sleeping mid-job — a sleeping runner reads to
+          # GitHub as "lost communication". Detached so it outlives this step.
+          nohup caffeinate -dimsu -t 7200 >/dev/null 2>&1 &
+          free_gb=$(df -g /System/Volumes/Data | awk 'NR==2 {print $4}')
+          echo "Free disk: ${free_gb} GB (minimum ${MIN_FREE_DISK_GB} GB)"
+          if [ "$free_gb" -lt "$MIN_FREE_DISK_GB" ]; then
+            echo "::error::Only ${free_gb} GB free. Reclaim space (unused simulator runtimes, DerivedData, build/) — below this the runner gets starved and drops its heartbeat."
+            exit 1
+          fi
 
       - name: Write gitignored .env files from secrets
         run: |
@@ -55,6 +91,8 @@ jobs:
           printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
           : > .env.prod.local   # empty stub; asset bundler just needs the file
           test -s .env.web.local || { echo "::error::DOTENV_WEB_LOCAL secret is empty"; exit 1; }
+          python3 -c 'import json,sys; json.load(open(".env.web.local"))' \
+            || { echo "::error::DOTENV_WEB_LOCAL must be valid JSON — flutter drive parses it with --dart-define-from-file"; exit 1; }
 
       - name: Flutter deps
         run: flutter pub get
@@ -76,43 +114,101 @@ jobs:
       - name: Web e2e (flutter drive boot smoke)
         run: bash scripts/run_web_e2e.sh
 
-  # Patrol integration smoke on iOS. Runs via patrol_cli (NOT `flutter test`) —
+  # Patrol integration flows on iOS. Runs via patrol_cli (NOT `flutter test`) —
   # patrol builds an XCUITest host, boots the sim, and drives the dev flavor.
   # Android Patrol is intentionally deferred (needs Android SDK 36 + AVD).
   #
-  # KNOWN RISK: the iOS 26.2 simulator (Xcode 26.2) can drop patrol's native
-  # automation handshake and hang; the smoke test caps itself at 3 min and the
-  # job at 45. If this proves flaky, gate it behind a label instead of removing.
+  # `needs:` is deliberate: this box has one runner and 8 GB of RAM. Letting the
+  # Xcode build overlap with build_runner/analyze is what starved the agent.
   integration-patrol-ios:
     name: Patrol (iOS)
-    # Expensive + can be flaky on the iOS 26.2 sim; only run it for real releases,
-    # not on every CI smoke push.
-    if: startsWith(github.ref, 'refs/heads/release/')
+    needs: unit-web-deno
     runs-on: [self-hosted, macOS, ARM64]
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+
+      - name: Preflight (keep awake, verify headroom)
+        run: |
+          set -euo pipefail
+          nohup caffeinate -dimsu -t 7200 >/dev/null 2>&1 &
+          free_gb=$(df -g /System/Volumes/Data | awk 'NR==2 {print $4}')
+          echo "Free disk: ${free_gb} GB (minimum ${MIN_FREE_DISK_GB} GB)"
+          if [ "$free_gb" -lt "$MIN_FREE_DISK_GB" ]; then
+            echo "::error::Only ${free_gb} GB free — an Xcode simulator build needs more headroom than this."
+            exit 1
+          fi
+
       - name: Write gitignored .env files from secrets
         run: |
           printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
           printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
-          printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
           : > .env.prod.local
+
+      - name: Write Patrol test credentials
+        run: |
+          mkdir -p secrets
+          {
+            echo "INTEGRATION_TEST_EMAIL=${{ secrets.INTEGRATION_TEST_EMAIL }}"
+            echo "INTEGRATION_TEST_PASSWORD=${{ secrets.INTEGRATION_TEST_PASSWORD }}"
+          } > secrets/integration_test.env
+          if [ -z "${{ secrets.INTEGRATION_TEST_EMAIL }}" ]; then
+            echo "::warning::INTEGRATION_TEST_EMAIL is unset — every Patrol flow will self-skip instead of testing anything."
+          fi
+
       - name: Flutter deps + codegen
         run: |
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
-      - name: Install patrol_cli
-        run: dart pub global activate patrol_cli
+
+      - name: Install patrol_cli (pinned — unpinned installs an incompatible CLI)
+        run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
+
       - name: Boot iOS simulator
         run: |
-          DEVICE="iPhone 15 Pro Max"
-          xcrun simctl boot "$DEVICE" 2>/dev/null || true
-          xcrun simctl bootstatus "$DEVICE" || true
-      - name: Patrol smoke test (iOS)
+          set -euo pipefail
+          xcrun simctl boot "$PATROL_DEVICE" 2>/dev/null || true
+          xcrun simctl bootstatus "$PATROL_DEVICE" || true
+          xcrun simctl list devices booted
+
+      # Every flow in integration_test/flows/ plus the toolchain smoke test.
+      # `_legacy/` is excluded by listing targets explicitly — those predate the
+      # Fuel Timeline dashboard and are kept only for reference.
+      #
+      # One invocation, many --target flags: patrol builds the app ONCE and runs
+      # every flow against it. Looping `patrol test` per file would rebuild the
+      # Xcode host each time — minutes of wall-clock and gigabytes of disk per
+      # flow on this machine.
+      #
+      # Two flows are deliberately NOT in this list:
+      #   • google_login_flow_test  — drives the native Google OAuth sheet, which
+      #     needs a real Google account and interactive consent.
+      #   • onboarding_signup_flow_test — requires a clean install with no
+      #     session, which it cannot have once an earlier flow has logged in.
+      # Run those two by hand against a freshly-erased simulator.
+      #
+      # No AI/LLM surface is exercised anywhere here: the meal-log flow uses the
+      # sheet's Manual tab (not Describe), and the activities flow uses the
+      # deterministic macro edge function (not plan generation via LLM).
+      - name: Patrol flows (iOS)
         run: |
+          set -euo pipefail
           export PATH="$HOME/.pub-cache/bin:$PATH"
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
-            --flavor dev -t lib/main_dev.dart \
-            -d "iPhone 15 Pro Max"
+            --target integration_test/flows/auth_flow_test.dart \
+            --target integration_test/flows/fuel_timeline_flow_test.dart \
+            --target integration_test/flows/meal_log_flow_test.dart \
+            --target integration_test/flows/activities_crud_flow_test.dart \
+            --target integration_test/flows/events_crud_flow_test.dart \
+            --target integration_test/flows/formula_pin_flow_test.dart \
+            --target integration_test/flows/formula_create_pin_flow_test.dart \
+            --target integration_test/flows/settings_persist_flow_test.dart \
+            --target integration_test/flows/integrations_connect_flow_test.dart \
+            --flavor dev \
+            --dart-define-from-file=secrets/integration_test.env \
+            -d "$PATROL_DEVICE"
+
+      - name: Shut down simulator
+        if: always()
+        run: xcrun simctl shutdown "$PATROL_DEVICE" || true

@@ -978,8 +978,16 @@ workflows:
   # TESTING WORKFLOWS
   # ============================================================
 
+  # SUPERSEDED by .github/workflows/tests-selfhosted.yml (job `Patrol (iOS)`),
+  # which runs every flow on the M1. Kept manual-only as a Codemagic fallback.
+  #
+  # It was BROKEN and firing on every develop/feature/release PR: the entrypoint
+  # `integration_test/test_runner.dart` no longer exists (it moved to
+  # `integration_test/flows/_legacy/`), so the step failed immediately. Worse,
+  # `flutter test` cannot run these at all any more — they are Patrol tests and
+  # need `patrol test`, which builds an XCUITest host. Rewritten accordingly.
   integration-tests:
-    name: Integration Tests
+    name: Integration Tests (manual fallback — prefer the M1 workflow)
     instance_type: mac_mini_m2
     max_build_duration: 60
 
@@ -991,18 +999,13 @@ workflows:
         - mealvana_dev
       vars:
         FLUTTER_ENV: dev
+        # patrol_cli 4.4.0 <-> patrol 4.6.x. An unpinned `activate` installs
+        # 4.6.1, which refuses to run against the resolved patrol package.
+        PATROL_CLI_VERSION: 4.4.0
 
+    # Manual only — the M1 self-hosted runner owns this on every push/PR.
     triggering:
-      events:
-        - pull_request
-      branch_patterns:
-        - pattern: 'develop'
-          include: true
-        - pattern: 'feature/*'
-          include: true
-        - pattern: 'release/*'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
       - *write_dotenv_files
@@ -1011,14 +1014,34 @@ workflows:
       - *run_unit_tests
       - *boot_ios_simulator
 
-      - name: Run integration tests
+      - name: Run Patrol integration flows
         script: |
-          mkdir -p test-results
+          set -euo pipefail
+          mkdir -p test-results secrets
+          {
+            echo "INTEGRATION_TEST_EMAIL=${INTEGRATION_TEST_EMAIL:-}"
+            echo "INTEGRATION_TEST_PASSWORD=${INTEGRATION_TEST_PASSWORD:-}"
+          } > secrets/integration_test.env
 
-          # Run integration tests with expanded output (single run)
-          flutter test integration_test/test_runner.dart \
+          dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+
+          # One build, every flow. `-d` takes a device NAME; do NOT also pass
+          # `-t lib/main_dev.dart` — for patrol_cli `-t` IS `--target`.
+          patrol test \
+            --target integration_test/patrol_smoke_test.dart \
+            --target integration_test/flows/auth_flow_test.dart \
+            --target integration_test/flows/fuel_timeline_flow_test.dart \
+            --target integration_test/flows/meal_log_flow_test.dart \
+            --target integration_test/flows/activities_crud_flow_test.dart \
+            --target integration_test/flows/events_crud_flow_test.dart \
+            --target integration_test/flows/formula_pin_flow_test.dart \
+            --target integration_test/flows/formula_create_pin_flow_test.dart \
+            --target integration_test/flows/settings_persist_flow_test.dart \
+            --target integration_test/flows/integrations_connect_flow_test.dart \
+            --flavor dev \
+            --dart-define-from-file=secrets/integration_test.env \
             -d "$TEST_DEVICE" \
-            --reporter expanded \
             2>&1 | tee test-results/integration-tests.log
         test_report: test-results/integration-tests.log
 
@@ -1040,8 +1063,11 @@ workflows:
         - mealvana_dev
       vars:
         FLUTTER_ENV: dev
-        # Default to event management test (fastest)
-        TEST_FLOW: event_management_flow_test.dart
+        # Default to the fuel-timeline flow (fastest, data-agnostic).
+        # The old default `event_management_flow_test.dart` moved to
+        # `flows/_legacy/` and no longer exists at this path.
+        TEST_FLOW: fuel_timeline_flow_test.dart
+        PATROL_CLI_VERSION: 4.4.0
 
     # Manual only
     triggering:
@@ -1055,10 +1081,22 @@ workflows:
 
       - name: Run single integration test
         script: |
-          mkdir -p test-results
-          flutter test "integration_test/flows/$TEST_FLOW" \
+          set -euo pipefail
+          mkdir -p test-results secrets
+          {
+            echo "INTEGRATION_TEST_EMAIL=${INTEGRATION_TEST_EMAIL:-}"
+            echo "INTEGRATION_TEST_PASSWORD=${INTEGRATION_TEST_PASSWORD:-}"
+          } > secrets/integration_test.env
+
+          # These are Patrol tests — `flutter test` cannot drive them.
+          dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+
+          patrol test \
+            --target "integration_test/flows/$TEST_FLOW" \
+            --flavor dev \
+            --dart-define-from-file=secrets/integration_test.env \
             -d "$TEST_DEVICE" \
-            --reporter expanded \
             2>&1 | tee test-results/quick-test.log
         test_report: test-results/quick-test.log
 

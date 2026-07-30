@@ -23,6 +23,7 @@ class SlotChipSelector extends StatelessWidget {
         final isSelected = slot == selectedSlot;
         final color = slotColor(slot);
         return ChoiceChip(
+          key: ValueKey('slot_chip.${slot.name}'),
           label: Text(slot.label),
           selected: isSelected,
           onSelected: (_) => onSlotSelected(slot),

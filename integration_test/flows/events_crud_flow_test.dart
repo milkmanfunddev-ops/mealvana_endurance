@@ -150,10 +150,10 @@ Future<void> _submitEventForm(PatrolIntegrationTester $) async {
 /// Returns true once the calendar is reachable (authenticated), false if we
 /// can't get there (clean install + no credentials).
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+  const sentinel = ValueKey('fuel_timeline.settings');
 
   // Already authenticated (warm sim / persisted session).
-  if ($(fab).exists) return true;
+  if ($(sentinel).exists) return true;
 
   // Need to log in — bail if no creds were injected.
   if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
@@ -166,6 +166,6 @@ Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
   await $(const ValueKey('login.log_in_button')).tap();
 
   // Allow the Supabase round-trip + redirect to the calendar.
-  await $(fab).waitUntilVisible(timeout: const Duration(seconds: 40));
-  return $(fab).exists;
+  await $(sentinel).waitUntilVisible(timeout: const Duration(seconds: 40));
+  return $(sentinel).exists;
 }

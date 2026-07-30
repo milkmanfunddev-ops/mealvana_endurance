@@ -1,6 +1,6 @@
 /// Activities (fueling-plan) CRUD walk under **Patrol** — create a running
 /// activity via the deterministic edge-function macro engine (NO LLM/AI),
-/// read it back, then delete it via swipe-to-delete.
+/// read it back from the Fuel Timeline, then delete it from Activity Detail.
 ///
 /// Why "Generate Plan" and not "Use Template":
 ///   The "Use Template" button only renders when the user already has a saved
@@ -10,12 +10,12 @@
 ///   which is exactly the engine we want exercised.
 ///
 /// Flow:
-///   ensureAuthenticated → calendar → New activity FAB (route 'distancepacegut')
+///   ensureAuthenticated → Fuel Timeline dashboard → '+ Add Activity' (route 'distancepacegut')
 ///     → CREATE: running tab, name + distance + duration → Generate Plan
 ///                → adjust-macros (assert macros rendered) → Create Plan
 ///                → lands on the plan detail screen
-///     → READ:   back to calendar → the activity card for our workout is present
-///     → DELETE: swipe the card left → confirm → assert the card is gone
+///     → READ:   back to the dashboard → our workout is a node on the timeline
+///     → DELETE: open Activity Detail → trash → confirm → assert the node is gone
 ///
 /// Macro VALUE-RANGE assertions live in the direct edge-function integration
 /// tests (better suited to numeric checks); here we assert the plan renders and
@@ -48,21 +48,33 @@ void main() {
         const Duration(minutes: 2),
       );
 
-      // ---- 0. Authenticated on the calendar -----------------------------
+      // ---- 0. Authenticated on the dashboard ----------------------------
       if (!await _ensureAuthenticated($)) {
         markTestSkipped(
-          'Could not reach the calendar: no session and no '
+          'Could not reach the dashboard: no session and no '
           'INTEGRATION_TEST_EMAIL/PASSWORD. Pass '
           '--dart-define-from-file=secrets/integration_test.env to run.',
         );
         return;
       }
 
-      final stamp = DateTime.now().millisecondsSinceEpoch;
+      // Assertions match on the stamp alone, not the whole name: the timeline
+      // tile renders `activity.title.toUpperCase()`, so an exact `find.text`
+      // on the mixed-case name we typed finds nothing. The stamp survives the
+      // case transform.
+      final stamp = '${DateTime.now().millisecondsSinceEpoch}';
       final workoutName = 'Patrol Run $stamp';
+      final onTimeline = find.textContaining(stamp);
 
-      // ---- 1. New activity FAB → running create form --------------------
-      await $(const ValueKey('calendar.create_activity_fab')).tap();
+      // ---- 1. "+ Add Activity" → running create form --------------------
+      // The old `calendar.create_activity_fab` was removed when Activities +
+      // Nutrition merged into the Fuel Timeline tab; the dashboard now shows a
+      // dashed "+ Add Activity" button under the timeline. It only renders
+      // under the All/Workout filters, so force All first.
+      await $(const ValueKey('fuel_timeline.filter_all')).tap();
+      await $(const ValueKey('fuel_timeline.add_activity'))
+          .waitUntilVisible(timeout: const Duration(seconds: 20));
+      await $(const ValueKey('fuel_timeline.add_activity')).tap();
       await $(const ValueKey('activity_create.tab_running')).waitUntilVisible(
         timeout: const Duration(seconds: 20),
       );
@@ -107,55 +119,62 @@ void main() {
         timeout: const Duration(seconds: 40),
       );
 
-      // ---- 6. READ — back on the calendar, our activity card is present -
-      // Create builds a deep stack: calendar → new_activity → adjust-macros →
+      // ---- 6. READ — back on the dashboard, our activity node is present -
+      // Create builds a deep stack: dashboard → new_activity → adjust-macros →
       // plan_detail. plan_detail's back only pops one level, so unwind by
-      // tapping whichever back button is present until the calendar reappears.
-      await _returnToCalendar($);
+      // tapping whichever back button is present until the dashboard reappears.
+      await _returnToDashboard($);
+      await $(onTimeline).waitUntilVisible(
+        timeout: const Duration(seconds: 20),
+      );
       expect(
-        $(workoutName),
+        $(onTimeline),
         findsWidgets,
-        reason: 'Created activity should appear as a card on the calendar.',
+        reason: 'Created activity should appear as a node on the Fuel Timeline.',
       );
 
-      // ---- 7. DELETE — swipe the card left, confirm ---------------------
-      // The card is wrapped in a Dismissible (endToStart); drag its row left to
-      // trigger the confirm dialog, then confirm.
-      final cardRow = find.ancestor(
-        of: find.text(workoutName),
-        matching: find.byType(Dismissible),
+      // ---- 7. DELETE — open the activity, delete from its detail screen --
+      // Swipe-to-delete is gone: it lived on ActivitiesListScreen, which the
+      // router no longer reaches after the Activities + Nutrition merge. The
+      // timeline's workout node opens Activity Detail, which owns the delete.
+      await $(onTimeline).tap();
+      await $(const ValueKey('plan_detail.delete_button')).waitUntilVisible(
+        timeout: const Duration(seconds: 30),
       );
-      await $.tester.drag(cardRow.first, const Offset(-500, 0));
-      await $.pump(const Duration(milliseconds: 600));
+      await $(const ValueKey('plan_detail.delete_button')).tap();
 
       await $(const ValueKey('activity_delete.confirm_button')).waitUntilVisible(
         timeout: const Duration(seconds: 10),
       );
       await $(const ValueKey('activity_delete.confirm_button')).tap();
-      await $.pump(const Duration(seconds: 1));
 
-      // ---- 8. Assert the activity card is gone --------------------------
+      // Delete pops back to the dashboard and shows a success snackbar; give
+      // the snackbar time to clear before asserting absence.
+      await _returnToDashboard($);
+      await $.pump(const Duration(seconds: 5));
+
+      // ---- 8. Assert the activity node is gone --------------------------
       expect(
-        $(workoutName),
+        $(onTimeline),
         findsNothing,
-        reason: 'Deleted activity should no longer appear on the calendar.',
+        reason: 'Deleted activity should no longer appear on the timeline.',
       );
     },
     timeout: const Timeout(Duration(minutes: 10)),
   );
 }
 
-/// Unwind the create-flow stack back to the calendar by tapping whichever
-/// screen's back button is currently present, until the calendar FAB shows.
-Future<void> _returnToCalendar(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
+/// Unwind the create-flow stack back to the dashboard by tapping whichever
+/// screen's back button is currently present, until the dashboard shows.
+Future<void> _returnToDashboard(PatrolIntegrationTester $) async {
+  const sentinel = ValueKey('fuel_timeline.settings');
   const backButtons = [
     ValueKey('plan_detail.back_button'),
     ValueKey('adjust_macros.back_button'),
     ValueKey('activity_create.back_button'),
   ];
   for (var i = 0; i < 6; i++) {
-    if ($(fab).exists) return;
+    if ($(sentinel).exists) return;
     var tapped = false;
     for (final back in backButtons) {
       if ($(back).exists) {
@@ -167,7 +186,7 @@ Future<void> _returnToCalendar(PatrolIntegrationTester $) async {
     if (!tapped) break;
     await $.pump(const Duration(milliseconds: 500));
   }
-  await $(fab).waitUntilVisible(timeout: const Duration(seconds: 30));
+  await $(sentinel).waitUntilVisible(timeout: const Duration(seconds: 30));
 }
 
 /// Dismiss any open keyboard (it overlays lower fields and makes them
@@ -187,8 +206,8 @@ Future<void> _fillField(
 
 /// Returns true once the calendar is reachable (authenticated).
 Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
-  const fab = ValueKey('calendar.create_activity_fab');
-  if ($(fab).exists) return true;
+  const sentinel = ValueKey('fuel_timeline.settings');
+  if ($(sentinel).exists) return true;
   if (_loginEmail.isEmpty || _loginPassword.isEmpty) return false;
 
   await $(const ValueKey('welcome.log_in_button')).tap();
@@ -196,6 +215,6 @@ Future<bool> _ensureAuthenticated(PatrolIntegrationTester $) async {
   await $(const ValueKey('login.email_field')).enterText(_loginEmail);
   await $(const ValueKey('login.password_field')).enterText(_loginPassword);
   await $(const ValueKey('login.log_in_button')).tap();
-  await $(fab).waitUntilVisible(timeout: const Duration(seconds: 40));
-  return $(fab).exists;
+  await $(sentinel).waitUntilVisible(timeout: const Duration(seconds: 40));
+  return $(sentinel).exists;
 }

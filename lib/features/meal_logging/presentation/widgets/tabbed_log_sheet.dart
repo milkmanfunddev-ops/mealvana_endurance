@@ -56,6 +56,12 @@ void showTabbedLogSheet(BuildContext context, {required String logDate}) {
 
 enum _LogTab { recent, favorites, search, describe, manual }
 
+extension _LogTabKey on _LogTab {
+  /// Stable finder key for integration tests: `log_sheet.tab_manual`, etc.
+  /// Derived from the enum name so a renamed tab breaks loudly at compile time.
+  ValueKey<String> get testKey => ValueKey('log_sheet.tab_$name');
+}
+
 extension _LogTabLabel on _LogTab {
   String get label {
     switch (this) {
@@ -135,6 +141,7 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     return Container(
+      key: const ValueKey('log_sheet.root'),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -266,6 +273,7 @@ class _TabBar extends StatelessWidget {
           final isSelected = tab == activeTab;
           return Expanded(
             child: GestureDetector(
+              key: tab.testKey,
               onTap: () => onTabSelected(tab),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
