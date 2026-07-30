@@ -95,6 +95,15 @@ export const BANANA_FLUID = 0;
 export const SPORTS_DRINK_CARBS = 15;    // per 1 cup (8 oz)
 export const SPORTS_DRINK_SODIUM = 100;   // per 1 cup (8 oz)
 export const SPORTS_DRINK_FLUID = 240;    // per 1 cup (8 oz)
+
+// Top-off floor (bug 3ace3fdb). A rendered top_up slot must never ship empty:
+// the UI draws a group header for it either way, so an empty one reads as a
+// broken plan. Half a cup of water is the agreed minimum — it is the one thing
+// that is always safe this close to a start, and hydration is the top-off's
+// actual job. Deliberately allowed to push total fluid past water_high_ml:
+// over-delivering 120 ml of water carries no GI risk, whereas an empty slot is
+// a visible defect. See PASS 4 in pre-workout.ts.
+export const MIN_TOP_UP_FLUID_ML = 120;   // 1/2 cup (4 oz)
 // Pass 1.5 universal fallback foods (vegan, gluten-free, no common allergens).
 // Used to deliver carbs when banana/sports_drink are disliked or already used. (#15)
 export const DATES_CARBS = 18;            // per 2 medjool dates

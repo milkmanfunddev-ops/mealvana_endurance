@@ -28,6 +28,7 @@ import {
   SPORTS_DRINK_CARBS,
   SPORTS_DRINK_SODIUM,
   SPORTS_DRINK_FLUID,
+  MIN_TOP_UP_FLUID_ML,
   DATES_CARBS,
   DATES_SODIUM,
   DATES_FLUID,
@@ -1508,6 +1509,107 @@ export function selectPreWorkoutFoods(
       state.protein_delivered += electrolyte.protein_g;
       state.sodium_delivered += electrolyte.sodium_mg;
       state.fluid_delivered += electrolyte.fluid_ml;
+    }
+  }
+
+  // ── Pass 4: Top-off floor — the slot must never ship empty ────────
+  // Bug 3ace3fdb: on a long pre-workout window all three phases activate, and
+  // meal+snack can consume the whole carb budget at template serving
+  // granularity. The cross-phase ceiling guard then skips top_up, Pass 1.5 is
+  // a no-op (carbs are already above carbs_low_g, so there is no gap to fill),
+  // and Passes 2 and 3 find no drink or electrolyte that fits under
+  // fluid_high — so the slot renders as a header with nothing beneath it.
+  //
+  // Every earlier pass is correctly headroom-guarded; the invariant they do not
+  // encode is that a rendered slot has to carry something. This pass is that
+  // invariant, and it is deliberately the ONLY place allowed to exceed
+  // water_high_ml — see MIN_TOP_UP_FLUID_ML.
+  //
+  // Note this does not resolve the upstream distribution problem (meal+snack
+  // over-consuming top_up's 10% carb share). That is the 60/30/10 budget rework
+  // Xuan raised on 2026-07-29, which is blocked on the fueling spec pinning the
+  // exact split. This guarantees the floor in the meantime.
+  if (topUpIdx >= 0) {
+    const phase = results[topUpIdx];
+
+    // Two shapes need the floor, and they are the same defect wearing
+    // different clothes:
+    //   1. Nothing selected at all — the reported empty header row.
+    //   2. An electrolyte tab and nothing else. Non-empty on paper, but a Nuun
+    //      tab with no water is not a top-off an athlete can act on; it fails
+    //      the same "should at least have a half a cup of water" bar.
+    // A slot that landed real food is left alone: it is already actionable,
+    // and stapling water onto every such plan is the distribution rework's
+    // call to make, not this fix's.
+    const hasFood =
+      phase.primary !== null || !!phase.stack || phase.add_ons.length > 0;
+    const needsFloor = !hasFood && phase.total_fluid_ml < MIN_TOP_UP_FLUID_ML;
+
+    if (needsFloor) {
+      // Reuse a real water template when one is eligible so the slot renders
+      // with the same name/unit the rest of the plan uses; synthesize the
+      // minimum only if the catalog has nothing (or all of it is filtered out).
+      const waterTemplate = eligibleDrinks.find(
+        (t) => t.fluid_ml > 0 && t.carbs_per_serving === 0 && t.sodium_mg === 0,
+      );
+
+      let floor: TemplateSelection;
+      if (waterTemplate) {
+        // Smallest half-serving that clears the floor, never below the
+        // template's own min_servings.
+        const servings = Math.max(
+          waterTemplate.min_servings,
+          snapToHalf(MIN_TOP_UP_FLUID_ML / waterTemplate.fluid_ml),
+        );
+        floor = makeSelection(waterTemplate, servings);
+      } else {
+        floor = {
+          id: 'water',
+          name: 'Water',
+          base_category: 'water',
+          serving_unit: 'cup',
+          servings: 0.5,
+          carbs_g: 0,
+          protein_g: 0,
+          fat_g: 0,
+          sodium_mg: 0,
+          fluid_ml: MIN_TOP_UP_FLUID_ML,
+          component_food_names: ['water'],
+          component_quantities: { water: 0.5 },
+        };
+      }
+
+      // If a sub-floor drink was already attached, the floor replaces it — back
+      // its contribution out of both the phase totals and the cross-phase state
+      // so nothing is double-counted.
+      const displaced = phase.drink;
+      if (displaced) {
+        phase.total_carbs_g = Math.round((phase.total_carbs_g - displaced.carbs_g) * 10) / 10;
+        phase.total_protein_g = Math.round((phase.total_protein_g - displaced.protein_g) * 10) / 10;
+        phase.total_sodium_mg = Math.round((phase.total_sodium_mg - displaced.sodium_mg) * 10) / 10;
+        phase.total_fluid_ml = Math.round((phase.total_fluid_ml - displaced.fluid_ml) * 10) / 10;
+        state.carbs_delivered -= displaced.carbs_g;
+        state.protein_delivered -= displaced.protein_g;
+        state.sodium_delivered -= displaced.sodium_mg;
+        state.fluid_delivered -= displaced.fluid_ml;
+      }
+
+      phase.drink = floor;
+      phase.total_fluid_ml = Math.round((phase.total_fluid_ml + floor.fluid_ml) * 10) / 10;
+      state.fluid_delivered += floor.fluid_ml;
+
+      console.log(
+        `[ALGO-C] Top-off floor: slot was empty after all passes, attached ` +
+          `${floor.servings} x ${floor.name} (${floor.fluid_ml}ml). ` +
+          `Fluid now ${state.fluid_delivered.toFixed(0)}ml of ` +
+          `${state.fluid_high.toFixed(0)}ml high.`,
+      );
+      logFormulaCascade({
+        phase: 'before:top_up',
+        source: 'solver',
+        reason: 'top_off_floor',
+        pinSetSize: 0,
+      });
     }
   }
 
