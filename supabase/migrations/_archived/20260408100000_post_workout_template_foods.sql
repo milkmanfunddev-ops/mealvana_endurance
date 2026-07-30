@@ -4,7 +4,7 @@
 -- Purpose: Insert 20 new recovery-specific foods needed by post_workout_templates.
 -- Idempotent via ON CONFLICT(name) — safe to re-run.
 --
--- Source: docs/templates/post_workout_template_foods.json
+-- Source: docs/features/formula_templates/post_workout_template_foods.json
 -- Date: 2026-04-08
 -- ============================================================================
 

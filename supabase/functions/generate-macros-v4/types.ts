@@ -7,6 +7,8 @@
  * - Pre-workout selection output
  */
 
+import type { FormulaDecisionSource } from '../_shared/nutrition/formula-decision.ts';
+
 // ============================================================================
 // Database Template Types
 // ============================================================================
@@ -182,12 +184,22 @@ export interface PreWorkoutPhaseResult {
      * than a real `formula_pins` row. Absent/false for real pins. Formula-first
      * flip, 2026-07-03 (plan Phase 2 #5). */
     ephemeral?: boolean;
+    /** Honest provenance: `user_pin` | `personal_formula` | `default_formula`
+     * | `solver`. Added 2026-07-29 when client-side auto-pinning was removed
+     * and computed defaults became the common path — `used_pin`/`ephemeral`
+     * alone conflate "you pinned this" with "we picked this for you". Additive;
+     * older parsers ignore it. See `_shared/nutrition/formula-decision.ts`. */
+    decision_source?: FormulaDecisionSource;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
     fallthrough_reason: 'no_pin_for_scope' | null;
+    /** Why no REAL pin fired, preserved for `default_formula` outcomes.
+     * `fallthrough_reason` must stay null while `used_pin` is true (client
+     * invariant), so the reason rides here instead of being discarded. */
+    default_fallthrough_reason?: string | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase
      * after scope-matching. Drives `plan_used_pin` / `plan_pin_fallthrough`
      * analytics. 0 when pins were supplied but none matched scope.

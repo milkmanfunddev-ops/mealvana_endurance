@@ -26,6 +26,7 @@ import '../../domain/sport_config.dart';
 import 'client_during_phase_solver.dart';
 import 'client_food_pool_service.dart';
 import 'client_greedy_solver.dart';
+import 'electrolyte_water_pairing.dart';
 
 /// Orchestrates client-side nutrition plan generation.
 ///
@@ -74,28 +75,50 @@ class ClientPlanService {
       context: 'CLIENT_PLAN_SERVICE',
     );
 
+    // Each phase runs its solver, then the electrolyte<->water pairing
+    // invariant: an electrolyte item never ships without water alongside it
+    // (see electrolyte_water_pairing.dart — mirrors the edge function pass).
+
     // Before phase
-    final beforeItems = await _solveBefore(
+    final beforeItems = await _pairElectrolyteWithWater(
+      await _solveBefore(
+        userId: userId,
+        macroTargets: macroTargets,
+        activityType: activityType,
+        timeBeforeRunHours: timeBeforeRunHours,
+      ),
+      phase: 'before',
       userId: userId,
-      macroTargets: macroTargets,
       activityType: activityType,
-      timeBeforeRunHours: timeBeforeRunHours,
+      fluidCeilingMl: macroTargets.preRun.fluidsHighMl,
     );
 
     // During phase
-    final duringItems = await _solveDuring(
+    final duringItems = await _pairElectrolyteWithWater(
+      await _solveDuring(
+        userId: userId,
+        macroTargets: macroTargets,
+        activityType: activityType,
+        durationMinutes: durationMinutes,
+        gutTrainingLevel: gutTrainingLevel,
+      ),
+      phase: 'during',
       userId: userId,
-      macroTargets: macroTargets,
       activityType: activityType,
-      durationMinutes: durationMinutes,
-      gutTrainingLevel: gutTrainingLevel,
+      fluidCeilingMl: macroTargets.duringRun.fluidsHighMl,
     );
 
     // After phase
-    final afterItems = await _solveAfter(
+    final afterItems = await _pairElectrolyteWithWater(
+      await _solveAfter(
+        userId: userId,
+        macroTargets: macroTargets,
+        activityType: activityType,
+      ),
+      phase: 'after',
       userId: userId,
-      macroTargets: macroTargets,
       activityType: activityType,
+      fluidCeilingMl: macroTargets.postRun.fluidsHighMl,
     );
 
     // If ALL phases produced zero foods, throw so caller uses generic fallback
@@ -210,6 +233,59 @@ class ClientPlanService {
       lastModifiedBy: userId,
       version: 1,
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Invariants
+  // ---------------------------------------------------------------------------
+
+  /// Enforce "an electrolyte item always goes with water" over one phase.
+  ///
+  /// The food pool is only fetched when the invariant is actually violated, so
+  /// the common case costs one list scan and zero DB reads. A pool-load
+  /// failure degrades to the uncorrected list rather than failing the plan —
+  /// this whole service is already the offline fallback path.
+  Future<List<FoodItemData>> _pairElectrolyteWithWater(
+    List<FoodItemData> items, {
+    required String phase,
+    required String userId,
+    required ActivityType activityType,
+    double? fluidCeilingMl,
+  }) async {
+    if (!needsWaterPairing(items)) return items;
+
+    try {
+      final pool = await _foodPool.getFoodsForPhase(
+        phase: phase,
+        userId: userId,
+        activityType: activityType,
+      );
+      final result = ensureElectrolyteWaterPairing(
+        items,
+        pool,
+        fluidCeilingMl: fluidCeilingMl,
+      );
+      if (result.conflict != null) {
+        _logger.warning(
+          '$phase phase: electrolyte selected with no water alongside it and '
+          'the pairing could not be enforced (${result.conflict!.name})',
+          context: 'CLIENT_PLAN_SERVICE',
+        );
+      } else if (result.changed) {
+        _logger.info(
+          '$phase phase: added water alongside a dry electrolyte item',
+          context: 'CLIENT_PLAN_SERVICE',
+        );
+      }
+      return result.items;
+    } catch (e) {
+      _logger.warning(
+        '$phase phase: electrolyte/water pairing pass failed',
+        context: 'CLIENT_PLAN_SERVICE',
+        error: e,
+      );
+      return items;
+    }
   }
 
   // ---------------------------------------------------------------------------

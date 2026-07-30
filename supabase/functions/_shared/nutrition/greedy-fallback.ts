@@ -179,10 +179,21 @@ export function greedyFallback(
         neededServings = Math.ceil(sodiumDeficit / food.per_serving.sodium_mg);
       }
     } else {
-      // For before/during, focus on carbs
+      // Before/during lead with carbs, then fall through to hydration and
+      // sodium (2026-07-29). Previously this branch computed servings from the
+      // carb deficit ALONE: once carbs reached target, every remaining food
+      // resolved to 0 servings, so fluid and sodium were simply abandoned
+      // wherever they happened to be. That is why the during-phase fallback
+      // could hand back a plan at 70% of the fluid target and call it done.
       const carbsDeficit = Math.max(0, carbsTarget - totals.carbs_g);
+      const waterDeficit = Math.max(0, waterTarget - totals.water_ml);
+      const sodiumDeficit = Math.max(0, sodiumTarget - totals.sodium_mg);
       if (carbsDeficit > 0 && food.per_serving.carbs_g > 0) {
         neededServings = Math.ceil(carbsDeficit / food.per_serving.carbs_g);
+      } else if (waterDeficit > 0 && food.per_serving.water_ml > 0) {
+        neededServings = Math.ceil(waterDeficit / food.per_serving.water_ml);
+      } else if (sodiumDeficit > 0 && food.per_serving.sodium_mg > 0) {
+        neededServings = Math.ceil(sodiumDeficit / food.per_serving.sodium_mg);
       }
     }
 
@@ -270,7 +281,13 @@ export function greedyFallback(
     neededServings = Math.min(neededServings, servingCap);
 
     // Indivisible items (tablets, gel packets) round to whole numbers;
-    // everything else rounds to nearest 0.5
+    // everything else rounds to nearest 0.5. The `Math.max(1, ...)` floor
+    // exists because you cannot take 0.4 of a tablet — but it must NOT
+    // resurrect a serving count that a band-ceiling cap above deliberately
+    // zeroed, which would turn "no room left" into a one-serving overshoot.
+    // Reachable now that the stop condition lets the loop run to target
+    // (2026-07-29).
+    if (neededServings <= 0) continue;
     neededServings = food.is_indivisible
       ? Math.max(1, Math.round(neededServings))
       : roundToIncrement(neededServings);
@@ -315,14 +332,24 @@ export function greedyFallback(
       totals.sodium_mg += food.per_serving.sodium_mg * neededServings;
       totals.water_ml += food.per_serving.water_ml * neededServings;
 
-      // Stop when carb/water (and, after only, protein) targets are met
-      const carbsMet = totals.carbs_g >= carbsTarget * 0.9;
+      // Stop only once every macro has actually REACHED its target
+      // (2026-07-29). This used to break at fixed fractions — 90% carbs, 70%
+      // protein, 70% (during) / 85% (after) water — which is not even the
+      // range floor; it is an arbitrary slice of the target that could sit
+      // either side of it. Fluid in particular was routinely declared "met"
+      // 30% short. Aim at the target, pass iff inside the range.
+      //
+      // Nothing here permits overshoot: the per-food serving caps above
+      // (carbHigh / sodiumHigh / waterHigh / proteinHigh) and the
+      // wouldOvershoot* skips still bound every addition by the band ceiling,
+      // and `maxFoods` still bounds the item count. The loop simply no longer
+      // congratulates itself before the job is done.
+      const carbsMet = carbsTarget <= 0 || totals.carbs_g >= carbsTarget;
       const proteinMet = phase !== "after" || proteinTarget <= 0 ||
-        totals.protein_g >= proteinTarget * 0.7;
-      const waterStopMultiplier = phase === "after" ? 0.85 : 0.7;
-      const waterMet = waterTarget <= 0 ||
-        totals.water_ml >= waterTarget * waterStopMultiplier;
-      if (carbsMet && proteinMet && waterMet) break;
+        totals.protein_g >= proteinTarget;
+      const waterMet = waterTarget <= 0 || totals.water_ml >= waterTarget;
+      const sodiumMet = sodiumTarget <= 0 || totals.sodium_mg >= sodiumTarget;
+      if (carbsMet && proteinMet && waterMet && sodiumMet) break;
     }
   }
 

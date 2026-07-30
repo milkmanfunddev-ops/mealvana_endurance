@@ -1,7 +1,7 @@
 /**
  * Pre-Workout Hydration Tests (new algorithm)
  *
- * Ported verbatim from /docs/sodium_hydration/hydration_sodium_calc_tests.md PART 2
+ * Ported verbatim from /docs/features/sodium_hydration/hydration_sodium_calc_tests.md PART 2
  *
  * Run with:
  *   deno test supabase/functions/generate-macros-v4/pre-workout-new.test.ts

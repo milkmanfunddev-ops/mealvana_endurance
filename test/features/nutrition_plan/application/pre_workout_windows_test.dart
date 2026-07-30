@@ -6,8 +6,8 @@
 //   3. Short window      — 10–120 min before, fixed top-up
 //   4. Full protocol     — ≥ 120 min before, body-weight-scaled
 //
-// Spec: docs/sodium_hydration/transparency_pre_hydration.md
-//       docs/sodium_hydration/transparency_pre_sodium.md
+// Spec: docs/features/sodium_hydration/transparency_pre_hydration.md
+//       docs/features/sodium_hydration/transparency_pre_sodium.md
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/macro_explanation_service.dart';

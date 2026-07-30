@@ -6,7 +6,7 @@ part of 'macro_explanation_service.dart';
 // Conversion: 1 mL = 0.033814 fl oz. Used to pre-convert targetGrams /
 // rangeLow / rangeHigh values in the fluid service when useImperial=true so
 // the transparency card (which only knows the `unit` suffix) displays the
-// right magnitude. See audit doc `docs/sodium_hydration/2026-04-22_audit.md`
+// right magnitude. See audit doc `docs/features/sodium_hydration/2026-04-22_audit.md`
 // U1 for the bug this fixes (e.g. `1688mL` rendering as `1688oz`).
 double _mlToDisplay(double ml, bool useImperial) =>
     useImperial ? (ml * 0.033814).roundToDouble() : ml;

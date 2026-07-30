@@ -1,7 +1,7 @@
 /**
  * Single-Sport Integration Tests for hydration algorithm.
  *
- * Ported verbatim from /docs/sodium_hydration/hydration_sodium_calc_tests.md §Single-Sport Integration Tests
+ * Ported verbatim from /docs/features/sodium_hydration/hydration_sodium_calc_tests.md §Single-Sport Integration Tests
  * Tolerances: ml/hr ±5%, sweat rate ±0.01 L/hr
  *
  * Run with:

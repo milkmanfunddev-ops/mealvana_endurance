@@ -17,6 +17,7 @@ import {
   greedyFallback,
   type MacroTargets,
   type Phase,
+  reconcilePhaseHydrationAndSodium,
   solveLPModel,
 } from "../_shared/nutrition/index.ts";
 import { getTemplateFoodsForPhase } from "../_shared/nutrition/template-food-queries.ts";
@@ -34,7 +35,10 @@ export async function generateLPPhase(
   likedFoods?: string[],
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
-  deviceId?: string,
+  /** @deprecated Ignored. Retained to keep the positional signature stable for
+   * existing callers; it used to resolve a user id for a `user_foods` lookup
+   * that no longer exists (food-source policy). Do not reintroduce. */
+  _deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
 ): Promise<LPPhaseResult> {
@@ -48,7 +52,8 @@ export async function generateLPPhase(
     likedFoods,
     willingToTryFoods,
     dislikedFoods,
-    deviceId,
+    // No deviceId: the LP fallback pool is curated `template_foods` only —
+    // `user_foods` is not a plan-generation source (food-source policy).
     false,
     allergies,
     dietaryPreference,
@@ -121,72 +126,30 @@ export async function generateLPPhase(
     resultFoods = greedyResult.foods;
   }
 
-  // If phase output is out-of-range and imported user foods are present in the pool,
-  // retry without imported user foods.
-  const initialValidation = validatePhaseResultAgainstTargets(
+  // Validate the result for observability. There used to be a second solve here
+  // that retried with imported `user_foods` stripped out of the pool; the pool
+  // no longer contains any user foods at all (food-source policy — see
+  // template-food-queries.ts), so that retry was unreachable and is gone.
+  const validation = validatePhaseResultAgainstTargets(
     resultFoods,
     targets,
     phase,
   );
-  if (!initialValidation.ok) {
-    const hasImportedUserFoods = foods.some((f) =>
-      f.is_user_food === true &&
-      (!f.product_type || f.product_type === "import")
+  if (!validation.ok) {
+    console.warn(
+      `[PLAN-V3] ${phase}: result out of range. Issues: ${
+        validation.issues.join("; ")
+      }`,
     );
-
-    if (hasImportedUserFoods) {
-      const sanitizedFoods = foods.filter((f) =>
-        !(f.is_user_food === true &&
-          (!f.product_type || f.product_type === "import"))
-      );
-
-      if (sanitizedFoods.length > 0) {
-        console.warn(
-          `[PLAN-V3] ${phase}: out-of-range with imported user foods. ` +
-            `Retrying with imported user foods removed (${foods.length} -> ${sanitizedFoods.length}). Issues: ${
-              initialValidation.issues.join("; ")
-            }`,
-        );
-
-        const retryModel = buildLPModel(
-          sanitizedFoods,
-          targets,
-          phase,
-          weights,
-          undefined,
-          undefined,
-          modelOptions,
-        );
-        const retrySolution = solveLPModel(retryModel, sanitizedFoods, phase);
-        let retryFoods: FoodResult[];
-        if (retrySolution && retrySolution.foods.length > 0) {
-          retryFoods = retrySolution.foods;
-        } else {
-          retryFoods = greedyFallback(sanitizedFoods, targets, phase).foods;
-        }
-
-        const retryValidation = validatePhaseResultAgainstTargets(
-          retryFoods,
-          targets,
-          phase,
-        );
-
-        if (
-          retryValidation.ok ||
-          retryValidation.issues.length < initialValidation.issues.length
-        ) {
-          resultFoods = retryFoods;
-          console.log(
-            `[PLAN-V3] ${phase}: adopted sanitized retry result (issues ${initialValidation.issues.length} -> ${retryValidation.issues.length})`,
-          );
-        } else {
-          console.warn(
-            `[PLAN-V3] ${phase}: keeping original result (sanitized retry not better).`,
-          );
-        }
-      }
-    }
   }
+
+  // Closing pass: the LP optimizes a linear preference score inside [min,max]
+  // bands, so it settles on a vertex — typically a range EDGE for sodium and
+  // fluid rather than the point target. Pull them back toward target from the
+  // same pool, strictly under every band ceiling. Mirrors what
+  // during-gap-fill.ts does for during-phase carbs. (2026-07-29)
+  resultFoods =
+    reconcilePhaseHydrationAndSodium(resultFoods, foods, targets).foods;
 
   return { foods: resultFoods };
 }

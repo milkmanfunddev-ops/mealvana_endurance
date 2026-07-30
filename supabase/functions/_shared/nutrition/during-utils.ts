@@ -351,9 +351,12 @@ export function pickBestElectrolyte(
   } = bounds;
   const MAX_SUPPLEMENT_SERVINGS = 4;
 
+  // Baseline = "add nothing". Must use the SAME formula as the candidate
+  // score below (target-relative undershoot, 2x-weighted overshoot), or the
+  // `best.score < baselineScore` comparison compares two different scales.
   const baselineSodiumScore = sodiumTarget > 0
-    ? (Math.max(0, sodiumLower - currentSodium) +
-      Math.max(0, currentSodium - sodiumUpper)) / sodiumTarget
+    ? (Math.max(0, sodiumTarget - currentSodium) +
+      Math.max(0, currentSodium - sodiumUpper) * 2) / sodiumTarget
     : 0;
   const baselineFluidPenalty = fluidTarget > 0 && currentFluid > fluidUpper
     ? ((currentFluid - fluidUpper) / fluidTarget) * 3
@@ -386,8 +389,16 @@ export function pickBestElectrolyte(
       if (fluid > fluidUpper + 1e-6) continue;
       if (carbs > carbUpper + 1e-6) continue;
 
+      // Undershoot is measured against sodium_TARGET, not sodium_lower
+      // (2026-07-29). Against the floor, every candidate that merely cleared
+      // sodiumLower scored an identical 0 penalty, so the tie-break decided
+      // selection and a pick sitting at the bottom of the band was as "good"
+      // as one sitting on the target. Measuring from the target makes the
+      // penalty strictly decrease as the pick approaches it. This also brings
+      // Deno into line with the Dart mirror (`client_during_phase_solver.dart`
+      // `_pickBestElectrolyte`), which has always used the target here.
       const sodiumPenalty = sodiumTarget > 0
-        ? (Math.max(0, sodiumLower - sodium) +
+        ? (Math.max(0, sodiumTarget - sodium) +
           Math.max(0, sodium - sodiumUpper) * 2) / sodiumTarget
         : 0;
       const fluidPenalty = fluidTarget > 0 && fluid > fluidUpper
@@ -419,7 +430,16 @@ export function pickBestElectrolyte(
   }
 
   if (!best) return null;
-  if (best.sodium >= sodiumLower) return best;
+  // Floor rescue: when we started BELOW the band floor, take any pick that
+  // clears it even if the score says otherwise. Gated on `currentSodium <
+  // sodiumLower` (2026-07-29) — previously this read `best.sodium >=
+  // sodiumLower`, which, once the penalty became target-relative, would also
+  // accept a *score-worsening* pick made from an already-in-range state and
+  // push sodium away from target. Above the floor, the score is the only
+  // arbiter and it minimizes distance to target.
+  if (currentSodium < sodiumLower - 1e-6 && best.sodium >= sodiumLower) {
+    return best;
+  }
   return best.score < baselineScore ? best : null;
 }
 
@@ -471,8 +491,14 @@ export function fillElectrolytes(
       );
     }
 
-    // Second pass: if sodium still below lower bound, try a different source
-    if (sodiumAssigned < bounds.sodiumLower) {
+    // Second pass: if sodium is still below TARGET, try a different source.
+    // Gated on `sodiumLower` until 2026-07-29 — because electrolyte servings
+    // are discretized, the first pick routinely lands between the floor and
+    // the target, and the retry that would have closed that gap never ran.
+    // `pickBestElectrolyte` still refuses anything breaching sodiumUpper and
+    // returns null unless the second source genuinely improves the score, so
+    // widening the gate can add an item but cannot overshoot the ceiling.
+    if (sodiumAssigned < bounds.sodiumTarget) {
       const secondPool = electrolytePool.filter((e) =>
         e.id !== firstPick.food.id
       );

@@ -302,12 +302,12 @@ Tolerances:
 ## References
 
 ### Specifications
-- `/docs/macro_calculations/iteration1_spec.txt` + `iteration1_tests.txt`
-- `/docs/macro_calculations/iteration2_tests.txt` (spec corrupted, formulas in v1_readme.txt)
-- `/docs/macro_calculations/iteration3_spec.txt` + `iteration3_tests.txt`
-- `/docs/macro_calculations/iteration4_spec.txt` + `iteration4_tests.txt`
-- `/docs/macro_calculations/v1_readme.txt` (iterations 1-2)
-- `/docs/macro_calculations/v2_readme.txt` (iterations 3-4)
+- `/docs/features/macro_calculations/iteration1_spec.txt` + `iteration1_tests.txt`
+- `/docs/features/macro_calculations/iteration2_tests.txt` (spec corrupted, formulas in v1_readme.txt)
+- `/docs/features/macro_calculations/iteration3_spec.txt` + `iteration3_tests.txt`
+- `/docs/features/macro_calculations/iteration4_spec.txt` + `iteration4_tests.txt`
+- `/docs/features/macro_calculations/v1_readme.txt` (iterations 1-2)
+- `/docs/features/macro_calculations/v2_readme.txt` (iterations 3-4)
 
 ### Scientific References
 - Cunningham RMR: `500 + 22 × LBM_kg`

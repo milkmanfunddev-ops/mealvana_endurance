@@ -333,3 +333,127 @@ Deno.test(
     );
   },
 );
+
+// ===========================================================================
+// Target-seeking (2026-07-29)
+//
+// `pickElectrolyte` used to open with `if (totalSodiumDelivered >= sodiumLow)
+// return null` — the instant food + drink selection cleared the band FLOOR, no
+// electrolyte was ever considered, so sodium parked at the bottom of the range
+// while sodium_target sat well above. These tests assert distance-to-target,
+// not range membership: landing in-range but further from target than an
+// available option is a failure.
+// ===========================================================================
+
+Deno.test(
+  'pickElectrolyte: keeps closing the gap to TARGET after the floor is already cleared',
+  () => {
+    // 320mg delivered — already above the 300mg floor, but 130mg short of the
+    // 450mg target. A 100mg tab lands 420mg (30mg from target). The old
+    // floor gate returned null here and shipped 320mg.
+    const SMALL_TAB = makeTemplate({
+      id: 'small-tab',
+      name: 'Small Salt Tab',
+      sodium_mg: 100,
+      carbs_per_serving: 0,
+      fluid_ml: 0,
+      min_servings: 1,
+      max_servings: 3,
+    });
+
+    const pick = pickElectrolyte(
+      [SMALL_TAB],
+      /* carbsDelivered */ 20,
+      /* proteinDelivered */ 0,
+      /* totalSodiumDelivered */ 320,
+      /* totalFluidDelivered */ 0,
+      /* carbsTarget */ 60,
+      TARGETS.carbsHigh,
+      TARGETS.proteinHigh,
+      TARGETS.sodiumLow,
+      TARGETS.sodiumHigh,
+      TARGETS.sodiumTarget,
+      TARGETS.fluidHigh,
+      TARGETS.fluidTarget,
+    );
+
+    assert(
+      pick !== null,
+      'expected an electrolyte: sodium cleared the floor but is 130mg short of target',
+    );
+    const total = 320 + pick!.sodium_mg;
+    assertEquals(
+      pick!.servings,
+      1,
+      `expected the target-closest serving; got ${pick!.servings} (total ${total}mg)`,
+    );
+    assert(
+      Math.abs(total - TARGETS.sodiumTarget) < Math.abs(320 - TARGETS.sodiumTarget),
+      `pick must move sodium CLOSER to target: ${total}mg vs baseline 320mg (target ${TARGETS.sodiumTarget}mg)`,
+    );
+  },
+);
+
+Deno.test(
+  'pickElectrolyte: adds nothing once sodium is already on target',
+  () => {
+    const SMALL_TAB = makeTemplate({
+      id: 'small-tab',
+      name: 'Small Salt Tab',
+      sodium_mg: 100,
+      carbs_per_serving: 0,
+      fluid_ml: 0,
+      min_servings: 1,
+      max_servings: 3,
+    });
+
+    const pick = pickElectrolyte(
+      [SMALL_TAB],
+      20,
+      0,
+      /* totalSodiumDelivered */ TARGETS.sodiumTarget,
+      0,
+      60,
+      TARGETS.carbsHigh,
+      TARGETS.proteinHigh,
+      TARGETS.sodiumLow,
+      TARGETS.sodiumHigh,
+      TARGETS.sodiumTarget,
+      TARGETS.fluidHigh,
+      TARGETS.fluidTarget,
+    );
+
+    assertEquals(pick, null, 'on target — nothing to add, and never overshoot');
+  },
+);
+
+Deno.test(
+  'pickElectrolyte: target-seeking must not become ceiling-busting',
+  () => {
+    // 320mg delivered (in range), only a 300mg tablet available: 620mg would
+    // breach sodium_high (600). Removing the floor gate must NOT let a
+    // ceiling-breaching pick through, and the floor rescue must stay dormant
+    // because we did not start below the floor.
+    const pick = pickElectrolyte(
+      [BIG_TABLET],
+      20,
+      0,
+      /* totalSodiumDelivered */ 320,
+      0,
+      60,
+      TARGETS.carbsHigh,
+      TARGETS.proteinHigh,
+      TARGETS.sodiumLow,
+      TARGETS.sodiumHigh,
+      TARGETS.sodiumTarget,
+      TARGETS.fluidHigh,
+      TARGETS.fluidTarget,
+    );
+
+    assertEquals(
+      pick,
+      null,
+      'prefer the in-range shortfall over breaching sodium_high',
+    );
+  },
+);

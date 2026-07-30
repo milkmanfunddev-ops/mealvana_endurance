@@ -6,7 +6,7 @@
 --   - component_ratios JSONB maps food names to their portion share
 --   - Public SELECT, service_role INSERT/UPDATE/DELETE
 --
--- Source: docs/food_templates/research/post_workout_templates_plan.md
+-- Source: docs/features/food_templates/research/post_workout_templates_plan.md
 -- Date: 2026-04-08
 -- ============================================================================
 

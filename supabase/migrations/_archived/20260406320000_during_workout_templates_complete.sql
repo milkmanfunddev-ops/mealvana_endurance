@@ -27,7 +27,7 @@ COMMENT ON COLUMN public.template_foods.min_increment
   IS 'Minimum serving increment for rounding (e.g. 1 for gels = whole units only, 0.5 for bars = half bars allowed).';
 
 -- STEP 2: Populate per-hour constraints for during-phase products
--- Values from: docs/during_workout_templates/during_workout_product_max_unit_constraints.md
+-- Values from: docs/features/during_workout_templates/during_workout_product_max_unit_constraints.md
 
 -- Gels: 2/hr low, 3/hr moderate, 3/hr high. Whole units only (no half gels).
 UPDATE public.template_foods
@@ -98,7 +98,7 @@ UPDATE public.template_foods
 --   component_food_names TEXT[] references template_foods.name values
 --   component_carb_ratios JSONB maps food names to their share of total carbs
 --
--- Source: docs/during_workout_templates/during_workout_formula_templates_v1.md
+-- Source: docs/features/during_workout_templates/during_workout_formula_templates_v1.md
 -- Date: 2026-04-06
 -- ============================================================================
 

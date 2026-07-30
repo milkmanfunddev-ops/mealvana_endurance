@@ -1,8 +1,24 @@
 /**
- * Before Phase — User Food Substitution
+ * Before Phase — User Food Substitution (DISABLED)
  *
- * Finds user foods that can substitute for template components based on
- * product_type matching and carb profile similarity.
+ * Historically this found `user_foods` that could substitute for a before-phase
+ * template component, matched on product_type and carb profile.
+ *
+ * FOOD-SOURCE POLICY (2026-07-29): plan generation draws foods ONLY from the
+ * curated `template_foods` catalog. `user_foods` — user-created, barcode-scanned
+ * and branded grocery items — must not reach any generated plan, including
+ * fallbacks. The only legitimate user-originating source is a pinned personal
+ * formula, which is self-contained (components carry their own macros, no
+ * food-pool lookup — see `personal-formula-pins.ts`).
+ *
+ * `fetchUserFoodsForBefore` therefore performs NO query and always returns an
+ * empty list, so `findSubstitutions` always returns an empty map and the
+ * explosion path in `before-phase-explosion.ts` always renders the original
+ * curated component. The matching machinery below is retained (still exercised
+ * by unit tests, still type-referenced by the explosion module) but is
+ * unreachable in production with an empty food list.
+ *
+ * Do not reintroduce the query.
  */
 
 import { createServiceClient } from "../_shared/supabase-client.ts";
@@ -69,78 +85,23 @@ export function isLiquidProductType(productType: string): boolean {
 // Fetch User Foods
 // ============================================================================
 
-/** Fetch user foods suitable for before phase substitution. */
+/**
+ * Fetch user foods suitable for before-phase substitution.
+ *
+ * DISABLED by the food-source policy (see file header): always returns an empty
+ * list without querying `user_foods`. The signature is kept so `before-phase.ts`
+ * needs no change, and so the disablement lives in exactly one place.
+ */
+// deno-lint-ignore require-await
 export async function fetchUserFoodsForBefore(
-  supabase: ReturnType<typeof createServiceClient>,
-  deviceId: string,
+  _supabase: ReturnType<typeof createServiceClient>,
+  _deviceId: string,
 ): Promise<UserFoodForSubstitution[]> {
-  // Look up user_id from device_id
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("device_id", deviceId)
-    .single();
-
-  const userId = userData?.id;
-  if (!userId) {
-    console.log(
-      "[PLAN-V3-SUBST] No user found for device_id, skipping substitution",
-    );
-    return [];
-  }
-
-  const { data: userFoods, error } = await supabase
-    .from("user_foods")
-    .select(`
-      id, name, display_name, display_name_plural,
-      carbs_per_serving, protein_per_serving, fat_per_serving,
-      sodium_mg, fluid_ml_per_serving, calories_per_serving,
-      serving_size, serving_unit, serving_amount,
-      product_type, is_electrolyte, categories
-    `)
-    .eq("user_id", userId)
-    .eq("is_deleted", false)
-    .eq("to_exclude_from_solver", false)
-    .not("product_type", "is", null)
-    .neq("product_type", "import");
-
-  if (error) {
-    console.warn(
-      `[PLAN-V3-SUBST] Failed to fetch user foods: ${error.message}`,
-    );
-    return [];
-  }
-
-  // Filter: must be suitable for before phase
-  const beforeFoods = (userFoods ?? []).filter((f: Record<string, unknown>) => {
-    const categories = f.categories as string[] | null;
-    if (!categories || categories.length === 0) return true;
-    return categories.includes("before_run");
-  });
-
   console.log(
-    `[PLAN-V3-SUBST] Found ${beforeFoods.length} user foods for before-phase substitution`,
+    "[PLAN-V3-SUBST] user_foods substitution is disabled by policy — " +
+      "before-phase components come from the curated catalog only",
   );
-
-  return beforeFoods.map((
-    f: Record<string, unknown>,
-  ): UserFoodForSubstitution => ({
-    id: f.id as string,
-    name: f.name as string,
-    display_name: (f.display_name as string) ?? null,
-    display_name_plural: (f.display_name_plural as string) ?? null,
-    carbs_per_serving: (f.carbs_per_serving as number) ?? 0,
-    protein_per_serving: (f.protein_per_serving as number) ?? 0,
-    fat_per_serving: (f.fat_per_serving as number) ?? 0,
-    sodium_mg: (f.sodium_mg as number) ?? 0,
-    fluid_ml_per_serving: (f.fluid_ml_per_serving as number) ?? 0,
-    calories_per_serving: (f.calories_per_serving as number) ?? 0,
-    serving_size: (f.serving_size as string) ?? null,
-    serving_unit: (f.serving_unit as string) ?? null,
-    serving_amount: (f.serving_amount as number) ?? null,
-    product_type: f.product_type as string,
-    is_electrolyte: (f.is_electrolyte as boolean) ?? false,
-  }));
+  return [];
 }
 
 // ============================================================================

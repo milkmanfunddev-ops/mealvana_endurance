@@ -44,7 +44,10 @@ import {
   type ActivityType,
   adjustTargetsForOverrides,
   type FoodResult,
+  PHASE_TIMING_LABELS,
 } from "../_shared/nutrition/index.ts";
+import { applyElectrolyteWaterPairing } from "../_shared/nutrition/electrolyte-water-pairing.ts";
+import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 
 import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
@@ -298,6 +301,29 @@ serve(withSentry(async (req) => {
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
       ]);
+
+    // Invariant: an electrolyte item never ships without water alongside it.
+    // Runs before validation so the validator sees the corrected lists.
+    // (Before-phase pairing is enforced inside `generateBeforePhaseV3`, which
+    // owns the per-slot targets and timing labels.)
+    duringPhaseResult.foods = await applyElectrolyteWaterPairing(
+      duringPhaseResult.foods,
+      {
+        fluidCeilingMl: input.macro_targets.during_run?.water_high_ml,
+        timing: PHASE_TIMING_LABELS.during,
+        logPrefix: "[PLAN-V3] During",
+      },
+      () => getEssentialFoods(supabase, activityType, "during"),
+    );
+    afterPhaseResult.foods = await applyElectrolyteWaterPairing(
+      afterPhaseResult.foods,
+      {
+        fluidCeilingMl: input.macro_targets.post_run?.water_high_ml,
+        timing: PHASE_TIMING_LABELS.after,
+        logPrefix: "[PLAN-V3] After",
+      },
+      () => getEssentialFoods(supabase, activityType, "after"),
+    );
 
     // Validate phases (non-fatal warnings)
     const validationStart = performance.now();

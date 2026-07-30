@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/widgets/swipe_action_background.dart';
 import '../../../application/by_hour_sync_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
@@ -48,19 +49,16 @@ class PlacedSlotFoodWidget extends StatelessWidget {
         '${assignment.foodItemId}_${assignment.timeSlot.hourIndex}_${assignment.timeSlot.slotIndex}_placed',
       ),
       direction: DismissDirection.endToStart,
-      background: Container(
+      // Radius matches the foreground chip below so the reveal is chip-shaped.
+      background: SwipeActionBackground(
         alignment: Alignment.centerRight,
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: AppRadius.smRadius,
         padding: const EdgeInsets.only(right: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: Colors.orange.withValues(alpha: 0.1),
-          borderRadius: AppRadius.smRadius,
-        ),
-        child: Text(
-          'Unassign',
-          style: AppTextStyles.smallLabel.copyWith(
-            color: Colors.orange,
-            fontSize: 11,
-          ),
+        label: 'Unassign',
+        labelStyle: AppTextStyles.smallLabel.copyWith(
+          color: Colors.orange,
+          fontSize: 11,
         ),
       ),
       onDismissed: (_) => onUnassign(),

@@ -1,6 +1,6 @@
 /**
  * Pre-Workout Formulas as TypeScript constants.
- * Source: pre_workout_formulas table (docs/pre_workout_formulas.txt)
+ * Source: pre_workout_formulas table (docs/_archived/data_dumps/pre_workout_formulas.txt)
  */
 
 import { type Formula } from '../types.ts';

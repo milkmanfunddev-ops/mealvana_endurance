@@ -1,7 +1,7 @@
 /**
  * Tests for sweat-hydration.ts
  *
- * Ported verbatim from /docs/sodium_hydration/hydration_sodium_calc_tests.md
+ * Ported verbatim from /docs/features/sodium_hydration/hydration_sodium_calc_tests.md
  * Tolerances: sweat rate ±0.01 L/hr
  *
  * Run with:

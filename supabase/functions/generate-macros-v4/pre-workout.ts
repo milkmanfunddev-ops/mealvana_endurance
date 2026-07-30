@@ -1,7 +1,7 @@
 /**
  * Algorithm C: Comfort-Capped Hybrid — Pre-workout food selection
  *
- * Ported from _test/pre-workout-comparison/algorithms/algo-c-comfort-cap.ts
+ * Ported from _archived/supabase/functions/_test/pre-workout-comparison/algorithms/algo-c-comfort-cap.ts
  * for production use in generate-macros-v4.
  *
  * Flow:
@@ -38,6 +38,11 @@ import {
   RAISINS_SODIUM,
   RAISINS_FLUID,
 } from './types.ts';
+
+import {
+  defaultFormulaDecision,
+  logFormulaCascade,
+} from '../_shared/nutrition/formula-decision.ts';
 
 import {
   ADDON_GAP_THRESHOLD,
@@ -713,8 +718,20 @@ export function pickElectrolyte(
   fluidHigh: number,
   fluidTarget: number,
 ): TemplateSelection | null {
-  // Only add electrolyte if sodium is below the low bound.
-  if (totalSodiumDelivered >= sodiumLow) return null;
+  // Aim at sodium_TARGET, not the range floor (2026-07-29). This used to be
+  // `if (totalSodiumDelivered >= sodiumLow) return null` — the moment food +
+  // drink selection cleared the *floor*, no electrolyte was ever considered,
+  // stranding sodium in the low end of the band while `sodium_target` (the
+  // midpoint) sat far above. `pickDrink` in this same file has never had such
+  // a gate; it just minimizes `scoreDrinkOption` (a |actual-target| score) all
+  // the way to the target, and that is the pattern sodium now follows too.
+  //
+  // Safety: the loop below only ever adopts a candidate that *strictly
+  // improves* the distance-to-target score, and every candidate is rejected
+  // if its own delta exceeds the remaining sodium/carb/protein/fluid headroom.
+  // So when sodium is already at (or past) target, nothing is added, and the
+  // ceiling can never be crossed. Aim at the target, pass iff inside the range.
+  const startsBelowFloor = totalSodiumDelivered < sodiumLow - 1e-6;
 
   let bestScore = scoreDrinkOption(totalSodiumDelivered, totalFluidDelivered, sodiumTarget, fluidTarget);
   let bestPick: { template: PreWorkoutTemplate; servings: number } | null = null;
@@ -752,9 +769,16 @@ export function pickElectrolyte(
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget) +
         (carbsTarget > 0 ? Math.max(0, resultCarbs - carbsHigh) / carbsTarget : 0) * 4;
 
+      // `score < bestScore` is the target-seeking rule and does all the work.
+      // The second clause is a floor rescue: accept a *non*-improving pick
+      // purely because it lands in-range. It must only fire when we started
+      // BELOW the floor — otherwise, now that the early return is gone, it
+      // would bolt an unnecessary electrolyte onto an already-in-range plan
+      // and push sodium further from target.
       if (
         score < bestScore ||
-        (bestPick === null && resultSodium >= sodiumLow && resultSodium <= sodiumHigh)
+        (startsBelowFloor && bestPick === null && resultSodium >= sodiumLow &&
+          resultSodium <= sodiumHigh)
       ) {
         bestScore = score;
         bestPick = { template, servings: srv };
@@ -772,7 +796,11 @@ export function pickElectrolyte(
   // over-delivery), still respecting the carb/protein/fluid caps so we don't
   // blow other macros. This mirrors the pin/formula path, which always tops
   // sodium up toward target via backfillPinnedFluidsAndSodium.
-  if (!bestPick) {
+  // Only rescue when we actually started below the floor. If sodium already
+  // cleared the floor, "no bestPick" simply means no candidate got us closer
+  // to target without breaching the ceiling — the correct answer is to add
+  // nothing rather than to deliberately overshoot.
+  if (!bestPick && startsBelowFloor) {
     let leastOvershootSodium = Infinity;
     for (const template of electrolyteTemplates) {
       const step = template.is_indivisible === false ? 0.5 : 1;
@@ -1084,12 +1112,23 @@ export function selectPreWorkoutFoods(
         ...(pinsActive && {
           pin_decision: {
             used_pin: false,
+            decision_source: 'solver' as const,
             pinned_template_id: null,
             pinned_template_name: null,
             fallthrough_reason: 'no_pin_for_scope' as const,
+            default_fallthrough_reason: 'no_pin_for_scope',
             pin_set_size: pinnedForPhase.length,
           },
         }),
+      });
+      // Always-on tripwire: no pin AND no default formula for this slot.
+      // `source=solver` here means "nothing rendered at all" — the before
+      // phase has no downstream solver, so this slot ships empty.
+      logFormulaCascade({
+        phase: `before:${phase}`,
+        source: 'solver',
+        reason: 'no_eligible_template',
+        pinSetSize: pinnedForPhase.length,
       });
       continue;
     }
@@ -1142,12 +1181,22 @@ export function selectPreWorkoutFoods(
           ...(pinsActive && {
             pin_decision: {
               used_pin: false,
+              decision_source: 'solver' as const,
               pinned_template_id: null,
               pinned_template_name: null,
               fallthrough_reason: 'no_pin_for_scope' as const,
+              default_fallthrough_reason: 'no_pin_for_scope',
               pin_set_size: pinnedForPhase.length,
             },
           }),
+        });
+        // Deliberate skip (carb ceiling), not a formula-resolution failure —
+        // still logged so the cascade line exists for every active slot.
+        logFormulaCascade({
+          phase: `before:${phase}`,
+          source: 'solver',
+          reason: 'carb_headroom_exhausted',
+          pinSetSize: pinnedForPhase.length,
         });
         continue;
       }
@@ -1223,6 +1272,19 @@ export function selectPreWorkoutFoods(
     state.sodium_delivered += totalSodium;
     state.fluid_delivered += totalFluid;
 
+    // A formula ALWAYS rendered for this slot at this point: either the user's
+    // in-scope pin, or the best-fit system template Algorithm C ranked. The
+    // second case is the "default formula" tier and — since the client stopped
+    // pre-computing auto-pins (2026-07-29) — it is the common outcome.
+    logFormulaCascade({
+      phase: `before:${phase}`,
+      source: pinOverrideActive ? 'user_pin' : 'default_formula',
+      templateId: pick.template.id,
+      templateName: pick.template.name,
+      reason: pinOverrideActive ? null : 'no_pin_for_scope',
+      pinSetSize: pinnedForPhase.length,
+    });
+
     results.push({
       phase,
       primary: primarySel,
@@ -1234,31 +1296,34 @@ export function selectPreWorkoutFoods(
       total_sodium_mg: Math.round(totalSodium * 10) / 10,
       total_fluid_ml: Math.round(totalFluid * 10) / 10,
       // Emit `pin_decision` when a real pin was supplied OR the client opted
-      // into the ephemeral default-formula net. When neither, it's omitted so
-      // the no-pin-parity contract stays byte-identical.
+      // into the default-formula telemetry net. When neither, it's omitted so
+      // the no-pin-parity contract stays byte-identical for legacy clients.
+      // (The `[FORMULA-CASCADE]` log above is unconditional — telemetry gating
+      // never hides which tier resolved the formula from the server logs.)
       ...((pinsActive || emitEphemeralDefault) && {
         pin_decision: pinOverrideActive
           ? {
               used_pin: true,
+              decision_source: 'user_pin' as const,
               pinned_template_id: pick.template.id,
               pinned_template_name: pick.template.name,
               fallthrough_reason: null,
               pin_set_size: pinnedForPhase.length,
             }
           : emitEphemeralDefault
-          // Ephemeral default-formula: this phase's algorithmically-selected
+          // Computed default formula: this slot's algorithmically-selected
           // system formula is honored like a pin (formula-first) without a
           // real pin row. Food output is unchanged; only the tag differs.
-          ? {
-              used_pin: true,
-              ephemeral: true,
-              pinned_template_id: pick.template.id,
-              pinned_template_name: pick.template.name,
-              fallthrough_reason: null,
-              pin_set_size: pinnedForPhase.length,
-            }
+          // `used_pin`/`ephemeral` keep their legacy values for wire
+          // compatibility; `decision_source` carries the honest provenance.
+          ? defaultFormulaDecision({
+              templateId: pick.template.id,
+              templateName: pick.template.name,
+              pinSetSize: pinnedForPhase.length,
+            })
           : {
               used_pin: false,
+              decision_source: 'default_formula' as const,
               pinned_template_id: null,
               pinned_template_name: null,
               fallthrough_reason: 'no_pin_for_scope' as const,

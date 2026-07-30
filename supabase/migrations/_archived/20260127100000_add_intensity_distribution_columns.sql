@@ -26,7 +26,7 @@
 --   - WorkoutDetailsWidget: Distance input with "By Duration" / "By Pace" toggle
 --   - Default values: 70% Z1-Z2, 20% Z3-Z4, 10% Z5+
 --
--- Feature: /docs/new_intensity/README.md
+-- Feature: /docs/features/new_intensity/README.md
 -- ============================================================================
 
 -- ============================================================================

@@ -10,7 +10,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/data/offline_macro_ca
 ///   supabase/functions/generate-macros-v4/pre-workout.ts
 ///   supabase/functions/generate-macros-v4/brick-workout.ts
 ///
-/// Test spec source: docs/sodium_hydration/hydration_sodium_calc_tests.md
+/// Test spec source: docs/features/sodium_hydration/hydration_sodium_calc_tests.md
 ///
 /// Tolerances:
 ///   ml/hr values  ±5%
