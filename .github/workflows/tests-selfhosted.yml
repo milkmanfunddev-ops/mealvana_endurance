@@ -84,11 +84,21 @@ jobs:
             exit 1
           fi
 
+      # Secrets go through `env:`, NOT `${{ }}` inside the script. Actions
+      # substitutes `${{ secrets.X }}` textually before the shell parses the
+      # line, so a secret containing double quotes — DOTENV_WEB_LOCAL is JSON —
+      # terminates the surrounding shell string and writes a mangled file. That
+      # is what made web-e2e fail with "not valid JSON" even though the stored
+      # secret was fine.
       - name: Write gitignored .env files from secrets
+        env:
+          DOTENV_ROOT: ${{ secrets.DOTENV_ROOT }}
+          DOTENV_DEV_LOCAL: ${{ secrets.DOTENV_DEV_LOCAL }}
+          DOTENV_WEB_LOCAL: ${{ secrets.DOTENV_WEB_LOCAL }}
         run: |
-          printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
-          printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
-          printf '%s' "${{ secrets.DOTENV_WEB_LOCAL }}" > .env.web.local
+          printf '%s' "$DOTENV_ROOT"      > .env
+          printf '%s' "$DOTENV_DEV_LOCAL" > .env.dev.local
+          printf '%s' "$DOTENV_WEB_LOCAL" > .env.web.local
           : > .env.prod.local   # empty stub; asset bundler just needs the file
           test -s .env.web.local || { echo "::error::DOTENV_WEB_LOCAL secret is empty"; exit 1; }
           python3 -c 'import json,sys; json.load(open(".env.web.local"))' \
@@ -139,20 +149,27 @@ jobs:
             exit 1
           fi
 
+      # See the note in the other job: secrets via `env:`, never `${{ }}` inline.
       - name: Write gitignored .env files from secrets
+        env:
+          DOTENV_ROOT: ${{ secrets.DOTENV_ROOT }}
+          DOTENV_DEV_LOCAL: ${{ secrets.DOTENV_DEV_LOCAL }}
         run: |
-          printf '%s' "${{ secrets.DOTENV_ROOT }}"      > .env
-          printf '%s' "${{ secrets.DOTENV_DEV_LOCAL }}" > .env.dev.local
+          printf '%s' "$DOTENV_ROOT"      > .env
+          printf '%s' "$DOTENV_DEV_LOCAL" > .env.dev.local
           : > .env.prod.local
 
       - name: Write Patrol test credentials
+        env:
+          TEST_EMAIL: ${{ secrets.INTEGRATION_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         run: |
           mkdir -p secrets
           {
-            echo "INTEGRATION_TEST_EMAIL=${{ secrets.INTEGRATION_TEST_EMAIL }}"
-            echo "INTEGRATION_TEST_PASSWORD=${{ secrets.INTEGRATION_TEST_PASSWORD }}"
+            printf 'INTEGRATION_TEST_EMAIL=%s\n' "$TEST_EMAIL"
+            printf 'INTEGRATION_TEST_PASSWORD=%s\n' "$TEST_PASSWORD"
           } > secrets/integration_test.env
-          if [ -z "${{ secrets.INTEGRATION_TEST_EMAIL }}" ]; then
+          if [ -z "$TEST_EMAIL" ]; then
             echo "::warning::INTEGRATION_TEST_EMAIL is unset — every Patrol flow will self-skip instead of testing anything."
           fi
 
