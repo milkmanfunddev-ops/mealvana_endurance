@@ -248,25 +248,25 @@ const DIVERSITY_FLOOR = 8;        // Minimum absolute carb gap to include in div
 cd supabase/functions
 
 # Full suite (112 scenarios)
-~/.deno/bin/deno run --allow-read --allow-write _test/pre-workout-comparison/run.ts --algo=c
+~/.deno/bin/deno run --allow-read --allow-write _archived/supabase/functions/_test/pre-workout-comparison/run.ts --algo=c
 
 # Verbose output (show every scenario)
-~/.deno/bin/deno run --allow-read --allow-write _test/pre-workout-comparison/run.ts --algo=c --verbose
+~/.deno/bin/deno run --allow-read --allow-write _archived/supabase/functions/_test/pre-workout-comparison/run.ts --algo=c --verbose
 
 # Quick mode (20 scenarios)
-~/.deno/bin/deno run --allow-read --allow-write _test/pre-workout-comparison/run.ts --algo=c --quick
+~/.deno/bin/deno run --allow-read --allow-write _archived/supabase/functions/_test/pre-workout-comparison/run.ts --algo=c --quick
 ```
 
 ## Key Files
-- **Algorithm**: `supabase/functions/_test/pre-workout-comparison/algorithms/algo-c-comfort-cap.ts`
-- **Shared utilities**: `supabase/functions/_test/pre-workout-comparison/algorithms/shared.ts`
-- **Formula data**: `supabase/functions/_test/pre-workout-comparison/data/formulas.ts`
-- **Types**: `supabase/functions/_test/pre-workout-comparison/types.ts`
-- **Scenarios**: `supabase/functions/_test/pre-workout-comparison/scenarios.ts`
-- **Criteria**: `supabase/functions/_test/pre-workout-comparison/criteria.ts`
-- **Report**: `supabase/functions/_test/pre-workout-comparison/report.ts`
-- **Entry point**: `supabase/functions/_test/pre-workout-comparison/run.ts`
-- **Macro targets**: `supabase/functions/_test/pre-workout-comparison/macro-targets.ts`
+- **Algorithm**: `_archived/supabase/functions/_test/pre-workout-comparison/algorithms/algo-c-comfort-cap.ts`
+- **Shared utilities**: `_archived/supabase/functions/_test/pre-workout-comparison/algorithms/shared.ts`
+- **Formula data**: `_archived/supabase/functions/_test/pre-workout-comparison/data/formulas.ts`
+- **Types**: `_archived/supabase/functions/_test/pre-workout-comparison/types.ts`
+- **Scenarios**: `_archived/supabase/functions/_test/pre-workout-comparison/scenarios.ts`
+- **Criteria**: `_archived/supabase/functions/_test/pre-workout-comparison/criteria.ts`
+- **Report**: `_archived/supabase/functions/_test/pre-workout-comparison/report.ts`
+- **Entry point**: `_archived/supabase/functions/_test/pre-workout-comparison/run.ts`
+- **Macro targets**: `_archived/supabase/functions/_test/pre-workout-comparison/macro-targets.ts`
 
 ## Evolution History
 
