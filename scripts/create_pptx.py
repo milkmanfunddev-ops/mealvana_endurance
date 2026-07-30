@@ -830,7 +830,7 @@ add_text_box(slide, Inches(1.5), Inches(6.4), Inches(5), Inches(0.4),
 # ════════════════════════════════════════════
 # SAVE
 # ════════════════════════════════════════════
-output_path = os.path.expanduser('~/development/mealvana_endurance/docs/Mealvana_Endurance_Pitch_Deck.pptx')
+output_path = os.path.expanduser('~/development/mealvana_endurance/docs/_archived/business/Mealvana_Endurance_Pitch_Deck.pptx')
 prs.save(output_path)
 print(f'Saved to: {output_path}')
 print(f'Total slides: {len(prs.slides)}')

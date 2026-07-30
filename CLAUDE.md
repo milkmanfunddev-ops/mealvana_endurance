@@ -70,6 +70,7 @@ stored in the macOS Keychain (service `mealvana-dev-login`). Prereqs: a booted s
 and `idb`. See the script header for details.
 
 ## Docs Map
+- Docs index (core vs `features/` history vs `_archived/`): `/docs/README.md`
 - Notion boards (IDs, release protocol, ownership boundary): `.claude/notion/boards.md`
 - Saved multi-agent workflows (`bug-batch`, `sweep`, `daily-work` — run via the Workflow tool when Lee asks; `daily-work` is launched by the `/daily` skill): `.claude/workflows/`
 - Architecture overview: `/docs/architecture/README.md`

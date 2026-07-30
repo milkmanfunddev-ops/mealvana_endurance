@@ -473,6 +473,6 @@ add_qa(doc, 'Additional Materials', '[TODO: Upload any one-pagers, press coverag
 add_qa(doc, 'Submission Date', '04/08/2026')
 
 # ========== SAVE ==========
-output_path = os.path.expanduser('~/development/mealvana_endurance/docs/Innovation_Depot_Application_Mealvana.docx')
+output_path = os.path.expanduser('~/development/mealvana_endurance/docs/_archived/business/Innovation_Depot_Application_Mealvana.docx')
 doc.save(output_path)
 print(f'Saved to: {output_path}')

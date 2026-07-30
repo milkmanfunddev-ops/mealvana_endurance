@@ -1,24 +1,26 @@
-// Brick-workout grouping on the Fuel Timeline (Notion bug 3a6e3fdb…522c:
-// "Brick workout function is gone"). The old activities-list screen's brick
-// features were ported to the fuel timeline; these tests pin the port:
+// Brick-workout grouping on the Fuel Timeline.
 //
-// - Two same-day activities of different sports → the Create Brick button
-//   appears in the workout area, and tapping it enters selection mode
-//   (Cancel / Confirm + selectable activity cards).
-// - A brick activity renders as a BrickGroupCard instead of a regular
-//   workout timeline tile.
+// Rewritten for the brick redesign (Notion 3a7e3fdb, Xuan 2026-07-27). The
+// pinned contract is now the redesigned flow, not the ported one:
+//
+// - The Brick entry is a third pill in the ADD ROW (after a divider, with a
+//   chain icon), not a standalone "Create Brick" button above it. It appears
+//   only when 2+ adjacent, brick-eligible workouts of different sports exist.
+// - Tapping it swaps the add row for "Pick legs to link … Cancel"; rows stay
+//   on the timeline rail rather than becoming full-width ActivityCards.
+// - A created brick renders as a TimelineBrickTile — one time-dot on the rail
+//   with its legs in an indented bracket — so the rail is never severed.
 //
 // Fixtures use TODAY's date because the screen resolves brick availability
 // against calendarSelectedDateProvider, which defaults to today.
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/activities/domain/brick_metadata.dart';
-import 'package:mealvana_endurance/features/activities/presentation/widgets/activity_card.dart';
-import 'package:mealvana_endurance/features/activities/presentation/widgets/brick_group_card.dart';
-import 'package:mealvana_endurance/features/activities/presentation/widgets/create_brick_button.dart';
+import 'package:mealvana_endurance/features/fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/application/day_timeline_assembler.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/presentation/providers/fuel_timeline_controller.dart';
@@ -92,8 +94,12 @@ void main() {
     fuelTimelineDayProvider.overrideWith((ref) async => result),
   ];
 
+  // The pill lives in the add row and is keyed, so find it by key rather than
+  // by a label that also appears elsewhere.
+  final brickPill = find.byKey(const ValueKey('fuel_timeline.create_brick'));
+
   testWidgets(
-    'two same-day activities of different sports show Create Brick button',
+    'two adjacent activities of different sports show the Brick pill',
     (tester) async {
       final result = resultWith([
         activity('run1', ActivityType.running, 8),
@@ -105,11 +111,11 @@ void main() {
         overrides: overridesFor(result),
       );
 
-      expect(find.byType(CreateBrickButton), findsOneWidget);
+      expect(brickPill, findsOneWidget);
     },
   );
 
-  testWidgets('two same-day activities of the SAME sport show no button', (
+  testWidgets('two same-day activities of the SAME sport show no pill', (
     tester,
   ) async {
     final result = resultWith([
@@ -122,10 +128,10 @@ void main() {
       overrides: overridesFor(result),
     );
 
-    expect(find.byType(CreateBrickButton), findsNothing);
+    expect(brickPill, findsNothing);
   });
 
-  testWidgets('tapping Create Brick enters selection mode', (tester) async {
+  testWidgets('tapping Brick enters leg-picking mode', (tester) async {
     final result = resultWith([
       activity('run1', ActivityType.running, 8),
       activity('ride1', ActivityType.cycling, 16),
@@ -136,24 +142,26 @@ void main() {
       overrides: overridesFor(result),
     );
 
-    await tester.tap(find.byType(CreateBrickButton));
+    await tester.tap(brickPill);
     await tester.pumpAndSettle();
 
-    // Selection controls replace the Create Brick button…
-    expect(find.byType(CreateBrickButton), findsNothing);
+    // The pick bar takes over the add row's slot.
+    expect(brickPill, findsNothing);
+    expect(find.text('Pick legs to link'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
-    expect(find.text('Confirm (0)'), findsOneWidget);
-    // …and workouts render as selectable activity cards.
-    expect(find.byType(ActivityCard), findsNWidgets(2));
 
-    // Cancel exits selection mode and restores the button.
+    // Nothing is picked yet, so the LEG ORDER panel stays hidden — it would
+    // otherwise dock an empty panel over the timeline.
+    expect(find.text('LEG ORDER'), findsNothing);
+
+    // Cancel returns to the add row.
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(find.byType(CreateBrickButton), findsOneWidget);
-    expect(find.byType(ActivityCard), findsNothing);
+    expect(brickPill, findsOneWidget);
+    expect(find.text('Pick legs to link'), findsNothing);
   });
 
-  testWidgets('brick activity renders BrickGroupCard, not a workout tile', (
+  testWidgets('a created brick renders as a TimelineBrickTile on the rail', (
     tester,
   ) async {
     const metadata = BrickMetadata(
@@ -185,8 +193,10 @@ void main() {
       overrides: overridesFor(result),
     );
 
-    expect(find.byType(BrickGroupCard), findsOneWidget);
+    expect(find.byType(TimelineBrickTile), findsOneWidget);
     expect(find.text('BRICK'), findsOneWidget);
+    // Header summarises the legs rather than repeating the activity title.
+    expect(find.text('2 legs · 90 min'), findsOneWidget);
     // The regular workout tile would show the uppercased title — it must not.
     expect(find.text('BRICK1 WORKOUT'), findsNothing);
   });

@@ -26,4 +26,4 @@ scripts/data/
 
 # Node modules
 node_modules/
-test/local_edge_functions/node_modules/
+_archived/test/local_edge_functions/node_modules/

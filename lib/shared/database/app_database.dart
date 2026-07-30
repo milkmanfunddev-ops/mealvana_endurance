@@ -245,7 +245,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -438,6 +438,29 @@ class AppDatabase extends _$AppDatabase {
               await customStatement('DROP TABLE $tempName');
             }
           }
+        }
+
+        // v15: repair `activities.is_fasted` on installs that were already at
+        // v14 when that column was introduced.
+        //
+        // The column was originally added inside the `from < 14` step above
+        // ("v14 (part 2)"). Devices that had ALREADY migrated to v14 before
+        // that step existed never re-run it — Drift skips onUpgrade entirely
+        // when `from == to` — so they sat at schemaVersion 14 with the column
+        // missing. The startup integrity check then found
+        //   Table "activities" missing columns: is_fasted
+        // and WIPED the local database to recover, losing any unsynced local
+        // data (Sentry MEALVANA-ENDURANCE-DEV-60 / DEV-61, 4 users).
+        //
+        // Bumping to 15 is what actually fixes it: it forces onUpgrade to run
+        // again for those installs. addColumn is idempotent, so devices that
+        // already picked the column up via the v14 path are unaffected.
+        if (from < 15) {
+          await addColumn(
+            'activities',
+            'is_fasted',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
         }
       },
 
