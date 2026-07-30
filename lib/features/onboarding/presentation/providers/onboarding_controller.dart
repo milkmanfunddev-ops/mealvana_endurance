@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import '../../../../shared/database/app_database.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/sync/entity_sync/user_sync_handler.dart';
@@ -12,7 +13,6 @@ import '../../../auth/application/auth_service.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../formula_kit/application/formula_library_controller.dart';
-import '../../application/onboarding_formula_pin_service.dart';
 import '../../application/onboarding_service.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
@@ -447,9 +447,16 @@ class OnboardingController extends _$OnboardingController {
       ref.read(foodSelectionsCacheProvider.notifier).clear();
       DebugLogger.debug('🧹 Food preferences - Cache cleared');
 
-      // NOTE: Sync is NOT triggered here - new users don't need to sync yet
-      // (they have no data on server). OAuth-only sync strategy means sync
-      // only happens after OAuth sign-in for existing users on new devices.
+      // Policy (2026-07-29): we always push to Supabase, for anonymous users
+      // too. This used to be a deliberate no-op ("new users don't need to sync
+      // yet"), which left food preferences local-only until some unrelated sync
+      // happened to run.
+      //
+      // Fire-and-forget so an offline device doesn't stall the save (the row is
+      // already committed to Drift with needs_upload = true and retries), but
+      // the upload result IS inspected and logged inside
+      // [uploadOnboardingDataToSupabase] — never silently dropped.
+      unawaited(uploadOnboardingDataToSupabase(currentUser.id));
       DebugLogger.info('📥 Food preferences saved');
     });
 
@@ -686,30 +693,11 @@ class OnboardingController extends _$OnboardingController {
         DebugLogger.info('✅ Allergies saved');
       }
 
-      // 4.5. Auto-pin default system formulas for the user's primary sport so
-      // a new user starts out formula-first with owned, editable formulas
-      // (plan Phase 1 #3). Best-effort — the service swallows failures so it
-      // can never block onboarding; the generation-time ephemeral safety net
-      // covers anyone this skips.
-      {
-        final diet =
-            (_cachedDietaryPreference != null &&
-                _cachedDietaryPreference != DietaryPreference.none)
-            ? _cachedDietaryPreference!.dbValue
-            : null;
-        final allergies =
-            _cachedAllergies?.map((a) => a.dbValue).toList(growable: false) ??
-            const <String>[];
-        await ref
-            .read(onboardingFormulaPinServiceProvider)
-            .autoPinDefaults(
-              userId: userId,
-              selectedSports: cachedSelectedSports,
-              diet: diet,
-              allergies: allergies,
-            );
-        DebugLogger.info('✅ Default formulas auto-pin attempted');
-      }
+      // NOTE: onboarding no longer pre-computes or writes "default" formula
+      // pins. The default formula is resolved at generation time by the
+      // nutrition-plan edge function (`emit_ephemeral_default_formula`), so
+      // there is nothing to seed here. Only user-created pins live in
+      // `formula_pins`.
 
       // 5. Save food preferences
       final foodSelections = ref.read(foodSelectionsCacheProvider);
@@ -765,13 +753,17 @@ class OnboardingController extends _$OnboardingController {
       _cachedAllergies = null;
       ref.read(foodSelectionsCacheProvider.notifier).clear();
 
-      // Set flag to skip sync on first navigation to main
-      // New users have all data locally - nothing to download from Supabase
-      ref.read(syncCoordinatorProvider.notifier).setSkipSyncForNewUser();
-      DebugLogger.info(
-        '🚫 Set skip sync flag - sync will be skipped for new user',
-      );
-
+      // Policy (2026-07-29): onboarding data ALWAYS goes to Supabase, whether
+      // the user created a real account or skipped and stayed anonymous. The
+      // anonymous user has a genuine Supabase anonymous-auth session (see
+      // AuthService.createUser), so `auth.uid()` == `users.id` and every RLS
+      // policy in 20260727120000_rls_baseline_dev.sql admits the write.
+      //
+      // The remaining dirty rows (allergies/diet/sport prefs written above,
+      // food preferences, formula pins, integrations) are pushed by the
+      // caller's post-save upload — see PostOnboardingAuthScreen. The old
+      // `setSkipSyncForNewUser()` call used to live here and suppressed exactly
+      // that first upload, which is why anonymous onboarding could stay local.
       DebugLogger.info('🎉 All onboarding data saved successfully');
     });
 
@@ -781,6 +773,40 @@ class OnboardingController extends _$OnboardingController {
     }
 
     return true;
+  }
+
+  /// Push everything captured during onboarding up to Supabase.
+  ///
+  /// Called by the post-onboarding auth screen *after* it has navigated to
+  /// `/main`, so it never sits between the user and the app. Runs identically
+  /// for anonymous (skipped account creation) and registered users — per the
+  /// 2026-07-29 policy, onboarding data always reaches Supabase.
+  ///
+  /// Uses the sanctioned offline-first path: every row was already written to
+  /// Drift with `needs_upload = true`, and this walks the repository dependency
+  /// graph pushing dirty records in FK-safe order. The result is CHECKED —
+  /// `uploadDirtyRecords()` swallows exceptions into a silent
+  /// `UploadResult.failed()`, so an unchecked call cannot tell success from
+  /// total failure. Rows that fail stay dirty and retry on the next sync.
+  ///
+  /// Returns the repository keys that did not make it (empty == everything
+  /// uploaded).
+  Future<List<String>> uploadOnboardingDataToSupabase(String userId) async {
+    final coordinator = ref.read(syncCoordinatorProvider.notifier);
+
+    final failedRepos = await coordinator.uploadAllDirtyRecords(userId);
+
+    if (failedRepos.isEmpty) {
+      DebugLogger.info('📤 Onboarding data uploaded to Supabase');
+    } else {
+      DebugLogger.error(
+        '⚠️ Onboarding data upload incomplete — repositories still dirty: '
+        '${failedRepos.join(", ")} (userId=$userId). '
+        'Rows remain marked needs_upload and will retry on the next sync.',
+      );
+    }
+
+    return failedRepos;
   }
 
   /// Reset onboarding for testing
@@ -882,36 +908,59 @@ class OnboardingController extends _$OnboardingController {
     }
   }
 
-  /// Upload user profile to Supabase immediately after creation
+  /// Upload user profile to Supabase immediately after creation.
   ///
   /// This ensures the user exists in Supabase BEFORE navigating to main screen.
   /// Prevents FK violations when activities/integrations are uploaded later.
-  Future<void> _uploadUserProfileToSupabase(String userId) async {
+  ///
+  /// Runs for anonymous users too — an anonymous user is a real Supabase auth
+  /// user, so this row is what makes every dependent upload (activities,
+  /// integrations, food preferences, formula pins) satisfy both its FK and its
+  /// `id = auth.uid()` RLS check.
+  ///
+  /// Returns true when the row is known to be in Supabase. Failure is
+  /// non-fatal (the local row keeps `needs_upload = true` and the caller's
+  /// post-save upload retries) but is reported rather than swallowed:
+  /// [UserSyncHandler.uploadUserProfile] deliberately does not rethrow, so the
+  /// only reliable success signal is whether the dirty flag got cleared.
+  Future<bool> _uploadUserProfileToSupabase(String userId) async {
     try {
       final userSyncHandler = ref.read(userSyncHandlerProvider);
       final database = ref.read(appDatabaseProvider);
 
-      // Get the user profile entry from the database using direct query
-      final userProfiles = await (database.select(
+      Future<UserProfileEntry?> readProfile() => (database.select(
         database.userProfilesTable,
-      )..where((t) => t.id.equals(userId))).get();
+      )..where((t) => t.id.equals(userId))).getSingleOrNull();
 
-      if (userProfiles.isEmpty) {
+      final userProfile = await readProfile();
+      if (userProfile == null) {
         DebugLogger.warning('⚠️ No user profile found to upload');
-        return;
+        return false;
       }
 
-      final userProfile = userProfiles.first;
       DebugLogger.info('📤 Uploading user profile to Supabase...');
       await userSyncHandler.uploadUserProfile(userProfile);
-      DebugLogger.info('✅ User profile uploaded to Supabase successfully');
+
+      // uploadUserProfile() clears needs_upload only on a successful upsert, so
+      // a still-dirty row means the push failed even though nothing threw.
+      final uploaded = (await readProfile())?.needsUpload == false;
+      if (uploaded) {
+        DebugLogger.info('✅ User profile uploaded to Supabase successfully');
+      } else {
+        DebugLogger.error(
+          '⚠️ User profile upload did not reach Supabase (still dirty) '
+          '— deferring to post-onboarding upload. userId=$userId',
+        );
+      }
+      return uploaded;
     } catch (e) {
-      // Don't fail onboarding if upload fails - sync will handle it later
-      // But log it as this may cause FK violations
+      // Don't fail onboarding if upload fails - the post-save upload and later
+      // syncs retry it. But log it, as this may cause FK violations meanwhile.
       DebugLogger.error('⚠️ Failed to upload user profile to Supabase: $e');
       DebugLogger.warning(
         '⚠️ This may cause FK violations when syncing activities',
       );
+      return false;
     }
   }
 }

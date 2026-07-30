@@ -219,6 +219,16 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
+      // Pending verification is a routing signal, not a failure — the caller
+      // inspects state.error and pushes the verify-code screen.
+      if (state.error is EmailVerificationRequiredException) {
+        _logger.info(
+          'Post-onboarding auth: email link pending verification',
+          context: 'AUTH',
+        );
+        return false;
+      }
+
       _logger.error(
         'Post-onboarding auth: Email account creation failed',
         context: 'AUTH',
@@ -271,6 +281,15 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
+      // Pending verification is a routing signal, not a failure.
+      if (state.error is EmailVerificationRequiredException) {
+        _logger.info(
+          'Post-onboarding auth: email signup pending verification',
+          context: 'AUTH',
+        );
+        return false;
+      }
+
       _logger.error(
         'Post-onboarding auth: Email signup failed',
         context: 'AUTH',

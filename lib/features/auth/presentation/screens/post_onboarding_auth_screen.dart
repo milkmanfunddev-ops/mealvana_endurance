@@ -9,6 +9,7 @@ import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/auth/auth_listener_service.dart';
+import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
@@ -358,7 +359,50 @@ class _PostOnboardingAuthScreenState
     final onboardingController = ref.read(
       onboardingControllerProvider.notifier,
     );
+    // Read before the async gaps below: this screen navigates away mid-flow, so
+    // `ref.read` after that point can throw on a disposed ConsumerState.
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
+
+    // This screen serves two arrivals:
+    //
+    //  - FIRST-RUN onboarding, where the cached profile answers are still in
+    //    memory and must be written out here.
+    //  - Settings -> "Create Account", where onboarding finished long ago.
+    //    There is no cache (it is per-run and in-memory), the profile is
+    //    already persisted, and the link preserved the uid — so there is
+    //    nothing to save and nothing to migrate. Calling saveAllOnboardingData
+    //    here returned false on the null cache and showed the user "Failed to
+    //    save your preferences" on an upgrade that had actually succeeded.
+    final authService = ref.read(authServiceProvider);
+    if (onboardingController.cachedUserProfileData == null) {
+      final existingUser = await authService.getCurrentUser();
+      if (!mounted) return;
+
+      if (existingUser != null) {
+        logger.info(
+          'Upgrading an already-onboarded account — skipping onboarding save',
+          context: 'NAV',
+          data: {'authProvider': authProvider, 'userId': existingUser.id},
+        );
+
+        // The identity fields were already flipped (locally and in Supabase)
+        // by AuthMigrationService.completeAuthentication during the link.
+        context.go('/main');
+
+        unawaited(
+          _uploadOnboardingDataInBackground(
+            userId: existingUser.id,
+            onboardingController: onboardingController,
+            syncCoordinator: syncCoordinator,
+            logger: logger,
+          ),
+        );
+        return;
+      }
+      // No cache AND no profile: genuinely nothing to work with. Fall through
+      // so saveAllOnboardingData reports the failure to the user.
+    }
 
     logger.info(
       'Starting saveAllOnboardingData',
@@ -388,7 +432,6 @@ class _PostOnboardingAuthScreenState
 
     if (success) {
       // Get current user ID for background sync
-      final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
 
       logger.info(
@@ -397,19 +440,25 @@ class _PostOnboardingAuthScreenState
         data: {'hasUser': currentUser != null, 'userId': currentUser?.id},
       );
 
-      // Navigate to main app immediately after local save
-      context.go('/main');
+      // Navigate to main app immediately after local save. The upload below
+      // still runs if this screen was disposed during the lookup above — the
+      // data is saved either way and must reach Supabase.
+      if (mounted) context.go('/main');
 
-      // Trigger background sync to upload data to Supabase (non-blocking)
+      // Push the onboarding data to Supabase in the background.
+      //
+      // This runs for EVERY user, including anonymous ones who skipped account
+      // creation (authProvider == 'anonymous') — as of the 2026-07-29 policy
+      // there is no local-only tier. Non-blocking so an offline or slow
+      // network never holds up the app; the rows stay dirty and retry.
       if (currentUser != null) {
         unawaited(
-          ref
-              .read(syncCoordinatorProvider.notifier)
-              .sync(
-                userId: currentUser.id,
-                trigger: SyncTrigger
-                    .manual, // Using manual trigger for post-onboarding sync
-              ),
+          _uploadOnboardingDataInBackground(
+            userId: currentUser.id,
+            onboardingController: onboardingController,
+            syncCoordinator: syncCoordinator,
+            logger: logger,
+          ),
         );
       }
     } else {
@@ -424,6 +473,62 @@ class _PostOnboardingAuthScreenState
           'auth.post_onboarding.error_save_failed',
           defaultValue: 'Failed to save your preferences. Please try again.',
         ),
+      );
+    }
+  }
+
+  /// Upload the just-saved onboarding data, then run a full sync.
+  ///
+  /// Deliberately result-checked at both steps: `uploadDirtyRecords()` reports
+  /// failure by returning `UploadResult.failed()` rather than throwing, and
+  /// `sync()` returns false instead of throwing, so a fire-and-forget call with
+  /// no inspection cannot distinguish "uploaded" from "silently lost".
+  ///
+  /// Takes its collaborators as parameters rather than reading them off `ref`:
+  /// it is started unawaited straight after `context.go('/main')`, by which
+  /// point this ConsumerState can already be disposed and `ref.read` would
+  /// throw. Both notifiers outlive the screen (SyncCoordinator is keepAlive,
+  /// OnboardingController calls `ref.keepAlive()`).
+  static Future<void> _uploadOnboardingDataInBackground({
+    required String userId,
+    required OnboardingController onboardingController,
+    required SyncCoordinator syncCoordinator,
+    required AppLogger logger,
+  }) async {
+    try {
+      final failedRepos = await onboardingController
+          .uploadOnboardingDataToSupabase(userId);
+
+      if (failedRepos.isNotEmpty) {
+        logger.error(
+          'Onboarding data upload incomplete',
+          context: 'ONBOARDING_SYNC',
+          data: {'userId': userId, 'failedRepos': failedRepos},
+        );
+      }
+
+      // Follow with a full sync so the download half runs too (and so any
+      // repository not covered by the dirty-record walk gets its chance).
+      final synced = await syncCoordinator.sync(
+        userId: userId,
+        trigger: SyncTrigger.manual,
+      );
+
+      if (!synced) {
+        logger.warning(
+          'Post-onboarding sync did not complete — onboarding rows remain '
+          'marked needs_upload and will retry',
+          context: 'ONBOARDING_SYNC',
+          data: {'userId': userId},
+        );
+      }
+    } catch (e, stackTrace) {
+      logger.error(
+        'Post-onboarding upload failed',
+        context: 'ONBOARDING_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
       );
     }
   }
