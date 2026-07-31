@@ -1,4 +1,5 @@
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/utils/unit_formatter.dart';
 
 /// Event domain model for calendar feature
 class Event {
@@ -289,9 +290,7 @@ extension EventExtensions on Event {
   /// Get formatted goal pace if available
   String? get formattedGoalPace {
     if (goalPaceMinutesPerMile == null) return null;
-    final minutes = goalPaceMinutesPerMile!.floor();
-    final seconds = ((goalPaceMinutesPerMile! - minutes) * 60).round();
-    return "$minutes:${seconds.toString().padLeft(2, '0')}/mi";
+    return '${UnitFormatter.formatMinutesAsMinSec(goalPaceMinutesPerMile!)}/mi';
   }
 
   /// Check if event has results

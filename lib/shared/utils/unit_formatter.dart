@@ -12,13 +12,19 @@ class UnitFormatter {
   static const double kMeterPerFoot = 0.3048;
   static const double kFootPerMeter = 3.28084;
 
-  static String formatFluids(
-    double ml, {
-    bool useImperial = false,
-    bool useMetric = false,
-  }) {
-    // Support both parameter names for backward compatibility
-    final shouldUseMetric = useMetric || !useImperial;
+  /// Render [ml] in the caller's unit system.
+  ///
+  /// Accepts either flag name. They are nullable so "not supplied" is
+  /// distinguishable from "supplied as false": with non-nullable defaults the
+  /// old `useMetric || !useImperial` resolved to metric whenever `useImperial`
+  /// was omitted, so a caller passing only `useMetric: false` still got
+  /// millilitres and could never reach imperial output at all.
+  ///
+  /// Precedence: an explicit [useMetric] wins, then an explicit [useImperial],
+  /// then the historical default of metric.
+  static String formatFluids(double ml, {bool? useImperial, bool? useMetric}) {
+    final shouldUseMetric =
+        useMetric ?? (useImperial == null ? true : !useImperial);
 
     if (!shouldUseMetric) {
       // Imperial: convert to oz
@@ -44,11 +50,27 @@ class UnitFormatter {
   /// `floor()` for the minutes and rounding `(value - minutes) * 60` separately
   /// renders 3.99995 min as "3:60" — the two halves disagree about which minute
   /// they are in. Every M:SS site should go through here.
-  static String formatMinutesAsMinSec(double minutes) {
-    final totalSeconds = (minutes * 60).round();
-    final wholeMinutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '$wholeMinutes:${seconds.toString().padLeft(2, '0')}';
+  static String formatMinutesAsMinSec(double minutes) =>
+      _splitSexagesimal(minutes);
+
+  /// Format a fractional hour count as `H:MM`.
+  ///
+  /// Same carry-safe split as [formatMinutesAsMinSec], one unit up: 3.9999 h
+  /// is `4:00`, never `3:60`.
+  static String formatHoursAsHourMin(double hours) => _splitSexagesimal(hours);
+
+  /// Split a fractional quantity into `whole:sixtieths`, rounding to the
+  /// sixtieth *first* so a value that rounds up to a whole unit carries
+  /// instead of overflowing the second field.
+  ///
+  /// Computing the two halves independently (`floor()` for the whole part,
+  /// `round((value - whole) * 60)` for the remainder) lets them disagree about
+  /// which unit they are in, which is what rendered 3.9999 as "3:60".
+  static String _splitSexagesimal(double value) {
+    final totalSixtieths = (value * 60).round();
+    final whole = totalSixtieths ~/ 60;
+    final remainder = totalSixtieths % 60;
+    return '$whole:${remainder.toString().padLeft(2, '0')}';
   }
 
   static String formatPace(double minPerMile, {required PaceUnit unit}) {
