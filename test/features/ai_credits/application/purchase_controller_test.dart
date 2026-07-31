@@ -71,6 +71,7 @@ class _FakePackage extends Fake implements Package {
 
 void _registerFallbacks() {
   registerFallbackValue(_FakePackage());
+  registerFallbackValue((CreditWallet _) {});
 }
 
 // ---------------------------------------------------------------------------
@@ -142,6 +143,7 @@ void main() {
     // buy() now refuses to reach the store without a signed-in user and
     // re-asserts the RevenueCat identity first, so both must be stubbed.
     when(() => creditsRepo.ensureWallet()).thenAnswer((_) async => null);
+    when(() => creditsRepo.subscribeToWallet(any())).thenReturn(null);
     when(() => creditsRepo.currentUserId).thenReturn(_testUserId);
     when(() => rcService.logIn(any())).thenAnswer((_) async {});
   });

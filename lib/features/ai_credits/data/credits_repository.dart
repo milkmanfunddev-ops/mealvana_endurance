@@ -88,6 +88,50 @@ class CreditsRepository {
     }
   }
 
+  /// Subscribe to live changes on the current user's wallet row.
+  ///
+  /// The wallet is credited server-side by the RevenueCat webhook, and delivery
+  /// is not bounded — a healthy credit lands in seconds, but a purchase made
+  /// before validation was configured once took 13 minutes. Any client-side
+  /// poll picks a timeout and is wrong on either side of it; a Postgres
+  /// realtime subscription instead delivers the new balance the instant the
+  /// webhook writes it (`token_wallets` is in the `supabase_realtime`
+  /// publication, and RLS scopes events to the user's own row).
+  ///
+  /// Returns null when nobody is signed in. Callers own the channel and must
+  /// [SupabaseClient.removeChannel] it when re-subscribing.
+  RealtimeChannel? subscribeToWallet(void Function(CreditWallet) onChange) {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return null;
+
+    return _supabase
+        .channel('token_wallet:${user.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'token_wallets',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: user.id,
+          ),
+          callback: (payload) {
+            if (payload.newRecord.isEmpty) return;
+            try {
+              onChange(CreditWallet.fromMap(payload.newRecord));
+            } catch (e) {
+              debugPrint('[CreditsRepository] realtime payload parse: $e');
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  /// Remove a channel previously returned by [subscribeToWallet].
+  void removeChannel(RealtimeChannel channel) {
+    _supabase.removeChannel(channel);
+  }
+
   /// Fetch the most recent [limit] ledger entries for the current user.
   ///
   /// Returns an empty list when no user is signed in or on any error.
