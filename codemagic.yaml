@@ -226,6 +226,97 @@ definitions:
           echo "appended ANALYTICS_DEV_ENABLED=true to .env.dev.local"
         fi
 
+        # RevenueCat Test Store key — same story as ANALYTICS_DEV_ENABLED above.
+        # It lives in a developer's own .env.dev.local, so local dev builds could
+        # buy tokens against the Test Store while CI-built dev apps fell back to
+        # the real appl_ key. The credit SKUs are not in App Store Connect yet, so
+        # that key yields an empty offering and the sheet reads "Token packs
+        # aren't available right now" — a broken purchase flow for every tester.
+        #
+        # Held as its own secure var (mealvana_dev group) rather than being folded
+        # into DOTENV_DEV_LOCAL: that secret is the whole file and is unreadable,
+        # so appending here is additive and cannot clobber its other contents.
+        # Dev only — on prod workflows REVENUECAT_API_KEY_TEST is unset and
+        # .env.dev.local is an empty stub, so this is a no-op. AppConfig also
+        # ignores the test key entirely unless the build is a dev flavor.
+        if [ -s .env.dev.local ] && [ -n "${REVENUECAT_API_KEY_TEST:-}" ] \
+           && ! grep -q '^REVENUECAT_API_KEY_TEST=' .env.dev.local; then
+          printf '\nREVENUECAT_API_KEY_TEST=%s\n' "$REVENUECAT_API_KEY_TEST" >> .env.dev.local
+          echo "appended REVENUECAT_API_KEY_TEST to .env.dev.local"
+        fi
+
+        # Force the AI surface flags ON for dev builds.
+        #
+        # Standing rule: dev is the AI proving ground, so these are always on
+        # there. AppConfig already defaults them on when the key is ABSENT — but
+        # DOTENV_DEV_LOCAL is a snapshot of somebody's .env.dev.local taken at
+        # some point in the past, and a key that is present-and-false beats any
+        # code-side fallback. That is invisible from here: the secret cannot be
+        # read back, so the only way to guarantee the flag is to overwrite it.
+        # Replace-or-append, rather than append-if-missing like the two above.
+        #
+        # APP_ENVIRONMENT is forced alongside them because it is the switch the
+        # others hang off: AppConfig.fromEnv reads it with `fallback: 'prod'`, so
+        # if the secret omits it, a dev build silently identifies as production —
+        # every dev-default flag resolves to false AND revenueCatApiKey ignores
+        # the Test Store key, because that is gated on isDevelopment. This
+        # workflow only ever produces dev-flavor artifacts, so pinning it is
+        # always correct here.
+        if [ -s .env.dev.local ]; then
+          # APP_ENVIRONMENT is a string ('dev'), the rest are booleans — do not
+          # fold it into the loop or it ends up as APP_ENVIRONMENT=true and the
+          # `appEnv == 'dev'` check fails just as silently as an absent key.
+          for entry in "APP_ENVIRONMENT=dev" "DEV_MODE_ENABLED=true" \
+                       "AI_CREDITS_ENABLED=true" "DESCRIBE_MEAL_ENABLED=true" \
+                       "COACH_INSIGHTS_ENABLED=true"; do
+            key="${entry%%=*}"
+            # Strip any existing definition (commented or not), then set ours.
+            sed -i '' "/^[[:space:]]*#*[[:space:]]*${key}=/d" .env.dev.local 2>/dev/null \
+              || sed -i "/^[[:space:]]*#*[[:space:]]*${key}=/d" .env.dev.local
+            printf '%s\n' "$entry" >> .env.dev.local
+          done
+          echo "forced dev flavor + AI surface flags ON for dev build"
+        fi
+
+        # Point dev builds at the RevenueCat app whose bundle id actually
+        # matches them.
+        #
+        # The dev flavor ships `com.milkman.mealvanaendurance.dev`, but
+        # DOTENV_DEV_LOCAL carries the `appl_` key of the RevenueCat app
+        # registered to `com.milkman.mealvanaendurance` — the PROD bundle. A
+        # RevenueCat App Store app validates receipts against its own bundle id,
+        # so the dev build was authenticating as the wrong app and could never
+        # have been served its products, no matter what was provisioned. There
+        # is now a second RevenueCat app for the dev bundle, and this is its key.
+        # Release dev builds use it; debug builds still prefer the Test Store key
+        # (AppConfig gates that on kDebugMode, because RevenueCat refuses
+        # Test Store keys in release binaries).
+        if [ -s .env.dev.local ] && [ -n "${REVENUECAT_API_KEY_APPLE_DEV:-}" ]; then
+          sed -i '' "/^[[:space:]]*#*[[:space:]]*REVENUECAT_API_KEY_APPLE=/d" .env.dev.local 2>/dev/null \
+            || sed -i "/^[[:space:]]*#*[[:space:]]*REVENUECAT_API_KEY_APPLE=/d" .env.dev.local
+          printf 'REVENUECAT_API_KEY_APPLE=%s\n' "$REVENUECAT_API_KEY_APPLE_DEV" >> .env.dev.local
+          echo "pointed REVENUECAT_API_KEY_APPLE at the dev-bundle RevenueCat app"
+        fi
+
+        # Diagnostic: prove what the app will actually read. Booleans only, plus
+        # presence (never the value) of the RevenueCat key. Without this, "the
+        # tokens are missing" is indistinguishable from "the flag is off", and
+        # that ambiguity has already cost two build cycles.
+        if [ -s .env.dev.local ]; then
+          echo "--- dev feature flags as built ---"
+          grep -E '^(APP_ENVIRONMENT|DEV_MODE_ENABLED|AI_CREDITS_ENABLED|DESCRIBE_MEAL_ENABLED|COACH_INSIGHTS_ENABLED|ANALYTICS_DEV_ENABLED)=' .env.dev.local || echo "  (none found)"
+          if grep -q '^REVENUECAT_API_KEY_TEST=test_' .env.dev.local; then
+            echo "  REVENUECAT_API_KEY_TEST: present (debug builds only — RevenueCat rejects it in a release binary)"
+          else
+            echo "  REVENUECAT_API_KEY_TEST: absent"
+          fi
+          if grep -q '^REVENUECAT_API_KEY_APPLE=appl_' .env.dev.local; then
+            echo "  REVENUECAT_API_KEY_APPLE: present (appl_ prefix) — this is what a TestFlight build uses"
+          else
+            echo "  REVENUECAT_API_KEY_APPLE: MISSING or wrong prefix — the paywall will have no store"
+          fi
+        fi
+
     - &install_patrol_cli
       name: Install Patrol CLI
       # patrol_cli MUST match the `patrol` package (pubspec.lock: 4.6.1). Per the

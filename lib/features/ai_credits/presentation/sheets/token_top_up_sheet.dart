@@ -95,8 +95,30 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   /// celebration state and carries how many tokens were added.
   int? _added;
 
+  /// Balance at the moment a purchase completed at the store but had not yet
+  /// been credited. While set, the sheet watches the live balance and flips
+  /// itself to the celebration state the instant the webhook lands — the
+  /// wallet row is realtime-subscribed, so a slow credit arrives on its own
+  /// rather than requiring the user to leave and come back.
+  int? _awaitingCreditFrom;
+
   @override
   Widget build(BuildContext context) {
+    // Late-credit watcher: the wallet row is realtime-subscribed, so when a
+    // purchase's webhook finally lands the balance rises on its own. If we are
+    // sitting in the "tokens on their way" state, complete the story the user
+    // started instead of leaving the reassurance text up forever.
+    ref.listen(creditsControllerProvider, (_, next) {
+      final from = _awaitingCreditFrom;
+      final balance = next.value?.balance;
+      if (from == null || balance == null || balance <= from) return;
+      setState(() {
+        _awaitingCreditFrom = null;
+        _error = null;
+        _added = balance - from;
+      });
+    });
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surface = isDark ? AppColors.blackberryLight : Colors.white;
 
@@ -424,6 +446,9 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
       case PurchaseOutcome.purchasedButNotCredited:
         setState(() {
           _buying = false;
+          // Arm the late-credit watcher (see build) so the sheet upgrades
+          // itself to the celebration state when the webhook lands.
+          _awaitingCreditFrom = balanceBefore;
           _error =
               'Your purchase went through, but the tokens are still on their '
               "way. They'll appear shortly — no need to buy again.";

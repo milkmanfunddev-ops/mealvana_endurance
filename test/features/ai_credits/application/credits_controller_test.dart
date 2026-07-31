@@ -56,6 +56,8 @@ void main() {
 
   late _MockCreditsRepository repo;
 
+  setUpAll(() => registerFallbackValue((CreditWallet _) {}));
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     _prefs = await SharedPreferences.getInstance();
@@ -65,6 +67,9 @@ void main() {
     // unavailable" so every existing test still exercises the fetchWallet path
     // it was written for; the provisioning tests stub this explicitly.
     when(() => repo.ensureWallet()).thenAnswer((_) async => null);
+    // The controller now opens a realtime wallet subscription on build; unit
+    // tests have no socket, so "not signed in / unavailable" (null) is right.
+    when(() => repo.subscribeToWallet(any())).thenReturn(null);
   });
 
   // -------------------------------------------------------------------------
@@ -259,64 +264,70 @@ void main() {
       },
     );
 
-    test(
-      'refresh exposes AsyncError when repository throws on re-fetch',
-      () async {
-        var callCount = 0;
-        when(() => repo.fetchWallet()).thenAnswer((_) async {
-          callCount++;
-          if (callCount == 1) return _wallet100;
-          throw Exception('server down');
-        });
-
-        final container = _container(repo);
-        await container.read(creditsControllerProvider.future);
-
-        await container.read(creditsControllerProvider.notifier).refresh();
-
-        final state = container.read(creditsControllerProvider);
-        expect(
-          state,
-          isA<AsyncError<CreditWallet>>(),
-          reason: 'refresh() must surface repository errors as AsyncError.',
-        );
-      },
-    );
-
-    test('refresh sets AsyncLoading before resolving', () async {
-      final completer = Completer<CreditWallet>();
+    test('a failing background refresh keeps the last good balance '
+        '(stale beats broken)', () async {
       var callCount = 0;
       when(() => repo.fetchWallet()).thenAnswer((_) async {
         callCount++;
-        if (callCount == 1) return _wallet0;
-        return completer.future;
+        if (callCount == 1) return _wallet100;
+        throw Exception('server down');
       });
 
       final container = _container(repo);
       await container.read(creditsControllerProvider.future);
 
-      // Kick off refresh without awaiting.
-      final refreshFuture = container
-          .read(creditsControllerProvider.notifier)
-          .refresh();
+      await container.read(creditsControllerProvider.notifier).refresh();
 
-      // Give the event loop a tick to transition to loading.
-      await Future<void>.microtask(() {});
-
-      final stateWhileLoading = container.read(creditsControllerProvider);
+      final state = container.read(creditsControllerProvider);
       expect(
-        stateWhileLoading,
-        isA<AsyncLoading<CreditWallet>>(),
-        reason: 'State must be AsyncLoading while refresh is in progress.',
+        state.value?.balance,
+        100,
+        reason:
+            'refresh() runs on every app foreground; a transient network '
+            'error there must not replace a real balance with an error '
+            'state. Stale beats broken.',
       );
-
-      // Resolve.
-      completer.complete(const CreditWallet(balance: 50));
-      await refreshFuture;
-
-      final stateAfter = container.read(creditsControllerProvider);
-      expect(stateAfter.value?.balance, 50);
     });
+
+    test(
+      'refresh keeps the previous balance visible while in flight',
+      () async {
+        final completer = Completer<CreditWallet>();
+        var callCount = 0;
+        when(() => repo.fetchWallet()).thenAnswer((_) async {
+          callCount++;
+          if (callCount == 1) return _wallet100;
+          return completer.future;
+        });
+
+        final container = _container(repo);
+        await container.read(creditsControllerProvider.future);
+
+        // Kick off refresh without awaiting.
+        final refreshFuture = container
+            .read(creditsControllerProvider.notifier)
+            .refresh();
+
+        await Future<void>.microtask(() {});
+
+        // No loading flash: refresh runs on app foreground, and blanking the
+        // pill each time reads as the balance vanishing.
+        final stateWhileLoading = container.read(creditsControllerProvider);
+        expect(
+          stateWhileLoading.value?.balance,
+          100,
+          reason:
+              'The old balance must stay visible while refresh is in flight.',
+        );
+
+        // Resolve.
+        completer.complete(const CreditWallet(balance: 50));
+        await refreshFuture;
+
+        final stateAfter = container.read(creditsControllerProvider);
+        expect(stateAfter.value?.balance, 50);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
