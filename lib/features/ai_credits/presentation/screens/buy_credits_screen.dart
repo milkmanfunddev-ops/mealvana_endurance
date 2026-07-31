@@ -6,6 +6,7 @@ import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
+import '../../domain/credit_packs.dart';
 import '../../domain/credit_wallet.dart';
 
 /// Paywall screen for purchasing AI credit packs.
@@ -201,15 +202,12 @@ class _PackageList extends StatelessWidget {
   final bool isBusy;
   final void Function(Package) onBuy;
 
-  /// Extract the credit count from a product identifier like `mealvana_credits_100`.
-  static int? _creditCount(String identifier) {
-    const map = {
-      'mealvana_credits_100': 100,
-      'mealvana_credits_500': 500,
-      'mealvana_credits_1200': 1200,
-    };
-    return map[identifier];
-  }
+  /// Extract the credit count from a product identifier like `mealvana_credits_50`.
+  ///
+  /// Delegates to the shared map rather than repeating it — this screen used to
+  /// carry its own copy, which silently went stale when the packs were resized.
+  static int? _creditCount(String identifier) =>
+      creditsForProductId(identifier);
 
   @override
   Widget build(BuildContext context) {

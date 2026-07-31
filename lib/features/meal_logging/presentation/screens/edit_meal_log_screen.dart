@@ -14,6 +14,7 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../jade/presentation/widgets/jade_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
@@ -21,6 +22,7 @@ import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../providers/meal_log_providers.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/meal_component_editor.dart';
 import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 
@@ -640,7 +642,15 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
 
-                    if (hasComponents) ...[
+                    // A re-scan replaces exactly this list, so the skeleton
+                    // stands in for it rather than covering the page — the
+                    // items dissolve and re-form in place.
+                    if (_isRescanning) ...[
+                      const MealAnalysisSkeleton(
+                        phases: JadeThinkingStatus.photoPhases,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ] else if (hasComponents) ...[
                       // Per-component editor
                       MealComponentEditor(
                         key: ValueKey(_rescanEpoch),
@@ -710,29 +720,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                 ),
               ),
             ),
-            if (_isRescanning) _analyzingOverlay(),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _analyzingOverlay() {
-    return Positioned.fill(
-      child: ColoredBox(
-        color: Colors.black54,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: Colors.white),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Analyzing your meal...',
-                style: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
-              ),
-            ],
-          ),
         ),
       ),
     );

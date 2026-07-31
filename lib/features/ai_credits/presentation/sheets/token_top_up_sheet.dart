@@ -26,12 +26,11 @@ Future<void> showTokenTopUpSheet(BuildContext context) {
 
 /// A purchasable pack, resolved from the live RevenueCat `credits` offering.
 ///
-/// Packs are *not* hardcoded. They previously were (50/$19.99, 200/$4.99 under
-/// ids `tokens_50`/`tokens_200`), which matched nothing that was ever
-/// provisioned — the store sells `mealvana_credits_100/500/1200` — so the sheet
-/// could never resolve a package and the buy button was permanently inert.
-/// Reading the offering keeps sizes, ids and localized prices in step with the
-/// store by construction.
+/// Packs are *not* hardcoded. They previously were, under ids that matched
+/// nothing ever provisioned, so the sheet could never resolve a package and the
+/// buy button was permanently inert. Reading the offering keeps sizes, ids and
+/// localized prices in step with the store by construction — which is why
+/// resizing the packs (100/500/1200 → 50/250) needed no change here at all.
 class _Pack {
   const _Pack({required this.package, required this.tokens, required this.tag});
 
@@ -47,8 +46,7 @@ class _Pack {
   /// Localized price straight from the store (never a hardcoded dollar value).
   String get price => product.priceString;
 
-  String get title =>
-      tokens != null ? '$tokens tokens' : product.title;
+  String get title => tokens != null ? '$tokens tokens' : product.title;
 }
 
 /// Build the display list from an offering, largest pack last and tagged.
@@ -238,9 +236,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   Widget _packRow(_Pack pack, int index, int selected, Color onSurface) {
     final isSelected = index == selected;
     return GestureDetector(
-      key: ValueKey(
-        'tokens.pack_${pack.tokens ?? pack.product.identifier}',
-      ),
+      key: ValueKey('tokens.pack_${pack.tokens ?? pack.product.identifier}'),
       onTap: _buying ? null : () => setState(() => _selected = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
@@ -301,7 +297,8 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final added = _added ?? 0;
-    final balance = ref.watch(creditsControllerProvider).value?.balance ?? added;
+    final balance =
+        ref.watch(creditsControllerProvider).value?.balance ?? added;
 
     return Column(
       key: const ValueKey('success'),
@@ -387,6 +384,12 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
 
   /// Purchase [pack]. The package comes straight from the rendered offering,
   /// so there is no id-matching step that can silently fail.
+  ///
+  /// The message shown comes from the controller's [PurchaseOutcome], not from
+  /// a balance comparison. Inferring it from the balance meant a successful
+  /// purchase whose grant was merely slow was reported as "Purchase failed.
+  /// Nothing was charged." — telling a user who had just been charged that
+  /// they hadn't been.
   Future<void> _buy(_Pack pack) async {
     final balanceBefore =
         ref.read(creditsControllerProvider).value?.balance ?? 0;
@@ -396,54 +399,53 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
       _error = null;
     });
 
-    try {
-      await ref.read(purchaseControllerProvider.notifier).buy(pack.package);
+    final outcome = await ref
+        .read(purchaseControllerProvider.notifier)
+        .buy(pack.package);
 
-      // buy() swallows cancellation and store errors into its AsyncValue, so
-      // check it rather than assuming success — otherwise a cancelled purchase
-      // would show the celebration screen.
-      final purchaseState = ref.read(purchaseControllerProvider);
-      if (purchaseState is AsyncError) {
+    if (!mounted) return;
+
+    switch (outcome) {
+      case PurchaseOutcome.credited:
+        // The wallet is credited server-side by the RevenueCat webhook, so the
+        // balance we want to show only exists after a refetch.
+        await ref.read(creditsControllerProvider.notifier).refresh();
         if (!mounted) return;
+        final balanceAfter =
+            ref.read(creditsControllerProvider).value?.balance ?? balanceBefore;
         setState(() {
           _buying = false;
-          _error = 'Purchase failed. Nothing was charged.';
+          // Report what the wallet really gained, not what the pack advertised.
+          _added = (balanceAfter - balanceBefore) > 0
+              ? balanceAfter - balanceBefore
+              : (pack.tokens ?? 0);
         });
-        return;
-      }
 
-      // The wallet is credited server-side by the RevenueCat webhook, so the
-      // balance we want to show only exists after a refetch. Refresh before
-      // celebrating, otherwise the "new balance" chip shows the old number.
-      await ref.read(creditsControllerProvider.notifier).refresh();
-
-      if (!mounted) return;
-
-      final balanceAfter =
-          ref.read(creditsControllerProvider).value?.balance ?? balanceBefore;
-      final credited = balanceAfter - balanceBefore;
-
-      // A cancelled purchase leaves the balance untouched. Only celebrate when
-      // something actually landed, and report what the wallet really gained
-      // rather than what the pack advertised.
-      if (credited <= 0) {
+      case PurchaseOutcome.purchasedButNotCredited:
         setState(() {
           _buying = false;
-          _error = 'No charge went through. Your balance is unchanged.';
+          _error =
+              'Your purchase went through, but the tokens are still on their '
+              "way. They'll appear shortly — no need to buy again.";
         });
-        return;
-      }
 
-      setState(() {
-        _buying = false;
-        _added = credited;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _buying = false;
-        _error = 'Purchase failed. Nothing was charged.';
-      });
+      case PurchaseOutcome.cancelled:
+        // Not an error. Drop back to the pack list silently.
+        setState(() => _buying = false);
+
+      case PurchaseOutcome.notSignedIn:
+        setState(() {
+          _buying = false;
+          _error =
+              'Sign in to buy tokens — they are tied to your account so they '
+              'follow you to any device.';
+        });
+
+      case PurchaseOutcome.failed:
+        setState(() {
+          _buying = false;
+          _error = "That didn't go through. Nothing was charged.";
+        });
     }
   }
 }

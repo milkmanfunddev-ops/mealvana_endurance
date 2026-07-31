@@ -64,4 +64,4 @@ final class RevenueCatServiceProvider
   }
 }
 
-String _$revenueCatServiceHash() => r'731af15cc47d5063297dcfa5a6611654dfdff782';
+String _$revenueCatServiceHash() => r'216a013bf21b15f46dd1d8a9e757e7194b6bab80';

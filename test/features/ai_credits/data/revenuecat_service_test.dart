@@ -16,6 +16,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,6 +41,9 @@ RevenueCatService _service({
 }) {
   return RevenueCatService(
     config: _config(enabled: enabled, appleKey: appleKey, googleKey: googleKey),
+    // Reporting is a side effect of every guard these tests exercise, so use
+    // the no-op reporter rather than reaching for the real Sentry SDK.
+    sentry: const NoopSentryReporter(),
   );
 }
 

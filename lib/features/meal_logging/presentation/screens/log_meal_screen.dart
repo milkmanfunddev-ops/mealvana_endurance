@@ -21,6 +21,7 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../jade/presentation/widgets/jade_thinking_status.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
@@ -36,6 +37,7 @@ import '../../domain/meal_log_source.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/common_ingredients_section.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/log_sheet_helpers.dart';
 import '../widgets/manual_log_form.dart';
 import '../widgets/quick_log_confirm_sheet.dart';
@@ -1550,6 +1552,10 @@ class _AiTabState extends ConsumerState<_AiTab> {
   final _ctrl = TextEditingController();
   bool _isAnalyzing = false;
 
+  /// Which set of waiting copy the overlay shows — this tab can start either a
+  /// text or a photo analysis, and the first line names what Jade is reading.
+  List<String> _thinkingPhases = JadeThinkingStatus.describePhases;
+
   @override
   void dispose() {
     _ctrl.dispose();
@@ -1571,7 +1577,10 @@ class _AiTabState extends ConsumerState<_AiTab> {
     // 'text' keeps the typed-describe funnel distinct from the photo funnels.
     analytics.track('meal_ai_started', properties: {'method': 'text'});
     final stopwatch = Stopwatch()..start();
-    setState(() => _isAnalyzing = true);
+    setState(() {
+      _thinkingPhases = JadeThinkingStatus.describePhases;
+      _isAnalyzing = true;
+    });
     try {
       final service = ref.read(mealAiServiceProvider);
       final result = await service.describeMeal(_ctrl.text.trim());
@@ -1677,7 +1686,10 @@ class _AiTabState extends ConsumerState<_AiTab> {
     // from each other and from the typed-describe funnel.
     analytics.track('meal_ai_started', properties: {'method': method});
     final stopwatch = Stopwatch()..start();
-    setState(() => _isAnalyzing = true);
+    setState(() {
+      _thinkingPhases = JadeThinkingStatus.photoPhases;
+      _isAnalyzing = true;
+    });
     try {
       final service = ref.read(mealAiServiceProvider);
       MealPhotoAnalysis analysis;
@@ -1766,137 +1778,101 @@ class _AiTabState extends ConsumerState<_AiTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return Stack(
+    return ListView(
+      controller: widget.scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       children: [
-        ListView(
-          controller: widget.scrollController,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
+        // Prompt on the left, token balance on the right — the cost of
+        // the action sits next to the description of it. This is the
+        // primary Describe surface (the Log a Meal tab); the standalone
+        // DescribeMealScreen carries the same pair.
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Prompt on the left, token balance on the right — the cost of
-            // the action sits next to the description of it. This is the
-            // primary Describe surface (the Log a Meal tab); the standalone
-            // DescribeMealScreen carries the same pair.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Describe what you ate and Jade will estimate the macros.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor.withValues(alpha: 0.65),
-                    ),
-                  ),
+            Expanded(
+              child: Text(
+                'Describe what you ate and Jade will estimate the macros.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: textColor.withValues(alpha: 0.65),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                const TokenPill(),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Form(
-              key: _formKey,
-              child: TextFormField(
-                controller: _ctrl,
-                maxLines: 4,
-                minLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-                enabled: !_isAnalyzing,
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                decoration: const InputDecoration(
-                  labelText: 'What did you eat?',
-                  hintText:
-                      'e.g. Oatmeal with blueberries, a tablespoon of honey, large coffee with oat milk.',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-                validator: (v) => (v == null || v.trim().length < 5)
-                    ? 'Please describe your meal'
-                    : null,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            // The Analyze button carries its own price.
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                KylePrimaryButton(
-                  text: 'Analyze',
-                  isLoading: _isAnalyzing,
-                  onPressed: _isAnalyzing ? null : _analyze,
-                ),
-                if (!_isAnalyzing)
-                  const IgnorePointer(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(width: 76),
-                        TokenCostChip(),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            if (!kIsWeb)
-              Row(
-                children: [
-                  Expanded(
-                    child: _OutlineButton(
-                      label: 'Camera',
-                      icon: Icons.photo_camera_outlined,
-                      onTap: _isAnalyzing
-                          ? null
-                          : () => _pickPhoto(ImageSource.camera),
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: _OutlineButton(
-                      label: 'Gallery',
-                      icon: Icons.photo_library_outlined,
-                      onTap: _isAnalyzing
-                          ? null
-                          : () => _pickPhoto(ImageSource.gallery),
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
-              )
-            else
-              _OutlineButton(
-                label: 'Choose Photo',
-                icon: Icons.photo_library_outlined,
-                onTap: _isAnalyzing
-                    ? null
-                    : () => _pickPhoto(ImageSource.gallery),
-                isDark: isDark,
-              ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(width: AppSpacing.md),
+            const TokenPill(),
           ],
         ),
+        const SizedBox(height: AppSpacing.md),
+        // While Jade works, the inputs give way to the shape of the answer
+        // rather than being covered by a scrim — the wait happens in the
+        // place the result will appear.
         if (_isAnalyzing)
-          Container(
-            color: Colors.black54,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(color: Colors.white),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Jade is thinking...',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+          MealAnalysisSkeleton(phases: _thinkingPhases)
+        else ...[
+          Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _ctrl,
+              maxLines: 4,
+              minLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              decoration: const InputDecoration(
+                labelText: 'What did you eat?',
+                hintText:
+                    'e.g. Oatmeal with blueberries, a tablespoon of honey, large coffee with oat milk.',
+                border: OutlineInputBorder(),
+                alignLabelWithHint: true,
               ),
+              validator: (v) => (v == null || v.trim().length < 5)
+                  ? 'Please describe your meal'
+                  : null,
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          // The Analyze button carries its own price. The chip is laid out
+          // after the label rather than stacked over it, so it can't collide
+          // at any text scale.
+          KylePrimaryButton(
+            text: 'Analyze',
+            onPressed: _analyze,
+            trailing: const TokenCostChip(),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (!kIsWeb)
+            Row(
+              children: [
+                Expanded(
+                  child: _OutlineButton(
+                    label: 'Camera',
+                    icon: Icons.photo_camera_outlined,
+                    onTap: () => _pickPhoto(ImageSource.camera),
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _OutlineButton(
+                    label: 'Gallery',
+                    icon: Icons.photo_library_outlined,
+                    onTap: () => _pickPhoto(ImageSource.gallery),
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            )
+          else
+            _OutlineButton(
+              label: 'Choose Photo',
+              icon: Icons.photo_library_outlined,
+              onTap: () => _pickPhoto(ImageSource.gallery),
+              isDark: isDark,
+            ),
+        ],
+        const SizedBox(height: AppSpacing.xl),
       ],
     );
   }

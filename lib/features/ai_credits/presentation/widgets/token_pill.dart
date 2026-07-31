@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -44,9 +45,7 @@ class TokenPill extends ConsumerWidget {
               : onSurface.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: out
-                ? AppColors.orange
-                : onSurface.withValues(alpha: 0.22),
+            color: out ? AppColors.orange : onSurface.withValues(alpha: 0.22),
             width: 1.5,
           ),
         ),
@@ -73,12 +72,12 @@ class TokenPill extends ConsumerWidget {
   }
 }
 
-/// The token glyph.
+/// The token glyph — the Mealvana logomark, which is itself a fortune cookie.
 ///
-/// The design uses a bespoke fortune-cookie mark; that asset isn't in the
-/// repo, so this uses the closest stock glyph and keeps the shape in one place
-/// — swap this widget's body when the real artwork lands and every surface
-/// picks it up.
+/// Tokens are "fortune cookies", so the mark is the brand logomark rather than
+/// a stock cookie: `assets/icons/token_cookie.svg` is the logomark flattened to
+/// a solid silhouette (crease and the slip's "M" knocked out) so it still reads
+/// at 16px. One widget, so every token surface picks up any change.
 class TokenGlyph extends StatelessWidget {
   const TokenGlyph({super.key, this.size = 20, this.color});
 
@@ -87,10 +86,11 @@ class TokenGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      Icons.cookie_outlined,
-      size: size,
-      color: color ?? AppColors.orange,
+    return SvgPicture.asset(
+      'assets/icons/token_cookie.svg',
+      width: size,
+      height: size,
+      colorFilter: ColorFilter.mode(color ?? AppColors.orange, BlendMode.srcIn),
     );
   }
 }

@@ -22,6 +22,45 @@ class CreditsRepository {
 
   final SupabaseClient _supabase;
 
+  /// Whether a real (non-anonymous) user is signed in.
+  ///
+  /// Purchases and the wallet are meaningless without one: the RevenueCat
+  /// webhook maps `app_user_id` straight onto `auth.users.id`, so a purchase
+  /// made without a signed-in user credits nobody and the money is simply gone.
+  bool get hasAuthenticatedUser {
+    final user = _supabase.auth.currentUser;
+    return user != null && user.id.isNotEmpty;
+  }
+
+  /// The signed-in user's id, or null.
+  String? get currentUserId => _supabase.auth.currentUser?.id;
+
+  /// Provision the wallet and grant this month's free credits, returning the
+  /// resulting balance (null on any failure).
+  ///
+  /// The wallet used to be created lazily by the first AI call, so a new user
+  /// saw a balance of 0 — and a "You're out of tokens" prompt — until they ran
+  /// an analysis, at which point it jumped straight to `grant - 1`. The grant
+  /// RPCs take a user id as a parameter and are `service_role`-only for that
+  /// reason, so this goes through the `ensure-credits` edge function, which
+  /// derives the user from the JWT. Idempotent: at most one grant per calendar
+  /// month, so it is safe to call on every app start.
+  Future<int?> ensureWallet() async {
+    if (!hasAuthenticatedUser) return null;
+
+    try {
+      final res = await _supabase.functions.invoke('ensure-credits');
+      final data = res.data;
+      if (data is Map && data['balance'] is int) return data['balance'] as int;
+      return null;
+    } catch (e) {
+      // Non-fatal: the AI functions still provision on first use, so a failure
+      // here costs a stale zero on screen, never a lost grant.
+      debugPrint('[CreditsRepository] ensureWallet error: $e');
+      return null;
+    }
+  }
+
   /// Fetch the current user's wallet.
   ///
   /// Returns [CreditWallet.zero] when:

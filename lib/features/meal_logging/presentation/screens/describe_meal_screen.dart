@@ -6,8 +6,10 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../jade/presentation/widgets/jade_thinking_status.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../application/meal_ai_service.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 
 /// Natural-language meal description screen.
 ///
@@ -149,102 +151,111 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
         title: const Text('Describe to Jade'),
         elevation: 0,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: AppSpacing.screenPaddingHorizontal,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      // While Jade works the page does not get covered — the editor collapses
+      // to a quiet echo of what was typed and the answer's skeleton takes the
+      // space the button had, so the wait happens where the result will land.
+      body: SingleChildScrollView(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppSpacing.md),
+              // Prompt on the left, token balance on the right — the cost
+              // of the action sits next to the description of it.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: AppSpacing.md),
-                  // Prompt on the left, token balance on the right — the cost
-                  // of the action sits next to the description of it.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Describe what you ate and Jade will estimate the '
-                          'macros.',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: isDark
-                                ? AppColors.cream.withValues(alpha: 0.65)
-                                : AppColors.blackberry.withValues(alpha: 0.65),
-                          ),
-                        ),
+                  Expanded(
+                    child: Text(
+                      'Describe what you ate and Jade will estimate the '
+                      'macros.',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark
+                            ? AppColors.cream.withValues(alpha: 0.65)
+                            : AppColors.blackberry.withValues(alpha: 0.65),
                       ),
-                      const SizedBox(width: AppSpacing.md),
-                      const TokenPill(),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  TextFormField(
-                    controller: _descriptionCtrl,
-                    maxLines: 6,
-                    minLines: 4,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'What did you eat?',
-                      hintText:
-                          'e.g. A bowl of oatmeal with blueberries and a tablespoon of honey, plus a large coffee with oat milk.',
-                      border: OutlineInputBorder(),
-                      alignLabelWithHint: true,
                     ),
-                    validator: (v) => (v == null || v.trim().length < 5)
-                        ? 'Please describe your meal'
-                        : null,
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  // The Analyze button carries its own price: "Analyze 🍪 1".
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      KylePrimaryButton(
-                        text: 'Analyze',
-                        isLoading: _isAnalyzing,
-                        onPressed: _isAnalyzing ? null : _analyze,
-                      ),
-                      if (!_isAnalyzing)
-                        const IgnorePointer(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Reserve the label's width so the chip sits to
-                              // its right rather than over it.
-                              SizedBox(width: 76),
-                              TokenCostChip(),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(width: AppSpacing.md),
+                  const TokenPill(),
                 ],
               ),
-            ),
-          ),
-          if (_isAnalyzing)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(color: Colors.white),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Jade is thinking...',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: AppSpacing.lg),
+              if (_isAnalyzing)
+                _DescriptionEcho(text: _descriptionCtrl.text.trim())
+              else
+                TextFormField(
+                  controller: _descriptionCtrl,
+                  maxLines: 6,
+                  minLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'What did you eat?',
+                    hintText:
+                        'e.g. A bowl of oatmeal with blueberries and a tablespoon of honey, plus a large coffee with oat milk.',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (v) => (v == null || v.trim().length < 5)
+                      ? 'Please describe your meal'
+                      : null,
                 ),
-              ),
-            ),
-        ],
+              const SizedBox(height: AppSpacing.xl),
+              if (_isAnalyzing)
+                const MealAnalysisSkeleton(
+                  phases: JadeThinkingStatus.describePhases,
+                )
+              else
+                // The Analyze button carries its own price: "Analyze 🍪 1".
+                // The chip is laid out after the label rather than stacked
+                // over it, so it can't collide at any text scale.
+                KylePrimaryButton(
+                  text: 'Analyze',
+                  onPressed: _analyze,
+                  trailing: const TokenCostChip(),
+                ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The typed description, shown read-only while Jade reads it.
+///
+/// It replaces the (much taller) editor during the wait so the skeleton below
+/// stays above the fold, while keeping what was sent visible — "Reading your
+/// description…" is a lot more convincing next to the description.
+class _DescriptionEcho extends StatelessWidget {
+  const _DescriptionEcho({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: onSurface.withValues(alpha: 0.12)),
+      ),
+      child: Text(
+        text,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: onSurface.withValues(alpha: 0.7),
+          fontStyle: FontStyle.italic,
+        ),
       ),
     );
   }
