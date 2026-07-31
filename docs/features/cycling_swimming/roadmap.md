@@ -404,8 +404,8 @@ class CyclingParameters with _$CyclingParameters {
    ```
 
 6. ✅ **Write comprehensive tests:**
-   - ✅ `test/local_edge_functions/functions/generate-macros/cycling-macros.test.ts` - 41 cycling tests (all passing)
-   - ✅ `test/local_edge_functions/functions/generate-macros/swimming-macros.test.ts` - 42 swimming tests (all passing)
+   - ✅ `_archived/test/local_edge_functions/functions/generate-macros/cycling-macros.test.ts` - 41 cycling tests (all passing)
+   - ✅ `_archived/test/local_edge_functions/functions/generate-macros/swimming-macros.test.ts` - 42 swimming tests (all passing)
    - ✅ TDD approach: Tests written first, then implementations added
 
 ### 3.3 Update `generate-nutrition-plan` Edge Function ✅
@@ -517,7 +517,7 @@ class CyclingParameters with _$CyclingParameters {
    - ✅ Running: 80 min, MET 12.5, 57g carbs (backward compatible)
    - ✅ Cycling: 120 min, MET 17.6, 110g carbs
    - ✅ Swimming: 100 min, MET 10, 75g carbs
-   - ✅ E2E test file: `test/local_edge_functions/e2e-multi-sport-test.ts`
+   - ✅ E2E test file: `_archived/test/local_edge_functions/e2e-multi-sport-test.ts`
 
 **Deliverables:**
 - ✅ Refactored `generate-macros` with multi-sport support

@@ -1,0 +1,49 @@
+{
+  "stressDetails": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "stress-20240328",
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": -18000,
+      "durationInSeconds": 86400,
+      "calendarDate": "2024-03-28",
+      "timeOffsetStressLevelValues": [
+        [
+          0,
+          25
+        ],
+        [
+          900,
+          30
+        ],
+        [
+          1800,
+          45
+        ],
+        [
+          2700,
+          35
+        ]
+      ],
+      "timeOffsetBodyBatteryValues": [
+        [
+          0,
+          95
+        ],
+        [
+          900,
+          92
+        ],
+        [
+          1800,
+          88
+        ],
+        [
+          2700,
+          90
+        ]
+      ]
+    }
+  ]
+}

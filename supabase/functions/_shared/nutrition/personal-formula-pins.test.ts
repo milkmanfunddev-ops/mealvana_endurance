@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.177.1/testing/asserts.ts";
 import {
   beforeSlotForSubPhase,
+  collectPersonalFormulaSkips,
   carbScaleFactor,
   matchBeforePersonalFormulaForSlot,
   matchPersonalFormulaPin,
@@ -228,5 +229,100 @@ Deno.test("before slot matcher returns first (newest) when multiple match", () =
   assertEquals(
     matchBeforePersonalFormulaForSlot([newer, older], "snack")?.id,
     "new",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// collectPersonalFormulaSkips — audit 2026-07-18
+//
+// Regression cover for the reported bug: a cycling formula scoped to 90+ min
+// was silently dropped on a 75-minute ride while an unrelated system pin was
+// reported as honored. These assert the skip is explained rather than lost.
+// ---------------------------------------------------------------------------
+
+Deno.test("skips: duration miss is reported with both brackets", () => {
+  const f = pin({
+    phase: "during",
+    activities: ["cycling"],
+    durations: ["90-150 min", "150-240 min"],
+    name: "Carb Drink Mix + Stroopwafel",
+  });
+  const skips = collectPersonalFormulaSkips([f], "during", "cycling", 75);
+  assertEquals(skips.length, 1);
+  assertEquals(skips[0].reason, "duration_out_of_scope");
+  assertEquals(skips[0].name, "Carb Drink Mix + Stroopwafel");
+  assertEquals(skips[0].workout_bracket, "< 90 min");
+  assertEquals(skips[0].formula_durations, ["90-150 min", "150-240 min"]);
+});
+
+Deno.test("skips: activity miss is reported ahead of duration", () => {
+  const f = pin({
+    phase: "during",
+    activities: ["running"],
+    durations: ["90-150 min"],
+  });
+  const skips = collectPersonalFormulaSkips([f], "during", "cycling", 75);
+  assertEquals(skips.length, 1);
+  assertEquals(skips[0].reason, "activity_out_of_scope");
+});
+
+Deno.test("skips: nothing reported when the formula is in scope", () => {
+  const f = pin({
+    phase: "during",
+    activities: ["cycling"],
+    durations: ["90-150 min"],
+  });
+  // 100 min → "90-150 min" — matches, so there is nothing to explain.
+  assertEquals(
+    collectPersonalFormulaSkips([f], "during", "cycling", 100).length,
+    0,
+  );
+});
+
+Deno.test("skips: boundary at 90 matches matchPersonalFormulaPin exactly", () => {
+  const f = pin({
+    phase: "during",
+    activities: ["cycling"],
+    durations: ["90-150 min"],
+  });
+  // 89 → out of scope, 90 → in scope. The skip list must agree with the
+  // matcher at the boundary or the banner would contradict the plan.
+  assertEquals(matchPersonalFormulaPin([f], "during", "cycling", 89), null);
+  assertEquals(
+    collectPersonalFormulaSkips([f], "during", "cycling", 89).length,
+    1,
+  );
+  assertEquals(
+    matchPersonalFormulaPin([f], "during", "cycling", 90)?.id,
+    "f1",
+  );
+  assertEquals(
+    collectPersonalFormulaSkips([f], "during", "cycling", 90).length,
+    0,
+  );
+});
+
+Deno.test("skips: unscoped formula is never reported as skipped", () => {
+  // Null activities/durations = wildcard, so it always matches.
+  const f = pin({ phase: "during", activities: null, durations: null });
+  assertEquals(
+    collectPersonalFormulaSkips([f], "during", "cycling", 75).length,
+    0,
+  );
+});
+
+Deno.test("skips: before phase has no scope axis, reports nothing", () => {
+  const f = pin({ phase: "before", activities: ["running"] });
+  assertEquals(
+    collectPersonalFormulaSkips([f], "before", "cycling", 75).length,
+    0,
+  );
+});
+
+Deno.test("skips: formulas for other phases are ignored", () => {
+  const f = pin({ phase: "after", activities: ["running"] });
+  assertEquals(
+    collectPersonalFormulaSkips([f], "during", "cycling", 75).length,
+    0,
   );
 });

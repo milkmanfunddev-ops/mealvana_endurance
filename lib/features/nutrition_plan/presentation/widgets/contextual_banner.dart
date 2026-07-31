@@ -22,46 +22,43 @@ class ContextualBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    
+
     // Determine if this is a long run (> 75 minutes per ISSN guidelines)
     final isLongRun = macroTargets.metrics.durationMin > 75;
     final bannerText = isLongRun ? _formatLongRunText() : shortRunText;
-    
+
     // Check if there are any validation issues to adjust banner priority
     final hasValidationIssues = _hasAnyValidationIssues();
-    
-    final bannerColor = hasValidationIssues 
+
+    final bannerColor = hasValidationIssues
         ? colorScheme.error
         : (isLongRun ? colorScheme.primary : colorScheme.secondary);
     final backgroundColor = hasValidationIssues
         ? colorScheme.error.withValues(alpha: 0.1)
-        : (isLongRun 
-            ? colorScheme.primary.withValues(alpha: 0.1)
-            : colorScheme.secondary.withValues(alpha: 0.1));
+        : (isLongRun
+              ? colorScheme.primary.withValues(alpha: 0.1)
+              : colorScheme.secondary.withValues(alpha: 0.1));
 
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: bannerColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: bannerColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         children: [
           // Icon
           Icon(
-            hasValidationIssues 
+            hasValidationIssues
                 ? Icons.warning_outlined
                 : (isLongRun ? Icons.info : Icons.check_circle_outline),
             color: bannerColor,
             size: 20.sp,
           ),
-          
+
           SizedBox(width: 12.w),
-          
+
           // Text content
           Expanded(
             child: Text(
@@ -82,7 +79,7 @@ class ContextualBanner extends StatelessWidget {
     // Get minimum recommended carbs (30g/h * duration)
     final durationH = macroTargets.metrics.durationH;
     final minCarbsRecommended = (30.0 * durationH).round();
-    
+
     // Replace {amount} placeholder with actual value
     return longRunText.replaceAll('{amount}', minCarbsRecommended.toString());
   }
@@ -91,34 +88,115 @@ class ContextualBanner extends StatelessWidget {
   bool _hasAnyValidationIssues() {
     final bodyWeightKg = this.bodyWeightKg;
     final durationH = macroTargets.metrics.durationH;
-    
+
     // Check pre-run macros
-    if (_validatePreRunMacro(MacroField.preRunCarbs, macroTargets.preRun.carbsG, bodyWeightKg) != null) return true;
-    if (_validatePreRunMacro(MacroField.preRunProtein, macroTargets.preRun.proteinG, bodyWeightKg) != null) return true;
-    if (_validatePreRunMacro(MacroField.preRunFatCap, macroTargets.preRun.fatCapG, bodyWeightKg) != null) return true;
-    if (_validatePreRunMacro(MacroField.preRunFluids, macroTargets.preRun.fluidsFlOz, bodyWeightKg) != null) return true;
-    if (_validatePreRunMacro(MacroField.preRunSodium, macroTargets.preRun.sodiumMg, bodyWeightKg) != null) return true;
-    
+    if (_validatePreRunMacro(
+          MacroField.preRunCarbs,
+          macroTargets.preRun.carbsG,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePreRunMacro(
+          MacroField.preRunProtein,
+          macroTargets.preRun.proteinG,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePreRunMacro(
+          MacroField.preRunFatCap,
+          macroTargets.preRun.fatCapG,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePreRunMacro(
+          MacroField.preRunFluids,
+          macroTargets.preRun.fluidsFlOz,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePreRunMacro(
+          MacroField.preRunSodium,
+          macroTargets.preRun.sodiumMg,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+
     // Check during-run macros
-    if (_validateDuringRunMacro(MacroField.duringRunCarbTotal, macroTargets.duringRun.carbTotalG, bodyWeightKg, durationH) != null) return true;
-    if (_validateDuringRunMacro(MacroField.duringRunFluidTotal, macroTargets.duringRun.fluidTotalFlOz, bodyWeightKg, durationH) != null) return true;
-    if (_validateDuringRunMacro(MacroField.duringRunSodiumTotal, macroTargets.duringRun.sodiumTotalMg, bodyWeightKg, durationH) != null) return true;
-    
+    if (_validateDuringRunMacro(
+          MacroField.duringRunCarbTotal,
+          macroTargets.duringRun.carbTotalG,
+          bodyWeightKg,
+          durationH,
+        ) !=
+        null)
+      return true;
+    if (_validateDuringRunMacro(
+          MacroField.duringRunFluidTotal,
+          macroTargets.duringRun.fluidTotalFlOz,
+          bodyWeightKg,
+          durationH,
+        ) !=
+        null)
+      return true;
+    if (_validateDuringRunMacro(
+          MacroField.duringRunSodiumTotal,
+          macroTargets.duringRun.sodiumTotalMg,
+          bodyWeightKg,
+          durationH,
+        ) !=
+        null)
+      return true;
+
     // Check post-run macros
-    if (_validatePostRunMacro(MacroField.postRunCarbs, macroTargets.postRun.carbsG, bodyWeightKg) != null) return true;
-    if (_validatePostRunMacro(MacroField.postRunProtein, macroTargets.postRun.proteinG, bodyWeightKg) != null) return true;
-    if (_validatePostRunMacro(MacroField.postRunFluids, macroTargets.postRun.fluidsFlOz, bodyWeightKg) != null) return true;
-    if (_validatePostRunMacro(MacroField.postRunSodium, macroTargets.postRun.sodiumMg, bodyWeightKg) != null) return true;
-    
+    if (_validatePostRunMacro(
+          MacroField.postRunCarbs,
+          macroTargets.postRun.carbsG,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePostRunMacro(
+          MacroField.postRunProtein,
+          macroTargets.postRun.proteinG,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePostRunMacro(
+          MacroField.postRunFluids,
+          macroTargets.postRun.fluidsFlOz,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+    if (_validatePostRunMacro(
+          MacroField.postRunSodium,
+          macroTargets.postRun.sodiumMg,
+          bodyWeightKg,
+        ) !=
+        null)
+      return true;
+
     return false;
   }
 
   /// Validation methods (same logic as MacroSectionCard for consistency)
-  String? _validatePreRunMacro(MacroField field, double value, double bodyWeightKg) {
+  String? _validatePreRunMacro(
+    MacroField field,
+    double value,
+    double bodyWeightKg,
+  ) {
     switch (field) {
       case MacroField.preRunCarbs:
-        if (value < 1.0 * bodyWeightKg) return 'Below recommended range (1-4 g/kg)';
-        if (value > 4.0 * bodyWeightKg) return 'Above recommended range (1-4 g/kg)';
+        if (value < 1.0 * bodyWeightKg)
+          return 'Below recommended range (1-4 g/kg)';
+        if (value > 4.0 * bodyWeightKg)
+          return 'Above recommended range (1-4 g/kg)';
         break;
       case MacroField.preRunProtein:
         if (value > 0.25 * bodyWeightKg) return 'Higher than typically needed';
@@ -141,7 +219,12 @@ class ContextualBanner extends StatelessWidget {
     return null;
   }
 
-  String? _validateDuringRunMacro(MacroField field, double value, double bodyWeightKg, double durationH) {
+  String? _validateDuringRunMacro(
+    MacroField field,
+    double value,
+    double bodyWeightKg,
+    double durationH,
+  ) {
     switch (field) {
       case MacroField.duringRunCarbTotal:
         final ratePerHour = durationH > 0 ? value / durationH : 0;
@@ -165,14 +248,20 @@ class ContextualBanner extends StatelessWidget {
     return null;
   }
 
-  String? _validatePostRunMacro(MacroField field, double value, double bodyWeightKg) {
+  String? _validatePostRunMacro(
+    MacroField field,
+    double value,
+    double bodyWeightKg,
+  ) {
     switch (field) {
       case MacroField.postRunCarbs:
-        if (value < 1.0 * bodyWeightKg) return 'Below optimal recovery (1.0-1.2 g/kg)';
+        if (value < 1.0 * bodyWeightKg)
+          return 'Below optimal recovery (1.0-1.2 g/kg)';
         if (value > 1.5 * bodyWeightKg) return 'More than typically needed';
         break;
       case MacroField.postRunProtein:
-        if (value < 0.25 * bodyWeightKg) return 'Below optimal recovery (0.25-0.3 g/kg)';
+        if (value < 0.25 * bodyWeightKg)
+          return 'Below optimal recovery (0.25-0.3 g/kg)';
         if (value > 0.5 * bodyWeightKg) return 'More than typically needed';
         break;
       case MacroField.postRunFluids:

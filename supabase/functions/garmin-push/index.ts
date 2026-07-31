@@ -38,6 +38,7 @@ import {
 } from "../_shared/garmin/mappers.ts";
 import {
   buildGarminCompletionUpdate,
+  enrichCompletedGarminActivity,
   findMatchingPlannedActivity,
   insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
@@ -192,7 +193,8 @@ async function mirrorGarminBodyCompToUser(
   const ageDays = (Date.now() / 1000 - measurementSec) / 86400;
   if (ageDays > GARMIN_BODY_COMP_MAX_AGE_DAYS || ageDays < 0) return;
 
-  const hasWeight = bodyComp.weightInGrams != null && bodyComp.weightInGrams > 0;
+  const hasWeight = bodyComp.weightInGrams != null &&
+    bodyComp.weightInGrams > 0;
   const hasBodyFat = bodyComp.percentFat != null && bodyComp.percentFat > 0;
   if (!hasWeight && !hasBodyFat) return;
 
@@ -336,6 +338,15 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               console.log(
                 `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
               );
+              // The winning push may have carried a preliminary payload
+              // (0 duration / 0 distance) — fill any metric gaps from ours.
+              await enrichCompletedGarminActivity(
+                supabase,
+                mapping.user_id,
+                String(summaryId),
+                activityRow,
+                "[garmin-push]",
+              );
               stats.skipped++;
             } else {
               console.log(
@@ -373,15 +384,33 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
                 stats.inserted++;
                 stats.processed++;
                 break;
-              case "duplicate":
+              case "duplicate": {
                 console.log(
                   `[garmin-push] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
                 );
+                const dupSummaryId = activity.summaryId ??
+                  (activity as { activityId?: string }).activityId;
+                if (dupSummaryId) {
+                  await enrichCompletedGarminActivity(
+                    supabase,
+                    mapping.user_id,
+                    String(dupSummaryId),
+                    activityRow,
+                    "[garmin-push]",
+                  );
+                }
                 stats.skipped++;
                 break;
+              }
               case "skipped_non_endurance":
                 console.log(
                   `[garmin-push] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_enum_not_ready":
+                console.warn(
+                  `[garmin-push] "other" activity_type not yet migrated on this database — skipping import for ${scheduledDate}`,
                 );
                 stats.skipped++;
                 break;
@@ -663,12 +692,42 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             distance_meters: activityRow.distance_meters,
           };
 
-          if (activityRow.average_pace_minutes_per_mile !== undefined) {
+          // Mirror the actual_* and sport-specific fields that
+          // buildGarminCompletionUpdate writes on first completion, so a
+          // later manual Garmin edit overwrites the same metrics. Zero is a
+          // valid value, so guard with typeof === "number", not truthiness.
+          if (typeof activityRow.duration_minutes === "number") {
+            updateFields.actual_duration_minutes = activityRow.duration_minutes;
+          }
+          const manualDistanceMiles =
+            typeof activityRow.distance_miles === "number"
+              ? activityRow.distance_miles
+              : typeof activityRow.distance_meters === "number"
+              ? activityRow.distance_meters / 1609.34
+              : null;
+          if (manualDistanceMiles !== null) {
+            updateFields.actual_distance_miles = manualDistanceMiles;
+          }
+          if (typeof activityRow.average_pace_minutes_per_mile === "number") {
             updateFields.average_pace_minutes_per_mile =
               activityRow.average_pace_minutes_per_mile;
           }
-          if (activityRow.distance_miles !== undefined) {
+          if (typeof activityRow.distance_miles === "number") {
             updateFields.distance_miles = activityRow.distance_miles;
+          }
+          if (typeof activityRow.cycling_power_watts === "number") {
+            updateFields.cycling_power_watts = activityRow.cycling_power_watts;
+          }
+          if (typeof activityRow.cycling_speed_mph === "number") {
+            updateFields.cycling_speed_mph = activityRow.cycling_speed_mph;
+          }
+          if (typeof activityRow.cycling_elevation_gain_ft === "number") {
+            updateFields.cycling_elevation_gain_ft =
+              activityRow.cycling_elevation_gain_ft;
+          }
+          if (typeof activityRow.swimming_pace_per_100m_seconds === "number") {
+            updateFields.swimming_pace_per_100m_seconds =
+              activityRow.swimming_pace_per_100m_seconds;
           }
 
           const { error } = await supabase
@@ -784,6 +843,15 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               console.log(
                 `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
               );
+              // Detail pushes usually carry the richest data — backfill any
+              // metric gaps left by the preliminary payload that won the race.
+              await enrichCompletedGarminActivity(
+                supabase,
+                mapping.user_id,
+                String(detailSummaryId),
+                activityRow,
+                "[garmin-push]",
+              );
               stats.skipped++;
             } else {
               console.log(
@@ -824,11 +892,24 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
                 console.log(
                   `[garmin-push] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
                 );
+                await enrichCompletedGarminActivity(
+                  supabase,
+                  mapping.user_id,
+                  String(detailSummaryId),
+                  activityRow,
+                  "[garmin-push]",
+                );
                 stats.skipped++;
                 break;
               case "skipped_non_endurance":
                 console.log(
                   `[garmin-push] No matching planned activity for detail non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_enum_not_ready":
+                console.warn(
+                  `[garmin-push] "other" activity_type not yet migrated on this database — skipping detail import for ${scheduledDate}`,
                 );
                 stats.skipped++;
                 break;
@@ -975,7 +1056,61 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
     }
 
     console.log("[garmin-push] Processing complete:", JSON.stringify(results));
+
+    await stampIntegrationSyncHealth(supabase, body);
   } catch (err) {
     console.error("[garmin-push] Fatal error:", err);
+  }
+}
+
+/// Garmin is push-based, so nothing ever ran a "sync" that could update
+/// `integrations.last_sync_status` the way the pull providers (TP/FS/VDOT)
+/// do client-side — every Garmin row sat at 'pending' forever even though
+/// data was flowing. Stamp success whenever Garmin delivers data for a
+/// mapped user: for a push provider, delivery IS the sync.
+async function stampIntegrationSyncHealth(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  body: GarminPushNotification,
+): Promise<void> {
+  const dataSummaries = [
+    body.activities,
+    body.activityDetails,
+    body.manuallyUpdatedActivities,
+    body.dailies,
+    body.epochs,
+    body.sleeps,
+    body.bodyComps,
+    body.stressDetails,
+    body.userMetrics,
+  ];
+  const garminUserIds = [
+    ...new Set(
+      dataSummaries.flatMap((entries) =>
+        (entries ?? []).map((e) => e.userId).filter(Boolean)
+      ),
+    ),
+  ];
+  if (garminUserIds.length === 0) return;
+
+  const { data: mappings, error: mapErr } = await supabase
+    .from("garmin_user_mappings")
+    .select("user_id")
+    .in("garmin_user_id", garminUserIds);
+  if (mapErr || !mappings || mappings.length === 0) return;
+
+  const userIds = [
+    ...new Set(mappings.map((m: { user_id: string }) => m.user_id)),
+  ];
+  const { error } = await supabase
+    .from("integrations")
+    .update({
+      last_sync_status: "success",
+      last_sync_at: new Date().toISOString(),
+    })
+    .eq("provider", "garmin")
+    .in("user_id", userIds);
+  if (error) {
+    console.error("[garmin-push] Sync-health stamp failed:", error);
   }
 }

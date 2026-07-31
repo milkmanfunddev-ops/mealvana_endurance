@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../providers/onboarding_analytics.dart';
 import '../providers/onboarding_controller.dart';
 import '../widgets/page_keep_alive_wrapper.dart';
 import 'user_profile_screen.dart';
@@ -27,10 +29,12 @@ class OnboardingPageViewScreen extends ConsumerStatefulWidget {
   const OnboardingPageViewScreen({super.key});
 
   @override
-  ConsumerState<OnboardingPageViewScreen> createState() => _OnboardingPageViewScreenState();
+  ConsumerState<OnboardingPageViewScreen> createState() =>
+      _OnboardingPageViewScreenState();
 }
 
-class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScreen> {
+class _OnboardingPageViewScreenState
+    extends ConsumerState<OnboardingPageViewScreen> {
   late PageController _pageController;
   int _currentPageIndex = 0;
 
@@ -47,6 +51,10 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
   }
 
   /// Build the list of pages dynamically based on selected sports
+  ///
+  /// The `stepIndex` passed to each screen must stay aligned with this list's
+  /// order — it is what stamps `step_index` onto the per-screen `screen_viewed`
+  /// events, and with [kOnboardingStepNames] it defines the drop-off funnel.
   List<Widget> _buildPages(Set<String> selectedSports) {
     return [
       // 1. Connect Training (Final Surge, TrainingPeaks, etc.)
@@ -54,6 +62,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         child: ConnectedAppsScreen(
           onContinue: _nextPage,
           onBack: null, // First page - can't go back
+          stepIndex: 0,
         ),
       ),
 
@@ -62,6 +71,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         child: UserProfileScreen(
           onContinue: _nextPage,
           onBack: _previousPage,
+          stepIndex: 1,
         ),
       ),
 
@@ -71,6 +81,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
           onContinue: _nextPage,
           onBack: _previousPage,
           onSportsChanged: _handleSportsChanged,
+          stepIndex: 2,
         ),
       ),
 
@@ -82,6 +93,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         child: DietaryPreferenceScreen(
           onContinue: _nextPage,
           onBack: _previousPage,
+          stepIndex: 3,
         ),
       ),
 
@@ -90,6 +102,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         child: AllergiesScreen(
           onContinue: _nextPage,
           onBack: _previousPage,
+          stepIndex: 4,
         ),
       ),
 
@@ -141,8 +154,16 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_pageController.hasClients) {
-      final selectedSports = ref.read(onboardingControllerProvider.notifier).cachedSelectedSports;
+      final selectedSports = ref
+          .read(onboardingControllerProvider.notifier)
+          .cachedSelectedSports;
       final pages = _buildPages(selectedSports);
+
+      // Every step's Continue routes through here, so this is the one place
+      // that sees the whole funnel. Fires only on an explicit Continue tap —
+      // a swipe advances via `onPageChanged` and is deliberately not counted
+      // as completing a step, since the user may not have filled it in.
+      _trackStepCompleted(_currentPageIndex);
 
       if (_currentPageIndex < pages.length - 1) {
         _pageController.animateToPage(
@@ -152,10 +173,48 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         );
       } else {
         // Last page - navigate to post-onboarding auth
+        _trackOnboardingCompleted(pages.length);
         if (mounted) {
           context.go('/auth/post-onboarding');
         }
       }
+    }
+  }
+
+  void _trackStepCompleted(int stepIndex) {
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'onboarding_step_completed',
+            properties: {
+              'step_name': onboardingStepName(stepIndex),
+              'step_index': stepIndex,
+            },
+          );
+    } catch (_) {
+      // Analytics must never block onboarding navigation.
+    }
+  }
+
+  void _trackOnboardingCompleted(int stepCount) {
+    try {
+      final durationSec = OnboardingAnalytics.durationSec();
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'onboarding_completed',
+            properties: {
+              'step_count': stepCount,
+              // Omitted rather than zeroed when onboarding wasn't entered through
+              // the welcome screen — a bogus 0 would drag the median down.
+              if (durationSec != null) 'duration_sec': durationSec,
+            },
+          );
+    } catch (_) {
+      // Analytics must never block onboarding navigation.
     }
   }
 
@@ -192,7 +251,9 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
     // Watch the controller to rebuild when sports selection changes
     ref.watch(onboardingControllerProvider);
 
-    final selectedSports = ref.read(onboardingControllerProvider.notifier).cachedSelectedSports;
+    final selectedSports = ref
+        .read(onboardingControllerProvider.notifier)
+        .cachedSelectedSports;
     final pages = _buildPages(selectedSports);
 
     // Each screen has its own Scaffold and progress bar, so we just use PageView

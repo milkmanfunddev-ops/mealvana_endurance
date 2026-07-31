@@ -17,32 +17,39 @@ import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 class _MockCoachRepository extends Mock implements CoachRepository {}
 
-class _MockMessagingRepository extends Mock implements CoachMessagingRepository {}
+class _MockMessagingRepository extends Mock
+    implements CoachMessagingRepository {}
 
 class _FakeLogger extends Fake implements AppLogger {
   @override
   void info(String message, {String? context, Map<String, dynamic>? data}) {}
 
   @override
-  void error(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void error(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 
   @override
-  void warning(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void warning(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 
   @override
-  void debug(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void debug(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 }
 
 // ---------------------------------------------------------------------------
@@ -136,29 +143,30 @@ void main() {
       expect(active.isPending, isFalse);
     });
 
-    test('wasRequestedByCoach / wasRequestedByAthlete discriminate correctly',
-        () {
-      final byCoach = _activeRelationship();
-      final now = DateTime.now();
-      final byAthlete = CoachAthleteRelationship(
-        id: 'rel-2',
-        coachUserId: _coachUserId,
-        athleteUserId: _athleteUserId,
-        status: RelationshipStatus.pending,
-        requestedBy: 'athlete',
-        requestedAt: now,
-        createdAt: now,
-        updatedAt: now,
-      );
+    test(
+      'wasRequestedByCoach / wasRequestedByAthlete discriminate correctly',
+      () {
+        final byCoach = _activeRelationship();
+        final now = DateTime.now();
+        final byAthlete = CoachAthleteRelationship(
+          id: 'rel-2',
+          coachUserId: _coachUserId,
+          athleteUserId: _athleteUserId,
+          status: RelationshipStatus.pending,
+          requestedBy: 'athlete',
+          requestedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        );
 
-      expect(byCoach.wasRequestedByCoach, isTrue);
-      expect(byCoach.wasRequestedByAthlete, isFalse);
-      expect(byAthlete.wasRequestedByCoach, isFalse);
-      expect(byAthlete.wasRequestedByAthlete, isTrue);
-    });
+        expect(byCoach.wasRequestedByCoach, isTrue);
+        expect(byCoach.wasRequestedByAthlete, isFalse);
+        expect(byAthlete.wasRequestedByCoach, isFalse);
+        expect(byAthlete.wasRequestedByAthlete, isTrue);
+      },
+    );
 
-    test('RelationshipStatus.fromString falls back to pending for unknown',
-        () {
+    test('RelationshipStatus.fromString falls back to pending for unknown', () {
       expect(
         RelationshipStatus.fromString('active'),
         RelationshipStatus.active,
@@ -268,24 +276,25 @@ void main() {
     }
 
     test(
-        'allMessages merges confirmed + pending and returns chronological order',
-        () {
-      final m1 = makeMsg('a', const Duration(minutes: 1));
-      final m2 = makeMsg('b', const Duration(minutes: 3));
-      final pending = makeMsg('c', const Duration(minutes: 2));
+      'allMessages merges confirmed + pending and returns chronological order',
+      () {
+        final m1 = makeMsg('a', const Duration(minutes: 1));
+        final m2 = makeMsg('b', const Duration(minutes: 3));
+        final pending = makeMsg('c', const Duration(minutes: 2));
 
-      // Inline the CoachChatState allMessages logic
-      final allMessages = <CoachMessage>[m1, m2, pending]
-        ..sort((a, b) {
-          final tc = a.createdAt.compareTo(b.createdAt);
-          if (tc != 0) return tc;
-          return a.id.compareTo(b.id);
-        });
+        // Inline the CoachChatState allMessages logic
+        final allMessages = <CoachMessage>[m1, m2, pending]
+          ..sort((a, b) {
+            final tc = a.createdAt.compareTo(b.createdAt);
+            if (tc != 0) return tc;
+            return a.id.compareTo(b.id);
+          });
 
-      expect(allMessages[0].id, 'a');
-      expect(allMessages[1].id, 'c');
-      expect(allMessages[2].id, 'b');
-    });
+        expect(allMessages[0].id, 'a');
+        expect(allMessages[1].id, 'c');
+        expect(allMessages[2].id, 'b');
+      },
+    );
 
     test('isCurrentUserCoach returns true when userId matches coachUserId', () {
       // We test this logic inline since CoachChatState needs
@@ -294,38 +303,40 @@ void main() {
       expect(_athleteUserId == relationship.coachUserId, isFalse);
     });
 
-    test('duplicate message IDs in allMessages stable-sort by ID as tiebreak',
-        () {
-      // Two messages with identical timestamps — stable by ID tiebreaker.
-      final ts = now;
-      final m1 = CoachMessage(
-        id: 'aaa',
-        coachUserId: _coachUserId,
-        athleteUserId: _athleteUserId,
-        senderUserId: _coachUserId,
-        messageText: 'first',
-        createdAt: ts,
-        updatedAt: ts,
-      );
-      final m2 = CoachMessage(
-        id: 'bbb',
-        coachUserId: _coachUserId,
-        athleteUserId: _athleteUserId,
-        senderUserId: _athleteUserId,
-        messageText: 'second',
-        createdAt: ts,
-        updatedAt: ts,
-      );
-      final sorted = [m2, m1]
-        ..sort((a, b) {
-          final tc = a.createdAt.compareTo(b.createdAt);
-          if (tc != 0) return tc;
-          return a.id.compareTo(b.id);
-        });
+    test(
+      'duplicate message IDs in allMessages stable-sort by ID as tiebreak',
+      () {
+        // Two messages with identical timestamps — stable by ID tiebreaker.
+        final ts = now;
+        final m1 = CoachMessage(
+          id: 'aaa',
+          coachUserId: _coachUserId,
+          athleteUserId: _athleteUserId,
+          senderUserId: _coachUserId,
+          messageText: 'first',
+          createdAt: ts,
+          updatedAt: ts,
+        );
+        final m2 = CoachMessage(
+          id: 'bbb',
+          coachUserId: _coachUserId,
+          athleteUserId: _athleteUserId,
+          senderUserId: _athleteUserId,
+          messageText: 'second',
+          createdAt: ts,
+          updatedAt: ts,
+        );
+        final sorted = [m2, m1]
+          ..sort((a, b) {
+            final tc = a.createdAt.compareTo(b.createdAt);
+            if (tc != 0) return tc;
+            return a.id.compareTo(b.id);
+          });
 
-      expect(sorted[0].id, 'aaa');
-      expect(sorted[1].id, 'bbb');
-    });
+        expect(sorted[0].id, 'aaa');
+        expect(sorted[1].id, 'bbb');
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -355,8 +366,11 @@ void main() {
     test('every failure reason produces isSuccess = false', () {
       for (final reason in PairingCodeConnectFailureReason.values) {
         final r = PairingCodeConnectResult.failure(reason);
-        expect(r.isSuccess, isFalse,
-            reason: 'reason=$reason should produce isSuccess=false');
+        expect(
+          r.isSuccess,
+          isFalse,
+          reason: 'reason=$reason should produce isSuccess=false',
+        );
       }
     });
   });
@@ -428,25 +442,30 @@ void main() {
     // The mock lets us simulate a remote failure.
 
     test(
-        'createRelationship propagates remote write error (no silent success)',
-        () async {
-      when(() => repo.createRelationship(
+      'createRelationship propagates remote write error (no silent success)',
+      () async {
+        when(
+          () => repo.createRelationship(
             coachUserId: any(named: 'coachUserId'),
             athleteUserId: any(named: 'athleteUserId'),
             requestedBy: any(named: 'requestedBy'),
-          )).thenThrow(StateError('Failed to create coach-athlete relationship remotely'));
+          ),
+        ).thenThrow(
+          StateError('Failed to create coach-athlete relationship remotely'),
+        );
 
-      // A caller that depends on createRelationship getting a result should
-      // receive the exception — not a null/false "not found" response.
-      expect(
-        () => repo.createRelationship(
-          coachUserId: _coachUserId,
-          athleteUserId: _athleteUserId,
-          requestedBy: 'coach',
-        ),
-        throwsA(isA<StateError>()),
-      );
-    });
+        // A caller that depends on createRelationship getting a result should
+        // receive the exception — not a null/false "not found" response.
+        expect(
+          () => repo.createRelationship(
+            coachUserId: _coachUserId,
+            athleteUserId: _athleteUserId,
+            requestedBy: 'coach',
+          ),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
 
     test('acceptRelationship propagates remote write error', () async {
       when(() => repo.acceptRelationship(any())).thenThrow(
@@ -487,35 +506,41 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('CoachMessagingRepository — message send remote-ack', () {
-    test('sendMessage propagates remote write error (no silent success)',
-        () async {
-      when(() => messagingRepo.sendMessage(
+    test(
+      'sendMessage propagates remote write error (no silent success)',
+      () async {
+        when(
+          () => messagingRepo.sendMessage(
             coachUserId: any(named: 'coachUserId'),
             athleteUserId: any(named: 'athleteUserId'),
             senderUserId: any(named: 'senderUserId'),
             messageText: any(named: 'messageText'),
             nutritionPlanId: any(named: 'nutritionPlanId'),
             activityId: any(named: 'activityId'),
-          )).thenThrow(StateError('Failed to send message remotely'));
+          ),
+        ).thenThrow(StateError('Failed to send message remotely'));
 
-      expect(
-        () => messagingRepo.sendMessage(
-          coachUserId: _coachUserId,
-          athleteUserId: _athleteUserId,
-          senderUserId: _coachUserId,
-          messageText: 'Hello',
-        ),
-        throwsA(isA<StateError>()),
-      );
-    });
+        expect(
+          () => messagingRepo.sendMessage(
+            coachUserId: _coachUserId,
+            athleteUserId: _athleteUserId,
+            senderUserId: _coachUserId,
+            messageText: 'Hello',
+          ),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
 
     test('sendChatMessageToSupabase propagates remote write error', () async {
-      when(() => messagingRepo.sendChatMessageToSupabase(
-            coachUserId: any(named: 'coachUserId'),
-            athleteUserId: any(named: 'athleteUserId'),
-            senderUserId: any(named: 'senderUserId'),
-            messageText: any(named: 'messageText'),
-          )).thenThrow(StateError('Failed to send chat message remotely'));
+      when(
+        () => messagingRepo.sendChatMessageToSupabase(
+          coachUserId: any(named: 'coachUserId'),
+          athleteUserId: any(named: 'athleteUserId'),
+          senderUserId: any(named: 'senderUserId'),
+          messageText: any(named: 'messageText'),
+        ),
+      ).thenThrow(StateError('Failed to send chat message remotely'));
 
       expect(
         () => messagingRepo.sendChatMessageToSupabase(
@@ -535,24 +560,28 @@ void main() {
 
   group('CoachService.getMyAthletes — authorization guard', () {
     test(
-        'getMyAthletes returns empty list and is not a coach when isUserApprovedCoach=false',
-        () async {
-      // Simulate the repository returning not-a-coach
-      when(() => repo.isUserApprovedCoach(any())).thenAnswer((_) async => false);
-      when(() => repo.getActiveRelationshipsForCoach(any()))
-          .thenAnswer((_) async => []);
+      'getMyAthletes returns empty list and is not a coach when isUserApprovedCoach=false',
+      () async {
+        // Simulate the repository returning not-a-coach
+        when(
+          () => repo.isUserApprovedCoach(any()),
+        ).thenAnswer((_) async => false);
+        when(
+          () => repo.getActiveRelationshipsForCoach(any()),
+        ).thenAnswer((_) async => []);
 
-      // Directly test repository layer
-      final isCoach = await repo.isUserApprovedCoach(_coachUserId);
-      expect(isCoach, isFalse);
+        // Directly test repository layer
+        final isCoach = await repo.isUserApprovedCoach(_coachUserId);
+        expect(isCoach, isFalse);
 
-      // Guard prevents fetching athletes when not a coach
-      // (mirrors coach_service.dart line 157: if (!isCoach) return [])
-      final athletes = isCoach
-          ? await repo.getActiveRelationshipsForCoach(_coachUserId)
-          : <CoachAthleteRelationship>[];
-      expect(athletes, isEmpty);
-    });
+        // Guard prevents fetching athletes when not a coach
+        // (mirrors coach_service.dart line 157: if (!isCoach) return [])
+        final athletes = isCoach
+            ? await repo.getActiveRelationshipsForCoach(_coachUserId)
+            : <CoachAthleteRelationship>[];
+        expect(athletes, isEmpty);
+      },
+    );
 
     test('inviteAthleteByCode refuses self-invitation', () {
       // Build the scenario: coach finds their own userId via athleteCode
@@ -562,8 +591,11 @@ void main() {
       const athleteUserId = _coachUserId; // same user
 
       final isSelfInvite = athleteUserId == selfId;
-      expect(isSelfInvite, isTrue,
-          reason: 'Self-invite should be caught before createRelationship');
+      expect(
+        isSelfInvite,
+        isTrue,
+        reason: 'Self-invite should be caught before createRelationship',
+      );
     });
   });
 
@@ -576,16 +608,20 @@ void main() {
       final result = PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.noUserProfile,
       );
-      expect(result.failureReason,
-          PairingCodeConnectFailureReason.noUserProfile);
+      expect(
+        result.failureReason,
+        PairingCodeConnectFailureReason.noUserProfile,
+      );
     });
 
     test('notApprovedCoach failure reason is carried through', () {
       final result = PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.notApprovedCoach,
       );
-      expect(result.failureReason,
-          PairingCodeConnectFailureReason.notApprovedCoach);
+      expect(
+        result.failureReason,
+        PairingCodeConnectFailureReason.notApprovedCoach,
+      );
     });
 
     test('codeExpired failure reason is carried through', () {
@@ -599,8 +635,10 @@ void main() {
       final result = PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.selfConnectionNotAllowed,
       );
-      expect(result.failureReason,
-          PairingCodeConnectFailureReason.selfConnectionNotAllowed);
+      expect(
+        result.failureReason,
+        PairingCodeConnectFailureReason.selfConnectionNotAllowed,
+      );
     });
   });
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/database/database_provider.dart';
@@ -21,10 +22,13 @@ import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/garmin_oauth_service.dart';
 import '../../application/integration_sync_coordinator.dart';
+import '../../application/runna_sync_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
+import '../../data/runna_ics_client.dart';
+import '../../domain/integration.dart';
 import 'integrations_providers.dart';
 
 part 'connect_training_controller.g.dart';
@@ -59,6 +63,8 @@ class ConnectTrainingState {
     this.isVdotConnected = false,
     this.vdotAthleteName,
     this.vdotLastSyncAt,
+    this.isRunnaConnected = false,
+    this.runnaLastSyncAt,
     this.isConnecting = false,
     this.connectingProvider,
     this.importedWorkoutsCount = 0,
@@ -84,6 +90,8 @@ class ConnectTrainingState {
   final bool isVdotConnected;
   final String? vdotAthleteName;
   final DateTime? vdotLastSyncAt;
+  final bool isRunnaConnected;
+  final DateTime? runnaLastSyncAt;
   final bool isConnecting;
   final String? connectingProvider;
   final int importedWorkoutsCount;
@@ -124,6 +132,8 @@ class ConnectTrainingState {
     String? vdotAthleteName,
     bool clearVdotAthleteName = false,
     DateTime? vdotLastSyncAt,
+    bool? isRunnaConnected,
+    DateTime? runnaLastSyncAt,
     bool? isConnecting,
     String? connectingProvider,
     bool clearConnectingProvider = false,
@@ -161,6 +171,8 @@ class ConnectTrainingState {
           ? null
           : (vdotAthleteName ?? this.vdotAthleteName),
       vdotLastSyncAt: vdotLastSyncAt ?? this.vdotLastSyncAt,
+      isRunnaConnected: isRunnaConnected ?? this.isRunnaConnected,
+      runnaLastSyncAt: runnaLastSyncAt ?? this.runnaLastSyncAt,
       isConnecting: isConnecting ?? this.isConnecting,
       connectingProvider: clearConnectingProvider
           ? null
@@ -199,6 +211,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   GarminOAuthService get _garminOAuth => ref.read(garminOAuthServiceProvider);
   VdotOAuthService get _vdotOAuth => ref.read(vdotOAuthServiceProvider);
   VdotSyncService get _vdotSync => ref.read(vdotSyncServiceProvider);
+  RunnaSyncService get _runnaSync => ref.read(runnaSyncServiceProvider);
   ActivitiesRepository get _activitiesRepo =>
       ref.read(activitiesRepositoryProvider);
   static const _uuid = Uuid();
@@ -235,6 +248,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Whether we're using a temporary user ID (during onboarding before profile creation)
   bool _isUsingTempUserId = false;
 
+  /// Whether we have a real auth session but onboarding hasn't completed yet,
+  /// meaning the public.users profile row doesn't exist in Supabase and
+  /// activity uploads would fail with FK 23503.
+  bool _isOnboardingInProgress = false;
+
   @override
   FutureOr<ConnectTrainingState> build() async {
     final database = ref.read(appDatabaseProvider);
@@ -247,6 +265,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // UnmountedRefException — the cause of Sentry MEALVANA-ENDURANCE-A0. Holding
     // a plain reference lets the remaining work finish without touching `ref`.
     final integrationsRepo = ref.read(integrationsRepositoryProvider);
+
+    // Same reasoning for SharedPreferences: it's needed by helpers further
+    // below (_getOrCreateTempUserId, _shouldTriggerGarminBackfill,
+    // _markGarminBackfillTriggered) that only run after several more
+    // `await`s. Those helpers used to call `ref.read(sharedPreferencesProvider)`
+    // themselves, which threw UnmountedRefException once the provider was
+    // disposed mid-build (Sentry MEALVANA-ENDURANCE-DEV-5J). Capture it here
+    // and thread it through as a parameter instead.
+    final SharedPreferences prefs = ref.read(sharedPreferencesProvider);
 
     // Get user profile for current auth session
     // Returns null if no auth session or no matching profile
@@ -319,9 +346,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId = currentAuthUserId;
       _isUsingTempUserId = false;
     } else {
-      _currentUserId = await _getOrCreateTempUserId();
+      _currentUserId = await _getOrCreateTempUserId(prefs);
       _isUsingTempUserId = true;
     }
+
+    _isOnboardingInProgress =
+        !_isUsingTempUserId && (user?.onboardingCompleted != true);
 
     if (kDebugMode) {
       print(
@@ -357,6 +387,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId!,
       'vdot',
     );
+    final runnaIntegration = await integrationsRepo.getIntegration(
+      _currentUserId!,
+      'runna',
+    );
 
     final isGarminActive = garminIntegration?.isActive ?? false;
 
@@ -368,11 +402,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     if (isGarminActive &&
         !_garminBackfillTriggeredThisSession &&
         !_isUsingTempUserId &&
-        _shouldTriggerGarminBackfill()) {
+        _shouldTriggerGarminBackfill(prefs)) {
       _garminBackfillTriggeredThisSession = true;
       // Stamp the cooldown immediately (before the async work) so concurrent
       // rebuilds and hot restarts within the window don't each fire again.
-      unawaited(_markGarminBackfillTriggered());
+      unawaited(_markGarminBackfillTriggered(prefs));
       Future<void>(() async {
         await triggerGarminBackfill();
       });
@@ -390,6 +424,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isVdotConnected: vdotIntegration?.isActive ?? false,
       vdotAthleteName: vdotIntegration?.providerAthleteName,
       vdotLastSyncAt: vdotIntegration?.lastSyncAt,
+      isRunnaConnected: runnaIntegration?.isActive ?? false,
+      runnaLastSyncAt: runnaIntegration?.lastSyncAt,
     );
   }
 
@@ -398,10 +434,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// survives controller disposal/rebuild and hot restarts (see
   /// [_garminBackfillTriggeredThisSession] for why an in-memory flag isn't
   /// sufficient).
-  bool _shouldTriggerGarminBackfill() {
+  ///
+  /// [prefs] must be captured by the caller before any `await` in build() —
+  /// this is called after several prior async gaps (the `getIntegration`
+  /// lookups above), so reading `ref.read(sharedPreferencesProvider)` at this
+  /// point throws UnmountedRefException if the provider was disposed
+  /// mid-build (Sentry MEALVANA-ENDURANCE-DEV-5J).
+  bool _shouldTriggerGarminBackfill(SharedPreferences prefs) {
     final userId = _currentUserId;
     if (userId == null) return false;
-    final prefs = ref.read(sharedPreferencesProvider);
     final lastMs = prefs.getInt('$_garminBackfillLastAtKeyPrefix$userId');
     if (lastMs == null) return true;
     final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
@@ -409,10 +450,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   /// Persist the current time as the last automatic Garmin backfill timestamp.
-  Future<void> _markGarminBackfillTriggered() async {
+  ///
+  /// [prefs] must be captured by the caller before any `await` in build() —
+  /// see [_shouldTriggerGarminBackfill] for why (Sentry
+  /// MEALVANA-ENDURANCE-DEV-5J).
+  Future<void> _markGarminBackfillTriggered(SharedPreferences prefs) async {
     final userId = _currentUserId;
     if (userId == null) return;
-    final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setInt(
       '$_garminBackfillLastAtKeyPrefix$userId',
       DateTime.now().millisecondsSinceEpoch,
@@ -421,9 +465,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
   /// Get or create a temporary user ID for use during onboarding
   /// This ID will be migrated to the real user ID when onboarding completes
-  Future<String> _getOrCreateTempUserId() async {
-    final prefs = ref.read(sharedPreferencesProvider);
-
+  ///
+  /// [prefs] must be captured by the caller before any `await` in build() —
+  /// this method runs after several prior async gaps (auth/user-id
+  /// resolution above), so reading `ref.read(sharedPreferencesProvider)` at
+  /// this point risks UnmountedRefException if the provider was disposed
+  /// mid-build (Sentry MEALVANA-ENDURANCE-DEV-5J).
+  Future<String> _getOrCreateTempUserId(SharedPreferences prefs) async {
     // Check if we already have a temp user ID from a previous session
     var tempUserId = prefs.getString(_tempUserIdKey);
 
@@ -626,6 +674,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Returns false (and surfaces an error via snackbar in the caller) on
   /// auth failure / network error / Garmin refusal.
   Future<bool> triggerGarminBackfill() async {
+    // This is invoked from build()'s fire-and-forget kick via
+    // `Future<void>(() async { await triggerGarminBackfill(); })`, which runs
+    // in a later microtask — by the time it executes, the controller may
+    // already have been disposed (e.g. the user navigated away). Bail out
+    // before touching `ref` at all rather than crashing with
+    // UnmountedRefException (Sentry MEALVANA-ENDURANCE-DEV-5J family).
+    if (!ref.mounted) return false;
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final session = supabaseClient.auth.currentSession;
     final supabaseAccessToken = session?.accessToken;
@@ -675,11 +730,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // delay in case the first push was slow.
       Future<void>(() async {
         await Future.delayed(const Duration(seconds: 5));
-        if (_currentUserId != null) {
+        // Guard against invalidating after this controller has been disposed
+        // (Sentry MEALVANA-ENDURANCE-A0 UnmountedRefException family) — the
+        // 5s/15s delays easily outlive a screen the user navigated away from.
+        if (ref.mounted && _currentUserId != null) {
           ref.invalidate(garminLastBodyCompProvider(_currentUserId!));
         }
         await Future.delayed(const Duration(seconds: 15));
-        if (_currentUserId != null) {
+        if (ref.mounted && _currentUserId != null) {
           ref.invalidate(garminLastBodyCompProvider(_currentUserId!));
         }
       });
@@ -731,13 +789,19 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// ([_garminBackfillTriggeredThisSession]) still prevents re-firing within
   /// the current session, so this can't spam Garmin.
   Future<void> _scheduleGarminBackfillRetrySoon() async {
+    // Called from triggerGarminBackfill() after an `await` (the backfill
+    // network call) — by the time we get here the controller may have been
+    // disposed (fire-and-forget path from build()). Guard before touching
+    // `ref` (Sentry MEALVANA-ENDURANCE-DEV-5J family).
+    if (!ref.mounted) return;
     final userId = _currentUserId;
     if (userId == null) return;
     const retryDelay = Duration(minutes: 30);
     if (retryDelay >= _garminBackfillCooldown) return;
     final prefs = ref.read(sharedPreferencesProvider);
-    final retryAt =
-        DateTime.now().subtract(_garminBackfillCooldown - retryDelay);
+    final retryAt = DateTime.now().subtract(
+      _garminBackfillCooldown - retryDelay,
+    );
     await prefs.setInt(
       '$_garminBackfillLastAtKeyPrefix$userId',
       retryAt.millisecondsSinceEpoch,
@@ -871,8 +935,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       var uploadFailed = false;
       if (!_isUsingTempUserId) {
         try {
-          final uploadResult =
-              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+            _currentUserId!,
+          );
           // success covers both a real upload and "nothing to upload" (count 0).
           uploadFailed = !uploadResult.success;
           if (kDebugMode) {
@@ -900,7 +965,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // ensureIntegrationsSynced re-run the sync and retry the upload promptly
       // (instead of waiting out the full staleness window). The coordinator
       // stamps its own clock once that retry completes, so this can't storm.
-      if (!uploadFailed) {
+      //
+      // Re-check `ref.mounted` here: the `uploadDirtyRecords` await above is
+      // another async gap since the last check, and reading `ref` after
+      // disposal throws UnmountedRefException (same pattern as
+      // MEALVANA-ENDURANCE-DEV-5J).
+      if (!uploadFailed && ref.mounted) {
         await ref
             .read(integrationSyncCoordinatorProvider.notifier)
             .markProviderSynced('vdot');
@@ -922,7 +992,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           // the retry above will pick them up.
           errorMessage: uploadFailed
               ? 'Workouts saved, but syncing to your account didn\'t finish. '
-                  'We\'ll retry automatically.'
+                    'We\'ll retry automatically.'
               : null,
           clearErrorMessage: !uploadFailed,
           vdotLastSyncAt: DateTime.now(),
@@ -945,10 +1015,289 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
-      _trackIntegrationSyncFailed('vdot', 'exception', errorMessage: e.toString());
+      _trackIntegrationSyncFailed(
+        'vdot',
+        'exception',
+        errorMessage: e.toString(),
+      );
       return VdotSyncResult.error(e.toString());
     } finally {
       _syncingProviders.remove('vdot');
+    }
+  }
+
+  /// Connect Runna via its calendar-subscription (.ics) URL.
+  ///
+  /// No OAuth — the user pastes the link from Runna app → Settings →
+  /// Calendar sync. URL-shape validation is deliberately permissive; the real
+  /// validation is an initial fetch+parse of the feed ([RunnaSyncService.probeFeed]).
+  ///
+  /// Integration-row storage choice (documented here, at the creation site):
+  /// the feed URL is stored in the row's `accessToken` field — it IS the
+  /// credential (the token is embedded in the URL), it's the closest existing
+  /// slot, and it gets the same Supabase backup treatment as every other
+  /// provider secret. `providerAthleteId` (required text, but Runna's feed
+  /// carries no athlete identity) is 'runna-' + a short stable hash of the
+  /// URL.
+  Future<bool> connectRunna(String feedUrl) async {
+    if (_currentUserId == null) {
+      if (kDebugMode) {
+        print('❌ connectRunna: No current user ID');
+      }
+      return false;
+    }
+
+    state = AsyncData(
+      state.value!.copyWith(
+        isConnecting: true,
+        connectingProvider: 'runna',
+        clearErrorMessage: true,
+      ),
+    );
+
+    try {
+      _trackIntegrationConnectStarted('runna');
+
+      final normalized = RunnaIcsClient.normalizeFeedUrl(feedUrl);
+      final uri = Uri.tryParse(normalized);
+      final looksLikeFeed =
+          uri != null &&
+          uri.host.isNotEmpty &&
+          (uri.isScheme('https') || uri.isScheme('http'));
+      if (!looksLikeFeed) {
+        throw const FormatException(
+          'That doesn\'t look like a calendar link. In the Runna app, go to '
+          'Settings → Calendar sync and copy the subscription link.',
+        );
+      }
+
+      // Real validation: the URL must actually serve parseable ICS. Zero
+      // events is fine (a fresh plan may be empty); non-ICS content throws.
+      await _runnaSync.probeFeed(normalized);
+
+      final integrationsRepo = ref.read(integrationsRepositoryProvider);
+      await integrationsRepo.upsertIntegration(
+        IntegrationModel(
+          userId: _currentUserId!,
+          provider: 'runna',
+          // Feed URL in accessToken — see method docs.
+          accessToken: normalized,
+          providerAthleteId:
+              'runna-${RunnaSyncService.stableFeedFingerprint(normalized)}',
+          isActive: true,
+        ),
+      );
+
+      if (!ref.mounted) return true;
+
+      state = AsyncData(
+        state.value!.copyWith(
+          isConnecting: false,
+          clearConnectingProvider: true,
+          isRunnaConnected: true,
+        ),
+      );
+      _trackIntegrationConnectSuccess('runna');
+      return true;
+    } on FormatException catch (e) {
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isConnecting: false,
+            clearConnectingProvider: true,
+            errorMessage: e.message,
+          ),
+        );
+      }
+      _trackIntegrationConnectFailed(
+        'runna',
+        'invalid_url',
+        errorMessage: e.message,
+      );
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ connectRunna: $e');
+      }
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isConnecting: false,
+            clearConnectingProvider: true,
+            errorMessage: e.toString(),
+          ),
+        );
+      }
+      _trackIntegrationConnectFailed(
+        'runna',
+        'feed_validation_error',
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<void> disconnectRunna() async {
+    await _disconnectProvider(
+      providerId: 'runna',
+      // Delete (not just deactivate) so the stored feed URL is removed both
+      // locally and from Supabase — a reconnect always starts from a freshly
+      // pasted link.
+      disconnect: () => ref
+          .read(integrationsRepositoryProvider)
+          .deleteIntegration(_currentUserId!, 'runna'),
+      updateState: () => state.value!.copyWith(isRunnaConnected: false),
+    );
+  }
+
+  /// Sync workouts from the Runna calendar feed into the local activities
+  /// table. Mirrors [importVdotWorkouts]: local-first writes during sync, then
+  /// an immediate uploadDirtyRecords push (result CHECKED — it swallows
+  /// failures into UploadResult.failed) to avoid the duplicate-on-relogin
+  /// trap.
+  Future<RunnaSyncResult> importRunnaWorkouts() async {
+    if (_currentUserId == null) {
+      return RunnaSyncResult.error('Missing user ID');
+    }
+    if (_syncingProviders.contains('runna')) {
+      if (kDebugMode) {
+        print('⚠️ runna sync already in progress, skipping');
+      }
+      return const RunnaSyncResult(success: true);
+    }
+    _syncingProviders.add('runna');
+
+    state = AsyncData(
+      state.value!.copyWith(
+        isImporting: true,
+        syncingProvider: 'runna',
+        importProgress: 0.0,
+        clearErrorMessage: true,
+        isNetworkError: false,
+      ),
+    );
+
+    try {
+      _trackIntegrationConnectStarted('runna');
+      final result = await _runnaSync.syncWorkouts(_currentUserId!);
+
+      if (!ref.mounted) return result;
+
+      if (!result.success) {
+        if (result.isNetworkError) {
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              isNetworkError: true,
+              errorMessage: result.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'runna',
+            'network_error',
+            errorMessage: result.error,
+          );
+          return result;
+        }
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: result.error ?? 'Failed to import workouts',
+          ),
+        );
+        _trackIntegrationSyncFailed(
+          'runna',
+          result.errorType.name,
+          errorMessage: result.error,
+        );
+        return result;
+      }
+
+      // Upload dirty activities to Supabase immediately so duplicates don't
+      // appear after logout/relogin/resync. Always attempt for a real user —
+      // uploadDirtyRecords doubles as the retry path for rows a previous sync
+      // left dirty. (Same reasoning as the VDOT path; see importVdotWorkouts.)
+      var uploadFailed = false;
+      if (!_isUsingTempUserId) {
+        try {
+          final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+            _currentUserId!,
+          );
+          uploadFailed = !uploadResult.success;
+          if (kDebugMode) {
+            if (uploadResult.success) {
+              print(
+                '☁️ Uploaded ${uploadResult.count} synced Runna activities',
+              );
+            } else {
+              print('⚠️ Runna activity upload failed: ${uploadResult.error}');
+            }
+          }
+        } catch (e) {
+          uploadFailed = true;
+          if (kDebugMode) {
+            print('⚠️ Failed to upload synced Runna activities: $e');
+          }
+        }
+      }
+
+      // Stamp the coordinator's staleness clock BEFORE invalidating providers
+      // so the rebuild doesn't kick a duplicate sync — but only when the
+      // upload succeeded, so a failed upload retries promptly. (Same pattern
+      // as VDOT; see importVdotWorkouts for the full reasoning.)
+      if (!uploadFailed && ref.mounted) {
+        await ref
+            .read(integrationSyncCoordinatorProvider.notifier)
+            .markProviderSynced('runna');
+      }
+
+      if (!ref.mounted) return result;
+
+      state = AsyncData(state.value!.copyWith(importProgress: 0.8));
+      _invalidateCalendar();
+
+      state = AsyncData(
+        state.value!.copyWith(
+          isImporting: false,
+          clearSyncingProvider: true,
+          importProgress: 1.0,
+          importedWorkoutsCount: result.newWorkouts,
+          isNetworkError: false,
+          errorMessage: uploadFailed
+              ? 'Workouts saved, but syncing to your account didn\'t finish. '
+                    'We\'ll retry automatically.'
+              : null,
+          clearErrorMessage: !uploadFailed,
+          runnaLastSyncAt: DateTime.now(),
+        ),
+      );
+
+      _trackIntegrationSyncSuccess(
+        'runna',
+        result.newWorkouts,
+        skippedCount: result.skipped,
+      );
+      return result;
+    } catch (e) {
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: 'Failed to import workouts: $e',
+          ),
+        );
+      }
+      _trackIntegrationSyncFailed(
+        'runna',
+        'exception',
+        errorMessage: e.toString(),
+      );
+      return RunnaSyncResult.error(e.toString());
+    } finally {
+      _syncingProviders.remove('runna');
     }
   }
 
@@ -1077,10 +1426,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       final newWorkouts = getNewWorkouts(result);
       final updated = getUpdated(result);
       if (newWorkouts > 0 || updated > 0) {
-        if (_isUsingTempUserId) {
+        if (_isUsingTempUserId || _isOnboardingInProgress) {
           if (kDebugMode) {
             print(
-              '⏸️ Skipping Supabase activity upload during onboarding (temp user ID)',
+              '⏸️ Skipping Supabase activity upload during onboarding (${_isUsingTempUserId ? "temp user ID" : "profile not yet uploaded"})',
             );
           }
         } else {
@@ -1105,6 +1454,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         }
       }
 
+      // Re-check `ref.mounted`: the `uploadDirtyRecords` await above is
+      // another async gap since the last check, and both the event-save
+      // helpers below and `markProviderSynced` read `ref` — doing so after
+      // disposal throws UnmountedRefException (same pattern as
+      // MEALVANA-ENDURANCE-DEV-5J).
+      if (!ref.mounted) return result;
+
       // Handle provider-specific event creation
       int savedEventsCount = 0;
       final raceCandidates = getRaceCandidates?.call(result);
@@ -1115,6 +1471,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       } else if (eventData != null && eventData.isNotEmpty) {
         savedEventsCount = await _saveTrainingPeaksEvents(eventData);
       }
+
+      // Re-check again: the event-save helpers above have their own internal
+      // awaits (one per candidate/event), another gap since the check above.
+      if (!ref.mounted) return result;
 
       // Record this manual sync in the coordinator's staleness clock BEFORE
       // invalidating providers — otherwise the activities controller rebuilds,
@@ -1339,10 +1699,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
     // Clear stale local block state when TP OAuth succeeds.
     // We will re-apply the block later only if TP confirms non-premium.
-    if (connected) {
+    // Guard against disposal during the `_connectProvider` await above
+    // (UnmountedRefException family — same pattern as MEALVANA-ENDURANCE-DEV-5J).
+    if (connected && ref.mounted) {
       final prefs = ref.read(preferencesServiceProvider);
       await prefs.setTpWritebackPremiumBlocked(false);
-      ref.invalidate(preferencesServiceProvider);
+      if (ref.mounted) {
+        ref.invalidate(preferencesServiceProvider);
+      }
     }
 
     return connected;
@@ -1444,6 +1808,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
     if (state.value?.isVdotConnected == true) {
       final result = await importVdotWorkouts();
+      return result.newWorkouts;
+    }
+    if (state.value?.isRunnaConnected == true) {
+      final result = await importRunnaWorkouts();
       return result.newWorkouts;
     }
     return 0;

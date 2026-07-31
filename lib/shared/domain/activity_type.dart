@@ -1,9 +1,13 @@
+import 'package:flutter/material.dart';
+
 /// Shared activity type enum used across activities, events, and nutrition features
 /// Represents the type of endurance activity or event
 ///
 /// Single-sport types: running, cycling, swimming
 /// Multi-sport types: triathlon, duathlon, multisport
 /// Brick workouts: brick (combined consecutive training sessions)
+/// Import-only catch-all: other (strength/hiking/walking/yoga/etc. imported
+/// from providers that we don't natively support — see [isImportOnly])
 enum ActivityType {
   running,
   cycling,
@@ -11,7 +15,8 @@ enum ActivityType {
   triathlon,
   duathlon,
   multisport,
-  brick;
+  brick,
+  other;
 
   /// Get display name for UI
   String get displayName {
@@ -30,10 +35,14 @@ enum ActivityType {
         return 'Multisport';
       case ActivityType.brick:
         return 'Brick';
+      case ActivityType.other:
+        return 'Workout';
     }
   }
 
-  /// Get activity icon for UI (Material Icons)
+  /// Get activity icon for UI (Material Icons) as a string name.
+  /// Prefer [icon] (IconData) in widgets — this is kept for any code that
+  /// still stores/serializes icon names as strings.
   String get iconName {
     switch (this) {
       case ActivityType.running:
@@ -50,6 +59,28 @@ enum ActivityType {
         return 'sports'; // Generic sports icon
       case ActivityType.brick:
         return 'link'; // Chain link icon representing connected sports
+      case ActivityType.other:
+        return 'fitness_center';
+    }
+  }
+
+  /// Get activity icon for UI (real [IconData], for direct use in `Icon()`).
+  IconData get icon {
+    switch (this) {
+      case ActivityType.running:
+        return Icons.directions_run;
+      case ActivityType.cycling:
+        return Icons.directions_bike;
+      case ActivityType.swimming:
+        return Icons.pool;
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+        return Icons.emoji_events; // Generic multi-sport icon
+      case ActivityType.brick:
+        return Icons.link; // Chain link icon representing connected sports
+      case ActivityType.other:
+        return Icons.fitness_center;
     }
   }
 
@@ -70,6 +101,8 @@ enum ActivityType {
         return 'multisport';
       case ActivityType.brick:
         return 'brick';
+      case ActivityType.other:
+        return 'other';
     }
   }
 
@@ -93,7 +126,21 @@ enum ActivityType {
     return this == ActivityType.brick;
   }
 
-  /// Create ActivityType from database value
+  /// True for activity types that can only arrive via provider import
+  /// (Garmin/TrainingPeaks/FinalSurge/etc.) and are never manually created
+  /// in-app. Import-only activities can be deleted but not edited, and never
+  /// get a generated nutrition plan.
+  bool get isImportOnly {
+    return this == ActivityType.other;
+  }
+
+  /// True for activity types a user can manually create in-app.
+  /// Convenience inverse of [isImportOnly].
+  bool get isCreatable => !isImportOnly;
+
+  /// Create ActivityType from database value.
+  /// Unknown/unrecognized values map to [ActivityType.other] rather than
+  /// silently misclassifying them as a run.
   static ActivityType fromDbValue(String dbValue) {
     switch (dbValue.toLowerCase()) {
       case 'running':
@@ -110,8 +157,11 @@ enum ActivityType {
         return ActivityType.multisport;
       case 'brick':
         return ActivityType.brick;
+      case 'other':
+        return ActivityType.other;
       default:
-        return ActivityType.running; // Default fallback
+        return ActivityType
+            .other; // Safe fallback — do not silently call it a run
     }
   }
 

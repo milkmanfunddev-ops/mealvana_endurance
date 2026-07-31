@@ -1,0 +1,7 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. The live API returns camelCase; the wiki documents snake_case, and a robust client accepts either. Credentials redacted.",
+  "accessToken": "<ACCESS_TOKEN>",
+  "refreshToken": "<REFRESH_TOKEN>",
+  "expiresIn": 7776000,
+  "tokenType": "Bearer"
+}

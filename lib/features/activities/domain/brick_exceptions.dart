@@ -12,7 +12,8 @@ class BrickException implements Exception {
   final String? code;
 
   @override
-  String toString() => 'BrickException: $message${code != null ? ' (code: $code)' : ''}';
+  String toString() =>
+      'BrickException: $message${code != null ? ' (code: $code)' : ''}';
 }
 
 /// Thrown when brick validation fails (e.g., not enough sports, same day requirement)
@@ -45,6 +46,16 @@ class BrickValidationException extends BrickException {
     return const BrickValidationException(
       'Cannot create brick: all activities must be different sports',
       code: 'DUPLICATE_SPORTS',
+    );
+  }
+
+  /// A selected activity is not one of the three triathlon disciplines.
+  /// Strength, foam rolling and other imported activities are not groupable
+  /// (Notion 3a7e3fdb — Xuan flagged the old behaviour as wrong).
+  factory BrickValidationException.ineligibleSport() {
+    return const BrickValidationException(
+      'Cannot create brick: only swim, bike and run activities can be grouped',
+      code: 'INELIGIBLE_SPORT',
     );
   }
 
@@ -119,12 +130,20 @@ class BrickUngroupException extends BrickException {
 
 /// Thrown when macro generation for brick fails
 class BrickMacroGenerationException extends BrickException {
-  const BrickMacroGenerationException(super.message, {super.code, this.originalError, this.statusCode});
+  const BrickMacroGenerationException(
+    super.message, {
+    super.code,
+    this.originalError,
+    this.statusCode,
+  });
 
   final Object? originalError;
   final int? statusCode;
 
-  factory BrickMacroGenerationException.edgeFunctionError(String message, {int? statusCode}) {
+  factory BrickMacroGenerationException.edgeFunctionError(
+    String message, {
+    int? statusCode,
+  }) {
     return BrickMacroGenerationException(
       'Edge function error: $message',
       code: 'EDGE_FUNCTION_ERROR',

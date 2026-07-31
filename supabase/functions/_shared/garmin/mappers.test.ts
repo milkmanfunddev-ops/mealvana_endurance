@@ -24,6 +24,7 @@ import {
 import {
   mapGarminSportType,
   garminTimestampToISO,
+  garminTimestampToLocalNaiveISO,
   garminTimestampToDateString,
   mapGarminActivityToActivity,
   mapGarminDailySummary,
@@ -129,12 +130,16 @@ const fixtures = {
     parentSummaryId: 'activity-005',
   } as GarminActivitySummary,
 
+  // Reporter scenario (bug 38ee3fdb): a planned run completed as a 0.0-mi /
+  // 0-min run. Garmin sends explicit zeros that must overwrite the plan.
   zeroActivity: {
     userId: 'garmin-user-123',
     userAccessToken: 'token-abc',
     summaryId: 'activity-007',
     activityType: 'running',
     durationInSeconds: 0,
+    distanceInMeters: 0,
+    averagePaceInMinutesPerKilometer: 0,
     startTimeInSeconds: 1711584000,
     startTimeOffsetInSeconds: 0,
   } as GarminActivitySummary,
@@ -269,6 +274,25 @@ describe('Garmin Mappers', () => {
     });
   });
 
+  describe('garminTimestampToLocalNaiveISO', () => {
+    it('renders local wall-clock time with negative offset (EST)', () => {
+      // 2024-03-28 00:00:00 UTC at -5h = 2024-03-27 19:00:00 local
+      const result = garminTimestampToLocalNaiveISO(1711584000, -18000);
+      assertEquals(result, '2024-03-27T19:00:00');
+    });
+
+    it('renders local wall-clock time with positive offset (JST)', () => {
+      const result = garminTimestampToLocalNaiveISO(1711584000, 32400);
+      assertEquals(result, '2024-03-28T09:00:00');
+    });
+
+    it('emits no zone suffix (tz-naive column contract)', () => {
+      const result = garminTimestampToLocalNaiveISO(1711584000, 0);
+      assertEquals(result, '2024-03-28T00:00:00');
+      assertEquals(result.includes('Z'), false);
+    });
+  });
+
   describe('garminTimestampToDateString', () => {
     it('returns correct local date with negative offset (EST)', () => {
       // 2024-03-28 00:00:00 UTC with EST offset (-5 hours)
@@ -356,8 +380,24 @@ describe('Garmin Mappers', () => {
       assertEquals(result.activity_type, 'running');
     });
 
-    it('handles zero-duration activity', () => {
+    it('keeps zero duration/distance/pace so an abandoned run overwrites the plan', () => {
+      // Regression for bug 38ee3fdb: zero values were coerced to null/undefined
+      // by truthiness guards, so a 0.0-mi completed run never overwrote the
+      // planned 14-mi distance. They must now survive as real zeros.
       const result = mapGarminActivityToActivity(fixtures.zeroActivity, USER_ID);
+
+      assertEquals(result.duration_minutes, 0);
+      assertEquals(result.distance_meters, 0);
+      assertEquals(result.distance_miles, 0);
+      assertEquals(result.average_pace_minutes_per_mile, 0);
+    });
+
+    it('coerces missing (undefined) duration to null', () => {
+      const activity = {
+        ...fixtures.minimalActivity,
+        durationInSeconds: undefined as unknown as number,
+      };
+      const result = mapGarminActivityToActivity(activity, USER_ID);
 
       assertEquals(result.duration_minutes, null);
     });
@@ -376,10 +416,15 @@ describe('Garmin Mappers', () => {
       assertEquals(result.synced_from_provider, 'garmin');
     });
 
-    it('generates ISO scheduled_date_time', () => {
+    it('generates local-naive scheduled_date_time from actual start + offset', () => {
+      // Regression for bug 3a6e3fdb: scheduled_date_time is a tz-naive column
+      // holding local wall-clock time everywhere else in the system. Writing
+      // the UTC instant ('2024-03-28T00:00:00.000Z') rendered the wrong hour
+      // in the app; the mapper must emit the Garmin local time instead.
       const result = mapGarminActivityToActivity(fixtures.runningActivity, USER_ID);
 
-      assertEquals(result.scheduled_date_time, '2024-03-28T00:00:00.000Z');
+      // 2024-03-28 00:00:00 UTC at offset -18000 (EST) = 2024-03-27 19:00 local
+      assertEquals(result.scheduled_date_time, '2024-03-27T19:00:00');
     });
 
     it('uses activityName when provided', () => {

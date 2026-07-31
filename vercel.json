@@ -30,7 +30,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets|icons|flutter|canvaskit|skwasm).*)",
+      "source": "/((?!api|assets|icons|flutter|canvaskit|skwasm).*)",
       "destination": "/index.html"
     }
   ]

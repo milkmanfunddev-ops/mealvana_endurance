@@ -13,7 +13,7 @@
 > User decisions captured during planning:
 > - **Scope:** Full — ship Iteration 5 (real Garmin consumption) + reply to Elena.
 > - **Tone:** Honest — describe what's actually in code when we send.
-> - **Notion shape:** Root page with child pages for iterations 1–5 + tests; mirror hierarchy into `/docs/macro_calculations/`.
+> - **Notion shape:** Root page with child pages for iterations 1–5 + tests; mirror hierarchy into `/docs/features/macro_calculations/`.
 > - **BF% precedence:** User-entered body fat % always wins; Garmin body comp is fallback only.
 > - **Rollout:** No feature flag; ship Iteration 5 to all users at merge.
 > - **Email delivery:** Assistant drafts full markdown reply + zipped screenshots; user pastes into Zendesk.
@@ -46,12 +46,12 @@ The plan is a sequence of four phases. Each phase produces output we need for th
 
 ### Phase 1 — Docs sync from Notion (blocked on Notion auth)
 
-**Goal:** Make Notion the authoritative spec source and mirror it cleanly into `/docs/macro_calculations/` so the team (Rachel the nutrition advisor, Xuan, engineering) works off one version.
+**Goal:** Make Notion the authoritative spec source and mirror it cleanly into `/docs/features/macro_calculations/` so the team (Rachel the nutrition advisor, Xuan, engineering) works off one version.
 
 **Steps:**
 1. User authorizes Notion MCP (OAuth URL delivered earlier in conversation).
 2. Pull root page `Daily-Macro-Calculation-326e3fdb754c80199486c17ecf9947cd` and all child pages recursively via Notion tools.
-3. Replace/supersede the current `/docs/macro_calculations/` contents:
+3. Replace/supersede the current `/docs/features/macro_calculations/` contents:
    - Keep file names stable (`iteration1_spec.txt`, etc.) so links in `supabase/functions/calculate-daily-macros/README.md` (lines 305–310) don't break.
    - Convert `.txt` → `.md` and update README references.
    - Add: `iteration5_spec.md`, `iteration5_tests.md` (the Garmin integration iteration).
@@ -60,10 +60,10 @@ The plan is a sequence of four phases. Each phase produces output we need for th
 4. Diff Notion-sourced content against what's currently in-repo for iterations 1–4. If Notion has more recent updates (e.g., Rachel's Apr 7 post-workout recovery formulas per memory), surface them and flag for Xuan.
 
 **Critical files touched:**
-- `/docs/macro_calculations/README.md` (new)
-- `/docs/macro_calculations/iteration{1,2,3,4,5}_spec.md` (rewrite/new)
-- `/docs/macro_calculations/iteration{1,2,3,4,5}_tests.md` (rewrite/new)
-- `/docs/macro_calculations/garmin_data_usage.md` (new)
+- `/docs/features/macro_calculations/README.md` (new)
+- `/docs/features/macro_calculations/iteration{1,2,3,4,5}_spec.md` (rewrite/new)
+- `/docs/features/macro_calculations/iteration{1,2,3,4,5}_tests.md` (rewrite/new)
+- `/docs/features/macro_calculations/garmin_data_usage.md` (new)
 - `/supabase/functions/calculate-daily-macros/README.md` (update doc links)
 
 ---
@@ -235,7 +235,7 @@ Per phase:
 - Not pushing planned workouts FROM our app TO Garmin devices via the Workouts/Courses API. Elena's question was about *consumption*; the reciprocal direction is a future project.
 - Not implementing the Women's Health API (menstrual cycle) — separate Garmin API not enabled on our portal.
 - Not rebuilding activity matching logic — it already works; just reshooting screenshots with the new badge.
-- Not migrating the `.txt` files in `/docs/macro_calculations/` to `.md` eagerly before Notion sync — that merges into Phase 1.
+- Not migrating the `.txt` files in `/docs/features/macro_calculations/` to `.md` eagerly before Notion sync — that merges into Phase 1.
 
 ## Reuse notes
 

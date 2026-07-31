@@ -27,6 +27,8 @@ import 'package:mealvana_endurance/features/integrations/domain/integration_exce
 import 'package:mealvana_endurance/features/integrations/domain/sync_change_result.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
+import '../../helpers/fakes/recording_analytics_tracker.dart';
+
 // ---------------------------------------------------------------------------
 // Mocks and fakes
 // ---------------------------------------------------------------------------
@@ -57,17 +59,16 @@ const _provider = 'final_surge';
 IntegrationModel _activeIntegration({
   DateTime? tokenExpiresAt,
   String? refreshToken = 'refresh-token',
-}) =>
-    IntegrationModel(
-      userId: _userId,
-      provider: _provider,
-      accessToken: 'access-token',
-      refreshToken: refreshToken,
-      tokenExpiresAt: tokenExpiresAt,
-      providerAthleteId: 'athlete-1',
-      providerAthleteName: 'Jane Doe',
-      isActive: true,
-    );
+}) => IntegrationModel(
+  userId: _userId,
+  provider: _provider,
+  accessToken: 'access-token',
+  refreshToken: refreshToken,
+  tokenExpiresAt: tokenExpiresAt,
+  providerAthleteId: 'athlete-1',
+  providerAthleteName: 'Jane Doe',
+  isActive: true,
+);
 
 Activity _activity({
   required String id,
@@ -75,20 +76,19 @@ Activity _activity({
   DateTime? scheduledDateTime,
   DateTime? providerDeletedAt,
   ActivityStatus status = ActivityStatus.planned,
-}) =>
-    Activity(
-      id: id,
-      userId: _userId,
-      activityType: ActivityType.running,
-      title: 'Test Run',
-      scheduledDateTime: scheduledDateTime ?? DateTime(2026, 6, 1, 8),
-      status: status,
-      providerWorkoutId: providerWorkoutId,
-      syncedFromProvider: _provider,
-      providerDeletedAt: providerDeletedAt,
-      createdAt: DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-    );
+}) => Activity(
+  id: id,
+  userId: _userId,
+  activityType: ActivityType.running,
+  title: 'Test Run',
+  scheduledDateTime: scheduledDateTime ?? DateTime(2026, 6, 1, 8),
+  status: status,
+  providerWorkoutId: providerWorkoutId,
+  syncedFromProvider: _provider,
+  providerDeletedAt: providerDeletedAt,
+  createdAt: DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+);
 
 FinalSurgeSyncService _buildService({
   required MockFinalSurgeApiClient apiClient,
@@ -96,14 +96,15 @@ FinalSurgeSyncService _buildService({
   required MockActivitiesRepository activitiesRepo,
   required MockFinalSurgeTransformer transformer,
   required MockChangeDetectionService changeDetection,
-}) =>
-    FinalSurgeSyncService(
-      apiClient: apiClient,
-      integrationsRepository: integrationsRepo,
-      activitiesRepository: activitiesRepo,
-      transformer: transformer,
-      changeDetectionService: changeDetection,
-    );
+  RecordingAnalyticsTracker? analytics,
+}) => FinalSurgeSyncService(
+  apiClient: apiClient,
+  integrationsRepository: integrationsRepo,
+  activitiesRepository: activitiesRepo,
+  transformer: transformer,
+  changeDetectionService: changeDetection,
+  analytics: analytics,
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -120,6 +121,7 @@ void main() {
   late MockActivitiesRepository mockActivitiesRepo;
   late MockFinalSurgeTransformer mockTransformer;
   late MockChangeDetectionService mockChangeDetection;
+  late RecordingAnalyticsTracker analytics;
   late FinalSurgeSyncService service;
 
   setUp(() {
@@ -128,6 +130,7 @@ void main() {
     mockActivitiesRepo = MockActivitiesRepository();
     mockTransformer = MockFinalSurgeTransformer();
     mockChangeDetection = MockChangeDetectionService();
+    analytics = RecordingAnalyticsTracker();
 
     service = _buildService(
       apiClient: mockApiClient,
@@ -135,6 +138,7 @@ void main() {
       activitiesRepo: mockActivitiesRepo,
       transformer: mockTransformer,
       changeDetection: mockChangeDetection,
+      analytics: analytics,
     );
 
     // Default stubs for side-effect methods.
@@ -292,13 +296,24 @@ void main() {
 
       verify(() => mockActivitiesRepo.insertActivity(any())).called(1);
       verifyNever(() => mockActivitiesRepo.softDeleteFromProvider(any()));
+
+      // A provider-synced workout is still "a workout planned" — it just did
+      // not come through ActivitiesController, which is the only other place
+      // that fires this. Without a fire here, `source` could only ever read
+      // 'manual' and the manual-vs-synced split would be unmeasurable.
+      final planned = analytics.findEvents('workout_planned');
+      expect(planned, hasLength(1));
+      expect(planned.single.properties!['source'], 'synced');
+      expect(planned.single.properties!['provider'], 'final_surge');
+      expect(planned.single.properties!['activity_id'], 'remote-1');
     });
 
-    test('soft-deletes activities flagged as deleted by change detection',
-        () async {
-      final fakeEmptyResponse = FinalSurgeWorkoutsResponse(
-        success: true,
-        workouts: [],
+    test('does not report a synced workout as manually planned', () async {
+      // Guards the specific regression: a hardcoded source: 'manual' at the
+      // controller call site.
+      final remoteActivity = _activity(
+        id: 'remote-2',
+        providerWorkoutId: 'p-2',
       );
 
       when(
@@ -307,8 +322,29 @@ void main() {
           numDays: any(named: 'numDays'),
           numWorkouts: any(named: 'numWorkouts'),
         ),
-      ).thenAnswer((_) async => fakeEmptyResponse);
-
+      ).thenAnswer(
+        (_) async => FinalSurgeWorkoutsResponse(
+          success: true,
+          workouts: [
+            {'WorkoutId': 'p-2', 'HasStructuredWorkout': false},
+          ],
+        ),
+      );
+      when(() => mockTransformer.extractWorkoutId(any())).thenReturn('p-2');
+      when(
+        () => mockTransformer.transform(
+          any(),
+          any(),
+          structuredData: any(named: 'structuredData'),
+        ),
+      ).thenReturn(
+        FinalSurgeTransformResult(
+          activity: remoteActivity,
+          syncedFromProvider: _provider,
+          providerWorkoutId: 'p-2',
+          lastSyncedAt: DateTime(2026, 6, 1),
+        ),
+      );
       when(
         () => mockChangeDetection.detectChanges(
           localActivities: any(named: 'localActivities'),
@@ -317,20 +353,132 @@ void main() {
         ),
       ).thenReturn(
         SyncChangeResult(
-          newActivities: [],
+          newActivities: [remoteActivity],
           updatedActivities: [],
-          deletedActivityIds: ['local-1'],
+          deletedActivityIds: [],
           unchangedCount: 0,
         ),
       );
 
-      final result = await service.syncWorkouts(_userId, numDays: 7);
+      await service.syncWorkouts(_userId, numDays: 7);
 
-      expect(result.success, isTrue);
-      expect(result.deleted, 1);
-      verify(() => mockActivitiesRepo.softDeleteFromProvider('local-1'))
-          .called(1);
+      final sources = analytics
+          .findEvents('workout_planned')
+          .map((e) => e.properties!['source'])
+          .toList();
+      expect(sources, isNotEmpty);
+      expect(sources, everyElement('synced'));
+      expect(sources, isNot(contains('manual')));
     });
+
+    test(
+      'syncWorkoutsByDateRange also reports synced workouts as synced',
+      () async {
+        // The date-range path inserts through the same seam and must not be the
+        // one place the manual/synced split silently reverts to 'manual'.
+        final remoteActivity = _activity(
+          id: 'remote-3',
+          providerWorkoutId: 'p-3',
+        );
+
+        when(
+          () => mockApiClient.getWorkoutsByDateRange(
+            any(),
+            startDate: any(named: 'startDate'),
+            endDate: any(named: 'endDate'),
+          ),
+        ).thenAnswer(
+          (_) async => FinalSurgeWorkoutsResponse(
+            success: true,
+            workouts: [
+              {'WorkoutId': 'p-3', 'HasStructuredWorkout': false},
+            ],
+          ),
+        );
+        when(() => mockTransformer.extractWorkoutId(any())).thenReturn('p-3');
+        when(
+          () => mockTransformer.transform(
+            any(),
+            any(),
+            structuredData: any(named: 'structuredData'),
+          ),
+        ).thenReturn(
+          FinalSurgeTransformResult(
+            activity: remoteActivity,
+            syncedFromProvider: _provider,
+            providerWorkoutId: 'p-3',
+            lastSyncedAt: DateTime(2026, 6, 1),
+          ),
+        );
+        when(
+          () => mockChangeDetection.detectChanges(
+            localActivities: any(named: 'localActivities'),
+            remoteWorkouts: any(named: 'remoteWorkouts'),
+            provider: any(named: 'provider'),
+          ),
+        ).thenReturn(
+          SyncChangeResult(
+            newActivities: [remoteActivity],
+            updatedActivities: [],
+            deletedActivityIds: [],
+            unchangedCount: 0,
+          ),
+        );
+
+        await service.syncWorkoutsByDateRange(
+          _userId,
+          startDate: DateTime(2026, 6, 1),
+          endDate: DateTime(2026, 6, 30),
+        );
+
+        final planned = analytics.findEvents('workout_planned');
+        expect(planned, hasLength(1));
+        expect(planned.single.properties!['source'], 'synced');
+        expect(planned.single.properties!['provider'], 'final_surge');
+        expect(planned.single.properties!['activity_id'], 'remote-3');
+      },
+    );
+
+    test(
+      'soft-deletes activities flagged as deleted by change detection',
+      () async {
+        final fakeEmptyResponse = FinalSurgeWorkoutsResponse(
+          success: true,
+          workouts: [],
+        );
+
+        when(
+          () => mockApiClient.getUpcomingWorkouts(
+            any(),
+            numDays: any(named: 'numDays'),
+            numWorkouts: any(named: 'numWorkouts'),
+          ),
+        ).thenAnswer((_) async => fakeEmptyResponse);
+
+        when(
+          () => mockChangeDetection.detectChanges(
+            localActivities: any(named: 'localActivities'),
+            remoteWorkouts: any(named: 'remoteWorkouts'),
+            provider: any(named: 'provider'),
+          ),
+        ).thenReturn(
+          SyncChangeResult(
+            newActivities: [],
+            updatedActivities: [],
+            deletedActivityIds: ['local-1'],
+            unchangedCount: 0,
+          ),
+        );
+
+        final result = await service.syncWorkouts(_userId, numDays: 7);
+
+        expect(result.success, isTrue);
+        expect(result.deleted, 1);
+        verify(
+          () => mockActivitiesRepo.softDeleteFromProvider('local-1'),
+        ).called(1);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -338,8 +486,7 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('token expiry', () {
-    test(
-        'returns requiresReauth when no refresh token is available and '
+    test('returns requiresReauth when no refresh token is available and '
         'the API throws TokenExpiredException', () async {
       // Integration without a refresh token — refresh will fail immediately.
       final expiredIntegration = _activeIntegration(
@@ -418,8 +565,7 @@ void main() {
       cds = ChangeDetectionService();
     });
 
-    test(
-        'already-soft-deleted activity is NOT re-added to deletedActivityIds '
+    test('already-soft-deleted activity is NOT re-added to deletedActivityIds '
         'when absent from the remote list', () {
       final alreadyDeleted = _activity(
         id: 'local-already-deleted',
@@ -444,8 +590,7 @@ void main() {
       expect(result.hasChanges, isFalse);
     });
 
-    test(
-        'only genuinely-new deletions appear in deletedActivityIds '
+    test('only genuinely-new deletions appear in deletedActivityIds '
         'when mixed with already-deleted rows', () {
       final alreadyDeleted = _activity(
         id: 'local-already-deleted',
@@ -476,13 +621,13 @@ void main() {
       expect(
         result.deletedActivityIds,
         equals(['local-newly-removed']),
-        reason: 'Only the genuinely-removed activity should appear, not '
+        reason:
+            'Only the genuinely-removed activity should appear, not '
             'the one already marked providerDeletedAt.',
       );
     });
 
-    test(
-        'all-already-deleted local rows produce zero changes '
+    test('all-already-deleted local rows produce zero changes '
         '(no spurious upload churn on no-op syncs)', () {
       final rows = List.generate(
         5,
@@ -502,14 +647,16 @@ void main() {
       expect(result.deletedActivityIds, isEmpty);
       expect(result.newActivities, isEmpty);
       expect(result.updatedActivities, isEmpty);
-      expect(result.hasChanges, isFalse,
-          reason:
-              'A no-op sync against a fully-deleted local set should produce '
-              'zero changes, which means zero dirty uploads.');
+      expect(
+        result.hasChanges,
+        isFalse,
+        reason:
+            'A no-op sync against a fully-deleted local set should produce '
+            'zero changes, which means zero dirty uploads.',
+      );
     });
 
-    test(
-        'activity with providerDeletedAt null IS still flagged when missing '
+    test('activity with providerDeletedAt null IS still flagged when missing '
         'from remote (normal deletion flow still works)', () {
       final normalActivity = _activity(
         id: 'local-normal',

@@ -13,27 +13,31 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 void main() {
   final now = DateTime(2026, 6, 17, 12);
 
-  MealNode mealNode() => MealNode(MealLog(
-        id: 'm',
-        userId: 'u',
-        logDate: '2026-06-17',
-        slot: MealSlot.lunch,
-        name: 'M',
-        source: MealLogSource.manual,
-        components: const [],
-        createdAt: now,
-        updatedAt: now,
-      ));
+  MealNode mealNode() => MealNode(
+    MealLog(
+      id: 'm',
+      userId: 'u',
+      logDate: '2026-06-17',
+      slot: MealSlot.lunch,
+      name: 'M',
+      source: MealLogSource.manual,
+      components: const [],
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
 
-  WorkoutNode workoutNode() => WorkoutNode(Activity(
-        id: 'w',
-        userId: 'u',
-        activityType: ActivityType.cycling,
-        title: 'Ride',
-        scheduledDateTime: DateTime(2026, 6, 17, 16),
-        createdAt: now,
-        updatedAt: now,
-      ));
+  WorkoutNode workoutNode() => WorkoutNode(
+    Activity(
+      id: 'w',
+      userId: 'u',
+      activityType: ActivityType.cycling,
+      title: 'Ride',
+      scheduledDateTime: DateTime(2026, 6, 17, 16),
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
 
   DailyMacroTargets targets({
     double rmr = 1000,
@@ -42,22 +46,21 @@ void main() {
     double carb = 300,
     double prot = 140,
     double fat = 75,
-  }) =>
-      DailyMacroTargets(
-        id: 't',
-        userId: 'u',
-        targetDate: DateTime(2026, 6, 17),
-        carbG: carb,
-        protG: prot,
-        fatG: fat,
-        tdee: rmr + (neat ?? 0) + session,
-        rmr: rmr,
-        sessionKcal: session,
-        neatKcal: neat,
-        mode: 'prospective',
-        createdAt: now,
-        updatedAt: now,
-      );
+  }) => DailyMacroTargets(
+    id: 't',
+    userId: 'u',
+    targetDate: DateTime(2026, 6, 17),
+    carbG: carb,
+    protG: prot,
+    fatG: fat,
+    tdee: rmr + (neat ?? 0) + session,
+    rmr: rmr,
+    sessionKcal: session,
+    neatKcal: neat,
+    mode: 'prospective',
+    createdAt: now,
+    updatedAt: now,
+  );
 
   group('FuelTimelineFilter', () {
     test('matches gates meal vs workout nodes', () {
@@ -95,23 +98,26 @@ void main() {
       DailyMacroTargets? t,
       ConsumedTotals consumed = const ConsumedTotals(),
       double workoutBurned = 0,
-    }) =>
-        DayEnergySummary.compute(
-          selectedDate: selected,
-          now: at ?? now,
-          targets: t ?? targets(),
-          consumed: consumed,
-          workoutBurnedKcal: workoutBurned,
-        );
+    }) => DayEnergySummary.compute(
+      selectedDate: selected,
+      now: at ?? now,
+      targets: t ?? targets(),
+      consumed: consumed,
+      workoutBurnedKcal: workoutBurned,
+    );
 
     test('today prorates resting+daily by elapsed fraction', () {
-      final at6 = compute(DateTime(2026, 6, 17),
-          at: DateTime(2026, 6, 17, 6)); // 360/1440 = 0.25
+      final at6 = compute(
+        DateTime(2026, 6, 17),
+        at: DateTime(2026, 6, 17, 6),
+      ); // 360/1440 = 0.25
       expect(at6.restingKcal, closeTo(250, 1e-6));
       expect(at6.dailyActivityKcal, closeTo(100, 1e-6));
 
-      final at18 = compute(DateTime(2026, 6, 17),
-          at: DateTime(2026, 6, 17, 18)); // 0.75
+      final at18 = compute(
+        DateTime(2026, 6, 17),
+        at: DateTime(2026, 6, 17, 18),
+      ); // 0.75
       expect(at18.restingKcal, closeTo(750, 1e-6));
       expect(at18.dailyActivityKcal, closeTo(300, 1e-6));
     });
@@ -132,8 +138,11 @@ void main() {
     });
 
     test('future day → no burn, net equals eaten', () {
-      final f = compute(DateTime(2026, 6, 18),
-          consumed: const ConsumedTotals(calories: 800), workoutBurned: 500);
+      final f = compute(
+        DateTime(2026, 6, 18),
+        consumed: const ConsumedTotals(calories: 800),
+        workoutBurned: 500,
+      );
       expect(f.dayKind, DayKind.future);
       expect(f.hasBurnData, isFalse);
       expect(f.burnedCalories, 0);
@@ -141,10 +150,12 @@ void main() {
     });
 
     test('net intake = eaten - burned (today)', () {
-      final s = compute(DateTime(2026, 6, 17),
-          at: DateTime(2026, 6, 17, 12), // 0.5 → resting 500, daily 200
-          consumed: const ConsumedTotals(calories: 1000),
-          workoutBurned: 300);
+      final s = compute(
+        DateTime(2026, 6, 17),
+        at: DateTime(2026, 6, 17, 12), // 0.5 → resting 500, daily 200
+        consumed: const ConsumedTotals(calories: 1000),
+        workoutBurned: 300,
+      );
       expect(s.burnedCalories, 1000); // 500 + 200 + 300
       expect(s.netCalories, 0);
     });
@@ -164,17 +175,25 @@ void main() {
     });
 
     test('macro + calorie pct clamp to 0..1', () {
-      final over = compute(DateTime(2026, 6, 17),
-          t: targets(carb: 100, prot: 50, fat: 20),
-          consumed: const ConsumedTotals(
-              calories: 99999, carbsG: 999, proteinG: 999, fatG: 999));
+      final over = compute(
+        DateTime(2026, 6, 17),
+        t: targets(carb: 100, prot: 50, fat: 20),
+        consumed: const ConsumedTotals(
+          calories: 99999,
+          carbsG: 999,
+          proteinG: 999,
+          fatG: 999,
+        ),
+      );
       expect(over.caloriesPct, 1.0);
       expect(over.carbsPct, 1.0);
       expect(over.proteinPct, 1.0);
       expect(over.fatPct, 1.0);
 
-      final half = compute(DateTime(2026, 6, 17),
-          consumed: const ConsumedTotals(carbsG: 150)); // target 300
+      final half = compute(
+        DateTime(2026, 6, 17),
+        consumed: const ConsumedTotals(carbsG: 150),
+      ); // target 300
       expect(half.carbsPct, closeTo(0.5, 1e-9));
     });
   });

@@ -57,8 +57,8 @@ class MealLoggingService {
   MealLoggingService({
     required MealLogRepository mealLogRepository,
     required SavedMealsRepository savedMealsRepository,
-  })  : _mealLogRepo = mealLogRepository,
-        _savedMealsRepo = savedMealsRepository;
+  }) : _mealLogRepo = mealLogRepository,
+       _savedMealsRepo = savedMealsRepository;
 
   final MealLogRepository _mealLogRepo;
   final SavedMealsRepository _savedMealsRepo;
@@ -76,7 +76,7 @@ class MealLoggingService {
   Future<MealLog> logManualMeal({
     required String userId,
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     int? calories,
     double? carbsG,
@@ -116,7 +116,7 @@ class MealLoggingService {
   Future<MealLog> logFromComponents({
     required String userId,
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     required MealLogSource source,
     required List<MealComponent> components,
@@ -160,7 +160,7 @@ class MealLoggingService {
   Future<MealLog> logSavedMeal({
     required SavedMeal savedMeal,
     required String userId,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
   }) async {
@@ -182,6 +182,56 @@ class MealLoggingService {
     return log;
   }
 
+  /// Bulk-log several saved meals to [logDate] in a single batch — the
+  /// multi-log path.
+  ///
+  /// Mirrors [logSavedMeal] per item (copies components, computes totals, sets
+  /// [savedMealId] provenance, bumps `lastUsedAt`) but persists every log in
+  /// one round-trip via [MealLogRepository.insertLogs]. Returns the created
+  /// logs. A null/omitted [slot] leaves each log unslotted.
+  Future<List<MealLog>> logSavedMeals({
+    required List<SavedMeal> savedMeals,
+    required String userId,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+  }) async {
+    if (savedMeals.isEmpty) return const <MealLog>[];
+    final now = DateTime.now();
+    final logs = savedMeals
+        .map((savedMeal) {
+          final totals = _sumComponents(savedMeal.components);
+          return MealLog(
+            id: _uuid.v4(),
+            userId: userId,
+            logDate: logDate,
+            slot: slot,
+            name: savedMeal.name,
+            source: MealLogSource.saved,
+            components: savedMeal.components,
+            calories: totals.calories,
+            carbsG: totals.carbsG,
+            proteinG: totals.proteinG,
+            fatG: totals.fatG,
+            sodiumMg: totals.sodiumMg,
+            photoPath: savedMeal.photoPath,
+            savedMealId: savedMeal.id,
+            eatenAt: eatenAt,
+            createdAt: now,
+            updatedAt: now,
+          );
+        })
+        .toList(growable: false);
+
+    final saved = await _mealLogRepo.insertLogs(logs);
+
+    // Non-blocking recency bump so the favorites list stays sorted.
+    for (final meal in savedMeals) {
+      unawaited(_savedMealsRepo.touchLastUsed(meal.id));
+    }
+    return saved;
+  }
+
   /// Log a meal from the recipe catalog, scaling macros by [params.servings].
   ///
   /// Builds a single [MealComponent] representing the whole recipe (rather than
@@ -190,7 +240,7 @@ class MealLoggingService {
   Future<MealLog> logRecipe({
     required RecipeLogParams params,
     required String userId,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
     String? notes,
@@ -246,10 +296,7 @@ class MealLoggingService {
   /// [customName] overrides the log's display name (useful when the user wants
   /// a friendlier label for their saved meal). If omitted, the log's [name] is
   /// used.
-  Future<SavedMeal> saveLogAsFavorite(
-    MealLog log, {
-    String? customName,
-  }) {
+  Future<SavedMeal> saveLogAsFavorite(MealLog log, {String? customName}) {
     final now = DateTime.now();
     final meal = SavedMeal(
       id: _uuid.v4(),
@@ -317,4 +364,3 @@ class MealLoggingService {
     return servings.toStringAsFixed(1);
   }
 }
-

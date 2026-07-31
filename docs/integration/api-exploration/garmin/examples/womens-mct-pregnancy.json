@@ -1,0 +1,44 @@
+{
+  "mct": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "x2faf44e-175f69ac4fa",
+      "periodStartDate": "2020-10-11",
+      "dayInCycle": 110,
+      "currentPhase": 6,
+      "currentPhaseType": "SECOND_TRIMESTER",
+      "lengthOfCurrentPhase": 98,
+      "daysUntilNextPhase": 80,
+      "predictedCycleLength": 280,
+      "isPredictedCycle": false,
+      "cycleLength": 280,
+      "lastUpdatedTimeInSeconds": 1606160139,
+      "hasSpecifiedCycleLength": false,
+      "hasSpecifiedPeriodLength": false,
+      "pregnancySnapshot": {
+        "title": "Pregnancy 2021",
+        "originalDueDate": "2021-07-17",
+        "dueDate": "2021-07-17",
+        "pregnancyCycleStartDate": "2020-10-11",
+        "numOfBabies": "SINGLE",
+        "weightGoalUserInput": {
+          "heightInCentimeters": 162,
+          "weightInGrams": 58966
+        },
+        "bloodGlucoseList": [
+          {
+            "valueInMilligramsPerDeciliter": 97.0,
+            "logType": "BEFOREBED",
+            "reportTimestampInSeconds": 1607032423
+          },
+          {
+            "valueInMilligramsPerDeciliter": 92.0,
+            "logType": "BEFOREMEAL",
+            "reportTimestampInSeconds": 1607032403
+          }
+        ]
+      }
+    }
+  ]
+}

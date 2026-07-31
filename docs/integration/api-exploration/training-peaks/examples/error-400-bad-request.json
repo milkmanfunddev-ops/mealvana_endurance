@@ -1,0 +1,17 @@
+{
+  "_comment": "HTTP 400 Bad Request. TrainingPeaks returns an error envelope with 'error' and 'error_description'. Common triggers: a workouts date range exceeding 45 days, a WorkoutDay more than 7 days in the past or 1 year in the future on a plan write, or a dead refresh_token on /oauth/token.",
+  "_status": 400,
+  "_body": {
+    "error": "invalid_request",
+    "error_description": "Field 'WorkoutDay' is required"
+  },
+  "_documented_write_constraints": {
+    "WorkoutDay": "cannot exceed 7 days past or 1 year future; the time component is ignored",
+    "TotalTimePlanned": "max 99:59:59 in decimal hours",
+    "DistancePlanned": "max 99999999 metres",
+    "TSSPlanned": "max 9999",
+    "IFPlanned": "max 5",
+    "workouts_range": "date range max 45 days; end date max 365 days in the future",
+    "structure_overrides": "when a valid non-RPE Structure is uploaded, TotalTimePlanned / TSSPlanned / IFPlanned are IGNORED and recomputed from the structure"
+  }
+}

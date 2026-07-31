@@ -35,7 +35,10 @@ void main() {
         coachInsightMarker: 'abc123',
       );
       final companion = formula.toDriftCompanion();
-      expect(companion.coachInsightText.value, 'Add more sodium for hot-weather runs.');
+      expect(
+        companion.coachInsightText.value,
+        'Add more sodium for hot-weather runs.',
+      );
       expect(companion.coachInsightMarker.value, 'abc123');
     });
 

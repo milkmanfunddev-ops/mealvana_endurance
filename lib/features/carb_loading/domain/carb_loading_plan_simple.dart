@@ -39,10 +39,10 @@ class CarbLoadingPlan {
   final DateTime raceDate;
   final RaceDistance raceDistance;
   final TrainingVolume trainingVolume;
-  final int dailyCarbTargetG;        // e.g., 500g
-  final int dailyServingsTarget;     // e.g., 10 servings (500g ÷ 50g)
+  final int dailyCarbTargetG; // e.g., 500g
+  final int dailyServingsTarget; // e.g., 10 servings (500g ÷ 50g)
   final double bodyWeightKg;
-  final double carbsPerKgTarget;     // 8g/kg from Featherstone guide
+  final double carbsPerKgTarget; // 8g/kg from Featherstone guide
   final Map<int, DayFoodSelections> daySelections; // Day -2, -1, 0
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -130,12 +130,15 @@ class CarbLoadingPlan {
 
   /// Create from JSON
   factory CarbLoadingPlan.fromJson(Map<String, dynamic> json) {
-    final daySelectionsJson = json['daySelections'] as Map<String, dynamic>? ?? {};
+    final daySelectionsJson =
+        json['daySelections'] as Map<String, dynamic>? ?? {};
     final daySelections = <int, DayFoodSelections>{};
 
     for (final entry in daySelectionsJson.entries) {
       final day = int.parse(entry.key);
-      daySelections[day] = DayFoodSelections.fromJson(entry.value as Map<String, dynamic>);
+      daySelections[day] = DayFoodSelections.fromJson(
+        entry.value as Map<String, dynamic>,
+      );
     }
 
     return CarbLoadingPlan(
@@ -253,9 +256,7 @@ class CarbLoadingPlan {
 class DayFoodSelections {
   final Map<String, MealFoods> meals; // breakfast, lunch, snack1, etc.
 
-  const DayFoodSelections({
-    required this.meals,
-  });
+  const DayFoodSelections({required this.meals});
 
   /// Create empty day with default meals
   factory DayFoodSelections.empty() {
@@ -276,7 +277,9 @@ class DayFoodSelections {
     final meals = <String, MealFoods>{};
 
     for (final entry in mealsJson.entries) {
-      meals[entry.key] = MealFoods.fromJson(entry.value as Map<String, dynamic>);
+      meals[entry.key] = MealFoods.fromJson(
+        entry.value as Map<String, dynamic>,
+      );
     }
 
     return DayFoodSelections(meals: meals);
@@ -302,12 +305,8 @@ class DayFoodSelections {
   }
 
   /// Create a copy with updated meal
-  DayFoodSelections copyWith({
-    Map<String, MealFoods>? meals,
-  }) {
-    return DayFoodSelections(
-      meals: meals ?? this.meals,
-    );
+  DayFoodSelections copyWith({Map<String, MealFoods>? meals}) {
+    return DayFoodSelections(meals: meals ?? this.meals);
   }
 
   /// Update specific meal
@@ -322,9 +321,7 @@ class DayFoodSelections {
 class MealFoods {
   final Map<String, int> selectedFoods; // {foodName: quantity}
 
-  const MealFoods({
-    required this.selectedFoods,
-  });
+  const MealFoods({required this.selectedFoods});
 
   /// Create empty meal
   factory MealFoods.empty() {
@@ -333,7 +330,8 @@ class MealFoods {
 
   /// Create from JSON
   factory MealFoods.fromJson(Map<String, dynamic> json) {
-    final selectedFoodsJson = json['selectedFoods'] as Map<String, dynamic>? ?? {};
+    final selectedFoodsJson =
+        json['selectedFoods'] as Map<String, dynamic>? ?? {};
     final selectedFoods = <String, int>{};
 
     for (final entry in selectedFoodsJson.entries) {
@@ -393,12 +391,8 @@ class MealFoods {
   }
 
   /// Create a copy with updated foods
-  MealFoods copyWith({
-    Map<String, int>? selectedFoods,
-  }) {
-    return MealFoods(
-      selectedFoods: selectedFoods ?? this.selectedFoods,
-    );
+  MealFoods copyWith({Map<String, int>? selectedFoods}) {
+    return MealFoods(selectedFoods: selectedFoods ?? this.selectedFoods);
   }
 }
 

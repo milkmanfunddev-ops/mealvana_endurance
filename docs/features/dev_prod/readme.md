@@ -280,7 +280,7 @@ git push origin main  # Waits for manual approval, then deploys to prod
 flutter test
 
 # Edge function tests (150+ tests)
-cd test/local_edge_functions
+cd _archived/test/local_edge_functions
 npm install
 npm test
 ```
@@ -334,7 +334,7 @@ See [/docs/test/README.md](/docs/test/README.md) for complete testing documentat
 1. **Tier 1: Local Unit Tests (Vitest)**
    - Fast, deterministic testing of pure function logic
    - No database dependencies
-   - Execution: `cd test/local_edge_functions && npm test`
+   - Execution: `cd _archived/test/local_edge_functions && npm test`
 
 2. **Tier 2: Local Integration Tests (Dart + Local Supabase)**
    - Realistic testing with isolated database
@@ -411,7 +411,7 @@ flutter test test/path/to/test_file.dart
 flutter test --reporter expanded
 
 # Check edge function tests
-cd test/local_edge_functions
+cd _archived/test/local_edge_functions
 npm test -- --reporter=verbose
 ```
 

@@ -16,10 +16,10 @@ class FinalSurgeOAuthService {
     required IntegrationsRepository repository,
     required String clientId,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
-  })  : _apiClient = apiClient,
-        _repository = repository,
-        _clientId = clientId,
-        _callbackUrlScheme = callbackUrlScheme;
+  }) : _apiClient = apiClient,
+       _repository = repository,
+       _clientId = clientId,
+       _callbackUrlScheme = callbackUrlScheme;
 
   final FinalSurgeApiClient _apiClient;
   final IntegrationsRepository _repository;
@@ -124,7 +124,9 @@ class FinalSurgeOAuthService {
     );
 
     if (kDebugMode) {
-      print('   Integration model created: provider=${integration.provider}, isActive=${integration.isActive}');
+      print(
+        '   Integration model created: provider=${integration.provider}, isActive=${integration.isActive}',
+      );
     }
 
     // 7. Save to database (upsert - replaces existing if present)

@@ -17,15 +17,19 @@ class TemplateFoodsTable extends Table {
   TextColumn get servingSize => text().named('serving_size')();
 
   /// Weight per serving in grams
-  RealColumn get servingWeightG => real().nullable().named('serving_weight_g')();
+  RealColumn get servingWeightG =>
+      real().nullable().named('serving_weight_g')();
 
   // Nutrition per serving
   IntColumn get calories => integer().withDefault(const Constant(0))();
-  RealColumn get carbsG => real().withDefault(const Constant(0)).named('carbs_g')();
-  RealColumn get proteinG => real().withDefault(const Constant(0)).named('protein_g')();
+  RealColumn get carbsG =>
+      real().withDefault(const Constant(0)).named('carbs_g')();
+  RealColumn get proteinG =>
+      real().withDefault(const Constant(0)).named('protein_g')();
   RealColumn get fatG => real().withDefault(const Constant(0)).named('fat_g')();
   RealColumn get fiberG => real().nullable().named('fiber_g')();
-  RealColumn get sodiumMg => real().withDefault(const Constant(0)).named('sodium_mg')();
+  RealColumn get sodiumMg =>
+      real().withDefault(const Constant(0)).named('sodium_mg')();
   RealColumn get fluidMl => real().nullable().named('fluid_ml')();
 
   // Metadata
@@ -33,51 +37,76 @@ class TemplateFoodsTable extends Table {
   TextColumn get allergens => text().withDefault(const Constant('[]'))();
 
   /// Digestion speed: fast/medium/slow
-  TextColumn get digestionSpeed => text().withDefault(const Constant('medium')).named('digestion_speed')();
+  TextColumn get digestionSpeed =>
+      text().withDefault(const Constant('medium')).named('digestion_speed')();
 
-  BoolColumn get isActive => boolean().withDefault(const Constant(true)).named('is_active')();
+  BoolColumn get isActive =>
+      boolean().withDefault(const Constant(true)).named('is_active')();
 
   /// Diets that should exclude this food (JSON array string)
-  TextColumn get excludedDiets => text().withDefault(const Constant('[]')).named('excluded_diets')();
+  TextColumn get excludedDiets =>
+      text().withDefault(const Constant('[]')).named('excluded_diets')();
 
   /// Product type: real_food/bar/gel/chew/supplement/beverage/condiment/sports_drink
-  TextColumn get productType => text().withDefault(const Constant('real_food')).named('product_type')();
+  TextColumn get productType =>
+      text().withDefault(const Constant('real_food')).named('product_type')();
 
   /// Activity types this food is suitable for (JSON array string)
-  TextColumn get activityTypes => text().withDefault(const Constant('["running","cycling","swimming"]')).named('activity_types')();
+  TextColumn get activityTypes => text()
+      .withDefault(const Constant('["running","cycling","swimming"]'))
+      .named('activity_types')();
 
   /// Categories this food belongs to (JSON array string)
-  TextColumn get categories => text().withDefault(const Constant('["before_run"]'))();
+  TextColumn get categories =>
+      text().withDefault(const Constant('["before_run"]'))();
 
-  BoolColumn get isElectrolyte => boolean().withDefault(const Constant(false)).named('is_electrolyte')();
-  BoolColumn get requiresPreparation => boolean().withDefault(const Constant(false)).named('requires_preparation')();
+  BoolColumn get isElectrolyte =>
+      boolean().withDefault(const Constant(false)).named('is_electrolyte')();
+  BoolColumn get requiresPreparation => boolean()
+      .withDefault(const Constant(false))
+      .named('requires_preparation')();
 
   RealColumn get caffeineMg => real().nullable().named('caffeine_mg')();
   RealColumn get potassiumMg => real().nullable().named('potassium_mg')();
 
   // Drink pool metadata
-  BoolColumn get isDrinkPool => boolean().withDefault(const Constant(false)).named('is_drink_pool')();
+  BoolColumn get isDrinkPool =>
+      boolean().withDefault(const Constant(false)).named('is_drink_pool')();
 
   /// Which phases this drink can be selected for (JSON array string)
-  TextColumn get drinkPoolPhases => text().withDefault(const Constant('[]')).named('drink_pool_phases')();
+  TextColumn get drinkPoolPhases =>
+      text().withDefault(const Constant('[]')).named('drink_pool_phases')();
 
   // LP solver columns (unified with foods table)
-  IntColumn get maxServingsBefore => integer().withDefault(const Constant(4)).named('max_servings_before')();
-  IntColumn get maxServingsDuring => integer().withDefault(const Constant(4)).named('max_servings_during')();
-  IntColumn get maxServingsAfter => integer().withDefault(const Constant(4)).named('max_servings_after')();
-  BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
-  BoolColumn get isEssential => boolean().withDefault(const Constant(false)).named('is_essential')();
-  BoolColumn get showInPreferences => boolean().withDefault(const Constant(true)).named('show_in_preferences')();
-  TextColumn get displayNamePlural => text().nullable().named('display_name_plural')();
+  IntColumn get maxServingsBefore =>
+      integer().withDefault(const Constant(4)).named('max_servings_before')();
+  IntColumn get maxServingsDuring =>
+      integer().withDefault(const Constant(4)).named('max_servings_during')();
+  IntColumn get maxServingsAfter =>
+      integer().withDefault(const Constant(4)).named('max_servings_after')();
+  BoolColumn get toExcludeFromSolver => boolean()
+      .withDefault(const Constant(false))
+      .named('to_exclude_from_solver')();
+  BoolColumn get isEssential =>
+      boolean().withDefault(const Constant(false)).named('is_essential')();
+  BoolColumn get showInPreferences => boolean()
+      .withDefault(const Constant(true))
+      .named('show_in_preferences')();
+  TextColumn get displayNamePlural =>
+      text().nullable().named('display_name_plural')();
   TextColumn get imageAddress => text().nullable().named('image_address')();
   TextColumn get description => text().nullable()();
   RealColumn get servingAmount => real().nullable().named('serving_amount')();
   TextColumn get servingUnit => text().nullable().named('serving_unit')();
-  TextColumn get servingQualifier => text().nullable().named('serving_qualifier')();
-  BoolColumn get isLiquid => boolean().withDefault(const Constant(false)).named('is_liquid')();
+  TextColumn get servingQualifier =>
+      text().nullable().named('serving_qualifier')();
+  BoolColumn get isLiquid =>
+      boolean().withDefault(const Constant(false)).named('is_liquid')();
 
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime).named('created_at')();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};

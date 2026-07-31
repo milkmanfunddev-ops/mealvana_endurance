@@ -18,7 +18,8 @@ class DailyCarbProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final daySelections = plan.daySelections[selectedDay] ?? DayFoodSelections.empty();
+    final daySelections =
+        plan.daySelections[selectedDay] ?? DayFoodSelections.empty();
     final totalConsumed = daySelections.totalCarbs;
     final target = plan.dailyCarbTargetG;
     final percentage = target > 0 ? (totalConsumed / target * 100).round() : 0;
@@ -29,10 +30,7 @@ class DailyCarbProgressWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.blue[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.blue[200]!,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.blue[200]!, width: 1),
       ),
       child: Row(
         children: [
@@ -96,19 +94,12 @@ class DailyCarbProgressWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                  width: 1,
-                ),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
+                  Icon(Icons.edit, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
                     'Edit Target',

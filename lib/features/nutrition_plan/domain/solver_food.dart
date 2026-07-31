@@ -104,10 +104,11 @@ class SolverFood {
   }
 
   /// Create from a Drift [UserFood].
-  factory SolverFood.fromUserFood(
-    UserFood f, {
-    required int preferenceScore,
-  }) {
+  ///
+  /// NOT used by plan generation. Since the 2026-07-29 food-source policy the
+  /// client food pool is the curated `template_foods` catalog only — see
+  /// `ClientFoodPoolService`. Do not call this from a solver food pool.
+  factory SolverFood.fromUserFood(UserFood f, {required int preferenceScore}) {
     return SolverFood(
       id: f.id,
       name: f.name,
@@ -126,7 +127,8 @@ class SolverFood {
       maxServings: 4,
       preferenceScore: preferenceScore,
       isElectrolyte: f.isElectrolyte,
-      isLiquid: f.productTypeId == 'sports_drink' || f.productTypeId == 'beverage',
+      isLiquid:
+          f.productTypeId == 'sports_drink' || f.productTypeId == 'beverage',
       isUserFood: true,
       isIndivisible: _isIndivisibleProduct(f.productTypeId),
       productType: f.productTypeId,

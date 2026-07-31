@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../data/integrations_repository.dart';
@@ -31,17 +33,23 @@ class VdotSyncService {
     required ActivitiesRepository activitiesRepository,
     required VdotTransformer transformer,
     required ChangeDetectionService changeDetectionService,
-  })  : _apiClient = apiClient,
-        _integrationsRepository = integrationsRepository,
-        _activitiesRepository = activitiesRepository,
-        _transformer = transformer,
-        _changeDetectionService = changeDetectionService;
+    AnalyticsTracker? analytics,
+  }) : _apiClient = apiClient,
+       _integrationsRepository = integrationsRepository,
+       _activitiesRepository = activitiesRepository,
+       _transformer = transformer,
+       _changeDetectionService = changeDetectionService,
+       _analytics = analytics;
 
   final VdotApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
   final ActivitiesRepository _activitiesRepository;
   final VdotTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
+  final AnalyticsTracker? _analytics;
+
+  void _trackSyncedWorkoutPlanned(Activity activity) =>
+      trackSyncedWorkoutPlanned(_analytics, activity, provider: 'vdot');
 
   static const _provider = 'vdot';
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -57,8 +65,10 @@ class VdotSyncService {
     int lookbackDays = 14,
     int lookaheadDays = 45,
   }) async {
-    final integrationRecord =
-        await _integrationsRepository.getIntegration(userId, _provider);
+    final integrationRecord = await _integrationsRepository.getIntegration(
+      userId,
+      _provider,
+    );
     if (integrationRecord == null || !integrationRecord.isActive) {
       return VdotSyncResult.notConnected();
     }
@@ -124,6 +134,7 @@ class VdotSyncService {
 
       for (final activity in changes.newActivities) {
         await _activitiesRepository.insertActivity(activity);
+        _trackSyncedWorkoutPlanned(activity);
       }
       for (final change in changes.updatedActivities) {
         final updated = change.updatedActivity.copyWith(
@@ -204,7 +215,9 @@ class VdotSyncService {
     var chunkStart = from;
     var workingIntegration = integration;
     while (!chunkStart.isAfter(to)) {
-      final chunkEnd = chunkStart.add(const Duration(days: _vdotMaxRangeDays - 1));
+      final chunkEnd = chunkStart.add(
+        const Duration(days: _vdotMaxRangeDays - 1),
+      );
       final effectiveEnd = chunkEnd.isAfter(to) ? to : chunkEnd;
       try {
         final response = await _apiClient.getWorkoutsByDateRange(
@@ -351,10 +364,4 @@ class VdotSyncResult {
   }
 }
 
-enum VdotSyncErrorType {
-  none,
-  notConnected,
-  requiresReauth,
-  network,
-  apiError,
-}
+enum VdotSyncErrorType { none, notConnected, requiresReauth, network, apiError }

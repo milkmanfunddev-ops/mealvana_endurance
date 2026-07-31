@@ -31,7 +31,7 @@ class CategorySelector extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         Text(
           key: const ValueKey('custom_food.timing_body'),
-          'Select one or more categories (at least one required)',
+          'Select all that apply (optional)',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

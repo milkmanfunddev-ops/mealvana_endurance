@@ -55,10 +55,17 @@ class BeforeSubPhase {
     }
   }
 
-  /// Auto-generated summary of foods in this sub-phase (for collapsed display).
-  /// Shows food names only (no quantities) for a clean, scannable format.
+  /// Summary of this sub-phase for collapsed display.
+  ///
+  /// Prefers the curated template's own name ("Smoothie", "Oatmeal + Raisins")
+  /// so a multi-ingredient recommendation reads as one item; falls back to
+  /// joining the ingredient names when no curated name exists
+  /// (bug 3abe3fdb754c8153: the getter used to gate templateName behind an
+  /// empty-foodItems condition that never occurs, so the name was never shown).
   String get templateSummary {
-    if (foodItems.isEmpty) return templateName ?? '';
+    final name = templateName;
+    if (name != null && name.isNotEmpty) return name;
+    if (foodItems.isEmpty) return '';
     return foodItems
         .map((f) => _simplifyName(f.displayName ?? f.name))
         .join(' + ');
@@ -207,6 +214,7 @@ class PlanSection {
     this.subPhases,
     this.byHourData,
     this.pinDecision,
+    this.shortfalls = const <MacroShortfall>[],
   });
 
   final String id;
@@ -243,6 +251,14 @@ class PlanSection {
   /// one at the section level (Before pins live on each [BeforeSubPhase]).
   /// Used by the activity-detail pin banner (Formula Kit PR 2 substep 9).
   final PinDecision? pinDecision;
+
+  /// Macros the solver could not satisfy for this section. Mirrors
+  /// [BeforeSubPhase.shortfalls] (Before carries them per sub-phase); today
+  /// only the During section ever carries them at the section level, from
+  /// `plan.during.shortfalls` in the V3 response. Empty list means clean
+  /// fit. Bug 3a3e3fdb: these were previously discarded, so during-phase
+  /// plans silently missed carb targets.
+  final List<MacroShortfall> shortfalls;
 
   /// Whether this section uses the template-based sub-phase layout
   bool get hasSubPhases => subPhases != null && subPhases!.isNotEmpty;
@@ -295,6 +311,9 @@ class PlanSection {
       subPhases: subPhases,
       byHourData: byHourData,
       pinDecision: _parsePinDecision(json),
+      shortfalls: ((json['shortfalls'] as List<dynamic>?) ?? const [])
+          .map((e) => MacroShortfall.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -360,6 +379,8 @@ class PlanSection {
         'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
       if (byHourData != null) 'byHourData': byHourData!.toJson(),
       if (pinDecision != null) 'pinDecision': pinDecision!.toJson(),
+      if (shortfalls.isNotEmpty)
+        'shortfalls': shortfalls.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -387,6 +408,7 @@ class PlanSection {
     ByHourData? byHourData,
     bool clearByHourData = false,
     PinDecision? pinDecision,
+    List<MacroShortfall>? shortfalls,
   }) {
     return PlanSection(
       id: id ?? this.id,
@@ -410,6 +432,7 @@ class PlanSection {
       subPhases: subPhases ?? this.subPhases,
       byHourData: clearByHourData ? null : (byHourData ?? this.byHourData),
       pinDecision: pinDecision ?? this.pinDecision,
+      shortfalls: shortfalls ?? this.shortfalls,
     );
   }
 

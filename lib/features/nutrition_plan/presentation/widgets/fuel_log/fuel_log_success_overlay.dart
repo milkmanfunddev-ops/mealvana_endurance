@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../../../../shared/utils/celebration_haptics.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Full-screen success overlay shown after fuel log is saved.
@@ -52,10 +54,7 @@ class _FuelLogSuccessOverlayState extends State<FuelLogSuccessOverlay>
       vsync: this,
     );
     _checkScale = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _checkController,
-        curve: Curves.elasticOut,
-      ),
+      CurvedAnimation(parent: _checkController, curve: Curves.elasticOut),
     );
     _checkFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -71,6 +70,9 @@ class _FuelLogSuccessOverlayState extends State<FuelLogSuccessOverlay>
 
     _checkController.forward();
     _confettiController.forward();
+
+    // Fire the celebration haptic on the same frame the confetti launches.
+    unawaited(CelebrationHaptics.play());
 
     // Auto-dismiss after 4 seconds
     Future.delayed(const Duration(seconds: 4), () {
@@ -99,9 +101,7 @@ class _FuelLogSuccessOverlayState extends State<FuelLogSuccessOverlay>
             builder: (context, _) {
               return CustomPaint(
                 size: MediaQuery.of(context).size,
-                painter: _ConfettiPainter(
-                  progress: _confettiController.value,
-                ),
+                painter: _ConfettiPainter(progress: _confettiController.value),
               );
             },
           ),
@@ -216,7 +216,8 @@ class _ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (final p in _particles) {
       final x = p.startX * size.width + p.driftX * progress * size.width * 0.3;
-      final y = p.startY * size.height * -0.2 +
+      final y =
+          p.startY * size.height * -0.2 +
           progress * size.height * (1.2 + p.speed * 0.5);
       final opacity = (1.0 - progress * 1.5).clamp(0.0, 1.0) * p.opacity;
 
@@ -231,7 +232,11 @@ class _ConfettiPainter extends CustomPainter {
       canvas.rotate(progress * p.rotationSpeed * 6.28);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.6),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: p.size,
+            height: p.size * 0.6,
+          ),
           const Radius.circular(2),
         ),
         paint,

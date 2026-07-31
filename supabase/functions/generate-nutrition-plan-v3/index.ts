@@ -20,13 +20,13 @@
  *
  * Module structure:
  * - types.ts: PlanInputV2, LPPhaseResult interfaces
- * - by-hour-apportionment.ts: deprecated server-side by-hour placement
- * - during-phase.ts: during-workout template + rule solver + LP fallback
+ * - during-phase.ts: during-workout template + rule solver + gap-fill closing pass
  * - after-phase.ts: post-workout template solver + LP fallback
- * - lp-phase.ts: LP solver orchestration
+ * - lp-phase.ts: LP solver orchestration (after phase only)
  * - validation.ts: phase result validation
  * - brick-handler.ts: brick workout multi-segment handler
  * - before-phase.ts: Algorithm C transformation layer
+ * - plan-generation-log.ts: per-plan targets-vs-delivered ledger
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
@@ -44,13 +44,19 @@ import {
   type ActivityType,
   adjustTargetsForOverrides,
   type FoodResult,
+  PHASE_TIMING_LABELS,
 } from "../_shared/nutrition/index.ts";
+import { applyElectrolyteWaterPairing } from "../_shared/nutrition/electrolyte-water-pairing.ts";
+import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 
 import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
 import { generateAfterPhase } from "./after-phase.ts";
-import { generateLPPhase } from "./lp-phase.ts";
+import {
+  buildPlanGenerationLogRow,
+  insertPlanGenerationLog,
+} from "./plan-generation-log.ts";
 import {
   flattenBeforeFoods,
   validatePhaseResultAgainstTargets,
@@ -154,6 +160,29 @@ serve(withSentry(async (req) => {
       );
     }
 
+    // Food preferences (liked / disliked / willing-to-try) ARE consumed again
+    // as of 2026-07-08 (re-enabled after the 2026-07-03 rip-out), but only by
+    // the free-form selectors: the default-formula/template tier and the
+    // rule/LP solvers. The pinned personal-formula path stays preference-blind —
+    // an explicit pin always overrides preferences.
+    //
+    // Dislikes are treated SOFTLY, which is what makes re-enabling safe against
+    // the failure mode that caused the rip-out (a stale/bogus disliked list
+    // collapsing the candidate pool to an empty plan):
+    //   - the template + rule solvers deprioritize/skip disliked foods but
+    //     tolerate a *reported* macro shortfall (allowPreferenceShortfall)
+    //     instead of returning null, and
+    //   - the LP last-resort ignores preferences entirely,
+    // so preferences can never produce "no plan" — worst case they nudge food
+    // choice and surface a shortfall. The client also now scopes the
+    // preferences UI to endurance/fuel foods, keeping the signal relevant.
+    // Diet + allergy remain SEPARATE, hard inputs (`dietary_preference`,
+    // `allergies`) and are unaffected. The contradiction guardrail above stays
+    // as a stale-cache canary.
+    input.liked_foods = likedIn;
+    input.willing_to_try_foods = willingIn;
+    input.disliked_foods = dislikedIn;
+
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
       input.macro_targets.pre_run = adjustTargetsForOverrides(
@@ -171,15 +200,23 @@ serve(withSentry(async (req) => {
       );
     }
 
+    // Fetch Formula Kit pins for this user (all scopes). When the user
+    // has no pins (or no row for this device), all Sets are empty and
+    // behavior is byte-identical to pre-pin v3. Errors inside the fetcher
+    // already degrade to empty sets, so plan generation is never blocked
+    // by a pins-query failure. Formula Kit PR 2 substep 5b; plumbed through
+    // the brick handler 2026-07-21 (was deferred in v1 — triathletes' pins
+    // were silently ignored).
+    const userPins = await timeAsync(
+      "fetch_user_pins",
+      () => fetchUserPinnedTemplateIds(supabase, input.device_id),
+    );
+
     // Brick workouts: route to dedicated handler.
-    // NOTE: Formula Kit pins are NOT plumbed through the brick handler in
-    // v1 (substep 5b). Single-activity workouts are the main pin use case;
-    // brick pin support is deferred. Brick plans run with byte-identical
-    // pre-pin behavior.
     if (activityType === "brick") {
       const response = await timeAsync(
         "brick_total",
-        () => handleBrickPlan(supabase, input, planId),
+        () => handleBrickPlan(supabase, input, planId, userPins),
       );
       console.log(
         `[PLAN-V3-TIMING] request_total completed in ${
@@ -188,16 +225,6 @@ serve(withSentry(async (req) => {
       );
       return response;
     }
-
-    // Fetch Formula Kit pins for this user (Before + During). When the user
-    // has no pins (or no row for this device), both Sets are empty and
-    // behavior is byte-identical to pre-pin v3. Errors inside the fetcher
-    // already degrade to empty sets, so plan generation is never blocked
-    // by a pins-query failure. Formula Kit PR 2 substep 5b.
-    const userPins = await timeAsync(
-      "fetch_user_pins",
-      () => fetchUserPinnedTemplateIds(supabase, input.device_id),
-    );
 
     // Generate all phases
     const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise
@@ -240,8 +267,9 @@ serve(withSentry(async (req) => {
                 // During) returns. Formula Kit PR 2 #18, extended to
                 // include After in PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
-                      userPins.afterPinIds.size > 0,
+                    userPins.afterPinIds.size > 0,
                 userPins.personalFormulas,
+                input.emit_ephemeral_default_formula === true,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -266,12 +294,36 @@ serve(withSentry(async (req) => {
                 // banner row-consistent when the user has pins only in
                 // other scopes. Formula Kit PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
-                      userPins.afterPinIds.size > 0,
+                    userPins.afterPinIds.size > 0,
                 userPins.personalFormulas,
+                input.emit_ephemeral_default_formula === true,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
       ]);
+
+    // Invariant: an electrolyte item never ships without water alongside it.
+    // Runs before validation so the validator sees the corrected lists.
+    // (Before-phase pairing is enforced inside `generateBeforePhaseV3`, which
+    // owns the per-slot targets and timing labels.)
+    duringPhaseResult.foods = await applyElectrolyteWaterPairing(
+      duringPhaseResult.foods,
+      {
+        fluidCeilingMl: input.macro_targets.during_run?.water_high_ml,
+        timing: PHASE_TIMING_LABELS.during,
+        logPrefix: "[PLAN-V3] During",
+      },
+      () => getEssentialFoods(supabase, activityType, "during"),
+    );
+    afterPhaseResult.foods = await applyElectrolyteWaterPairing(
+      afterPhaseResult.foods,
+      {
+        fluidCeilingMl: input.macro_targets.post_run?.water_high_ml,
+        timing: PHASE_TIMING_LABELS.after,
+        logPrefix: "[PLAN-V3] After",
+      },
+      () => getEssentialFoods(supabase, activityType, "after"),
+    );
 
     // Validate phases (non-fatal warnings)
     const validationStart = performance.now();
@@ -420,6 +472,31 @@ serve(withSentry(async (req) => {
         elapsedMs(requestStart)
       }ms`,
     );
+
+    // Ledger: record targets vs delivered for failure-rate analytics.
+    // Best-effort — insertPlanGenerationLog never throws. Runs after the
+    // response via waitUntil when the runtime provides it.
+    const ledgerWrite = insertPlanGenerationLog(
+      supabase,
+      buildPlanGenerationLogRow({
+        planId,
+        input,
+        activityType,
+        beforeFoods: flattenBeforeFoods(
+          beforeResult as Record<string, { foods?: FoodResult[] }>,
+        ),
+        duringResult: duringPhaseResult,
+        afterResult: afterPhaseResult,
+        warnings,
+      }),
+    );
+    // deno-lint-ignore no-explicit-any
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (typeof runtime?.waitUntil === "function") {
+      runtime.waitUntil(ledgerWrite);
+    } else {
+      await ledgerWrite;
+    }
 
     return jsonResponse(response);
   } catch (error) {

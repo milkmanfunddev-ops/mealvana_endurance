@@ -1,9 +1,0 @@
---- lib/features/nutrition_plan/presentation/widgets/activity_detail/activity_detail_action_buttons.dart
-+++ lib/features/nutrition_plan/presentation/widgets/activity_detail/activity_detail_action_buttons.dart
-@@ -60,7 +60,6 @@
-         notes: state.activity?.completionNotes,
-         onRatingChanged: onRatingChanged,
-         onNotesChanged: onNotesChanged,
--        onEditFeedback: isCoachView ? null : () => _handleEditFeedback(context),
-       );
-     }

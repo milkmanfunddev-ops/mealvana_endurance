@@ -53,12 +53,7 @@ Future<void> _pumpWithRouter(
 }) async {
   final router = GoRouter(
     initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => buildScreen(),
-      ),
-    ],
+    routes: [GoRoute(path: '/', builder: (_, __) => buildScreen())],
     redirect: (_, state) => null,
   );
 
@@ -108,14 +103,8 @@ Future<void> _pumpWithExtra(
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => const SizedBox.shrink(),
-      ),
-      GoRoute(
-        path: screenPath,
-        builder: (_, __) => buildScreen(),
-      ),
+      GoRoute(path: '/', builder: (_, __) => const SizedBox.shrink()),
+      GoRoute(path: screenPath, builder: (_, __) => buildScreen()),
     ],
   );
 
@@ -160,9 +149,9 @@ Override _fakeEventDetail({
   required Event event,
   Activity? activity,
 }) {
-  return eventDetailProvider(eventId).overrideWith(
-    (ref) async => (activity: activity, event: event),
-  );
+  return eventDetailProvider(
+    eventId,
+  ).overrideWith((ref) async => (activity: activity, event: event));
 }
 
 /// Builds a minimal [Event] suitable for seeding.
@@ -207,14 +196,15 @@ void main() {
       await pumpSeeded(
         tester,
         const EventDetailScreen(eventId: 'evt-1'),
-        overrides: [
-          _fakeEventDetail(eventId: 'evt-1', event: event),
-        ],
+        overrides: [_fakeEventDetail(eventId: 'evt-1', event: event)],
         settle: true,
       );
 
-      expect(find.text('Boston Marathon 2026'), findsOneWidget,
-          reason: 'Event name must appear in the EventHeaderCard');
+      expect(
+        find.text('Boston Marathon 2026'),
+        findsOneWidget,
+        reason: 'Event name must appear in the EventHeaderCard',
+      );
     });
 
     testWidgets('renders event location from seeded provider', (tester) async {
@@ -222,17 +212,18 @@ void main() {
       await pumpSeeded(
         tester,
         const EventDetailScreen(eventId: 'evt-1'),
-        overrides: [
-          _fakeEventDetail(eventId: 'evt-1', event: event),
-        ],
+        overrides: [_fakeEventDetail(eventId: 'evt-1', event: event)],
         settle: true,
       );
 
       // EventDetailsCard renders location via LocationFormatter.parseAndFormatCityState.
       // The value 'Boston, MA' is a comma-separated city,state string and should
       // pass through the formatter as-is (no country stripping needed here).
-      expect(find.textContaining('Boston'), findsWidgets,
-          reason: 'Location city must appear in EventDetailsCard');
+      expect(
+        find.textContaining('Boston'),
+        findsWidgets,
+        reason: 'Location city must appear in EventDetailsCard',
+      );
     });
 
     testWidgets('renders event date from seeded provider', (tester) async {
@@ -241,15 +232,16 @@ void main() {
       await pumpSeeded(
         tester,
         const EventDetailScreen(eventId: 'evt-1'),
-        overrides: [
-          _fakeEventDetail(eventId: 'evt-1', event: event),
-        ],
+        overrides: [_fakeEventDetail(eventId: 'evt-1', event: event)],
         settle: true,
       );
 
       // EventHeaderCard formats the date as "EEEE, MMMM d, yyyy"
-      expect(find.textContaining('April 20, 2026'), findsOneWidget,
-          reason: 'Formatted date must appear in EventHeaderCard');
+      expect(
+        find.textContaining('April 20, 2026'),
+        findsOneWidget,
+        reason: 'Formatted date must appear in EventHeaderCard',
+      );
     });
 
     testWidgets('renders goal time when set', (tester) async {
@@ -258,14 +250,15 @@ void main() {
       await pumpSeeded(
         tester,
         const EventDetailScreen(eventId: 'evt-1'),
-        overrides: [
-          _fakeEventDetail(eventId: 'evt-1', event: event),
-        ],
+        overrides: [_fakeEventDetail(eventId: 'evt-1', event: event)],
         settle: true,
       );
 
-      expect(find.text('3h 30m'), findsOneWidget,
-          reason: 'Goal time must be formatted as Xh Ym in EventDetailsCard');
+      expect(
+        find.text('3h 30m'),
+        findsOneWidget,
+        reason: 'Goal time must be formatted as Xh Ym in EventDetailsCard',
+      );
     });
 
     testWidgets('shows error state when provider throws', (tester) async {
@@ -280,8 +273,11 @@ void main() {
         settle: true,
       );
 
-      expect(find.text('Error loading event'), findsOneWidget,
-          reason: 'Error card must appear when provider throws');
+      expect(
+        find.text('Error loading event'),
+        findsOneWidget,
+        reason: 'Error card must appear when provider throws',
+      );
     });
   });
 
@@ -294,21 +290,27 @@ void main() {
       // EventFormScreen does NOT read GoRouterState, so pumpSeeded is fine.
       await pumpSeeded(tester, const EventFormScreen(), settle: true);
 
-      expect(find.text('New Event'), findsOneWidget,
-          reason: 'AppBar title must read "New Event" in create mode');
+      expect(
+        find.text('New Event'),
+        findsOneWidget,
+        reason: 'AppBar title must read "New Event" in create mode',
+      );
     });
 
     testWidgets('shows "Edit Event" title in edit mode', (tester) async {
       final event = _seedEvent();
       await pumpSeeded(tester, EventFormScreen(event: event), settle: true);
 
-      expect(find.text('Edit Event'), findsOneWidget,
-          reason: 'AppBar title must read "Edit Event" when event is passed');
+      expect(
+        find.text('Edit Event'),
+        findsOneWidget,
+        reason: 'AppBar title must read "Edit Event" when event is passed',
+      );
     });
 
-    testWidgets(
-        'tapping save with empty event name shows validation error',
-        (tester) async {
+    testWidgets('tapping save with empty event name shows validation error', (
+      tester,
+    ) async {
       // Tall surface ensures the Save button is on-screen without scrolling.
       tester.view.physicalSize = const Size(800, 2400);
       tester.view.devicePixelRatio = 1.0;
@@ -320,22 +322,29 @@ void main() {
       await pumpSeeded(tester, const EventFormScreen(), settle: true);
 
       // Tap the Create Event button (now in-viewport on the tall surface)
-      final saveButtonFinder =
-          find.byKey(const ValueKey('event_create.create_button'));
-      expect(saveButtonFinder, findsOneWidget,
-          reason: 'Create button must be present');
+      final saveButtonFinder = find.byKey(
+        const ValueKey('event_create.create_button'),
+      );
+      expect(
+        saveButtonFinder,
+        findsOneWidget,
+        reason: 'Create button must be present',
+      );
       await tester.tap(saveButtonFinder);
       await tester.pump();
       await tester.pumpAndSettle();
 
       // Validator returns 'Please enter an event name'
-      expect(find.text('Please enter an event name'), findsOneWidget,
-          reason: 'Validation error must appear when event name is empty');
+      expect(
+        find.text('Please enter an event name'),
+        findsOneWidget,
+        reason: 'Validation error must appear when event name is empty',
+      );
     });
 
-    testWidgets(
-        'goal time minutes validator fires when out of range (60)',
-        (tester) async {
+    testWidgets('goal time minutes validator fires when out of range (60)', (
+      tester,
+    ) async {
       // Tall surface so the entire form (sport selector → ExpansionTile → save
       // button) fits in one viewport without scrolling.
       tester.view.physicalSize = const Size(800, 3000);
@@ -371,14 +380,17 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Must be 0-59'), findsOneWidget,
-          reason:
-              'Goal time minutes validator must reject 60 with "Must be 0-59"');
+      expect(
+        find.text('Must be 0-59'),
+        findsOneWidget,
+        reason:
+            'Goal time minutes validator must reject 60 with "Must be 0-59"',
+      );
     });
 
-    testWidgets(
-        'goal pace seconds validator fires when out of range (99)',
-        (tester) async {
+    testWidgets('goal pace seconds validator fires when out of range (99)', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 3000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -411,9 +423,12 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Must be 0-59'), findsOneWidget,
-          reason:
-              'Goal pace seconds validator must reject 99 with "Must be 0-59"');
+      expect(
+        find.text('Must be 0-59'),
+        findsOneWidget,
+        reason:
+            'Goal pace seconds validator must reject 99 with "Must be 0-59"',
+      );
     });
 
     testWidgets('renders event name field and location field', (tester) async {
@@ -453,8 +468,11 @@ void main() {
       final nameField = tester.widget<TextFormField>(
         find.byKey(const ValueKey('event_create.name_field')),
       );
-      expect(nameField.controller?.text, equals('Chicago Marathon'),
-          reason: 'Event name field must be pre-filled in edit mode');
+      expect(
+        nameField.controller?.text,
+        equals('Chicago Marathon'),
+        reason: 'Event name field must be pre-filled in edit mode',
+      );
     });
   });
 
@@ -490,17 +508,18 @@ void main() {
       );
     }
 
-    testWidgets('shows null-extra fallback text when no extra provided',
-        (tester) async {
+    testWidgets('shows null-extra fallback text when no extra provided', (
+      tester,
+    ) async {
       // With no extra, _result == null → shows 'Missing analysis result.'
-      await _pumpWithRouter(
-        tester,
-        () => const MealReviewScreen(),
-      );
+      await _pumpWithRouter(tester, () => const MealReviewScreen());
 
-      expect(find.text('Missing analysis result.'), findsOneWidget,
-          reason:
-              'Null extra must render the fallback "Missing analysis result." text');
+      expect(
+        find.text('Missing analysis result.'),
+        findsOneWidget,
+        reason:
+            'Null extra must render the fallback "Missing analysis result." text',
+      );
     });
 
     testWidgets('renders meal name from seeded result', (tester) async {
@@ -509,11 +528,7 @@ void main() {
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
@@ -521,8 +536,11 @@ void main() {
       );
 
       // MealReviewScreen sets _nameCtrl.text = _result!.name
-      expect(find.text('Morning Oatmeal'), findsOneWidget,
-          reason: 'Meal name must be pre-filled from MealAnalysisResult.name');
+      expect(
+        find.text('Morning Oatmeal'),
+        findsOneWidget,
+        reason: 'Meal name must be pre-filled from MealAnalysisResult.name',
+      );
     });
 
     testWidgets('renders item name from seeded result', (tester) async {
@@ -531,11 +549,7 @@ void main() {
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
@@ -543,22 +557,22 @@ void main() {
       );
 
       // MealItemsEditor renders item.name as ListTile title
-      expect(find.text('Oatmeal'), findsOneWidget,
-          reason: 'Item name must appear in the MealItemsEditor');
+      expect(
+        find.text('Oatmeal'),
+        findsOneWidget,
+        reason: 'Item name must appear in the MealItemsEditor',
+      );
     });
 
-    testWidgets('renders item calorie value from seeded result',
-        (tester) async {
+    testWidgets('renders item calorie value from seeded result', (
+      tester,
+    ) async {
       final result = _buildResult();
       await _pumpWithExtra(
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
@@ -566,8 +580,11 @@ void main() {
       );
 
       // MealItemsEditor subtitle: "1 cup · 300 kcal  C 54g  P 10g  F 6g"
-      expect(find.textContaining('300 kcal'), findsWidgets,
-          reason: 'Item calories must appear in MealItemsEditor subtitle');
+      expect(
+        find.textContaining('300 kcal'),
+        findsWidgets,
+        reason: 'Item calories must appear in MealItemsEditor subtitle',
+      );
     });
 
     testWidgets('renders total calorie row', (tester) async {
@@ -576,11 +593,7 @@ void main() {
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
@@ -588,8 +601,11 @@ void main() {
       );
 
       // MealItemsEditor totals row: "300 kcal  C 54g  P 10g  F 6g"
-      expect(find.text('Total'), findsOneWidget,
-          reason: 'Total row must appear in MealItemsEditor');
+      expect(
+        find.text('Total'),
+        findsOneWidget,
+        reason: 'Total row must appear in MealItemsEditor',
+      );
     });
 
     testWidgets('renders confidence badge for high confidence', (tester) async {
@@ -598,19 +614,18 @@ void main() {
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
 
-      expect(find.text('High confidence'), findsOneWidget,
-          reason: '_ConfidenceBadge must show "High confidence" label');
+      expect(
+        find.text('High confidence'),
+        findsOneWidget,
+        reason: '_ConfidenceBadge must show "High confidence" label',
+      );
     });
 
     testWidgets('renders AI notes when notes are present', (tester) async {
@@ -619,11 +634,7 @@ void main() {
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
@@ -643,23 +654,23 @@ void main() {
         tester,
         '/review',
         () => const MealReviewScreen(),
-        extra: {
-          'result': result,
-          'source': 'photo',
-          'logDate': '2026-06-25',
-        },
+        extra: {'result': result, 'source': 'photo', 'logDate': '2026-06-25'},
         overrides: [
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
 
-      expect(find.text('Log this meal'), findsOneWidget,
-          reason: 'Submit button must be present');
+      expect(
+        find.text('Log this meal'),
+        findsOneWidget,
+        reason: 'Submit button must be present',
+      );
     });
 
-    testWidgets('confidence badge shows low-confidence label correctly',
-        (tester) async {
+    testWidgets('confidence badge shows low-confidence label correctly', (
+      tester,
+    ) async {
       const item = MealAnalysisItem(
         name: 'Unknown dish',
         portion: '1 serving',
@@ -698,8 +709,11 @@ void main() {
         settle: true,
       );
 
-      expect(find.text('Low confidence — please review'), findsOneWidget,
-          reason: 'Low-confidence badge must show review warning');
+      expect(
+        find.text('Low confidence — please review'),
+        findsOneWidget,
+        reason: 'Low-confidence badge must show review warning',
+      );
     });
   });
 
@@ -721,12 +735,16 @@ void main() {
         settle: true,
       );
 
-      expect(find.text('Log a Meal'), findsOneWidget,
-          reason: 'AppBar must show "Log a Meal"');
+      expect(
+        find.text('Log a Meal'),
+        findsOneWidget,
+        reason: 'AppBar must show "Log a Meal"',
+      );
     });
 
-    testWidgets('renders meal name, calories, carbs, protein, fat fields',
-        (tester) async {
+    testWidgets('renders meal name, calories, carbs, protein, fat fields', (
+      tester,
+    ) async {
       await _pumpWithRouter(
         tester,
         () => const ManualLogScreen(),
@@ -736,23 +754,36 @@ void main() {
         settle: true,
       );
 
-      expect(find.widgetWithText(TextFormField, 'Meal name'), findsOneWidget,
-          reason: 'Meal name field must render');
-      expect(find.widgetWithText(TextFormField, 'Calories (kcal)'),
-          findsOneWidget,
-          reason: 'Calories field must render');
       expect(
-          find.widgetWithText(TextFormField, 'Carbs (g)'), findsOneWidget,
-          reason: 'Carbs field must render');
+        find.widgetWithText(TextFormField, 'Meal name'),
+        findsOneWidget,
+        reason: 'Meal name field must render',
+      );
       expect(
-          find.widgetWithText(TextFormField, 'Protein (g)'), findsOneWidget,
-          reason: 'Protein field must render');
-      expect(find.widgetWithText(TextFormField, 'Fat (g)'), findsOneWidget,
-          reason: 'Fat field must render');
+        find.widgetWithText(TextFormField, 'Calories (kcal)'),
+        findsOneWidget,
+        reason: 'Calories field must render',
+      );
+      expect(
+        find.widgetWithText(TextFormField, 'Carbs (g)'),
+        findsOneWidget,
+        reason: 'Carbs field must render',
+      );
+      expect(
+        find.widgetWithText(TextFormField, 'Protein (g)'),
+        findsOneWidget,
+        reason: 'Protein field must render',
+      );
+      expect(
+        find.widgetWithText(TextFormField, 'Fat (g)'),
+        findsOneWidget,
+        reason: 'Fat field must render',
+      );
     });
 
-    testWidgets('submitting empty form shows "Name is required" error',
-        (tester) async {
+    testWidgets('submitting empty form shows "Name is required" error', (
+      tester,
+    ) async {
       await _pumpWithRouter(
         tester,
         () => const ManualLogScreen(),
@@ -762,16 +793,25 @@ void main() {
         settle: true,
       );
 
-      // Tap Save without entering any data
+      // Tap Save without entering any data (scroll it into view first — the
+      // manual form now includes slot + time fields, so Save can sit below the
+      // test viewport fold).
+      await tester.ensureVisible(find.text('Save'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Save'));
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Name is required'), findsOneWidget,
-          reason: 'Validation must require a meal name');
+      expect(
+        find.text('Name is required'),
+        findsOneWidget,
+        reason: 'Validation must require a meal name',
+      );
     });
 
-    testWidgets('saves button is present and enabled when idle', (tester) async {
+    testWidgets('saves button is present and enabled when idle', (
+      tester,
+    ) async {
       await _pumpWithRouter(
         tester,
         () => const ManualLogScreen(),
@@ -781,8 +821,11 @@ void main() {
         settle: true,
       );
 
-      expect(find.text('Save'), findsOneWidget,
-          reason: 'Save button must be present in the form');
+      expect(
+        find.text('Save'),
+        findsOneWidget,
+        reason: 'Save button must be present in the form',
+      );
     });
 
     testWidgets('renders Meal type section label', (tester) async {
@@ -795,8 +838,11 @@ void main() {
         settle: true,
       );
 
-      expect(find.text('Meal type'), findsOneWidget,
-          reason: 'Slot selector section label must appear');
+      expect(
+        find.text('Meal type'),
+        findsOneWidget,
+        reason: 'Slot selector section label must appear',
+      );
     });
   });
 }

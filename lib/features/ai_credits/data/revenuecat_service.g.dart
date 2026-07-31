@@ -8,9 +8,16 @@ part of 'revenuecat_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Kept alive because this wraps a process-wide native singleton. Under
+/// autoDispose the instance that startup configured was thrown away, and every
+/// later read built a fresh, unconfigured one.
 
 @ProviderFor(revenueCatService)
 const revenueCatServiceProvider = RevenueCatServiceProvider._();
+
+/// Kept alive because this wraps a process-wide native singleton. Under
+/// autoDispose the instance that startup configured was thrown away, and every
+/// later read built a fresh, unconfigured one.
 
 final class RevenueCatServiceProvider
     extends
@@ -20,13 +27,16 @@ final class RevenueCatServiceProvider
           RevenueCatService
         >
     with $Provider<RevenueCatService> {
+  /// Kept alive because this wraps a process-wide native singleton. Under
+  /// autoDispose the instance that startup configured was thrown away, and every
+  /// later read built a fresh, unconfigured one.
   const RevenueCatServiceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'revenueCatServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -54,4 +64,4 @@ final class RevenueCatServiceProvider
   }
 }
 
-String _$revenueCatServiceHash() => r'7df35a1333c3087c9c45ac3b4b6ae247151ba07e';
+String _$revenueCatServiceHash() => r'216a013bf21b15f46dd1d8a9e757e7194b6bab80';

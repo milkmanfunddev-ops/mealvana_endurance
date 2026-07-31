@@ -127,35 +127,51 @@ MealComponent makeComponent({
 
 /// Logger/sentry stubs shared across tests that use real repositories.
 void stubLogger(MockAppLogger logger) {
-  when(() => logger.info(any(),
-          context: any(named: 'context'), data: any(named: 'data')))
-      .thenReturn(null);
-  when(() => logger.debug(any(),
-          context: any(named: 'context'), data: any(named: 'data')))
-      .thenReturn(null);
-  when(() => logger.warning(any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data')))
-      .thenReturn(null);
-  when(() => logger.error(any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-          data: any(named: 'data')))
-      .thenReturn(null);
+  when(
+    () => logger.info(
+      any(),
+      context: any(named: 'context'),
+      data: any(named: 'data'),
+    ),
+  ).thenReturn(null);
+  when(
+    () => logger.debug(
+      any(),
+      context: any(named: 'context'),
+      data: any(named: 'data'),
+    ),
+  ).thenReturn(null);
+  when(
+    () => logger.warning(
+      any(),
+      context: any(named: 'context'),
+      error: any(named: 'error'),
+      stackTrace: any(named: 'stackTrace'),
+      data: any(named: 'data'),
+    ),
+  ).thenReturn(null);
+  when(
+    () => logger.error(
+      any(),
+      context: any(named: 'context'),
+      error: any(named: 'error'),
+      stackTrace: any(named: 'stackTrace'),
+      data: any(named: 'data'),
+    ),
+  ).thenReturn(null);
 }
 
 void stubSentry(MockSentryReporter sentry) {
-  when(() => sentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        statusCode: any(named: 'statusCode'),
-        timeout: any(named: 'timeout'),
-        stackTrace: any(named: 'stackTrace'),
-      )).thenAnswer((_) async {});
+  when(
+    () => sentry.reportNetworkError(
+      any(),
+      url: any(named: 'url'),
+      method: any(named: 'method'),
+      statusCode: any(named: 'statusCode'),
+      timeout: any(named: 'timeout'),
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenAnswer((_) async {});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,23 +185,27 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     // Fallback values required by mocktail for argument matchers.
     registerFallbackValue(makeMealLog());
-    registerFallbackValue(SavedMeal(
-      id: 'fallback',
-      userId: 'fallback-user',
-      name: 'Fallback',
-      components: const [],
-      createdAt: DateTime.utc(2026),
-      updatedAt: DateTime.utc(2026),
-    ));
-    registerFallbackValue(RecipeLogParams(
-      recipeId: 'r',
-      recipeName: 'R',
-      servings: 1,
-      caloriesPerServing: 100,
-      carbsGPerServing: 20,
-      proteinGPerServing: 5,
-      fatGPerServing: 2,
-    ));
+    registerFallbackValue(
+      SavedMeal(
+        id: 'fallback',
+        userId: 'fallback-user',
+        name: 'Fallback',
+        components: const [],
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+      ),
+    );
+    registerFallbackValue(
+      RecipeLogParams(
+        recipeId: 'r',
+        recipeName: 'R',
+        servings: 1,
+        caloriesPerServing: 100,
+        carbsGPerServing: 20,
+        proteinGPerServing: 5,
+        fatGPerServing: 2,
+      ),
+    );
     // For MealAiService storage mock.
     registerFallbackValue(Uint8List(0));
     registerFallbackValue(const FileOptions());
@@ -210,9 +230,19 @@ void main() {
 
     test('operator + sums all fields', () {
       const a = ConsumedTotals(
-          calories: 300, carbsG: 50, proteinG: 10, fatG: 5, sodiumMg: 200);
+        calories: 300,
+        carbsG: 50,
+        proteinG: 10,
+        fatG: 5,
+        sodiumMg: 200,
+      );
       const b = ConsumedTotals(
-          calories: 200, carbsG: 30, proteinG: 8, fatG: 3, sodiumMg: 100);
+        calories: 200,
+        carbsG: 30,
+        proteinG: 8,
+        fatG: 3,
+        sodiumMg: 100,
+      );
       final c = a + b;
       expect(c.calories, 500);
       expect(c.carbsG, 80);
@@ -317,8 +347,20 @@ void main() {
       test('sums components when components list is non-empty', () {
         final log = makeMealLog(
           components: [
-            makeComponent(calories: 150, carbG: 27.0, proteinG: 5.0, fatG: 3.0, sodiumMg: 50.0),
-            makeComponent(calories: 100, carbG: 20.0, proteinG: 3.0, fatG: 2.0, sodiumMg: 30.0),
+            makeComponent(
+              calories: 150,
+              carbG: 27.0,
+              proteinG: 5.0,
+              fatG: 3.0,
+              sodiumMg: 50.0,
+            ),
+            makeComponent(
+              calories: 100,
+              carbG: 20.0,
+              proteinG: 3.0,
+              fatG: 2.0,
+              sodiumMg: 30.0,
+            ),
           ],
           // Denormalised columns are intentionally different to prove we use
           // components, not column cache, when components is non-empty.
@@ -350,21 +392,24 @@ void main() {
         expect(totals.proteinG, 10);
       });
 
-      test('returns zero totals when components and denormalised columns are all null', () {
-        final log = makeMealLog(
-          components: const [],
-          calories: null,
-          carbsG: null,
-          proteinG: null,
-          fatG: null,
-          sodiumMg: null,
-        );
+      test(
+        'returns zero totals when components and denormalised columns are all null',
+        () {
+          final log = makeMealLog(
+            components: const [],
+            calories: null,
+            carbsG: null,
+            proteinG: null,
+            fatG: null,
+            sodiumMg: null,
+          );
 
-        final totals = log.totalsFromComponents();
-        expect(totals.calories, 0);
-        expect(totals.carbsG, 0);
-        expect(totals.proteinG, 0);
-      });
+          final totals = log.totalsFromComponents();
+          expect(totals.calories, 0);
+          expect(totals.carbsG, 0);
+          expect(totals.proteinG, 0);
+        },
+      );
 
       test('handles components with null macro fields (partial entry)', () {
         final log = makeMealLog(
@@ -383,7 +428,11 @@ void main() {
         final log = makeMealLog(
           components: [
             const MealComponent(
-                name: 'Water', portion: '500 ml', calories: 0, carbG: 0),
+              name: 'Water',
+              portion: '500 ml',
+              calories: 0,
+              carbG: 0,
+            ),
           ],
           calories: null,
           carbsG: null,
@@ -393,24 +442,27 @@ void main() {
     });
 
     group('Supabase serialisation', () {
-      test('toSupabaseJson round-trips via fromSupabaseJson preserving all fields', () {
-        final original = makeMealLog(
-          components: [makeComponent()],
-          logDate: '2026-06-30',
-        );
-        final json = original.toSupabaseJson();
-        final parsed = MealLog.fromSupabaseJson(json);
+      test(
+        'toSupabaseJson round-trips via fromSupabaseJson preserving all fields',
+        () {
+          final original = makeMealLog(
+            components: [makeComponent()],
+            logDate: '2026-06-30',
+          );
+          final json = original.toSupabaseJson();
+          final parsed = MealLog.fromSupabaseJson(json);
 
-        expect(parsed, isNotNull);
-        expect(parsed!.id, original.id);
-        expect(parsed.logDate, '2026-06-30');
-        expect(parsed.slot, original.slot);
-        expect(parsed.source, original.source);
-        expect(parsed.calories, original.calories);
-        expect(parsed.carbsG, original.carbsG);
-        expect(parsed.components, hasLength(1));
-        expect(parsed.components.first.name, 'Oats');
-      });
+          expect(parsed, isNotNull);
+          expect(parsed!.id, original.id);
+          expect(parsed.logDate, '2026-06-30');
+          expect(parsed.slot, original.slot);
+          expect(parsed.source, original.source);
+          expect(parsed.calories, original.calories);
+          expect(parsed.carbsG, original.carbsG);
+          expect(parsed.components, hasLength(1));
+          expect(parsed.components.first.name, 'Oats');
+        },
+      );
 
       test('toSupabaseJson excludes Drift-only sync columns', () {
         final log = makeMealLog(needsUpload: true);
@@ -431,17 +483,20 @@ void main() {
         expect(MealLog.fromSupabaseJson(json), isNull);
       });
 
-      test('fromSupabaseJson parses JSONB items array (not re-encoded string)', () {
-        final json = makeMealLog(
-          components: [makeComponent(calories: 200, carbG: 30.0)],
-        ).toSupabaseJson();
-        // items in Supabase is a native List (JSONB), not a JSON string.
-        expect(json['items'], isA<List>());
+      test(
+        'fromSupabaseJson parses JSONB items array (not re-encoded string)',
+        () {
+          final json = makeMealLog(
+            components: [makeComponent(calories: 200, carbG: 30.0)],
+          ).toSupabaseJson();
+          // items in Supabase is a native List (JSONB), not a JSON string.
+          expect(json['items'], isA<List>());
 
-        final parsed = MealLog.fromSupabaseJson(json);
-        expect(parsed!.components.first.calories, 200);
-        expect(parsed.components.first.carbG, 30.0);
-      });
+          final parsed = MealLog.fromSupabaseJson(json);
+          expect(parsed!.components.first.calories, 200);
+          expect(parsed.components.first.carbG, 30.0);
+        },
+      );
 
       test('fromSupabaseJson tolerates null/absent optional fields', () {
         final json = {
@@ -463,11 +518,14 @@ void main() {
         expect(log.notes, isNull);
       });
 
-      test('logDate stays as yyyy-MM-dd string, not converted to ISO timestamp', () {
-        final log = makeMealLog(logDate: '2026-06-30');
-        final json = log.toSupabaseJson();
-        expect(json['log_date'], '2026-06-30');
-      });
+      test(
+        'logDate stays as yyyy-MM-dd string, not converted to ISO timestamp',
+        () {
+          final log = makeMealLog(logDate: '2026-06-30');
+          final json = log.toSupabaseJson();
+          expect(json['log_date'], '2026-06-30');
+        },
+      );
     });
 
     group('copyWith', () {
@@ -513,7 +571,10 @@ void main() {
       expect(MealLogSource.fromWireValue('describe'), MealLogSource.describe);
       expect(MealLogSource.fromWireValue('saved'), MealLogSource.saved);
       expect(MealLogSource.fromWireValue('recipe'), MealLogSource.recipe);
-      expect(MealLogSource.fromWireValue('jade_baseline'), MealLogSource.jadeBaseline);
+      expect(
+        MealLogSource.fromWireValue('jade_baseline'),
+        MealLogSource.jadeBaseline,
+      );
     });
 
     test('returns null for unknown or null wire value', () {
@@ -580,19 +641,38 @@ void main() {
 
     test('fromJson with notes populates notes field', () {
       final result = MealAnalysisResult.fromJson(
-          buildAnalysisJson(notes: 'Estimated portion size'));
+        buildAnalysisJson(notes: 'Estimated portion size'),
+      );
       expect(result.notes, 'Estimated portion size');
+    });
+
+    test('fromJson captures gateway usage metadata for Mixpanel', () {
+      final json = buildAnalysisJson()
+        ..['_usage'] = {
+          'input_tokens': 321,
+          'output_tokens': 87,
+          'model': 'anthropic/claude-sonnet-4.6',
+          'cost_usd': 0.0042,
+        };
+      final result = MealAnalysisResult.fromJson(json);
+      expect(result.inputTokens, 321);
+      expect(result.outputTokens, 87);
+      expect(result.totalTokens, 408);
+      expect(result.model, 'anthropic/claude-sonnet-4.6');
+      expect(result.costUsd, 0.0042);
     });
 
     test('fromJson falls back to snack for unknown suggested_slot', () {
       final result = MealAnalysisResult.fromJson(
-          buildAnalysisJson(slot: 'midnight_snack'));
+        buildAnalysisJson(slot: 'midnight_snack'),
+      );
       expect(result.suggestedSlot, MealSlot.snack);
     });
 
     test('fromJson falls back to medium for unknown confidence', () {
       final result = MealAnalysisResult.fromJson(
-          buildAnalysisJson(confidence: 'uncertain'));
+        buildAnalysisJson(confidence: 'uncertain'),
+      );
       expect(result.confidence, MealAnalysisConfidence.medium);
     });
 
@@ -634,8 +714,21 @@ void main() {
     group('consumedTotalsForLogs', () {
       test('sums calories and macros across multiple logs', () {
         final logs = [
-          makeMealLog(calories: 300, carbsG: 50, proteinG: 10, fatG: 5, sodiumMg: 200),
-          makeMealLog(id: 'log-2', calories: 200, carbsG: 30, proteinG: 8, fatG: 3, sodiumMg: 100),
+          makeMealLog(
+            calories: 300,
+            carbsG: 50,
+            proteinG: 10,
+            fatG: 5,
+            sodiumMg: 200,
+          ),
+          makeMealLog(
+            id: 'log-2',
+            calories: 200,
+            carbsG: 30,
+            proteinG: 8,
+            fatG: 3,
+            sodiumMg: 100,
+          ),
         ];
         final totals = service.consumedTotalsForLogs(logs);
         expect(totals.calories, 500);
@@ -653,7 +746,13 @@ void main() {
 
       test('handles logs with null calorie/macro fields (partial entries)', () {
         final logs = [
-          makeMealLog(calories: null, carbsG: null, proteinG: null, fatG: null, sodiumMg: null),
+          makeMealLog(
+            calories: null,
+            carbsG: null,
+            proteinG: null,
+            fatG: null,
+            sodiumMg: null,
+          ),
           makeMealLog(id: 'log-2', calories: 300, carbsG: 50),
         ];
         final totals = service.consumedTotalsForLogs(logs);
@@ -684,8 +783,9 @@ void main() {
     group('logManualMeal', () {
       test('passes macro fields to repository insertLog', () async {
         final savedLog = makeMealLog(calories: 400, carbsG: 60);
-        when(() => mockLogRepo.insertLog(any()))
-            .thenAnswer((_) async => savedLog);
+        when(
+          () => mockLogRepo.insertLog(any()),
+        ).thenAnswer((_) async => savedLog);
 
         final result = await service.logManualMeal(
           userId: 'user-abc',
@@ -698,9 +798,9 @@ void main() {
           fatG: 8,
         );
 
-        final captured = verify(() => mockLogRepo.insertLog(captureAny()))
-            .captured
-            .single as MealLog;
+        final captured =
+            verify(() => mockLogRepo.insertLog(captureAny())).captured.single
+                as MealLog;
         expect(captured.source, MealLogSource.manual);
         expect(captured.components, isEmpty);
         expect(captured.calories, 400);
@@ -711,8 +811,9 @@ void main() {
 
       test('logs with null macros does not crash (partial entry)', () async {
         final savedLog = makeMealLog(calories: null, carbsG: null);
-        when(() => mockLogRepo.insertLog(any()))
-            .thenAnswer((_) async => savedLog);
+        when(
+          () => mockLogRepo.insertLog(any()),
+        ).thenAnswer((_) async => savedLog);
 
         await expectLater(
           service.logManualMeal(
@@ -729,35 +830,53 @@ void main() {
     // ── logFromComponents ─────────────────────────────────────────────────
 
     group('logFromComponents', () {
-      test('computes totals from components and writes denormalised columns', () async {
-        final components = [
-          makeComponent(calories: 150, carbG: 27.0, proteinG: 5.0, fatG: 3.0, sodiumMg: 50.0),
-          makeComponent(name: 'Banana', calories: 105, carbG: 27.0, proteinG: 1.3, fatG: 0.4, sodiumMg: 1.0),
-        ];
+      test(
+        'computes totals from components and writes denormalised columns',
+        () async {
+          final components = [
+            makeComponent(
+              calories: 150,
+              carbG: 27.0,
+              proteinG: 5.0,
+              fatG: 3.0,
+              sodiumMg: 50.0,
+            ),
+            makeComponent(
+              name: 'Banana',
+              calories: 105,
+              carbG: 27.0,
+              proteinG: 1.3,
+              fatG: 0.4,
+              sodiumMg: 1.0,
+            ),
+          ];
 
-        MealLog? insertedLog;
-        when(() => mockLogRepo.insertLog(any())).thenAnswer((invocation) async {
-          insertedLog = invocation.positionalArguments[0] as MealLog;
-          return insertedLog!;
-        });
+          MealLog? insertedLog;
+          when(() => mockLogRepo.insertLog(any())).thenAnswer((
+            invocation,
+          ) async {
+            insertedLog = invocation.positionalArguments[0] as MealLog;
+            return insertedLog!;
+          });
 
-        await service.logFromComponents(
-          userId: 'user-abc',
-          name: 'Oatmeal + banana',
-          slot: MealSlot.breakfast,
-          logDate: '2026-06-30',
-          source: MealLogSource.manual,
-          components: components,
-        );
+          await service.logFromComponents(
+            userId: 'user-abc',
+            name: 'Oatmeal + banana',
+            slot: MealSlot.breakfast,
+            logDate: '2026-06-30',
+            source: MealLogSource.manual,
+            components: components,
+          );
 
-        expect(insertedLog, isNotNull);
-        // Totals are summed from components, not passed by caller.
-        expect(insertedLog!.calories, 255); // 150 + 105
-        expect(insertedLog!.carbsG, 54.0); // 27 + 27
-        expect(insertedLog!.proteinG, closeTo(6.3, 0.01));
-        expect(insertedLog!.fatG, closeTo(3.4, 0.01));
-        expect(insertedLog!.sodiumMg, closeTo(51.0, 0.01));
-      });
+          expect(insertedLog, isNotNull);
+          // Totals are summed from components, not passed by caller.
+          expect(insertedLog!.calories, 255); // 150 + 105
+          expect(insertedLog!.carbsG, 54.0); // 27 + 27
+          expect(insertedLog!.proteinG, closeTo(6.3, 0.01));
+          expect(insertedLog!.fatG, closeTo(3.4, 0.01));
+          expect(insertedLog!.sodiumMg, closeTo(51.0, 0.01));
+        },
+      );
 
       test('photo path and notes are passed through', () async {
         MealLog? insertedLog;
@@ -806,39 +925,44 @@ void main() {
     // ── logSavedMeal ────────────────────────────────────────────────────────
 
     group('logSavedMeal', () {
-      test('copies components from savedMeal and sets savedMealId provenance', () async {
-        final now = DateTime.utc(2026, 6, 30);
-        final savedMeal = SavedMeal(
-          id: 'saved-1',
-          userId: 'user-abc',
-          name: 'Pre-race oatmeal',
-          components: [makeComponent(calories: 300, carbG: 60.0)],
-          calories: 300,
-          carbsG: 60.0,
-          createdAt: now,
-          updatedAt: now,
-        );
+      test(
+        'copies components from savedMeal and sets savedMealId provenance',
+        () async {
+          final now = DateTime.utc(2026, 6, 30);
+          final savedMeal = SavedMeal(
+            id: 'saved-1',
+            userId: 'user-abc',
+            name: 'Pre-race oatmeal',
+            components: [makeComponent(calories: 300, carbG: 60.0)],
+            calories: 300,
+            carbsG: 60.0,
+            createdAt: now,
+            updatedAt: now,
+          );
 
-        MealLog? insertedLog;
-        when(() => mockLogRepo.insertLog(any())).thenAnswer((inv) async {
-          insertedLog = inv.positionalArguments[0] as MealLog;
-          return insertedLog!;
-        });
-        when(() => mockSavedRepo.touchLastUsed(any())).thenAnswer((_) async {});
+          MealLog? insertedLog;
+          when(() => mockLogRepo.insertLog(any())).thenAnswer((inv) async {
+            insertedLog = inv.positionalArguments[0] as MealLog;
+            return insertedLog!;
+          });
+          when(
+            () => mockSavedRepo.touchLastUsed(any()),
+          ).thenAnswer((_) async {});
 
-        await service.logSavedMeal(
-          savedMeal: savedMeal,
-          userId: 'user-abc',
-          slot: MealSlot.breakfast,
-          logDate: '2026-06-30',
-        );
+          await service.logSavedMeal(
+            savedMeal: savedMeal,
+            userId: 'user-abc',
+            slot: MealSlot.breakfast,
+            logDate: '2026-06-30',
+          );
 
-        expect(insertedLog!.savedMealId, 'saved-1');
-        expect(insertedLog!.name, 'Pre-race oatmeal');
-        expect(insertedLog!.source, MealLogSource.saved);
-        expect(insertedLog!.components, hasLength(1));
-        verify(() => mockSavedRepo.touchLastUsed('saved-1')).called(1);
-      });
+          expect(insertedLog!.savedMealId, 'saved-1');
+          expect(insertedLog!.name, 'Pre-race oatmeal');
+          expect(insertedLog!.source, MealLogSource.saved);
+          expect(insertedLog!.components, hasLength(1));
+          verify(() => mockSavedRepo.touchLastUsed('saved-1')).called(1);
+        },
+      );
     });
 
     // ── logRecipe ──────────────────────────────────────────────────────────
@@ -910,35 +1034,38 @@ void main() {
         expect(insertedLog!.components.single.portion, '1 serving');
       });
 
-      test('fractional servings use 1 decimal place in portion string', () async {
-        const params = RecipeLogParams(
-          recipeId: 'recipe-y',
-          recipeName: 'Pasta',
-          servings: 1.5,
-          caloriesPerServing: 400,
-          carbsGPerServing: 70.0,
-          proteinGPerServing: 15.0,
-          fatGPerServing: 8.0,
-        );
+      test(
+        'fractional servings use 1 decimal place in portion string',
+        () async {
+          const params = RecipeLogParams(
+            recipeId: 'recipe-y',
+            recipeName: 'Pasta',
+            servings: 1.5,
+            caloriesPerServing: 400,
+            carbsGPerServing: 70.0,
+            proteinGPerServing: 15.0,
+            fatGPerServing: 8.0,
+          );
 
-        MealLog? insertedLog;
-        when(() => mockLogRepo.insertLog(any())).thenAnswer((inv) async {
-          insertedLog = inv.positionalArguments[0] as MealLog;
-          return insertedLog!;
-        });
+          MealLog? insertedLog;
+          when(() => mockLogRepo.insertLog(any())).thenAnswer((inv) async {
+            insertedLog = inv.positionalArguments[0] as MealLog;
+            return insertedLog!;
+          });
 
-        await service.logRecipe(
-          params: params,
-          userId: 'user-abc',
-          slot: MealSlot.dinner,
-          logDate: '2026-06-30',
-        );
+          await service.logRecipe(
+            params: params,
+            userId: 'user-abc',
+            slot: MealSlot.dinner,
+            logDate: '2026-06-30',
+          );
 
-        // 1.5 servings → "1.5 servings"
-        expect(insertedLog!.components.single.portion, '1.5 servings');
-        // 400 * 1.5 = 600 (round)
-        expect(insertedLog!.components.single.calories, 600);
-      });
+          // 1.5 servings → "1.5 servings"
+          expect(insertedLog!.components.single.portion, '1.5 servings');
+          // 400 * 1.5 = 600 (round)
+          expect(insertedLog!.components.single.calories, 600);
+        },
+      );
 
       test('null sodiumMgPerServing is omitted from component', () async {
         const params = RecipeLogParams(
@@ -996,26 +1123,29 @@ void main() {
         expect(writtenLog!.proteinG, 8.0);
       });
 
-      test('uses caller macro values directly for manual log with no components', () async {
-        final log = makeMealLog(
-          components: const [],
-          calories: 450,
-          carbsG: 70,
-          proteinG: 20,
-        );
+      test(
+        'uses caller macro values directly for manual log with no components',
+        () async {
+          final log = makeMealLog(
+            components: const [],
+            calories: 450,
+            carbsG: 70,
+            proteinG: 20,
+          );
 
-        MealLog? writtenLog;
-        when(() => mockLogRepo.updateLog(any())).thenAnswer((inv) async {
-          writtenLog = inv.positionalArguments[0] as MealLog;
-          return writtenLog!;
-        });
+          MealLog? writtenLog;
+          when(() => mockLogRepo.updateLog(any())).thenAnswer((inv) async {
+            writtenLog = inv.positionalArguments[0] as MealLog;
+            return writtenLog!;
+          });
 
-        await service.updateLog(log);
+          await service.updateLog(log);
 
-        // No totals recomputed — direct pass-through.
-        expect(writtenLog!.calories, 450);
-        expect(writtenLog!.carbsG, 70);
-      });
+          // No totals recomputed — direct pass-through.
+          expect(writtenLog!.calories, 450);
+          expect(writtenLog!.carbsG, 70);
+        },
+      );
     });
 
     // ── saveLogAsFavorite ─────────────────────────────────────────────────
@@ -1051,7 +1181,10 @@ void main() {
           return savedMeal!;
         });
 
-        await service.saveLogAsFavorite(log, customName: 'My race-day breakfast');
+        await service.saveLogAsFavorite(
+          log,
+          customName: 'My race-day breakfast',
+        );
 
         expect(savedMeal!.name, 'My race-day breakfast');
       });
@@ -1126,19 +1259,22 @@ void main() {
         expect(rows.single.logDate, '2026-06-30');
       });
 
-      test('stored components round-trip through JSON in Drift TEXT column', () async {
-        final log = makeMealLog(
-          userId: testUserId,
-          components: [makeComponent(calories: 200, carbG: 40.0)],
-        );
-        await repository.insertLog(log);
+      test(
+        'stored components round-trip through JSON in Drift TEXT column',
+        () async {
+          final log = makeMealLog(
+            userId: testUserId,
+            components: [makeComponent(calories: 200, carbG: 40.0)],
+          );
+          await repository.insertLog(log);
 
-        final rows = await database.select(database.mealLogsTable).get();
-        final parsed = MealLog.fromDriftEntry(rows.single);
-        expect(parsed, isNotNull);
-        expect(parsed!.components.first.calories, 200);
-        expect(parsed.components.first.carbG, 40.0);
-      });
+          final rows = await database.select(database.mealLogsTable).get();
+          final parsed = MealLog.fromDriftEntry(rows.single);
+          expect(parsed, isNotNull);
+          expect(parsed!.components.first.calories, 200);
+          expect(parsed.components.first.carbG, 40.0);
+        },
+      );
     });
 
     // ── updateLog ────────────────────────────────────────────────────────
@@ -1152,8 +1288,7 @@ void main() {
         // Simulate clearing dirty flag (as if upload succeeded).
         await (database.update(database.mealLogsTable)
               ..where((t) => t.id.equals(log.id)))
-            .write(const MealLogsTableCompanion(
-                needsUpload: Value(false)));
+            .write(const MealLogsTableCompanion(needsUpload: Value(false)));
 
         // Update it.
         await repository.updateLog(log.copyWith(calories: 500));
@@ -1196,15 +1331,18 @@ void main() {
         expect(rows.single.isDeleted, isTrue); // unchanged
       });
 
-      test('soft-deleted log is excluded from watchLogsForDate stream', () async {
-        final log = makeMealLog(userId: testUserId, logDate: '2026-06-30');
-        await repository.insertLog(log);
-        await repository.softDeleteLog(id: log.id, userId: testUserId);
+      test(
+        'soft-deleted log is excluded from watchLogsForDate stream',
+        () async {
+          final log = makeMealLog(userId: testUserId, logDate: '2026-06-30');
+          await repository.insertLog(log);
+          await repository.softDeleteLog(id: log.id, userId: testUserId);
 
-        final stream = repository.watchLogsForDate(testUserId, '2026-06-30');
-        final result = await stream.first;
-        expect(result, isEmpty);
-      });
+          final stream = repository.watchLogsForDate(testUserId, '2026-06-30');
+          final result = await stream.first;
+          expect(result, isEmpty);
+        },
+      );
     });
 
     // ── restoreLog ────────────────────────────────────────────────────────
@@ -1222,7 +1360,11 @@ void main() {
       });
 
       test('restored log appears in watchLogsForDate stream', () async {
-        final log = makeMealLog(userId: testUserId, logDate: '2026-06-30', isDeleted: true);
+        final log = makeMealLog(
+          userId: testUserId,
+          logDate: '2026-06-30',
+          isDeleted: true,
+        );
         await repository.insertLog(log);
         await repository.restoreLog(id: log.id, userId: testUserId);
 
@@ -1238,20 +1380,29 @@ void main() {
     group('watchLogsForDate', () {
       test('returns only logs matching the userId and logDate', () async {
         // Different date.
-        await repository.insertLog(makeMealLog(
+        await repository.insertLog(
+          makeMealLog(
             id: 'log-other-date',
             userId: testUserId,
-            logDate: '2026-07-01'));
+            logDate: '2026-07-01',
+          ),
+        );
         // Different user.
-        await repository.insertLog(makeMealLog(
+        await repository.insertLog(
+          makeMealLog(
             id: 'log-other-user',
             userId: 'user-xyz',
-            logDate: '2026-06-30'));
+            logDate: '2026-06-30',
+          ),
+        );
         // Correct.
-        await repository.insertLog(makeMealLog(
+        await repository.insertLog(
+          makeMealLog(
             id: 'log-correct',
             userId: testUserId,
-            logDate: '2026-06-30'));
+            logDate: '2026-06-30',
+          ),
+        );
 
         final stream = repository.watchLogsForDate(testUserId, '2026-06-30');
         final result = await stream.first;
@@ -1266,8 +1417,7 @@ void main() {
         // Corrupt the slot directly in the DB to simulate a forward-compat row.
         await (database.update(database.mealLogsTable)
               ..where((t) => t.id.equals(log.id)))
-            .write(const MealLogsTableCompanion(
-                slot: Value('future_slot')));
+            .write(const MealLogsTableCompanion(slot: Value('future_slot')));
 
         final stream = repository.watchLogsForDate(testUserId, '2026-06-30');
         // fromDriftEntry returns null for unknown slot → filtered by whereType.
@@ -1282,26 +1432,27 @@ void main() {
       test('deduplicates by lowercase name, returning most recent', () async {
         final now = DateTime.utc(2026, 6, 30, 12);
         // Log "Oatmeal" twice — dedup should collapse to one.
-        await repository.insertLog(makeMealLog(
-          id: 'log-1',
-          userId: testUserId,
-          name: 'Oatmeal',
-        ));
-        await repository.insertLog(makeMealLog(
-          id: 'log-2',
-          userId: testUserId,
-          name: 'oatmeal', // same name, different case
-        ));
-        await repository.insertLog(makeMealLog(
-          id: 'log-3',
-          userId: testUserId,
-          name: 'Banana',
-        ));
+        await repository.insertLog(
+          makeMealLog(id: 'log-1', userId: testUserId, name: 'Oatmeal'),
+        );
+        await repository.insertLog(
+          makeMealLog(
+            id: 'log-2',
+            userId: testUserId,
+            name: 'oatmeal', // same name, different case
+          ),
+        );
+        await repository.insertLog(
+          makeMealLog(id: 'log-3', userId: testUserId, name: 'Banana'),
+        );
 
         final recents = await repository.getRecentLogs(testUserId);
         final names = recents.map((l) => l.name.toLowerCase()).toList();
-        expect(names.where((n) => n == 'oatmeal'), hasLength(1),
-            reason: 'dedup should collapse both oatmeal entries');
+        expect(
+          names.where((n) => n == 'oatmeal'),
+          hasLength(1),
+          reason: 'dedup should collapse both oatmeal entries',
+        );
         expect(names.contains('banana'), isTrue);
       });
 
@@ -1329,15 +1480,27 @@ void main() {
       });
 
       test('logs for different dates are bucketed separately', () async {
-        await repository.insertLog(makeMealLog(
-            id: 'log-june', userId: testUserId, logDate: '2026-06-30'));
-        await repository.insertLog(makeMealLog(
-            id: 'log-july', userId: testUserId, logDate: '2026-07-01'));
+        await repository.insertLog(
+          makeMealLog(
+            id: 'log-june',
+            userId: testUserId,
+            logDate: '2026-06-30',
+          ),
+        );
+        await repository.insertLog(
+          makeMealLog(
+            id: 'log-july',
+            userId: testUserId,
+            logDate: '2026-07-01',
+          ),
+        );
 
-        final june =
-            await repository.watchLogsForDate(testUserId, '2026-06-30').first;
-        final july =
-            await repository.watchLogsForDate(testUserId, '2026-07-01').first;
+        final june = await repository
+            .watchLogsForDate(testUserId, '2026-06-30')
+            .first;
+        final july = await repository
+            .watchLogsForDate(testUserId, '2026-07-01')
+            .first;
 
         expect(june, hasLength(1));
         expect(july, hasLength(1));
@@ -1371,8 +1534,11 @@ void main() {
         // We can't mock the Supabase query chain easily, so we verify the dirty-
         // preserve logic by checking the DB state after insertLog marks it dirty.
         final rows = await database.select(database.mealLogsTable).get();
-        expect(rows.single.needsUpload, isTrue,
-            reason: 'dirty flag must be set to protect against remote overwrite');
+        expect(
+          rows.single.needsUpload,
+          isTrue,
+          reason: 'dirty flag must be set to protect against remote overwrite',
+        );
       });
     });
   });
@@ -1473,8 +1639,7 @@ void main() {
       // Clear dirty flag to simulate "already uploaded."
       await (database.update(database.savedMealsTable)
             ..where((t) => t.id.equals('saved-1')))
-          .write(const SavedMealsTableCompanion(
-              needsUpload: Value(false)));
+          .write(const SavedMealsTableCompanion(needsUpload: Value(false)));
 
       await repository.touchLastUsed('saved-1');
       await Future<void>.delayed(Duration.zero); // let fire-and-forget settle
@@ -1536,7 +1701,7 @@ void main() {
             'protein_g': 31.0,
             'fat_g': 3.6,
             'sodium_mg': 74.0,
-          }
+          },
         ],
         'totals': {
           'calories': 165,
@@ -1547,9 +1712,11 @@ void main() {
         },
       };
 
-      when(() => mockFunctions.invoke('describe-meal',
-          body: any(named: 'body'))).thenAnswer((_) async =>
-          FunctionResponse(data: responseData, status: 200));
+      when(
+        () => mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+      ).thenAnswer(
+        (_) async => FunctionResponse(data: responseData, status: 200),
+      );
 
       final result = await service.describeMeal('A grilled chicken salad');
       expect(result.name, 'Chicken salad');
@@ -1558,88 +1725,136 @@ void main() {
     });
 
     test('describeMeal throws MealAiException(notFood) on 422', () async {
-      when(() => mockFunctions.invoke('describe-meal',
-              body: any(named: 'body')))
-          .thenAnswer((_) async => FunctionResponse(
-              data: {'error': 'Not a food description'},
-              status: 422));
+      when(
+        () => mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+      ).thenAnswer(
+        (_) async => FunctionResponse(
+          data: {'error': 'Not a food description'},
+          status: 422,
+        ),
+      );
 
       expect(
         () => service.describeMeal('blue sky'),
-        throwsA(isA<MealAiException>()
-            .having((e) => e.kind, 'kind', MealAiFailureKind.notFood)),
+        throwsA(
+          isA<MealAiException>().having(
+            (e) => e.kind,
+            'kind',
+            MealAiFailureKind.notFood,
+          ),
+        ),
       );
     });
 
     test('describeMeal throws MealAiException(serverError) on 500', () async {
-      when(() => mockFunctions.invoke('describe-meal',
-              body: any(named: 'body')))
-          .thenAnswer((_) async =>
-              FunctionResponse(data: {'error': 'Internal error'}, status: 500));
+      when(
+        () => mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+      ).thenAnswer(
+        (_) async =>
+            FunctionResponse(data: {'error': 'Internal error'}, status: 500),
+      );
 
       expect(
         () => service.describeMeal('pasta'),
-        throwsA(isA<MealAiException>()
-            .having((e) => e.kind, 'kind', MealAiFailureKind.serverError)),
+        throwsA(
+          isA<MealAiException>().having(
+            (e) => e.kind,
+            'kind',
+            MealAiFailureKind.serverError,
+          ),
+        ),
       );
     });
 
-    test('describeMeal throws MealAiException(serverError) on FunctionException', () async {
-      when(() => mockFunctions.invoke('describe-meal',
-              body: any(named: 'body')))
-          .thenThrow(FunctionException(
-              status: 503,
-              details: 'Service unavailable'));
+    test(
+      'describeMeal throws MealAiException(serverError) on FunctionException',
+      () async {
+        when(
+          () => mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+        ).thenThrow(
+          FunctionException(status: 503, details: 'Service unavailable'),
+        );
 
-      expect(
-        () => service.describeMeal('spaghetti'),
-        throwsA(isA<MealAiException>()
-            .having((e) => e.kind, 'kind', MealAiFailureKind.serverError)),
-      );
-    });
+        expect(
+          () => service.describeMeal('spaghetti'),
+          throwsA(
+            isA<MealAiException>().having(
+              (e) => e.kind,
+              'kind',
+              MealAiFailureKind.serverError,
+            ),
+          ),
+        );
+      },
+    );
 
     test('describeMeal maps FunctionException 422 to notFood', () async {
-      when(() => mockFunctions.invoke('describe-meal',
-              body: any(named: 'body')))
-          .thenThrow(FunctionException(
-              status: 422,
-              details: 'Not food'));
+      when(
+        () => mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+      ).thenThrow(FunctionException(status: 422, details: 'Not food'));
 
       expect(
         () => service.describeMeal('abstract concept'),
-        throwsA(isA<MealAiException>()
-            .having((e) => e.kind, 'kind', MealAiFailureKind.notFood)),
+        throwsA(
+          isA<MealAiException>().having(
+            (e) => e.kind,
+            'kind',
+            MealAiFailureKind.notFood,
+          ),
+        ),
       );
     });
 
-    test('analyzePhotoBytes throws MealAiException(serverError) on StorageException', () async {
-      final mockStorageClient = MockStorageFileApi();
-      final mockBucket = MockBucketApi();
+    test(
+      'analyzePhotoBytes throws MealAiException(serverError) on StorageException',
+      () async {
+        final mockStorageClient = MockStorageFileApi();
+        final mockBucket = MockBucketApi();
 
-      when(() => mockSupabase.storage).thenReturn(mockStorageClient);
-      when(() => mockStorageClient.from('meal-photos')).thenReturn(mockBucket);
-      when(() => mockBucket.uploadBinary(any(), any(),
-              fileOptions: any(named: 'fileOptions')))
-          .thenThrow(StorageException('Upload failed'));
+        when(() => mockSupabase.storage).thenReturn(mockStorageClient);
+        when(
+          () => mockStorageClient.from('meal-photos'),
+        ).thenReturn(mockBucket);
+        when(
+          () => mockBucket.uploadBinary(
+            any(),
+            any(),
+            fileOptions: any(named: 'fileOptions'),
+          ),
+        ).thenThrow(StorageException('Upload failed'));
 
-      expect(
-        () => service.analyzePhotoBytes(Uint8List(0)),
-        throwsA(isA<MealAiException>()
-            .having((e) => e.kind, 'kind', MealAiFailureKind.serverError)),
-      );
-    });
+        expect(
+          () => service.analyzePhotoBytes(Uint8List(0)),
+          throwsA(
+            isA<MealAiException>().having(
+              (e) => e.kind,
+              'kind',
+              MealAiFailureKind.serverError,
+            ),
+          ),
+        );
+      },
+    );
 
-    test('throws MealAiException(serverError) when no user is authenticated', () async {
-      when(() => mockAuth.currentUser).thenReturn(null);
+    test(
+      'throws MealAiException(serverError) when no user is authenticated',
+      () async {
+        when(() => mockAuth.currentUser).thenReturn(null);
 
-      expect(
-        () => service.describeMeal('scrambled eggs'),
-        throwsA(isA<MealAiException>()
-            .having((e) => e.kind, 'kind', MealAiFailureKind.serverError)
-            .having((e) => e.userMessage, 'userMessage',
-                contains('signed in'))),
-      );
-    });
+        expect(
+          () => service.describeMeal('scrambled eggs'),
+          throwsA(
+            isA<MealAiException>()
+                .having((e) => e.kind, 'kind', MealAiFailureKind.serverError)
+                .having(
+                  (e) => e.userMessage,
+                  'userMessage',
+                  contains('signed in'),
+                ),
+          ),
+        );
+      },
+    );
   });
 
   // ==========================================================================
@@ -1676,16 +1891,22 @@ void main() {
 
     test('each kQuickAssembly entry has at least one component', () {
       for (final assembly in kQuickAssemblies) {
-        expect(assembly.components, isNotEmpty,
-            reason: '${assembly.name} has no components');
+        expect(
+          assembly.components,
+          isNotEmpty,
+          reason: '${assembly.name} has no components',
+        );
       }
     });
 
     test('kQuickAssemblies calorie sums are plausible (40–1000 kcal)', () {
       for (final assembly in kQuickAssemblies) {
         final calories = assembly.totalCalories;
-        expect(calories, inInclusiveRange(40, 1000),
-            reason: '${assembly.name} has implausible calories: $calories');
+        expect(
+          calories,
+          inInclusiveRange(40, 1000),
+          reason: '${assembly.name} has implausible calories: $calories',
+        );
       }
     });
   });

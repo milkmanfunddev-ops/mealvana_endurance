@@ -9,17 +9,22 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/services/app_config.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../jade/presentation/widgets/jade_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
+import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../providers/meal_log_providers.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/meal_component_editor.dart';
-import '../widgets/slot_chip_selector.dart';
+import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 
 /// Edit an existing [MealLog] entry.
 ///
@@ -56,7 +61,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   static final _timeFmt = DateFormat('h:mm a');
 
   MealLog? _originalLog;
-  MealSlot _slot = MealSlot.breakfast;
+  MealSlot? _slot;
   List<MealComponent> _components = const [];
   bool _showExtra = false;
   bool _initialized = false;
@@ -167,21 +172,26 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   }
 
   /// Re-capture the meal photo and replace the current items with a fresh Jade
-  /// AI analysis. Mirrors the capture flow in [PhotoCaptureScreen] but updates
-  /// this log in place instead of creating a new one. The replacement only
+  /// AI analysis. Mirrors the photo capture flow in the Log a Meal screen but
+  /// updates this log in place instead of creating a new one. The replacement only
   /// happens after the user confirms, and the edit is held in memory until
   /// "Save changes" — so the unsaved-changes guard still protects it.
   Future<void> _rescanPhoto() async {
+    // Metered AI must fail closed: the button is hidden when the release flag
+    // is off, and this guard covers any path that reaches here anyway.
+    if (!ref.read(appConfigProvider).describeMealEnabled) return;
     final source = await _pickImageSource();
     if (source == null || !mounted) return;
 
     final picker = ImagePicker();
     XFile? file;
     try {
+      // 1000px keeps enough detail for food recognition while trimming ~30%
+      // off the image's share of model input tokens vs 1200px.
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1200,
+        maxWidth: 1000,
       );
     } catch (_) {
       if (mounted) {
@@ -322,6 +332,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       return original.copyWith(
         name: _nameCtrl.text.trim(),
         slot: _slot,
+        clearSlot: _slot == null,
         components: _components,
         photoPath: _photoPath,
         eatenAt: _eatenAt,
@@ -332,6 +343,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     return original.copyWith(
       name: _nameCtrl.text.trim(),
       slot: _slot,
+      clearSlot: _slot == null,
       calories: int.tryParse(_calCtrl.text),
       carbsG: double.tryParse(_carbCtrl.text),
       proteinG: double.tryParse(_protCtrl.text),
@@ -406,6 +418,45 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   static String _encodeComponents(List<MealComponent> components) =>
       jsonEncode(components.map((c) => c.toJson()).toList());
 
+  /// Opens the shared food-swap picker (returnSelection mode) and maps the
+  /// chosen food + quantity into a replacement [MealComponent]. Returns null if
+  /// the user cancels. Wired to [MealComponentEditor.onRequestSwap] so swiping
+  /// an item swaps it (mirrors the Activity Detail food rows).
+  Future<MealComponent?> _swapComponentFood(MealComponent current) async {
+    final selection = await context.push<SwapFoodSelection>(
+      '/swap-food',
+      extra: {
+        'returnSelection': true,
+        // Neutral category — the picker still searches the full catalog.
+        'category': 'before_run',
+        'foodToSwapName': current.name,
+      },
+    );
+    if (selection == null) return null;
+
+    final food = selection.food;
+    final qty = selection.quantity;
+    final qtyLabel = qty == qty.truncateToDouble()
+        ? qty.toInt().toString()
+        : qty.toStringAsFixed(1);
+    final unit = qty == 1
+        ? (food.servingUnit ?? 'serving')
+        : (food.servingUnitPlural ?? food.servingUnit ?? 'servings');
+    double? scale(num? v) => v == null ? null : v.toDouble() * qty;
+
+    return MealComponent(
+      name: food.displayName ?? food.name,
+      portion: '$qtyLabel $unit',
+      calories: food.caloriesPerServing != null
+          ? (food.caloriesPerServing! * qty).round()
+          : null,
+      carbG: scale(food.carbsPerServing),
+      proteinG: scale(food.proteinPerServing),
+      fatG: scale(food.fatPerServing),
+      sodiumMg: scale(food.sodiumMg),
+    );
+  }
+
   /// Prompts the user before discarding unsaved edits. Returns the chosen
   /// action; `keepEditing` (or a dismissed dialog) leaves the screen in place.
   Future<_LeaveAction> _promptUnsavedChanges() async {
@@ -461,6 +512,9 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     final controllerState = ref.watch(mealLogControllerProvider);
     final isLoading = controllerState is AsyncLoading;
     final hasComponents = _components.isNotEmpty;
+    final describeMealEnabled = ref.watch(
+      appConfigProvider.select((config) => config.describeMealEnabled),
+    );
 
     return PopScope(
       // Intercept all back-navigation so unsaved edits aren't silently
@@ -471,6 +525,12 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
         appBar: AppBar(
+          // Route through maybePop so the PopScope unsaved-changes guard above
+          // still fires (a bare CustomAppBarBackButton pops directly and would
+          // bypass the discard/save prompt).
+          leading: CustomAppBarBackButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
           backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
           title: const Text('Edit Meal'),
           elevation: 0,
@@ -486,30 +546,36 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                   children: [
                     const SizedBox(height: AppSpacing.md),
 
-                    // Photo thumbnail — tappable to re-scan with a new photo.
+                    // Photo thumbnail — tappable to re-scan with a new photo
+                    // (view-only while the meal-AI release flag is off).
                     if (_photoPath != null && _photoPath!.isNotEmpty)
                       _PhotoThumbnail(
                         // Keyed by path so the image reloads after a re-scan.
                         key: ValueKey(_photoPath),
                         photoPath: _photoPath!,
-                        onTap: _isRescanning ? null : _rescanPhoto,
+                        onTap: !describeMealEnabled || _isRescanning
+                            ? null
+                            : _rescanPhoto,
                       ),
 
                     // Re-scan action — lets the user recapture the meal photo and
                     // have Jade AI re-estimate the items. Available even when no
                     // photo exists yet (e.g. a manual log gaining a photo).
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _isRescanning ? null : _rescanPhoto,
-                        icon: const Icon(Icons.camera_alt_outlined, size: 20),
-                        label: Text(
-                          (_photoPath != null && _photoPath!.isNotEmpty)
-                              ? 'Re-scan photo'
-                              : 'Scan a photo',
+                    // Hidden while the meal-AI release flag is off so this
+                    // metered entry point fails closed like the others.
+                    if (describeMealEnabled)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _isRescanning ? null : _rescanPhoto,
+                          icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                          label: Text(
+                            (_photoPath != null && _photoPath!.isNotEmpty)
+                                ? 'Re-scan photo'
+                                : 'Scan a photo',
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: AppSpacing.sm),
 
                     // Name
@@ -532,7 +598,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
-                    SlotChipSelector(
+                    OptionalSlotChipSelector(
                       selectedSlot: _slot,
                       onSlotSelected: (s) => setState(() => _slot = s),
                     ),
@@ -576,13 +642,22 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
 
-                    if (hasComponents) ...[
+                    // A re-scan replaces exactly this list, so the skeleton
+                    // stands in for it rather than covering the page — the
+                    // items dissolve and re-form in place.
+                    if (_isRescanning) ...[
+                      const MealAnalysisSkeleton(
+                        phases: JadeThinkingStatus.photoPhases,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ] else if (hasComponents) ...[
                       // Per-component editor
                       MealComponentEditor(
                         key: ValueKey(_rescanEpoch),
                         initialComponents: _components,
                         onComponentsChanged: (updated) =>
                             setState(() => _components = updated),
+                        onRequestSwap: _swapComponentFood,
                       ),
                       const SizedBox(height: AppSpacing.md),
                     ] else ...[
@@ -645,29 +720,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                 ),
               ),
             ),
-            if (_isRescanning) _analyzingOverlay(),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _analyzingOverlay() {
-    return Positioned.fill(
-      child: ColoredBox(
-        color: Colors.black54,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: Colors.white),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Analyzing your meal...',
-                style: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
-              ),
-            ],
-          ),
         ),
       ),
     );

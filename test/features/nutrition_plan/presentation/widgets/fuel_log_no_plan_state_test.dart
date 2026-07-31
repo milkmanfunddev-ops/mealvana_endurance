@@ -45,16 +45,14 @@ void main() {
       );
 
       expect(find.text('No fueling plan for this workout'), findsOneWidget);
-      expect(
-        find.textContaining('came in from Garmin'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('came in from Garmin'), findsOneWidget);
       // Brand-compliant attribution must surface "Garmin" with the device.
       expect(find.textContaining('Garmin'), findsWidgets);
     });
 
-    testWidgets('renders neutral copy when activity has no Garmin data',
-        (tester) async {
+    testWidgets('renders neutral copy when activity has no Garmin data', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -76,8 +74,9 @@ void main() {
       expect(find.textContaining('Garmin'), findsNothing);
     });
 
-    testWidgets('Generate fueling plan button invokes onGeneratePlan',
-        (tester) async {
+    testWidgets('Generate fueling plan button invokes onGeneratePlan', (
+      tester,
+    ) async {
       var generated = false;
       await tester.pumpWidget(
         MaterialApp(

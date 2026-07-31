@@ -53,9 +53,7 @@ class JadeCoachBanner extends ConsumerWidget {
           );
 
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final cardBg = isDark
-        ? AppColors.blackberryLight
-        : AppColors.cream;
+    final cardBg = isDark ? AppColors.blackberryLight : AppColors.cream;
     final borderColor = isDark
         ? AppColors.electrolyte.withValues(alpha: 0.18)
         : AppColors.electrolyte.withValues(alpha: 0.28);

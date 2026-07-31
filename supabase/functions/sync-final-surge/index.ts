@@ -11,7 +11,7 @@
  * - get_workouts: Fetch upcoming workouts for a user
  * - get_profile: Fetch user's Final Surge profile info
  *
- * API Docs: /docs/final_surge/Final-Surge-Partner-API-Uploads.pdf
+ * API Docs: /docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf
  */
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';

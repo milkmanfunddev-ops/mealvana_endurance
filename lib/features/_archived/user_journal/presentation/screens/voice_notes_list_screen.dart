@@ -15,7 +15,7 @@ class VoiceNotesListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesState = ref.watch(voiceNotesControllerProvider);
-    
+
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
@@ -50,14 +50,11 @@ class VoiceNotesListScreen extends ConsumerWidget {
         color: AppTheme.primary600,
         child: notesState.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(
-              color: AppTheme.primary600,
-            ),
+            child: CircularProgressIndicator(color: AppTheme.primary600),
           ),
           error: (error, stack) => _buildErrorState(error.toString()),
-          data: (notes) => notes.isEmpty 
-              ? _buildEmptyState()
-              : _buildNotesList(notes, ref),
+          data: (notes) =>
+              notes.isEmpty ? _buildEmptyState() : _buildNotesList(notes, ref),
         ),
       ),
     );
@@ -145,7 +142,7 @@ class VoiceNotesListScreen extends ConsumerWidget {
     // Group notes by date
     final groupedNotes = <String, List<NutritionPlan>>{};
     final dateFormat = DateFormat('dd MMM, yyyy');
-    
+
     for (final note in notes) {
       final date = note.runDateTime ?? note.createdAt ?? DateTime.now();
       final dateKey = dateFormat.format(date);
@@ -161,12 +158,12 @@ class VoiceNotesListScreen extends ConsumerWidget {
       itemBuilder: (context, index) {
         final dateKey = groupedNotes.keys.elementAt(index);
         final dateNotes = groupedNotes[dateKey]!;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (index > 0) SizedBox(height: 32.h),
-            
+
             // Date header
             Padding(
               padding: EdgeInsets.only(left: 8.w, bottom: 16.h),
@@ -179,7 +176,7 @@ class VoiceNotesListScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            
+
             // Notes for this date
             ...dateNotes.map((note) => _buildNoteItem(note, ref)),
           ],
@@ -193,13 +190,13 @@ class VoiceNotesListScreen extends ConsumerWidget {
     final time = plan.runDateTime ?? plan.createdAt ?? DateTime.now();
     final rating = plan.planRating;
     final notes = plan.journalNotes ?? '';
-    
+
     // Get emoji for rating
     final ratingEmoji = _getRatingEmoji(rating);
-    
+
     // Preview of notes (first 2 lines)
     final notePreview = _getNotesPreview(notes);
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       child: Material(
@@ -228,15 +225,12 @@ class VoiceNotesListScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Center(
-                    child: Text(
-                      ratingEmoji,
-                      style: TextStyle(fontSize: 20.sp),
-                    ),
+                    child: Text(ratingEmoji, style: TextStyle(fontSize: 20.sp)),
                   ),
                 ),
-                
+
                 SizedBox(width: 16.w),
-                
+
                 // Note content
                 Expanded(
                   child: Column(
@@ -253,9 +247,9 @@ class VoiceNotesListScreen extends ConsumerWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      
+
                       SizedBox(height: 4.h),
-                      
+
                       // Time
                       Text(
                         '${timeFormat.format(time)} A.M.',
@@ -267,7 +261,7 @@ class VoiceNotesListScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // More options button
                 IconButton(
                   icon: Icon(
@@ -302,7 +296,7 @@ class VoiceNotesListScreen extends ConsumerWidget {
     if (notes.isEmpty) {
       return 'No notes added';
     }
-    
+
     // Return first ~80 characters or until second newline
     final lines = notes.split('\\n');
     if (lines.length > 2) {
@@ -335,9 +329,7 @@ class VoiceNotesListScreen extends ConsumerWidget {
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: AppTheme.baseWhite,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20.r),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

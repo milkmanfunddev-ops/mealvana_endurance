@@ -1,7 +1,8 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../utils/platform_io.dart' if (dart.library.html) '../utils/platform_web.dart';
+import '../utils/platform_io.dart'
+    if (dart.library.html) '../utils/platform_web.dart';
 
 /// Cached device information for analytics and telemetry.
 ///
@@ -31,7 +32,8 @@ class DeviceInfoService {
       // Web platform uses browser-based device info
       if (kIsWeb) {
         final webInfo = await deviceInfo.webBrowserInfo;
-        _cachedDeviceId = 'web-${webInfo.userAgent?.hashCode.abs() ?? DateTime.now().millisecondsSinceEpoch}';
+        _cachedDeviceId =
+            'web-${webInfo.userAgent?.hashCode.abs() ?? DateTime.now().millisecondsSinceEpoch}';
         _cachedDeviceInfo = {
           'os_version': webInfo.platform ?? 'unknown',
           'device_model': webInfo.browserName.name,
@@ -63,10 +65,7 @@ class DeviceInfoService {
       _isInitialized = true;
     } catch (e) {
       _cachedDeviceId = _generateFallbackId();
-      _cachedDeviceInfo = {
-        'os_version': 'unknown',
-        'device_model': 'unknown',
-      };
+      _cachedDeviceInfo = {'os_version': 'unknown', 'device_model': 'unknown'};
       _isInitialized = true;
     }
   }
@@ -86,7 +85,8 @@ class DeviceInfoService {
 
   /// Get cached device info.
   Map<String, String> get deviceInfo {
-    return _cachedDeviceInfo ?? {'os_version': 'unknown', 'device_model': 'unknown'};
+    return _cachedDeviceInfo ??
+        {'os_version': 'unknown', 'device_model': 'unknown'};
   }
 
   /// Check if initialized

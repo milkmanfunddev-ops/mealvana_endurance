@@ -77,11 +77,11 @@ extension _$ExplanationsExt on MacroExplanationService {
         formulaText: mealType == 'top-up'
             ? 'A fixed 250mL (about 8oz) tops off your hydration in the '
                   'final minutes before your workout.\n\n'
-                  'Formula:  fixed 250 mL (top-up window)'
+                  'Formula:  fixed ${_fmtMlAmount(250, useImperial)} (top-up window)'
             : 'Your pre-workout fluid target is based on your body weight '
                   'and $mealType timing.\n\n'
                   'Formula:  weight  x  $fluidsMlPerKg mL/kg\n'
-                  '${wt}kg  x  $fluidsMlPerKg mL/kg  =  ${pre.fluidsMl.round()}mL\n\n'
+                  '${wt}kg  x  $fluidsMlPerKg mL/kg  =  ${_fmtMlAmount(pre.fluidsMl.round(), useImperial)}\n\n'
                   'Range: 50%–150% of target.',
         rangeRationale: 'Adjust based on how thirsty you feel and the weather.',
       ),
@@ -130,13 +130,19 @@ extension _$ExplanationsExt on MacroExplanationService {
     final sportName = _sportLabel(sport);
     final ceiling = _sportCarbCeiling(sport);
 
-    // Duration band from the stored abs_clamp_range
-    final bandLow = during.absClampRangeGPerH.isNotEmpty
-        ? during.absClampRangeGPerH[0].round()
-        : 0;
-    final bandHigh = during.absClampRangeGPerH.length > 1
-        ? during.absClampRangeGPerH[1].round()
-        : 60;
+    // Step 1 shows the raw duration band (pre gut-scaling, pre ceiling).
+    // The stored abs_clamp_range is the final gut-scaled, ceiling-clamped
+    // band — using it here mislabeled scaled numbers as the duration band.
+    final bandLow =
+        during.rawBandLowGPerH?.round() ??
+        (during.absClampRangeGPerH.isNotEmpty
+            ? during.absClampRangeGPerH[0].round()
+            : 0);
+    final bandHigh =
+        during.rawBandHighGPerH?.round() ??
+        (during.absClampRangeGPerH.length > 1
+            ? during.absClampRangeGPerH[1].round()
+            : 60);
 
     final explanations = <MacroExplanation>[];
 
@@ -185,7 +191,7 @@ extension _$ExplanationsExt on MacroExplanationService {
           ? '\n4. Brick fatigue penalty: ${(penalty * 100).round()}% '
                 '(running after cycling)\n'
           : '';
-      final ceilingNote2 = segRate > segCeiling
+      final ceilingNote2 = segRate >= segCeiling - 0.05
           ? '\nSport ceiling ($segSport): $segCeiling g/hr — rate capped.'
           : '';
 
@@ -201,7 +207,9 @@ extension _$ExplanationsExt on MacroExplanationService {
           '${segRate.round()} g/hr  x  ${segDurationH.toStringAsFixed(1)}h  =  ${carbValue}g\n\n'
           'Segment: $segSport (${segDurationMin}min)';
     } else {
-      final ceilingNote = during.carbRateGPerH > ceiling
+      // The stored rate is already capped, so it can never EXCEED the
+      // ceiling — sitting AT the ceiling is what "capped" looks like.
+      final ceilingNote = during.carbRateGPerH >= ceiling - 0.05
           ? '\nSport ceiling ($sportName): $ceiling g/hr — rate capped.'
           : '';
       carbFormula =
@@ -265,7 +273,7 @@ extension _$ExplanationsExt on MacroExplanationService {
         formulaText:
             'We replace about 75% of your sweat losses during activity.\n\n'
             'Formula:  sweat_rate  x  0.75  x  duration\n'
-            '${during.fluidRateMlPerH.round()} mL/hr  x  ${(brickSegment != null ? brickSegment.durationMinutes / 60.0 : durationH).toStringAsFixed(1)}h  =  ${fluidsValMl}mL\n\n'
+            '${_fmtMlRate(during.fluidRateMlPerH.round(), useImperial)}  x  ${(brickSegment != null ? brickSegment.durationMinutes / 60.0 : durationH).toStringAsFixed(1)}h  =  ${_fmtMlAmount(fluidsValMl, useImperial)}\n\n'
             'Your sweat rate is estimated from your sweat profile and '
             'adjusted for temperature (linear above 20°C).',
         rangeRationale:
@@ -411,12 +419,15 @@ extension _$ExplanationsExt on MacroExplanationService {
 
   List<MacroExplanation> _transitionExplanations(
     int transitionNumber,
-    Map<String, int>? actuals,
-  ) {
+    Map<String, int>? actuals, {
+    bool useImperial = false,
+  }) {
     final isT1 = transitionNumber == 1;
     final carbs = isT1 ? 20 : 25;
     final sodium = isT1 ? 150 : 100;
     final water = isT1 ? 200 : 150;
+    final waterVal = useImperial ? (water * 0.033814).round() : water;
+    final waterUnit = useImperial ? 'oz' : 'mL';
 
     return [
       MacroExplanation(
@@ -436,13 +447,15 @@ extension _$ExplanationsExt on MacroExplanationService {
       ),
       MacroExplanation(
         macroName: 'Fluids',
-        value: '$water',
-        unit: 'mL',
-        actualValue: actuals != null ? '${(actuals['fluids'] ?? 0)}' : null,
+        value: '$waterVal',
+        unit: waterUnit,
+        actualValue: actuals != null
+            ? '${useImperial ? ((actuals['fluids'] ?? 0) * 0.033814).round() : actuals['fluids'] ?? 0}'
+            : null,
         formulaText:
             'A small drink during transition to stay on top of '
             'hydration without overfilling your stomach.\n\n'
-            'Formula:  fixed ${water}mL (${isT1 ? "T1" : "T2"} transition)',
+            'Formula:  fixed ${_fmtMlAmount(water, useImperial)} (${isT1 ? "T1" : "T2"} transition)',
         rangeRationale:
             'Keep it small — you\'ll resume full hydration '
             'in the next segment.',

@@ -5,13 +5,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 
 /// Snackbar type enum for different visual states
-enum SnackbarType {
-  success,
-  error,
-  warning,
-  info,
-  loading,
-}
+enum SnackbarType { success, error, warning, info, loading }
 
 /// Mealvana branded snackbar with consistent styling.
 ///
@@ -100,15 +94,19 @@ class MealvanaSnackbar {
   }
 
   /// Shows an info snackbar with blackberry background.
-  static void showInfo(
+  ///
+  /// Returns the [ScaffoldFeatureController] so callers can dismiss the bar
+  /// early if they need to.
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showInfo(
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 3),
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    bool persist = false,
   }) {
-    _show(
+    return _show(
       context,
       message: message,
       type: SnackbarType.info,
@@ -116,6 +114,7 @@ class MealvanaSnackbar {
       actionLabel: actionLabel,
       onAction: onAction,
       showIcon: showIcon,
+      persist: persist,
     );
   }
 
@@ -154,6 +153,7 @@ class MealvanaSnackbar {
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    bool persist = false,
   }) {
     // Clear any existing snackbars first
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -199,6 +199,13 @@ class MealvanaSnackbar {
           vertical: AppSpacing.md,
         ),
         duration: duration,
+        // SnackBar.persist defaults to `action != null` (snack_bar.dart:303),
+        // so ANY snackbar with an action — e.g. "Undo" — stays on screen
+        // forever, ignoring `duration`. We want the timeout to apply whether or
+        // not there's an action, so state it explicitly rather than inheriting
+        // that default. Pass persist: true only for a bar that must wait on the
+        // user.
+        persist: persist,
         action: actionLabel != null && onAction != null
             ? SnackBarAction(
                 label: actionLabel,

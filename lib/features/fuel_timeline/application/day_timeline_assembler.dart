@@ -1,7 +1,9 @@
 import '../../activities/domain/activity.dart';
 import '../../daily_macros/domain/daily_macro_targets.dart';
+import '../../events/domain/event.dart';
 import '../../meal_logging/domain/consumed_totals.dart';
 import '../../meal_logging/domain/meal_log.dart';
+import '../../../shared/database/app_database.dart' show CarbLoadingDay;
 import '../domain/day_energy_summary.dart';
 import '../domain/fuel_timeline_filter.dart';
 import '../domain/timeline_node.dart';
@@ -35,6 +37,9 @@ class DayTimelineAssembler {
     required DailyMacroTargets? targets,
     required ConsumedTotals consumed,
     Map<String, double> burnByActivityId = const {},
+    List<Event> events = const [],
+    List<CarbLoadingDay> carbLoadingDays = const [],
+    Map<String, int> planTotalDaysById = const {},
     FuelTimelineFilter filter = FuelTimelineFilter.all,
   }) {
     // Drop tombstones / deleted rows defensively (callers usually pre-filter).
@@ -48,12 +53,28 @@ class DayTimelineAssembler {
       (a) => WorkoutNode(a, burnKcal: burnByActivityId[a.id]),
     );
 
+    // Events + carb-loading days are pre-filtered to the selected day by the
+    // caller. Each event resolves to a precise start time when it has one, else
+    // midnight of its date so an all-day race sorts to the top of its day.
+    final eventNodes = events
+        .where((e) => e.eventDate != null || e.startTime != null)
+        .map((e) => EventNode(e, _eventTime(e, selectedDate)));
+    final carbNodes = carbLoadingDays.map(
+      (d) =>
+          CarbLoadingNode(d, totalDays: planTotalDaysById[d.carbLoadingPlanId]),
+    );
+
     // Interleave by time; tie-break on id for stable, deterministic ordering.
-    final ordered = <TimelineNode>[...mealNodes, ...workoutNodes]
-      ..sort((a, b) {
-        final byTime = a.time.compareTo(b.time);
-        return byTime != 0 ? byTime : a.id.compareTo(b.id);
-      });
+    final ordered =
+        <TimelineNode>[
+          ...mealNodes,
+          ...workoutNodes,
+          ...eventNodes,
+          ...carbNodes,
+        ]..sort((a, b) {
+          final byTime = a.time.compareTo(b.time);
+          return byTime != 0 ? byTime : a.id.compareTo(b.id);
+        });
 
     final nodes = ordered.where(filter.matches).toList(growable: false);
 
@@ -71,6 +92,17 @@ class DayTimelineAssembler {
     );
 
     return DayTimelineResult(nodes: nodes, summary: summary);
+  }
+
+  /// Resolve an event's timeline instant: its precise [Event.startTime] if it
+  /// parses, otherwise midnight of the selected day (an all-day banner).
+  DateTime _eventTime(Event event, DateTime selectedDate) {
+    final raw = event.startTime;
+    if (raw != null) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed;
+    }
+    return DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
   }
 
   /// Sum the session energy of workouts considered "done" for the selected day:

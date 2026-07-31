@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
+import '../domain/macro_shortfall.dart';
 import '../domain/time_slot_assignment.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
@@ -158,6 +159,24 @@ class NutritionPlanMapper {
                 section = section.copyWith(
                   pinDecision: PinDecision.fromJson(pinDecisionJson),
                 );
+              }
+              // Parse macro shortfalls the solver reported for this phase
+              // (bug 3a3e3fdb: previously dropped on the floor, so plans
+              // that knowingly missed carb targets showed no explanation).
+              // Mirrors BeforeSubPhase.shortfalls; absent or malformed
+              // entries are skipped rather than failing the whole parse.
+              final shortfallsJson = duringMap['shortfalls'];
+              if (shortfallsJson is List) {
+                final shortfalls = shortfallsJson
+                    .whereType<Map>()
+                    .map(
+                      (e) =>
+                          MacroShortfall.fromJson(Map<String, dynamic>.from(e)),
+                    )
+                    .toList();
+                if (shortfalls.isNotEmpty) {
+                  section = section.copyWith(shortfalls: shortfalls);
+                }
               }
               parsedSections.add(section);
             } else if (plan['during'] is List) {
@@ -514,6 +533,8 @@ class NutritionPlanMapper {
     // 2. During segments + interleaved transitions
     final duringSegmentsData =
         plan['during_segments'] as Map<String, dynamic>? ?? {};
+    final duringSegmentShortfalls =
+        plan['during_segment_shortfalls'] as Map<String, dynamic>? ?? {};
     final transitionsData = plan['transitions'] as Map<String, dynamic>? ?? {};
 
     // Build segment targets map from phases.during_segments
@@ -555,6 +576,14 @@ class NutritionPlanMapper {
                 FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>),
           )
           .toList();
+      final segmentShortfalls =
+          (duringSegmentShortfalls[segmentOrder] as List<dynamic>? ?? const [])
+              .whereType<Map>()
+              .map(
+                (entry) =>
+                    MacroShortfall.fromJson(Map<String, dynamic>.from(entry)),
+              )
+              .toList();
 
       sections.add(
         PlanSection(
@@ -571,6 +600,7 @@ class NutritionPlanMapper {
           sodiumHighTarget: (segTargets?['sodium_high_mg'] as num?)?.toDouble(),
           fluidsLowTarget: (segTargets?['water_low_ml'] as num?)?.toDouble(),
           fluidsHighTarget: (segTargets?['water_high_ml'] as num?)?.toDouble(),
+          shortfalls: segmentShortfalls,
         ),
       );
 

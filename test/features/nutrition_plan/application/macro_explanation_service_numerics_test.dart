@@ -28,24 +28,33 @@ void main() {
         macroTargets: targets,
         bodyWeightKg: 70,
       )![Scenario.singleSport]!;
-      expect(data.targetGrams, closeTo(750.0, 0.5),
-          reason: '1.5h × 500 mL/hr = 750 mL');
+      expect(
+        data.targetGrams,
+        closeTo(750.0, 0.5),
+        reason: '1.5h × 500 mL/hr = 750 mL',
+      );
       expect(data.primaryUnit, 'mL/hr');
     });
 
-    test('useImperial=true pre-converts targetGrams / rangeLow / rangeHigh', () {
-      final targets = _sampleTargets(durationH: 1.5);
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.during,
-        macroTargets: targets,
-        bodyWeightKg: 70,
-        useImperial: true,
-      )![Scenario.singleSport]!;
-      // 750 mL × 0.033814 = ~25 oz (values are whole-number rounded)
-      expect(data.targetGrams, closeTo(25.0, 1.0),
-          reason: 'mL pre-converted to oz');
-      expect(data.primaryUnit, 'oz/hr');
-    });
+    test(
+      'useImperial=true pre-converts targetGrams / rangeLow / rangeHigh',
+      () {
+        final targets = _sampleTargets(durationH: 1.5);
+        final data = service.getFluidTransparencyData(
+          phase: ExplanationPhase.during,
+          macroTargets: targets,
+          bodyWeightKg: 70,
+          useImperial: true,
+        )![Scenario.singleSport]!;
+        // 750 mL × 0.033814 = ~25 oz (values are whole-number rounded)
+        expect(
+          data.targetGrams,
+          closeTo(25.0, 1.0),
+          reason: 'mL pre-converted to oz',
+        );
+        expect(data.primaryUnit, 'oz/hr');
+      },
+    );
 
     test('pre-workout fluid target converts symmetrically', () {
       final targets = _sampleTargets(durationH: 1.5, preFluidsMl: 420);
@@ -55,8 +64,11 @@ void main() {
         bodyWeightKg: 70,
         useImperial: true,
       )![Scenario.singleSport]!;
-      expect(imperial.targetGrams, closeTo(14.0, 1.0),
-          reason: '420 mL × 0.033814 ≈ 14 oz');
+      expect(
+        imperial.targetGrams,
+        closeTo(14.0, 1.0),
+        reason: '420 mL × 0.033814 ≈ 14 oz',
+      );
     });
   });
 
@@ -71,37 +83,52 @@ void main() {
       final highs = data.storySections
           .where((s) => s.confidence == ConfidenceLevel.high)
           .toList();
-      expect(highs, isNotEmpty,
-          reason: 'at least sweat-rate, EAH, and warning Qs are HIGH');
+      expect(
+        highs,
+        isNotEmpty,
+        reason: 'at least sweat-rate, EAH, and warning Qs are HIGH',
+      );
 
       final eah = data.storySections.firstWhere(
         (s) => s.question.contains('too much water'),
       );
-      expect(eah.confidence, ConfidenceLevel.high,
-          reason: 'EAH/hyponatremia Q is safety-critical HIGH confidence');
+      expect(
+        eah.confidence,
+        ConfidenceLevel.high,
+        reason: 'EAH/hyponatremia Q is safety-critical HIGH confidence',
+      );
     });
 
-    test('humidity and indoor Qs carry transparencyNote + MEDIUM/LOW pills', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.during,
-        macroTargets: _sampleTargets(durationH: 2.0),
-        bodyWeightKg: 70,
-      )![Scenario.singleSport]!;
+    test(
+      'humidity and indoor Qs carry transparencyNote + MEDIUM/LOW pills',
+      () {
+        final data = service.getFluidTransparencyData(
+          phase: ExplanationPhase.during,
+          macroTargets: _sampleTargets(durationH: 2.0),
+          bodyWeightKg: 70,
+        )![Scenario.singleSport]!;
 
-      final humidity = data.storySections.firstWhere(
-        (s) => s.question.contains('humidity'),
-      );
-      expect(humidity.transparencyNote, isNotNull,
-          reason: 'humidity Q has transparencyNote about Mealvana estimate');
-      expect(humidity.confidence, ConfidenceLevel.medium);
+        final humidity = data.storySections.firstWhere(
+          (s) => s.question.contains('humidity'),
+        );
+        expect(
+          humidity.transparencyNote,
+          isNotNull,
+          reason: 'humidity Q has transparencyNote about Mealvana estimate',
+        );
+        expect(humidity.confidence, ConfidenceLevel.medium);
 
-      final indoor = data.storySections.firstWhere(
-        (s) => s.question.contains('indoors'),
-      );
-      expect(indoor.transparencyNote, isNotNull,
-          reason: 'indoor Q has transparencyNote about unquantified 1.30×');
-      expect(indoor.confidence, ConfidenceLevel.low);
-    });
+        final indoor = data.storySections.firstWhere(
+          (s) => s.question.contains('indoors'),
+        );
+        expect(
+          indoor.transparencyNote,
+          isNotNull,
+          reason: 'indoor Q has transparencyNote about unquantified 1.30×',
+        );
+        expect(indoor.confidence, ConfidenceLevel.low);
+      },
+    );
   });
 
   group('Sodium transparency — during-workout spec parity', () {
@@ -113,8 +140,7 @@ void main() {
         macroTargets: targets,
       )![Scenario.singleSport]!;
       // 600 mg/hr × 1.5 hr = 900 mg total (set on the fixture).
-      expect(data.targetGrams, 900.0,
-          reason: 'sodium total = rate × duration');
+      expect(data.targetGrams, 900.0, reason: 'sodium total = rate × duration');
     });
 
     test('salt-type Q chips carry percentile annotations (C23)', () {
@@ -143,12 +169,21 @@ void main() {
         (s) => s.question.contains('standard sports drink'),
         orElse: () => const StorySection(question: 'MISSING', answer: ''),
       );
-      expect(standardDrinkQ.question, isNot('MISSING'),
-          reason: 'spec\'s most actionable sodium Q must be present');
-      expect(standardDrinkQ.dataChips, isNotEmpty,
-          reason: 'comparison chips showing % of target coverage');
-      expect(standardDrinkQ.answer, contains('54%'),
-          reason: 'spec callout: standard drink delivers ~54% of target');
+      expect(
+        standardDrinkQ.question,
+        isNot('MISSING'),
+        reason: 'spec\'s most actionable sodium Q must be present',
+      );
+      expect(
+        standardDrinkQ.dataChips,
+        isNotEmpty,
+        reason: 'comparison chips showing % of target coverage',
+      );
+      expect(
+        standardDrinkQ.answer,
+        contains('54%'),
+        reason: 'spec callout: standard drink delivers ~54% of target',
+      );
     });
 
     test('salt-type indicators Q has 4 qualitative bullets (C24)', () {
@@ -181,11 +216,17 @@ void main() {
         orElse: () => const CalculationSection(header: 'MISSING', lines: []),
       );
       expect(floorCeil.header, 'FLOOR & CEILING');
-      expect(floorCeil.footerNote, isNotNull,
-          reason: 'inherited-note prose below floor/ceiling');
+      expect(
+        floorCeil.footerNote,
+        isNotNull,
+        reason: 'inherited-note prose below floor/ceiling',
+      );
       expect(floorCeil.footerNote, contains('Fluids section'));
-      expect(floorCeil.footerNoteVariant, CalcNoteVariant.info,
-          reason: 'blue info variant per Figma');
+      expect(
+        floorCeil.footerNoteVariant,
+        CalcNoteVariant.info,
+        reason: 'blue info variant per Figma',
+      );
     });
   });
 
@@ -201,19 +242,31 @@ void main() {
         (s) => s.question.contains('help retain fluid'),
         orElse: () => const StorySection(question: 'MISSING', answer: ''),
       );
-      expect(retention.question, isNot('MISSING'),
-          reason: 'C9 — kidney-excretion framing Q');
-      expect(retention.answer, contains('kidneys'),
-          reason: 'mechanism is kidney excretion, not plasma expansion');
+      expect(
+        retention.question,
+        isNot('MISSING'),
+        reason: 'C9 — kidney-excretion framing Q',
+      );
+      expect(
+        retention.answer,
+        contains('kidneys'),
+        reason: 'mechanism is kidney excretion, not plasma expansion',
+      );
 
       final loading = data.storySections.firstWhere(
         (s) => s.question.contains('sodium loading'),
         orElse: () => const StorySection(question: 'MISSING', answer: ''),
       );
-      expect(loading.question, isNot('MISSING'),
-          reason: 'C12 — sodium-loading distinction Q');
-      expect(loading.citation, contains('Sims'),
-          reason: 'Sims et al. (2007) citation for loading distinction');
+      expect(
+        loading.question,
+        isNot('MISSING'),
+        reason: 'C12 — sodium-loading distinction Q',
+      );
+      expect(
+        loading.citation,
+        contains('Sims'),
+        reason: 'Sims et al. (2007) citation for loading distinction',
+      );
     });
   });
 }

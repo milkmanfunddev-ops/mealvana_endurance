@@ -1,0 +1,27 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "callbackURL": "https://apis.garmin.com/wellness-api/rest/activities?uploadStartTimeInSeconds=1711584000&uploadEndTimeInSeconds=1711670400",
+      "uploadStartTimeInSeconds": 1711584000,
+      "uploadEndTimeInSeconds": 1711670400
+    }
+  ],
+  "dailies": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "callbackURL": "https://apis.garmin.com/wellness-api/rest/dailies?calendarDate=2024-03-28",
+      "uploadStartTimeInSeconds": 1711584000,
+      "uploadEndTimeInSeconds": 1711670400
+    }
+  ],
+  "sleeps": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "callbackURL": "https://apis.garmin.com/wellness-api/rest/sleeps?calendarDate=2024-03-28"
+    }
+  ]
+}

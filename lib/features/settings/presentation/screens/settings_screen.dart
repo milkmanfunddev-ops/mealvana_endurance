@@ -6,11 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/services/analytics/analytics_excluded_pref.dart';
+import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/settings_controller.dart';
 import 'debug_screen.dart';
 
@@ -36,13 +37,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // If this device is already marked as excluded, auto-reveal the tester
+    // If this device is already flagged internal, auto-reveal the tester
     // section so the tester can see the current state and toggle it off if
     // needed — without requiring 7 taps every time they open Settings.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final excluded = ref.read(analyticsExcludedProvider);
-      if (excluded && !_showTesterSection) {
+      recordNavigationDestinationRendered('/settings');
+      if (ref.read(internalDeviceFlagProvider) && !_showTesterSection) {
         setState(() => _showTesterSection = true);
       }
     });
@@ -92,37 +93,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  /// Handles toggling the "Exclude this device from analytics" switch.
-  ///
-  /// Order of operations when ENABLING exclusion:
-  ///   1. Call markInternal() on the live tracker (while analytics is still
-  ///      active) to flag the Mixpanel profile for dashboard filtering.
-  ///   2. Persist the exclusion pref — this causes analyticsTrackerProvider
-  ///      to rebuild and return NoopAnalyticsTracker.
-  ///
-  /// When DISABLING exclusion:
-  ///   1. Clear the pref so analyticsTrackerProvider returns
-  ///      MixpanelAnalyticsTracker on the next app launch.
-  Future<void> _onAnalyticsExcludedToggled(bool excluded) async {
-    if (excluded) {
-      // Mark the profile BEFORE suppressing — order matters.
-      await ref.read(analyticsTrackerProvider).markInternal();
-      await ref.read(analyticsExcludedProvider.notifier).setExcluded(true);
-      if (mounted) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'This device is excluded from analytics. Mixpanel profile flagged.',
-        );
-      }
-    } else {
-      await ref.read(analyticsExcludedProvider.notifier).setExcluded(false);
-      if (mounted) {
-        MealvanaSnackbar.showInfo(
-          context,
-          'Analytics re-enabled. Changes take full effect on next app launch.',
-        );
-      }
+  String _internalSwitchSubtitle(bool isInternal, bool isForced) {
+    if (isForced) {
+      return 'Locked on: this is a debug / IS_INTERNAL build, or a registered '
+          'team device. Events are tagged is_internal.';
     }
+    if (isInternal) {
+      return 'Events from this device are tagged is_internal and filtered out '
+          'of Mixpanel reports.';
+    }
+    return 'This device currently reports as a real user. Toggle on if it '
+        "belongs to the team.";
+  }
+
+  /// Persists the internal flag for this device.
+  ///
+  /// On iOS this is written to the Keychain, which survives app uninstall — so
+  /// this only needs to be done once per phone, not once per reinstall. On
+  /// Android secure storage is wiped on uninstall, so also add the device ID
+  /// below to `kInternalDeviceIds` to make it permanent.
+  Future<void> _onInternalToggled(bool value) async {
+    // Flag the Mixpanel People profile straight away. The `is_internal` super
+    // property is only re-registered at the next Mixpanel init, so without this
+    // the events fired between now and the next launch would go out untagged —
+    // and the profile itself would stay unflagged, so historical events could
+    // not be filtered out either. (This is the one useful thing the old
+    // "Exclude this device from analytics" toggle did; it is preserved here.)
+    if (value) {
+      await ref.read(analyticsTrackerProvider).markInternal();
+    }
+
+    await ref.read(internalDeviceFlagProvider.notifier).setInternal(value);
+    if (!mounted) return;
+
+    if (value) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Device marked internal. Events are tagged is_internal from the next '
+        'app launch.',
+      );
+    } else {
+      MealvanaSnackbar.showInfo(
+        context,
+        'Device no longer marked internal. Takes effect on the next app launch.',
+      );
+    }
+  }
+
+  /// Shows the device ID used by the `kInternalDeviceIds` allowlist, with a tap
+  /// to copy. Needed to permanently register an Android phone, where the
+  /// Keychain trick isn't available.
+  Widget _buildDeviceIdRow(BuildContext context) {
+    final deviceId = ref.read(internalUserServiceProvider).deviceId;
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: Text(
+        'Device ID',
+        style: AppTextStyles.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      subtitle: Text(
+        deviceId,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontFamily: 'monospace',
+        ),
+      ),
+      trailing: const Icon(Icons.copy, size: 18),
+      onTap: () async {
+        await Clipboard.setData(ClipboardData(text: deviceId));
+        if (!context.mounted) return;
+        MealvanaSnackbar.showInfo(context, 'Device ID copied.');
+      },
+    );
   }
 
   @override
@@ -146,20 +192,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
+      // ITEM 22: use the shared Mealvana back button instead of a raw chevron
+      // IconButton. It has built-in double-tap debounce; the canPop guard
+      // avoids GoError "There is nothing to pop" (Sentry MEALVANA-ENDURANCE-8Y).
+      leading: CustomAppBarBackButton(
         key: const ValueKey('settings.back_button'),
-        tooltip: 'Back',
-        // Guard against popping when there's nothing to pop (e.g. a rapid
-        // double-tap where the first tap already popped this route) — that
-        // throws GoError "There is nothing to pop" (Sentry MEALVANA-ENDURANCE-8Y).
         onPressed: () {
           if (context.canPop()) context.pop();
         },
-        icon: Icon(
-          Icons.arrow_back_ios_new,
-          color: Theme.of(context).colorScheme.onSurface,
-          size: 20,
-        ),
       ),
       title: Text(
         key: const ValueKey('settings.title'),
@@ -302,11 +342,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Hidden "Developer / Tester" section.
   ///
   /// Revealed after the user taps the version text 7 times (or automatically
-  /// when the exclusion pref is already active). Lets internal testers exclude
-  /// their device from production Mixpanel analytics without needing to know
-  /// their device ID.
+  /// when this device is already flagged internal). Lets internal testers tag
+  /// their device so team traffic can be filtered out of Mixpanel reports
+  /// (`is_internal != true`) without needing to know their device ID.
   Widget _buildTesterSection(BuildContext context) {
-    final isExcluded = ref.watch(analyticsExcludedProvider);
+    final isInternal = ref.watch(internalDeviceFlagProvider);
+    final isForced = ref.read(internalDeviceFlagProvider.notifier).isForced;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg),
@@ -330,47 +371,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: AppSpacing.sm),
             SwitchListTile(
               title: Text(
-                'Exclude this device from analytics (testers)',
+                'Mark this device as internal',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               subtitle: Text(
-                isExcluded
-                    ? 'No events are sent to Mixpanel from this device.'
-                    : 'Analytics are active. Toggle to stop tracking on this device.',
+                _internalSwitchSubtitle(isInternal, isForced),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
-              value: isExcluded,
-              onChanged: _onAnalyticsExcludedToggled,
+              value: isInternal,
+              // A dart-define'd or debug build is internal by definition; there
+              // is nothing to toggle.
+              onChanged: isForced ? null : _onInternalToggled,
               activeThumbColor: AppColors.electrolyte,
               contentPadding: EdgeInsets.zero,
             ),
-            // Hidden paywall entry for purchase testing. Only present when the
-            // AI-credits feature flag is on; keeps it out of the normal user UI.
-            if (ref.watch(appConfigProvider).aiCreditsEnabled) ...[
-              const Divider(),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.bolt, color: AppColors.electrolyte),
-                title: Text(
-                  'Buy AI Credits (tester)',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  'Opens the credits paywall for purchase testing.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/buy-credits'),
-              ),
-            ],
+            _buildDeviceIdRow(context),
           ],
         ),
       ),
@@ -835,6 +854,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
 
+          // Privacy — the app's only consent-withdrawal path (Apple 5.1.1(ii));
+          // outside the EEA/UK/WA analytics defaults ON, and the legal basis for
+          // that implied grant is "disclosure + an accessible opt-out".
+          const SizedBox(height: AppSpacing.sm),
+          _buildQuickLink(
+            context: context,
+            rowKey: const ValueKey('settings.privacy_row'),
+            icon: FontAwesomeIcons.shieldHalved.data,
+            title: 'Privacy',
+            subtitle: 'Usage data, privacy policy and terms',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_privacy_tapped');
+              context.push('/settings/privacy');
+            },
+          ),
           const SizedBox(height: AppSpacing.sm),
 
           // Help & Feedback

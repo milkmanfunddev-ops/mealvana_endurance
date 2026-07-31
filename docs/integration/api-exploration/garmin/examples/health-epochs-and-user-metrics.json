@@ -1,0 +1,29 @@
+{
+  "epochs": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "epoch-20240328-0800",
+      "startTimeInSeconds": 1711612800,
+      "startTimeOffsetInSeconds": -18000,
+      "durationInSeconds": 900,
+      "activityType": "running",
+      "activeKilocalories": 120,
+      "steps": 2200,
+      "distanceInMeters": 1800,
+      "averageHeartRateInBeatsPerMinute": 145,
+      "maxHeartRateInBeatsPerMinute": 160,
+      "intensity": "HIGHLY_ACTIVE"
+    }
+  ],
+  "userMetrics": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "usermetrics-20240328",
+      "calendarDate": "2024-03-28",
+      "vo2Max": 54.0,
+      "fitnessAge": 31
+    }
+  ]
+}

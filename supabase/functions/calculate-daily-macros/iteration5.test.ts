@@ -106,7 +106,7 @@ Deno.test('Iter5: session kcal — auto-detect promotes prospective→retrospect
     refInput({
       sessions: [session('running', 1.5, 0.7, 0.2, 0.1)],
       mode: 'prospective', // explicit prospective is overridden by auto-detect
-      garmin_activities: [{ activeKilocalories: 892 }],
+      garmin_activities: [{ activeKilocalories: 892, durationInSeconds: null }],
     }),
   );
   // Per server-side auto-detect: any Garmin activity data → retrospective.
@@ -507,15 +507,16 @@ Deno.test('Iter5: ctlToVolumeTier — boundary mapping', () => {
   assertEquals(ctlToVolumeTier(null), null);
 });
 
-Deno.test('Iter5: pipeline uses CTL tier when TP CTL provided', () => {
-  // CTL=70 → serious (0.20), same as 10 weekly_hours → serious. Verify path.
+Deno.test('Iter5: pipeline survives missing weekly_hours (TP CTL input not yet wired)', () => {
+  // `tp_global` was removed from DailyMacroInput — TP context is not yet wired
+  // into the pipeline (see pipeline.ts "tp_session — not yet wired"). The pure
+  // ctlToVolumeTier mapping is covered above; here we only assert the pipeline
+  // still produces sane output when weekly_hours is missing.
   const out = calculateDailyMacros(
     refInput({
-      typical_weekly_hours: null, // no hours-based fallback
-      tp_global: { CTL: 70 },
+      typical_weekly_hours: null, // no hours-based tier input
     }),
   );
-  // No regression in TDEE despite missing weekly_hours — CTL filled the tier.
   assert(out.tdee > 0);
   assert(out.neat_kcal > 0);
 });
@@ -554,8 +555,6 @@ Deno.test('Iter5 regression: empty garmin/tp objects → still formula path', ()
       garmin_daily: null,
       garmin_body_comp: null,
       garmin_activities: null,
-      tp_global: null,
-      tp_sessions: null,
     }),
   );
   assertEquals(out.sources.rmr, 'FORMULA');
@@ -652,7 +651,7 @@ Deno.test('Iter5: retrospective recalculation produces delta vs prospective', ()
   const retrospective = calculateDailyMacros({
     ...baseInput,
     mode: 'retrospective',
-    garmin_daily: { activeKilocalories: 1000 },
+    garmin_daily: { bmrKilocalories: null, activeKilocalories: 1000 },
     garmin_activities: [{ activeKilocalories: 700, durationInSeconds: 3600 }],
   });
 

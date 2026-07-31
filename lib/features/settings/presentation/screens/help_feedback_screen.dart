@@ -5,6 +5,8 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wiredash/wiredash.dart';
+import 'package:mealvana_endurance/features/auth/application/auth_service.dart';
+import 'package:mealvana_endurance/shared/services/support/support_identity.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 
@@ -484,7 +486,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
   // NPS Promoter Score Survey using Wiredash
   // Opens the "How likely are you to recommend?" survey (0-10 scale)
   // Always shows when user explicitly taps it (force: true)
-  void _showRatingsSurvey(BuildContext context, WidgetRef ref) {
+  Future<void> _showRatingsSurvey(BuildContext context, WidgetRef ref) async {
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track('help_rate_experience_tapped');
 
@@ -492,13 +494,17 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
     debugPrint('[Ratings] Opening Wiredash Promoter Score survey...');
 
-    // Prefill user properties for Wiredash survey
+    // Prefill user properties for Wiredash survey — prefer the real profile
+    // email over an Apple private-relay address.
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final currentUser = supabaseClient.auth.currentUser;
     if (currentUser != null) {
-      Wiredash.of(
-        context,
-      ).setUserProperties(userEmail: currentUser.email, userId: currentUser.id);
+      final profile = await ref.read(currentUserProvider.future);
+      if (!context.mounted) return;
+      Wiredash.of(context).setUserProperties(
+        userEmail: resolveSupportEmail([profile?.email, currentUser.email]),
+        userId: currentUser.id,
+      );
     }
 
     // Always show the NPS survey when user explicitly requests it
@@ -518,7 +524,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
   // 2. User can draw/annotate on the current screen (circle issues, arrows, etc.)
   // 3. User writes description in the feedback form
   // 4. Feedback is uploaded to Wiredash dashboard
-  void _showBugReport(BuildContext context, WidgetRef ref) {
+  Future<void> _showBugReport(BuildContext context, WidgetRef ref) async {
     // Track bug report
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track('help_bug_report_tapped');
@@ -527,13 +533,17 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
     debugPrint('[BugReport] Opening Wiredash feedback widget...');
 
-    // Prefill user properties for Wiredash feedback
+    // Prefill user properties for Wiredash feedback — prefer the real profile
+    // email over an Apple private-relay address.
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final currentUser = supabaseClient.auth.currentUser;
     if (currentUser != null) {
-      Wiredash.of(
-        context,
-      ).setUserProperties(userEmail: currentUser.email, userId: currentUser.id);
+      final profile = await ref.read(currentUserProvider.future);
+      if (!context.mounted) return;
+      Wiredash.of(context).setUserProperties(
+        userEmail: resolveSupportEmail([profile?.email, currentUser.email]),
+        userId: currentUser.id,
+      );
     }
 
     // Open Wiredash with bug report flow

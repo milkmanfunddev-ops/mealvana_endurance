@@ -48,25 +48,28 @@ Widget _wrap(Widget child) {
 
 void main() {
   testWidgets(
-      'during formula with multiple duration brackets renders one pill per '
-      'bracket, not one merged pill', (tester) async {
-    final formula = _fixture(
-      durations: const ['90-150 min', '150-240 min', '> 240 min'],
-    );
-    await tester.pumpWidget(
-      _wrap(PersonalFormulaCard(formula: formula, onTap: () {})),
-    );
-    await tester.pump();
+    'during formula with multiple duration brackets renders one pill per '
+    'bracket, not one merged pill',
+    (tester) async {
+      final formula = _fixture(
+        durations: const ['90-150 min', '150-240 min', '> 240 min'],
+      );
+      await tester.pumpWidget(
+        _wrap(PersonalFormulaCard(formula: formula, onTap: () {})),
+      );
+      await tester.pump();
 
-    expect(find.text('90–150 min'), findsOneWidget);
-    expect(find.text('150–240 min'), findsOneWidget);
-    expect(find.text('> 240 min'), findsOneWidget);
-    // The old bug joined the brackets into a single pill.
-    expect(find.textContaining(' · '), findsNothing);
-  });
+      expect(find.text('90–150 min'), findsOneWidget);
+      expect(find.text('150–240 min'), findsOneWidget);
+      expect(find.text('> 240 min'), findsOneWidget);
+      // The old bug joined the brackets into a single pill.
+      expect(find.textContaining(' · '), findsNothing);
+    },
+  );
 
-  testWidgets('during formula with a single duration shows one header pill',
-      (tester) async {
+  testWidgets('during formula with a single duration shows one header pill', (
+    tester,
+  ) async {
     final formula = _fixture(durations: const ['90-150 min']);
     await tester.pumpWidget(
       _wrap(PersonalFormulaCard(formula: formula, onTap: () {})),

@@ -35,7 +35,8 @@ class FinalSurgeFixtures {
     'PlannedTime': 4800, // 80 minutes in SECONDS
     'PlannedDistance': 10.0,
     'PlannedDistanceType': 'mi',
-    'PlannedPace': null, // Note: Pace often comes from WorkoutDescription instead
+    'PlannedPace':
+        null, // Note: Pace often comes from WorkoutDescription instead
     'PlannedPaceType': null,
     'ActualTime': null,
     'ActualDistanceMeters': null,
@@ -64,7 +65,8 @@ class FinalSurgeFixtures {
   /// Running workout with pace in description - alternate format "9:12-10:01"
   static const Map<String, dynamic> runningWorkoutPaceRangeNoSpace = {
     'WorkoutKey': 'alternate-pace-format',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=alternate',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=alternate',
     'WorkoutDate': '2025-12-25T00:00:00',
     'WorkoutTitle': 'Moderate Run',
     'WorkoutDescription': '@ 8:30-9:30', // No spaces around dash
@@ -80,10 +82,12 @@ class FinalSurgeFixtures {
   /// 5400 seconds (90 min) / 12 miles = 7.5 min/mi pace
   static const Map<String, dynamic> runningWorkoutCalculatedPace = {
     'WorkoutKey': 'calculated-pace-workout',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=calculated',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=calculated',
     'WorkoutDate': '2025-12-26T00:00:00',
     'WorkoutTitle': 'Long Run',
-    'WorkoutDescription': 'Easy effort, no specific pace target', // NO pace info
+    'WorkoutDescription':
+        'Easy effort, no specific pace target', // NO pace info
     'WorkoutTypeName': 'Run',
     'WorkoutSubTypeName': 'Long Run',
     'WorkoutCompleted': false,
@@ -102,7 +106,8 @@ class FinalSurgeFixtures {
   /// Walk workout - should map to ActivityType.running with IntensityLevel.easy
   static const Map<String, dynamic> walkWorkout = {
     'WorkoutKey': 'walk-12347',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=walk-12347',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=walk-12347',
     'WorkoutDate': '2025-12-26T00:00:00',
     'WorkoutTitle': 'Active Recovery Walk',
     'WorkoutDescription': 'Nice easy walk for recovery',
@@ -123,7 +128,8 @@ class FinalSurgeFixtures {
   /// Swimming workout with meters
   static const Map<String, dynamic> swimmingWorkout = {
     'WorkoutKey': 'swim-12348',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-12348',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-12348',
     'WorkoutDate': '2025-12-27T00:00:00',
     'WorkoutTitle': 'Pool Intervals',
     'WorkoutDescription': '4x500m with 30s rest',
@@ -140,7 +146,8 @@ class FinalSurgeFixtures {
   /// Swimming workout with yards
   static const Map<String, dynamic> swimmingWorkoutYards = {
     'WorkoutKey': 'swim-yards',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-yards',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-yards',
     'WorkoutDate': '2025-12-28T00:00:00',
     'WorkoutTitle': 'Easy Swim',
     'WorkoutDescription': null,
@@ -158,7 +165,8 @@ class FinalSurgeFixtures {
   /// Cycling workout
   static const Map<String, dynamic> cyclingWorkout = {
     'WorkoutKey': 'bike-12349',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=bike-12349',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=bike-12349',
     'WorkoutDate': '2025-12-29T00:00:00',
     'WorkoutTitle': 'Endurance Ride',
     'WorkoutDescription': 'Zone 2 endurance',
@@ -193,7 +201,8 @@ class FinalSurgeFixtures {
   /// Running workout with HasStructuredWorkout=true and StructuredWorkoutURLs
   static const Map<String, dynamic> structuredWorkout = {
     'WorkoutKey': 'structured-workout-001',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=structured-001',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=structured-001',
     'WorkoutDate': '2026-02-01T00:00:00',
     'WorkoutTitle': 'Interval Session',
     'WorkoutDescription': 'Warmup, 4x1000m, Cooldown',
@@ -207,7 +216,8 @@ class FinalSurgeFixtures {
     'PlannedDistanceType': 'mi',
     'HasStructuredWorkout': true,
     'StructuredWorkoutURLs': {
-      'json_fs_v1': 'https://log.finalsurge.com/API/v1/StructuredWorkout/structured-workout-001?format=json_fs_v1',
+      'json_fs_v1':
+          'https://log.finalsurge.com/API/v1/StructuredWorkout/structured-workout-001?format=json_fs_v1',
     },
   };
 
@@ -291,7 +301,8 @@ class FinalSurgeFixtures {
   /// Workout with MISSING distance/time/pace - tests sensible defaults
   static const Map<String, dynamic> workoutMissingData = {
     'WorkoutKey': 'missing-12350',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=missing-12350',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=missing-12350',
     'WorkoutDate': '2025-12-31T00:00:00',
     'WorkoutTitle': 'Run TBD',
     'WorkoutDescription': null,
@@ -306,7 +317,8 @@ class FinalSurgeFixtures {
   /// Workout with null/empty fields
   static const Map<String, dynamic> workoutNullFields = {
     'WorkoutKey': 'null-12351',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=null-12351',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=null-12351',
     'WorkoutDate': '2026-01-01T00:00:00',
     'WorkoutTitle': null, // null title
     'WorkoutDescription': '', // empty description
@@ -320,7 +332,8 @@ class FinalSurgeFixtures {
   /// Cycling workout missing data - tests cycling defaults
   static const Map<String, dynamic> cyclingMissingData = {
     'WorkoutKey': 'bike-missing',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=bike-missing',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=bike-missing',
     'WorkoutDate': '2026-01-02T00:00:00',
     'WorkoutTitle': 'Bike TBD',
     'WorkoutTypeName': 'Bike',
@@ -333,7 +346,8 @@ class FinalSurgeFixtures {
   /// Swimming workout missing data - tests swimming defaults
   static const Map<String, dynamic> swimmingMissingData = {
     'WorkoutKey': 'swim-missing',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-missing',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-missing',
     'WorkoutDate': '2026-01-03T00:00:00',
     'WorkoutTitle': 'Swim TBD',
     'WorkoutTypeName': 'Swim',
@@ -350,7 +364,8 @@ class FinalSurgeFixtures {
   /// Rest Day - should be filtered out
   static const Map<String, dynamic> restDayWorkout = {
     'WorkoutKey': 'rest-day',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=rest-day',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=rest-day',
     'WorkoutDate': '2026-01-04T00:00:00',
     'WorkoutTitle': null,
     'WorkoutDescription': null,
@@ -363,7 +378,8 @@ class FinalSurgeFixtures {
   /// Recovery/Rehab - should be filtered out
   static const Map<String, dynamic> recoveryWorkout = {
     'WorkoutKey': 'recovery',
-    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=recovery',
+    'WorkoutURL':
+        'https://log.finalsurge.com/WorkoutDetails?s=test&id=recovery',
     'WorkoutDate': '2026-01-05T00:00:00',
     'WorkoutTitle': 'Foam Rolling',
     'WorkoutDescription': null,
@@ -421,7 +437,8 @@ class FinalSurgeFixtures {
     'activityType': 'running',
     'durationMinutes': 45, // 2700 seconds / 60
     'distanceMiles': 5.0,
-    'paceTargetMinutesPerMile': 9.6083, // midpoint of 9:12 (9.2) and 10:01 (10.0167)
+    'paceTargetMinutesPerMile':
+        9.6083, // midpoint of 9:12 (9.2) and 10:01 (10.0167)
     'paceMinMinutesPerMile': 9.2, // 9:12
     'paceMaxMinutesPerMile': 10.0167, // 10:01
   };
@@ -455,10 +472,13 @@ class FinalSurgeFixtures {
   };
 }
 
-/// Supported workout types that we import into Mealvana
+/// Supported workout types that we import into Mealvana with dedicated
+/// nutrition-plan handling.
 const List<String> supportedWorkoutTypes = ['Run', 'Walk', 'Bike', 'Swim'];
 
-/// Workout types that should be filtered out
+/// Workout types that fall back to a generic ActivityType.other import
+/// (import-only, delete-only — not "filtered out" anymore). Only "Rest Day"
+/// is actually filtered out entirely (no physical activity occurred).
 const List<String> unsupportedWorkoutTypes = [
   'Rest Day',
   'Recovery/Rehab',

@@ -3,10 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Provider for SharedPreferences — must be overridden at app startup.
 ///
-/// Defined in its own file (rather than app_external_deps.dart) so that
-/// analytics_excluded_pref.dart can import it without creating a circular
+/// Defined in its own file (rather than app_external_deps.dart) so that the
+/// privacy/consent providers can import it without creating a circular
 /// dependency:
-///   analytics_tracker.dart → analytics_excluded_pref.dart → prefs_provider.dart
+///   analytics_tracker.dart → privacy/analytics_consent.dart → prefs_provider.dart
 ///   app_external_deps.dart → analytics_tracker.dart (no cycle back)
 ///
 /// app_external_deps.dart re-exports this symbol so all existing call sites

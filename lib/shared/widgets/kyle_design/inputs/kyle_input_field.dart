@@ -45,7 +45,8 @@ class KyleInputField extends StatelessWidget {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.inputBackground, // Brighter purple for better visibility
+        color:
+            AppColors.inputBackground, // Brighter purple for better visibility
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -61,9 +62,7 @@ class KyleInputField extends StatelessWidget {
               onSubmitted: onSubmitted,
               onChanged: onChanged,
               textAlign: textAlign,
-              style: AppTextStyles.inputText.copyWith(
-                color: AppColors.cream,
-              ),
+              style: AppTextStyles.inputText.copyWith(color: AppColors.cream),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hintText,

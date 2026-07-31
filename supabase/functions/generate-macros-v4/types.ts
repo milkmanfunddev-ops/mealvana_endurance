@@ -7,6 +7,8 @@
  * - Pre-workout selection output
  */
 
+import type { FormulaDecisionSource } from '../_shared/nutrition/formula-decision.ts';
+
 // ============================================================================
 // Database Template Types
 // ============================================================================
@@ -37,6 +39,13 @@ export interface PreWorkoutTemplate {
   is_active: boolean;
   component_food_names: string[];
   component_quantities: Record<string, number>;
+  /** When `false`, this template may be selected in 0.5-serving increments
+   * instead of whole servings (e.g. a divisible electrolyte packet).
+   * Mirrors `FoodResult.is_indivisible` used elsewhere in the solver.
+   * Defaults to indivisible (whole-unit steps) when omitted/undefined —
+   * pre-existing rows without the DB column behave exactly as before.
+   * Item 5 (before-run sodium over/undershoot), 2026-07-04. */
+  is_indivisible?: boolean;
 }
 
 // ============================================================================
@@ -86,6 +95,15 @@ export const BANANA_FLUID = 0;
 export const SPORTS_DRINK_CARBS = 15;    // per 1 cup (8 oz)
 export const SPORTS_DRINK_SODIUM = 100;   // per 1 cup (8 oz)
 export const SPORTS_DRINK_FLUID = 240;    // per 1 cup (8 oz)
+
+// Top-off floor (bug 3ace3fdb). A rendered top_up slot must never ship empty:
+// the UI draws a group header for it either way, so an empty one reads as a
+// broken plan. Half a cup of water is the agreed minimum — it is the one thing
+// that is always safe this close to a start, and hydration is the top-off's
+// actual job. Deliberately allowed to push total fluid past water_high_ml:
+// over-delivering 120 ml of water carries no GI risk, whereas an empty slot is
+// a visible defect. See PASS 4 in pre-workout.ts.
+export const MIN_TOP_UP_FLUID_ML = 120;   // 1/2 cup (4 oz)
 // Pass 1.5 universal fallback foods (vegan, gluten-free, no common allergens).
 // Used to deliver carbs when banana/sports_drink are disliked or already used. (#15)
 export const DATES_CARBS = 18;            // per 2 medjool dates
@@ -140,7 +158,11 @@ export interface PreWorkoutShortfall {
   delivered: number;
   target: number;
   unit: 'g' | 'mg' | 'ml';
-  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+  reason:
+    | 'all_disliked'
+    | 'no_diet_match'
+    | 'all_templates_filtered'
+    | 'template_constraint';
 }
 
 export interface PreWorkoutPhaseResult {
@@ -167,12 +189,26 @@ export interface PreWorkoutPhaseResult {
    * behavior byte-identical to pre-pin v3. Formula Kit PR 2 substep 5a. */
   pin_decision?: {
     used_pin: boolean;
+    /** True when satisfied by the EPHEMERAL default-formula safety net rather
+     * than a real `formula_pins` row. Absent/false for real pins. Formula-first
+     * flip, 2026-07-03 (plan Phase 2 #5). */
+    ephemeral?: boolean;
+    /** Honest provenance: `user_pin` | `personal_formula` | `default_formula`
+     * | `solver`. Added 2026-07-29 when client-side auto-pinning was removed
+     * and computed defaults became the common path — `used_pin`/`ephemeral`
+     * alone conflate "you pinned this" with "we picked this for you". Additive;
+     * older parsers ignore it. See `_shared/nutrition/formula-decision.ts`. */
+    decision_source?: FormulaDecisionSource;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
     fallthrough_reason: 'no_pin_for_scope' | null;
+    /** Why no REAL pin fired, preserved for `default_formula` outcomes.
+     * `fallthrough_reason` must stay null while `used_pin` is true (client
+     * invariant), so the reason rides here instead of being discarded. */
+    default_fallthrough_reason?: string | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase
      * after scope-matching. Drives `plan_used_pin` / `plan_pin_fallthrough`
      * analytics. 0 when pins were supplied but none matched scope.
@@ -215,7 +251,10 @@ export interface SubPhaseTargets {
 // ============================================================================
 
 export const BUDGET_SPLITS = {
-  carbs:   { meal: 0.60, snack: 0.25, top_up: 0.15 },
+  // Carbs per the Notion spec 31fe3fdb: 60/30/10 three-tier; the two-tier
+  // snack+top_up renormalization of 30/10 is exactly the spec's 75/25.
+  // (Was 60/25/15, a drift — 2026-07-21.)
+  carbs:   { meal: 0.60, snack: 0.30, top_up: 0.10 },
   protein: { meal: 0.70, snack: 0.25, top_up: 0.05 },
   fat:     { meal: 0.80, snack: 0.15, top_up: 0.05 },
   sodium:  { meal: 0.30, snack: 0.50, top_up: 0.20 },

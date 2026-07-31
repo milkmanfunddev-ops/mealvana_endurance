@@ -1,0 +1,21 @@
+POST /oauth/token HTTP/1.1
+Host: log.finalsurge.com
+Content-Type: application/x-www-form-urlencoded
+
+client-id=<FINAL_SURGE_CLIENT_ID>&client-secret=<FINAL_SURGE_CLIENT_SECRET>&code=<authorization_code>
+
+# Source: lib/features/integrations/data/final_surge_api_client.dart:58-74
+#
+# NOTE 1: field names are HYPHENATED (client-id), not underscored (client_id).
+# NOTE 2: credentials go in the BODY. A Basic auth header alone does not work.
+# NOTE 3: no scope, no response_type, no PKCE, no redirect-uri at this step.
+#
+# --- Refresh variant (final_surge_api_client.dart:128-136) ---
+# Note the asymmetry: hyphenated client-id, underscored refresh_token/grant_type,
+# and NO client-secret.
+#
+# POST /oauth/token HTTP/1.1
+# Host: log.finalsurge.com
+# Content-Type: application/x-www-form-urlencoded
+#
+# client-id=<FINAL_SURGE_CLIENT_ID>&refresh_token=<refresh_token>&grant_type=refresh_token

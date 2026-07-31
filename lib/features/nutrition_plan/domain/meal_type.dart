@@ -50,21 +50,19 @@ double recommendedHoursBefore(
 
   // Duration factor: short workouts need less pre-fueling
   // Dead zone below 30 min, scales linearly to 1.0 at 180 min
-  final durationFactor =
-      ((durationMinutes - 30) / 150.0).clamp(0.0, 1.0);
+  final durationFactor = ((durationMinutes - 30) / 150.0).clamp(0.0, 1.0);
 
   // Combined factor: duration weighted 60%, intensity 40%
   // Duration matters more: a 45-min easy jog needs far less pre-fueling
   // than a 3-hour easy long run, regardless of intensity
-  final combinedFactor =
-      durationFactor * 0.6 + weightedIntensity * 0.4;
+  final combinedFactor = durationFactor * 0.6 + weightedIntensity * 0.4;
 
   // Sport-specific min/max windows
   final (minHours, maxHours) = switch (sport) {
-    ActivityType.running   => (0.25, 3.5),
-    ActivityType.cycling   => (0.25, 3.0),
-    ActivityType.swimming  => (0.5,  2.5),
-    _                      => (0.25, 3.5), // brick/triathlon/etc
+    ActivityType.running => (0.25, 3.5),
+    ActivityType.cycling => (0.25, 3.0),
+    ActivityType.swimming => (0.5, 2.5),
+    _ => (0.25, 3.5), // brick/triathlon/etc
   };
 
   // Linear interpolation between min and max

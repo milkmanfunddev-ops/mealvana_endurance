@@ -66,10 +66,6 @@ class KyleSwitch extends StatelessWidget {
     );
 
     if (semanticLabel == null) return widget;
-    return Semantics(
-      label: semanticLabel,
-      toggled: value,
-      child: widget,
-    );
+    return Semantics(label: semanticLabel, toggled: value, child: widget);
   }
 }

@@ -21,25 +21,33 @@ class VoiceNotesController extends _$VoiceNotesController {
     try {
       final userRepo = await ref.read(userRepositoryProvider.future);
       final user = await userRepo.getCurrentUser();
-      
+
       if (user == null) {
         throw Exception('No user found');
       }
 
       final repository = await ref.read(nutritionPlanRepositoryProvider.future);
       final allPlans = await repository.getUserNutritionPlans(user.id);
-      
+
       // Filter plans that have journal notes or ratings
       final notesPlans = allPlans
-          .where((plan) => 
-            plan.journalNotes != null && plan.journalNotes!.isNotEmpty ||
-            plan.planRating != null)
+          .where(
+            (plan) =>
+                plan.journalNotes != null && plan.journalNotes!.isNotEmpty ||
+                plan.planRating != null,
+          )
           .toList();
-      
+
       // Sort by run date (newest first), then by creation date
       notesPlans.sort((a, b) {
-        final dateA = a.runDateTime ?? a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final dateB = b.runDateTime ?? b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final dateA =
+            a.runDateTime ??
+            a.createdAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final dateB =
+            b.runDateTime ??
+            b.createdAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
         return dateB.compareTo(dateA);
       });
 

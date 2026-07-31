@@ -12,7 +12,8 @@ class ContentService {
   AppContent? _cachedContent;
 
   /// Get the content repository
-  ContentRepository get _contentRepository => ref.read(contentRepositoryProvider);
+  ContentRepository get _contentRepository =>
+      ref.read(contentRepositoryProvider);
 
   /// Initialize content service - loads initial content and checks for updates
   Future<void> initialize() async {
@@ -26,22 +27,24 @@ class ContentService {
   /// Check for updates in background without blocking the UI
   void _checkForUpdatesInBackground() {
     // Don't await this - let it run in background
-    _contentRepository.refreshContent().then((latestContent) {
-      // Update in-memory cache with refreshed content
-      _cachedContent = latestContent;
-    }).catchError((error) {
-      // Silently handle errors - app continues with cached/default content
-      // Log error but don't print in production
-    });
+    _contentRepository
+        .refreshContent()
+        .then((latestContent) {
+          // Update in-memory cache with refreshed content
+          _cachedContent = latestContent;
+        })
+        .catchError((error) {
+          // Silently handle errors - app continues with cached/default content
+          // Log error but don't print in production
+        });
   }
 
   /// Get a content value by key with fallback (lightning-fast from memory)
   String getValue(String key, {String? defaultValue}) {
-    return _cachedContent?.getValue(key, defaultValue: defaultValue) ?? 
-           defaultValue ?? 
-           key;
+    return _cachedContent?.getValue(key, defaultValue: defaultValue) ??
+        defaultValue ??
+        key;
   }
-
 
   /// Refresh content from backend (Supabase) - for manual refresh
   Future<bool> refreshFromBackend() async {

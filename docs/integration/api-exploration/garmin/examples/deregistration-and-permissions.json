@@ -1,0 +1,22 @@
+{
+  "deregistration_body": {
+    "deregistrations": [
+      {
+        "userId": "<USER_ID>",
+        "userAccessToken": "<USER_ACCESS_TOKEN>"
+      }
+    ]
+  },
+  "user_permissions_change_body": {
+    "userPermissionsChange": [
+      {
+        "userId": "<USER_ID>",
+        "userAccessToken": "<USER_ACCESS_TOKEN>",
+        "permissions": {
+          "ACTIVITY_EXPORT": true,
+          "HEALTH_EXPORT": false
+        }
+      }
+    ]
+  }
+}

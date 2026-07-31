@@ -736,15 +736,26 @@ class AuthMigrationService {
       // Directly update the fetched profile with current auth session values
       // This avoids calling updateAuthProvider() which does a getCurrentUser() lookup
       // that can fail if authUserId doesn't match the new session yet
+      final sessionEmail = supabase.auth.currentUser?.email;
       final updatedProfile = remoteProfile.copyWith(
         authUserId:
             userId, // Ensure authUserId matches current Supabase session
         authProvider: authProvider,
         isAnonymous: false,
+        // Carry the address the user just proved onto the profile row.
+        email: (sessionEmail != null && sessionEmail.isNotEmpty)
+            ? sessionEmail
+            : remoteProfile.email,
         updatedAt: DateTime.now(),
       );
 
-      await userRepository.saveUserProfile(updatedProfile);
+      // updateUserProfile (NOT saveUserProfile) because this must reach
+      // Supabase: a local-only save left `users.is_anonymous` true on the
+      // server for every upgraded-in-place account, so the row still looked
+      // anonymous despite carrying a real identity. updateUserProfile
+      // write-throughs and, if the write fails, marks the row needs_upload so
+      // background sync retries — no silently-dropped flip.
+      await userRepository.updateUserProfile(updatedProfile);
 
       sentry.addBreadcrumb(
         message: 'Fresh login - profile updated successfully',

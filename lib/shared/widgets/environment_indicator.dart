@@ -33,11 +33,7 @@ class EnvironmentIndicator extends ConsumerWidget {
             ),
           ],
         ),
-        child: Icon(
-          Icons.build,
-          color: Colors.black87,
-          size: 20.sp,
-        ),
+        child: Icon(Icons.build, color: Colors.black87, size: 20.sp),
       ),
     );
   }
@@ -47,18 +43,10 @@ class EnvironmentIndicator extends ConsumerWidget {
 class ScreenWithEnvironmentIndicator extends StatelessWidget {
   final Widget child;
 
-  const ScreenWithEnvironmentIndicator({
-    super.key,
-    required this.child,
-  });
+  const ScreenWithEnvironmentIndicator({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        child,
-        const EnvironmentIndicator(),
-      ],
-    );
+    return Stack(children: [child, const EnvironmentIndicator()]);
   }
 }

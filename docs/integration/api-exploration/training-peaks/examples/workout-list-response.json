@@ -1,0 +1,55 @@
+{
+  "_comment": "The response body of GET /v2/workouts/{startDate}/{endDate}?includeDescription=true is a BARE JSON ARRAY, not an envelope. This file wraps it in an object only so the comment can sit alongside it - the real body is the value of _body. Max range 45 days; end date max 365 days in the future. Note the mix of planned (*Planned fields, Structure) and completed (Distance/TotalTime/StartTime) workouts.",
+  "_request": "GET /v2/workouts/2026-07-20/2026-09-03?includeDescription=true",
+  "_body": [
+    {
+      "Id": 123456789,
+      "AthleteId": 54321,
+      "WorkoutDay": "2026-07-21T00:00:00",
+      "StartTimePlanned": "2026-07-21T06:30:00",
+      "WorkoutType": "Run",
+      "Title": "Track Intervals",
+      "Description": "4x1000m with recoveries",
+      "TotalTimePlanned": 0.75,
+      "DistancePlanned": 8000.0,
+      "TSSPlanned": 65.0,
+      "IFPlanned": 0.95,
+      "ElevationGainPlanned": 45.0,
+      "CaloriesPlanned": 520.0,
+      "Tags": ["quality", "track"],
+      "Structure": "[{\"Type\":\"Step\",\"Length\":{\"Unit\":\"Minute\",\"Value\":10},\"IntensityTarget\":{\"Unit\":\"PercentOfFtp\",\"Value\":0.60}}]"
+    },
+    {
+      "Id": 345678908,
+      "WorkoutDay": "2026-07-22T00:00:00",
+      "WorkoutType": "Walk",
+      "Title": "Active Recovery Walk",
+      "TotalTimePlanned": 0.5,
+      "IFPlanned": null,
+      "Structure": null
+    },
+    {
+      "Id": 567890124,
+      "WorkoutDay": "2026-07-23T00:00:00",
+      "WorkoutType": "Bike",
+      "Title": "Endurance Ride",
+      "TotalTimePlanned": 2.5,
+      "IFPlanned": null,
+      "Structure": null
+    },
+    {
+      "Id": 456789013,
+      "WorkoutDay": "2026-07-24T00:00:00",
+      "WorkoutType": "Strength",
+      "Title": "Gym Session",
+      "TotalTimePlanned": 1.0
+    },
+    {
+      "Distance": 100000,
+      "Id": 139283664,
+      "StartTime": "2026-07-25T12:57:59",
+      "TotalTime": 1.25,
+      "WorkoutType": "Bike"
+    }
+  ]
+}

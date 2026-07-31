@@ -1,4 +1,16 @@
 import 'package:accessibility_tools/accessibility_tools.dart';
+// The testing-tools panel is not exported from the package barrel, but it is
+// the only half of the package that survives a release build: the issue
+// checkers read `RenderObject.debugSemantics`/`debugCreator`, which Flutter
+// nulls out in release. The panel only overrides MediaQuery/Theme, so it runs
+// anywhere. Reaching into `src/` is safe here because accessibility_tools is
+// pinned to an exact version (2.2.3) in pubspec.yaml.
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/testing_tools/test_environment.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/testing_tools/testing_tools_panel.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/testing_tools/testing_tools_wrapper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +25,8 @@ import '../services/app_external_deps.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
+import '../../features/auth/application/auth_service.dart';
+import '../services/support/support_identity.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -131,27 +145,31 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                   Label(id: 'label-ovo60gyfw6', title: 'UI/UX Feedback'),
                   Label(id: 'label-1anu74e8gf', title: 'High Priority'),
                 ],
-                collectMetaData: (metaData) => metaData
-                  ..userEmail = ref
+                collectMetaData: (metaData) async {
+                  final supabaseUser = ref
                       .read(appExternalDepsProvider)
                       .supabaseClient
                       .auth
-                      .currentUser
-                      ?.email
-                  ..userId = ref
-                      .read(appExternalDepsProvider)
-                      .supabaseClient
-                      .auth
-                      .currentUser
-                      ?.id
-                  ..custom['auth_provider'] =
-                      ref
-                          .read(appExternalDepsProvider)
-                          .supabaseClient
-                          .auth
-                          .currentUser
-                          ?.appMetadata['provider'] ??
-                      'unknown',
+                      .currentUser;
+                  // Prefer the real profile email over an Apple private-relay
+                  // address; only fall back to relay when it's all we have.
+                  final profile = await ref.read(currentUserProvider.future);
+                  metaData
+                    ..userEmail = resolveSupportEmail([
+                      profile?.email,
+                      supabaseUser?.email,
+                    ])
+                    ..userId = supabaseUser?.id
+                    ..custom['auth_provider'] =
+                        supabaseUser?.appMetadata['provider'] ?? 'unknown';
+                  final name = resolveSupportName(
+                    firstName: profile?.firstName,
+                    lastName: profile?.lastName,
+                    senderName: profile?.senderName,
+                  );
+                  if (name != null) metaData.custom['name'] = name;
+                  return metaData;
+                },
               ),
               child: MaterialApp.router(
                 title: 'Mealvana Endurance',
@@ -240,37 +258,55 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// 1. Clamp `MediaQuery.textScaler` to [1.0, 1.6] so extreme system font
 ///    scaling can't break layouts (cut-off CTAs, truncated labels). Bumping
 ///    the ceiling requires verifying every screen at the new value.
-/// 2. In **debug builds only**, wrap the tree in `_DevAccessibilityTools`
-///    which provides the wrench testing-tools panel + checker overlay —
-///    available in dev flavor, stripped from release/prod by `kDebugMode`.
+/// 2. In the **dev flavor only**, mount the accessibility testing overlay —
+///    the blue wrench button (text scale, bold text, color-blindness
+///    simulation, locale, semantics debugger) and, in debug, the red issue
+///    checker button.
 ///
 /// Tree order matters:
 ///
 ///     MediaQuery(clamp(OS))
-///       └ AccessibilityTools
+///       └ AccessibilityTools / _DevTestingTools
 ///           ├ TestingToolsWrapper(env override)
 ///           │   └ child  ← reads env override OR clamped fallback
 ///           └ Overlay(panel + buttons)  ← reads clamped MediaQuery
 ///
-/// The clamp wraps the *whole* AccessibilityTools tree so the panel chrome
-/// itself respects the ceiling (otherwise the panel UI renders at the raw OS
-/// scale, e.g. 3.1× at AX5). Inside the package, `TestingToolsWrapper`
-/// inserts its own MediaQuery between the clamp and `child`, so panel slider
-/// changes override the clamped value for app content — testers can drive
-/// scale freely while the panel chrome stays bounded.
+/// The clamp wraps the *whole* tools tree so the panel chrome itself respects
+/// the ceiling (otherwise the panel UI renders at the raw OS scale, e.g. 3.1×
+/// at AX5). `TestingToolsWrapper` inserts its own MediaQuery between the clamp
+/// and `child`, so panel slider changes override the clamped value for app
+/// content — testers can drive scale freely while the panel chrome stays
+/// bounded.
 ///
-/// Show-overlay rule: dev flavor in debug mode only. `kDebugMode` is a
-/// compile-time constant so any release/profile build tree-shakes the
-/// AccessibilityTools branch entirely. `isDev` (runtime, from AppConfig)
-/// further blocks prod-flavor debug runs from showing the overlay.
+/// Show rule is `isDev` alone (runtime, from AppConfig: `.env.dev.local` sets
+/// `APP_ENVIRONMENT=dev`). Deliberately *not* gated on `kDebugMode`, so the
+/// installed dev build — a Shorebird/TestFlight release binary — carries the
+/// tools for QA. Prod never shows them in any build mode.
+///
+/// Which button appears where:
+///
+/// | build              | blue wrench | red checker |
+/// |--------------------|-------------|-------------|
+/// | dev + debug        | yes         | yes         |
+/// | dev + release      | yes         | no          |
+/// | prod (any mode)    | no          | no          |
+///
+/// The red checker is debug-only for a reason outside our control: its
+/// checkers read `RenderObject.debugSemantics` and `debugCreator`, which
+/// Flutter nulls out in release builds. Forcing it on in an installed dev
+/// build would just render a button that always finds zero issues, so the
+/// release path mounts the testing-tools panel alone.
 Widget _appShell(BuildContext context, Widget child, {required bool isDev}) {
   final mq = MediaQuery.of(context);
-  final showA11yOverlay = kDebugMode && isDev;
   return MediaQuery(
     data: mq.copyWith(
       textScaler: mq.textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.6),
     ),
-    child: showA11yOverlay ? _DevAccessibilityTools(child: child) : child,
+    child: !isDev
+        ? child
+        : kDebugMode
+        ? _DevAccessibilityTools(child: child)
+        : _DevTestingTools(child: child),
   );
 }
 
@@ -312,6 +348,103 @@ class _DevAccessibilityToolsState extends State<_DevAccessibilityTools> {
       // real errors). The on-screen overlay + testing panel still work.
       logLevel: LogLevel.none,
       child: widget.child,
+    );
+  }
+}
+
+/// Dev-flavor testing tools for **release** builds (installed dev app).
+///
+/// `AccessibilityTools` short-circuits to `child` whenever `!kDebugMode`, so
+/// the installed dev build gets nothing from it. This mounts the half of the
+/// package that does work outside debug — `TestingToolsWrapper` + the wrench
+/// panel — behind the same blue floating button, reproducing the package's own
+/// overlay structure so QA sees identical chrome on device and in simulator.
+///
+/// The red issue-checker button is intentionally absent here; see [_appShell].
+class _DevTestingTools extends StatefulWidget {
+  const _DevTestingTools({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DevTestingTools> createState() => _DevTestingToolsState();
+}
+
+class _DevTestingToolsState extends State<_DevTestingTools> {
+  TestEnvironment _environment = const TestEnvironment();
+  bool _panelVisible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      textDirection: TextDirection.ltr,
+      children: [
+        // Inserts its own MediaQuery/Theme between the clamp and the app, so
+        // panel overrides reach app content while panel chrome stays clamped.
+        TestingToolsWrapper(environment: _environment, child: widget.child),
+        Overlay(
+          initialEntries: [
+            OverlayEntry(
+              builder: (context) => SafeArea(
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _TestingToolsButton(
+                      onPressed: () =>
+                          setState(() => _panelVisible = !_panelVisible),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            OverlayEntry(
+              builder: (context) {
+                if (!_panelVisible) return const SizedBox();
+                return TestingToolsPanel(
+                  environment: _environment,
+                  onClose: () => setState(() => _panelVisible = false),
+                  onEnvironmentUpdate: (environment) =>
+                      setState(() => _environment = environment),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Blue wrench button. Matches the package's own `AccessibilityToolsToggle`
+/// (which lives in `src/` and isn't exported) so the two build modes look the
+/// same.
+class _TestingToolsButton extends StatelessWidget {
+  const _TestingToolsButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    const label = 'Open testing tools';
+    return SizedBox.square(
+      dimension: 48,
+      child: Tooltip(
+        message: label,
+        child: FloatingActionButton(
+          onPressed: onPressed,
+          shape: const CircleBorder(),
+          elevation: 10,
+          hoverElevation: 10,
+          backgroundColor: Colors.blue,
+          child: const Icon(
+            Icons.build,
+            size: 24,
+            color: Colors.white,
+            semanticLabel: label,
+          ),
+        ),
+      ),
     );
   }
 }

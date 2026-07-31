@@ -21,4 +21,5 @@ cd "$(dirname "$0")/.."
 exec flutter run \
   --flavor dev \
   --target lib/main_dev.dart \
+  --dart-define=IS_INTERNAL=true \
   "$@"

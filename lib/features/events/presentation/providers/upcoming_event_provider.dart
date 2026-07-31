@@ -23,9 +23,13 @@ Future<({Event event, DateTime eventDate})?> nextUpcomingEventFromDate(
 
   for (final event in events) {
     if (event.activityId != null) {
-      final activity = await activitiesService.getActivityById(userId, event.activityId!);
+      final activity = await activitiesService.getActivityById(
+        userId,
+        event.activityId!,
+      );
       if (activity != null && activity.scheduledDateTime.isAfter(fromDate)) {
-        if (nextEventDate == null || activity.scheduledDateTime.isBefore(nextEventDate)) {
+        if (nextEventDate == null ||
+            activity.scheduledDateTime.isBefore(nextEventDate)) {
           nextEvent = event;
           nextEventDate = activity.scheduledDateTime;
         }

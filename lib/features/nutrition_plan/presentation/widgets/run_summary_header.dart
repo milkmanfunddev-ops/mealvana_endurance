@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/macro_targets.dart';
+import '../../domain/run_parameters.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 
 /// Header widget displaying run summary information (distance, duration, pace)
 /// Shows key run metrics at the top of the adjust macros screen
-class RunSummaryHeader extends StatelessWidget {
-  const RunSummaryHeader({
-    super.key,
-    required this.macroTargets,
-  });
+class RunSummaryHeader extends ConsumerWidget {
+  const RunSummaryHeader({super.key, required this.macroTargets});
 
   final MacroTargets macroTargets;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final metrics = macroTargets.metrics;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -39,9 +43,9 @@ class RunSummaryHeader extends StatelessWidget {
               color: colorScheme.onSurface,
             ),
           ),
-          
+
           SizedBox(height: 12.h),
-          
+
           // Main metrics row
           Row(
             children: [
@@ -50,11 +54,16 @@ class RunSummaryHeader extends StatelessWidget {
                 child: _buildMetricColumn(
                   context,
                   'Distance',
-                  '${metrics.distanceMi.toStringAsFixed(1)} mi',
+                  UnitFormatter.formatDistance(
+                    metrics.distanceMi,
+                    unit: useMetric
+                        ? DistanceUnit.kilometers
+                        : DistanceUnit.miles,
+                  ),
                   Icons.straighten,
                 ),
               ),
-              
+
               // Duration
               Expanded(
                 child: _buildMetricColumn(
@@ -64,21 +73,28 @@ class RunSummaryHeader extends StatelessWidget {
                   Icons.schedule,
                 ),
               ),
-              
+
               // Pace
               Expanded(
                 child: _buildMetricColumn(
                   context,
                   'Pace',
-                  '${metrics.formattedPace}/mi',
+                  metrics.paceMinPerMile != null
+                      ? UnitFormatter.formatPace(
+                          metrics.paceMinPerMile!,
+                          unit: useMetric
+                              ? PaceUnit.minPerKm
+                              : PaceUnit.minPerMile,
+                        )
+                      : 'N/A',
                   Icons.speed,
                 ),
               ),
             ],
           ),
-          
+
           SizedBox(height: 16.h),
-          
+
           // Secondary metrics row
           Row(
             children: [
@@ -91,17 +107,20 @@ class RunSummaryHeader extends StatelessWidget {
                   Icons.local_fire_department,
                 ),
               ),
-              
+
               // Speed
               Expanded(
                 child: _buildMetricColumn(
                   context,
                   'Speed',
-                  '${metrics.speedMph.toStringAsFixed(1)} mph',
+                  UnitFormatter.formatSpeed(
+                    metrics.speedMph,
+                    useMetric: useMetric,
+                  ),
                   Icons.flash_on,
                 ),
               ),
-              
+
               // Empty space for alignment
               const Expanded(child: SizedBox()),
             ],
@@ -126,11 +145,7 @@ class RunSummaryHeader extends StatelessWidget {
         // Icon and label row
         Row(
           children: [
-            Icon(
-              icon,
-              size: 16.sp,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            Icon(icon, size: 16.sp, color: colorScheme.onSurfaceVariant),
             SizedBox(width: 4.w),
             Text(
               label,
@@ -141,9 +156,9 @@ class RunSummaryHeader extends StatelessWidget {
             ),
           ],
         ),
-        
+
         SizedBox(height: 4.h),
-        
+
         // Value
         Text(
           value,

@@ -22,6 +22,8 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../../helpers/widget_test_harness.dart';
 
@@ -68,17 +70,19 @@ Future<void> _pumpEditScreen(WidgetTester tester, MealLog log) async {
           ),
         ),
       ),
-      GoRoute(
-        path: '/edit',
-        builder: (_, __) => const EditMealLogScreen(),
-      ),
+      GoRoute(path: '/edit', builder: (_, __) => const EditMealLogScreen()),
     ],
   );
   addTearDown(router.dispose);
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [mockAppExternalDeps()],
+      overrides: [
+        mockAppExternalDeps(),
+        // The re-scan entry point is gated on describeMealEnabled (true in
+        // AppConfig.forTesting), so these tests exercise the enabled state.
+        appConfigProvider.overrideWithValue(AppConfig.forTesting()),
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
@@ -116,7 +120,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Now press the app-bar back button. The guard must intercept it.
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byType(CustomAppBarBackButton));
       await tester.pumpAndSettle();
 
       expect(find.text('Discard changes?'), findsOneWidget);
@@ -130,27 +134,25 @@ void main() {
     },
   );
 
-  testWidgets(
-    'pressing back with no edits leaves without a discard prompt',
-    (tester) async {
-      await _pumpEditScreen(tester, _componentLog());
+  testWidgets('pressing back with no edits leaves without a discard prompt', (
+    tester,
+  ) async {
+    await _pumpEditScreen(tester, _componentLog());
 
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byType(CustomAppBarBackButton));
+    await tester.pumpAndSettle();
 
-      // No nag dialog, and we're back on the home route.
-      expect(find.text('Discard changes?'), findsNothing);
-      expect(find.text('open'), findsOneWidget);
-    },
-  );
+    // No nag dialog, and we're back on the home route.
+    expect(find.text('Discard changes?'), findsNothing);
+    expect(find.text('open'), findsOneWidget);
+  });
 
-  testWidgets(
-    'exposes a photo re-scan entry point on the edit screen',
-    (tester) async {
-      // A log with no photo yet offers to "Scan a photo".
-      await _pumpEditScreen(tester, _componentLog());
-      expect(find.text('Scan a photo'), findsOneWidget);
-      expect(find.text('Re-scan photo'), findsNothing);
-    },
-  );
+  testWidgets('exposes a photo re-scan entry point on the edit screen', (
+    tester,
+  ) async {
+    // A log with no photo yet offers to "Scan a photo".
+    await _pumpEditScreen(tester, _componentLog());
+    expect(find.text('Scan a photo'), findsOneWidget);
+    expect(find.text('Re-scan photo'), findsNothing);
+  });
 }

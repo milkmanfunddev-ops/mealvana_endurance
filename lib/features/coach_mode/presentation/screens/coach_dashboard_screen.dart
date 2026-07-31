@@ -33,7 +33,8 @@ class CoachDashboardScreen extends ConsumerWidget {
       ),
       body: dashboardAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString(), ref),
+        error: (error, stack) =>
+            _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildDashboard(context, state, ref),
       ),
     );
@@ -87,9 +88,7 @@ class CoachDashboardScreen extends ConsumerWidget {
       child: CustomScrollView(
         slivers: [
           // Stats header
-          SliverToBoxAdapter(
-            child: _buildStatsHeader(context, state),
-          ),
+          SliverToBoxAdapter(child: _buildStatsHeader(context, state)),
 
           // Active athletes section
           SliverToBoxAdapter(
@@ -102,35 +101,28 @@ class CoachDashboardScreen extends ConsumerWidget {
           ),
 
           if (state.activeAthletes.isEmpty)
-            SliverToBoxAdapter(
-              child: _buildEmptyAthletesView(context),
-            )
+            SliverToBoxAdapter(child: _buildEmptyAthletesView(context))
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final athlete = state.activeAthletes[index];
-                  return AthleteCard(
-                    relationship: athlete,
-                    onTap: () {
-                      context.push('/coach/athlete/${athlete.id}');
-                    },
-                    onMessage: () {
-                      context.push('/chat/${athlete.id}');
-                    },
-                    onArchive: () {
-                      _showArchiveConfirmation(context, ref, athlete);
-                    },
-                  );
-                },
-                childCount: state.activeAthletes.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final athlete = state.activeAthletes[index];
+                return AthleteCard(
+                  relationship: athlete,
+                  onTap: () {
+                    context.push('/coach/athlete/${athlete.id}');
+                  },
+                  onMessage: () {
+                    context.push('/chat/${athlete.id}');
+                  },
+                  onArchive: () {
+                    _showArchiveConfirmation(context, ref, athlete);
+                  },
+                );
+              }, childCount: state.activeAthletes.length),
             ),
 
           // Bottom padding for FAB
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
       ),
     );
@@ -184,10 +176,7 @@ class CoachDashboardScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(label, style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -244,10 +233,7 @@ class CoachDashboardScreen extends ConsumerWidget {
             color: theme.colorScheme.outline,
           ),
           const SizedBox(height: 16),
-          Text(
-            'No athletes yet',
-            style: theme.textTheme.titleMedium,
-          ),
+          Text('No athletes yet', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
             'Athletes can request to connect with you from the Coach Directory',
@@ -269,11 +255,7 @@ class CoachDashboardScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_add,
-              size: 80,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.person_add, size: 80, color: theme.colorScheme.primary),
             const SizedBox(height: 24),
             Text(
               'Become a Coach',
@@ -337,5 +319,4 @@ class CoachDashboardScreen extends ConsumerWidget {
       ),
     );
   }
-
 }

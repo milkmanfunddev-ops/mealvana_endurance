@@ -135,16 +135,24 @@ class DuringWorkoutTemplatesRepository with SyncableRepository {
         foodForm: json['food_form'] as String,
         activityTypes: Value(_arrayToJsonString(json['activity_types'])),
         durationBrackets: Value(_arrayToJsonString(json['duration_brackets'])),
-        gutTrainingLevels:
-            Value(_arrayToJsonString(json['gut_training_levels'])),
-        componentFoodNames:
-            Value(_arrayToJsonString(json['component_food_names'])),
-        componentCarbRatios: Value(_jsonbToString(json['component_carb_ratios'])),
-        primaryToSecondaryRatio:
-            Value(json['primary_to_secondary_ratio'] as String?),
+        gutTrainingLevels: Value(
+          _arrayToJsonString(json['gut_training_levels']),
+        ),
+        componentFoodNames: Value(
+          _arrayToJsonString(json['component_food_names']),
+        ),
+        componentCarbRatios: Value(
+          _jsonbToString(json['component_carb_ratios']),
+        ),
+        primaryToSecondaryRatio: Value(
+          json['primary_to_secondary_ratio'] as String?,
+        ),
         allergens: Value(_arrayToJsonString(json['allergens'])),
         excludedDiets: Value(_arrayToJsonString(json['excluded_diets'])),
         notes: Value(json['notes'] as String?),
+        selectionPriority: Value(
+          (json['selection_priority'] as num?)?.toInt() ?? 0,
+        ),
         isActive: Value(json['is_active'] as bool? ?? true),
         createdAt: Value(
           DateTime.tryParse(json['created_at'] as String? ?? '') ??
@@ -194,8 +202,12 @@ class DuringWorkoutTemplatesRepository with SyncableRepository {
 /// Riverpod provider for [DuringWorkoutTemplatesRepository].
 final duringWorkoutTemplatesRepositoryProvider =
     Provider<DuringWorkoutTemplatesRepository>((ref) {
-  final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
-  final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return DuringWorkoutTemplatesRepository(supabase, database, logger: logger);
-});
+      final database = ref.watch(appDatabaseProvider);
+      final logger = ref.watch(appLoggerProvider);
+      final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
+      return DuringWorkoutTemplatesRepository(
+        supabase,
+        database,
+        logger: logger,
+      );
+    });

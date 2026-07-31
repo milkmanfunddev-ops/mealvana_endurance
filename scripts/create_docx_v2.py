@@ -76,7 +76,7 @@ def add_qa(doc, question, answer, required=True):
 
 
 # Read the updated markdown
-with open(os.path.expanduser('~/development/mealvana_endurance/docs/innovation_depot_application_draft.md'), 'r') as f:
+with open(os.path.expanduser('~/development/mealvana_endurance/docs/_archived/business/innovation_depot_application_draft.md'), 'r') as f:
     md = f.read()
 
 # Parse sections and Q&A from markdown
@@ -181,6 +181,6 @@ for section_text in sections:
 # Remove the notes section by not including it
 # The markdown has a NOTES FOR REVIEW section we skip
 
-output_path = os.path.expanduser('~/development/mealvana_endurance/docs/Innovation_Depot_Application_Mealvana.docx')
+output_path = os.path.expanduser('~/development/mealvana_endurance/docs/_archived/business/Innovation_Depot_Application_Mealvana.docx')
 doc.save(output_path)
 print(f'Saved to: {output_path}')

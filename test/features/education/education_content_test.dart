@@ -14,18 +14,17 @@ EducationContent _makeContent({
   int sortOrder = 0,
   bool isPublished = true,
   List<String> tags = const [],
-}) =>
-    EducationContent(
-      id: id,
-      title: title,
-      contentType: EducationContentType.fromString(contentType),
-      durationSeconds: durationSeconds,
-      sortOrder: sortOrder,
-      isPublished: isPublished,
-      tags: tags,
-      createdAt: DateTime(2025, 1, 1),
-      updatedAt: DateTime(2025, 1, 2),
-    );
+}) => EducationContent(
+  id: id,
+  title: title,
+  contentType: EducationContentType.fromString(contentType),
+  durationSeconds: durationSeconds,
+  sortOrder: sortOrder,
+  isPublished: isPublished,
+  tags: tags,
+  createdAt: DateTime(2025, 1, 1),
+  updatedAt: DateTime(2025, 1, 2),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -38,7 +37,10 @@ void main() {
 
   group('EducationContentType.fromString', () {
     test('parses "free" correctly', () {
-      expect(EducationContentType.fromString('free'), EducationContentType.free);
+      expect(
+        EducationContentType.fromString('free'),
+        EducationContentType.free,
+      );
     });
 
     test('parses "pro" correctly', () {
@@ -46,12 +48,18 @@ void main() {
     });
 
     test('parses "course" correctly', () {
-      expect(EducationContentType.fromString('course'), EducationContentType.course);
+      expect(
+        EducationContentType.fromString('course'),
+        EducationContentType.course,
+      );
     });
 
     // BUG PROBE: unknown value should fall back to `free` per orElse clause
     test('falls back to free for unknown content type string', () {
-      expect(EducationContentType.fromString('UNKNOWN'), EducationContentType.free);
+      expect(
+        EducationContentType.fromString('UNKNOWN'),
+        EducationContentType.free,
+      );
     });
 
     test('falls back to free for empty string', () {
@@ -62,8 +70,11 @@ void main() {
     // fromString uses `e.name == value` which is case-sensitive.
     // This documents current (case-sensitive) behavior.
     test('is case-sensitive — "Free" does not match "free" and falls back', () {
-      expect(EducationContentType.fromString('Free'), EducationContentType.free,
-          reason: 'Falls back to free because orElse fires on case mismatch');
+      expect(
+        EducationContentType.fromString('Free'),
+        EducationContentType.free,
+        reason: 'Falls back to free because orElse fires on case mismatch',
+      );
     });
   });
 

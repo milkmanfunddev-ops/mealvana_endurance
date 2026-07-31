@@ -9,11 +9,17 @@ class TransparencyAccordion extends StatefulWidget {
     required this.title,
     required this.child,
     this.initiallyExpanded = false,
+    this.onExpanded,
   });
 
   final String title;
   final Widget child;
   final bool initiallyExpanded;
+
+  /// Called when the user expands the accordion (not when they collapse it,
+  /// and not on the initial build). Optional because this widget also wraps
+  /// the calculation and video sections, which don't track expansion.
+  final VoidCallback? onExpanded;
 
   @override
   State<TransparencyAccordion> createState() => _TransparencyAccordionState();
@@ -56,6 +62,9 @@ class _TransparencyAccordionState extends State<TransparencyAccordion>
         _controller.reverse();
       }
     });
+    if (_isExpanded) {
+      widget.onExpanded?.call();
+    }
   }
 
   @override
@@ -67,8 +76,9 @@ class _TransparencyAccordionState extends State<TransparencyAccordion>
     final labelColor = isDark
         ? AppColors.textDarkSecondary
         : AppColors.textLightSecondary;
-    final expandedLabelColor =
-        isDark ? AppColors.textDark : AppColors.textLight;
+    final expandedLabelColor = isDark
+        ? AppColors.textDark
+        : AppColors.textLight;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -109,10 +119,7 @@ class _TransparencyAccordionState extends State<TransparencyAccordion>
               return Align(
                 alignment: Alignment.topCenter,
                 heightFactor: _heightFactor.value,
-                child: Opacity(
-                  opacity: _controller.value,
-                  child: child,
-                ),
+                child: Opacity(opacity: _controller.value, child: child),
               );
             },
             child: Padding(

@@ -49,6 +49,27 @@ export function garminTimestampToISO(
 }
 
 /**
+ * Convert Garmin epoch seconds + offset to a tz-naive LOCAL wall-clock
+ * timestamp (YYYY-MM-DDTHH:MM:SS, no zone suffix).
+ *
+ * `activities.scheduled_date_time` is `timestamp without time zone` and every
+ * other writer (app-created activities, TP/FS sync) stores the user's local
+ * wall-clock time in it; the planned-activity matcher likewise compares
+ * against naive local-day bounds. Writing a UTC instant here renders as the
+ * wrong hour in the app (bug 3a6e3fdb: actual 12:30 PM start displayed
+ * incorrectly), so Garmin writes must use this local-naive form.
+ */
+export function garminTimestampToLocalNaiveISO(
+  startTimeInSeconds: number,
+  startTimeOffsetInSeconds: number,
+): string {
+  const localEpochMs = (startTimeInSeconds + (startTimeOffsetInSeconds || 0)) *
+    1000;
+  // Render the shifted instant with UTC getters -> local wall-clock fields.
+  return new Date(localEpochMs).toISOString().slice(0, 19);
+}
+
+/**
  * Convert Garmin epoch seconds to a date-only string (YYYY-MM-DD) in the user's local timezone.
  */
 export function garminTimestampToDateString(
@@ -78,8 +99,9 @@ export function mapGarminActivityToActivity(
     garminActivity.startTimeInSeconds,
     garminActivity.startTimeOffsetInSeconds,
   );
-  const scheduledDateTime = garminTimestampToISO(
+  const scheduledDateTime = garminTimestampToLocalNaiveISO(
     garminActivity.startTimeInSeconds,
+    garminActivity.startTimeOffsetInSeconds,
   );
 
   // Column names must match the actual activities table schema
@@ -88,7 +110,10 @@ export function mapGarminActivityToActivity(
     activity_type: sportType,
     title: garminActivity.activityName || `Garmin ${sportType}`,
     scheduled_date_time: scheduledDateTime,
-    duration_minutes: durationMinutes > 0 ? durationMinutes : null,
+    // Zero is a valid duration (e.g. an abandoned/0.0-mi run pushed from
+    // Garmin) and must overwrite the planned value. Guard against NaN
+    // (missing durationInSeconds) via >= 0, which excludes NaN.
+    duration_minutes: durationMinutes >= 0 ? durationMinutes : null,
     distance_meters: garminActivity.distanceInMeters ?? null,
     synced_from_provider: 'garmin',
     provider_workout_id: garminActivity.summaryId,
@@ -106,7 +131,9 @@ export function mapGarminActivityToActivity(
 
   // Add sport-specific fields (using actual column names)
   if (sportType === 'running') {
-    if (garminActivity.averagePaceInMinutesPerKilometer) {
+    // Use != null (not truthiness) so a real 0 actual value overwrites the
+    // planned distance/pace instead of being dropped.
+    if (garminActivity.averagePaceInMinutesPerKilometer != null) {
       // Convert min/km to min/mile
       activity.average_pace_minutes_per_mile =
         garminActivity.averagePaceInMinutesPerKilometer * 1.60934;

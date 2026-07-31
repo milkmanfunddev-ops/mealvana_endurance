@@ -33,11 +33,22 @@
  * - Soft-deleted pins (`is_deleted = true`) are excluded — the partial
  *   `formula_pins_user_kind` index targets the same predicate.
  * - `template_kind = 'personal_formula'` pins are fetched + resolved here (into
- *   `personalFormulas`) and honored by the DURING and AFTER phase solvers
- *   (see `personal-formula-pins.ts`). BEFORE-phase honoring on the edge path is
- *   not wired yet — the macros-v4 before output is a structured TemplateSelection,
- *   not a flat food list — so before personal-formula pins take effect via the
- *   client fallback only for now.
+ *   `personalFormulas`) and honored by the BEFORE, DURING and AFTER phase
+ *   solvers (see `personal-formula-pins.ts`). BEFORE honoring is a per-SLOT
+ *   overlay applied after Algorithm C runs (`before-phase.ts` step 8), because
+ *   the before phase can emit meal + snack + top_up and each carries its own
+ *   timing tag — it is not a whole-phase early return like during/after.
+ *   (The old note here claiming before honoring was "client fallback only" was
+ *   stale as of the personal-formula overlay work; corrected 2026-07-29 while
+ *   verifying the server-side formula guarantee.)
+ *
+ * Server-side guarantee (2026-07-29): the client no longer pre-computes any
+ * auto-pins at onboarding or in settings, so EVERY phase resolves its formula
+ * here at generation time. Empty pin sets are the COMMON case, not a rare
+ * branch — each phase must still land on its ranked default-formula tier
+ * before any rule/LP/greedy solver. See
+ * `_shared/nutrition/formula-decision.ts` for the shared provenance vocabulary
+ * and the always-on `[FORMULA-CASCADE]` tripwire log.
  */
 
 import type { createServiceClient } from "../supabase-client.ts";

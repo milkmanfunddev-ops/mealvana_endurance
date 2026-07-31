@@ -102,7 +102,9 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 3.0),
             child: Icon(
-              isFilled ? FontAwesomeIcons.solidStar.data : FontAwesomeIcons.star.data,
+              isFilled
+                  ? FontAwesomeIcons.solidStar.data
+                  : FontAwesomeIcons.star.data,
               size: 22,
               color: isFilled
                   ? AppColors.electrolyte

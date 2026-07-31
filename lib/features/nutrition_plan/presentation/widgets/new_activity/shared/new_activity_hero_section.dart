@@ -45,11 +45,7 @@ class NewActivityHeroSection extends ConsumerWidget {
         alignment: Alignment.center,
         children: [
           // Hero image
-          Image.asset(
-            heroImagePath,
-            height: 180,
-            fit: BoxFit.contain,
-          ),
+          Image.asset(heroImagePath, height: 180, fit: BoxFit.contain),
 
           // Pink star overlay
           // TODO: Uncomment when Vector.png is extracted from Figma

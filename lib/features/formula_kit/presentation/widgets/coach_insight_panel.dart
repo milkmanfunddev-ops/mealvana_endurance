@@ -36,8 +36,9 @@ class CoachInsightPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final async = ref.watch(coachInsightControllerProvider(formulaId));
-    final notifier =
-        ref.read(coachInsightControllerProvider(formulaId).notifier);
+    final notifier = ref.read(
+      coachInsightControllerProvider(formulaId).notifier,
+    );
 
     final liveMarker = insightContext.staleMarker;
     final insight = async.value;
@@ -53,7 +54,7 @@ class CoachInsightPanel extends ConsumerWidget {
         actionLabel: 'Try again',
         scheme: scheme,
         isError: true,
-        onPressed: () => notifier.generate(insightContext),
+        onPressed: () => notifier.generate(insightContext, trigger: 'retry'),
       );
     } else if (insight == null) {
       body = _MessageWithAction(
@@ -79,14 +80,20 @@ class CoachInsightPanel extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.electrolyte.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.electrolyte.withValues(alpha: 0.20)),
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.20),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, size: 16, color: AppColors.electrolyte),
+              const Icon(
+                Icons.auto_awesome,
+                size: 16,
+                color: AppColors.electrolyte,
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 'Coach insight',
@@ -117,12 +124,17 @@ class _LoadingRow extends StatelessWidget {
         const SizedBox(
           width: 16,
           height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.electrolyte),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.electrolyte,
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
         Text(
           'Thinking…',
-          style: AppTextStyles.bodyMedium.copyWith(color: scheme.onSurfaceVariant),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -162,16 +174,21 @@ class _MessageWithAction extends StatelessWidget {
             key: const ValueKey('formula_kit.coach_insight_action'),
             onPressed: onPressed,
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 4,
+              ),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: AppColors.electrolyte,
             ),
-            child: Text(actionLabel,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.electrolyte,
-                  fontWeight: FontWeight.w700,
-                )),
+            child: Text(
+              actionLabel,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.electrolyte,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
       ],
@@ -216,23 +233,30 @@ class _InsightBody extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Outdated — your formula changed.',
-                  style: AppTextStyles.smallLabel.copyWith(color: scheme.onSurfaceVariant),
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               TextButton(
                 key: const ValueKey('formula_kit.coach_insight_refresh'),
                 onPressed: onRefresh,
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 4,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   foregroundColor: AppColors.electrolyte,
                 ),
-                child: Text('Refresh',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.electrolyte,
-                      fontWeight: FontWeight.w700,
-                    )),
+                child: Text(
+                  'Refresh',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.electrolyte,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),

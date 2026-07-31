@@ -11,10 +11,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 ///
 /// Returns true if user confirms, false if cancelled.
 class BrickConfirmationDialog extends StatelessWidget {
-  const BrickConfirmationDialog({
-    super.key,
-    required this.selectedActivities,
-  });
+  const BrickConfirmationDialog({super.key, required this.selectedActivities});
 
   final List<Activity> selectedActivities;
 
@@ -146,7 +143,6 @@ class BrickConfirmationDialog extends StatelessWidget {
             //     ],
             //   ),
             // ),
-
             const SizedBox(height: AppSpacing.lg),
 
             // Create button
@@ -177,6 +173,7 @@ class BrickConfirmationDialog extends StatelessWidget {
       ActivityType.duathlon => FontAwesomeIcons.personRunning.data,
       ActivityType.multisport => FontAwesomeIcons.personSwimming.data,
       ActivityType.brick => FontAwesomeIcons.link.data,
+      ActivityType.other => FontAwesomeIcons.circle.data,
     };
   }
 }

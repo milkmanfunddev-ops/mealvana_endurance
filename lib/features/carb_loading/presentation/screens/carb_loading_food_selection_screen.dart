@@ -141,42 +141,38 @@ class _CarbLoadingFoodSelectionScreenState
     });
   }
 
+  /// Minimum number of carb-loading-curated matches (template + user foods)
+  /// for the current query below which the generic nutrition-plan pool is
+  /// mixed into the search pool as a fallback. Keeps curated carb foods from
+  /// being crowded out when they already answer the query well.
+  static const int _fallbackPoolThreshold = 4;
+
   void _seedSearchController(CarbLoadingFoodSelectionState state) {
     final userFoods = <Food>[];
-    final templateFoods = <Food>[];
-    final nutritionPlanFoods = <Food>[];
-    final nutritionPlanUserFoods = <Food>[];
+    // Carb-loading's own curated pool (its dedicated catalog + the user's
+    // custom carb foods). Always ranked first.
+    final ownFoods = <Food>[];
+    // Generic nutrition-plan pool (imported foods). Lower priority than
+    // carb-loading's own pool, and only surfaced as a fallback when the
+    // carb-specific pool is thin for the current query (ITEM 18).
+    final fallbackFoods = <Food>[];
     _searchSourceById.clear();
 
     for (final food in state.carbLoadingUserFoods) {
       if (food.isDeleted) continue;
       final mapped = _mapCarbLoadingUserFoodToSearchFood(food);
       userFoods.add(mapped);
+      ownFoods.add(mapped);
       _searchSourceById[mapped.id] = food;
     }
 
     for (final food in state.carbLoadingFoods) {
       final mapped = _mapCarbLoadingTemplateFoodToSearchFood(food);
-      templateFoods.add(mapped);
+      ownFoods.add(mapped);
       _searchSourceById[mapped.id] = food;
     }
 
-    // Add nutrition plan foods to search pool
-    for (final food in state.nutritionPlanFoods) {
-      final mapped = Food(
-        id: 'nutrition_plan_${food.id}',
-        name: food.name,
-        displayName: food.displayName,
-        displayNamePlural: food.displayNamePlural,
-        imageAddress: food.imageUrl,
-        carbsPerServing: food.carbsPerServing,
-        categories: const [],
-      );
-      nutritionPlanFoods.add(mapped);
-      _searchSourceById[mapped.id] = food;
-    }
-
-    // Add nutrition plan user foods to search pool
+    // Nutrition plan user foods (fallback pool)
     for (final food in state.nutritionPlanUserFoods) {
       final mapped = Food(
         id: 'nutrition_plan_user_${food.id}',
@@ -187,21 +183,76 @@ class _CarbLoadingFoodSelectionScreenState
         carbsPerServing: food.carbsPerServing,
         categories: const [],
       );
-      nutritionPlanUserFoods.add(mapped);
+      fallbackFoods.add(mapped);
       _searchSourceById[mapped.id] = food;
     }
 
-    ref
-        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
-        .updateFoodPool(
-          allFoods: [
-            ...templateFoods,
-            ...userFoods,
-            ...nutritionPlanUserFoods,
-            ...nutritionPlanFoods,
-          ],
-          userFoods: userFoods,
-        );
+    // Nutrition plan foods (fallback pool)
+    for (final food in state.nutritionPlanFoods) {
+      final mapped = Food(
+        id: 'nutrition_plan_${food.id}',
+        name: food.name,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        imageAddress: food.imageUrl,
+        carbsPerServing: food.carbsPerServing,
+        categories: const [],
+      );
+      fallbackFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
+    // Only mix the fallback (nutrition-plan) pool in when carb-loading's own
+    // pool is thin for the current query. The shared FoodSearchController
+    // already renders `templateFoodResults` above its remote catalog/OFF/USDA
+    // cascade, so keeping `ownFoods` first here + gating the fallback pool
+    // ensures carb-loading-curated foods surface first end-to-end.
+    final query = _searchController.text.trim();
+    final includeFallbackPool =
+        query.isEmpty ||
+        _ownFoodMatchCount(state, query) < _fallbackPoolThreshold;
+
+    final notifier = ref.read(
+      foodSearchControllerProvider(_searchControllerKey).notifier,
+    );
+
+    // Carb loading wants real food — pasta, rice, bagels, potatoes — not gels
+    // and chews. This screen was the only search surface that never called
+    // setFilter, so it ran on the default `all` and ranked a caffeinated gel
+    // level with a bowl of pasta.
+    //
+    // `generalFirst` ranks rather than hides (see FoodSearchController), so a
+    // gel is still reachable — some people do carb-load with sports drinks and
+    // energy gels; the seeded carb_loading_foods list includes both. It just
+    // stops them crowding out the foods this screen is actually for.
+    //
+    // Note this is the fuel/general axis, which is NOT carb loading's real axis
+    // (that is meal_types: breakfast/lunch/dinner/snack). Filtering by meal type
+    // needs the recommendation rail — see the audit doc §10 Phase 4.
+    notifier.setFilter(FoodSearchFilter.generalFirst);
+
+    notifier.updateFoodPool(
+      allFoods: [...ownFoods, if (includeFallbackPool) ...fallbackFoods],
+      userFoods: userFoods,
+    );
+  }
+
+  /// Count carb-loading's own curated foods (template + user, undeleted)
+  /// that match [query] by name/display name. Used to decide whether the
+  /// generic nutrition-plan pool should be mixed in as a fallback.
+  int _ownFoodMatchCount(CarbLoadingFoodSelectionState state, String query) {
+    final lowerQuery = query.toLowerCase();
+    bool matches(String name, String displayName) =>
+        name.toLowerCase().contains(lowerQuery) ||
+        displayName.toLowerCase().contains(lowerQuery);
+
+    final templateMatches = state.carbLoadingFoods
+        .where((f) => matches(f.name, f.displayName))
+        .length;
+    final userMatches = state.carbLoadingUserFoods
+        .where((f) => !f.isDeleted && matches(f.name, f.displayName))
+        .length;
+    return templateMatches + userMatches;
   }
 
   Food _mapCarbLoadingTemplateFoodToSearchFood(CarbLoadingFood food) {
@@ -232,7 +283,23 @@ class _CarbLoadingFoodSelectionScreenState
     final userFoods = state.carbLoadingUserFoods
         .where((food) => !food.isDeleted)
         .toList();
-    final templateFoods = state.carbLoadingFoods;
+
+    // Show only the curated carb foods that suit the meal you're adding to.
+    // Every seeded food carries meal_types (breakfast / lunch+dinner / snacks),
+    // and CarbLoadingFood.isSuitableForMeal already reads it — but the browse
+    // list ignored both and rendered all 27, so the Breakfast screen offered
+    // pizza and the Dinner screen offered orange juice.
+    //
+    // Browse only. Search is deliberately left unfiltered: typing "pizza" at
+    // breakfast is an explicit ask and should still find it.
+    final suitable = state.carbLoadingFoods
+        .where((f) => f.isSuitableForMeal(state.mealType))
+        .toList();
+    // Never show an empty rail — if a meal type has no curated matches (or the
+    // seed data changes), fall back to the full list rather than a blank page.
+    final templateFoods = suitable.isNotEmpty
+        ? suitable
+        : state.carbLoadingFoods;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -299,7 +366,11 @@ class _CarbLoadingFoodSelectionScreenState
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
-              'Template Foods',
+              // Was "Template Foods" — meaningless to an athlete, and
+              // "template" already means four unrelated things in this codebase
+              // (see the 2026-07-03 architecture audit §1). The list is now
+              // filtered to this meal, so say so.
+              '${state.mealType.displayName} Carb Foods',
               style: AppTextStyles.sectionTitle.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -312,7 +383,8 @@ class _CarbLoadingFoodSelectionScreenState
           InkWell(
             onTap: () {
               setState(() {
-                _isNutritionPlanUserFoodsExpanded = !_isNutritionPlanUserFoodsExpanded;
+                _isNutritionPlanUserFoodsExpanded =
+                    !_isNutritionPlanUserFoodsExpanded;
               });
             },
             borderRadius: BorderRadius.circular(8),
@@ -433,7 +505,20 @@ class _CarbLoadingFoodSelectionScreenState
         .addFoodToMeal();
 
     if (mounted) {
+      _safePop();
+    }
+  }
+
+  /// Guarded pop for this GoRoute-registered screen (ITEM 19 audit). This
+  /// screen is only ever reached via `context.push('/carb-loading-select-food')`
+  /// so it IS on the GoRouter stack, but every reachable pop is still guarded
+  /// against an empty stack (e.g. deep link / hot restart edge cases) rather
+  /// than assuming there is always something to pop.
+  void _safePop() {
+    if (context.canPop()) {
       context.pop();
+    } else {
+      Navigator.of(context).maybePop();
     }
   }
 
@@ -470,7 +555,7 @@ class _CarbLoadingFoodSelectionScreenState
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(onPressed: () => context.pop()),
+        leading: CustomAppBarBackButton(onPressed: _safePop),
         title: Text(
           'Add Food to $_mealTypeName',
           style: AppTextStyles.sectionTitle.copyWith(
@@ -932,7 +1017,8 @@ class _CarbLoadingFoodSelectionScreenState
                           color: AppColors.electrolyte.withValues(alpha: 0.7),
                           size: AppIconSizes.sm,
                         ),
-                        onPressed: () => _duplicateAndCustomizeTemplateFood(food),
+                        onPressed: () =>
+                            _duplicateAndCustomizeTemplateFood(food),
                         tooltip: 'Duplicate & customize',
                       ),
                       const SizedBox(width: AppSpacing.xs),
@@ -974,7 +1060,9 @@ class _CarbLoadingFoodSelectionScreenState
         mealTypes: [_params.mealType],
       );
 
-      debugPrint('✅ Created custom food: ${customFood.displayName} (ID: ${customFood.id})');
+      debugPrint(
+        '✅ Created custom food: ${customFood.displayName} (ID: ${customFood.id})',
+      );
 
       // Refresh the food list to show the new custom food
       ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
@@ -1042,7 +1130,9 @@ class _CarbLoadingFoodSelectionScreenState
       fluidMlPerServing = null;
       caloriesPerServing = null;
 
-      debugPrint('✅ Fresh data loaded: ${freshFood.displayName} with ${freshFood.carbsPerServing}g carbs');
+      debugPrint(
+        '✅ Fresh data loaded: ${freshFood.displayName} with ${freshFood.carbsPerServing}g carbs',
+      );
     } else if (food is db.UserFood) {
       debugPrint('🔍 Fetching fresh data for UserFood: $foodId');
       final freshFoodQuery = database.select(database.userFoodsTable)
@@ -1065,7 +1155,9 @@ class _CarbLoadingFoodSelectionScreenState
       fluidMlPerServing = freshFood.fluidMlPerServing;
       caloriesPerServing = freshFood.caloriesPerServing;
 
-      debugPrint('✅ Fresh data loaded: ${freshFood.name} with ${freshFood.carbsPerServing}g carbs');
+      debugPrint(
+        '✅ Fresh data loaded: ${freshFood.name} with ${freshFood.carbsPerServing}g carbs',
+      );
     } else {
       return; // Not an editable food type
     }
@@ -1122,10 +1214,14 @@ class _CarbLoadingFoodSelectionScreenState
     }
     // Handle update
     else if (result is FoodDetailResult) {
-      debugPrint('📦 FoodDetailResult received: ${result.name} with ${result.carbsPerServing}g carbs (ID: ${result.foodId})');
+      debugPrint(
+        '📦 FoodDetailResult received: ${result.name} with ${result.carbsPerServing}g carbs (ID: ${result.foodId})',
+      );
 
       try {
-        debugPrint('🔧 Updating food: ${result.name} with ${result.carbsPerServing}g carbs');
+        debugPrint(
+          '🔧 Updating food: ${result.name} with ${result.carbsPerServing}g carbs',
+        );
         debugPrint('🔧 Food ID: ${result.foodId}');
 
         // CRITICAL FIX: Use carbLoadingFoodService for carb loading foods, not userFoodCrudService
@@ -1134,11 +1230,14 @@ class _CarbLoadingFoodSelectionScreenState
         // result.name from FoodDetailScreen maps to displayName (user-facing name)
         await carbLoadingFoodService.updateUserFood(
           id: result.foodId,
-          displayName: result.name,  // FoodDetailScreen's name field = displayName
+          displayName:
+              result.name, // FoodDetailScreen's name field = displayName
           carbsPerServing: result.carbsPerServing,
         );
 
-        debugPrint('🔧 Carb loading user food updated successfully in correct table');
+        debugPrint(
+          '🔧 Carb loading user food updated successfully in correct table',
+        );
 
         // Update carbs in all existing meal entries that use this food
         final dayMealRepo = ref.read(carbLoadingDayMealRepositoryProvider);

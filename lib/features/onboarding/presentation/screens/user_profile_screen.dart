@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/birth_year_picker.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -19,13 +20,22 @@ import '../../../../shared/widgets/adaptive/adaptive.dart';
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
 class UserProfileScreen extends ConsumerStatefulWidget {
-  const UserProfileScreen({super.key, this.onContinue, this.onBack});
+  const UserProfileScreen({
+    super.key,
+    this.onContinue,
+    this.onBack,
+    this.stepIndex,
+  });
 
   /// Callback to advance to next page (optional for PageView mode)
   final VoidCallback? onContinue;
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null outside onboarding.
+  final int? stepIndex;
 
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -37,11 +47,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   // Core fields (mapped to database)
   final _heightFeetController = TextEditingController();
   final _heightInchesController = TextEditingController();
+  final _heightCmController = TextEditingController();
   final _weightController = TextEditingController();
   Gender _selectedGender = Gender.male;
   DateTime? _selectedBirthday;
   bool _runsWithWaterBottle = false;
   UnitSystem _unitSystem = UnitSystem.imperial;
+
+  bool get _useMetric => _unitSystem == UnitSystem.metric;
 
   // Optional name fields (for coach mode athlete identification)
   final _firstNameController = TextEditingController();
@@ -64,12 +77,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     if (cachedData != null) {
       _selectedGender = cachedData['gender'] as Gender;
       _selectedBirthday = cachedData['birthday'] as DateTime;
-      _heightFeetController.text = cachedData['heightFeet'].toString();
-      _heightInchesController.text = cachedData['heightInches'].toString();
-      _weightController.text = cachedData['weightPounds'].toString();
       _runsWithWaterBottle = cachedData['runsWithWaterBottle'] as bool;
+      // Unit system must be set before formatting the cached height/weight
+      // values below, since display depends on it.
       _unitSystem =
           cachedData['unitSystem'] as UnitSystem? ?? UnitSystem.imperial;
+      _setHeightDisplayFromFeetInches(
+        cachedData['heightFeet'] as int,
+        cachedData['heightInches'] as int,
+      );
+      _setWeightDisplayFromPounds(
+        (cachedData['weightPounds'] as num).toDouble(),
+      );
       // Optional name fields
       if (cachedData['firstName'] != null) {
         _firstNameController.text = cachedData['firstName'] as String;
@@ -107,7 +126,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         .analytics
         .track(
           'screen_viewed',
-          properties: {'screen_name': 'User Profile Onboarding'},
+          properties: {
+            'screen_name': 'User Profile Onboarding',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
         );
   }
 
@@ -188,8 +210,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               garminIntegration?.providerAthleteWeightKg != null;
           final weightSource = useGarmin ? garminIntegration : integration;
           if (weightSource?.providerAthleteWeightLbs != null) {
-            _weightController.text = weightSource!.providerAthleteWeightLbs!
-                .toStringAsFixed(1);
+            _setWeightDisplayFromPounds(
+              weightSource!.providerAthleteWeightLbs!,
+            );
             if (useGarmin) _weightFromGarmin = true;
           }
         }
@@ -217,10 +240,71 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
+  /// Sets the weight display text from a canonical pounds value, formatted
+  /// in whichever unit ([_unitSystem]) is currently selected.
+  void _setWeightDisplayFromPounds(double pounds) {
+    _weightController.text = _useMetric
+        ? UnitFormatter.poundsToKg(pounds).toStringAsFixed(1)
+        : pounds.toStringAsFixed(1);
+  }
+
+  /// Sets the height display text from canonical feet/inches, formatted in
+  /// whichever unit ([_unitSystem]) is currently selected.
+  void _setHeightDisplayFromFeetInches(int feet, int inches) {
+    if (_useMetric) {
+      final totalInches = (feet * 12) + inches;
+      _heightCmController.text = UnitFormatter.totalInchesToCm(
+        totalInches,
+      ).toString();
+    } else {
+      _heightFeetController.text = feet.toString();
+      _heightInchesController.text = inches.toString();
+    }
+  }
+
+  /// Converts whatever is currently entered in the weight/height fields from
+  /// [oldSystem] to [newSystem] so the user doesn't lose their entry when
+  /// toggling the unit preference. Best-effort — unparsable/empty fields are
+  /// left untouched.
+  void _convertFieldsForUnitChange(UnitSystem oldSystem, UnitSystem newSystem) {
+    if (oldSystem == newSystem) return;
+
+    if (newSystem == UnitSystem.metric) {
+      final lbs = double.tryParse(_weightController.text);
+      if (lbs != null) {
+        _weightController.text = UnitFormatter.poundsToKg(
+          lbs,
+        ).toStringAsFixed(1);
+      }
+      final feet = int.tryParse(_heightFeetController.text);
+      final inches = int.tryParse(_heightInchesController.text);
+      if (feet != null && inches != null) {
+        final totalInches = (feet * 12) + inches;
+        _heightCmController.text = UnitFormatter.totalInchesToCm(
+          totalInches,
+        ).toString();
+      }
+    } else {
+      final kg = double.tryParse(_weightController.text);
+      if (kg != null) {
+        _weightController.text = UnitFormatter.kgToPounds(
+          kg,
+        ).toStringAsFixed(1);
+      }
+      final cm = int.tryParse(_heightCmController.text);
+      if (cm != null) {
+        final (feet, inches) = UnitFormatter.cmToFeetInches(cm);
+        _heightFeetController.text = feet.toString();
+        _heightInchesController.text = inches.toString();
+      }
+    }
+  }
+
   @override
   void dispose() {
     _heightFeetController.dispose();
     _heightInchesController.dispose();
+    _heightCmController.dispose();
     _weightController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
@@ -429,6 +513,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             hint: 'Email address',
             icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            autofillHints: const [AutofillHints.email],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -468,55 +554,77 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  fieldKey: const ValueKey('profile.height_ft_field'),
+          _useMetric
+              ? _buildTextField(
+                  fieldKey: const ValueKey('profile.height_cm_field'),
                   context: context,
-                  controller: _heightFeetController,
-                  label: 'Feet',
-                  hint: 'ft',
+                  controller: _heightCmController,
+                  label: 'Height',
+                  hint: 'cm',
                   icon: FontAwesomeIcons.rulerVertical.data,
                   keyboardType: TextInputType.number,
-                  suffix: 'ft',
+                  suffix: 'cm',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Required';
                     }
-                    final feet = int.tryParse(value);
-                    if (feet == null || feet < 3 || feet > 8) {
-                      return 'Valid: 3-8';
+                    final cm = int.tryParse(value);
+                    // 91 cm (~3 ft) - 244 cm (~8 ft), matching imperial range.
+                    if (cm == null || cm < 91 || cm > 244) {
+                      return 'Valid: 91-244 cm';
                     }
                     return null;
                   },
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        fieldKey: const ValueKey('profile.height_ft_field'),
+                        context: context,
+                        controller: _heightFeetController,
+                        label: 'Feet',
+                        hint: 'ft',
+                        icon: FontAwesomeIcons.rulerVertical.data,
+                        keyboardType: TextInputType.number,
+                        suffix: 'ft',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          final feet = int.tryParse(value);
+                          if (feet == null || feet < 3 || feet > 8) {
+                            return 'Valid: 3-8';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _buildTextField(
+                        fieldKey: const ValueKey('profile.height_in_field'),
+                        context: context,
+                        controller: _heightInchesController,
+                        label: 'Inches',
+                        hint: 'in',
+                        icon: FontAwesomeIcons.rulerVertical.data,
+                        keyboardType: TextInputType.number,
+                        suffix: 'in',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          final inches = int.tryParse(value);
+                          if (inches == null || inches < 0 || inches >= 12) {
+                            return 'Valid: 0-11';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: _buildTextField(
-                  fieldKey: const ValueKey('profile.height_in_field'),
-                  context: context,
-                  controller: _heightInchesController,
-                  label: 'Inches',
-                  hint: 'in',
-                  icon: FontAwesomeIcons.rulerVertical.data,
-                  keyboardType: TextInputType.number,
-                  suffix: 'in',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Required';
-                    }
-                    final inches = int.tryParse(value);
-                    if (inches == null || inches < 0 || inches >= 12) {
-                      return 'Valid: 0-11';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -558,14 +666,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     hint: 'Enter your weight',
                     icon: FontAwesomeIcons.weightScale.data,
                     keyboardType: TextInputType.number,
-                    suffix: 'lbs',
+                    suffix: _useMetric ? 'kg' : 'lbs',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your weight';
                       }
                       final weight = double.tryParse(value);
-                      if (weight == null || weight < 80 || weight > 500) {
-                        return 'Please enter a valid weight (80-500 lbs)';
+                      if (_useMetric) {
+                        if (weight == null || weight < 36 || weight > 227) {
+                          return 'Please enter a valid weight (36-227 kg)';
+                        }
+                      } else {
+                        if (weight == null || weight < 80 || weight > 500) {
+                          return 'Please enter a valid weight (80-500 lbs)';
+                        }
                       }
                       return null;
                     },
@@ -613,7 +727,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             segments: UnitSystem.values,
             selected: _unitSystem,
             onChanged: (value) {
-              setState(() => _unitSystem = value);
+              setState(() {
+                _convertFieldsForUnitChange(_unitSystem, value);
+                _unitSystem = value;
+              });
             },
             segmentKeyPrefix: 'profile.units',
           ),
@@ -842,6 +959,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool autocorrect = true,
+    Iterable<String>? autofillHints,
     String? suffix,
     String? Function(String?)? validator,
   }) {
@@ -854,6 +973,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
+          autocorrect: autocorrect,
+          autofillHints: autofillHints,
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
@@ -1007,6 +1128,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       return;
     }
 
+    // Convert display values (which are in whatever unit the user selected)
+    // back to the canonical storage units: pounds + feet/inches.
+    final weightEntered = double.parse(_weightController.text);
+    final weightPounds = _useMetric
+        ? UnitFormatter.kgToPounds(weightEntered)
+        : weightEntered;
+
+    final int heightFeet;
+    final int heightInches;
+    if (_useMetric) {
+      final cm = int.parse(_heightCmController.text);
+      (heightFeet, heightInches) = UnitFormatter.cmToFeetInches(cm);
+    } else {
+      heightFeet = int.parse(_heightFeetController.text);
+      heightInches = int.parse(_heightInchesController.text);
+    }
+
     // Track form submission attempt
     final analytics = ref.read(appExternalDepsProvider).analytics;
     await analytics.track(
@@ -1014,9 +1152,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       properties: {
         'gender': _selectedGender.name,
         'runs_with_water_bottle': _runsWithWaterBottle,
-        'height_feet': _heightFeetController.text,
-        'height_inches': _heightInchesController.text,
-        'weight': _weightController.text,
+        'height_feet': heightFeet,
+        'height_inches': heightInches,
+        'weight': weightPounds,
         'unit_system': _unitSystem.name,
       },
     );
@@ -1026,9 +1164,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     controller.cacheUserProfileData(
       gender: _selectedGender,
       birthday: _selectedBirthday!,
-      heightFeet: int.parse(_heightFeetController.text),
-      heightInches: int.parse(_heightInchesController.text),
-      weightPounds: double.parse(_weightController.text),
+      heightFeet: heightFeet,
+      heightInches: heightInches,
+      weightPounds: weightPounds,
       runsWithWaterBottle: _runsWithWaterBottle,
       firstName: _firstNameController.text.trim().isNotEmpty
           ? _firstNameController.text.trim()

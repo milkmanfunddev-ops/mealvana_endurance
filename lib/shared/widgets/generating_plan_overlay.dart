@@ -43,13 +43,9 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
 
     // Spin animation for circular progress
     _spinController = AnimationController(
@@ -70,7 +66,8 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
       await Future.delayed(const Duration(milliseconds: 2500));
       if (mounted) {
         setState(() {
-          _currentMessageIndex = (_currentMessageIndex + 1) % _motivationalMessages.length;
+          _currentMessageIndex =
+              (_currentMessageIndex + 1) % _motivationalMessages.length;
         });
         return true;
       }
@@ -133,7 +130,9 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
                         height: 80.w,
                         child: CircularProgressIndicator(
                           strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            accentColor,
+                          ),
                           backgroundColor: Colors.transparent,
                         ),
                       ),
@@ -158,13 +157,16 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
                       return FadeTransition(
                         opacity: animation,
                         child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.2),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          )),
+                          position:
+                              Tween<Offset>(
+                                begin: const Offset(0, 0.2),
+                                end: Offset.zero,
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: animation,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              ),
                           child: child,
                         ),
                       );
@@ -216,9 +218,7 @@ class _GeneratingPlanOverlayState extends State<GeneratingPlanOverlay>
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     height: 1.4,
-                  ).copyWith(
-                    color: secondaryTextColor,
-                  ),
+                  ).copyWith(color: secondaryTextColor),
                 ),
               ],
             ),

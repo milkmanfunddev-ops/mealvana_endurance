@@ -1,0 +1,27 @@
+{
+  "dailies": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "daily-20240328",
+      "calendarDate": "2024-03-28",
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": -18000,
+      "durationInSeconds": 86400,
+      "steps": 15200,
+      "distanceInMeters": 11500,
+      "activeTimeInSeconds": 4200,
+      "activeKilocalories": 520,
+      "bmrKilocalories": 1850,
+      "averageHeartRateInBeatsPerMinute": 65,
+      "maxHeartRateInBeatsPerMinute": 168,
+      "minHeartRateInBeatsPerMinute": 48,
+      "restingHeartRateInBeatsPerMinute": 52,
+      "averageStressLevel": 32,
+      "maxStressLevel": 78,
+      "bodyBatteryHighestValue": 98,
+      "bodyBatteryLowestValue": 20,
+      "floorsClimbed": 22
+    }
+  ]
+}

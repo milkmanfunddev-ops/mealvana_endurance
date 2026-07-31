@@ -7,6 +7,7 @@ import '../../features/fuel_timeline/presentation/screens/fuel_timeline_screen.d
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
+import '../core/guarded_navigation.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
@@ -98,14 +99,20 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                   body,
                   if (_currentIndex != 0)
                     Positioned(
-                      top: MediaQuery.of(context).padding.top + 12,
-                      right: 16,
-                      child: GestureDetector(
+                      top: MediaQuery.of(context).padding.top,
+                      right: 4,
+                      child: IconButton(
                         key: const ValueKey('calendar.settings_button'),
-                        onTap: () => context.push('/settings'),
-                        child: FaIcon(
+                        onPressed: () => context.pushOnce('/settings'),
+                        tooltip: 'Settings',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        icon: FaIcon(
                           FontAwesomeIcons.gear,
-                          size: 18,
+                          size: 22,
                           color: isDark
                               ? AppColors.cream
                               : AppColors.blackberry,
@@ -134,21 +141,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             Positioned(
               top: MediaQuery.of(context).padding.top,
               right: 4,
-              child: Semantics(
-                button: true,
-                label: 'Settings',
-                child: GestureDetector(
-                  key: const ValueKey('calendar.settings_button'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => context.push('/settings'),
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: FaIcon(
-                      FontAwesomeIcons.gear,
-                      size: 18,
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                    ),
-                  ),
+              child: IconButton(
+                key: const ValueKey('calendar.settings_button'),
+                onPressed: () => context.pushOnce('/settings'),
+                tooltip: 'Settings',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: FaIcon(
+                  FontAwesomeIcons.gear,
+                  size: 22,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
               ),
             ),

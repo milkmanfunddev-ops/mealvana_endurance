@@ -65,21 +65,37 @@ class FoodItem {
   factory FoodItem.fromJson(Map<String, dynamic> json) {
     return FoodItem(
       id: json['id'] as String? ?? json['food_id'] as String,
-      name: json['name'] as String? ?? json['food_name'] as String? ?? 'Unknown',
+      name:
+          json['name'] as String? ?? json['food_name'] as String? ?? 'Unknown',
       quantity: json['quantity']?.toString() ?? '1',
-      displayName: json['displayName'] as String? ?? json['display_name'] as String?,
-      displayNamePlural: json['displayNamePlural'] as String? ?? json['display_name_plural'] as String?,
-      imageAddress: json['imageAddress'] as String? ?? json['image_address'] as String?,
+      displayName:
+          json['displayName'] as String? ?? json['display_name'] as String?,
+      displayNamePlural:
+          json['displayNamePlural'] as String? ??
+          json['display_name_plural'] as String?,
+      imageAddress:
+          json['imageAddress'] as String? ?? json['image_address'] as String?,
       description: json['description'] as String?,
       timing: json['timing'] as String?,
       instructions: json['instructions'] as String?,
-      servingSize: json['servingSize'] as String? ?? json['serving_size'] as String?,
+      servingSize:
+          json['servingSize'] as String? ?? json['serving_size'] as String?,
       calories: _parseIntOrNull(json['calories']),
-      carbsGrams: _parseDoubleOrNull(json['carbsGrams'] ?? json['carbs_grams'] ?? json['carbs']),
-      proteinGrams: _parseDoubleOrNull(json['proteinGrams'] ?? json['protein_grams'] ?? json['protein']),
-      fatGrams: _parseDoubleOrNull(json['fatGrams'] ?? json['fat_grams'] ?? json['fat']),
-      sodiumMg: _parseIntOrNull(json['sodiumMg'] ?? json['sodium_mg'] ?? json['sodium']),
-      fluidsMl: _parseDoubleOrNull(json['fluidsMl'] ?? json['fluids_ml'] ?? json['fluids']),
+      carbsGrams: _parseDoubleOrNull(
+        json['carbsGrams'] ?? json['carbs_grams'] ?? json['carbs'],
+      ),
+      proteinGrams: _parseDoubleOrNull(
+        json['proteinGrams'] ?? json['protein_grams'] ?? json['protein'],
+      ),
+      fatGrams: _parseDoubleOrNull(
+        json['fatGrams'] ?? json['fat_grams'] ?? json['fat'],
+      ),
+      sodiumMg: _parseIntOrNull(
+        json['sodiumMg'] ?? json['sodium_mg'] ?? json['sodium'],
+      ),
+      fluidsMl: _parseDoubleOrNull(
+        json['fluidsMl'] ?? json['fluids_ml'] ?? json['fluids'],
+      ),
     );
   }
 

@@ -40,51 +40,57 @@ void main() {
           sportLabel: 'Brick',
         );
 
-        expect(data.phase, 'after',
-            reason: 'After card must render with phase="after".');
-        expect(data.targetGrams, closeTo(58, 1),
-            reason:
-                'Post-workout carb target should be ~58 g (48 × 1.2), '
-                'not 288 g (during total).');
-        expect(data.targetGrams, isNot(closeTo(288, 1)),
-            reason:
-                'A targetGrams near 288 indicates the old during-fallthrough.');
+        expect(
+          data.phase,
+          'after',
+          reason: 'After card must render with phase="after".',
+        );
+        expect(
+          data.targetGrams,
+          closeTo(58, 1),
+          reason:
+              'Post-workout carb target should be ~58 g (48 × 1.2), '
+              'not 288 g (during total).',
+        );
+        expect(
+          data.targetGrams,
+          isNot(closeTo(288, 1)),
+          reason:
+              'A targetGrams near 288 indicates the old during-fallthrough.',
+        );
         expect(data.nutrientLabel, 'Carbs');
         expect(data.sportLabel, 'Post-Workout');
       },
     );
 
-    test(
-      'short workout (≤2 h) uses 1.0× duration multiplier',
-      () {
-        final macroTargets = _bricklikeTargets(
-          weightKg: 70,
-          durationH: 1.5,
-          // 70 × 1.0 × 1.0 = 70 g
-          postCarbsG: 70,
-          duringCarbTotalG: 90,
-        );
+    test('short workout (≤2 h) uses 1.0× duration multiplier', () {
+      final macroTargets = _bricklikeTargets(
+        weightKg: 70,
+        durationH: 1.5,
+        // 70 × 1.0 × 1.0 = 70 g
+        postCarbsG: 70,
+        duringCarbTotalG: 90,
+      );
 
-        final data = service.getCarbTransparencyData(
-          phase: ExplanationPhase.after,
-          macroTargets: macroTargets,
-          bodyWeightKg: 70,
-          gutTrainingLabel: 'standard',
-          gutMultiplier: 1.0,
-          sportLabel: 'Run',
-        );
+      final data = service.getCarbTransparencyData(
+        phase: ExplanationPhase.after,
+        macroTargets: macroTargets,
+        bodyWeightKg: 70,
+        gutTrainingLabel: 'standard',
+        gutMultiplier: 1.0,
+        sportLabel: 'Run',
+      );
 
-        expect(data.targetGrams, closeTo(70, 1));
-        // tldrBody should reference 1.0 g per kg (not 1.2)
-        expect(
-          data.tldrBody?.contains('1.0 g of carbs per kg') ?? false,
-          isTrue,
-          reason:
-              'For workouts ≤2 h the standard 1.0× multiplier should appear '
-              'in the explanation copy.',
-        );
-      },
-    );
+      expect(data.targetGrams, closeTo(70, 1));
+      // tldrBody should reference 1.0 g per kg (not 1.2)
+      expect(
+        data.tldrBody?.contains('1.0 g of carbs per kg') ?? false,
+        isTrue,
+        reason:
+            'For workouts ≤2 h the standard 1.0× multiplier should appear '
+            'in the explanation copy.',
+      );
+    });
   });
 }
 

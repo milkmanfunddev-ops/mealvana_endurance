@@ -16,8 +16,8 @@ class OnboardingService {
 
   /// Get auth service for user operations
   AuthService get _authService => ref.read(authServiceProvider);
-  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
-
+  AnalyticsTracker get _analytics =>
+      ref.read(appExternalDepsProvider).analytics;
 
   /// Complete user profile creation step
   Future<UserProfile> createUserProfile({
@@ -27,14 +27,14 @@ class OnboardingService {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
-    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    String authProvider =
+        'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
     String? firstName,
     String? lastName,
     String? email,
     UnitSystem unitSystem = UnitSystem.imperial,
   }) async {
-
     final user = await _authService.createUser(
       gender: gender,
       birthday: birthday,
@@ -95,11 +95,14 @@ class OnboardingService {
     );
 
     // Track sport preferences saved
-    await _analytics.track('sport_preferences_saved', properties: {
-      'gi_sensitivity': giSensitivity,
-      'has_cycling': ftpWatts != null,
-      'has_swimming': cssPacePer100mSeconds != null,
-    });
+    await _analytics.track(
+      'sport_preferences_saved',
+      properties: {
+        'gi_sensitivity': giSensitivity,
+        'has_cycling': ftpWatts != null,
+        'has_swimming': cssPacePer100mSeconds != null,
+      },
+    );
   }
 
   /// Complete dietary preference step
@@ -110,25 +113,28 @@ class OnboardingService {
     await _authService.updateDietaryPreference(userId, dietaryPreference);
 
     // Track dietary preference saved
-    await _analytics.track('dietary_preference_saved', properties: {
-      'preference': dietaryPreference?.name ?? 'none',
-      'skipped': dietaryPreference == null,
-    });
+    await _analytics.track(
+      'dietary_preference_saved',
+      properties: {
+        'preference': dietaryPreference?.name ?? 'none',
+        'skipped': dietaryPreference == null,
+      },
+    );
   }
 
   /// Complete allergies step
-  Future<void> saveAllergies(
-    String userId,
-    List<Allergy> allergies,
-  ) async {
+  Future<void> saveAllergies(String userId, List<Allergy> allergies) async {
     await _authService.updateAllergies(userId, allergies);
 
     // Track allergies saved
-    await _analytics.track('allergies_saved', properties: {
-      'allergies': allergies.map((a) => a.name).toList(),
-      'count': allergies.length,
-      'skipped': allergies.isEmpty,
-    });
+    await _analytics.track(
+      'allergies_saved',
+      properties: {
+        'allergies': allergies.map((a) => a.name).toList(),
+        'count': allergies.length,
+        'skipped': allergies.isEmpty,
+      },
+    );
   }
 
   /// Complete food preferences step
@@ -178,9 +184,9 @@ class OnboardingService {
 
 /// Enum for tracking onboarding progress
 enum OnboardingProgress {
-  notStarted,      // No user profile
+  notStarted, // No user profile
   profileComplete, // User profile created, but no food preferences
-  complete,        // Both profile and preferences complete
+  complete, // Both profile and preferences complete
 }
 
 /// Provider for OnboardingService
@@ -189,7 +195,9 @@ final onboardingServiceProvider = Provider<OnboardingService>((ref) {
 });
 
 /// Provider for onboarding progress
-final onboardingProgressProvider = FutureProvider<OnboardingProgress>((ref) async {
+final onboardingProgressProvider = FutureProvider<OnboardingProgress>((
+  ref,
+) async {
   final service = ref.watch(onboardingServiceProvider);
   return await service.getOnboardingProgress();
 });

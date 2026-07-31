@@ -24,7 +24,8 @@ class LowFuelRiskBadge extends StatelessWidget {
 
   /// Calculate fuel status from the nutrition plan
   /// Returns a record with (isLowFuel, actualCarbs, targetCarbs, lowestSection)
-  ({bool isLowFuel, int actualCarbs, int targetCarbs, String? lowestSection}) _calculateFuelStatus() {
+  ({bool isLowFuel, int actualCarbs, int targetCarbs, String? lowestSection})
+  _calculateFuelStatus() {
     int totalActualCarbs = 0;
     int totalTargetCarbs = 0;
     String? lowestSection;
@@ -67,7 +68,8 @@ class LowFuelRiskBadge extends StatelessWidget {
     }
 
     // Check if overall carbs are below threshold
-    final isLowFuel = totalTargetCarbs > 0 &&
+    final isLowFuel =
+        totalTargetCarbs > 0 &&
         (totalActualCarbs / totalTargetCarbs) < threshold;
 
     return (

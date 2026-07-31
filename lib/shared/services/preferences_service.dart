@@ -12,9 +12,11 @@ class PreferencesService {
   final SharedPreferences _prefs;
 
   // Keys
-  static const String _keyHasCompletedInitialSurvey = 'has_completed_initial_survey';
+  static const String _keyHasCompletedInitialSurvey =
+      'has_completed_initial_survey';
   static const String _keyTpWritebackEnabled = 'tp_writeback_enabled';
-  static const String _keyTpWritebackPremiumBlocked = 'tp_writeback_premium_blocked';
+  static const String _keyTpWritebackPremiumBlocked =
+      'tp_writeback_premium_blocked';
 
   /// Check if user has completed the initial survey after first activity creation
   bool get hasCompletedInitialSurvey {
@@ -64,7 +66,8 @@ class PreferencesService {
 
   // ─── Jade Baseline Tip Banner ───
 
-  static const String _keyJadeBaselineTipDismissed = 'jade_baseline_tip_dismissed';
+  static const String _keyJadeBaselineTipDismissed =
+      'jade_baseline_tip_dismissed';
 
   /// Whether the user has dismissed the one-time baseline-logging tutorial
   /// copy on the Jade coach banner.  Once true, the banner shows the default
@@ -89,6 +92,24 @@ class PreferencesService {
 
   Future<void> setFuelTrackingEnabled(bool enabled) async {
     await _prefs.setBool(_keyFuelTrackingEnabled, enabled);
+  }
+
+  // ─── AI credits ───
+
+  static const String _keyCreditsEnsuredStamp = 'credits_ensured_stamp';
+
+  /// Marker for "this user's free monthly credits have already been requested",
+  /// stored as `<userId>|<YYYY-MM>`.
+  ///
+  /// Provisioning the wallet is an edge-function round trip, and the grant it
+  /// performs is idempotent for the whole calendar month — so calling it more
+  /// than once per user per month is pure cost. The user id is part of the
+  /// value so that signing in as somebody else on the same device does not
+  /// inherit the previous account's marker.
+  String? get creditsEnsuredStamp => _prefs.getString(_keyCreditsEnsuredStamp);
+
+  Future<void> setCreditsEnsuredStamp(String stamp) async {
+    await _prefs.setString(_keyCreditsEnsuredStamp, stamp);
   }
 
   /// Clear all preferences (useful for testing or logout)

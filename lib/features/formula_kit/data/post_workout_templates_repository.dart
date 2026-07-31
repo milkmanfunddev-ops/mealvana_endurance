@@ -133,20 +133,24 @@ class PostWorkoutTemplatesRepository with SyncableRepository {
         formula: json['formula'] as String,
         portions: Value(json['portions'] as String?),
         activityTypes: Value(_arrayToJsonString(json['activity_types'])),
-        componentFoodNames:
-            Value(_arrayToJsonString(json['component_food_names'])),
+        componentFoodNames: Value(
+          _arrayToJsonString(json['component_food_names']),
+        ),
         componentRatios: Value(_jsonbToString(json['component_ratios'])),
-        defaultServings:
-            Value(_jsonbToString(json['default_servings']) ?? '{}'),
-        targetCarbProteinRatio:
-            Value(json['target_carb_protein_ratio'] as String?),
+        defaultServings: Value(
+          _jsonbToString(json['default_servings']) ?? '{}',
+        ),
+        targetCarbProteinRatio: Value(
+          json['target_carb_protein_ratio'] as String?,
+        ),
         travelFriendliness: Value(json['travel_friendliness'] as String?),
         flavorProfile: Value(json['flavor_profile'] as String?),
         prepEffort: Value(json['prep_effort'] as String?),
         proteinAnchor: Value(json['protein_anchor'] as String?),
         carbSources: Value(_arrayToJsonString(json['carb_sources'])),
-        selectionPriority:
-            Value((json['selection_priority'] as num?)?.toInt() ?? 0),
+        selectionPriority: Value(
+          (json['selection_priority'] as num?)?.toInt() ?? 0,
+        ),
         allergens: Value(_arrayToJsonString(json['allergens'])),
         excludedDiets: Value(_arrayToJsonString(json['excluded_diets'])),
         notes: Value(json['notes'] as String?),
@@ -199,8 +203,8 @@ class PostWorkoutTemplatesRepository with SyncableRepository {
 /// Riverpod provider for [PostWorkoutTemplatesRepository].
 final postWorkoutTemplatesRepositoryProvider =
     Provider<PostWorkoutTemplatesRepository>((ref) {
-  final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
-  final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return PostWorkoutTemplatesRepository(supabase, database, logger: logger);
-});
+      final database = ref.watch(appDatabaseProvider);
+      final logger = ref.watch(appLoggerProvider);
+      final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
+      return PostWorkoutTemplatesRepository(supabase, database, logger: logger);
+    });

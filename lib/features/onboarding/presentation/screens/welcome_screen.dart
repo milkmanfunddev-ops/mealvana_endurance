@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/privacy/analytics_consent.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../providers/onboarding_analytics.dart';
 
 /// Welcome Screen - Design System
 /// First screen in onboarding flow
@@ -160,6 +162,10 @@ class WelcomeScreen extends ConsumerWidget {
     final externalDeps = ref.read(appExternalDepsProvider);
     externalDeps.analytics.track('welcome_get_started_tapped');
 
+    // Start of the onboarding funnel — read back at the final step to derive
+    // `duration_sec` on `onboarding_completed`.
+    OnboardingAnalytics.markStarted();
+
     // Capture navigation info before async operations
     final shouldUseCallback = onContinue != null;
     final callback = onContinue;
@@ -189,9 +195,20 @@ class WelcomeScreen extends ConsumerWidget {
     // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
     if (shouldUseCallback && callback != null) {
       callback();
-    } else {
-      navigator.push('/onboarding');
+      return;
     }
+
+    // Strict-regime users (EEA/UK, Washington) answer the analytics question
+    // first, as the opening step of onboarding. Everyone else goes straight in
+    // and never sees it — they get disclosure plus the Settings → Privacy
+    // opt-out instead. `needsPrompt` already encodes that regional rule.
+    //
+    // The anonymous session created above is deliberately NOT gated on this:
+    // it is how the app functions at all (contract performance), not analytics.
+    final consent = ref.read(analyticsConsentProvider);
+    navigator.push(
+      consent.needsPrompt ? '/privacy-consent?next=/onboarding' : '/onboarding',
+    );
   }
 
   void _goToLogin(BuildContext context, WidgetRef ref) {

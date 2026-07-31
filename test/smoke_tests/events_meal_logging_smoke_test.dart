@@ -27,13 +27,17 @@ import 'package:mealvana_endurance/features/events/presentation/screens/events_l
 import 'package:mealvana_endurance/features/events/presentation/screens/event_form_screen.dart';
 import 'package:mealvana_endurance/features/events/presentation/screens/event_detail_screen.dart';
 import 'package:mealvana_endurance/features/race_checklist/presentation/screens/race_checklist_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/build_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_log_method_sheet.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/manual_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/photo_capture_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/describe_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_review_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recipe_picker_screen.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../helpers/widget_test_harness.dart';
 
@@ -70,16 +74,12 @@ Future<void> _smokeWithRouter(
 }) async {
   final router = GoRouter(
     initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => buildScreen(),
-      ),
-    ],
+    routes: [GoRoute(path: '/', builder: (_, __) => buildScreen())],
   );
 
   final allOverrides = <Override>[
     mockAppExternalDeps(),
+    appConfigProvider.overrideWithValue(AppConfig.forTesting()),
     ...overrides,
   ];
 
@@ -111,7 +111,11 @@ Future<void> _smokeWithRouter(
     router.dispose();
   }
 
-  for (dynamic e = tester.takeException(); e != null; e = tester.takeException()) {
+  for (
+    dynamic e = tester.takeException();
+    e != null;
+    e = tester.takeException()
+  ) {
     captured.add(e.toString());
   }
 
@@ -119,7 +123,8 @@ Future<void> _smokeWithRouter(
   expect(
     crashes,
     isEmpty,
-    reason: 'Screen threw during build/layout at $size:\n${crashes.join('\n\n')}',
+    reason:
+        'Screen threw during build/layout at $size:\n${crashes.join('\n\n')}',
   );
 
   addTearDown(() {
@@ -148,8 +153,9 @@ void main() {
         settle: false,
         overrides: [
           eventsControllerProvider.overrideWith(_LoadingEventsController.new),
-          activitiesControllerProvider
-              .overrideWith(_LoadingActivitiesController.new),
+          activitiesControllerProvider.overrideWith(
+            _LoadingActivitiesController.new,
+          ),
         ],
       );
     });
@@ -189,7 +195,9 @@ void main() {
     // With null extra, _originalLog stays null and the screen renders its empty
     // form (safe fallback — _submit() returns early when _originalLog == null).
     // settle:false because mealLogControllerProvider still needs the async init.
-    testWidgets('EditMealLogScreen builds (no extra, empty form)', (tester) async {
+    testWidgets('EditMealLogScreen builds (no extra, empty form)', (
+      tester,
+    ) async {
       await _smokeWithRouter(tester, () => const EditMealLogScreen());
     });
 
@@ -216,14 +224,18 @@ void main() {
     // MealReviewScreen reads GoRouterState.of(context) for MealAnalysisResult.
     // With null extra, _result == null and the screen shows 'Missing analysis
     // result.' fallback text — a defined safe state, not a crash.
-    testWidgets('MealReviewScreen builds (missing result fallback)', (tester) async {
+    testWidgets('MealReviewScreen builds (missing result fallback)', (
+      tester,
+    ) async {
       await _smokeWithRouter(tester, () => const MealReviewScreen());
     });
 
     // RecentSavedPickerScreen reads GoRouterState.of(context) for logDate and
     // watches savedMealsProvider + recentMealsProvider (both async streams).
     // settle:false — streams never emit without real Drift DB.
-    testWidgets('RecentSavedPickerScreen builds (loading state)', (tester) async {
+    testWidgets('RecentSavedPickerScreen builds (loading state)', (
+      tester,
+    ) async {
       await _smokeWithRouter(tester, () => const RecentSavedPickerScreen());
     });
 
@@ -232,6 +244,78 @@ void main() {
     // settle:false — async recipe load never completes without a real DB.
     testWidgets('RecipePickerScreen builds (loading state)', (tester) async {
       await _smokeWithRouter(tester, () => const RecipePickerScreen());
+    });
+
+    // LogMealScreen (full-screen "Log a Meal" redesign) — logDate is a plain
+    // constructor param (no GoRouterState dependency), so it renders under a
+    // bare MaterialApp like smokeScreen() does elsewhere. It watches several
+    // async providers (recentMeals/savedMeals/recipes) that never resolve
+    // without a real Drift DB + auth session, and its initState schedules
+    // non-fatal best-effort seeding (wrapped in try/catch) via a post-frame
+    // callback — settle:false keeps the test deterministic and avoids waiting
+    // on work that never completes in this harness.
+    testWidgets('LogMealScreen builds (loading state)', (tester) async {
+      await smokeScreen(
+        tester,
+        const LogMealScreen(logDate: '2026-07-04'),
+        settle: false,
+      );
+    });
+
+    testWidgets('LogMealScreen hides Describe when release flag is off', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const LogMealScreen(logDate: '2026-07-04'),
+        settle: false,
+        appConfig: AppConfig.forTesting(describeMealEnabled: false),
+      );
+
+      expect(find.text('Describe'), findsNothing);
+    });
+
+    // BuildMealScreen (Surface 2 of the meal-logging split) — same shape as
+    // LogMealScreen: plain constructor params, no GoRouterState dependency.
+    // Renders its empty state synchronously (draftMealControllerProvider's
+    // initial state has zero components) — no async provider gates the
+    // first frame, so settle:true is safe here.
+    testWidgets('BuildMealScreen builds (empty draft state)', (tester) async {
+      await smokeScreen(tester, const BuildMealScreen(logDate: '2026-07-04'));
+    });
+
+    // MealLogMethodSheet is a modal bottom-sheet body (re-exported from
+    // today_log_section.dart). It watches only appConfigProvider
+    // (describeMealEnabled). Wrapped in a Scaffold because its _MethodTile
+    // rows use InkWell, which needs a Material ancestor. Method callbacks are
+    // tap-only.
+    testWidgets('MealLogMethodSheet renders without overflow', (tester) async {
+      await smokeScreen(
+        tester,
+        Scaffold(
+          body: MealLogMethodSheet(
+            logDate: '2026-07-04',
+            onMethodSelected: (_) {},
+          ),
+        ),
+      );
+    });
+
+    // With the describe-meal release flag off, the AI entry tiles are hidden;
+    // the sheet must still render its manual entries.
+    testWidgets('MealLogMethodSheet renders with describeMeal flag off', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        Scaffold(
+          body: MealLogMethodSheet(
+            logDate: '2026-07-04',
+            onMethodSelected: (_) {},
+          ),
+        ),
+        appConfig: AppConfig.forTesting(describeMealEnabled: false),
+      );
     });
   });
 }

@@ -81,18 +81,20 @@ void main() {
       expect(FormulaMacros.carbScaleFactor(components, 100), 4);
     });
 
-    test('carbScaleFactor is 1 for non-positive target or carb-free formula',
-        () {
-      final carby = [
-        {FormulaMacros.kQuantity: 1, FormulaMacros.kCarbsPerServing: 25},
-      ];
-      expect(FormulaMacros.carbScaleFactor(carby, 0), 1);
-      expect(FormulaMacros.carbScaleFactor(carby, -5), 1);
-      final carbFree = [
-        {FormulaMacros.kQuantity: 2, FormulaMacros.kCarbsPerServing: 0},
-      ];
-      expect(FormulaMacros.carbScaleFactor(carbFree, 90), 1);
-    });
+    test(
+      'carbScaleFactor is 1 for non-positive target or carb-free formula',
+      () {
+        final carby = [
+          {FormulaMacros.kQuantity: 1, FormulaMacros.kCarbsPerServing: 25},
+        ];
+        expect(FormulaMacros.carbScaleFactor(carby, 0), 1);
+        expect(FormulaMacros.carbScaleFactor(carby, -5), 1);
+        final carbFree = [
+          {FormulaMacros.kQuantity: 2, FormulaMacros.kCarbsPerServing: 0},
+        ];
+        expect(FormulaMacros.carbScaleFactor(carbFree, 90), 1);
+      },
+    );
 
     test('carbScaleFactor ignores zero-quantity components in the base', () {
       final components = [

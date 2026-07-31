@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/utils/location_formatter.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../domain/event.dart';
 
 /// Event details card showing event information
-class EventDetailsCard extends StatelessWidget {
+class EventDetailsCard extends ConsumerWidget {
   final Activity? activity;
   final Event event;
 
@@ -17,7 +21,11 @@ class EventDetailsCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
+
     return BaseCard(
       margin: AppSpacing.screenPaddingHorizontal,
       child: Column(
@@ -37,7 +45,10 @@ class EventDetailsCard extends StatelessWidget {
               context,
               icon: FontAwesomeIcons.ruler.data,
               label: 'Distance',
-              value: '${activity!.distanceMiles} miles',
+              value: UnitFormatter.formatDistance(
+                activity!.distanceMiles!,
+                unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+              ),
             ),
 
           if (event.location != null) ...[
@@ -104,11 +115,7 @@ class EventDetailsCard extends StatelessWidget {
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: AppIconSizes.sm,
-          color: AppColors.electrolyte,
-        ),
+        Icon(icon, size: AppIconSizes.sm, color: AppColors.electrolyte),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(

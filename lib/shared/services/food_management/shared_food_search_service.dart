@@ -11,7 +11,9 @@ import '../logging_service.dart';
 import 'user_food_crud_service.dart';
 
 /// Provider for SharedFoodSearchService
-final sharedFoodSearchServiceProvider = Provider<SharedFoodSearchService>((ref) {
+final sharedFoodSearchServiceProvider = Provider<SharedFoodSearchService>((
+  ref,
+) {
   final openFoodFactsService = ref.read(openFoodFactsSearchServiceProvider);
   final catalogSearchService = ref.read(catalogSearchServiceProvider);
   final productDetailService = ref.read(productDetailServiceProvider);
@@ -49,16 +51,20 @@ class SharedFoodSearchService {
 
   /// Search Open Food Facts for products
   Future<List<FoodSearchResult>> searchProducts(String query) async {
-    try {      final results = await _openFoodFactsService.searchProducts(query);      return results;
+    try {
+      final results = await _openFoodFactsService.searchProducts(query);
+      return results;
     } on SearchException catch (e) {
-      _logger.error('Search failed with SearchException',
+      _logger.error(
+        'Search failed with SearchException',
         context: 'SharedFoodSearchService',
         data: {'query': query},
         error: e,
       );
       rethrow;
     } catch (e) {
-      _logger.error('Search failed with unexpected error',
+      _logger.error(
+        'Search failed with unexpected error',
         context: 'SharedFoodSearchService',
         data: {'query': query},
         error: e,
@@ -76,18 +82,20 @@ class SharedFoodSearchService {
   }) async {
     try {
       if (!result.hasValidId) {
-        _logger.warning('Invalid search result ID',
+        _logger.warning(
+          'Invalid search result ID',
           context: 'SharedFoodSearchService',
           data: {'result': result.toString()},
         );
         return null;
-      }      // Get product details from Open Food Facts
+      } // Get product details from Open Food Facts
       final apiProduct = await _productDetailService.getProductDetails(
         openFoodFactsId: result.id,
       );
 
       if (apiProduct == null) {
-        _logger.warning('Failed to get product details',
+        _logger.warning(
+          'Failed to get product details',
           context: 'SharedFoodSearchService',
           data: {'productId': result.id},
         );
@@ -97,14 +105,18 @@ class SharedFoodSearchService {
       // Map API product to Food
       final food = await _foodMappingService.mapToFood(apiProduct);
 
-      // Assign all categories to user-imported foods so they're available in all contexts
-      // Categories: 1=before_run, 2=during_run, 3=after_run
-      final categoryIds = [1, 2, 3];
+      // Leave categories empty so saveUserFood infers workout phases from the
+      // product type (gel -> during, bar -> before+during, etc.) instead of
+      // blanket-tagging every import to all phases. Unknown types fall back to
+      // all phases inside the inference.
+      const categoryIds = <int>[];
 
       // Save to user foods
-      await _userFoodService.saveUserFood(food, categoryIds);      return food;
+      await _userFoodService.saveUserFood(food, categoryIds);
+      return food;
     } catch (e) {
-      _logger.error('Error adding search result to user foods',
+      _logger.error(
+        'Error adding search result to user foods',
         context: 'SharedFoodSearchService',
         data: {'productId': result.id, 'deviceId': deviceId},
         error: e,
@@ -176,14 +188,18 @@ class SharedFoodSearchService {
         fatPerServing: result.fatG,
         sodiumMg: result.sodiumMg,
         caffeineMg: result.caffeineMg,
-        productTypeId: result.productTypeId ?? _mapCatalogProductType(result.productType),
+        productTypeId:
+            result.productTypeId ?? _mapCatalogProductType(result.productType),
         categories: result.categories?.isNotEmpty == true
             ? result.categories!
             : const ['before_run', 'during_run', 'after_run'],
       );
 
-      // Save to user foods with all categories
-      final categoryIds = [1, 2, 3];
+      // Infer workout phases from the product type rather than blanket all-phases.
+      // (A catalog row's own `categories` are product categories, not
+      // before/during/after phase tags, so they aren't used for phase tagging;
+      // productTypeId set above drives the inference in saveUserFood.)
+      const categoryIds = <int>[];
       await _userFoodService.saveUserFood(food, categoryIds);
 
       _logger.info(

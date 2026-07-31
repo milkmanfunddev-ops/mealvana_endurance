@@ -10520,6 +10520,21 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isFastedMeta = const VerificationMeta(
+    'isFasted',
+  );
+  @override
+  late final GeneratedColumn<bool> isFasted = GeneratedColumn<bool>(
+    'is_fasted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_fasted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _intensityZ1Z2PctMeta = const VerificationMeta(
     'intensityZ1Z2Pct',
   );
@@ -10964,6 +10979,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     swimmingWaterTempC,
     intensityTarget,
     timeBeforeMinutes,
+    isFasted,
     intensityZ1Z2Pct,
     intensityZ3Z4Pct,
     intensityZ5Pct,
@@ -11185,6 +11201,12 @@ class $ActivitiesTableTable extends ActivitiesTable
           data['time_before_minutes']!,
           _timeBeforeMinutesMeta,
         ),
+      );
+    }
+    if (data.containsKey('is_fasted')) {
+      context.handle(
+        _isFastedMeta,
+        isFasted.isAcceptableOrUnknown(data['is_fasted']!, _isFastedMeta),
       );
     }
     if (data.containsKey('intensity_z1_z2_pct')) {
@@ -11595,6 +11617,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.int,
         data['${effectivePrefix}time_before_minutes'],
       ),
+      isFasted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_fasted'],
+      )!,
       intensityZ1Z2Pct: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}intensity_z1_z2_pct'],
@@ -11773,6 +11799,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   final double? swimmingWaterTempC;
   final String? intensityTarget;
   final int? timeBeforeMinutes;
+  final bool isFasted;
   final int? intensityZ1Z2Pct;
   final int? intensityZ3Z4Pct;
   final int? intensityZ5Pct;
@@ -11831,6 +11858,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.swimmingWaterTempC,
     this.intensityTarget,
     this.timeBeforeMinutes,
+    required this.isFasted,
     this.intensityZ1Z2Pct,
     this.intensityZ3Z4Pct,
     this.intensityZ5Pct,
@@ -11926,6 +11954,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || timeBeforeMinutes != null) {
       map['time_before_minutes'] = Variable<int>(timeBeforeMinutes);
     }
+    map['is_fasted'] = Variable<bool>(isFasted);
     if (!nullToAbsent || intensityZ1Z2Pct != null) {
       map['intensity_z1_z2_pct'] = Variable<int>(intensityZ1Z2Pct);
     }
@@ -12085,6 +12114,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       timeBeforeMinutes: timeBeforeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(timeBeforeMinutes),
+      isFasted: Value(isFasted),
       intensityZ1Z2Pct: intensityZ1Z2Pct == null && nullToAbsent
           ? const Value.absent()
           : Value(intensityZ1Z2Pct),
@@ -12229,6 +12259,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       ),
       intensityTarget: serializer.fromJson<String?>(json['intensityTarget']),
       timeBeforeMinutes: serializer.fromJson<int?>(json['timeBeforeMinutes']),
+      isFasted: serializer.fromJson<bool>(json['isFasted']),
       intensityZ1Z2Pct: serializer.fromJson<int?>(json['intensityZ1Z2Pct']),
       intensityZ3Z4Pct: serializer.fromJson<int?>(json['intensityZ3Z4Pct']),
       intensityZ5Pct: serializer.fromJson<int?>(json['intensityZ5Pct']),
@@ -12324,6 +12355,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'swimmingWaterTempC': serializer.toJson<double?>(swimmingWaterTempC),
       'intensityTarget': serializer.toJson<String?>(intensityTarget),
       'timeBeforeMinutes': serializer.toJson<int?>(timeBeforeMinutes),
+      'isFasted': serializer.toJson<bool>(isFasted),
       'intensityZ1Z2Pct': serializer.toJson<int?>(intensityZ1Z2Pct),
       'intensityZ3Z4Pct': serializer.toJson<int?>(intensityZ3Z4Pct),
       'intensityZ5Pct': serializer.toJson<int?>(intensityZ5Pct),
@@ -12389,6 +12421,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<double?> swimmingWaterTempC = const Value.absent(),
     Value<String?> intensityTarget = const Value.absent(),
     Value<int?> timeBeforeMinutes = const Value.absent(),
+    bool? isFasted,
     Value<int?> intensityZ1Z2Pct = const Value.absent(),
     Value<int?> intensityZ3Z4Pct = const Value.absent(),
     Value<int?> intensityZ5Pct = const Value.absent(),
@@ -12475,6 +12508,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     timeBeforeMinutes: timeBeforeMinutes.present
         ? timeBeforeMinutes.value
         : this.timeBeforeMinutes,
+    isFasted: isFasted ?? this.isFasted,
     intensityZ1Z2Pct: intensityZ1Z2Pct.present
         ? intensityZ1Z2Pct.value
         : this.intensityZ1Z2Pct,
@@ -12615,6 +12649,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       timeBeforeMinutes: data.timeBeforeMinutes.present
           ? data.timeBeforeMinutes.value
           : this.timeBeforeMinutes,
+      isFasted: data.isFasted.present ? data.isFasted.value : this.isFasted,
       intensityZ1Z2Pct: data.intensityZ1Z2Pct.present
           ? data.intensityZ1Z2Pct.value
           : this.intensityZ1Z2Pct,
@@ -12740,6 +12775,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
           ..write('intensityTarget: $intensityTarget, ')
           ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('isFasted: $isFasted, ')
           ..write('intensityZ1Z2Pct: $intensityZ1Z2Pct, ')
           ..write('intensityZ3Z4Pct: $intensityZ3Z4Pct, ')
           ..write('intensityZ5Pct: $intensityZ5Pct, ')
@@ -12803,6 +12839,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     swimmingWaterTempC,
     intensityTarget,
     timeBeforeMinutes,
+    isFasted,
     intensityZ1Z2Pct,
     intensityZ3Z4Pct,
     intensityZ5Pct,
@@ -12865,6 +12902,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.swimmingWaterTempC == this.swimmingWaterTempC &&
           other.intensityTarget == this.intensityTarget &&
           other.timeBeforeMinutes == this.timeBeforeMinutes &&
+          other.isFasted == this.isFasted &&
           other.intensityZ1Z2Pct == this.intensityZ1Z2Pct &&
           other.intensityZ3Z4Pct == this.intensityZ3Z4Pct &&
           other.intensityZ5Pct == this.intensityZ5Pct &&
@@ -12925,6 +12963,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<double?> swimmingWaterTempC;
   final Value<String?> intensityTarget;
   final Value<int?> timeBeforeMinutes;
+  final Value<bool> isFasted;
   final Value<int?> intensityZ1Z2Pct;
   final Value<int?> intensityZ3Z4Pct;
   final Value<int?> intensityZ5Pct;
@@ -12984,6 +13023,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.swimmingWaterTempC = const Value.absent(),
     this.intensityTarget = const Value.absent(),
     this.timeBeforeMinutes = const Value.absent(),
+    this.isFasted = const Value.absent(),
     this.intensityZ1Z2Pct = const Value.absent(),
     this.intensityZ3Z4Pct = const Value.absent(),
     this.intensityZ5Pct = const Value.absent(),
@@ -13044,6 +13084,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.swimmingWaterTempC = const Value.absent(),
     this.intensityTarget = const Value.absent(),
     this.timeBeforeMinutes = const Value.absent(),
+    this.isFasted = const Value.absent(),
     this.intensityZ1Z2Pct = const Value.absent(),
     this.intensityZ3Z4Pct = const Value.absent(),
     this.intensityZ5Pct = const Value.absent(),
@@ -13109,6 +13150,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<double>? swimmingWaterTempC,
     Expression<String>? intensityTarget,
     Expression<int>? timeBeforeMinutes,
+    Expression<bool>? isFasted,
     Expression<int>? intensityZ1Z2Pct,
     Expression<int>? intensityZ3Z4Pct,
     Expression<int>? intensityZ5Pct,
@@ -13176,6 +13218,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         'swimming_water_temp_c': swimmingWaterTempC,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (timeBeforeMinutes != null) 'time_before_minutes': timeBeforeMinutes,
+      if (isFasted != null) 'is_fasted': isFasted,
       if (intensityZ1Z2Pct != null) 'intensity_z1_z2_pct': intensityZ1Z2Pct,
       if (intensityZ3Z4Pct != null) 'intensity_z3_z4_pct': intensityZ3Z4Pct,
       if (intensityZ5Pct != null) 'intensity_z5_pct': intensityZ5Pct,
@@ -13247,6 +13290,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<double?>? swimmingWaterTempC,
     Value<String?>? intensityTarget,
     Value<int?>? timeBeforeMinutes,
+    Value<bool>? isFasted,
     Value<int?>? intensityZ1Z2Pct,
     Value<int?>? intensityZ3Z4Pct,
     Value<int?>? intensityZ5Pct,
@@ -13311,6 +13355,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       swimmingWaterTempC: swimmingWaterTempC ?? this.swimmingWaterTempC,
       intensityTarget: intensityTarget ?? this.intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
+      isFasted: isFasted ?? this.isFasted,
       intensityZ1Z2Pct: intensityZ1Z2Pct ?? this.intensityZ1Z2Pct,
       intensityZ3Z4Pct: intensityZ3Z4Pct ?? this.intensityZ3Z4Pct,
       intensityZ5Pct: intensityZ5Pct ?? this.intensityZ5Pct,
@@ -13428,6 +13473,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (timeBeforeMinutes.present) {
       map['time_before_minutes'] = Variable<int>(timeBeforeMinutes.value);
+    }
+    if (isFasted.present) {
+      map['is_fasted'] = Variable<bool>(isFasted.value);
     }
     if (intensityZ1Z2Pct.present) {
       map['intensity_z1_z2_pct'] = Variable<int>(intensityZ1Z2Pct.value);
@@ -13581,6 +13629,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
           ..write('intensityTarget: $intensityTarget, ')
           ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('isFasted: $isFasted, ')
           ..write('intensityZ1Z2Pct: $intensityZ1Z2Pct, ')
           ..write('intensityZ3Z4Pct: $intensityZ3Z4Pct, ')
           ..write('intensityZ5Pct: $intensityZ5Pct, ')
@@ -21429,7 +21478,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String id;
   final String userId;
 
-  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot', 'runna'
   final String provider;
   final String accessToken;
   final String? refreshToken;
@@ -28029,6 +28078,18 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _selectionPriorityMeta = const VerificationMeta(
+    'selectionPriority',
+  );
+  @override
+  late final GeneratedColumn<int> selectionPriority = GeneratedColumn<int>(
+    'selection_priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -28084,6 +28145,7 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
     allergens,
     excludedDiets,
     notes,
+    selectionPriority,
     isActive,
     createdAt,
     updatedAt,
@@ -28215,6 +28277,15 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('selection_priority')) {
+      context.handle(
+        _selectionPriorityMeta,
+        selectionPriority.isAcceptableOrUnknown(
+          data['selection_priority']!,
+          _selectionPriorityMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -28301,6 +28372,10 @@ class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      selectionPriority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}selection_priority'],
+      )!,
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -28368,6 +28443,11 @@ class DuringWorkoutTemplateEntry extends DataClass
   /// e.g. `["vegan"]`.
   final String excludedDiets;
   final String? notes;
+
+  /// Tie breaker for default-formula / template selection. Higher = preferred
+  /// when scores tie. Mirrors Supabase `selection_priority`; consumed by the
+  /// client-side default-formula selector used to seed onboarding pins.
+  final int selectionPriority;
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -28386,6 +28466,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     required this.allergens,
     required this.excludedDiets,
     this.notes,
+    required this.selectionPriority,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
@@ -28415,6 +28496,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['selection_priority'] = Variable<int>(selectionPriority);
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -28443,6 +28525,7 @@ class DuringWorkoutTemplateEntry extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      selectionPriority: Value(selectionPriority),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -28475,6 +28558,7 @@ class DuringWorkoutTemplateEntry extends DataClass
       allergens: serializer.fromJson<String>(json['allergens']),
       excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
       notes: serializer.fromJson<String?>(json['notes']),
+      selectionPriority: serializer.fromJson<int>(json['selectionPriority']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -28500,6 +28584,7 @@ class DuringWorkoutTemplateEntry extends DataClass
       'allergens': serializer.toJson<String>(allergens),
       'excludedDiets': serializer.toJson<String>(excludedDiets),
       'notes': serializer.toJson<String?>(notes),
+      'selectionPriority': serializer.toJson<int>(selectionPriority),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -28521,6 +28606,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     String? allergens,
     String? excludedDiets,
     Value<String?> notes = const Value.absent(),
+    int? selectionPriority,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -28543,6 +28629,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     allergens: allergens ?? this.allergens,
     excludedDiets: excludedDiets ?? this.excludedDiets,
     notes: notes.present ? notes.value : this.notes,
+    selectionPriority: selectionPriority ?? this.selectionPriority,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -28581,6 +28668,9 @@ class DuringWorkoutTemplateEntry extends DataClass
           ? data.excludedDiets.value
           : this.excludedDiets,
       notes: data.notes.present ? data.notes.value : this.notes,
+      selectionPriority: data.selectionPriority.present
+          ? data.selectionPriority.value
+          : this.selectionPriority,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -28604,6 +28694,7 @@ class DuringWorkoutTemplateEntry extends DataClass
           ..write('allergens: $allergens, ')
           ..write('excludedDiets: $excludedDiets, ')
           ..write('notes: $notes, ')
+          ..write('selectionPriority: $selectionPriority, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -28627,6 +28718,7 @@ class DuringWorkoutTemplateEntry extends DataClass
     allergens,
     excludedDiets,
     notes,
+    selectionPriority,
     isActive,
     createdAt,
     updatedAt,
@@ -28649,6 +28741,7 @@ class DuringWorkoutTemplateEntry extends DataClass
           other.allergens == this.allergens &&
           other.excludedDiets == this.excludedDiets &&
           other.notes == this.notes &&
+          other.selectionPriority == this.selectionPriority &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -28670,6 +28763,7 @@ class DuringWorkoutTemplatesTableCompanion
   final Value<String> allergens;
   final Value<String> excludedDiets;
   final Value<String?> notes;
+  final Value<int> selectionPriority;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -28689,6 +28783,7 @@ class DuringWorkoutTemplatesTableCompanion
     this.allergens = const Value.absent(),
     this.excludedDiets = const Value.absent(),
     this.notes = const Value.absent(),
+    this.selectionPriority = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -28709,6 +28804,7 @@ class DuringWorkoutTemplatesTableCompanion
     this.allergens = const Value.absent(),
     this.excludedDiets = const Value.absent(),
     this.notes = const Value.absent(),
+    this.selectionPriority = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -28733,6 +28829,7 @@ class DuringWorkoutTemplatesTableCompanion
     Expression<String>? allergens,
     Expression<String>? excludedDiets,
     Expression<String>? notes,
+    Expression<int>? selectionPriority,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -28756,6 +28853,7 @@ class DuringWorkoutTemplatesTableCompanion
       if (allergens != null) 'allergens': allergens,
       if (excludedDiets != null) 'excluded_diets': excludedDiets,
       if (notes != null) 'notes': notes,
+      if (selectionPriority != null) 'selection_priority': selectionPriority,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -28778,6 +28876,7 @@ class DuringWorkoutTemplatesTableCompanion
     Value<String>? allergens,
     Value<String>? excludedDiets,
     Value<String?>? notes,
+    Value<int>? selectionPriority,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -28799,6 +28898,7 @@ class DuringWorkoutTemplatesTableCompanion
       allergens: allergens ?? this.allergens,
       excludedDiets: excludedDiets ?? this.excludedDiets,
       notes: notes ?? this.notes,
+      selectionPriority: selectionPriority ?? this.selectionPriority,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -28855,6 +28955,9 @@ class DuringWorkoutTemplatesTableCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (selectionPriority.present) {
+      map['selection_priority'] = Variable<int>(selectionPriority.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -28887,6 +28990,7 @@ class DuringWorkoutTemplatesTableCompanion
           ..write('allergens: $allergens, ')
           ..write('excludedDiets: $excludedDiets, ')
           ..write('notes: $notes, ')
+          ..write('selectionPriority: $selectionPriority, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -37491,9 +37595,9 @@ class $MealLogsTableTable extends MealLogsTable
   late final GeneratedColumn<String> slot = GeneratedColumn<String>(
     'slot',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
@@ -37751,8 +37855,6 @@ class $MealLogsTableTable extends MealLogsTable
         _slotMeta,
         slot.isAcceptableOrUnknown(data['slot']!, _slotMeta),
       );
-    } else if (isInserting) {
-      context.missing(_slotMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -37903,7 +38005,7 @@ class $MealLogsTableTable extends MealLogsTable
       slot: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}slot'],
-      )!,
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -37993,8 +38095,10 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
   /// match the Supabase DATE column without timezone drift.
   final String logDate;
 
-  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'.
-  final String slot;
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack', or NULL when the user leaves
+  /// the meal untagged (optional since schema v14 — see the build-a-meal
+  /// redesign notes on [AppDatabase.migration]).
+  final String? slot;
 
   /// Display title, e.g. "Oatmeal + banana".
   final String name;
@@ -38031,7 +38135,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     required this.id,
     required this.userId,
     required this.logDate,
-    required this.slot,
+    this.slot,
     required this.name,
     required this.source,
     required this.items,
@@ -38057,7 +38161,9 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     map['id'] = Variable<String>(id);
     map['user_id'] = Variable<String>(userId);
     map['log_date'] = Variable<String>(logDate);
-    map['slot'] = Variable<String>(slot);
+    if (!nullToAbsent || slot != null) {
+      map['slot'] = Variable<String>(slot);
+    }
     map['name'] = Variable<String>(name);
     map['source'] = Variable<String>(source);
     map['items'] = Variable<String>(items);
@@ -38108,7 +38214,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       id: Value(id),
       userId: Value(userId),
       logDate: Value(logDate),
-      slot: Value(slot),
+      slot: slot == null && nullToAbsent ? const Value.absent() : Value(slot),
       name: Value(name),
       source: Value(source),
       items: Value(items),
@@ -38161,7 +38267,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String>(json['userId']),
       logDate: serializer.fromJson<String>(json['logDate']),
-      slot: serializer.fromJson<String>(json['slot']),
+      slot: serializer.fromJson<String?>(json['slot']),
       name: serializer.fromJson<String>(json['name']),
       source: serializer.fromJson<String>(json['source']),
       items: serializer.fromJson<String>(json['items']),
@@ -38189,7 +38295,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       'id': serializer.toJson<String>(id),
       'userId': serializer.toJson<String>(userId),
       'logDate': serializer.toJson<String>(logDate),
-      'slot': serializer.toJson<String>(slot),
+      'slot': serializer.toJson<String?>(slot),
       'name': serializer.toJson<String>(name),
       'source': serializer.toJson<String>(source),
       'items': serializer.toJson<String>(items),
@@ -38215,7 +38321,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     String? id,
     String? userId,
     String? logDate,
-    String? slot,
+    Value<String?> slot = const Value.absent(),
     String? name,
     String? source,
     String? items,
@@ -38238,7 +38344,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     id: id ?? this.id,
     userId: userId ?? this.userId,
     logDate: logDate ?? this.logDate,
-    slot: slot ?? this.slot,
+    slot: slot.present ? slot.value : this.slot,
     name: name ?? this.name,
     source: source ?? this.source,
     items: items ?? this.items,
@@ -38379,7 +38485,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
   final Value<String> id;
   final Value<String> userId;
   final Value<String> logDate;
-  final Value<String> slot;
+  final Value<String?> slot;
   final Value<String> name;
   final Value<String> source;
   final Value<String> items;
@@ -38428,7 +38534,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.id = const Value.absent(),
     required String userId,
     required String logDate,
-    required String slot,
+    this.slot = const Value.absent(),
     required String name,
     required String source,
     this.items = const Value.absent(),
@@ -38450,7 +38556,6 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.rowid = const Value.absent(),
   }) : userId = Value(userId),
        logDate = Value(logDate),
-       slot = Value(slot),
        name = Value(name),
        source = Value(source),
        createdAt = Value(createdAt),
@@ -38511,7 +38616,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Value<String>? id,
     Value<String>? userId,
     Value<String>? logDate,
-    Value<String>? slot,
+    Value<String?>? slot,
     Value<String>? name,
     Value<String>? source,
     Value<String>? items,
@@ -45128,6 +45233,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<double?> swimmingWaterTempC,
       Value<String?> intensityTarget,
       Value<int?> timeBeforeMinutes,
+      Value<bool> isFasted,
       Value<int?> intensityZ1Z2Pct,
       Value<int?> intensityZ3Z4Pct,
       Value<int?> intensityZ5Pct,
@@ -45189,6 +45295,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<double?> swimmingWaterTempC,
       Value<String?> intensityTarget,
       Value<int?> timeBeforeMinutes,
+      Value<bool> isFasted,
       Value<int?> intensityZ1Z2Pct,
       Value<int?> intensityZ3Z4Pct,
       Value<int?> intensityZ5Pct,
@@ -45335,6 +45442,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<int> get timeBeforeMinutes => $composableBuilder(
     column: $table.timeBeforeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFasted => $composableBuilder(
+    column: $table.isFasted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -45633,6 +45745,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFasted => $composableBuilder(
+    column: $table.isFasted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get intensityZ1Z2Pct => $composableBuilder(
     column: $table.intensityZ1Z2Pct,
     builder: (column) => ColumnOrderings(column),
@@ -45920,6 +46037,9 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isFasted =>
+      $composableBuilder(column: $table.isFasted, builder: (column) => column);
+
   GeneratedColumn<int> get intensityZ1Z2Pct => $composableBuilder(
     column: $table.intensityZ1Z2Pct,
     builder: (column) => column,
@@ -46147,6 +46267,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> swimmingWaterTempC = const Value.absent(),
                 Value<String?> intensityTarget = const Value.absent(),
                 Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<bool> isFasted = const Value.absent(),
                 Value<int?> intensityZ1Z2Pct = const Value.absent(),
                 Value<int?> intensityZ3Z4Pct = const Value.absent(),
                 Value<int?> intensityZ5Pct = const Value.absent(),
@@ -46206,6 +46327,7 @@ class $$ActivitiesTableTableTableManager
                 swimmingWaterTempC: swimmingWaterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                isFasted: isFasted,
                 intensityZ1Z2Pct: intensityZ1Z2Pct,
                 intensityZ3Z4Pct: intensityZ3Z4Pct,
                 intensityZ5Pct: intensityZ5Pct,
@@ -46267,6 +46389,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> swimmingWaterTempC = const Value.absent(),
                 Value<String?> intensityTarget = const Value.absent(),
                 Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<bool> isFasted = const Value.absent(),
                 Value<int?> intensityZ1Z2Pct = const Value.absent(),
                 Value<int?> intensityZ3Z4Pct = const Value.absent(),
                 Value<int?> intensityZ5Pct = const Value.absent(),
@@ -46326,6 +46449,7 @@ class $$ActivitiesTableTableTableManager
                 swimmingWaterTempC: swimmingWaterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                isFasted: isFasted,
                 intensityZ1Z2Pct: intensityZ1Z2Pct,
                 intensityZ3Z4Pct: intensityZ3Z4Pct,
                 intensityZ5Pct: intensityZ5Pct,
@@ -52874,6 +52998,7 @@ typedef $$DuringWorkoutTemplatesTableTableCreateCompanionBuilder =
       Value<String> allergens,
       Value<String> excludedDiets,
       Value<String?> notes,
+      Value<int> selectionPriority,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -52895,6 +53020,7 @@ typedef $$DuringWorkoutTemplatesTableTableUpdateCompanionBuilder =
       Value<String> allergens,
       Value<String> excludedDiets,
       Value<String?> notes,
+      Value<int> selectionPriority,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -52977,6 +53103,11 @@ class $$DuringWorkoutTemplatesTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -53075,6 +53206,11 @@ class $$DuringWorkoutTemplatesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -53158,6 +53294,11 @@ class $$DuringWorkoutTemplatesTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -53228,6 +53369,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 Value<String> allergens = const Value.absent(),
                 Value<String> excludedDiets = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<int> selectionPriority = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -53247,6 +53389,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 allergens: allergens,
                 excludedDiets: excludedDiets,
                 notes: notes,
+                selectionPriority: selectionPriority,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -53268,6 +53411,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 Value<String> allergens = const Value.absent(),
                 Value<String> excludedDiets = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<int> selectionPriority = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -53287,6 +53431,7 @@ class $$DuringWorkoutTemplatesTableTableTableManager
                 allergens: allergens,
                 excludedDiets: excludedDiets,
                 notes: notes,
+                selectionPriority: selectionPriority,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -57275,7 +57420,7 @@ typedef $$MealLogsTableTableCreateCompanionBuilder =
       Value<String> id,
       required String userId,
       required String logDate,
-      required String slot,
+      Value<String?> slot,
       required String name,
       required String source,
       Value<String> items,
@@ -57301,7 +57446,7 @@ typedef $$MealLogsTableTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> userId,
       Value<String> logDate,
-      Value<String> slot,
+      Value<String?> slot,
       Value<String> name,
       Value<String> source,
       Value<String> items,
@@ -57679,7 +57824,7 @@ class $$MealLogsTableTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String> logDate = const Value.absent(),
-                Value<String> slot = const Value.absent(),
+                Value<String?> slot = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String> items = const Value.absent(),
@@ -57729,7 +57874,7 @@ class $$MealLogsTableTableTableManager
                 Value<String> id = const Value.absent(),
                 required String userId,
                 required String logDate,
-                required String slot,
+                Value<String?> slot = const Value.absent(),
                 required String name,
                 required String source,
                 Value<String> items = const Value.absent(),

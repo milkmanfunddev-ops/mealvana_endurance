@@ -26,7 +26,8 @@ class FoodDataTransformationService {
     final foodDetails = await _foodRepository.getFoodById(foodId);
 
     if (foodDetails == null) {
-      _logger.error('Food not found in local database',
+      _logger.error(
+        'Food not found in local database',
         context: 'FOOD_TRANSFORMATION',
         data: {
           'food_id': foodId,
@@ -38,7 +39,10 @@ class FoodDataTransformationService {
       );
 
       // Use the food_name from edge function as fallback (should always be present)
-      final foodName = item['food_name'] as String? ?? item['display_name'] as String? ?? 'Unknown Food';
+      final foodName =
+          item['food_name'] as String? ??
+          item['display_name'] as String? ??
+          'Unknown Food';
       final description = item['description'] as String? ?? '';
 
       // Special handling for salt packets which are essential
@@ -52,13 +56,17 @@ class FoodDataTransformationService {
           id: const Uuid().v4(), // Generate unique instance ID
           name: 'Salt',
           quantity: '$packets $packetLabel',
-          description: description.isNotEmpty ? description : 'Electrolyte supplement',
+          description: description.isNotEmpty
+              ? description
+              : 'Electrolyte supplement',
           nutritionalInfo: NutritionalInfo(
             calories: 0,
             carbs: 0,
             protein: 0,
             fat: 0,
-            sodium: item['sodium_mg'] != null ? (item['sodium_mg'] as num).round() : (quantity * 200).round(),
+            sodium: item['sodium_mg'] != null
+                ? (item['sodium_mg'] as num).round()
+                : (quantity * 200).round(),
             fluids: 0.0,
           ),
         );
@@ -69,15 +77,27 @@ class FoodDataTransformationService {
         id: const Uuid().v4(), // Generate unique instance ID
         name: foodName,
         quantity: _formatQuantity(quantity, '', foodName),
-        description: description.isNotEmpty ? description : 'Food details not available',
+        description: description.isNotEmpty
+            ? description
+            : 'Food details not available',
         servingSize: item['serving_size'] as String?,
         nutritionalInfo: NutritionalInfo(
           calories: item['calories'] as int?,
-          carbs: item['carbs_grams'] != null ? (item['carbs_grams'] as num).round() : null,
-          protein: item['protein_grams'] != null ? (item['protein_grams'] as num).round() : null,
-          fat: item['fat_grams'] != null ? (item['fat_grams'] as num).round() : null,
-          sodium: item['sodium_mg'] != null ? (item['sodium_mg'] as num).round() : null,
-          fluids: item['fluids_ml'] != null ? (item['fluids_ml'] as num).toDouble() : null,
+          carbs: item['carbs_grams'] != null
+              ? (item['carbs_grams'] as num).round()
+              : null,
+          protein: item['protein_grams'] != null
+              ? (item['protein_grams'] as num).round()
+              : null,
+          fat: item['fat_grams'] != null
+              ? (item['fat_grams'] as num).round()
+              : null,
+          sodium: item['sodium_mg'] != null
+              ? (item['sodium_mg'] as num).round()
+              : null,
+          fluids: item['fluids_ml'] != null
+              ? (item['fluids_ml'] as num).toDouble()
+              : null,
         ),
       );
     }
@@ -86,7 +106,8 @@ class FoodDataTransformationService {
     final displayName = _generateDisplayName(quantity, foodDetails);
 
     // Calculate nutritional values based on quantity and food details from database
-    final calculatedCalories = foodDetails.effectiveCaloriesPerServing * quantity;
+    final calculatedCalories =
+        foodDetails.effectiveCaloriesPerServing * quantity;
     final calculatedCarbs = foodDetails.effectiveCarbsPerServing * quantity;
     final calculatedProtein = foodDetails.effectiveProteinPerServing * quantity;
     final calculatedFat = foodDetails.effectiveFatPerServing * quantity;
@@ -122,7 +143,8 @@ class FoodDataTransformationService {
   /// servingUnit is null in the database.
   String _generateDisplayName(num quantity, dynamic foodDetails) {
     // Check if there's a display override (for special cases like water+electrolytes)
-    if (foodDetails.displayOverride != null && foodDetails.displayOverride!.isNotEmpty) {
+    if (foodDetails.displayOverride != null &&
+        foodDetails.displayOverride!.isNotEmpty) {
       return _formatQuantity(quantity, '', foodDetails.displayOverride!);
     }
 
@@ -152,7 +174,8 @@ class FoodDataTransformationService {
       // in that case fall back to the old "$qty $displayName" approach.
       if (result == rawQty) {
         final isPlural = quantity != 1;
-        final displayName = isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
+        final displayName =
+            isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
             ? foodDetails.displayNamePlural!
             : singularName;
         return _formatQuantity(quantity, '', displayName);
@@ -162,7 +185,8 @@ class FoodDataTransformationService {
 
     // Has explicit serving unit – use old formatting with redundancy check
     final isPlural = quantity != 1;
-    final displayName = isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
+    final displayName =
+        isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
         ? foodDetails.displayNamePlural!
         : singularName;
     return _formatQuantity(quantity, unit, displayName);
@@ -173,9 +197,27 @@ class FoodDataTransformationService {
     if (str.isEmpty) return false;
 
     // Common units that might be mistakenly used as display names
-    final units = ['g', 'mg', 'kg', 'ml', 'l', 'oz', 'lb', 'lbs',
-                   'tsp', 'tbsp', 'cup', 'cups', 'fl oz', 'packet', 'packets',
-                   'serving', 'servings', 'piece', 'pieces'];
+    final units = [
+      'g',
+      'mg',
+      'kg',
+      'ml',
+      'l',
+      'oz',
+      'lb',
+      'lbs',
+      'tsp',
+      'tbsp',
+      'cup',
+      'cups',
+      'fl oz',
+      'packet',
+      'packets',
+      'serving',
+      'servings',
+      'piece',
+      'pieces',
+    ];
 
     final strLower = str.toLowerCase().trim();
     return units.contains(strLower);
@@ -202,8 +244,10 @@ class FoodDataTransformationService {
     final displayWords = displayLower.split(RegExp(r'\s+'));
 
     // Check if any complete word in unit matches any complete word in display name
-    final hasWordOverlap = unitWords.any((unitWord) =>
-      displayWords.any((displayWord) => unitWord == displayWord && unitWord.length > 1)
+    final hasWordOverlap = unitWords.any(
+      (unitWord) => displayWords.any(
+        (displayWord) => unitWord == displayWord && unitWord.length > 1,
+      ),
     );
 
     if (hasWordOverlap) {
@@ -217,6 +261,7 @@ class FoodDataTransformationService {
 }
 
 /// Provider for FoodDataTransformationService
-final foodDataTransformationServiceProvider = Provider<FoodDataTransformationService>((ref) {
-  return FoodDataTransformationService(ref);
-});
+final foodDataTransformationServiceProvider =
+    Provider<FoodDataTransformationService>((ref) {
+      return FoodDataTransformationService(ref);
+    });

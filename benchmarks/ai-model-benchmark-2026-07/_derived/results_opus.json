@@ -1,0 +1,1709 @@
+[
+  {
+    "tag": "text|opus|long-01",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 14.64,
+    "input_tokens": 1713,
+    "output_tokens": 917,
+    "analysis": {
+      "name": "Loaded Oatmeal Breakfast with Coffee",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Oatmeal with banana, peanut butter, blueberries and honey",
+          "portion": "1 cup dry rolled oats cooked in water, 1 medium banana, 2 tbsp peanut butter, ~1/2 cup blueberries, 1 tbsp honey",
+          "calories": 708,
+          "carb_g": 117,
+          "protein_g": 20.8,
+          "fat_g": 21.6,
+          "sodium_mg": 158
+        },
+        {
+          "name": "Black coffee",
+          "portion": "16 oz (large), no milk or sugar",
+          "calories": 5,
+          "carb_g": 0,
+          "protein_g": 0.6,
+          "fat_g": 0,
+          "sodium_mg": 10
+        }
+      ],
+      "totals": {
+        "calories": 713,
+        "carb_g": 117,
+        "protein_g": 21.4,
+        "fat_g": 21.6,
+        "sodium_mg": 168
+      },
+      "notes": "Oatmeal and its stir-ins logged as one dish; coffee logged separately as the drink. Portions assumed: 1 cup dry oats (~80 g), medium banana, heaping tablespoon of peanut butter treated as ~2 tbsp (32 g), handful of blueberries ~75 g, honey drizzle ~1 tbsp. Solid pre-run carb load (~117 g carbs)."
+    }
+  },
+  {
+    "tag": "text|opus|long-03",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 11.48,
+    "input_tokens": 1697,
+    "output_tokens": 510,
+    "analysis": {
+      "name": "Baked Salmon with Roasted Sweet Potato and Broccoli",
+      "suggested_slot": "dinner",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Baked salmon fillet with olive oil and lemon",
+          "portion": "6 oz fillet (170 g) with ~1 tsp olive oil and lemon",
+          "calories": 400,
+          "carb_g": 1,
+          "protein_g": 39,
+          "fat_g": 26,
+          "sodium_mg": 180
+        },
+        {
+          "name": "Roasted sweet potato",
+          "portion": "1 medium (150 g) with ~1 tsp olive oil",
+          "calories": 175,
+          "carb_g": 27,
+          "protein_g": 2.5,
+          "fat_g": 5,
+          "sodium_mg": 90
+        },
+        {
+          "name": "Roasted broccoli",
+          "portion": "large serving, ~2 cups (180 g) with ~1.5 tsp olive oil",
+          "calories": 170,
+          "carb_g": 13,
+          "protein_g": 6,
+          "fat_g": 11,
+          "sodium_mg": 190
+        },
+        {
+          "name": "White wine",
+          "portion": "1 glass (5 oz / 150 ml)",
+          "calories": 120,
+          "carb_g": 3.8,
+          "protein_g": 0.1,
+          "fat_g": 0,
+          "sodium_mg": 10
+        }
+      ],
+      "totals": {
+        "calories": 865,
+        "carb_g": 44.8,
+        "protein_g": 47.6,
+        "fat_g": 42,
+        "sodium_mg": 470
+      },
+      "notes": "Assumed light cooking oil (~1 tsp per component) and modest salting. Sodium will be higher if the fish or vegetables were salted generously or if a marinade/sauce was used."
+    }
+  },
+  {
+    "tag": "text|opus|long-04",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 14.94,
+    "input_tokens": 1691,
+    "output_tokens": 778,
+    "analysis": {
+      "name": "Post-Workout Recovery Shake",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Vanilla whey recovery shake (whey, oat milk, frozen banana, almond butter)",
+          "portion": "1 large blended shake (~16 oz): 1 scoop whey, 1 cup oat milk, 1 medium-large frozen banana, 1 heaping tbsp almond butter",
+          "calories": 455,
+          "carb_g": 50,
+          "protein_g": 32,
+          "fat_g": 16,
+          "sodium_mg": 265
+        }
+      ],
+      "totals": {
+        "calories": 455,
+        "carb_g": 50,
+        "protein_g": 32,
+        "fat_g": 16,
+        "sodium_mg": 265
+      },
+      "notes": "Logged as one blended drink since all components go into a single shake. Your 400 kcal guess is close but slightly low \u2014 a full scoop of whey (~120 kcal), 1 cup oat milk (~120 kcal), a medium-large banana (~110 kcal) and a heaping spoon of almond butter (~100 kcal) land nearer 450\u2013470 kcal. Carb:protein ratio (~1.6:1) is solid for glycogen resynthesis and muscle repair after endurance work. Exact numbers depend on your whey brand and whether the oat milk is sweetened/barista style (barista versions can add 30\u201350 kcal and more fat)."
+    }
+  },
+  {
+    "tag": "text|opus|long-05",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 11.34,
+    "input_tokens": 1682,
+    "output_tokens": 475,
+    "analysis": {
+      "name": "Pre-Ride Carb Breakfast: Toast with Jam & Honey, Banana, Coffee",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "White toast with jam and honey",
+          "portion": "2 slices with ~1.5 tbsp jam and ~1 tbsp honey",
+          "calories": 345,
+          "carb_g": 72,
+          "protein_g": 6,
+          "fat_g": 2.5,
+          "sodium_mg": 300
+        },
+        {
+          "name": "Banana",
+          "portion": "1 large (~136 g)",
+          "calories": 121,
+          "carb_g": 31,
+          "protein_g": 1.5,
+          "fat_g": 0.4,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Coffee with a splash of milk",
+          "portion": "12 oz brewed coffee with ~2 tbsp whole milk",
+          "calories": 24,
+          "carb_g": 1.8,
+          "protein_g": 1.3,
+          "fat_g": 1.2,
+          "sodium_mg": 18
+        }
+      ],
+      "totals": {
+        "calories": 490,
+        "carb_g": 104.8,
+        "protein_g": 8.8,
+        "fat_g": 4.1,
+        "sodium_mg": 319
+      },
+      "notes": "Portions inferred from typical athlete servings: 2 standard white bread slices, a large banana, and a modest milk splash. Butter was not mentioned so none was included. Very carb-dense and low in fat/fiber, which fits a pre-long-ride strategy; consider adding on-bike carbs since protein here is low."
+    }
+  },
+  {
+    "tag": "text|opus|long-06",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 10.99,
+    "input_tokens": 1691,
+    "output_tokens": 469,
+    "analysis": {
+      "name": "Turkey sandwich with apple and pretzels",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Turkey sandwich on whole wheat with lettuce, tomato, mayo and mustard",
+          "portion": "1 sandwich (2 slices whole wheat bread, ~4 oz deli turkey, 1 tsp mayo, 1 tsp mustard, lettuce, 2 tomato slices)",
+          "calories": 420,
+          "carb_g": 36,
+          "protein_g": 32,
+          "fat_g": 15,
+          "sodium_mg": 1450
+        },
+        {
+          "name": "Apple",
+          "portion": "1 medium (~180 g)",
+          "calories": 95,
+          "carb_g": 25,
+          "protein_g": 0.5,
+          "fat_g": 0.3,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Pretzels",
+          "portion": "small handful (~28 g / 1 oz)",
+          "calories": 110,
+          "carb_g": 23,
+          "protein_g": 3,
+          "fat_g": 1,
+          "sodium_mg": 390
+        }
+      ],
+      "totals": {
+        "calories": 625,
+        "carb_g": 84,
+        "protein_g": 35.5,
+        "fat_g": 16.3,
+        "sodium_mg": 1842
+      },
+      "notes": "Portions inferred as typical athlete-sized servings: ~4 oz deli turkey and a 1 oz handful of pretzels. Sodium is driven mainly by deli meat, bread, mustard and pretzels and could vary widely by brand."
+    }
+  },
+  {
+    "tag": "text|opus|long-07",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.65,
+    "input_tokens": 1691,
+    "output_tokens": 461,
+    "analysis": {
+      "name": "Carb-Loading Pasta Dinner",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Spaghetti with marinara and ground turkey",
+          "portion": "large bowl (~3 cups cooked pasta, 1.5 cups marinara, 5 oz ground turkey)",
+          "calories": 1150,
+          "carb_g": 168,
+          "protein_g": 54,
+          "fat_g": 26,
+          "sodium_mg": 1450
+        },
+        {
+          "name": "Garlic bread",
+          "portion": "2 pieces",
+          "calories": 340,
+          "carb_g": 38,
+          "protein_g": 8,
+          "fat_g": 17,
+          "sodium_mg": 580
+        },
+        {
+          "name": "Side salad with Italian dressing",
+          "portion": "~2 cups mixed greens/veggies with 2 tbsp dressing",
+          "calories": 170,
+          "carb_g": 10,
+          "protein_g": 3,
+          "fat_g": 13,
+          "sodium_mg": 420
+        }
+      ],
+      "totals": {
+        "calories": 1660,
+        "carb_g": 216,
+        "protein_g": 65,
+        "fat_g": 56,
+        "sodium_mg": 2450
+      },
+      "notes": "Portions estimated for a carb-loading endurance athlete: \"huge bowl\" treated as ~3 cups cooked spaghetti with sauce and turkey combined into one dish entry. Roughly 216 g carbs \u2014 solid for pre-race loading; sodium is on the higher side, which is generally fine the day before a race."
+    }
+  },
+  {
+    "tag": "text|opus|long-08",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.86,
+    "input_tokens": 1698,
+    "output_tokens": 542,
+    "analysis": {
+      "name": "Veggie Omelette Breakfast with Sourdough, Avocado & OJ",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Three-egg veggie omelette with spinach, mushrooms, feta, cooked in olive oil",
+          "portion": "3 large eggs, ~1 cup spinach, ~1/2 cup mushrooms, ~30 g feta, ~1 tbsp olive oil",
+          "calories": 475,
+          "carb_g": 6,
+          "protein_g": 27,
+          "fat_g": 38,
+          "sodium_mg": 710
+        },
+        {
+          "name": "Sourdough toast",
+          "portion": "2 slices (~60 g total)",
+          "calories": 175,
+          "carb_g": 33,
+          "protein_g": 6,
+          "fat_g": 1.5,
+          "sodium_mg": 390
+        },
+        {
+          "name": "Avocado",
+          "portion": "1/2 medium (~70 g)",
+          "calories": 115,
+          "carb_g": 6,
+          "protein_g": 1.5,
+          "fat_g": 10.5,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Orange juice",
+          "portion": "small glass (~180 ml)",
+          "calories": 85,
+          "carb_g": 20,
+          "protein_g": 1.5,
+          "fat_g": 0.3,
+          "sodium_mg": 2
+        }
+      ],
+      "totals": {
+        "calories": 850,
+        "carb_g": 65,
+        "protein_g": 36,
+        "fat_g": 50.3,
+        "sodium_mg": 1107
+      },
+      "notes": "Portions inferred from typical athlete-sized servings; feta and olive oil amounts estimated ('a bit' of feta ~30 g, ~1 tbsp oil for pan). Sodium is driven mainly by feta, added salt, and sourdough."
+    }
+  },
+  {
+    "tag": "text|opus|long-09",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 10.2,
+    "input_tokens": 1696,
+    "output_tokens": 562,
+    "analysis": {
+      "name": "On-Bike Fueling (gels, Clif bar, Skratch drink)",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Maurten Gel 100 (2 gels)",
+          "portion": "2 x 40 g gels",
+          "calories": 200,
+          "carb_g": 50,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 40
+        },
+        {
+          "name": "Clif Bar (half bar)",
+          "portion": "1/2 bar (~34 g)",
+          "calories": 125,
+          "carb_g": 22,
+          "protein_g": 5,
+          "fat_g": 3,
+          "sodium_mg": 100
+        },
+        {
+          "name": "Skratch Labs Sport Hydration Drink Mix bottle",
+          "portion": "1 bottle (~750 ml, 2 scoops)",
+          "calories": 160,
+          "carb_g": 40,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 760
+        },
+        {
+          "name": "Skratch Labs Sport Hydration Drink Mix bottle",
+          "portion": "1 bottle (~750 ml, 2 scoops)",
+          "calories": 160,
+          "carb_g": 40,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 760
+        }
+      ],
+      "totals": {
+        "calories": 485,
+        "carb_g": 112,
+        "protein_g": 5,
+        "fat_g": 3,
+        "sodium_mg": 900
+      },
+      "notes": "Estimates based on brand standard servings: Maurten Gel 100 = 100 kcal/25 g carb each; half a standard 68 g Clif Bar; one ~750 ml bottle of Skratch Sport Hydration mixed at 2 scoops. Athlete noted amounts are approximate (partially consumed bottle/bar would lower these figures slightly)."
+    }
+  },
+  {
+    "tag": "text|opus|long-10",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.78,
+    "input_tokens": 1686,
+    "output_tokens": 451,
+    "analysis": {
+      "name": "Thai Takeout \u2014 Chicken Pad Thai with Spring Rolls",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Chicken pad thai (two-thirds of a large takeout portion)",
+          "portion": "~2/3 of a large restaurant portion (~430 g)",
+          "calories": 900,
+          "carb_g": 103,
+          "protein_g": 42,
+          "fat_g": 36,
+          "sodium_mg": 1900
+        },
+        {
+          "name": "Fried spring rolls (vegetable)",
+          "portion": "2 rolls",
+          "calories": 240,
+          "carb_g": 26,
+          "protein_g": 5,
+          "fat_g": 13,
+          "sodium_mg": 460
+        },
+        {
+          "name": "Sweet chili dipping sauce",
+          "portion": "~2 tbsp",
+          "calories": 70,
+          "carb_g": 17,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 320
+        }
+      ],
+      "totals": {
+        "calories": 1210,
+        "carb_g": 146,
+        "protein_g": 47,
+        "fat_g": 49,
+        "sodium_mg": 2680
+      },
+      "notes": "Assumed a large takeout pad thai portion (~650 g full serving) with the athlete eating two-thirds, plus 2 standard fried vegetable spring rolls and typical dipping sauce. Restaurant pad thai varies widely in oil and fish/tamarind sauce, so calories and sodium could swing \u00b125%."
+    }
+  },
+  {
+    "tag": "text|opus|short-01",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 4.87,
+    "input_tokens": 1642,
+    "output_tokens": 377,
+    "analysis": {
+      "name": "Oatmeal with Banana and Peanut Butter, Black Coffee",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Oatmeal with banana and peanut butter",
+          "portion": "1 large bowl (1 cup dry oats cooked, 1 medium banana, 2 tbsp peanut butter)",
+          "calories": 675,
+          "carb_g": 90,
+          "protein_g": 22,
+          "fat_g": 26,
+          "sodium_mg": 160
+        },
+        {
+          "name": "Black coffee",
+          "portion": "12 oz mug",
+          "calories": 5,
+          "carb_g": 0,
+          "protein_g": 0.5,
+          "fat_g": 0,
+          "sodium_mg": 10
+        }
+      ],
+      "totals": {
+        "calories": 680,
+        "carb_g": 90,
+        "protein_g": 22.5,
+        "fat_g": 26,
+        "sodium_mg": 170
+      },
+      "notes": "Assumed an athlete-sized serving: 1 cup dry rolled oats cooked in water, 1 medium banana sliced, and 2 tbsp natural peanut butter. If milk was used instead of water, add roughly 100-130 kcal, 12 g carbs, and 8 g protein."
+    }
+  },
+  {
+    "tag": "text|opus|short-02",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 11.83,
+    "input_tokens": 1643,
+    "output_tokens": 846,
+    "analysis": {
+      "name": "Chipotle Chicken Burrito Bowl",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Chipotle chicken burrito bowl with brown rice, black beans, and guacamole",
+          "portion": "1 large bowl (~570 g): ~4 oz grilled chicken, 1 cup brown rice, ~3/4 cup black beans, 4 oz guacamole",
+          "calories": 800,
+          "carb_g": 72,
+          "protein_g": 47,
+          "fat_g": 39,
+          "sodium_mg": 1150
+        }
+      ],
+      "totals": {
+        "calories": 800,
+        "carb_g": 72,
+        "protein_g": 47,
+        "fat_g": 39,
+        "sodium_mg": 1150
+      },
+      "notes": "Logged as one dish since a burrito bowl is assembled and eaten as a single item. Assumed a standard Chipotle build with a generous single serving of rice, beans, chicken, and a full side of guacamole; no salsa, cheese, or lettuce was mentioned so none were included. Sodium is high, typical of restaurant bowls \u2014 good for post-training electrolyte replacement. If you got double rice or double protein, add roughly 210 kcal/36 g carb or 180 kcal/32 g protein respectively."
+    }
+  },
+  {
+    "tag": "text|opus|short-03",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 8.03,
+    "input_tokens": 1640,
+    "output_tokens": 500,
+    "analysis": {
+      "name": "Grilled Chicken Breast with White Rice and Green Beans",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Grilled chicken breast",
+          "portion": "1 large breast, ~200 g cooked",
+          "calories": 330,
+          "carb_g": 0,
+          "protein_g": 62,
+          "fat_g": 7.2,
+          "sodium_mg": 420
+        },
+        {
+          "name": "White rice, cooked",
+          "portion": "1.5 cups cooked (~240 g)",
+          "calories": 315,
+          "carb_g": 68,
+          "protein_g": 6.5,
+          "fat_g": 0.7,
+          "sodium_mg": 10
+        },
+        {
+          "name": "Steamed green beans",
+          "portion": "1.5 cups (~180 g)",
+          "calories": 62,
+          "carb_g": 14,
+          "protein_g": 3.3,
+          "fat_g": 0.3,
+          "sodium_mg": 12
+        },
+        {
+          "name": "Cooking oil / light seasoning used on chicken and beans",
+          "portion": "~1 tsp olive oil plus salt",
+          "calories": 45,
+          "carb_g": 0,
+          "protein_g": 0,
+          "fat_g": 5,
+          "sodium_mg": 180
+        }
+      ],
+      "totals": {
+        "calories": 752,
+        "carb_g": 82,
+        "protein_g": 71.8,
+        "fat_g": 13.2,
+        "sodium_mg": 622
+      },
+      "notes": "Portions estimated at endurance-athlete size (200 g chicken, 1.5 cups rice). A small allowance for cooking oil and salt is included since grilled/steamed dishes typically use some. Adjust if you weighed your food or used no added oil."
+    }
+  },
+  {
+    "tag": "text|opus|short-04",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.7,
+    "input_tokens": 1633,
+    "output_tokens": 362,
+    "analysis": {
+      "name": "Vanilla Protein Shake with Banana",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Vanilla protein shake (2 scoops whey protein blended with milk)",
+          "portion": "about 16 oz (2 scoops powder + 12 oz low-fat milk)",
+          "calories": 390,
+          "carb_g": 25,
+          "protein_g": 54,
+          "fat_g": 8,
+          "sodium_mg": 420
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium-large (~120 g)",
+          "calories": 110,
+          "carb_g": 28,
+          "protein_g": 1.3,
+          "fat_g": 0.4,
+          "sodium_mg": 1
+        }
+      ],
+      "totals": {
+        "calories": 500,
+        "carb_g": 53,
+        "protein_g": 55.3,
+        "fat_g": 8.4,
+        "sodium_mg": 421
+      },
+      "notes": "Assumed a 2-scoop shake mixed with low-fat milk, which is typical for an endurance athlete. If mixed with water instead, subtract roughly 150 kcal, 18 g carb, 12 g protein, 4 g fat, and 150 mg sodium."
+    }
+  },
+  {
+    "tag": "text|opus|short-05",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.69,
+    "input_tokens": 1633,
+    "output_tokens": 344,
+    "analysis": {
+      "name": "2 Clif Bars and Gatorade",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Clif Bar (energy bar)",
+          "portion": "2 bars (68 g each, 136 g total)",
+          "calories": 500,
+          "carb_g": 88,
+          "protein_g": 18,
+          "fat_g": 12,
+          "sodium_mg": 350
+        },
+        {
+          "name": "Gatorade Thirst Quencher",
+          "portion": "20 fl oz bottle",
+          "calories": 140,
+          "carb_g": 36,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 270
+        }
+      ],
+      "totals": {
+        "calories": 640,
+        "carb_g": 124,
+        "protein_g": 18,
+        "fat_g": 12,
+        "sodium_mg": 620
+      },
+      "notes": "Assumed standard 68 g Clif Bars (~250 kcal each) and a 20 fl oz Gatorade bottle. A 32 oz Gatorade would add roughly 90 kcal and 20 g carbs more. Carb-dense combo typical of pre- or mid-workout fueling."
+    }
+  },
+  {
+    "tag": "text|opus|short-06",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.11,
+    "input_tokens": 1639,
+    "output_tokens": 432,
+    "analysis": {
+      "name": "Turkey Sandwich with Apple and Pretzels",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Turkey sandwich (deli turkey, bread, lettuce, tomato, mayo)",
+          "portion": "1 sandwich, 2 slices bread with ~4 oz turkey",
+          "calories": 470,
+          "carb_g": 42,
+          "protein_g": 34,
+          "fat_g": 18,
+          "sodium_mg": 1450
+        },
+        {
+          "name": "Apple",
+          "portion": "1 medium-large (~200 g)",
+          "calories": 105,
+          "carb_g": 28,
+          "protein_g": 0.5,
+          "fat_g": 0.3,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Pretzels",
+          "portion": "handful, ~1.5 oz (43 g)",
+          "calories": 165,
+          "carb_g": 34,
+          "protein_g": 4,
+          "fat_g": 1.5,
+          "sodium_mg": 600
+        }
+      ],
+      "totals": {
+        "calories": 740,
+        "carb_g": 104,
+        "protein_g": 38.5,
+        "fat_g": 19.8,
+        "sodium_mg": 2052
+      },
+      "notes": "Portions assumed at athlete scale: a full deli-style sandwich with ~4 oz turkey, a medium-large apple, and roughly 1.5 oz of pretzels. Sodium is high due to deli meat and pretzels."
+    }
+  },
+  {
+    "tag": "text|opus|short-07",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 12.28,
+    "input_tokens": 1635,
+    "output_tokens": 616,
+    "analysis": {
+      "name": "Greek Yogurt Bowl with Granola and Blueberries",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Greek yogurt with granola and blueberries",
+          "portion": "1.5 cups (340 g) plain Greek yogurt + 1/2 cup (60 g) granola + 1 cup (150 g) blueberries",
+          "calories": 555,
+          "carb_g": 69,
+          "protein_g": 41,
+          "fat_g": 14,
+          "sodium_mg": 182
+        }
+      ],
+      "totals": {
+        "calories": 555,
+        "carb_g": 69,
+        "protein_g": 41,
+        "fat_g": 14,
+        "sodium_mg": 182
+      },
+      "notes": "Logged as one bowl since the yogurt, granola, and berries are components of a single dish. Assumed athlete-sized portions: ~1.5 cups plain Greek yogurt (2% fat), a generous 1/2 cup granola, and 1 cup fresh blueberries. If the yogurt was full-fat, sweetened/flavored, or honey was added, calories and carbs would be meaningfully higher."
+    }
+  },
+  {
+    "tag": "text|opus|short-08",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.81,
+    "input_tokens": 1629,
+    "output_tokens": 382,
+    "analysis": {
+      "name": "Chicken Caesar Salad",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Chicken Caesar salad (romaine, grilled chicken breast, Caesar dressing, parmesan, croutons)",
+          "portion": "1 large entr\u00e9e salad (~450 g; ~6 oz grilled chicken, 3 cups romaine, 3 tbsp dressing, 1/4 cup parmesan, 1/2 cup croutons)",
+          "calories": 710,
+          "carb_g": 26,
+          "protein_g": 52,
+          "fat_g": 44,
+          "sodium_mg": 1450
+        }
+      ],
+      "totals": {
+        "calories": 710,
+        "carb_g": 26,
+        "protein_g": 52,
+        "fat_g": 44,
+        "sodium_mg": 1450
+      },
+      "notes": "Assumed a restaurant-sized entr\u00e9e salad appropriate for an endurance athlete: ~6 oz grilled chicken breast, romaine, full-fat Caesar dressing, shaved parmesan, and croutons all combined into one item. Sodium is high due to dressing, parmesan, and croutons; specify dressing amount or use of light dressing for a more precise estimate."
+    }
+  },
+  {
+    "tag": "text|opus|short-09",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.23,
+    "input_tokens": 1630,
+    "output_tokens": 346,
+    "analysis": {
+      "name": "Cheeseburger and Fries",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cheeseburger",
+          "portion": "1 burger (approx. 1/4 lb beef patty, cheese slice, bun, lettuce, tomato, onion, ketchup/mayo)",
+          "calories": 650,
+          "carb_g": 40,
+          "protein_g": 37,
+          "fat_g": 37,
+          "sodium_mg": 1100
+        },
+        {
+          "name": "French fries",
+          "portion": "1 large side (approx. 150 g)",
+          "calories": 460,
+          "carb_g": 56,
+          "protein_g": 6,
+          "fat_g": 23,
+          "sodium_mg": 420
+        }
+      ],
+      "totals": {
+        "calories": 1110,
+        "carb_g": 96,
+        "protein_g": 43,
+        "fat_g": 60,
+        "sodium_mg": 1520
+      },
+      "notes": "Assumed a restaurant-style quarter-pound cheeseburger with standard toppings and a large side of fries, sized for an endurance athlete. Actual values vary with patty size, cheese type, and whether fries were salted heavily."
+    }
+  },
+  {
+    "tag": "text|opus|short-10",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.72,
+    "input_tokens": 1631,
+    "output_tokens": 388,
+    "analysis": {
+      "name": "Almonds and Apple",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Almonds",
+          "portion": "1 handful (~1.5 oz / 40 g, ~35 almonds)",
+          "calories": 232,
+          "carb_g": 8.7,
+          "protein_g": 8.5,
+          "fat_g": 20,
+          "sodium_mg": 0
+        },
+        {
+          "name": "Apple",
+          "portion": "1 medium-large (~200 g), whole with skin",
+          "calories": 104,
+          "carb_g": 27.6,
+          "protein_g": 0.5,
+          "fat_g": 0.3,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Almonds",
+          "portion": "placeholder-removed",
+          "calories": 0,
+          "carb_g": 0,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 0
+        }
+      ],
+      "totals": {
+        "calories": 336,
+        "carb_g": 36.3,
+        "protein_g": 9,
+        "fat_g": 20.3,
+        "sodium_mg": 2
+      },
+      "notes": "Portions estimated for an endurance athlete: a generous handful of raw unsalted almonds (~40 g) and one medium-large apple. If the almonds were roasted/salted, add roughly 150-250 mg sodium."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-01",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.81,
+    "input_tokens": 2564,
+    "output_tokens": 277,
+    "analysis": {
+      "name": "Salted Edamame (Steamed Soybeans in Pods)",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Steamed salted edamame in pods",
+          "portion": "about 1 large bowl, ~250 g pods (~125 g edible beans)",
+          "calories": 190,
+          "carb_g": 15,
+          "protein_g": 18,
+          "fat_g": 8,
+          "sodium_mg": 400
+        }
+      ],
+      "totals": {
+        "calories": 190,
+        "carb_g": 15,
+        "protein_g": 18,
+        "fat_g": 8,
+        "sodium_mg": 400
+      },
+      "notes": "Bowl of whole edamame pods with visible coarse salt. Macros reflect edible beans only (pods discarded). Sodium is an estimate based on surface salt and can vary widely; a good plant-protein and electrolyte snack for an endurance athlete."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-02",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 8.2,
+    "input_tokens": 2564,
+    "output_tokens": 366,
+    "analysis": {
+      "name": "Baked Salmon with Roasted Broccolini and Kale",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Baked salmon fillet",
+          "portion": "1 fillet, about 5 oz cooked",
+          "calories": 290,
+          "carb_g": 0,
+          "protein_g": 34,
+          "fat_g": 16,
+          "sodium_mg": 190
+        },
+        {
+          "name": "Roasted broccolini and kale with olive oil",
+          "portion": "about 2 cups cooked",
+          "calories": 190,
+          "carb_g": 14,
+          "protein_g": 7,
+          "fat_g": 12,
+          "sodium_mg": 260
+        }
+      ],
+      "totals": {
+        "calories": 480,
+        "carb_g": 14,
+        "protein_g": 41,
+        "fat_g": 28,
+        "sodium_mg": 450
+      },
+      "notes": "Simple high-protein, low-carb dinner. Portion of salmon estimated from fillet thickness relative to the bowl. Carbohydrate content is low for an endurance athlete \u2014 consider adding a starch (rice, potatoes, bread) if this follows a hard training session."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-03",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.57,
+    "input_tokens": 2564,
+    "output_tokens": 267,
+    "analysis": {
+      "name": "Cheeseburger on sesame seed bun",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cheeseburger with melted cheese and pickled red onion on sesame bun",
+          "portion": "1 burger (~200 g patty + bun, single/double cheese)",
+          "calories": 760,
+          "carb_g": 42,
+          "protein_g": 40,
+          "fat_g": 45,
+          "sodium_mg": 1250
+        }
+      ],
+      "totals": {
+        "calories": 760,
+        "carb_g": 42,
+        "protein_g": 40,
+        "fat_g": 45,
+        "sodium_mg": 1250
+      },
+      "notes": "Single burger on a white plate with a glass of water in the background. Patty thickness and whether it is single or double are partially hidden by the bun, so calories could range 650\u2013950. No visible side dish; water contributes no macros."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-04",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.63,
+    "input_tokens": 2564,
+    "output_tokens": 280,
+    "analysis": {
+      "name": "Lentil, Potato and Pea Rice Bowl",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Lentil, potato, pea and tomato curry with basmati rice",
+          "portion": "1 large bowl (~600 g)",
+          "calories": 720,
+          "carb_g": 124,
+          "protein_g": 27,
+          "fat_g": 13,
+          "sodium_mg": 880
+        }
+      ],
+      "totals": {
+        "calories": 720,
+        "carb_g": 124,
+        "protein_g": 27,
+        "fat_g": 13,
+        "sodium_mg": 880
+      },
+      "notes": "Single mixed dish: brown/green lentils, diced potato, green peas, tomato, onion and cilantro stirred through white basmati rice with a light oil/spice sauce. Portion estimated as a full athlete-sized bowl. Sodium is uncertain and depends on added salt."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-05",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.52,
+    "input_tokens": 2564,
+    "output_tokens": 405,
+    "analysis": {
+      "name": "Smoked Salmon Sourdough Sandwich",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Sourdough bread (2 thick slices)",
+          "portion": "2 slices, ~120 g",
+          "calories": 320,
+          "carb_g": 62,
+          "protein_g": 12,
+          "fat_g": 2.5,
+          "sodium_mg": 640
+        },
+        {
+          "name": "Smoked salmon (lox)",
+          "portion": "~85 g",
+          "calories": 100,
+          "carb_g": 0,
+          "protein_g": 16,
+          "fat_g": 4,
+          "sodium_mg": 1200
+        },
+        {
+          "name": "Cream cheese spread",
+          "portion": "~2 tbsp",
+          "calories": 100,
+          "carb_g": 1.5,
+          "protein_g": 2,
+          "fat_g": 10,
+          "sodium_mg": 90
+        }
+      ],
+      "totals": {
+        "calories": 520,
+        "carb_g": 63.5,
+        "protein_g": 30,
+        "fat_g": 16.5,
+        "sodium_mg": 1930
+      },
+      "notes": "Close-up of a hand-held sandwich; a thin spread (likely cream cheese or butter) is assumed between the sourdough slices. Portions estimated from the visible thick-cut bread and generous salmon layer. Sodium is high due to cured salmon and bread."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-06",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.28,
+    "input_tokens": 2564,
+    "output_tokens": 270,
+    "analysis": {
+      "name": "Steamed Japanese Sweet Potato",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Steamed/baked Japanese sweet potato (half, peeled)",
+          "portion": "about 1 large half, ~200 g cooked flesh",
+          "calories": 180,
+          "carb_g": 42,
+          "protein_g": 3,
+          "fat_g": 0.3,
+          "sodium_mg": 30
+        }
+      ],
+      "totals": {
+        "calories": 180,
+        "carb_g": 42,
+        "protein_g": 3,
+        "fat_g": 0.3,
+        "sodium_mg": 30
+      },
+      "notes": "Half of a purple-skinned Japanese sweet potato, cooked, held in hand with peel partially removed. No visible added butter or toppings. Great pre- or post-workout carbohydrate source; portion estimated from hand-size reference."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-07",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.36,
+    "input_tokens": 2564,
+    "output_tokens": 331,
+    "analysis": {
+      "name": "Scrambled Egg, Spinach & Avocado Tortilla Plate",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Scrambled eggs with avocado over spinach on a whole wheat tortilla",
+          "portion": "3 large eggs, ~2 cups fresh spinach, ~1/3 avocado, 1 medium (8-inch) tortilla",
+          "calories": 600,
+          "carb_g": 36,
+          "protein_g": 26,
+          "fat_g": 38,
+          "sodium_mg": 760
+        }
+      ],
+      "totals": {
+        "calories": 600,
+        "carb_g": 36,
+        "protein_g": 26,
+        "fat_g": 38,
+        "sodium_mg": 760
+      },
+      "notes": "Single open-faced breakfast wrap logged as one dish: eggs, avocado, spinach and tortilla combined. Cooking fat/butter and light salting assumed. Portions estimated from plate coverage; actual egg count could be 2-4, which would shift calories by roughly \u00b180 kcal."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-08",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 5.85,
+    "input_tokens": 2564,
+    "output_tokens": 333,
+    "analysis": {
+      "name": "RXBAR Strawberry Protein Bar",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "RXBAR Strawberry protein bar",
+          "portion": "1 bar (52 g)",
+          "calories": 210,
+          "carb_g": 24,
+          "protein_g": 12,
+          "fat_g": 9,
+          "sodium_mg": 140
+        }
+      ],
+      "totals": {
+        "calories": 210,
+        "carb_g": 24,
+        "protein_g": 12,
+        "fat_g": 9,
+        "sodium_mg": 140
+      },
+      "notes": "Sealed single-serving RXBAR (1.8 oz / 52 g), Strawberry flavor, labeled 12 g protein. Macros based on standard RXBAR nutrition panel: ~210 kcal, 24 g carb (including ~13 g natural sugar from dates and ~5 g fiber), 12 g protein from egg whites, 9 g fat from almonds and cashews. Good pre- or post-training portable snack; carb-to-protein ratio is roughly 2:1."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-09",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.21,
+    "input_tokens": 2564,
+    "output_tokens": 435,
+    "analysis": {
+      "name": "Lentil, Tuna & Arugula Salad Bowl with Creamy Dressing",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Black beluga lentil salad with tuna, arugula, corn, bell pepper, feta and creamy dressing",
+          "portion": "1 large bowl (~500 g)",
+          "calories": 720,
+          "carb_g": 58,
+          "protein_g": 42,
+          "fat_g": 36,
+          "sodium_mg": 1250
+        },
+        {
+          "name": "Kalamata and green olives",
+          "portion": "~10 olives (50 g)",
+          "calories": 75,
+          "carb_g": 2,
+          "protein_g": 0.5,
+          "fat_g": 7,
+          "sodium_mg": 700
+        }
+      ],
+      "totals": {
+        "calories": 795,
+        "carb_g": 60,
+        "protein_g": 42.5,
+        "fat_g": 43,
+        "sodium_mg": 1950
+      },
+      "notes": "Mixed bowl with lentils, flaked tuna/salmon, arugula, sweet corn, diced bell pepper, cheese cubes and a creamy (aioli/thousand-island style) dressing. Olives logged separately as they are a distinct add-on. Sodium is high from olives, feta and dressing \u2014 good post-workout for electrolyte replacement. Portions estimated from bowl volume; dressing amount is the largest source of uncertainty."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-10",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.81,
+    "input_tokens": 2564,
+    "output_tokens": 361,
+    "analysis": {
+      "name": "Braised Beef with Rice and Roasted Brussels Sprouts",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Braised beef over rice with pan sauce",
+          "portion": "~5 oz cooked beef over ~1 cup rice with gravy",
+          "calories": 610,
+          "carb_g": 48,
+          "protein_g": 40,
+          "fat_g": 27,
+          "sodium_mg": 720
+        },
+        {
+          "name": "Roasted Brussels sprouts",
+          "portion": "~1.5 cups",
+          "calories": 180,
+          "carb_g": 18,
+          "protein_g": 7,
+          "fat_g": 10,
+          "sodium_mg": 320
+        }
+      ],
+      "totals": {
+        "calories": 790,
+        "carb_g": 66,
+        "protein_g": 47,
+        "fat_g": 37,
+        "sodium_mg": 1040
+      },
+      "notes": "Meal-prep container with braised/pot-roast style beef over a bed of rice and a generous portion of roasted Brussels sprouts. Rice amount partially hidden under the beef and sprouts, so carb estimate has moderate uncertainty; sauce adds unquantified sodium and fat."
+    }
+  },
+  {
+    "tag": "image|opus|compressed|img-11",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.86,
+    "input_tokens": 2204,
+    "output_tokens": 533,
+    "analysis": {
+      "name": "Oatmeal breakfast with banana, dates, coffee and juice",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cooked oatmeal",
+          "portion": "1 large bowl, ~1.5 cups cooked",
+          "calories": 230,
+          "carb_g": 40,
+          "protein_g": 8,
+          "fat_g": 4,
+          "sodium_mg": 150
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium-large",
+          "calories": 115,
+          "carb_g": 30,
+          "protein_g": 1.4,
+          "fat_g": 0.4,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Medjool dates",
+          "portion": "4 dates (~90 g)",
+          "calories": 250,
+          "carb_g": 67,
+          "protein_g": 1.6,
+          "fat_g": 0.4,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Black coffee",
+          "portion": "1 mug (~250 ml)",
+          "calories": 3,
+          "carb_g": 0,
+          "protein_g": 0.3,
+          "fat_g": 0,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Fruit juice (cranberry/berry)",
+          "portion": "1 glass (~250 ml)",
+          "calories": 120,
+          "carb_g": 30,
+          "protein_g": 0.5,
+          "fat_g": 0.2,
+          "sodium_mg": 10
+        }
+      ],
+      "totals": {
+        "calories": 718,
+        "carb_g": 167,
+        "protein_g": 11.8,
+        "fat_g": 5,
+        "sodium_mg": 168
+      },
+      "notes": "Oatmeal appears made with water or milk-thinned; if made with milk add ~60 kcal and 4 g protein. Juice identity uncertain (dark red \u2014 possibly cranberry or grape)."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-01",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.88,
+    "input_tokens": 6332,
+    "output_tokens": 283,
+    "analysis": {
+      "name": "Salted Edamame",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Steamed edamame in pods with sea salt",
+          "portion": "about 1 heaping bowl, ~200 g pods (~100 g edible beans)",
+          "calories": 190,
+          "carb_g": 14,
+          "protein_g": 18,
+          "fat_g": 8,
+          "sodium_mg": 420
+        }
+      ],
+      "totals": {
+        "calories": 190,
+        "carb_g": 14,
+        "protein_g": 18,
+        "fat_g": 8,
+        "sodium_mg": 420
+      },
+      "notes": "Pods are not eaten, so macros reflect the edible beans only (~100 g). Visible salt crystals suggest a moderately salted preparation; sodium could range 250-600 mg depending on how much is consumed with the beans. A second plate of pods is partially visible in the background, which may indicate a shared serving."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-02",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.77,
+    "input_tokens": 6332,
+    "output_tokens": 427,
+    "analysis": {
+      "name": "Baked Salmon with Roasted Broccolini and Kale",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Baked salmon fillet",
+          "portion": "about 5 oz (140 g) cooked",
+          "calories": 290,
+          "carb_g": 0,
+          "protein_g": 34,
+          "fat_g": 16,
+          "sodium_mg": 260
+        },
+        {
+          "name": "Roasted broccolini and kale with olive oil",
+          "portion": "about 2 cups cooked",
+          "calories": 180,
+          "carb_g": 13,
+          "protein_g": 6,
+          "fat_g": 12,
+          "sodium_mg": 220
+        },
+        {
+          "name": "Roasted broccolini and kale with olive oil",
+          "portion": "about 2 cups cooked",
+          "calories": 0,
+          "carb_g": 0,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 0
+        }
+      ],
+      "totals": {
+        "calories": 470,
+        "carb_g": 13,
+        "protein_g": 40,
+        "fat_g": 28,
+        "sodium_mg": 480
+      },
+      "notes": "Salmon appears simply seasoned and oven-baked; greens look roasted with olive oil. Portion is modest for an endurance athlete \u2014 carbohydrate content is very low, so a starch source (rice, potato, bread) may be needed to meet training fueling needs. Sodium estimate assumes light salting."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-03",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 18.9,
+    "input_tokens": 6332,
+    "output_tokens": 311,
+    "analysis": {
+      "name": "Bacon Cheeseburger on Sesame Bun",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Bacon cheeseburger with pickles and pickled red onion on sesame seed bun",
+          "portion": "1 burger (approx. 150 g beef patty, 2 slices cheese, 2 strips bacon, sesame bun, pickles, pickled onion)",
+          "calories": 780,
+          "carb_g": 42,
+          "protein_g": 45,
+          "fat_g": 47,
+          "sodium_mg": 1450
+        }
+      ],
+      "totals": {
+        "calories": 780,
+        "carb_g": 42,
+        "protein_g": 45,
+        "fat_g": 47,
+        "sodium_mg": 1450
+      },
+      "notes": "Single restaurant-style burger on a plate; no visible side dish. Water glasses in background not counted. Patty thickness and cheese/bacon quantity partially obscured by the bun, so calories could range roughly 650\u2013900 kcal."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-04",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.23,
+    "input_tokens": 6332,
+    "output_tokens": 323,
+    "analysis": {
+      "name": "Lentil, Rice & Vegetable Curry Bowl",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Lentil, potato and vegetable curry with basmati rice (lentils, potatoes, peas, cauliflower, tomatoes, squash, onion, cilantro)",
+          "portion": "1 large bowl, approx. 650 g",
+          "calories": 720,
+          "carb_g": 118,
+          "protein_g": 28,
+          "fat_g": 15,
+          "sodium_mg": 890
+        }
+      ],
+      "totals": {
+        "calories": 720,
+        "carb_g": 118,
+        "protein_g": 28,
+        "fat_g": 15,
+        "sodium_mg": 890
+      },
+      "notes": "Single mixed one-pot dish; all components (rice, lentils, potato, peas, cauliflower, tomato, squash) are combined into one entry. Portion estimated as a generous full bowl suitable for an endurance athlete. Fat depends on oil/coconut used, so calories could range 600-850."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-05",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.84,
+    "input_tokens": 6332,
+    "output_tokens": 316,
+    "analysis": {
+      "name": "Smoked Salmon on Sourdough",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Sourdough bread sandwich with smoked salmon and cream cheese",
+          "portion": "large open sandwich, ~2 thick slices sourdough (~120 g) with ~80 g smoked salmon and ~30 g cream cheese",
+          "calories": 540,
+          "carb_g": 62,
+          "protein_g": 26,
+          "fat_g": 19,
+          "sodium_mg": 1750
+        }
+      ],
+      "totals": {
+        "calories": 540,
+        "carb_g": 62,
+        "protein_g": 26,
+        "fat_g": 19,
+        "sodium_mg": 1750
+      },
+      "notes": "Held-in-hand sandwich viewed from the side; bread is thick artisan sourdough with visible smoked salmon (lox) and a thin spread that appears to be cream cheese or butter. Portion estimated generously for an endurance athlete. Sodium is high due to cured salmon."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-06",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 11.39,
+    "input_tokens": 6332,
+    "output_tokens": 307,
+    "analysis": {
+      "name": "Steamed Japanese Sweet Potato",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Steamed/baked Japanese sweet potato (purple skin, yellow flesh), partially peeled",
+          "portion": "1 medium-large potato, ~250 g cooked flesh",
+          "calories": 230,
+          "carb_g": 53,
+          "protein_g": 4,
+          "fat_g": 0.3,
+          "sodium_mg": 40
+        }
+      ],
+      "totals": {
+        "calories": 230,
+        "carb_g": 53,
+        "protein_g": 4,
+        "fat_g": 0.3,
+        "sodium_mg": 40
+      },
+      "notes": "Single whole steamed Japanese sweet potato held over a plate, no visible toppings or added fat. Portion estimated from hand-scale (~10-12 cm long, ~250-280 g). Excellent pre- or post-training carbohydrate source; consider pairing with a protein source if used as a recovery snack."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-07",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.97,
+    "input_tokens": 6332,
+    "output_tokens": 338,
+    "analysis": {
+      "name": "Scrambled Egg, Spinach & Avocado Tortilla",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Scrambled egg, avocado and spinach on flour tortilla",
+          "portion": "1 open-faced tortilla with ~3 eggs, ~1/3 avocado, ~1.5 cups spinach",
+          "calories": 530,
+          "carb_g": 34,
+          "protein_g": 24,
+          "fat_g": 33,
+          "sodium_mg": 610
+        }
+      ],
+      "totals": {
+        "calories": 530,
+        "carb_g": 34,
+        "protein_g": 24,
+        "fat_g": 33,
+        "sodium_mg": 610
+      },
+      "notes": "Open-faced breakfast tortilla: soft scrambled eggs (about 3 large) with mashed avocado and a generous handful of raw baby spinach on a ~8-inch flour tortilla. Portion of avocado is partially hidden under the eggs, so fat could range 28-38 g. Sodium assumes lightly salted eggs plus tortilla."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-08",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 6.23,
+    "input_tokens": 6332,
+    "output_tokens": 314,
+    "analysis": {
+      "name": "RXBAR Strawberry Protein Bar",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "RXBAR Strawberry protein bar",
+          "portion": "1 bar (52 g)",
+          "calories": 210,
+          "carb_g": 24,
+          "protein_g": 12,
+          "fat_g": 9,
+          "sodium_mg": 140
+        }
+      ],
+      "totals": {
+        "calories": 210,
+        "carb_g": 24,
+        "protein_g": 12,
+        "fat_g": 9,
+        "sodium_mg": 140
+      },
+      "notes": "Packaged bar, sealed and unopened \u2014 macros taken from standard RXBAR Strawberry label (1.8 oz / 52 g bar): ~210 kcal, 24 g carbs (about 15 g sugar from dates, 5 g fiber), 12 g protein from egg whites, 9 g fat from almonds/cashews. Good pre- or mid-ride snack; low sodium so pair with electrolytes for long sessions."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-09",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 8.02,
+    "input_tokens": 6332,
+    "output_tokens": 360,
+    "analysis": {
+      "name": "Mediterranean lentil, tuna and arugula bowl with hummus",
+      "suggested_slot": "lunch",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Lentil, tuna, arugula and veggie salad bowl with feta, olives, corn and hummus dressing",
+          "portion": "1 large bowl (~550 g)",
+          "calories": 720,
+          "carb_g": 58,
+          "protein_g": 42,
+          "fat_g": 36,
+          "sodium_mg": 1650
+        }
+      ],
+      "totals": {
+        "calories": 720,
+        "carb_g": 58,
+        "protein_g": 42,
+        "fat_g": 36,
+        "sodium_mg": 1650
+      },
+      "notes": "Single composed bowl: arugula base, black/beluga lentils, flaked tuna, sweet corn, roasted red and green peppers, kalamata and green olives, feta cubes, tomato-based relish, and a generous creamy hummus/tahini dressing. Sodium is high from olives, feta and canned tuna. Portion estimated as a full adult athlete-sized bowl; macros are approximate since dressing quantity and tuna amount are partly hidden."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-10",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 9.13,
+    "input_tokens": 6332,
+    "output_tokens": 328,
+    "analysis": {
+      "name": "Braised Beef with Rice and Roasted Brussels Sprouts",
+      "suggested_slot": "dinner",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Braised beef over seasoned rice",
+          "portion": "~5 oz beef with ~1 cup cooked rice and pan sauce",
+          "calories": 610,
+          "carb_g": 48,
+          "protein_g": 42,
+          "fat_g": 26,
+          "sodium_mg": 760
+        },
+        {
+          "name": "Roasted Brussels sprouts",
+          "portion": "~1.5 cups, roasted in oil",
+          "calories": 190,
+          "carb_g": 18,
+          "protein_g": 7,
+          "fat_g": 11,
+          "sodium_mg": 260
+        }
+      ],
+      "totals": {
+        "calories": 800,
+        "carb_g": 66,
+        "protein_g": 49,
+        "fat_g": 37,
+        "sodium_mg": 1020
+      },
+      "notes": "Meal-prep container. Rice partially hidden beneath the beef, so carb estimate assumes about one cup cooked. Sauce adds a moderate amount of sodium."
+    }
+  },
+  {
+    "tag": "image|opus|uncompressed|img-11",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 7.52,
+    "input_tokens": 5548,
+    "output_tokens": 525,
+    "analysis": {
+      "name": "Oatmeal breakfast with banana, dates, coffee and juice",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Cooked oatmeal",
+          "portion": "about 1.5 cups prepared (bowl)",
+          "calories": 230,
+          "carb_g": 40,
+          "protein_g": 8,
+          "fat_g": 4,
+          "sodium_mg": 150
+        },
+        {
+          "name": "Banana",
+          "portion": "1 medium-large (~120 g)",
+          "calories": 110,
+          "carb_g": 28,
+          "protein_g": 1.3,
+          "fat_g": 0.4,
+          "sodium_mg": 1
+        },
+        {
+          "name": "Medjool dates",
+          "portion": "4 dates (~90 g)",
+          "calories": 250,
+          "carb_g": 67,
+          "protein_g": 1.6,
+          "fat_g": 0.4,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Black coffee",
+          "portion": "1 small cup (~180 ml)",
+          "calories": 3,
+          "carb_g": 0,
+          "protein_g": 0.3,
+          "fat_g": 0,
+          "sodium_mg": 5
+        },
+        {
+          "name": "Grape/berry juice",
+          "portion": "1 glass (~250 ml)",
+          "calories": 150,
+          "carb_g": 37,
+          "protein_g": 0.8,
+          "fat_g": 0.3,
+          "sodium_mg": 15
+        }
+      ],
+      "totals": {
+        "calories": 743,
+        "carb_g": 172,
+        "protein_g": 12,
+        "fat_g": 5.1,
+        "sodium_mg": 176
+      },
+      "notes": "Oatmeal appears plain (water or milk unclear); dark red drink assumed to be grape or berry juice. Carbohydrate-dense breakfast well suited to endurance training."
+    }
+  },
+  {
+    "tag": "text|opus|long-02",
+    "model": "anthropic/claude-opus-5",
+    "latency_s": 13.36,
+    "input_tokens": 1715,
+    "output_tokens": 990,
+    "analysis": {
+      "name": "Chipotle Burrito Bowl (brown rice, black beans, double chicken, guac)",
+      "suggested_slot": "lunch",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Chipotle burrito bowl with brown rice, black beans, double chicken, fajita veggies, corn salsa, cheese and guacamole (no sour cream)",
+          "portion": "1 full bowl (~750 g)",
+          "calories": 1025,
+          "carb_g": 86,
+          "protein_g": 87.5,
+          "fat_g": 41,
+          "sodium_mg": 1680
+        }
+      ],
+      "totals": {
+        "calories": 1025,
+        "carb_g": 86,
+        "protein_g": 87.5,
+        "fat_g": 41,
+        "sodium_mg": 1680
+      },
+      "notes": "Logged as one dish since a burrito bowl is a single composed meal. Estimates use Chipotle's published serving data: 4 oz brown rice, black beans, 2x chicken (~8 oz cooked), fajita veggies, corn salsa, shredded cheese, and roughly a half scoop of guacamole. Sodium is high (~1680 mg) which is generally fine given the morning training session, but worth noting. Carbs ~86 g may be on the low side for post-long-session refueling \u2014 consider adding tortilla chips or a beverage with carbs if recovery glycogen is a priority."
+    }
+  }
+]

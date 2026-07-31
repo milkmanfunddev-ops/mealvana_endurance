@@ -19,6 +19,8 @@ import '../../../features/auth/data/user_repository.dart';
 import '../../../features/user_foods/data/user_foods_repository.dart';
 import '../../../features/meal_logging/data/meal_log_repository.dart';
 import '../../../features/meal_logging/data/saved_meals_repository.dart';
+import '../../../features/integrations/presentation/providers/integrations_providers.dart';
+import '../../../features/formula_kit/data/formula_pins_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -66,9 +68,6 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Track last failed sync attempt per repository (for rate limiting)
   final Map<String, DateTime> _lastFailedAttempt = {};
-
-  /// Skip sync for users who just completed onboarding (in-memory, self-clearing)
-  bool _skipSyncForNewUser = false;
 
   /// Track consecutive failure count per repository (for rate limiting)
   final Map<String, int> _failureCount = {};
@@ -124,17 +123,13 @@ class SyncCoordinator extends _$SyncCoordinator {
     String userId, {
     SyncableRepository? repository,
   }) async {
-    // 0. Skip sync for users who just completed onboarding
-    // New users have all data locally - nothing to download from Supabase
-    // Their data will be uploaded via background sync later
-    if (_shouldSkipSyncForNewUser()) {
-      _logger.info(
-        'Skipping sync - user just completed onboarding',
-        context: 'SYNC_COORDINATOR',
-        data: {'repoKey': repoKey},
-      );
-      return;
-    }
+    // NOTE (2026-07-29 policy change): there is deliberately no "skip sync for
+    // a user who just onboarded" short-circuit here any more. We ALWAYS push
+    // to Supabase, including for anonymous (skipped-account-creation) users —
+    // the old flag suppressed the first upload after onboarding, which was the
+    // one upload that carried the onboarding answers. Downloads are additive
+    // (every syncFromRemote upserts and preserves locally-dirty rows), so
+    // syncing a brand-new user against an empty remote cannot lose data.
 
     // 1. Prevent infinite loops - if already syncing this repo, return
     if (_syncingNow.contains(repoKey)) {
@@ -191,9 +186,15 @@ class SyncCoordinator extends _$SyncCoordinator {
       markedSyncing = true;
 
       // 5. Sync dependencies FIRST (recursive)
+      //
+      // Resolve each dependency's repository. Without it the recursive call has
+      // no repository to work with, so it uploads nothing and downloads nothing
+      // — it just stamps a timestamp. That made this step a no-op, which is how
+      // a dirty event could be uploaded while its activity was still local-only
+      // (FK 23503 on events_activity_id_fkey).
       final deps = _dependencies[repoKey] ?? const <String>[];
       for (final dep in deps) {
-        await ensureSynced(dep, userId);
+        await ensureSynced(dep, userId, repository: await _repositoryFor(dep));
       }
 
       // 6. Upload dirty records (if repository provided)
@@ -253,6 +254,75 @@ class SyncCoordinator extends _$SyncCoordinator {
       }
     }
   }
+
+  /// Resolve the [SyncableRepository] backing a dependency-graph key.
+  ///
+  /// Returns null for keys with no syncable repository (e.g. reference data such
+  /// as `template_foods`), in which case the caller treats the key as a no-op —
+  /// the pre-existing behaviour for those keys.
+  ///
+  /// Resolution is best-effort: if a repository provider cannot be constructed
+  /// we log and return null rather than failing the caller's sync. Falling back
+  /// to the old no-op leaves the caller no worse off than before this resolver
+  /// existed — an FK violation would still surface as an upload error — whereas
+  /// throwing here would take down a sync that could otherwise have succeeded.
+  Future<SyncableRepository?> _repositoryFor(String repoKey) async {
+    try {
+      switch (repoKey) {
+        case 'users':
+          return await ref.read(userRepositoryProvider.future);
+        case 'activities':
+          return ref.read(activitiesRepositoryProvider);
+        case 'events':
+          return ref.read(eventsRepositoryProvider);
+        case 'carb_loading_plans':
+          return ref.read(carbLoadingRepositoryProvider);
+        case 'feedback':
+          return ref.read(feedbackRepositoryProvider);
+        case 'food_preferences':
+          return await ref.read(foodPreferencesRepositoryProvider.future);
+        case 'user_foods':
+          return await ref.read(userFoodsRepositoryProvider.future);
+        case 'meal_logs':
+          return ref.read(mealLogRepositoryProvider);
+        case 'saved_meals':
+          return ref.read(savedMealsRepositoryProvider);
+        // Both are written during onboarding — `integrations` by the
+        // Connect-Training step, `formula_pins` by the default-formula
+        // auto-pin — but neither was resolvable here, so a dirty row that
+        // missed its opportunistic inline upload had no retry channel at all.
+        case 'integrations':
+          return ref.read(integrationsRepositoryProvider);
+        case 'formula_pins':
+          return ref.read(formulaPinsRepositoryProvider);
+        default:
+          return null;
+      }
+    } catch (e) {
+      _logger.warning(
+        'Could not resolve repository for dependency sync',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey, 'error': e.toString()},
+      );
+      return null;
+    }
+  }
+
+  /// Repository keys that [_repositoryFor] can resolve, i.e. everything that
+  /// participates in dirty-record upload.
+  static const List<String> _syncableRepositoryKeys = <String>[
+    'users',
+    'activities',
+    'events',
+    'carb_loading_plans',
+    'feedback',
+    'food_preferences',
+    'user_foods',
+    'meal_logs',
+    'saved_meals',
+    'integrations',
+    'formula_pins',
+  ];
 
   /// Check if a repository's data is stale and needs syncing.
   ///
@@ -315,30 +385,6 @@ class SyncCoordinator extends _$SyncCoordinator {
   void _clearFailureTracking(String repoKey) {
     _lastFailedAttempt.remove(repoKey);
     _failureCount.remove(repoKey);
-  }
-
-  // ========================================================================
-  // New User (Post-Onboarding) Sync Skip
-  // ========================================================================
-
-  /// Check if sync should be skipped for a user who just completed onboarding.
-  ///
-  /// New users have all data locally - nothing to download from Supabase.
-  /// Their user profile is already uploaded during onboarding completion.
-  /// Skipping sync prevents unnecessary network calls and potential FK errors.
-  ///
-  /// Uses in-memory flag - self-clearing on first check.
-  bool _shouldSkipSyncForNewUser() {
-    if (_skipSyncForNewUser) {
-      _skipSyncForNewUser = false; // Clear immediately (self-clearing)
-      return true;
-    }
-    return false;
-  }
-
-  /// Set flag to skip sync for new users (called from onboarding completion)
-  void setSkipSyncForNewUser() {
-    _skipSyncForNewUser = true;
   }
 
   /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)
@@ -410,44 +456,79 @@ class SyncCoordinator extends _$SyncCoordinator {
   }
 
   /// Upload dirty records from all repositories (public API).
-  /// Best-effort: logs failures but doesn't throw.
-  /// Used by corruption recovery to save data before database deletion.
-  Future<void> uploadAllDirtyRecords(String userId) =>
+  ///
+  /// Best-effort: never throws. Returns the repository keys whose upload did
+  /// not succeed (failed outright, or was skipped because a dependency failed)
+  /// so callers can surface the failure instead of assuming success —
+  /// `uploadDirtyRecords()` swallows exceptions into a silent
+  /// `UploadResult.failed()`, so an unchecked call looks identical to a
+  /// successful one. An empty list means everything reached Supabase.
+  ///
+  /// Used by corruption recovery to save data before database deletion, and by
+  /// onboarding completion to push the freshly-captured profile.
+  Future<List<String>> uploadAllDirtyRecords(String userId) =>
       _uploadAllDirtyRecords(userId);
 
   /// Upload dirty records from all repositories before download.
   /// Best-effort: logs failures but doesn't block download.
-  Future<void> _uploadAllDirtyRecords(String userId) async {
-    try {
-      final repos = <String, SyncableRepository>{
-        'activities': ref.read(activitiesRepositoryProvider),
-        'events': ref.read(eventsRepositoryProvider),
-        'carb_loading': ref.read(carbLoadingRepositoryProvider),
-        'feedback': ref.read(feedbackRepositoryProvider),
-        'food_preferences': await ref.read(
-          foodPreferencesRepositoryProvider.future,
-        ),
-        'users': await ref.read(userRepositoryProvider.future),
-        'user_foods': await ref.read(userFoodsRepositoryProvider.future),
-        'meal_logs': ref.read(mealLogRepositoryProvider),
-        'saved_meals': ref.read(savedMealsRepositoryProvider),
-      };
+  ///
+  /// Uploads in dependency order, one level at a time. Uploading everything at
+  /// once (the previous behaviour) raced a child against its parent: a dirty
+  /// event could reach Supabase before the activity it references, failing
+  /// events_activity_id_fkey with Postgres 23503.
+  Future<List<String>> _uploadAllDirtyRecords(String userId) async {
+    final failures = <String>[];
+    final skipped = <String>[];
 
-      final entries = repos.entries.toList();
-      final results = await Future.wait(
-        entries.map((e) => e.value.uploadDirtyRecords(userId)),
+    try {
+      final levels = SyncDependencyGraph.topologicalLevels(
+        _syncableRepositoryKeys,
       );
 
-      final failures = <String>[];
-      for (var i = 0; i < entries.length; i++) {
-        final name = entries[i].key;
-        final result = results[i];
-        if (!result.success) {
-          failures.add(name);
-          _logger.error(
-            'Dirty record upload failed for $name',
+      for (final level in levels) {
+        // A repository whose parent failed to upload cannot succeed — its rows
+        // would violate the same FK. Skip it instead of firing a second, noisier
+        // failure for the same root cause.
+        final runnable = <String>[];
+        for (final repoKey in level) {
+          final blockedBy = SyncDependencyGraph.dependenciesFor(repoKey)
+              .where((d) => failures.contains(d) || skipped.contains(d))
+              .toList(growable: false);
+
+          if (blockedBy.isEmpty) {
+            runnable.add(repoKey);
+            continue;
+          }
+
+          skipped.add(repoKey);
+          _logger.warning(
+            'Skipping dirty record upload for $repoKey - dependency failed',
             context: 'SYNC_COORDINATOR',
-            data: {'repository': name, 'error': result.error},
+            data: {'repository': repoKey, 'blockedBy': blockedBy},
+          );
+        }
+
+        if (runnable.isEmpty) continue;
+
+        // Independent within a level, so upload them concurrently.
+        final results = await Future.wait(
+          runnable.map((repoKey) async {
+            final repository = await _repositoryFor(repoKey);
+            if (repository == null) return UploadResult.nothingToUpload();
+            return repository.uploadDirtyRecords(userId);
+          }),
+        );
+
+        for (var i = 0; i < runnable.length; i++) {
+          final repoKey = runnable[i];
+          final result = results[i];
+          if (result.success) continue;
+
+          failures.add(repoKey);
+          _logger.error(
+            'Dirty record upload failed for $repoKey',
+            context: 'SYNC_COORDINATOR',
+            data: {'repository': repoKey, 'error': result.error},
           );
         }
       }
@@ -458,8 +539,9 @@ class SyncCoordinator extends _$SyncCoordinator {
           context: 'SYNC_COORDINATOR',
           data: {
             'failedRepos': failures,
+            'skippedRepos': skipped,
             'failedCount': failures.length,
-            'totalRepos': entries.length,
+            'totalRepos': _syncableRepositoryKeys.length,
           },
         );
         unawaited(
@@ -469,6 +551,7 @@ class SyncCoordinator extends _$SyncCoordinator {
             tags: {
               'failed_repos': failures.join(','),
               'failed_count': '${failures.length}',
+              if (skipped.isNotEmpty) 'skipped_repos': skipped.join(','),
             },
           ),
         );
@@ -487,7 +570,13 @@ class SyncCoordinator extends _$SyncCoordinator {
           context: 'sync_upload_dirty_records',
         ),
       );
+      // The orchestration itself blew up, so nothing can be assumed to have
+      // landed. Report every repository as unsuccessful rather than handing the
+      // caller a misleading empty (== "all good") list.
+      return _syncableRepositoryKeys.toList(growable: false);
     }
+
+    return [...failures, ...skipped];
   }
 
   /// Invalidate ALL data providers after sync

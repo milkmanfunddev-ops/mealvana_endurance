@@ -181,7 +181,7 @@ class MealLogController extends _$MealLogController {
   /// Log a manual meal entry and invalidate the date's stream provider.
   Future<void> logManualMeal({
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     int? calories,
     double? carbsG,
@@ -210,8 +210,9 @@ class MealLogController extends _$MealLogController {
       );
 
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': 'manual',
+        'method': 'manual',
         'log_date': logDate,
       });
     });
@@ -220,7 +221,7 @@ class MealLogController extends _$MealLogController {
   /// Log a meal from the user's saved favorites.
   Future<void> logSavedMeal({
     required SavedMeal savedMeal,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
   }) async {
@@ -238,7 +239,40 @@ class MealLogController extends _$MealLogController {
       if (ref.mounted) ref.invalidate(recentMealsProvider);
 
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
+        'source': 'saved',
+        'method': 'saved',
+        'log_date': logDate,
+      });
+    });
+  }
+
+  /// Bulk-log multiple saved meals to [logDate] in one batch — the multi-log
+  /// action. No-op for an empty [savedMeals]. Invalidates the recents stream
+  /// once after the batch.
+  Future<void> logSavedMeals({
+    required List<SavedMeal> savedMeals,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+  }) async {
+    if (savedMeals.isEmpty) return;
+    await _runGuarded((service) async {
+      final userId = await _currentUserId();
+      if (userId == null) throw StateError('No authenticated user');
+
+      await service.logSavedMeals(
+        savedMeals: savedMeals,
+        userId: userId,
+        slot: slot,
+        logDate: logDate,
+        eatenAt: eatenAt,
+      );
+      if (ref.mounted) ref.invalidate(recentMealsProvider);
+
+      await _trackEvent('meals_logged_bulk', {
+        'count': savedMeals.length,
+        if (slot != null) 'slot': slot.wireValue,
         'source': 'saved',
         'log_date': logDate,
       });
@@ -248,7 +282,7 @@ class MealLogController extends _$MealLogController {
   /// Log a recipe, scaling macros by [servings].
   Future<void> logRecipe({
     required RecipeLogParams params,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     DateTime? eatenAt,
     String? notes,
@@ -267,8 +301,9 @@ class MealLogController extends _$MealLogController {
       );
 
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': 'recipe',
+        'method': 'recipe',
         'log_date': logDate,
         'recipe_id': params.recipeId,
       });
@@ -276,16 +311,21 @@ class MealLogController extends _$MealLogController {
   }
 
   /// Log a meal built from individual food components (used by photo, describe,
-  /// and AI-review flows).
+  /// manual-add, and build-a-meal draft flows).
   Future<void> logFromComponents({
     required String name,
-    required MealSlot slot,
+    MealSlot? slot,
     required String logDate,
     required MealLogSource source,
     required List<MealComponent> components,
     String? photoPath,
     String? notes,
     DateTime? eatenAt,
+    // Analytics-only method label. The persisted `source` is constrained by
+    // the DB CHECK ('photo'|'manual'|'describe'|'saved'|'recipe'|...), so
+    // barcode/build/common-tap all persist as `manual`; this disambiguates
+    // them for funnels without a schema migration. Defaults to source.
+    String? logMethod,
   }) async {
     await _runGuarded((service) async {
       final userId = await _currentUserId();
@@ -303,8 +343,9 @@ class MealLogController extends _$MealLogController {
       );
       if (ref.mounted) ref.invalidate(recentMealsProvider);
       await _trackEvent('meal_logged', {
-        'slot': slot.wireValue,
+        if (slot != null) 'slot': slot.wireValue,
         'source': source.wireValue,
+        'method': logMethod ?? source.wireValue,
         'log_date': logDate,
       });
     });
@@ -326,7 +367,7 @@ class MealLogController extends _$MealLogController {
 
       await _trackEvent('meal_log_updated', {
         'log_id': log.id,
-        'slot': log.slot.wireValue,
+        if (log.slot != null) 'slot': log.slot!.wireValue,
       });
     });
   }

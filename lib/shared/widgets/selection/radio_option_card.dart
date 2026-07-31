@@ -79,10 +79,7 @@ class RadioOptionCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.sm),
                 child: emoji != null
-                    ? Text(
-                        emoji!,
-                        style: const TextStyle(fontSize: 24),
-                      )
+                    ? Text(emoji!, style: const TextStyle(fontSize: 24))
                     : Icon(
                         icon,
                         size: 24,
@@ -101,7 +98,9 @@ class RadioOptionCard extends StatelessWidget {
                   Text(
                     label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                       color: effectiveEnabled
                           ? AppColors.textLight
                           : AppColors.inactive,
@@ -127,10 +126,7 @@ class RadioOptionCard extends StatelessWidget {
 }
 
 class _RadioIndicator extends StatelessWidget {
-  const _RadioIndicator({
-    required this.isSelected,
-    required this.enabled,
-  });
+  const _RadioIndicator({required this.isSelected, required this.enabled});
 
   final bool isSelected;
   final bool enabled;

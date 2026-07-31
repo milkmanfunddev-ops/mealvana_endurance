@@ -97,22 +97,25 @@ class FormulaFilterState {
   }) {
     return FormulaFilterState(
       phase: phase ?? this.phase,
-      beforeSubPhase:
-          beforeSubPhase != null ? beforeSubPhase() : this.beforeSubPhase,
+      beforeSubPhase: beforeSubPhase != null
+          ? beforeSubPhase()
+          : this.beforeSubPhase,
       beforeDigestionSpeed: beforeDigestionSpeed != null
           ? beforeDigestionSpeed()
           : this.beforeDigestionSpeed,
-      duringActivity:
-          duringActivity != null ? duringActivity() : this.duringActivity,
-      duringDuration:
-          duringDuration != null ? duringDuration() : this.duringDuration,
-      duringGutLevel:
-          duringGutLevel != null ? duringGutLevel() : this.duringGutLevel,
+      duringActivity: duringActivity != null
+          ? duringActivity()
+          : this.duringActivity,
+      duringDuration: duringDuration != null
+          ? duringDuration()
+          : this.duringDuration,
+      duringGutLevel: duringGutLevel != null
+          ? duringGutLevel()
+          : this.duringGutLevel,
       afterTravelFriendliness: afterTravelFriendliness != null
           ? afterTravelFriendliness()
           : this.afterTravelFriendliness,
-      activeAllergyFilters:
-          activeAllergyFilters ?? this.activeAllergyFilters,
+      activeAllergyFilters: activeAllergyFilters ?? this.activeAllergyFilters,
       activeDietFilters: activeDietFilters ?? this.activeDietFilters,
       pinnedOnly: pinnedOnly ?? this.pinnedOnly,
     );
@@ -135,15 +138,15 @@ class FormulaFilterState {
 
   @override
   int get hashCode => Object.hash(
-        phase,
-        beforeSubPhase,
-        beforeDigestionSpeed,
-        duringActivity,
-        duringDuration,
-        duringGutLevel,
-        afterTravelFriendliness,
-        Object.hashAllUnordered(activeAllergyFilters),
-        Object.hashAllUnordered(activeDietFilters),
-        pinnedOnly,
-      );
+    phase,
+    beforeSubPhase,
+    beforeDigestionSpeed,
+    duringActivity,
+    duringDuration,
+    duringGutLevel,
+    afterTravelFriendliness,
+    Object.hashAllUnordered(activeAllergyFilters),
+    Object.hashAllUnordered(activeDietFilters),
+    pinnedOnly,
+  );
 }

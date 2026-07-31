@@ -35,10 +35,9 @@ class CarbFeedbackSelector extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? AppColors.electrolyte.withValues(alpha: 0.2)
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.08),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.08),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.electrolyte
@@ -47,10 +46,7 @@ class CarbFeedbackSelector extends StatelessWidget {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  level.emoji,
-                  style: const TextStyle(fontSize: 24),
-                ),
+                child: Text(level.emoji, style: const TextStyle(fontSize: 24)),
               ),
             );
           }).toList(),

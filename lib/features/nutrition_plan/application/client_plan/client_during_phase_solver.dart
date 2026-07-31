@@ -267,21 +267,17 @@ _ElecPick? _pickBestElectrolyte(
   double carbUpper,
   String? gutTrainingLevel,
 ) {
-  const maxSupplementServings = 4.0;
-
   final baselineSodiumScore = sodiumTarget > 0
-      ? (max(0.0, sodiumLower - currentSodium) +
-              max(0.0, currentSodium - sodiumUpper)) /
-          sodiumTarget
+      ? (max(0.0, sodiumTarget - currentSodium) +
+                max(0.0, currentSodium - sodiumUpper)) /
+            sodiumTarget
       : 0.0;
-  final baselineFluidPenalty =
-      (fluidTarget > 0 && currentFluid > fluidUpper)
-          ? ((currentFluid - fluidUpper) / fluidTarget) * 3
-          : 0.0;
-  final baselineCarbPenalty =
-      (carbTarget > 0 && currentCarbs > carbUpper)
-          ? ((currentCarbs - carbUpper) / carbTarget) * 2
-          : 0.0;
+  final baselineFluidPenalty = (fluidTarget > 0 && currentFluid > fluidUpper)
+      ? ((currentFluid - fluidUpper) / fluidTarget) * 3
+      : 0.0;
+  final baselineCarbPenalty = (carbTarget > 0 && currentCarbs > carbUpper)
+      ? ((currentCarbs - carbUpper) / carbTarget) * 2
+      : 0.0;
   final baselineScore =
       baselineSodiumScore + baselineFluidPenalty + baselineCarbPenalty;
 
@@ -292,12 +288,15 @@ _ElecPick? _pickBestElectrolyte(
     final gutMax = _maxServingsForGut(elec, gutTrainingLevel);
     // Build candidate serving increments (0.5 steps for divisible, 1 for indivisible)
     final candidates = <double>[];
-    final isSupp =
-        elec.productType == 'supplement' && !elec.isLiquid;
+    final isSupp = elec.productType == 'supplement' && !elec.isLiquid;
     final step = elec.isIndivisible ? 1.0 : 0.5;
     final start = elec.isIndivisible ? 1.0 : 0.5;
-    final maxCandidateServings =
-        isSupp ? min(gutMax, maxSupplementServings) : gutMax;
+    // The food's own (gut-adjusted) max servings is the only hard cap — a
+    // synthetic 4-serving supplement ceiling used to stop the top-up below
+    // the range floor even when more capsules were allowed (bug 3abe3fdb).
+    // The capsulePenalty below still steers toward fewer capsules when a
+    // smaller count scores equally.
+    final maxCandidateServings = gutMax;
     for (double s = start; s <= maxCandidateServings + 1e-9; s += step) {
       candidates.add(s);
     }
@@ -312,9 +311,9 @@ _ElecPick? _pickBestElectrolyte(
       if (carbs > carbUpper + 1e-9) continue;
 
       final sodiumPenalty = sodiumTarget > 0
-          ? (max(0.0, sodiumLower - sodium) +
-                  max(0.0, sodium - sodiumUpper) * 2) /
-              sodiumTarget
+          ? (max(0.0, sodiumTarget - sodium) +
+                    max(0.0, sodium - sodiumUpper) * 2) /
+                sodiumTarget
           : 0.0;
       final fluidPenalty = (fluidTarget > 0 && fluid > fluidUpper)
           ? ((fluid - fluidUpper) / fluidTarget) * 3
@@ -322,11 +321,16 @@ _ElecPick? _pickBestElectrolyte(
       final carbPenalty = (carbTarget > 0 && carbs > carbUpper)
           ? ((carbs - carbUpper) / carbTarget) * 1.5
           : 0.0;
-      final capsulePenalty =
-          (isSupp && servings > 2) ? 0.05 * (servings - 2) : 0.0;
+      final capsulePenalty = (isSupp && servings > 2)
+          ? 0.05 * (servings - 2)
+          : 0.0;
       final prefBonus = elec.preferenceScore >= kPrefScoreLiked ? -0.02 : 0.0;
       final score =
-          sodiumPenalty + fluidPenalty + carbPenalty + capsulePenalty + prefBonus;
+          sodiumPenalty +
+          fluidPenalty +
+          carbPenalty +
+          capsulePenalty +
+          prefBonus;
 
       final candidate = _ElecPick(
         food: elec,
@@ -339,7 +343,7 @@ _ElecPick? _pickBestElectrolyte(
 
       if (best == null ||
           score < best.score - 1e-9 ||
-          (score.abs() < best.score.abs() + 1e-9 &&
+          ((score - best.score).abs() < 1e-9 &&
               (sodiumTarget - sodium).abs() <
                   (sodiumTarget - best.sodiumAfter).abs())) {
         best = candidate;
@@ -405,12 +409,21 @@ class ClientDuringPhaseSolver {
     final sodiumTarget = targets.sodiumMg;
     final fluidTarget = targets.fluidMl;
 
-    // Generous upper bounds (mirrors the server's 1.1× default)
-    final carbUpper = carbTarget > 0 ? carbTarget * 1.1 : double.infinity;
-    final sodiumUpper =
-        sodiumTarget > 0 ? sodiumTarget * 1.1 : double.infinity;
-    final fluidUpper = fluidTarget > 0 ? fluidTarget * 1.1 : double.infinity;
-    final sodiumLower = sodiumTarget > 0 ? sodiumTarget * 0.9 : 0.0;
+    // Bounds come from the real calculated ranges when present; the ×1.1
+    // multipliers are only a fallback for callers that pass no range
+    // (mirrors the server's fallback in during-template-solver.ts).
+    final carbUpper = carbTarget > 0
+        ? (targets.carbsHighG ?? carbTarget * 1.1)
+        : double.infinity;
+    final sodiumUpper = sodiumTarget > 0
+        ? (targets.sodiumHighMg ?? sodiumTarget * 1.1)
+        : double.infinity;
+    final fluidUpper = fluidTarget > 0
+        ? (targets.fluidHighMl ?? fluidTarget * 1.1)
+        : double.infinity;
+    final sodiumLower = sodiumTarget > 0
+        ? (targets.sodiumLowMg ?? sodiumTarget * 0.9)
+        : 0.0;
 
     final isRunning = activityType == ActivityType.running;
     final isCycling = activityType == ActivityType.cycling;
@@ -434,8 +447,7 @@ class ClientDuringPhaseSolver {
     if (primaryCarb != null) {
       // If sports drink is also available, split carb share 70/30
       final sdPeek = _pickWeighted(cat.sportsDrink);
-      final hasSportsDrink =
-          sdPeek != null && sdPeek.carbsG > 0;
+      final hasSportsDrink = sdPeek != null && sdPeek.carbsG > 0;
       final primaryShare = hasSportsDrink ? 0.7 : 1.0;
 
       final primaryCarbTarget = carbTarget * primaryShare;
@@ -475,7 +487,9 @@ class ClientDuringPhaseSolver {
 
       if (remainingCarbs > 0 && sportsDrink.carbsG > 0) {
         final rawSdServings = remainingCarbs / sportsDrink.carbsG;
-        final effectiveCarbUpper = carbTarget < 15 ? double.infinity : carbUpper;
+        final effectiveCarbUpper = carbTarget < 15
+            ? double.infinity
+            : carbUpper;
 
         var sdServings = _cappedServings(
           food: sportsDrink,
@@ -522,8 +536,9 @@ class ClientDuringPhaseSolver {
                 sdFullCarbs <= carbUpper + 1e-9) {
               // Remove primary carb and replace with sports drink alone
               if (primaryCarb != null) {
-                final idx =
-                    result.indexWhere((s) => s.foodId == primaryCarb!.id);
+                final idx = result.indexWhere(
+                  (s) => s.foodId == primaryCarb!.id,
+                );
                 if (idx >= 0) {
                   final removed = result.removeAt(idx);
                   carbsAssigned -= removed.carbsG;
@@ -554,8 +569,8 @@ class ClientDuringPhaseSolver {
         // block other primary-carb types (only allow the same product type).
         final filteredAlternates = (isRunning && primaryCarb != null)
             ? alternates
-                .where((f) => f.productType == primaryCarb!.productType)
-                .toList()
+                  .where((f) => f.productType == primaryCarb!.productType)
+                  .toList()
             : alternates;
 
         if (filteredAlternates.isNotEmpty) {
@@ -711,10 +726,11 @@ class ClientDuringPhaseSolver {
           fluidAssigned = firstPick.fluidAfter;
           carbsAssigned = firstPick.carbsAfter;
 
-          // Second pass: if sodium is still below lower bound
-          if (sodiumAssigned < sodiumLower) {
-            final secondPool =
-                cat.electrolyte.where((e) => e.id != firstPick.food.id).toList();
+          // Second pass: if sodium is still below target
+          if (sodiumAssigned < sodiumTarget) {
+            final secondPool = cat.electrolyte
+                .where((e) => e.id != firstPick.food.id)
+                .toList();
             final secondPick = _pickBestElectrolyte(
               secondPool,
               sodiumAssigned,

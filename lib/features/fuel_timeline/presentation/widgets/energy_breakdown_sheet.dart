@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
@@ -36,7 +37,14 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const onSurface = AppColors.cream;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    // A "one layer up" shade for the sheet's own surface (it floats above the
+    // screen bg), matching in both themes.
+    final sheetBg = isDark ? AppColors.blackberryDark : AppColors.creamDark;
+    // The close button + selected-tab fill are `onSurface`; their glyph/text
+    // needs to contrast against that fill, i.e. the inverse.
+    final surfaceBg = isDark ? AppColors.blackberry : AppColors.cream;
     final macrosAsync = ref.watch(dailyMacrosControllerProvider);
     final state = macrosAsync.asData?.value;
     final daily = state?.dailyMacros;
@@ -44,12 +52,12 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.92,
       decoration: BoxDecoration(
-        color: AppColors.blackberryDark,
+        color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
-          _header(context, onSurface),
+          _header(context, onSurface, surfaceBg),
           Expanded(
             child: daily == null
                 ? Center(
@@ -66,9 +74,14 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
                       children: [
                         _targetHeadline(daily.totalCalories, onSurface),
                         const SizedBox(height: 18),
-                        _macroChips(daily.carbG, daily.protG, daily.fatG),
+                        _macroChips(
+                          daily.carbG,
+                          daily.protG,
+                          daily.fatG,
+                          onSurface,
+                        ),
                         const SizedBox(height: 22),
-                        _toggle(onSurface),
+                        _toggle(onSurface, surfaceBg),
                         const SizedBox(height: 20),
                         if (_weekly)
                           _weeklyContent(state!.weeklyMacros, onSurface)
@@ -83,7 +96,7 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
     );
   }
 
-  Widget _header(BuildContext context, Color onSurface) {
+  Widget _header(BuildContext context, Color onSurface, Color surfaceBg) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
@@ -93,15 +106,11 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
             child: Container(
               width: 32,
               height: 32,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.cream,
+                color: onSurface,
               ),
-              child: const Icon(
-                Icons.close,
-                size: 16,
-                color: AppColors.blackberry,
-              ),
+              child: Icon(Icons.close, size: 16, color: surfaceBg),
             ),
           ),
           Expanded(
@@ -146,24 +155,23 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
     );
   }
 
-  Widget _macroChips(double carb, double prot, double fat) {
+  Widget _macroChips(double carb, double prot, double fat, Color onSurface) {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _chip(carb, 'Carbs', kMacroColorCarbs),
+          _chip(carb, 'Carbs', kMacroColorCarbs, onSurface),
           const SizedBox(width: 34),
-          _chip(prot, 'Protein', kMacroColorProtein),
+          _chip(prot, 'Protein', kMacroColorProtein, onSurface),
           const SizedBox(width: 34),
-          _chip(fat, 'Fat', kMacroColorFat),
+          _chip(fat, 'Fat', kMacroColorFat, onSurface),
         ],
       ),
     );
   }
 
-  Widget _chip(double grams, String label, Color color) {
-    const onSurface = AppColors.cream;
+  Widget _chip(double grams, String label, Color color, Color onSurface) {
     return Column(
       children: [
         Row(
@@ -188,7 +196,20 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
     );
   }
 
-  Widget _toggle(Color onSurface) {
+  /// The weekly overview is one of the consumption surfaces we had no
+  /// visibility into. Note this is the *fuel-timeline* breakdown sheet — the
+  /// `daily_macros` WeeklyOverviewChart is dead code in this build and firing
+  /// from there would produce an event that never arrives.
+  void _trackWeeklyOverviewViewed() {
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track('weekly_overview_viewed');
+    } catch (_) {}
+  }
+
+  Widget _toggle(Color onSurface, Color surfaceBg) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -204,14 +225,21 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
             !_weekly,
             () => setState(() => _weekly = false),
             onSurface,
+            surfaceBg,
           ),
           _tab(
             ref
                 .read(contentServiceProvider)
                 .getValue('energy_breakdown.weekly', defaultValue: 'Weekly'),
             _weekly,
-            () => setState(() => _weekly = true),
+            () {
+              // Only on the daily -> weekly transition; re-tapping the already
+              // active Weekly tab shouldn't count as another view.
+              if (!_weekly) _trackWeeklyOverviewViewed();
+              setState(() => _weekly = true);
+            },
             onSurface,
+            surfaceBg,
           ),
         ],
       ),
@@ -223,6 +251,7 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
     bool selected,
     VoidCallback onTap,
     Color onSurface,
+    Color surfaceBg,
   ) {
     return Expanded(
       child: GestureDetector(
@@ -231,15 +260,13 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
           padding: const EdgeInsets.symmetric(vertical: 9),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? AppColors.cream : Colors.transparent,
+            color: selected ? onSurface : Colors.transparent,
             borderRadius: BorderRadius.circular(100),
           ),
           child: Text(
             label,
             style: FtType.tab.copyWith(
-              color: selected
-                  ? AppColors.blackberry
-                  : onSurface.withValues(alpha: 0.6),
+              color: selected ? surfaceBg : onSurface.withValues(alpha: 0.6),
             ),
           ),
         ),

@@ -27,6 +27,7 @@ class AllergiesScreen extends ConsumerStatefulWidget {
     this.mode = ScreenMode.onboarding,
     this.onContinue,
     this.onBack,
+    this.stepIndex,
   });
 
   /// The screen mode determines visual style and navigation behavior
@@ -37,6 +38,11 @@ class AllergiesScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null in settings mode, where the
+  /// screen is not part of a funnel.
+  final int? stepIndex;
 
   @override
   ConsumerState<AllergiesScreen> createState() => _AllergiesScreenState();
@@ -61,7 +67,13 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('screen_viewed', properties: {'screen_name': screenName});
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': screenName,
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -150,11 +162,9 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
         if (widget.onContinue != null) {
           widget.onContinue!();
         } else {
-          // Navigate to food preferences
-          context.push(
-            '/onboarding/food-preferences-v2',
-            extra: {'allergies': _selectedAllergies.toList()},
-          );
+          // Allergies is the final onboarding step (Food Preferences was
+          // removed from the flow) - proceed to post-onboarding auth.
+          context.go('/auth/post-onboarding');
         }
       } else {
         // SETTINGS MODE: Save to database
@@ -211,8 +221,9 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
 
       if (!mounted) return;
 
-      // Navigate to food preferences without allergies
-      context.push('/onboarding/food-preferences-v2');
+      // Allergies is the final onboarding step (Food Preferences was removed
+      // from the flow) - proceed to post-onboarding auth without allergies.
+      context.go('/auth/post-onboarding');
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -264,7 +275,11 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: widget.onBack ?? () => context.pop(),
+                          onTap:
+                              widget.onBack ??
+                              () {
+                                if (context.canPop()) context.pop();
+                              },
                           child: Container(
                             width: 48,
                             height: 48,
@@ -330,7 +345,10 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           FigmaOnboardingFooter(
             onContinue: _continue,
             onBack: _isOnboarding
-                ? (widget.onBack ?? () => context.pop())
+                ? (widget.onBack ??
+                      () {
+                        if (context.canPop()) context.pop();
+                      })
                 : null,
             isLoading: _isSaving,
             buttonText: _isSettings ? 'Save' : 'Continue',

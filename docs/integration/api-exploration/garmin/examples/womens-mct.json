@@ -1,0 +1,25 @@
+{
+  "mct": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "x153a9f3-176e4715000",
+      "periodStartDate": "2021-01-04",
+      "dayInCycle": 1,
+      "periodLength": 5,
+      "currentPhase": 1,
+      "currentPhaseType": "MENSTRUAL",
+      "lengthOfCurrentPhase": 5,
+      "daysUntilNextPhase": 5,
+      "fertileWindowStart": 11,
+      "lengthOfFertileWindow": 7,
+      "predictedCycleLength": 28,
+      "isPredictedCycle": true,
+      "cycleLength": 28,
+      "lastUpdatedTimeInSeconds": 1610150400,
+      "hasSpecifiedCycleLength": false,
+      "hasSpecifiedPeriodLength": false,
+      "pregnancySnapshot": {}
+    }
+  ]
+}

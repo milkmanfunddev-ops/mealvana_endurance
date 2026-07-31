@@ -18,18 +18,18 @@ This documentation is **no longer accurate** for the current version of Mealvana
 
 **Updated Android deployment documentation for v1.9.0+30 is now available at:**
 
-📂 **[/docs/android/](/docs/android/)**
+📂 **[/docs/features/android/](/docs/features/android/)**
 
 ### New Documentation Structure
 
 | Document | Purpose |
 |----------|---------|
-| [README.md](/docs/android/README.md) | Overview, quick links, status summary |
-| [technical-requirements.md](/docs/android/technical-requirements.md) | SDK versions, package requirements, Gradle config |
-| [implementation-roadmap.md](/docs/android/implementation-roadmap.md) | Step-by-step deployment plan (5-7 days) |
-| [notification-implementation.md](/docs/android/notification-implementation.md) | Complete Android notification setup guide |
-| [build-configuration.md](/docs/android/build-configuration.md) | Gradle, signing, AndroidManifest configuration |
-| [google-play-submission.md](/docs/android/google-play-submission.md) | Store listing and submission process |
+| [README.md](/docs/features/android/README.md) | Overview, quick links, status summary |
+| [technical-requirements.md](/docs/features/android/technical-requirements.md) | SDK versions, package requirements, Gradle config |
+| [implementation-roadmap.md](/docs/features/android/implementation-roadmap.md) | Step-by-step deployment plan (5-7 days) |
+| [notification-implementation.md](/docs/features/android/notification-implementation.md) | Complete Android notification setup guide |
+| [build-configuration.md](/docs/features/android/build-configuration.md) | Gradle, signing, AndroidManifest configuration |
+| [google-play-submission.md](/docs/features/android/google-play-submission.md) | Store listing and submission process |
 
 ---
 
@@ -93,9 +93,9 @@ If you were following this old documentation:
 3. Skip outdated package setup instructions
 
 ### Start Using New Docs
-1. Read [/docs/android/README.md](/docs/android/README.md) for overview
-2. Follow [/docs/android/implementation-roadmap.md](/docs/android/implementation-roadmap.md) step-by-step
-3. Reference [/docs/android/technical-requirements.md](/docs/android/technical-requirements.md) for package details
+1. Read [/docs/features/android/README.md](/docs/features/android/README.md) for overview
+2. Follow [/docs/features/android/implementation-roadmap.md](/docs/features/android/implementation-roadmap.md) step-by-step
+3. Reference [/docs/features/android/technical-requirements.md](/docs/features/android/technical-requirements.md) for package details
 
 ### Key Migration Steps
 1. **Update build.gradle.kts:**
@@ -136,9 +136,9 @@ For historical reference, this directory still contains:
 
 ## Questions?
 
-- **For current Android deployment:** See [/docs/android/README.md](/docs/android/README.md)
-- **For technical requirements:** See [/docs/android/technical-requirements.md](/docs/android/technical-requirements.md)
-- **For step-by-step guide:** See [/docs/android/implementation-roadmap.md](/docs/android/implementation-roadmap.md)
+- **For current Android deployment:** See [/docs/features/android/README.md](/docs/features/android/README.md)
+- **For technical requirements:** See [/docs/features/android/technical-requirements.md](/docs/features/android/technical-requirements.md)
+- **For step-by-step guide:** See [/docs/features/android/implementation-roadmap.md](/docs/features/android/implementation-roadmap.md)
 
 ---
 
@@ -152,4 +152,4 @@ For historical reference, this directory still contains:
 
 ---
 
-*For all current Android deployment tasks, please use [/docs/android/](/docs/android/) documentation.*
+*For all current Android deployment tasks, please use [/docs/features/android/](/docs/features/android/) documentation.*

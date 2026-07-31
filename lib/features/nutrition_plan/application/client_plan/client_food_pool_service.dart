@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/database/app_database.dart';
-import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -16,16 +16,28 @@ import '../../domain/solver_types.dart';
 
 /// Assembles and filters the food pool for a given nutrition phase.
 ///
-/// Loads template foods from Drift (with Supabase fallback), user foods,
-/// food preferences, and user profile to produce a scored list of
-/// [SolverFood] items suitable for the greedy solver.
+/// Loads template foods from Drift (with Supabase fallback), food preferences,
+/// and the user profile to produce a scored list of [SolverFood] items suitable
+/// for the greedy solver.
+///
+/// FOOD-SOURCE POLICY (2026-07-29): the pool is the curated `template_foods`
+/// catalog ONLY. `user_foods` — user-created, barcode-scanned and branded
+/// grocery items — are NOT loaded here, and must not be reintroduced. This
+/// mirrors the server (`_shared/nutrition/template-food-queries.ts`). The one
+/// legitimate user-originating source is a pinned personal formula, which is
+/// self-contained: its components carry their own macros and never touch this
+/// pool (see `ClientPlanService._tryPinnedPersonalFormula`). The pin backfill
+/// does read this pool, but only for `isEssential` water/salt.
+///
+/// Rows without a classified `product_type` (null or `'import'`) are also
+/// excluded, matching the server gate — a curated row that arrives unclassified
+/// or flagged as an import never reaches a generated plan.
 class ClientFoodPoolService {
   ClientFoodPoolService(this._ref);
   final Ref _ref;
 
   TemplateFoodsRepository get _templateFoodsRepo =>
       _ref.read(templateFoodsRepositoryProvider);
-  AppDatabase get _database => _ref.read(appDatabaseProvider);
   AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
 
   /// Build a scored and filtered food pool for a specific phase.
@@ -69,19 +81,21 @@ class ClientFoodPoolService {
       templateFoods = await _fetchTemplateFoodsFromSupabase();
     }
 
-    // 4. Load user foods
-    final userFoods = await _database.foodsDao.getUserFoods(userId);
-
-    // 5. Phase category names for filtering
+    // 4. Phase category names for filtering
     final phaseCategories = _phaseCategoryNames(phase);
     final sportName = activityType.dbValue;
 
-    // 6. Build solver food list
+    // 5. Build solver food list — curated template foods only.
     final result = <SolverFood>[];
 
-    // Process template foods
     for (final tf in templateFoods) {
       if (tf.toExcludeFromSolver) continue;
+
+      // Branded / unclassified gate (skip for essentials so water/salt are
+      // never lost to a data-entry gap). Mirrors the server's
+      // `isClassifiedProductType` in template-food-queries.ts and the SQL gate
+      // in before-phase-substitution.ts.
+      if (!tf.isEssential && !isClassifiedProductType(tf.productType)) continue;
 
       // Category filter
       final categories = _parseJsonList(tf.categories);
@@ -111,44 +125,36 @@ class ClientFoodPoolService {
       // Score
       final score = _scoreFood(tf.name, tf.isEssential, likedSet, willingSet);
 
-      result.add(SolverFood.fromTemplateFoodEntry(
-        tf,
-        phase: phase,
-        preferenceScore: score,
-      ));
-    }
-
-    // Process user foods
-    for (final uf in userFoods) {
-      if (uf.toExcludeFromSolver) continue;
-
-      // Category filter
-      final categories = _parseJsonList(uf.categories);
-      if (categories.isNotEmpty &&
-          !categories.any((c) => phaseCategories.contains(c))) {
-        continue;
-      }
-
-      // Activity type filter
-      final activityTypes = _parseJsonList(uf.activityTypes);
-      if (activityTypes.isNotEmpty && !activityTypes.contains(sportName)) {
-        continue;
-      }
-
-      // User foods always get the highest preference score
-      result.add(SolverFood.fromUserFood(
-        uf,
-        preferenceScore: kPrefScoreUserFood,
-      ));
+      result.add(
+        SolverFood.fromTemplateFoodEntry(
+          tf,
+          phase: phase,
+          preferenceScore: score,
+        ),
+      );
     }
 
     _logger.info(
       'Food pool for $phase: ${result.length} foods '
-      '(${templateFoods.length} templates checked, ${userFoods.length} user foods checked)',
+      '(${templateFoods.length} curated template foods checked; '
+      'user_foods excluded by policy)',
       context: 'CLIENT_FOOD_POOL',
     );
 
     return result;
+  }
+
+  /// True when a food row carries a real, classified product type.
+  ///
+  /// Null/empty (never classified) or `'import'` (a barcode-scanned or
+  /// otherwise imported branded item) is not eligible for plan generation.
+  /// Server twin: `isClassifiedProductType` in
+  /// `supabase/functions/_shared/nutrition/template-food-queries.ts`.
+  @visibleForTesting
+  static bool isClassifiedProductType(String? productType) {
+    if (productType == null) return false;
+    final t = productType.trim().toLowerCase();
+    return t.isNotEmpty && t != 'import';
   }
 
   /// Score a food based on its preference status.
@@ -241,21 +247,44 @@ class ClientFoodPoolService {
       servingUnit: json['serving_unit'] as String?,
       servingQualifier: json['serving_qualifier'] as String?,
       isLiquid: json['is_liquid'] as bool? ?? false,
-      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ??
           DateTime.now(),
     );
   }
 
-  List<String> _parseJsonList(String? jsonStr) {
-    if (jsonStr == null || jsonStr.isEmpty) return [];
+  /// Parse a categories/activityTypes value that may be stored EITHER as a JSON
+  /// array (`["before_run","during_run"]`, from Supabase-synced rows) OR as a
+  /// PostgreSQL array literal (`{before_run,during_run}`, from locally-created
+  /// rows). Handling both is required because user_foods is offline-first and
+  /// syncs across clients, so the same field legitimately appears in both forms.
+  @visibleForTesting
+  List<String> parseCategoryList(String? raw) {
+    if (raw == null) return [];
+    final s = raw.trim();
+    if (s.isEmpty) return [];
+    // PostgreSQL array literal: {before_run,during_run}
+    if (s.startsWith('{') && s.endsWith('}')) {
+      final content = s.substring(1, s.length - 1).trim();
+      if (content.isEmpty) return [];
+      return content
+          .split(',')
+          .map((e) => e.trim().replaceAll('"', ''))
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    // JSON array: ["before_run","during_run"]
     try {
-      final decoded = jsonDecode(jsonStr);
-      if (decoded is List) return decoded.cast<String>();
+      final decoded = jsonDecode(s);
+      if (decoded is List) return decoded.map((e) => e.toString()).toList();
     } catch (_) {}
     return [];
   }
+
+  List<String> _parseJsonList(String? jsonStr) => parseCategoryList(jsonStr);
 
   String _arrayToJsonString(dynamic value) {
     if (value == null) return '[]';

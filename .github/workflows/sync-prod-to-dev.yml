@@ -1,0 +1,30 @@
+# Mirror refresh-managed tables PROD -> DEV (catalog_products, public_events).
+# Runs weekly AFTER the prod refreshes (feed GH Action ~09:23 UTC, events routine ~14:00 UTC).
+# Reuses existing secrets DEV_/PROD_SUPABASE_SERVICE_ROLE_KEY. Checkout pinned to develop (where the script lives).
+name: Sync Prod to Dev (catalog + events)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 15 * * 1"   # Mondays 15:00 UTC — after both prod refreshes
+permissions:
+  contents: read
+concurrency:
+  group: sync-prod-to-dev
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Copy prod -> dev
+        env:
+          DEV_SUPABASE_URL: https://vlmtsdzpnjnavdgytcmi.supabase.co
+          PROD_SUPABASE_URL: https://wvmvsodrvbkxfydabqed.supabase.co
+          DEV_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}
+          PROD_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/sync_prod_to_dev.js

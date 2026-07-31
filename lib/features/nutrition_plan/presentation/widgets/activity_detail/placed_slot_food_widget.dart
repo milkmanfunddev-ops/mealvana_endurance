@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/widgets/swipe_action_background.dart';
 import '../../../application/by_hour_sync_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
@@ -33,8 +34,7 @@ class PlacedSlotFoodWidget extends StatelessWidget {
   final VoidCallback onUnassign;
 
   double get _slotQty =>
-      assignment.adjustedQuantity ??
-      ByHourSyncService.parseQuantity(food);
+      assignment.adjustedQuantity ?? ByHourSyncService.parseQuantity(food);
 
   double get _stepSize => food.isIndivisible ? 1.0 : 0.5;
 
@@ -46,21 +46,19 @@ class PlacedSlotFoodWidget extends StatelessWidget {
 
     return Dismissible(
       key: ValueKey(
-          '${assignment.foodItemId}_${assignment.timeSlot.hourIndex}_${assignment.timeSlot.slotIndex}_placed'),
+        '${assignment.foodItemId}_${assignment.timeSlot.hourIndex}_${assignment.timeSlot.slotIndex}_placed',
+      ),
       direction: DismissDirection.endToStart,
-      background: Container(
+      // Radius matches the foreground chip below so the reveal is chip-shaped.
+      background: SwipeActionBackground(
         alignment: Alignment.centerRight,
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: AppRadius.smRadius,
         padding: const EdgeInsets.only(right: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: Colors.orange.withValues(alpha: 0.1),
-          borderRadius: AppRadius.smRadius,
-        ),
-        child: Text(
-          'Unassign',
-          style: AppTextStyles.smallLabel.copyWith(
-            color: Colors.orange,
-            fontSize: 11,
-          ),
+        label: 'Unassign',
+        labelStyle: AppTextStyles.smallLabel.copyWith(
+          color: Colors.orange,
+          fontSize: 11,
         ),
       ),
       onDismissed: (_) => onUnassign(),
@@ -72,9 +70,7 @@ class PlacedSlotFoodWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: sectionColor.withValues(alpha: 0.04),
           borderRadius: AppRadius.smRadius,
-          border: Border.all(
-            color: sectionColor.withValues(alpha: 0.12),
-          ),
+          border: Border.all(color: sectionColor.withValues(alpha: 0.12)),
         ),
         child: Row(
           children: [
@@ -95,8 +91,7 @@ class PlacedSlotFoodWidget extends StatelessWidget {
             if (carbs != null && carbs > 0) ...[
               const SizedBox(width: AppSpacing.xs),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
                   color: sectionColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(4),
@@ -147,10 +142,9 @@ class PlacedSlotFoodWidget extends StatelessWidget {
                 child: Icon(
                   Icons.close,
                   size: 14,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -169,11 +163,7 @@ class PlacedSlotFoodWidget extends StatelessWidget {
 }
 
 class _StepButton extends StatelessWidget {
-  const _StepButton({
-    required this.icon,
-    required this.color,
-    this.onTap,
-  });
+  const _StepButton({required this.icon, required this.color, this.onTap});
 
   final IconData icon;
   final Color color;
@@ -196,9 +186,7 @@ class _StepButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 14,
-          color: isEnabled
-              ? color
-              : Colors.grey.withValues(alpha: 0.3),
+          color: isEnabled ? color : Colors.grey.withValues(alpha: 0.3),
         ),
       ),
     );

@@ -14,10 +14,12 @@ class EdgeFunctionsTable extends Table {
   TextColumn get code => text()();
 
   /// When the function was created (matches Supabase edge_functions.created_at)
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime).named('created_at')();
 
   /// When the function was last updated (matches Supabase edge_functions.updated_at)
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};

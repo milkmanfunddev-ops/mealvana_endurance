@@ -75,5 +75,5 @@ class TransparencyFeedbackStore extends Notifier<Map<String, String>> {
 /// on first read; subsequent reads use the in-memory state.
 final transparencyFeedbackStoreProvider =
     NotifierProvider<TransparencyFeedbackStore, Map<String, String>>(
-  TransparencyFeedbackStore.new,
-);
+      TransparencyFeedbackStore.new,
+    );

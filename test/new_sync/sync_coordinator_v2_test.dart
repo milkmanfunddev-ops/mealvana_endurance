@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
+import 'package:mealvana_endurance/shared/services/sync/sync_dependency_graph.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,10 +18,7 @@ class MockRepository implements SyncableRepository {
   bool shouldThrowOnSync = false;
   bool shouldThrowOnUpload = false;
 
-  MockRepository({
-    required this.repositoryKey,
-    this.dependencies = const [],
-  });
+  MockRepository({required this.repositoryKey, this.dependencies = const []});
 
   @override
   Future<bool> isStale() async {
@@ -149,7 +147,11 @@ void main() {
       // Sync activities (which depends on users)
       // Note: In real usage, we'd pass both repos, but for Phase 2.2
       // we're just testing the logic with one repo at a time
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       await coordinator.ensureSynced(
         'activities',
         'user-123',
@@ -277,7 +279,11 @@ void main() {
       }
 
       // Sync in correct dependency order
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       await coordinator.ensureSynced(
         'carb_loading_plans',
         'user-123',
@@ -319,6 +325,86 @@ void main() {
       await coordinator.ensureSynced('users', 'user-123', repository: repo);
 
       expect(repo.syncCallCount, 0); // Did not sync again
+    });
+  });
+
+  // Policy (2026-07-29): onboarding data ALWAYS goes to Supabase, including
+  // for users who skipped account creation and stayed anonymous. The coordinator
+  // used to carry a one-shot `setSkipSyncForNewUser()` flag that made the very
+  // first ensureSynced() after onboarding return before uploading — which is
+  // precisely the upload carrying the onboarding answers. These guard its removal.
+  group('SyncCoordinator — no post-onboarding upload skip', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('uploads on the first ever ensureSynced for a brand-new user', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final coordinator = container.read(syncCoordinatorProvider.notifier);
+      // Never synced: exactly the state of a user who just finished onboarding.
+      final repo = MockRepository(repositoryKey: 'users');
+
+      await coordinator.ensureSynced('users', 'anon-user-1', repository: repo);
+
+      expect(
+        repo.uploadCallCount,
+        1,
+        reason: 'a freshly-onboarded user must still push their dirty rows',
+      );
+      expect(repo.syncCallCount, 1);
+    });
+
+    test(
+      'no one-shot flag can swallow the first upload of a second repository',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final coordinator = container.read(syncCoordinatorProvider.notifier);
+        final usersRepo = MockRepository(repositoryKey: 'users');
+        final foodPrefsRepo = MockRepository(repositoryKey: 'food_preferences');
+
+        await coordinator.ensureSynced(
+          'users',
+          'anon-user-1',
+          repository: usersRepo,
+        );
+        await coordinator.ensureSynced(
+          'food_preferences',
+          'anon-user-1',
+          repository: foodPrefsRepo,
+        );
+
+        expect(usersRepo.uploadCallCount, 1);
+        expect(foodPrefsRepo.uploadCallCount, 1);
+      },
+    );
+  });
+
+  group('SyncDependencyGraph — onboarding-written repositories', () {
+    // The Connect-Training onboarding step writes `integrations`, and the
+    // default-formula auto-pin writes `formula_pins`. Both were absent from the
+    // coordinator's dirty-record walk, so a row that missed its opportunistic
+    // inline upload had no retry channel at all.
+    test('orders integrations and formula_pins after users', () {
+      final levels = SyncDependencyGraph.topologicalLevels(const [
+        'users',
+        'integrations',
+        'formula_pins',
+      ]);
+
+      int levelOf(String key) => levels.indexWhere((l) => l.contains(key));
+
+      expect(levelOf('users'), 0);
+      expect(levelOf('integrations'), greaterThan(levelOf('users')));
+      expect(levelOf('formula_pins'), greaterThan(levelOf('users')));
+    });
+
+    test('both declare users as their dependency', () {
+      expect(SyncDependencyGraph.dependenciesFor('integrations'), ['users']);
+      expect(SyncDependencyGraph.dependenciesFor('formula_pins'), ['users']);
     });
   });
 

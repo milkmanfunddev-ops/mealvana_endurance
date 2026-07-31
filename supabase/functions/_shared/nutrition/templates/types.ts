@@ -3,6 +3,7 @@
  */
 
 import { type FoodResult, type MacroTargets } from '../types.ts';
+import type { FormulaDecisionSource } from '../formula-decision.ts';
 
 // ============================================================================
 // Template Types (from Supabase)
@@ -111,7 +112,17 @@ export interface SubPhaseShortfall {
   delivered: number;
   target: number;
   unit: 'g' | 'mg' | 'ml';
-  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+  /**
+   * `template_constraint` covers shortfalls caused by catalog/serving
+   * granularity rather than by the athlete's preferences (added to
+   * PreWorkoutShortfall first; kept in sync here so before-phase-explosion
+   * can pass Algorithm C shortfalls straight through).
+   */
+  reason:
+    | 'all_disliked'
+    | 'no_diet_match'
+    | 'all_templates_filtered'
+    | 'template_constraint';
 }
 
 export interface SubPhaseResult {
@@ -130,12 +141,30 @@ export interface SubPhaseResult {
    * substep 5b. */
   pin_decision?: {
     used_pin: boolean;
+    /** True when satisfied by the EPHEMERAL default-formula safety net rather
+     * than a real `formula_pins` row. Absent/false for real pins. Formula-first
+     * flip, 2026-07-03 (plan Phase 1 #2). */
+    ephemeral?: boolean;
+    /** Honest provenance: `user_pin` | `personal_formula` | `default_formula`
+     * | `solver`. Additive; older parsers ignore it. Added 2026-07-29 when
+     * client-side auto-pinning was removed and computed defaults became the
+     * common path. See `_shared/nutrition/formula-decision.ts`. */
+    decision_source?: FormulaDecisionSource;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
-    fallthrough_reason: 'no_pin_for_scope' | null;
+    /** `no_pin_for_scope` — pins supplied but none matched this sub-phase.
+     * `personal_formula_empty` — a pinned personal formula matched this
+     * slot but rendered zero components, so the algorithmic selection for
+     * the slot was kept. Item 12 (personal formulas silently dropped),
+     * 2026-07-04. */
+    fallthrough_reason: 'no_pin_for_scope' | 'personal_formula_empty' | null;
+    /** Why no REAL pin fired, preserved for `default_formula` outcomes.
+     * `fallthrough_reason` must stay null while `used_pin` is true (client
+     * invariant), so the reason rides here rather than being discarded. */
+    default_fallthrough_reason?: string | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase
      * after scope-matching (sub_phase / activity_type × duration). Drives
      * the `plan_used_pin` / `plan_pin_fallthrough` analytics payload. 0 when

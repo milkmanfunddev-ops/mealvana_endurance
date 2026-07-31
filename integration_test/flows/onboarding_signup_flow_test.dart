@@ -28,13 +28,15 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
-import 'package:mealvana_endurance/main_dev.dart' as app;
+
+import '../helpers/flow_launcher.dart';
 
 void main() {
   patrolTest(
     'new user completes onboarding and lands on calendar',
     ($) async {
-      await app.main();
+      // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
+      await launchApp();
       // Bounded first-frame settle (default 100ms interval, 2-min ceiling).
       await $.tester.pumpAndSettle(
         const Duration(milliseconds: 100),
@@ -54,7 +56,7 @@ void main() {
           'session. Reinstall the app for a clean onboarding run.',
         );
         expect(
-          $(const ValueKey('fuel_timeline.settings')),
+          $(const ValueKey('bottom_nav.timeline_tab')),
           findsOneWidget,
           reason: 'Not on welcome AND not on calendar — unexpected state.',
         );
@@ -79,8 +81,9 @@ void main() {
       // Driven via the RAW WidgetTester (no Patrol wrapper / no auto-settle) +
       // bounded manual pumps. NOTE: this still deadlocks on Android (the Done
       // tap never returns) — see STATUS above. Passes on iOS.
-      await $.tester
-          .tap(find.byKey(const ValueKey('profile.birth_year_button')));
+      await $.tester.tap(
+        find.byKey(const ValueKey('profile.birth_year_button')),
+      );
       await $.tester.pump(const Duration(seconds: 1));
       await $.tester.tap(
         find.byKey(const ValueKey('profile.birth_year_done_button')),
@@ -113,21 +116,26 @@ void main() {
       await $(const ValueKey('post_onboarding.email_button')).tap();
 
       // ---- 9. Email signup form -----------------------------------------
-      await $(const ValueKey('signup_email.email_field')).enterText(uniqueEmail);
-      await $(const ValueKey('signup_email.password_field')).enterText(password);
-      await $(const ValueKey('signup_email.confirm_password_field'))
-          .enterText(password);
+      await $(
+        const ValueKey('signup_email.email_field'),
+      ).enterText(uniqueEmail);
+      await $(
+        const ValueKey('signup_email.password_field'),
+      ).enterText(password);
+      await $(
+        const ValueKey('signup_email.confirm_password_field'),
+      ).enterText(password);
       await $(const ValueKey('signup_email.create_account_button')).tap();
 
       // ---- 10. Assert we landed on the calendar -------------------------
-      await $(const ValueKey('fuel_timeline.settings')).waitUntilVisible(
-        timeout: const Duration(seconds: 40),
-      );
+      await $(
+        const ValueKey('bottom_nav.timeline_tab'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 40));
       expect(
-        $(const ValueKey('fuel_timeline.settings')),
+        $(const ValueKey('bottom_nav.timeline_tab')),
         findsOneWidget,
         reason:
-            'Expected the Fuel Timeline dashboard after signup. If this fails, the signup '
+            'Expected the calendar FAB after signup. If this fails, the signup '
             'round-trip did not complete or the post-signup redirect changed.',
       );
     },

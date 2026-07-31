@@ -37,6 +37,7 @@ import { z } from 'npm:zod@3';
 
 import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
 import { creditCost } from '../_shared/ai/credits.ts';
+import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
 
 // ---------------------------------------------------------------------------
 // A. description validation rules (mirrors index.ts handler logic)
@@ -220,10 +221,22 @@ describe('E. Prompt embedding', () => {
 The athlete described this meal: "${description.trim()}"
 
 INSTRUCTIONS:
-- Parse the description into individual food items.
+- Group food into items the way a person logging their own meal would think
+  about it — one item per DISH or line, not one item per raw ingredient.
+  For example: "spaghetti and meatballs" is ONE item (its sauce, pasta, and
+  meatballs are summed into one entry), while a side of "broccoli" is a
+  SEPARATE item because it's a distinct component of the plate. Similarly,
+  "a turkey sandwich with lettuce and mayo" is ONE item, not three. Only
+  split into multiple items when the foods are genuinely separate parts of
+  the meal (a side dish, a drink, a dessert) — never split a single dish's
+  own ingredients apart.
+- Each item's macros must be the SUM across everything that makes up that
+  dish (e.g. the meatballs' and sauce's calories/carbs/protein/fat/sodium
+  are combined into the "spaghetti and meatballs" item, not reported
+  separately).
 - If a quantity is mentioned (e.g. "two eggs", "large OJ"), use it; otherwise assume a single, realistic serving for an adult endurance athlete.
 - Do NOT underestimate portions — athletes eat meaningfully sized meals.
-- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg).
+- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg). These must be non-null for every item.
 - Compute accurate totals across all items.
 - Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods described.
 - Set confidence to "high" if the description is precise (weights, brand names, counts); "medium" if typical portions can be inferred; "low" if too vague to estimate reliably.
@@ -288,10 +301,14 @@ describe('F. AI_GATEWAY_API_KEY guard', () => {
 // G. JADE_MODEL env wiring
 // ---------------------------------------------------------------------------
 
-describe('G. JADE_MODEL wiring', () => {
-  it('defaults to anthropic/claude-sonnet-4.6', () => {
-    const model = Deno.env.get('JADE_MODEL') ?? 'anthropic/claude-sonnet-4.6';
-    assertEquals(model, 'anthropic/claude-sonnet-4.6');
+describe('G. DESCRIBE_MEAL_MODEL wiring', () => {
+  it('resolves to Sonnet when env not set', () => {
+    // This function reads DESCRIBE_MEAL_MODEL, not JADE_MODEL — and it asserts
+    // the REAL exported constant. The previous version re-typed the fallback
+    // inline against the wrong constant, so it passed through the whole
+    // Sonnet -> Haiku -> Sonnet round trip without ever going red.
+    assertEquals(Deno.env.get('DESCRIBE_MEAL_MODEL'), undefined);
+    assertEquals(DESCRIBE_MEAL_MODEL, 'anthropic/claude-sonnet-4.6');
   });
 });
 
@@ -339,7 +356,7 @@ describe('H. Schema edge cases', () => {
     assert(!result.success, 'float totals.calories should fail int() constraint');
   });
 
-  it('multiple items — schema accepts arrays of any length >= 1', () => {
+  it('multiple items — schema accepts a practical meal-sized array', () => {
     const items = Array.from({ length: 10 }, (_, i) => ({
       name: `Item ${i}`,
       portion: '1 serving',

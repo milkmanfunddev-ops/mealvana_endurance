@@ -168,3 +168,49 @@ enum ConflictResolution {
     );
   }
 }
+
+/// Per-phase food item counts, for analytics.
+///
+/// Reported on `nutrition_plan_created_from_adjusted_macros`, which is the
+/// first point at which a food plan actually exists. `plan_generated` fires
+/// earlier, at macro generation, where there is nothing to count — it used to
+/// carry hardcoded `1`s for these.
+extension NutritionPlanItemCounts on NutritionPlan {
+  /// Foods in the before phase, **including sub-phase items**.
+  ///
+  /// The V2 format puts before-phase foods under `subPhases` (meal / snack /
+  /// top_up) and leaves the section's own `foodItems` empty, so counting only
+  /// `foodItems` reports 0 for most real plans.
+  int get beforeItemCount => _countFor('before');
+
+  int get duringItemCount => _countFor('during');
+
+  int get afterItemCount => _countFor('after');
+
+  /// Classifies on `section.id` (`before_run` / `during_run` / `after_run`),
+  /// matching how the UI groups phases. Deliberately **not** on `title`: titles
+  /// are display strings that vary by sport — a brick renders "BEFORE BRICK"
+  /// and "DURING BIKE", so title matching would silently return 0 for every
+  /// non-running plan.
+  int _countFor(String phase) {
+    var total = 0;
+    for (final section in sections) {
+      if (_phaseOf(section.id) != phase) continue;
+      total += section.foodItems.length;
+      final subPhases = section.subPhases;
+      if (subPhases != null) {
+        for (final subPhase in subPhases) {
+          total += subPhase.foodItems.length;
+        }
+      }
+    }
+    return total;
+  }
+
+  /// Same precedence the widgets use: during, then after, else before.
+  static String _phaseOf(String sectionId) {
+    if (sectionId.contains('during')) return 'during';
+    if (sectionId.contains('after')) return 'after';
+    return 'before';
+  }
+}

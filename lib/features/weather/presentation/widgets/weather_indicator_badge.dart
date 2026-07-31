@@ -25,10 +25,7 @@ class WeatherIndicatorBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: _getBackgroundColor(),
           borderRadius: BorderRadius.circular(6.r),
-          border: Border.all(
-            color: _getBorderColor(),
-            width: 1,
-          ),
+          border: Border.all(color: _getBorderColor(), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -42,11 +39,7 @@ class WeatherIndicatorBadge extends StatelessWidget {
               ),
             ),
             SizedBox(width: 4.w),
-            Icon(
-              Icons.info_outline,
-              size: 14,
-              color: _getIconColor(),
-            ),
+            Icon(Icons.info_outline, size: 14, color: _getIconColor()),
           ],
         ),
       ),

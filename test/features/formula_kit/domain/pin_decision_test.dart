@@ -27,10 +27,7 @@ void main() {
         expect(decision.usedPin, isFalse);
         expect(decision.pinnedTemplateId, isNull);
         expect(decision.pinnedTemplateName, isNull);
-        expect(
-          decision.fallthroughReason,
-          PinFallthroughReason.noPinForScope,
-        );
+        expect(decision.fallthroughReason, PinFallthroughReason.noPinForScope);
       });
 
       test('legacy payload without pinned_template_name still parses', () {
@@ -161,8 +158,7 @@ void main() {
     });
 
     test('returns null for unknown wire value (forward-compat)', () {
-      expect(PinFallthroughReason.fromWireValue('totally_new_reason'),
-          isNull);
+      expect(PinFallthroughReason.fromWireValue('totally_new_reason'), isNull);
     });
 
     test('returns null for null input', () {

@@ -78,8 +78,9 @@ const Set<String> beverageProductTypes = {
 };
 
 /// Set of valid product type values for the dropdown
-final Set<String> validProductTypes =
-    productTypeOptions.map((o) => o.value).toSet();
+final Set<String> validProductTypes = productTypeOptions
+    .map((o) => o.value)
+    .toSet();
 
 /// Normalize a product type value to one the dropdown can display.
 /// Unknown values (capsule, quick_carbs, etc.) fall back to 'import'.

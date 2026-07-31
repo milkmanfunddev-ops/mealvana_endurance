@@ -36,8 +36,9 @@ class _JadeChoiceButtonsState extends ConsumerState<JadeChoiceButtons> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final isStreaming =
-        ref.watch(jadeChatControllerProvider.select((s) => s.value?.isStreaming ?? false));
+    final isStreaming = ref.watch(
+      jadeChatControllerProvider.select((s) => s.value?.isStreaming ?? false),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

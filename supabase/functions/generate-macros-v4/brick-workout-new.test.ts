@@ -1,7 +1,7 @@
 /**
  * Multi-Segment (Brick) Workout Hydration Tests
  *
- * Ported verbatim from /docs/sodium_hydration/hydration_sodium_calc_tests.md
+ * Ported verbatim from /docs/features/sodium_hydration/hydration_sodium_calc_tests.md
  * §Multi-Segment Integration Tests and §Redistribution Test
  *
  * Run with:

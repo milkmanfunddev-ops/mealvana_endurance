@@ -42,17 +42,24 @@ class SportCategorySelector extends StatelessWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ActivityType.values.map((category) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: _SportCategoryButton(
-                    key: ValueKey('event_create.sport_${category.name}_chip'),
-                    category: category,
-                    isSelected: selectedCategory == category,
-                    onTap: () => onCategoryChanged(category),
-                  ),
-                );
-              }).toList(),
+              // Import-only types (e.g. ActivityType.other) can never be
+              // manually created — only offer types the user can pick here.
+              children: ActivityType.values
+                  .where((type) => type.isCreatable)
+                  .map((category) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _SportCategoryButton(
+                        key: ValueKey(
+                          'event_create.sport_${category.name}_chip',
+                        ),
+                        category: category,
+                        isSelected: selectedCategory == category,
+                        onTap: () => onCategoryChanged(category),
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
           ),
         ),
@@ -137,6 +144,8 @@ class _SportCategoryButton extends StatelessWidget {
         return FontAwesomeIcons.trophy;
       case ActivityType.brick:
         return FontAwesomeIcons.link; // Chain link icon for brick workouts
+      case ActivityType.other:
+        return FontAwesomeIcons.circle;
     }
   }
 }

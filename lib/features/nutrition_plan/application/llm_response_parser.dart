@@ -34,7 +34,8 @@ class LLMResponseParser {
     // Primary: edge function returns activity_type: 'brick'
     // Fallback: inputMacroTargets or brickMetadata indicate brick
     final activityType = data['activity_type'] as String?;
-    final isBrick = activityType == 'brick' ||
+    final isBrick =
+        activityType == 'brick' ||
         inputMacroTargets?.activityType == ActivityType.brick ||
         brickMetadata != null;
     if (isBrick) {
@@ -49,49 +50,71 @@ class LLMResponseParser {
 
     final planData = data['plan'] as Map<String, dynamic>;
     final macroTargets = data['macro_targets'] as Map<String, dynamic>;
-    final detailedMessage = data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
-    final planId = data['plan_id'] as String? ??
-                   'llm-plan-${DateTime.now().millisecondsSinceEpoch}';
+    final detailedMessage =
+        data['detailed_message'] as String? ?? 'AI-generated nutrition plan';
+    final planId =
+        data['plan_id'] as String? ??
+        'llm-plan-${DateTime.now().millisecondsSinceEpoch}';
 
     final beforeItems = <FoodItemData>[];
     for (final item in planData['before'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
 
       // Use transformation service for proper nutrition calculation
-      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      final transformedFoodItem = await _transformationService
+          .transformEdgeFunctionItem(itemMap);
       beforeItems.add(transformedFoodItem);
     }
 
     // Validation logging: Track sodium and fluids for before section
-    final beforeSodiumTotal = beforeItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
-    final beforeFluidsTotal = beforeItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
+    final beforeSodiumTotal = beforeItems.fold<int>(
+      0,
+      (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0),
+    );
+    final beforeFluidsTotal = beforeItems.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0),
+    );
 
     final duringItems = <FoodItemData>[];
     for (final item in planData['during'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
 
       // Use transformation service for proper nutrition calculation
-      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      final transformedFoodItem = await _transformationService
+          .transformEdgeFunctionItem(itemMap);
       duringItems.add(transformedFoodItem);
     }
 
     // Validation logging: Track sodium and fluids for during section
-    final duringSodiumTotal = duringItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
-    final duringFluidsTotal = duringItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
+    final duringSodiumTotal = duringItems.fold<int>(
+      0,
+      (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0),
+    );
+    final duringFluidsTotal = duringItems.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0),
+    );
 
     final afterItems = <FoodItemData>[];
     for (final item in planData['after'] as List<dynamic>) {
       final itemMap = item as Map<String, dynamic>;
 
       // Use transformation service for proper nutrition calculation
-      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      final transformedFoodItem = await _transformationService
+          .transformEdgeFunctionItem(itemMap);
       afterItems.add(transformedFoodItem);
     }
 
     // Validation logging: Track sodium and fluids for after section
-    final afterSodiumTotal = afterItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0));
-    final afterFluidsTotal = afterItems.fold<double>(0.0, (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0));
-
+    final afterSodiumTotal = afterItems.fold<int>(
+      0,
+      (sum, item) => sum + (item.nutritionalInfo?.sodium ?? 0),
+    );
+    final afterFluidsTotal = afterItems.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.nutritionalInfo?.fluids ?? 0.0),
+    );
 
     // Calculate total macros from phase targets (using correct field names)
     final preRun = macroTargets['pre_run'] as Map<String, dynamic>;
@@ -113,28 +136,46 @@ class LLMResponseParser {
     final totalCarbs = preRunCarbs + duringRunCarbs + postRunCarbs;
     final totalProtein = preRunProtein + postRunProtein;
     final totalFat = preRunFat + postRunFat;
-    final totalCalories = (totalCarbs * 4) + (totalProtein * 4) + (totalFat * 9); // Rough calorie calculation
+    final totalCalories =
+        (totalCarbs * 4) +
+        (totalProtein * 4) +
+        (totalFat * 9); // Rough calorie calculation
 
     // Extract macro target values for sodium and fluids
     final preRunSodium = (preRun['sodium_mg'] as num?)?.toInt() ?? 0;
-    final duringRunSodium = (duringRun['sodium_total_mg'] as num?)?.toInt() ?? 0;
+    final duringRunSodium =
+        (duringRun['sodium_total_mg'] as num?)?.toInt() ?? 0;
     final postRunSodium = (postRun['sodium_mg'] as num?)?.toInt() ?? 0;
     final totalTargetSodium = preRunSodium + duringRunSodium + postRunSodium;
 
     final preRunFluids = (preRun['water_ml'] as num?)?.toDouble() ?? 0.0;
-    final duringRunFluids = (duringRun['water_total_ml'] as num?)?.toDouble() ?? 0.0;
+    final duringRunFluids =
+        (duringRun['water_total_ml'] as num?)?.toDouble() ?? 0.0;
     final postRunFluids = (postRun['water_ml'] as num?)?.toDouble() ?? 0.0;
     final totalTargetFluids = preRunFluids + duringRunFluids + postRunFluids;
 
     // Calculate actual food item totals across all phases
-    final totalFoodItemSodium = beforeSodiumTotal + duringSodiumTotal + afterSodiumTotal;
-    final totalFoodItemFluids = beforeFluidsTotal + duringFluidsTotal + afterFluidsTotal;
-    final totalFoodItemCarbs = beforeItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0)) +
-                              duringItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0)) +
-                              afterItems.fold<int>(0, (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0));
+    final totalFoodItemSodium =
+        beforeSodiumTotal + duringSodiumTotal + afterSodiumTotal;
+    final totalFoodItemFluids =
+        beforeFluidsTotal + duringFluidsTotal + afterFluidsTotal;
+    final totalFoodItemCarbs =
+        beforeItems.fold<int>(
+          0,
+          (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0),
+        ) +
+        duringItems.fold<int>(
+          0,
+          (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0),
+        ) +
+        afterItems.fold<int>(
+          0,
+          (sum, item) => sum + (item.nutritionalInfo?.carbs ?? 0),
+        );
 
     // CRITICAL VALIDATION: Log the discrepancy between macro targets and food item totals
-    _logger.error('LLM Response Validation: Food Items vs Macro Targets Comparison',
+    _logger.error(
+      'LLM Response Validation: Food Items vs Macro Targets Comparison',
       context: 'LLMResponseParser',
       data: {
         'macro_targets': {
@@ -153,40 +194,60 @@ class LLMResponseParser {
           'carbs_difference_g': totalFoodItemCarbs - totalCarbs,
         },
         'percentage_match': {
-          'sodium_percentage': totalTargetSodium > 0 ? (totalFoodItemSodium / totalTargetSodium * 100).round() : 0,
-          'fluids_percentage': totalTargetFluids > 0 ? (totalFoodItemFluids / totalTargetFluids * 100).round() : 0,
-          'carbs_percentage': totalCarbs > 0 ? (totalFoodItemCarbs / totalCarbs * 100).round() : 0,
-        }
+          'sodium_percentage': totalTargetSodium > 0
+              ? (totalFoodItemSodium / totalTargetSodium * 100).round()
+              : 0,
+          'fluids_percentage': totalTargetFluids > 0
+              ? (totalFoodItemFluids / totalTargetFluids * 100).round()
+              : 0,
+          'carbs_percentage': totalCarbs > 0
+              ? (totalFoodItemCarbs / totalCarbs * 100).round()
+              : 0,
+        },
       },
     );
 
     // Use inputMacroTargets directly when available (from Adjust Macros screen)
     // This ensures the targets displayed match exactly what the user saw/edited
     // Fall back to parsing from response only when inputMacroTargets is not provided
-    final preRunSodiumTarget = inputMacroTargets?.preRun.sodiumMg ??
+    final preRunSodiumTarget =
+        inputMacroTargets?.preRun.sodiumMg ??
         (preRun['sodium_mg'] as num? ?? 200).toDouble();
-    final preRunFluidsTarget = inputMacroTargets?.preRun.fluidsMl ??
+    final preRunFluidsTarget =
+        inputMacroTargets?.preRun.fluidsMl ??
         (preRun['water_ml'] as num? ?? 500).toDouble();
-    final preRunCarbsTarget = inputMacroTargets?.preRun.carbsG ?? preRunCarbs.toDouble();
-    final preRunProteinTarget = inputMacroTargets?.preRun.proteinG ?? preRunProtein.toDouble();
-    final preRunFatTarget = inputMacroTargets?.preRun.fatCapG ??
+    final preRunCarbsTarget =
+        inputMacroTargets?.preRun.carbsG ?? preRunCarbs.toDouble();
+    final preRunProteinTarget =
+        inputMacroTargets?.preRun.proteinG ?? preRunProtein.toDouble();
+    final preRunFatTarget =
+        inputMacroTargets?.preRun.fatCapG ??
         (preRun['fat_g'] as num? ?? 5).toDouble();
 
-    final duringRunSodiumTarget = inputMacroTargets?.duringRun.sodiumTotalMg ??
+    final duringRunSodiumTarget =
+        inputMacroTargets?.duringRun.sodiumTotalMg ??
         (duringRun['sodium_total_mg'] as num? ?? 250).toDouble();
-    final duringRunFluidsTarget = inputMacroTargets?.duringRun.fluidTotalMl ??
+    final duringRunFluidsTarget =
+        inputMacroTargets?.duringRun.fluidTotalMl ??
         (duringRun['water_total_ml'] as num? ?? 600).toDouble();
-    final duringRunCarbsTarget = inputMacroTargets?.duringRun.carbTotalG ?? duringRunCarbs.toDouble();
+    final duringRunCarbsTarget =
+        inputMacroTargets?.duringRun.carbTotalG ?? duringRunCarbs.toDouble();
 
-    final postRunSodiumTarget = inputMacroTargets?.postRun.sodiumMg ??
+    final postRunSodiumTarget =
+        inputMacroTargets?.postRun.sodiumMg ??
         (postRun['sodium_mg'] as num? ?? 300).toDouble();
-    final postRunFluidsTarget = inputMacroTargets?.postRun.fluidsMl ??
-        (postRun['water_ml'] as num?)?.toDouble() ?? (duringRunFluidsTarget * 1.25);
-    final postRunCarbsTarget = inputMacroTargets?.postRun.carbsG ?? postRunCarbs.toDouble();
-    final postRunProteinTarget = inputMacroTargets?.postRun.proteinG ?? postRunProtein.toDouble();
+    final postRunFluidsTarget =
+        inputMacroTargets?.postRun.fluidsMl ??
+        (postRun['water_ml'] as num?)?.toDouble() ??
+        (duringRunFluidsTarget * 1.25);
+    final postRunCarbsTarget =
+        inputMacroTargets?.postRun.carbsG ?? postRunCarbs.toDouble();
+    final postRunProteinTarget =
+        inputMacroTargets?.postRun.proteinG ?? postRunProtein.toDouble();
 
     // Get activity type from macro targets, defaulting to running
-    final planActivityType = inputMacroTargets?.activityType ?? ActivityType.running;
+    final planActivityType =
+        inputMacroTargets?.activityType ?? ActivityType.running;
 
     // Create the nutrition plan
     final plan = NutritionPlan(
@@ -198,7 +259,8 @@ class LLMResponseParser {
         PlanSection(
           id: 'before-run',
           title: planActivityType.getSectionTitle('before'),
-          subtitle: '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein, ${preRunSodiumTarget.round()}mg sodium',
+          subtitle:
+              '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein, ${preRunSodiumTarget.round()}mg sodium',
           timing: 'Before',
           foodItems: beforeItems,
           carbsTarget: preRunCarbsTarget,
@@ -210,7 +272,8 @@ class LLMResponseParser {
         PlanSection(
           id: 'during-run',
           title: planActivityType.getSectionTitle('during'),
-          subtitle: 'Total: ${duringRunCarbsTarget.round()}g carbs, ${duringRunFluidsTarget.round()}ml fluids',
+          subtitle:
+              'Total: ${duringRunCarbsTarget.round()}g carbs, ${duringRunFluidsTarget.round()}ml fluids',
           timing: 'During',
           foodItems: duringItems,
           carbsTarget: duringRunCarbsTarget,
@@ -222,7 +285,8 @@ class LLMResponseParser {
         PlanSection(
           id: 'after-run',
           title: planActivityType.getSectionTitle('after'),
-          subtitle: 'Recovery (${postRunCarbsTarget.round()}g carbs, ${postRunProteinTarget.round()}g protein)',
+          subtitle:
+              'Recovery (${postRunCarbsTarget.round()}g carbs, ${postRunProteinTarget.round()}g protein)',
           timing: 'Within 30min',
           foodItems: afterItems,
           carbsTarget: postRunCarbsTarget,
@@ -240,7 +304,8 @@ class LLMResponseParser {
         sodium: (duringRun['sodium_total_mg'] as num?)?.toInt(),
         fluids: (duringRun['water_total_ml'] as num?)?.toInt(),
         // Store phase-specific data in ranges for display (using adjusted values)
-        carbsRange: 'Pre: ${preRunCarbs}g | During: ${duringRunCarbs}g total | Post: ${postRunCarbs}g',
+        carbsRange:
+            'Pre: ${preRunCarbs}g | During: ${duringRunCarbs}g total | Post: ${postRunCarbs}g',
         proteinRange: 'Pre: ${preRunProtein}g | Post: ${postRunProtein}g',
         fatRange: 'Pre: ${preRunFat}g | Post: ${postRunFat}g',
       ),
@@ -248,10 +313,12 @@ class LLMResponseParser {
       createdAt: DateTime.now(),
     );
 
-    _logger.nutritionPlan('Nutrition plan creation completed',
+    _logger.nutritionPlan(
+      'Nutrition plan creation completed',
       planId: plan.id,
       data: {
-        'totalFoodItems': beforeItems.length + duringItems.length + afterItems.length,
+        'totalFoodItems':
+            beforeItems.length + duringItems.length + afterItems.length,
         'beforeItems': beforeItems.length,
         'duringItems': duringItems.length,
         'afterItems': afterItems.length,
@@ -271,9 +338,11 @@ class LLMResponseParser {
     BrickMetadata? brickMetadata,
   }) async {
     final planData = data['plan'] as Map<String, dynamic>;
-    final detailedMessage = data['detailed_message'] as String? ?? 'Brick workout nutrition plan';
-    final planId = data['plan_id'] as String? ??
-                   'brick-plan-${DateTime.now().millisecondsSinceEpoch}';
+    final detailedMessage =
+        data['detailed_message'] as String? ?? 'Brick workout nutrition plan';
+    final planId =
+        data['plan_id'] as String? ??
+        'brick-plan-${DateTime.now().millisecondsSinceEpoch}';
 
     final sections = <PlanSection>[];
 
@@ -283,8 +352,10 @@ class LLMResponseParser {
     // - transitions: [{transition_name, carbs_g, sodium_mg, water_ml}, ...]
     final macroTargetsData = data['macro_targets'] as Map<String, dynamic>?;
     final phasesTargets = macroTargetsData?['phases'] as Map<String, dynamic>?;
-    final segmentTargetsList = phasesTargets?['during_segments'] as List<dynamic>? ?? [];
-    final transitionTargetsList = phasesTargets?['transitions'] as List<dynamic>? ?? [];
+    final segmentTargetsList =
+        phasesTargets?['during_segments'] as List<dynamic>? ?? [];
+    final transitionTargetsList =
+        phasesTargets?['transitions'] as List<dynamic>? ?? [];
 
     // Build lookup maps for quick access by segment order / transition name
     final segmentTargetsMap = <int, Map<String, dynamic>>{};
@@ -312,22 +383,26 @@ class LLMResponseParser {
     final beforeList = planData['before'] as List<dynamic>? ?? [];
     for (final item in beforeList) {
       final itemMap = item as Map<String, dynamic>;
-      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      final transformedFoodItem = await _transformationService
+          .transformEdgeFunctionItem(itemMap);
       beforeItems.add(transformedFoodItem);
     }
-    sections.add(PlanSection(
-      id: 'before',
-      title: 'Before Brick',
-      subtitle: '1-4 hours before your workout',
-      foodItems: beforeItems,
-      carbsTarget: inputMacroTargets?.preRun.carbsG,
-      proteinTarget: inputMacroTargets?.preRun.proteinG,
-      sodiumTarget: inputMacroTargets?.preRun.sodiumMg,
-      fluidsTarget: inputMacroTargets?.preRun.fluidsMl,
-    ));
+    sections.add(
+      PlanSection(
+        id: 'before',
+        title: 'Before Brick',
+        subtitle: '1-4 hours before your workout',
+        foodItems: beforeItems,
+        carbsTarget: inputMacroTargets?.preRun.carbsG,
+        proteinTarget: inputMacroTargets?.preRun.proteinG,
+        sodiumTarget: inputMacroTargets?.preRun.sodiumMg,
+        fluidsTarget: inputMacroTargets?.preRun.fluidsMl,
+      ),
+    );
 
     // 2. During segments (keyed by segment order: "1", "2", "3")
-    final duringSegmentsData = planData['during_segments'] as Map<String, dynamic>? ?? {};
+    final duringSegmentsData =
+        planData['during_segments'] as Map<String, dynamic>? ?? {};
 
     // Build sport name map from macroTargets.brickSegments if available,
     // falling back to brickMetadata.segments for sport name resolution
@@ -351,7 +426,8 @@ class LLMResponseParser {
       final foodItems = <FoodItemData>[];
       for (final item in segmentItems) {
         final itemMap = item as Map<String, dynamic>;
-        final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+        final transformedFoodItem = await _transformationService
+            .transformEdgeFunctionItem(itemMap);
         foodItems.add(transformedFoodItem);
       }
 
@@ -362,40 +438,59 @@ class LLMResponseParser {
       // Look up per-segment macro targets from the edge function response
       final segTargets = segmentTargetsMap[orderInt];
 
-      sections.add(PlanSection(
-        id: 'during_segment_$segmentOrder',
-        title: 'During $sportName',
-        subtitle: null,
-        foodItems: foodItems,
-        carbsTarget: segTargets != null ? (segTargets['carbs_g'] as num?)?.toDouble() : null,
-        sodiumTarget: segTargets != null ? (segTargets['sodium_mg'] as num?)?.toDouble() : null,
-        fluidsTarget: segTargets != null ? (segTargets['water_ml'] as num?)?.toDouble() : null,
-      ));
+      sections.add(
+        PlanSection(
+          id: 'during_segment_$segmentOrder',
+          title: 'During $sportName',
+          subtitle: null,
+          foodItems: foodItems,
+          carbsTarget: segTargets != null
+              ? (segTargets['carbs_g'] as num?)?.toDouble()
+              : null,
+          sodiumTarget: segTargets != null
+              ? (segTargets['sodium_mg'] as num?)?.toDouble()
+              : null,
+          fluidsTarget: segTargets != null
+              ? (segTargets['water_ml'] as num?)?.toDouble()
+              : null,
+        ),
+      );
 
       // Add transition after each segment (except the last)
-      final transitionsData = planData['transitions'] as Map<String, dynamic>? ?? {};
+      final transitionsData =
+          planData['transitions'] as Map<String, dynamic>? ?? {};
       final transitionKey = 'T${segmentIndex + 1}';
       if (transitionsData.containsKey(transitionKey)) {
-        final transitionItems = transitionsData[transitionKey] as List<dynamic>? ?? [];
+        final transitionItems =
+            transitionsData[transitionKey] as List<dynamic>? ?? [];
         final transitionFoodItems = <FoodItemData>[];
         for (final item in transitionItems) {
           final itemMap = item as Map<String, dynamic>;
-          final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+          final transformedFoodItem = await _transformationService
+              .transformEdgeFunctionItem(itemMap);
           transitionFoodItems.add(transformedFoodItem);
         }
 
         // Look up per-transition macro targets from the edge function response
         final transTargets = transitionTargetsMap[transitionKey];
 
-        sections.add(PlanSection(
-          id: transitionKey,
-          title: 'Transition ($transitionKey)',
-          subtitle: 'Quick refuel between segments',
-          foodItems: transitionFoodItems,
-          carbsTarget: transTargets != null ? (transTargets['carbs_g'] as num?)?.toDouble() : null,
-          sodiumTarget: transTargets != null ? (transTargets['sodium_mg'] as num?)?.toDouble() : null,
-          fluidsTarget: transTargets != null ? (transTargets['water_ml'] as num?)?.toDouble() : null,
-        ));
+        sections.add(
+          PlanSection(
+            id: transitionKey,
+            title: 'Transition ($transitionKey)',
+            subtitle: 'Quick refuel between segments',
+            foodItems: transitionFoodItems,
+            carbsTarget: transTargets != null
+                ? (transTargets['carbs_g'] as num?)?.toDouble()
+                : null,
+            sodiumTarget: transTargets != null
+                ? (transTargets['sodium_mg'] as num?)?.toDouble()
+                : null,
+            fluidsTarget: transTargets != null
+                ? (transTargets['water_ml'] as num?)?.toDouble()
+                : null,
+          ),
+        );
       }
 
       segmentIndex++;
@@ -406,19 +501,22 @@ class LLMResponseParser {
     final afterList = planData['after'] as List<dynamic>? ?? [];
     for (final item in afterList) {
       final itemMap = item as Map<String, dynamic>;
-      final transformedFoodItem = await _transformationService.transformEdgeFunctionItem(itemMap);
+      final transformedFoodItem = await _transformationService
+          .transformEdgeFunctionItem(itemMap);
       afterItems.add(transformedFoodItem);
     }
-    sections.add(PlanSection(
-      id: 'after',
-      title: 'After Brick',
-      subtitle: 'Within 30-60 minutes post-workout',
-      foodItems: afterItems,
-      carbsTarget: inputMacroTargets?.postRun.carbsG,
-      proteinTarget: inputMacroTargets?.postRun.proteinG,
-      sodiumTarget: inputMacroTargets?.postRun.sodiumMg,
-      fluidsTarget: inputMacroTargets?.postRun.fluidsMl,
-    ));
+    sections.add(
+      PlanSection(
+        id: 'after',
+        title: 'After Brick',
+        subtitle: 'Within 30-60 minutes post-workout',
+        foodItems: afterItems,
+        carbsTarget: inputMacroTargets?.postRun.carbsG,
+        proteinTarget: inputMacroTargets?.postRun.proteinG,
+        sodiumTarget: inputMacroTargets?.postRun.sodiumMg,
+        fluidsTarget: inputMacroTargets?.postRun.fluidsMl,
+      ),
+    );
 
     // Calculate total calories from food items
     int totalCalories = 0;

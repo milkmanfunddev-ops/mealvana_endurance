@@ -24,16 +24,17 @@ class PlanContainer extends StatefulWidget {
   final targets_model.MacroTargets? macroTargets;
   final Function(String foodItemId)? onFoodItemTap;
   final bool showMacroTargets;
-  final Function(String foodItemId, String foodName, String category)? onSwapFood;
+  final Function(String foodItemId, String foodName, String category)?
+  onSwapFood;
   final Function(String foodItemId, String category)? onDeleteFood;
-  final Function(String foodItemId, String category, double newQuantity)? onUpdateQuantity;
-  
+  final Function(String foodItemId, String category, double newQuantity)?
+  onUpdateQuantity;
+
   @override
   State<PlanContainer> createState() => _PlanContainerState();
 }
 
 class _PlanContainerState extends State<PlanContainer> {
-  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -41,10 +42,7 @@ class _PlanContainerState extends State<PlanContainer> {
       decoration: BoxDecoration(
         color: AppTheme.baseWhite,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: AppTheme.primary900,
-          width: 2.0,
-        ),
+        border: Border.all(color: AppTheme.primary900, width: 2.0),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primary600.withValues(alpha: 0.1),

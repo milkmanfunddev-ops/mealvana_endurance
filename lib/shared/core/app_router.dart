@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
+import '../services/app_config.dart';
 import '../../main.dart' show sentryNavigatorKey;
 
 // Import all screens
@@ -46,6 +47,9 @@ import '../../features/settings/presentation/screens/sport_preferences_hub_scree
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
+import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
+import '../../features/privacy/presentation/screens/privacy_consent_screen.dart';
+import '../services/privacy/analytics_consent.dart';
 import '../../features/settings/presentation/screens/sweat_profile_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_profile_screen.dart';
@@ -117,6 +121,43 @@ class AppRouter {
           return null;
         }
 
+        // Metered meal-AI routes fail closed. Hiding the entry points is the
+        // primary UX, while this guard also blocks stale deep links from an
+        // older build when the release flag is off. `/jade` rides the same
+        // flag: its banner entry point is intentionally unrendered, and the
+        // chat screen calls the jade-chat edge function on every send.
+        // `/buy-credits` rides it too — with every AI surface hidden there is
+        // nothing to buy credits for, and the 402 paywall flows that push it
+        // all originate from the gated AI calls.
+        if ((currentPath == '/meal-log/photo' ||
+                currentPath == '/meal-log/describe' ||
+                currentPath == '/jade' ||
+                currentPath == '/buy-credits') &&
+            !ref.read(appConfigProvider).describeMealEnabled) {
+          return '/';
+        }
+
+        // ANALYTICS CONSENT.
+        //
+        // The screen is no longer a gate that fires ahead of everything. It is
+        // reached two ways, both of which route TO it explicitly:
+        //   - new users, from Welcome's "Get Started" (see welcome_screen.dart),
+        //     so it reads as the first step of onboarding rather than a popup;
+        //   - existing users who were onboarded before the prompt existed, from
+        //     the startup `data:` branch below.
+        //
+        // Only strict-regime users (EEA/UK, Washington) are ever sent here —
+        // `needsPrompt` encodes that. Everyone else gets disclosure + an
+        // always-available Settings → Privacy opt-out instead of a screen.
+        //
+        // Let it render once we're on it. Without this the session check below
+        // bounces /privacy-consent to /welcome whenever `signInAnonymously()`
+        // failed (welcome_screen swallows that error), producing an infinite
+        // redirect loop between the two.
+        if (currentPath == '/privacy-consent') {
+          return null;
+        }
+
         // Public routes that don't require auth (welcome, onboarding, auth screens)
         final isPublicRoute =
             currentPath == '/welcome' ||
@@ -167,6 +208,22 @@ class AppRouter {
             if (appStartupData.isLoggedOut) {
               return '/welcome';
             }
+
+            // Existing user, onboarded before the consent prompt existed, in a
+            // strict region. New users can't reach this — !hasCompletedOnboarding
+            // short-circuits to /welcome above — so this is only the backfill.
+            //
+            // Placed HERE, not at the top of the redirect, on purpose: reaching
+            // this branch means appStartupProvider has returned data, which
+            // means the region lookup has completed (it is awaited in that
+            // provider's Future.wait). A top-of-redirect check would run on the
+            // very first parse of '/', while startup is still loading and the
+            // region is still an unresolved device-signal guess — and would
+            // prompt Californians.
+            if (ref.read(analyticsConsentProvider).needsPrompt) {
+              return '/privacy-consent';
+            }
+
             // User is fully onboarded - go to main app
             return '/main';
           },
@@ -175,6 +232,17 @@ class AppRouter {
         );
       },
       routes: [
+        // Analytics consent - strict regions only (EEA/UK, Washington).
+        // `next` is where to go once a decision is recorded: '/onboarding' when
+        // entered from Get Started, '/' for the existing-user backfill (which
+        // then resolves through the startup redirect to /main).
+        GoRoute(
+          path: '/privacy-consent',
+          name: 'privacy-consent',
+          builder: (context, state) => PrivacyConsentScreen(
+            next: state.uri.queryParameters['next'] ?? '/',
+          ),
+        ),
         // Force Upgrade Screen - Mandatory update required
         GoRoute(
           path: '/force-upgrade',
@@ -551,6 +619,13 @@ class AppRouter {
           path: '/settings/connected-apps',
           name: 'settings-connected-apps',
           builder: (context, state) => const ConnectedAppsScreen(),
+        ),
+
+        // Privacy Screen - analytics consent withdrawal + policy/terms links
+        GoRoute(
+          path: '/settings/privacy',
+          name: 'settings-privacy',
+          builder: (context, state) => const PrivacySettingsScreen(),
         ),
 
         // Preferences Screen - Edit profile and preferences with save button

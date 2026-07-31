@@ -42,7 +42,8 @@ class TokenExpiredException extends IntegrationApiException {
   });
 
   @override
-  String toString() => 'TokenExpiredException${provider != null ? '[$provider]' : ''}: $message';
+  String toString() =>
+      'TokenExpiredException${provider != null ? '[$provider]' : ''}: $message';
 }
 
 /// Exception thrown when token refresh fails
@@ -83,7 +84,8 @@ class RateLimitException extends IntegrationApiException {
     final buffer = StringBuffer('RateLimitException');
     if (provider != null) buffer.write('[$provider]');
     buffer.write(': $message');
-    if (retryAfterSeconds != null) buffer.write(' (retry after ${retryAfterSeconds}s)');
+    if (retryAfterSeconds != null)
+      buffer.write(' (retry after ${retryAfterSeconds}s)');
     return buffer.toString();
   }
 }
@@ -93,13 +95,12 @@ class RateLimitException extends IntegrationApiException {
 /// These are transient errors (no internet, timeout) that may be
 /// resolved by retrying after the network is available.
 class NetworkException extends IntegrationApiException {
-  const NetworkException(
-    super.message, {
-    super.provider,
-  }) : super(isRetryable: true);
+  const NetworkException(super.message, {super.provider})
+    : super(isRetryable: true);
 
   @override
-  String toString() => 'NetworkException${provider != null ? '[$provider]' : ''}: $message';
+  String toString() =>
+      'NetworkException${provider != null ? '[$provider]' : ''}: $message';
 }
 
 /// Exception for server-side errors (5xx)

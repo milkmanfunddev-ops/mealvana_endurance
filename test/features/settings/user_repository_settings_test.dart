@@ -163,24 +163,27 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('save → load round-trip', () {
-    test('saveUserProfile persists all base fields and loads them back', () async {
-      final profile = _baseProfile();
-      await repository.saveUserProfile(profile);
+    test(
+      'saveUserProfile persists all base fields and loads them back',
+      () async {
+        final profile = _baseProfile();
+        await repository.saveUserProfile(profile);
 
-      final loaded = await _getByAuthUserId(_testAuthUserId);
+        final loaded = await _getByAuthUserId(_testAuthUserId);
 
-      expect(loaded, isNotNull);
-      expect(loaded!.id, _testUserId);
-      expect(loaded.gender, Gender.male);
-      expect(loaded.heightFeet, 5);
-      expect(loaded.heightInches, 10);
-      expect(loaded.weightPounds, 175.0);
-      expect(loaded.runsWithWaterBottle, isFalse);
-      expect(loaded.unitSystem, UnitSystem.imperial);
-      expect(loaded.gutTraining, GutTraining.moderate);
-      expect(loaded.sweatRate, SweatRateCat.medium);
-      expect(loaded.onboardingCompleted, isTrue);
-    });
+        expect(loaded, isNotNull);
+        expect(loaded!.id, _testUserId);
+        expect(loaded.gender, Gender.male);
+        expect(loaded.heightFeet, 5);
+        expect(loaded.heightInches, 10);
+        expect(loaded.weightPounds, 175.0);
+        expect(loaded.runsWithWaterBottle, isFalse);
+        expect(loaded.unitSystem, UnitSystem.imperial);
+        expect(loaded.gutTraining, GutTraining.moderate);
+        expect(loaded.sweatRate, SweatRateCat.medium);
+        expect(loaded.onboardingCompleted, isTrue);
+      },
+    );
 
     test('saveUserProfile persists gender female correctly', () async {
       final profile = _baseProfile().copyWith(gender: Gender.female);
@@ -342,9 +345,7 @@ void main() {
 
     test('empty allergies persist as empty', () async {
       // First save with allergies, then update to empty.
-      final initial = _baseProfile().copyWith(
-        allergies: [Allergy.dairy],
-      );
+      final initial = _baseProfile().copyWith(allergies: [Allergy.dairy]);
       await repository.saveUserProfile(initial);
 
       // Now update to empty allergies via updateUserProfile.
@@ -354,8 +355,11 @@ void main() {
       final loaded = await _getByAuthUserId(_testAuthUserId);
       // The database itself correctly stores empty, which proves the
       // bug is in _saveProfile's guard logic (not the DAO).
-      expect(loaded!.allergies, isEmpty,
-          reason: 'DAO correctly stores empty allergies list');
+      expect(
+        loaded!.allergies,
+        isEmpty,
+        reason: 'DAO correctly stores empty allergies list',
+      );
     });
   });
 
@@ -384,68 +388,71 @@ void main() {
       expect(loaded.weightPounds, 145.0);
     });
 
-    test('updating unitSystem does not clobber cycling speed or sweat rate', () async {
-      // ftpWatts and typicalBikeBottles are NOT in the local Drift schema
-      // (they are Supabase-only fields).  Use defaultCyclingSpeedMph and
-      // sweatRate instead — both ARE persisted locally.
-      // copyWith does not expose defaultCyclingSpeedMph — construct directly.
-      final base = _baseProfile();
-      final initial = UserProfile(
-        id: base.id,
-        deviceId: base.deviceId,
-        authUserId: base.authUserId,
-        authProvider: base.authProvider,
-        isAnonymous: base.isAnonymous,
-        gender: base.gender,
-        birthday: base.birthday,
-        heightFeet: base.heightFeet,
-        heightInches: base.heightInches,
-        weightPounds: base.weightPounds,
-        runsWithWaterBottle: base.runsWithWaterBottle,
-        createdAt: base.createdAt,
-        updatedAt: base.updatedAt,
-        gutTraining: base.gutTraining,
-        sweatRate: SweatRateCat.heavy,
-        onboardingCompleted: base.onboardingCompleted,
-        appVersion: base.appVersion,
-        unitSystem: UnitSystem.imperial,
-        dietaryPreference: base.dietaryPreference,
-        allergies: base.allergies,
-        defaultCyclingSpeedMph: 18.0,
-      );
-      await repository.saveUserProfile(initial);
+    test(
+      'updating unitSystem does not clobber cycling speed or sweat rate',
+      () async {
+        // ftpWatts and typicalBikeBottles are NOT in the local Drift schema
+        // (they are Supabase-only fields).  Use defaultCyclingSpeedMph and
+        // sweatRate instead — both ARE persisted locally.
+        // copyWith does not expose defaultCyclingSpeedMph — construct directly.
+        final base = _baseProfile();
+        final initial = UserProfile(
+          id: base.id,
+          deviceId: base.deviceId,
+          authUserId: base.authUserId,
+          authProvider: base.authProvider,
+          isAnonymous: base.isAnonymous,
+          gender: base.gender,
+          birthday: base.birthday,
+          heightFeet: base.heightFeet,
+          heightInches: base.heightInches,
+          weightPounds: base.weightPounds,
+          runsWithWaterBottle: base.runsWithWaterBottle,
+          createdAt: base.createdAt,
+          updatedAt: base.updatedAt,
+          gutTraining: base.gutTraining,
+          sweatRate: SweatRateCat.heavy,
+          onboardingCompleted: base.onboardingCompleted,
+          appVersion: base.appVersion,
+          unitSystem: UnitSystem.imperial,
+          dietaryPreference: base.dietaryPreference,
+          allergies: base.allergies,
+          defaultCyclingSpeedMph: 18.0,
+        );
+        await repository.saveUserProfile(initial);
 
-      // copyWith does not propagate defaultCyclingSpeedMph — construct directly.
-      final updated = UserProfile(
-        id: initial.id,
-        deviceId: initial.deviceId,
-        authUserId: initial.authUserId,
-        authProvider: initial.authProvider,
-        isAnonymous: initial.isAnonymous,
-        gender: initial.gender,
-        birthday: initial.birthday,
-        heightFeet: initial.heightFeet,
-        heightInches: initial.heightInches,
-        weightPounds: initial.weightPounds,
-        runsWithWaterBottle: initial.runsWithWaterBottle,
-        createdAt: initial.createdAt,
-        updatedAt: DateTime.now(),
-        gutTraining: initial.gutTraining,
-        sweatRate: initial.sweatRate,
-        onboardingCompleted: initial.onboardingCompleted,
-        appVersion: initial.appVersion,
-        unitSystem: UnitSystem.metric,
-        dietaryPreference: initial.dietaryPreference,
-        allergies: initial.allergies,
-        defaultCyclingSpeedMph: initial.defaultCyclingSpeedMph,
-      );
-      await repository.updateUserProfile(updated, needsUpload: true);
+        // copyWith does not propagate defaultCyclingSpeedMph — construct directly.
+        final updated = UserProfile(
+          id: initial.id,
+          deviceId: initial.deviceId,
+          authUserId: initial.authUserId,
+          authProvider: initial.authProvider,
+          isAnonymous: initial.isAnonymous,
+          gender: initial.gender,
+          birthday: initial.birthday,
+          heightFeet: initial.heightFeet,
+          heightInches: initial.heightInches,
+          weightPounds: initial.weightPounds,
+          runsWithWaterBottle: initial.runsWithWaterBottle,
+          createdAt: initial.createdAt,
+          updatedAt: DateTime.now(),
+          gutTraining: initial.gutTraining,
+          sweatRate: initial.sweatRate,
+          onboardingCompleted: initial.onboardingCompleted,
+          appVersion: initial.appVersion,
+          unitSystem: UnitSystem.metric,
+          dietaryPreference: initial.dietaryPreference,
+          allergies: initial.allergies,
+          defaultCyclingSpeedMph: initial.defaultCyclingSpeedMph,
+        );
+        await repository.updateUserProfile(updated, needsUpload: true);
 
-      final loaded = await _getByAuthUserId(_testAuthUserId);
-      expect(loaded!.unitSystem, UnitSystem.metric);
-      expect(loaded.defaultCyclingSpeedMph, closeTo(18.0, 0.01));
-      expect(loaded.sweatRate, SweatRateCat.heavy);
-    });
+        final loaded = await _getByAuthUserId(_testAuthUserId);
+        expect(loaded!.unitSystem, UnitSystem.metric);
+        expect(loaded.defaultCyclingSpeedMph, closeTo(18.0, 0.01));
+        expect(loaded.sweatRate, SweatRateCat.heavy);
+      },
+    );
 
     test('updating gut training does not clobber dietary preference', () async {
       final initial = _baseProfile().copyWith(
@@ -537,10 +544,7 @@ void main() {
           carbRateGPerH: 60.0,
           fluidRateMlPerH: 500.0,
         ),
-        post: PostActivityOverrides(
-          carbsG: 80.0,
-          proteinG: 25.0,
-        ),
+        post: PostActivityOverrides(carbsG: 80.0, proteinG: 25.0),
       );
 
       final profile = _baseProfile().copyWith(
@@ -550,50 +554,44 @@ void main() {
 
       final loaded = await _getByAuthUserId(_testAuthUserId);
       expect(loaded!.nutritionTargetOverrides, isNotNull);
-      expect(
-        loaded.nutritionTargetOverrides!.duringRun?.carbRateGPerH,
-        60.0,
-      );
+      expect(loaded.nutritionTargetOverrides!.duringRun?.carbRateGPerH, 60.0);
       expect(
         loaded.nutritionTargetOverrides!.duringRun?.fluidRateMlPerH,
         500.0,
       );
-      expect(
-        loaded.nutritionTargetOverrides!.post?.carbsG,
-        80.0,
-      );
-      expect(
-        loaded.nutritionTargetOverrides!.post?.proteinG,
-        25.0,
-      );
+      expect(loaded.nutritionTargetOverrides!.post?.carbsG, 80.0);
+      expect(loaded.nutritionTargetOverrides!.post?.proteinG, 25.0);
     });
 
-    test('updates nutrition target overrides without clobbering other fields', () async {
-      final initial = _baseProfile().copyWith(
-        weightPounds: 170.0,
-        unitSystem: UnitSystem.metric,
-        nutritionTargetOverrides: const NutritionTargetOverrides(
-          duringCycling: DuringActivityOverrides(carbRateGPerH: 90.0),
-        ),
-      );
-      await repository.saveUserProfile(initial);
+    test(
+      'updates nutrition target overrides without clobbering other fields',
+      () async {
+        final initial = _baseProfile().copyWith(
+          weightPounds: 170.0,
+          unitSystem: UnitSystem.metric,
+          nutritionTargetOverrides: const NutritionTargetOverrides(
+            duringCycling: DuringActivityOverrides(carbRateGPerH: 90.0),
+          ),
+        );
+        await repository.saveUserProfile(initial);
 
-      final updatedOverrides = const NutritionTargetOverrides(
-        duringCycling: DuringActivityOverrides(carbRateGPerH: 100.0),
-      );
-      final updated = initial.copyWith(
-        nutritionTargetOverrides: updatedOverrides,
-      );
-      await repository.updateUserProfile(updated, needsUpload: true);
+        final updatedOverrides = const NutritionTargetOverrides(
+          duringCycling: DuringActivityOverrides(carbRateGPerH: 100.0),
+        );
+        final updated = initial.copyWith(
+          nutritionTargetOverrides: updatedOverrides,
+        );
+        await repository.updateUserProfile(updated, needsUpload: true);
 
-      final loaded = await _getByAuthUserId(_testAuthUserId);
-      expect(loaded!.weightPounds, 170.0);
-      expect(loaded.unitSystem, UnitSystem.metric);
-      expect(
-        loaded.nutritionTargetOverrides?.duringCycling?.carbRateGPerH,
-        100.0,
-      );
-    });
+        final loaded = await _getByAuthUserId(_testAuthUserId);
+        expect(loaded!.weightPounds, 170.0);
+        expect(loaded.unitSystem, UnitSystem.metric);
+        expect(
+          loaded.nutritionTargetOverrides?.duringCycling?.carbRateGPerH,
+          100.0,
+        );
+      },
+    );
 
     test('clearing nutrition target overrides (null) saves null', () async {
       final initial = _baseProfile().copyWith(
@@ -631,8 +629,11 @@ void main() {
       await repository.updateUserProfile(cleared, needsUpload: true);
 
       final loaded = await _getByAuthUserId(_testAuthUserId);
-      expect(loaded!.nutritionTargetOverrides, isNull,
-          reason: 'Cleared overrides must persist as null');
+      expect(
+        loaded!.nutritionTargetOverrides,
+        isNull,
+        reason: 'Cleared overrides must persist as null',
+      );
     });
   });
 
@@ -689,13 +690,16 @@ void main() {
       expect(row.needsUpload, isTrue);
     });
 
-    test('saveUserProfile with needsUpload=false does not mark dirty', () async {
-      final profile = _baseProfile();
-      await repository.saveUserProfile(profile, needsUpload: false);
+    test(
+      'saveUserProfile with needsUpload=false does not mark dirty',
+      () async {
+        final profile = _baseProfile();
+        await repository.saveUserProfile(profile, needsUpload: false);
 
-      final rawRows = await database.select(database.userProfilesTable).get();
-      final row = rawRows.firstWhere((r) => r.id == _testUserId);
-      expect(row.needsUpload, isFalse);
-    });
+        final rawRows = await database.select(database.userProfilesTable).get();
+        final row = rawRows.firstWhere((r) => r.id == _testUserId);
+        expect(row.needsUpload, isFalse);
+      },
+    );
   });
 }

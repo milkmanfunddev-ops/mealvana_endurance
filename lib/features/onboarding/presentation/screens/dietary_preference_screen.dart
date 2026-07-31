@@ -27,6 +27,7 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
     this.mode = ScreenMode.onboarding,
     this.onContinue,
     this.onBack,
+    this.stepIndex,
   });
 
   /// The screen mode determines visual style and navigation behavior
@@ -37,6 +38,11 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null in settings mode, where the
+  /// screen is not part of a funnel.
+  final int? stepIndex;
 
   @override
   ConsumerState<DietaryPreferenceScreen> createState() =>
@@ -62,7 +68,13 @@ class _DietaryPreferenceScreenState
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('screen_viewed', properties: {'screen_name': screenName});
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': screenName,
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -150,7 +162,7 @@ class _DietaryPreferenceScreenState
           ref.invalidate(settingsControllerProvider);
 
           MealvanaSnackbar.showSuccess(context, 'Dietary preference updated');
-          context.pop();
+          if (context.canPop()) context.pop();
         } else {
           MealvanaSnackbar.showError(
             context,
@@ -230,7 +242,11 @@ class _DietaryPreferenceScreenState
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: widget.onBack ?? () => context.pop(),
+                          onTap:
+                              widget.onBack ??
+                              () {
+                                if (context.canPop()) context.pop();
+                              },
                           child: Container(
                             width: 48,
                             height: 48,
@@ -295,7 +311,10 @@ class _DietaryPreferenceScreenState
           FigmaOnboardingFooter(
             onContinue: _continue,
             onBack: _isOnboarding
-                ? (widget.onBack ?? () => context.pop())
+                ? (widget.onBack ??
+                      () {
+                        if (context.canPop()) context.pop();
+                      })
                 : null,
             canContinue: true, // Always allow continue/skip
             isLoading: _isSaving,

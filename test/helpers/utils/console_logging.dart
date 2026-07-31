@@ -49,10 +49,13 @@ void logTestResult(
   final unitStr = unit != null ? ' $unit' : '';
   final expectedStr = expected != null
       ? ' (expected: $expected$unitStr)'
-      : (expectedRange != null ? ' (expected range: $expectedRange$unitStr)' : '');
+      : (expectedRange != null
+            ? ' (expected range: $expectedRange$unitStr)'
+            : '');
 
   print(
-      '${_Colors.cyan}RESULT:${_Colors.reset} $label = ${_Colors.bold}$actual$unitStr${_Colors.reset}$expectedStr');
+    '${_Colors.cyan}RESULT:${_Colors.reset} $label = ${_Colors.bold}$actual$unitStr${_Colors.reset}$expectedStr',
+  );
 }
 
 /// Log multiple test results at once
@@ -63,11 +66,12 @@ void logTestResults(Map<String, ResultData> results) {
     final expectedStr = data.expected != null
         ? ' (expected: ${data.expected}$unitStr)'
         : (data.expectedRange != null
-            ? ' (expected range: ${data.expectedRange}$unitStr)'
-            : '');
+              ? ' (expected range: ${data.expectedRange}$unitStr)'
+              : '');
 
     print(
-        '  $label: ${_Colors.bold}${data.actual}$unitStr${_Colors.reset}$expectedStr');
+      '  $label: ${_Colors.bold}${data.actual}$unitStr${_Colors.reset}$expectedStr',
+    );
   });
 }
 
@@ -77,7 +81,9 @@ void logAssertion(String description, {required bool passed, String? reason}) {
       ? '${_Colors.green}PASS${_Colors.reset}'
       : '${_Colors.red}FAIL${_Colors.reset}';
   final reasonStr = reason != null ? ' - $reason' : '';
-  print('${_Colors.yellow}ASSERT:${_Colors.reset} $description [$status]$reasonStr');
+  print(
+    '${_Colors.yellow}ASSERT:${_Colors.reset} $description [$status]$reasonStr',
+  );
 }
 
 /// Log test pass status

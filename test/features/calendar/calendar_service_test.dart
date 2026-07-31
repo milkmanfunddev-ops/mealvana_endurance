@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/features/calendar/application/calendar_service.dart';
 import 'package:mealvana_endurance/features/activities/application/activities_service.dart';
-import 'package:mealvana_endurance/features/activities/domain/activity.dart' as domain;
+import 'package:mealvana_endurance/features/activities/domain/activity.dart'
+    as domain;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
@@ -47,10 +48,36 @@ void main() {
     mockLogger = MockAppLogger();
 
     // Stub all logger calls
-    when(() => mockLogger.info(any(), context: any(named: 'context'), data: any(named: 'data'))).thenReturn(null);
-    when(() => mockLogger.debug(any(), context: any(named: 'context'), data: any(named: 'data'))).thenReturn(null);
-    when(() => mockLogger.warning(any(), context: any(named: 'context'), data: any(named: 'data'))).thenReturn(null);
-    when(() => mockLogger.error(any(), context: any(named: 'context'), error: any(named: 'error'), stackTrace: any(named: 'stackTrace'), data: any(named: 'data'))).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
 
     service = CalendarService(db, mockLogger, mockActivitiesService);
   });
@@ -67,23 +94,41 @@ void main() {
     test('passes userId, startDate, endDate through unchanged', () async {
       final start = DateTime(2026, 6, 1);
       final end = DateTime(2026, 6, 7, 23, 59, 59);
-      when(() => mockActivitiesService.getActivitiesForDateRange(testUserId, start, end))
-          .thenAnswer((_) async => []);
+      when(
+        () => mockActivitiesService.getActivitiesForDateRange(
+          testUserId,
+          start,
+          end,
+        ),
+      ).thenAnswer((_) async => []);
 
-      final result = await service.getActivitiesForDateRange(testUserId, start, end);
+      final result = await service.getActivitiesForDateRange(
+        testUserId,
+        start,
+        end,
+      );
 
-      verify(() => mockActivitiesService.getActivitiesForDateRange(testUserId, start, end)).called(1);
+      verify(
+        () => mockActivitiesService.getActivitiesForDateRange(
+          testUserId,
+          start,
+          end,
+        ),
+      ).called(1);
       expect(result, isEmpty);
     });
 
     test('getActivitiesForWeek delegates correctly', () async {
       final weekStart = DateTime(2026, 6, 1);
-      when(() => mockActivitiesService.getActivitiesForWeek(testUserId, weekStart))
-          .thenAnswer((_) async => []);
+      when(
+        () => mockActivitiesService.getActivitiesForWeek(testUserId, weekStart),
+      ).thenAnswer((_) async => []);
 
       await service.getActivitiesForWeek(testUserId, weekStart);
 
-      verify(() => mockActivitiesService.getActivitiesForWeek(testUserId, weekStart)).called(1);
+      verify(
+        () => mockActivitiesService.getActivitiesForWeek(testUserId, weekStart),
+      ).called(1);
     });
   });
 
@@ -146,8 +191,16 @@ void main() {
     });
 
     test('returns all events in descending createdAt order', () async {
-      await service.createEvent(userId: testUserId, eventType: ActivityType.running, eventName: 'First');
-      await service.createEvent(userId: testUserId, eventType: ActivityType.cycling, eventName: 'Second');
+      await service.createEvent(
+        userId: testUserId,
+        eventType: ActivityType.running,
+        eventName: 'First',
+      );
+      await service.createEvent(
+        userId: testUserId,
+        eventType: ActivityType.cycling,
+        eventName: 'Second',
+      );
 
       final events = await service.getAllEvents(testUserId);
       expect(events.length, 2);
@@ -160,7 +213,9 @@ void main() {
 
   group('getEventForActivity', () {
     test('returns null when no event exists for the activity', () async {
-      final result = await service.getEventForActivity('nonexistent-activity-id');
+      final result = await service.getEventForActivity(
+        'nonexistent-activity-id',
+      );
       expect(result, equals(null));
     });
 
@@ -198,23 +253,26 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('createCarbLoadingPlan schedule math', () {
-    test('2-day protocol: startDate is raceDate minus 2, endDate is raceDate minus 1', () async {
-      final raceDate = DateTime(2026, 10, 5);
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        protocolDays: 2,
-        raceDate: raceDate,
-        bodyWeightPounds: 154.0, // ~70 kg
-      );
+    test(
+      '2-day protocol: startDate is raceDate minus 2, endDate is raceDate minus 1',
+      () async {
+        final raceDate = DateTime(2026, 10, 5);
+        await service.createCarbLoadingPlan(
+          userId: testUserId,
+          protocolDays: 2,
+          raceDate: raceDate,
+          bodyWeightPounds: 154.0, // ~70 kg
+        );
 
-      final plans = await db.select(db.carbLoadingPlansTable).get();
-      expect(plans.length, 1);
+        final plans = await db.select(db.carbLoadingPlansTable).get();
+        expect(plans.length, 1);
 
-      final plan = plans.first;
-      expect(plan.startDate, DateTime(2026, 10, 3)); // 5 - 2 days
-      expect(plan.endDate, DateTime(2026, 10, 4));   // 5 - 1 day
-      expect(plan.totalDays, 2);
-    });
+        final plan = plans.first;
+        expect(plan.startDate, DateTime(2026, 10, 3)); // 5 - 2 days
+        expect(plan.endDate, DateTime(2026, 10, 4)); // 5 - 1 day
+        expect(plan.totalDays, 2);
+      },
+    );
 
     test('3-day protocol: startDate is raceDate minus 3', () async {
       final raceDate = DateTime(2026, 10, 5);
@@ -230,7 +288,7 @@ void main() {
 
       final plan = plans.first;
       expect(plan.startDate, DateTime(2026, 10, 2)); // 5 - 3 days
-      expect(plan.endDate, DateTime(2026, 10, 4));   // 5 - 1 day
+      expect(plan.endDate, DateTime(2026, 10, 4)); // 5 - 1 day
     });
 
     test('2-day protocol generates exactly 2 day records', () async {
@@ -281,9 +339,9 @@ void main() {
         bodyWeightPounds: 154.3236,
       );
 
-      final days = await (db.select(db.carbLoadingDaysTable)
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
-          .get();
+      final days = await (db.select(
+        db.carbLoadingDaysTable,
+      )..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)])).get();
 
       // Day 1 = 2 days before race (protocolDays - 0 = 2 days before)
       // carbProtocol = 9g/kg for day -2
@@ -302,9 +360,9 @@ void main() {
         bodyWeightPounds: 154.3236,
       );
 
-      final days = await (db.select(db.carbLoadingDaysTable)
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
-          .get();
+      final days = await (db.select(
+        db.carbLoadingDaysTable,
+      )..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)])).get();
 
       final day2 = days[1];
       final expectedDay2Carbs = (11.0 * weightKg).round();
@@ -322,44 +380,50 @@ void main() {
         bodyWeightPounds: 154.3236,
       );
 
-      final days = await (db.select(db.carbLoadingDaysTable)
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
-          .get();
+      final days = await (db.select(
+        db.carbLoadingDaysTable,
+      )..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)])).get();
 
       expect(days[0].carbTargetGrams, (8.0 * weightKg).round()); // day -3
       expect(days[1].carbTargetGrams, (8.0 * weightKg).round()); // day -2
       expect(days[2].carbTargetGrams, (10.0 * weightKg).round()); // day -1
     });
 
-    test('2-day avg daily carb target equals (9+11)/2 * bodyWeightKg', () async {
-      const weightKg = 70.0;
-      final raceDate = DateTime(2026, 10, 5);
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        protocolDays: 2,
-        raceDate: raceDate,
-        bodyWeightPounds: 154.3236,
-      );
+    test(
+      '2-day avg daily carb target equals (9+11)/2 * bodyWeightKg',
+      () async {
+        const weightKg = 70.0;
+        final raceDate = DateTime(2026, 10, 5);
+        await service.createCarbLoadingPlan(
+          userId: testUserId,
+          protocolDays: 2,
+          raceDate: raceDate,
+          bodyWeightPounds: 154.3236,
+        );
 
-      final plans = await db.select(db.carbLoadingPlansTable).get();
-      final avgExpected = ((9.0 + 11.0) / 2 * weightKg).round();
-      expect(plans.first.dailyCarbTargetGrams, avgExpected);
-    });
+        final plans = await db.select(db.carbLoadingPlansTable).get();
+        final avgExpected = ((9.0 + 11.0) / 2 * weightKg).round();
+        expect(plans.first.dailyCarbTargetGrams, avgExpected);
+      },
+    );
 
-    test('3-day avg daily carb target equals (8+8+10)/3 * bodyWeightKg', () async {
-      const weightKg = 70.0;
-      final raceDate = DateTime(2026, 10, 5);
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        protocolDays: 3,
-        raceDate: raceDate,
-        bodyWeightPounds: 154.3236,
-      );
+    test(
+      '3-day avg daily carb target equals (8+8+10)/3 * bodyWeightKg',
+      () async {
+        const weightKg = 70.0;
+        final raceDate = DateTime(2026, 10, 5);
+        await service.createCarbLoadingPlan(
+          userId: testUserId,
+          protocolDays: 3,
+          raceDate: raceDate,
+          bodyWeightPounds: 154.3236,
+        );
 
-      final plans = await db.select(db.carbLoadingPlansTable).get();
-      final avgExpected = ((8.0 + 8.0 + 10.0) / 3 * weightKg).round();
-      expect(plans.first.dailyCarbTargetGrams, avgExpected);
-    });
+        final plans = await db.select(db.carbLoadingPlansTable).get();
+        final avgExpected = ((8.0 + 8.0 + 10.0) / 3 * weightKg).round();
+        expect(plans.first.dailyCarbTargetGrams, avgExpected);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -437,24 +501,27 @@ void main() {
       expect(days.length, 2);
     });
 
-    test('excludes the race day itself (race day is NOT a carb-loading day)', () async {
-      final raceDate = DateTime(2026, 10, 5);
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        protocolDays: 2,
-        raceDate: raceDate,
-        bodyWeightPounds: 154.3236,
-      );
+    test(
+      'excludes the race day itself (race day is NOT a carb-loading day)',
+      () async {
+        final raceDate = DateTime(2026, 10, 5);
+        await service.createCarbLoadingPlan(
+          userId: testUserId,
+          protocolDays: 2,
+          raceDate: raceDate,
+          bodyWeightPounds: 154.3236,
+        );
 
-      // Request only the race day
-      final days = await service.getCarbLoadingDaysForRange(
-        userId: testUserId,
-        startDate: DateTime(2026, 10, 5),
-        endDate: DateTime(2026, 10, 5, 23, 59, 59),
-      );
+        // Request only the race day
+        final days = await service.getCarbLoadingDaysForRange(
+          userId: testUserId,
+          startDate: DateTime(2026, 10, 5),
+          endDate: DateTime(2026, 10, 5, 23, 59, 59),
+        );
 
-      expect(days, isEmpty);
-    });
+        expect(days, isEmpty);
+      },
+    );
 
     test('scopes to userId – other user\'s days are invisible', () async {
       final raceDate = DateTime(2026, 10, 5);
@@ -477,25 +544,28 @@ void main() {
       expect(days, isEmpty);
     });
 
-    test('does NOT return days for the day BEFORE startDate (boundary exclusive left check)', () async {
-      final raceDate = DateTime(2026, 10, 5);
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        protocolDays: 2,
-        raceDate: raceDate,
-        bodyWeightPounds: 154.3236,
-      );
+    test(
+      'does NOT return days for the day BEFORE startDate (boundary exclusive left check)',
+      () async {
+        final raceDate = DateTime(2026, 10, 5);
+        await service.createCarbLoadingPlan(
+          userId: testUserId,
+          protocolDays: 2,
+          raceDate: raceDate,
+          bodyWeightPounds: 154.3236,
+        );
 
-      // Start the query from Oct 4, which should miss Oct 3
-      final days = await service.getCarbLoadingDaysForRange(
-        userId: testUserId,
-        startDate: DateTime(2026, 10, 4),
-        endDate: DateTime(2026, 10, 10),
-      );
+        // Start the query from Oct 4, which should miss Oct 3
+        final days = await service.getCarbLoadingDaysForRange(
+          userId: testUserId,
+          startDate: DateTime(2026, 10, 4),
+          endDate: DateTime(2026, 10, 10),
+        );
 
-      expect(days.length, 1);
-      expect(days.first.planDate.day, 4);
-    });
+        expect(days.length, 1);
+        expect(days.first.planDate.day, 4);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -503,31 +573,34 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('deleteCarbLoadingPlan cascade', () {
-    test('removes plan, all days, and all meals when event has a plan', () async {
-      // Create event
-      final event = await service.createEvent(
-        userId: testUserId,
-        eventType: ActivityType.running,
-        hasCarbLoading: true,
-      );
+    test(
+      'removes plan, all days, and all meals when event has a plan',
+      () async {
+        // Create event
+        final event = await service.createEvent(
+          userId: testUserId,
+          eventType: ActivityType.running,
+          hasCarbLoading: true,
+        );
 
-      // Create plan (attached to event)
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        eventId: event.id,
-        protocolDays: 2,
-        raceDate: DateTime(2026, 10, 5),
-        bodyWeightPounds: 154.3236,
-      );
+        // Create plan (attached to event)
+        await service.createCarbLoadingPlan(
+          userId: testUserId,
+          eventId: event.id,
+          protocolDays: 2,
+          raceDate: DateTime(2026, 10, 5),
+          bodyWeightPounds: 154.3236,
+        );
 
-      expect((await db.select(db.carbLoadingPlansTable).get()).length, 1);
-      expect((await db.select(db.carbLoadingDaysTable).get()).length, 2);
+        expect((await db.select(db.carbLoadingPlansTable).get()).length, 1);
+        expect((await db.select(db.carbLoadingDaysTable).get()).length, 2);
 
-      await service.deleteCarbLoadingPlan(eventId: event.id);
+        await service.deleteCarbLoadingPlan(eventId: event.id);
 
-      expect((await db.select(db.carbLoadingPlansTable).get()), isEmpty);
-      expect((await db.select(db.carbLoadingDaysTable).get()), isEmpty);
-    });
+        expect((await db.select(db.carbLoadingPlansTable).get()), isEmpty);
+        expect((await db.select(db.carbLoadingDaysTable).get()), isEmpty);
+      },
+    );
 
     test('updates event hasCarbLoading=false after plan deletion', () async {
       final event = await service.createEvent(
@@ -594,18 +667,20 @@ void main() {
   group('deleteActivity cascade', () {
     test('deletes associated event and carb loading plan', () async {
       // Insert activity directly
-      await db.into(db.activitiesTable).insert(
-        ActivitiesTableCompanion.insert(
-          id: Value('act-del-001'),
-          userId: testUserId,
-          activityType: 'running',
-          title: 'Race Day Run',
-          scheduledDateTime: DateTime(2026, 10, 5, 7),
-          status: Value('planned'),
-          createdAt: DateTime(2026, 1, 1),
-          updatedAt: DateTime(2026, 1, 1),
-        ),
-      );
+      await db
+          .into(db.activitiesTable)
+          .insert(
+            ActivitiesTableCompanion.insert(
+              id: Value('act-del-001'),
+              userId: testUserId,
+              activityType: 'running',
+              title: 'Race Day Run',
+              scheduledDateTime: DateTime(2026, 10, 5, 7),
+              status: Value('planned'),
+              createdAt: DateTime(2026, 1, 1),
+              updatedAt: DateTime(2026, 1, 1),
+            ),
+          );
 
       // Create event linked to activity
       final event = await service.createEvent(
@@ -625,12 +700,17 @@ void main() {
       );
 
       // Now mock deleteActivity on the service
-      when(() => mockActivitiesService.deleteActivity(
-            deviceId: any(named: 'deviceId'),
-            activityId: 'act-del-001',
-          )).thenAnswer((_) async {});
+      when(
+        () => mockActivitiesService.deleteActivity(
+          deviceId: any(named: 'deviceId'),
+          activityId: 'act-del-001',
+        ),
+      ).thenAnswer((_) async {});
 
-      await service.deleteActivity(deviceId: testUserId, activityId: 'act-del-001');
+      await service.deleteActivity(
+        deviceId: testUserId,
+        activityId: 'act-del-001',
+      );
 
       // Event should be gone
       expect((await db.select(db.eventsTable).get()), isEmpty);
@@ -639,25 +719,37 @@ void main() {
       // Carb loading days should be gone
       expect((await db.select(db.carbLoadingDaysTable).get()), isEmpty);
 
-      verify(() => mockActivitiesService.deleteActivity(
-            deviceId: testUserId,
-            activityId: 'act-del-001',
-          )).called(1);
+      verify(
+        () => mockActivitiesService.deleteActivity(
+          deviceId: testUserId,
+          activityId: 'act-del-001',
+        ),
+      ).called(1);
     });
 
-    test('still delegates activity deletion even when no event exists', () async {
-      when(() => mockActivitiesService.deleteActivity(
+    test(
+      'still delegates activity deletion even when no event exists',
+      () async {
+        when(
+          () => mockActivitiesService.deleteActivity(
             deviceId: any(named: 'deviceId'),
             activityId: 'act-no-event',
-          )).thenAnswer((_) async {});
+          ),
+        ).thenAnswer((_) async {});
 
-      await service.deleteActivity(deviceId: testUserId, activityId: 'act-no-event');
+        await service.deleteActivity(
+          deviceId: testUserId,
+          activityId: 'act-no-event',
+        );
 
-      verify(() => mockActivitiesService.deleteActivity(
+        verify(
+          () => mockActivitiesService.deleteActivity(
             deviceId: testUserId,
             activityId: 'act-no-event',
-          )).called(1);
-    });
+          ),
+        ).called(1);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -667,18 +759,20 @@ void main() {
   group('getEventsForWeek', () {
     test('returns events whose activity falls in the requested week', () async {
       // Insert an activity
-      await db.into(db.activitiesTable).insert(
-        ActivitiesTableCompanion.insert(
-          id: Value('act-week-001'),
-          userId: testUserId,
-          activityType: 'running',
-          title: 'Monday Run',
-          scheduledDateTime: DateTime(2026, 6, 15, 8),
-          status: Value('planned'),
-          createdAt: DateTime(2026, 1, 1),
-          updatedAt: DateTime(2026, 1, 1),
-        ),
-      );
+      await db
+          .into(db.activitiesTable)
+          .insert(
+            ActivitiesTableCompanion.insert(
+              id: Value('act-week-001'),
+              userId: testUserId,
+              activityType: 'running',
+              title: 'Monday Run',
+              scheduledDateTime: DateTime(2026, 6, 15, 8),
+              status: Value('planned'),
+              createdAt: DateTime(2026, 1, 1),
+              updatedAt: DateTime(2026, 1, 1),
+            ),
+          );
 
       await service.createEvent(
         userId: testUserId,
@@ -697,8 +791,9 @@ void main() {
         updatedAt: DateTime(2026, 1, 1),
       );
 
-      when(() => mockActivitiesService.getActivityById(testUserId, 'act-week-001'))
-          .thenAnswer((_) async => activity);
+      when(
+        () => mockActivitiesService.getActivityById(testUserId, 'act-week-001'),
+      ).thenAnswer((_) async => activity);
 
       // Week of June 15, 2026 (Monday)
       final weekStart = DateTime(2026, 6, 15);
@@ -709,18 +804,20 @@ void main() {
     });
 
     test('excludes events whose activity falls outside the week', () async {
-      await db.into(db.activitiesTable).insert(
-        ActivitiesTableCompanion.insert(
-          id: Value('act-week-002'),
-          userId: testUserId,
-          activityType: 'running',
-          title: 'Next Week Run',
-          scheduledDateTime: DateTime(2026, 6, 22, 8), // next week
-          status: Value('planned'),
-          createdAt: DateTime(2026, 1, 1),
-          updatedAt: DateTime(2026, 1, 1),
-        ),
-      );
+      await db
+          .into(db.activitiesTable)
+          .insert(
+            ActivitiesTableCompanion.insert(
+              id: Value('act-week-002'),
+              userId: testUserId,
+              activityType: 'running',
+              title: 'Next Week Run',
+              scheduledDateTime: DateTime(2026, 6, 22, 8), // next week
+              status: Value('planned'),
+              createdAt: DateTime(2026, 1, 1),
+              updatedAt: DateTime(2026, 1, 1),
+            ),
+          );
 
       await service.createEvent(
         userId: testUserId,
@@ -739,8 +836,9 @@ void main() {
         updatedAt: DateTime(2026, 1, 1),
       );
 
-      when(() => mockActivitiesService.getActivityById(testUserId, 'act-week-002'))
-          .thenAnswer((_) async => nextWeekActivity);
+      when(
+        () => mockActivitiesService.getActivityById(testUserId, 'act-week-002'),
+      ).thenAnswer((_) async => nextWeekActivity);
 
       // Query week of June 15 — should NOT include June 22
       final weekStart = DateTime(2026, 6, 15);

@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../../../shared/services/performance_telemetry.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
 import '../../domain/brick_metadata.dart';
@@ -37,31 +41,73 @@ class ActivitiesController extends _$ActivitiesController {
     final userId = await ref.read(userIdProvider.future);
 
     // Clean up any abandoned draft activities before loading
-    await service.cleanupDraftActivities(userId);
+    await PerformanceTelemetry.measure(
+      'dashboard.activities.cleanup_drafts',
+      () => service.cleanupDraftActivities(userId),
+      threshold: const Duration(milliseconds: 500),
+    );
 
     // 1. Load local data IMMEDIATELY (no blocking sync)
-    final localData = await service.getAllActivities(userId);
+    final localData = await PerformanceTelemetry.measure(
+      'dashboard.activities.load_local',
+      () => service.getAllActivities(userId),
+      threshold: const Duration(milliseconds: 500),
+    );
 
-    // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes UI
-    unawaited(_backgroundSync(userId));
-
-    // 3. Background integration sync (non-blocking, fire-and-forget)
+    // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes
+    //    state IN PLACE (no invalidateSelf) so dependents don't see a second
+    //    build/spinner and don't re-trigger these background syncs again.
     unawaited(
-      integrationSyncCoordinator
-          .ensureIntegrationsSynced(userId)
-          .then((anySynced) {
-            if (anySynced) {
-              if (!ref.mounted) return;
-              ref.invalidateSelf();
-            }
-          })
-          .catchError((_) {}),
+      PerformanceTelemetry.measure(
+        'dashboard.activities.background_sync',
+        () => _backgroundSync(userId),
+      ),
+    );
+
+    // 3. Background integration sync (non-blocking, fire-and-forget) - also
+    //    refreshes state in place, sharing the same dedupe path as #2 so a
+    //    sync that changes nothing never ripples into a rebuild.
+    unawaited(
+      PerformanceTelemetry.measure('dashboard.integration_sync', () async {
+        final anySynced = await integrationSyncCoordinator
+            .ensureIntegrationsSynced(userId);
+        if (anySynced) {
+          await _refreshInPlace(userId);
+        }
+      }).catchError((_) {}),
     );
 
     return localData;
   }
 
-  /// Background sync: ensures data is fresh, then refreshes UI only when data was stale
+  /// Re-fetch local activities and update [state] in place, but only if the
+  /// data actually changed.
+  ///
+  /// This is the single dedupe path shared by both background sync
+  /// mechanisms (`_backgroundSync` and integration sync). Using a direct
+  /// `state = AsyncData(...)` assignment instead of `invalidateSelf()` means:
+  /// - No second build()/spinner (AsyncNotifier doesn't re-run build() for a
+  ///   direct state assignment).
+  /// - No chained re-invocation of the background syncs kicked off in
+  ///   build() (which is what caused the double/triple dashboard load, since
+  ///   invalidateSelf() re-ran build() which re-fired both syncs).
+  /// - Watchers (fuel_timeline, daily_macros) only see a new emission when
+  ///   the activity list genuinely differs, since `Activity` has value
+  ///   equality and `listEquals` does an element-wise compare.
+  Future<void> _refreshInPlace(String userId) async {
+    if (!ref.mounted) return;
+    final fresh = await _service.getAllActivities(userId);
+    if (!ref.mounted) return;
+
+    final current = state.value;
+    if (current != null && listEquals(current, fresh)) {
+      return; // No real change - don't emit, don't ripple to watchers.
+    }
+    state = AsyncData(fresh);
+  }
+
+  /// Background sync: ensures data is fresh, then refreshes state in place
+  /// only when data was stale AND the sync actually produced different data.
   Future<void> _backgroundSync(String userId) async {
     final repo = ref.read(activitiesRepositoryProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
@@ -80,8 +126,7 @@ class ActivitiesController extends _$ActivitiesController {
       // wasStale=true forever, causing an infinite build→sync→invalidate loop.
       final stillStale = await repo.isStale();
       if (wasStale && !stillStale) {
-        if (!ref.mounted) return;
-        ref.invalidateSelf();
+        await _refreshInPlace(userId);
       }
     } catch (e, stackTrace) {
       logger.error(
@@ -126,6 +171,7 @@ class ActivitiesController extends _$ActivitiesController {
     String? brickId,
   }) async {
     try {
+      final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
 
       final createdActivity = await _service.createActivity(
@@ -156,6 +202,38 @@ class ActivitiesController extends _$ActivitiesController {
         brickId: brickId,
       );
 
+      // The "used the core function" signal. Everything reaching this
+      // controller is a user planning a workout by hand; provider-synced
+      // workouts fire the same event from their sync service with
+      // `source: 'synced'`.
+      try {
+        ref
+            .read(appExternalDepsProvider)
+            .analytics
+            .trackWorkoutPlanned(
+              sport: activityType.name,
+              source: 'manual',
+              durationMinutes: durationMinutes,
+              activityId: createdActivity.id,
+              isCoachCreated: forUserId != null,
+            );
+      } catch (_) {}
+
+      if (priorCount == 0) {
+        try {
+          ref
+              .read(appExternalDepsProvider)
+              .analytics
+              .track(
+                'first_activity_added',
+                properties: {
+                  'activity_type': activityType.name,
+                  'activity_id': createdActivity.id,
+                },
+              );
+        } catch (_) {}
+      }
+
       // Refresh activities list
       ref.invalidateSelf();
 
@@ -185,7 +263,25 @@ class ActivitiesController extends _$ActivitiesController {
   }
 
   /// Delete an activity (soft delete)
+  ///
+  /// Removes the activity from the current list state IN PLACE rather than
+  /// calling `invalidateSelf()`. invalidateSelf forces a full re-fetch, which
+  /// pushes dependents (the fuel-timeline dashboard) through a loading
+  /// transition and flashes the card instead of removing it cleanly. Optimistic
+  /// removal disappears the card instantly and rolls back if the persist fails.
+  ///
+  /// NB: this has nothing to do with the long-running "Activity deleted
+  /// snackbar never dismisses" bug, despite what earlier comments here claimed.
+  /// That was `SnackBar.persist`, which Flutter defaults to `action != null` —
+  /// so any bar with an Undo action ignored its timeout. Fixed in
+  /// `MealvanaSnackbar._show`. Provider churn was never involved.
   Future<void> deleteActivity(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    // Optimistically drop the card so the UI updates immediately with no
+    // loading flash.
+    state = AsyncData(
+      previous.where((a) => a.id != activityId).toList(growable: false),
+    );
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
@@ -193,11 +289,40 @@ class ActivitiesController extends _$ActivitiesController {
         deviceId: deviceIdValue,
         activityId: activityId,
       );
-
-      // Refresh activities list
-      ref.invalidateSelf();
     } catch (e) {
       _logger.error('Error deleting activity', error: e);
+      // Roll back the optimistic removal so the card reappears on failure.
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
+  /// Restore a just-deleted activity — the "Undo" affordance on the fuel
+  /// timeline's swipe-delete.
+  ///
+  /// Optimistically re-inserts [activity] into list state (ordered by schedule)
+  /// and persists WITHOUT `invalidateSelf()`, exactly mirroring [deleteActivity]
+  /// — the general [updateActivity] would call `invalidateSelf()` and push
+  /// dependents (the fuel-timeline dashboard) through a loading transition,
+  /// flashing the card back in. Writing the pre-delete [Activity] back clears
+  /// the soft-delete because its `deletedAt` is null.
+  Future<void> restoreActivity(Activity activity) async {
+    final previous = state.value ?? const <Activity>[];
+    // Optimistically re-add (guard against a duplicate) and keep the list
+    // ordered by scheduled time so the card reappears in its original slot.
+    final next = [...previous.where((a) => a.id != activity.id), activity]
+      ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+    state = AsyncData(List.unmodifiable(next));
+    try {
+      final deviceIdValue = await ref.read(userIdProvider.future);
+      await _service.updateActivity(
+        deviceId: deviceIdValue,
+        activity: activity,
+      );
+    } catch (e) {
+      _logger.error('Error restoring activity', error: e);
+      // Roll back the optimistic restore so the card disappears again.
+      if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
   }

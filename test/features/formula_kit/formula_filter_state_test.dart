@@ -24,21 +24,23 @@ void main() {
       expect(state.activeChipFilterCount, 0);
     });
 
-    test('activeChipFilterCount counts only the chips for the active phase',
-        () {
-      const before = FormulaFilterState(
-        phase: FormulaPhase.before,
-        beforeSubPhase: BeforeSubPhase.snack,
-      );
-      expect(before.activeChipFilterCount, 1);
+    test(
+      'activeChipFilterCount counts only the chips for the active phase',
+      () {
+        const before = FormulaFilterState(
+          phase: FormulaPhase.before,
+          beforeSubPhase: BeforeSubPhase.snack,
+        );
+        expect(before.activeChipFilterCount, 1);
 
-      const during = FormulaFilterState(
-        phase: FormulaPhase.during,
-        duringActivity: DuringActivity.cycling,
-        duringDuration: DuringDuration.ninetyTo150,
-      );
-      expect(during.activeChipFilterCount, 2);
-    });
+        const during = FormulaFilterState(
+          phase: FormulaPhase.during,
+          duringActivity: DuringActivity.cycling,
+          duringDuration: DuringDuration.ninetyTo150,
+        );
+        expect(during.activeChipFilterCount, 2);
+      },
+    );
 
     test('activeChipFilterCount on After phase — 0 when null, 1 when set', () {
       const unset = FormulaFilterState(phase: FormulaPhase.after);
@@ -78,18 +80,20 @@ void main() {
       expect(cleared.beforeSubPhase, isNull);
     });
 
-    test('omitting a sentinel function preserves the existing nullable value',
-        () {
-      const original = FormulaFilterState(
-        phase: FormulaPhase.before,
-        beforeSubPhase: BeforeSubPhase.topUp,
-      );
-      final preserved = original.copyWith(
-        activeAllergyFilters: {Allergy.dairy},
-      ); // no subPhase sentinel
-      expect(preserved.beforeSubPhase, BeforeSubPhase.topUp);
-      expect(preserved.activeAllergyFilters, {Allergy.dairy});
-    });
+    test(
+      'omitting a sentinel function preserves the existing nullable value',
+      () {
+        const original = FormulaFilterState(
+          phase: FormulaPhase.before,
+          beforeSubPhase: BeforeSubPhase.topUp,
+        );
+        final preserved = original.copyWith(
+          activeAllergyFilters: {Allergy.dairy},
+        ); // no subPhase sentinel
+        expect(preserved.beforeSubPhase, BeforeSubPhase.topUp);
+        expect(preserved.activeAllergyFilters, {Allergy.dairy});
+      },
+    );
 
     test('equality is value-based across all fields', () {
       final a = FormulaFilterState(
@@ -131,17 +135,22 @@ void main() {
       expect(BeforeSubPhase.fromStorageValue(null), isNull);
     });
 
-    test('fromTimeWindow maps live pre_workout_templates time_window values',
-        () {
-      expect(
-        BeforeSubPhase.fromTimeWindow('1.5-3 hours'),
-        BeforeSubPhase.meal,
-      );
-      expect(BeforeSubPhase.fromTimeWindow('30-90 min'), BeforeSubPhase.snack);
-      expect(BeforeSubPhase.fromTimeWindow('< 30 min'), BeforeSubPhase.topUp);
-      expect(BeforeSubPhase.fromTimeWindow('whatever'), isNull);
-      expect(BeforeSubPhase.fromTimeWindow(null), isNull);
-    });
+    test(
+      'fromTimeWindow maps live pre_workout_templates time_window values',
+      () {
+        expect(
+          BeforeSubPhase.fromTimeWindow('1.5-3 hours'),
+          BeforeSubPhase.meal,
+        );
+        expect(
+          BeforeSubPhase.fromTimeWindow('30-90 min'),
+          BeforeSubPhase.snack,
+        );
+        expect(BeforeSubPhase.fromTimeWindow('< 30 min'), BeforeSubPhase.topUp);
+        expect(BeforeSubPhase.fromTimeWindow('whatever'), isNull);
+        expect(BeforeSubPhase.fromTimeWindow(null), isNull);
+      },
+    );
   });
 
   group('DuringDuration storage mapping', () {
@@ -154,12 +163,17 @@ void main() {
   });
 
   group('TravelFriendliness storage mapping', () {
-    test('storage values use snake_case for the post_workout_templates column',
-        () {
-      expect(TravelFriendliness.inBag.storageValue, 'in_bag');
-      expect(TravelFriendliness.coolerFriendly.storageValue, 'cooler_friendly');
-      expect(TravelFriendliness.homeOnly.storageValue, 'home_only');
-    });
+    test(
+      'storage values use snake_case for the post_workout_templates column',
+      () {
+        expect(TravelFriendliness.inBag.storageValue, 'in_bag');
+        expect(
+          TravelFriendliness.coolerFriendly.storageValue,
+          'cooler_friendly',
+        );
+        expect(TravelFriendliness.homeOnly.storageValue, 'home_only');
+      },
+    );
 
     test('fromStorageValue is the inverse of storageValue', () {
       for (final v in TravelFriendliness.values) {

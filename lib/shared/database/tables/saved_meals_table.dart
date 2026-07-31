@@ -27,7 +27,8 @@ class SavedMealsTable extends Table {
   TextColumn get photoPath => text().nullable().named('photo_path')();
 
   /// Bumped each time the saved meal is re-logged (sorts the picker).
-  DateTimeColumn get lastUsedAt => dateTime().nullable().named('last_used_at')();
+  DateTimeColumn get lastUsedAt =>
+      dateTime().nullable().named('last_used_at')();
 
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();

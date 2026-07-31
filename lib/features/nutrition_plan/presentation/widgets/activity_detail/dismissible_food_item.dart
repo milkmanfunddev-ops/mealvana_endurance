@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/widgets/swipe_action_background.dart';
 import '../../../domain/food_item_data.dart';
 import '../../utils/activity_detail_helpers.dart';
 import 'expandable_food_item_widget.dart';
@@ -36,61 +37,39 @@ class DismissibleFoodItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Swipe right→left (endToStart) = Delete, swipe left→right (startToEnd) =
+    // Swap — the iOS-conventional "swipe left to delete". Kept in sync with the
+    // Fuel Timeline rows (TimelineNodeTile).
     return Dismissible(
       key: Key(food.id),
-      background: Container(
+      // Both reveals carry ExpandableFoodItemWidget's radius so no square
+      // corner shows behind the rounded row.
+      background: const SwipeActionBackground(
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
-          borderRadius: AppRadius.smRadius,
+        color: AppColors.electrolyte,
+        borderRadius: AppRadius.smRadius,
+        padding: EdgeInsets.only(left: AppSpacing.lg),
+        icon: FaIcon(
+          FontAwesomeIcons.arrowRightArrowLeft,
+          color: Colors.white,
+          size: AppIconSizes.md,
         ),
-        child: Row(
-          children: [
-            FaIcon(
-              FontAwesomeIcons.trash,
-              color: Colors.white,
-              size: AppIconSizes.md,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Delete',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+        label: 'Swap',
       ),
-      secondaryBackground: Container(
+      secondaryBackground: const SwipeActionBackground(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.electrolyte,
-          borderRadius: AppRadius.smRadius,
+        color: AppColors.dragonfruit,
+        borderRadius: AppRadius.smRadius,
+        padding: EdgeInsets.only(right: AppSpacing.lg),
+        icon: FaIcon(
+          FontAwesomeIcons.trash,
+          color: Colors.white,
+          size: AppIconSizes.md,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              'Swap',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            FaIcon(
-              FontAwesomeIcons.arrowRightArrowLeft,
-              color: Colors.white,
-              size: AppIconSizes.md,
-            ),
-          ],
-        ),
+        label: 'Delete',
       ),
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
+        if (direction == DismissDirection.endToStart) {
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
@@ -116,7 +95,7 @@ class DismissibleFoodItem extends StatelessWidget {
             onDelete();
           }
           return false;
-        } else if (direction == DismissDirection.endToStart) {
+        } else if (direction == DismissDirection.startToEnd) {
           onSwap();
           return false;
         }

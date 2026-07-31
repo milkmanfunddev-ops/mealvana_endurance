@@ -16,6 +16,10 @@
 --   • Section 3 (users sweat-profile columns) — DEV + PROD: safe to apply now.
 --     Independent of formula-kit; fixes a live 42703 error that makes EVERY
 --     profile save (name/allergies/diet) fail to reach Supabase.
+--   • Section 5 (users.is_internal analytics earmark) — ✅ APPLIED to DEV +
+--     PROD on 2026-07-08 via Supabase MCP. Flags internal team/test accounts
+--     for exclusion from Mixpanel + engagement metrics. No longer pending —
+--     kept here only for idempotent re-runs.
 --
 -- After applying:
 --   1. Save a dated copy at supabase/migrations/_archived/<YYYYMMDDhhmmss>_<slug>.sql
@@ -408,8 +412,34 @@ CREATE TABLE IF NOT EXISTS public.ai_usage (
   model          TEXT NOT NULL,   -- provider/model string actually used
   input_tokens   INT NOT NULL DEFAULT 0,
   output_tokens  INT NOT NULL DEFAULT 0,
+  cost_usd       NUMERIC,         -- actual USD charge from the AI Gateway (null if unreported)
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Added 2026-07-23 (applied to DEV + PROD): durable per-request cost, so
+-- accounting no longer depends on Mixpanel cost_usd event props.
+ALTER TABLE public.ai_usage ADD COLUMN IF NOT EXISTS cost_usd NUMERIC;
+
+-- Per-user accounting view (DEV + PROD, applied 2026-07-23). One row per
+-- (user, function, model): calls, tokens, summed USD cost. security_invoker
+-- so the underlying RLS still applies to non-service-role callers; query as
+-- service role (DataGrip) for the full cross-user report.
+CREATE OR REPLACE VIEW public.ai_usage_per_user
+WITH (security_invoker = true) AS
+SELECT
+  u.user_id,
+  au.email,
+  u.function_name,
+  u.model,
+  count(*)                            AS calls,
+  sum(u.input_tokens)                 AS input_tokens,
+  sum(u.output_tokens)                AS output_tokens,
+  round(sum(u.cost_usd)::numeric, 4)  AS cost_usd,
+  min(u.created_at)                   AS first_call,
+  max(u.created_at)                   AS last_call
+FROM public.ai_usage u
+LEFT JOIN auth.users au ON au.id = u.user_id
+GROUP BY u.user_id, au.email, u.function_name, u.model;
 
 CREATE INDEX IF NOT EXISTS ai_usage_user_created
   ON public.ai_usage (user_id, created_at DESC);
@@ -434,6 +464,38 @@ CREATE POLICY "Users read own ai usage"
 --   WHERE created_at > now() - interval '30 days'
 --   GROUP BY user_id
 --   ORDER BY total_tokens DESC;
+
+
+-- ── 5. users.is_internal — internal-account earmark for analytics ───────────
+-- ✅ APPLIED to DEV + PROD on 2026-07-08 via Supabase MCP.
+--
+-- Flags team/test accounts so the upcoming Mixpanel wiring (and any engagement
+-- query) can exclude them. Seed list = accounts confirmed internal during the
+-- 2026-07-08 prod engagement audit. Idempotent: ADD COLUMN IF NOT EXISTS; the
+-- UPDATE is a guarded no-op on DBs (e.g. dev) where those rows don't exist.
+
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS is_internal BOOLEAN NOT NULL DEFAULT false;
+
+COMMENT ON COLUMN public.users.is_internal IS
+  'Internal team/test account. Exclude from analytics (Mixpanel) and engagement metrics.';
+
+UPDATE public.users SET is_internal = true
+WHERE id IN (
+  '5c25e7b0-c152-449f-a87f-1c77c6133d15', -- Xuan — main (apple auth)
+  'f3e1c70e-ba22-454f-bd4a-6a4c0a75c71c', -- Xuan — second account (email auth)
+  'd628ceab-7fe7-40ae-8fb3-171c3ab0d44d', -- Xuan — athlete-side account (coach-paired)
+  'e92cb452-0368-4bb3-a888-3e86a65d097f', -- test coach "Samwise Gamgee" (test@test.com)
+  '9754a410-25e7-4d70-8110-db51b951075f', -- test athlete "samwise g" (teest@test.com)
+  '09cd66df-b38e-42c9-a738-1f002f7c1f1e', -- Lee Martin — main
+  'd519d63b-954d-43fb-8eb6-713f6196bcc9', -- Lee Martin — second account
+  'bed7c42b-9293-4895-a724-2c1d9fb3577d'  -- Ray (ruitian821@gmail.com)
+);
+
+-- Candidates NOT yet flagged — anonymous sessions created on team signup days;
+-- run the UPDATE for these too once confirmed internal:
+--   'aada1a31-24a5-4ac0-a4d6-88e4c5e57885'  -- anon, created 2025-11-27 (Xuan's signup day)
+--   '64dd093b-28d3-4442-bfc7-59679791089d'  -- anon, created 2025-11-29 (test coach's signup day)
 
 
 -- ============================================================================

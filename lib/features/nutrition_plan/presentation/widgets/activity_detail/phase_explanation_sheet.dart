@@ -40,6 +40,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
     this.foods,
     this.brickSegment,
     this.isBrick = false,
+    this.planId,
     this.onRegenerate,
   });
 
@@ -51,6 +52,10 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
   final List<FoodItemData>? foods;
   final BrickSegmentMacroTarget? brickSegment;
   final bool isBrick;
+
+  /// Id of the activity whose plan is being explained. Reported as `plan_id`
+  /// on `nutrition_transparency_viewed`.
+  final String? planId;
 
   /// Called after a profile save (sweat rate / sodium concentration) so the
   /// caller can trigger macro regeneration.
@@ -67,6 +72,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
     List<FoodItemData>? foods,
     BrickSegmentMacroTarget? brickSegment,
     bool isBrick = false,
+    String? planId,
     VoidCallback? onRegenerate,
   }) {
     showModalBottomSheet<void>(
@@ -82,6 +88,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
         foods: foods,
         brickSegment: brickSegment,
         isBrick: isBrick,
+        planId: planId,
         onRegenerate: onRegenerate,
       ),
     );
@@ -92,8 +99,7 @@ class PhaseExplanationSheet extends ConsumerStatefulWidget {
       _PhaseExplanationSheetState();
 }
 
-class _PhaseExplanationSheetState
-    extends ConsumerState<PhaseExplanationSheet> {
+class _PhaseExplanationSheetState extends ConsumerState<PhaseExplanationSheet> {
   final _service = const MacroExplanationService();
 
   /// Which scenario tab is active (during-workout only; null otherwise).
@@ -124,9 +130,7 @@ class _PhaseExplanationSheetState
   ///   add [Scenario.redistribution] when any safety_flags mention redistribution;
   ///   add [Scenario.knownRate] if isTested.
   /// - Swim segment (inside brick): always returns empty — rendered as zero-state.
-  List<Scenario> _deriveScenariosForWorkout({
-    Set<Scenario>? availableInMaps,
-  }) {
+  List<Scenario> _deriveScenariosForWorkout({Set<Scenario>? availableInMaps}) {
     if (widget.phase != ExplanationPhase.during &&
         widget.phase != ExplanationPhase.transition1 &&
         widget.phase != ExplanationPhase.transition2) {
@@ -141,8 +145,7 @@ class _PhaseExplanationSheetState
     final isTested = widget.brickSegment?.isTested ?? during.isTested;
     final durationMin = widget.macroTargets.metrics.durationMin;
     final tempC = during.tempC;
-    final isShortGate = durationMin < 60 &&
-        (tempC == null || tempC < 30);
+    final isShortGate = durationMin < 60 && (tempC == null || tempC < 30);
 
     List<Scenario> scenarios;
 
@@ -362,12 +365,14 @@ class _PhaseExplanationSheetState
     );
 
     // Resolve active scenario (reset to first if current one is not in the list)
-    final effectiveActiveScenario =
-        scenarios.contains(_activeScenario) ? _activeScenario : scenarios.firstOrNull;
+    final effectiveActiveScenario = scenarios.contains(_activeScenario)
+        ? _activeScenario
+        : scenarios.firstOrNull;
 
     // Pick per-scenario content driven by the active tab.
     NutrientTransparencyData? pickFromMap(
-        Map<Scenario, NutrientTransparencyData>? map) {
+      Map<Scenario, NutrientTransparencyData>? map,
+    ) {
       if (map == null) return null;
       if (effectiveActiveScenario != null &&
           map.containsKey(effectiveActiveScenario)) {
@@ -376,10 +381,10 @@ class _PhaseExplanationSheetState
       return map.values.firstOrNull;
     }
 
-    final fluidTransparency =
-        isSwimSegment ? swimFluid : pickFromMap(fluidMap);
-    final sodiumTransparency =
-        isSwimSegment ? swimSodium : pickFromMap(sodiumMap);
+    final fluidTransparency = isSwimSegment ? swimFluid : pickFromMap(fluidMap);
+    final sodiumTransparency = isSwimSegment
+        ? swimSodium
+        : pickFromMap(sodiumMap);
 
     // Legacy explanations for any remaining macros (After phase: Protein; Before: labels)
     final legacyExplanations = _service.getExplanations(
@@ -465,6 +470,7 @@ class _PhaseExplanationSheetState
                             ? '${actuals['carbs'] ?? 0}'
                             : null,
                         unit: 'g',
+                        planId: widget.planId,
                         onSettingsChanged: () => setState(() {}),
                         onRegenerate: widget.onRegenerate,
                       ),
@@ -476,10 +482,11 @@ class _PhaseExplanationSheetState
                         transparency: fluidTransparency,
                         actualValue: actuals != null
                             ? widget.useImperial
-                                ? '${((actuals['fluids'] ?? 0) * 0.033814).round()}'
-                                : '${actuals['fluids'] ?? 0}'
+                                  ? '${((actuals['fluids'] ?? 0) * 0.033814).round()}'
+                                  : '${actuals['fluids'] ?? 0}'
                             : null,
                         unit: widget.useImperial ? 'oz' : 'mL',
+                        planId: widget.planId,
                         onSettingsChanged: () => setState(() {}),
                         onRegenerate: widget.onRegenerate,
                       ),
@@ -493,6 +500,7 @@ class _PhaseExplanationSheetState
                             ? '${actuals['sodium'] ?? 0}'
                             : null,
                         unit: 'mg',
+                        planId: widget.planId,
                         onSettingsChanged: () => setState(() {}),
                         onRegenerate: widget.onRegenerate,
                       ),
@@ -502,8 +510,11 @@ class _PhaseExplanationSheetState
                     //  through when carbTransparency is null)
                     for (final explanation in legacyExplanations)
                       if (_shouldShowLegacyCard(
-                          explanation.macroName, carbTransparency,
-                          fluidTransparency, sodiumTransparency))
+                        explanation.macroName,
+                        carbTransparency,
+                        fluidTransparency,
+                        sodiumTransparency,
+                      ))
                         _buildExplanationCard(context, explanation),
 
                     const SizedBox(height: 20),
@@ -668,9 +679,7 @@ class _AfterPhilosophySheet extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: accent.withValues(alpha: 0.3),
-                    ),
+                    border: Border.all(color: accent.withValues(alpha: 0.3)),
                   ),
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -717,7 +726,6 @@ class _AfterPhilosophySheet extends StatelessWidget {
       ),
     );
   }
-
 }
 
 /// Static scenario label when only one scenario applies.
@@ -766,6 +774,7 @@ class _NutrientTransparencyCard extends StatefulWidget {
     required this.transparency,
     required this.unit,
     this.actualValue,
+    this.planId,
     this.onSettingsChanged,
     this.onRegenerate,
   });
@@ -774,6 +783,7 @@ class _NutrientTransparencyCard extends StatefulWidget {
   final NutrientTransparencyData transparency;
   final String unit;
   final String? actualValue;
+  final String? planId;
   final VoidCallback? onSettingsChanged;
   final VoidCallback? onRegenerate;
 
@@ -782,8 +792,7 @@ class _NutrientTransparencyCard extends StatefulWidget {
       _NutrientTransparencyCardState();
 }
 
-class _NutrientTransparencyCardState
-    extends State<_NutrientTransparencyCard> {
+class _NutrientTransparencyCardState extends State<_NutrientTransparencyCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -800,10 +809,7 @@ class _NutrientTransparencyCardState
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -838,7 +844,11 @@ class _NutrientTransparencyCardState
                 ),
                 const Spacer(),
                 _buildTargetBadge(
-                    context, dimColor, secondaryText, accentColor),
+                  context,
+                  dimColor,
+                  secondaryText,
+                  accentColor,
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -862,6 +872,7 @@ class _NutrientTransparencyCardState
             if (widget.transparency.storySections.isNotEmpty)
               NutrientFullStorySection(
                 data: widget.transparency,
+                planId: widget.planId,
                 onSettingsChanged: widget.onSettingsChanged,
                 onEditKnownSweatRate: widget.onRegenerate,
                 onEditKnownSodiumConcentration: widget.onRegenerate,
@@ -907,10 +918,7 @@ class _NutrientTransparencyCardState
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                'planned',
-                style: TextStyle(fontSize: 11, color: dimColor),
-              ),
+              Text('planned', style: TextStyle(fontSize: 11, color: dimColor)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: Text(
@@ -933,10 +941,7 @@ class _NutrientTransparencyCardState
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                'target',
-                style: TextStyle(fontSize: 11, color: dimColor),
-              ),
+              Text('target', style: TextStyle(fontSize: 11, color: dimColor)),
             ] else ...[
               Text(
                 '$target$unit',
@@ -949,10 +954,7 @@ class _NutrientTransparencyCardState
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                'target',
-                style: TextStyle(fontSize: 11, color: dimColor),
-              ),
+              Text('target', style: TextStyle(fontSize: 11, color: dimColor)),
             ],
           ],
         ),
@@ -963,9 +965,7 @@ class _NutrientTransparencyCardState
             decoration: BoxDecoration(
               color: accentColor.withValues(alpha: 0.09),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: accentColor.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: accentColor.withValues(alpha: 0.22)),
             ),
             child: Text(
               'Range: ${transparency.rangeLow!.round()}\u2013${transparency.rangeHigh!.round()}$unit',

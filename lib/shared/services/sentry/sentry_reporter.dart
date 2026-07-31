@@ -54,6 +54,8 @@ abstract class SentryReporter {
     String message, {
     SentryLevel level,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   });
 
   bool get isEnabled;
@@ -97,7 +99,10 @@ class SentrySdkReporter implements SentryReporter {
         scope.setTag('function_name', functionName);
         scope.level = SentryLevel.error;
         if (responseTime != null) {
-          scope.setTag('response_time_ms', responseTime.inMilliseconds.toString());
+          scope.setTag(
+            'response_time_ms',
+            responseTime.inMilliseconds.toString(),
+          );
         }
         if (statusCode != null) {
           scope.setTag('status_code', statusCode.toString());
@@ -142,7 +147,9 @@ class SentrySdkReporter implements SentryReporter {
         scope.level = SentryLevel.warning;
         if (url != null) scope.setTag('url', url);
         if (method != null) scope.setTag('method', method);
-        if (statusCode != null) scope.setTag('status_code', statusCode.toString());
+        if (statusCode != null) {
+          scope.setTag('status_code', statusCode.toString());
+        }
         if (timeout != null) {
           scope.setTag('timeout_ms', timeout.inMilliseconds.toString());
         }
@@ -158,15 +165,17 @@ class SentrySdkReporter implements SentryReporter {
     String? gutTrainingLevel,
   }) async {
     await Sentry.configureScope((scope) {
-      scope.setUser(SentryUser(
-        id: deviceId,
-        data: {
-          if (appVersion != null) 'app_version': appVersion,
-          if (onboardingCompleted != null)
-            'onboarding_completed': onboardingCompleted.toString(),
-          if (gutTrainingLevel != null) 'gut_training': gutTrainingLevel,
-        },
-      ));
+      scope.setUser(
+        SentryUser(
+          id: deviceId,
+          data: {
+            if (appVersion != null) 'app_version': appVersion,
+            if (onboardingCompleted != null)
+              'onboarding_completed': onboardingCompleted.toString(),
+            if (gutTrainingLevel != null) 'gut_training': gutTrainingLevel,
+          },
+        ),
+      );
     });
   }
 
@@ -184,12 +193,14 @@ class SentrySdkReporter implements SentryReporter {
     SentryLevel level = SentryLevel.info,
     Map<String, dynamic>? data,
   }) {
-    Sentry.addBreadcrumb(Breadcrumb(
-      message: message,
-      category: category,
-      level: level,
-      data: data,
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(
+        message: message,
+        category: category,
+        level: level,
+        data: data,
+      ),
+    );
   }
 
   @override
@@ -197,12 +208,20 @@ class SentrySdkReporter implements SentryReporter {
     String message, {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   }) async {
     await Sentry.captureMessage(
       message,
       level: level,
       withScope: (scope) {
         tags?.forEach(scope.setTag);
+        if (extra != null) {
+          scope.setContexts('diagnostic', extra);
+        }
+        if (fingerprint != null) {
+          scope.fingerprint = fingerprint;
+        }
       },
     );
   }
@@ -215,24 +234,39 @@ class NoopSentryReporter implements SentryReporter {
   const NoopSentryReporter();
 
   @override
-  Future<void> reportCriticalError(dynamic error,
-      {StackTrace? stackTrace, String? context, Map<String, String>? tags}) async {}
+  Future<void> reportCriticalError(
+    dynamic error, {
+    StackTrace? stackTrace,
+    String? context,
+    Map<String, String>? tags,
+  }) async {}
 
   @override
-  Future<void> reportEdgeFunctionError(String functionName, dynamic error,
-      {Duration? responseTime, int? statusCode, StackTrace? stackTrace}) async {}
+  Future<void> reportEdgeFunctionError(
+    String functionName,
+    dynamic error, {
+    Duration? responseTime,
+    int? statusCode,
+    StackTrace? stackTrace,
+  }) async {}
 
   @override
-  Future<void> reportDatabaseError(dynamic error,
-      {String? operation, String? table, StackTrace? stackTrace}) async {}
+  Future<void> reportDatabaseError(
+    dynamic error, {
+    String? operation,
+    String? table,
+    StackTrace? stackTrace,
+  }) async {}
 
   @override
-  Future<void> reportNetworkError(dynamic error,
-      {String? url,
-      String? method,
-      int? statusCode,
-      Duration? timeout,
-      StackTrace? stackTrace}) async {}
+  Future<void> reportNetworkError(
+    dynamic error, {
+    String? url,
+    String? method,
+    int? statusCode,
+    Duration? timeout,
+    StackTrace? stackTrace,
+  }) async {}
 
   @override
   Future<void> setUserContext({
@@ -254,8 +288,13 @@ class NoopSentryReporter implements SentryReporter {
   }) {}
 
   @override
-  Future<void> captureMessage(String message,
-      {SentryLevel level = SentryLevel.info, Map<String, String>? tags}) async {}
+  Future<void> captureMessage(
+    String message, {
+    SentryLevel level = SentryLevel.info,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
+  }) async {}
 
   @override
   bool get isEnabled => false;

@@ -23,7 +23,7 @@ class IncrementDecrementWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayValue = formatValue?.call(value) ?? value;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       // mainAxisSize: MainAxisAlignment.start,
@@ -61,10 +61,7 @@ class IncrementDecrementWidget extends StatelessWidget {
             ),
             SizedBox(width: 40.w),
             // Increment Button
-            _IncrementDecrementButton(
-              icon: Icons.add,
-              onPressed: onIncrement,
-            ),
+            _IncrementDecrementButton(icon: Icons.add, onPressed: onIncrement),
           ],
         ),
       ],
@@ -89,10 +86,7 @@ class _IncrementDecrementButton extends StatelessWidget {
       height: 40.h,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: AppTheme.highlight490,
-          width: 1.5,
-        ),
+        border: Border.all(color: AppTheme.highlight490, width: 1.5),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
@@ -107,11 +101,7 @@ class _IncrementDecrementButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(20.r),
-          child: Icon(
-            icon,
-            size: 16.sp,
-            color: AppTheme.primary900,
-          ),
+          child: Icon(icon, size: 16.sp, color: AppTheme.primary900),
         ),
       ),
     );

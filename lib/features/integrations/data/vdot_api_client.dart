@@ -23,12 +23,12 @@ class VdotApiClient {
     required String apiBaseUrl,
     http.Client? httpClient,
     RetryConfig? retryConfig,
-  })  : _clientId = clientId,
-        _clientSecret = clientSecret,
-        _authBaseUrl = authBaseUrl,
-        _apiBaseUrl = apiBaseUrl,
-        _httpClient = httpClient ?? http.Client(),
-        _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
+  }) : _clientId = clientId,
+       _clientSecret = clientSecret,
+       _authBaseUrl = authBaseUrl,
+       _apiBaseUrl = apiBaseUrl,
+       _httpClient = httpClient ?? http.Client(),
+       _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
 
   static const _provider = 'vdot';
 
@@ -103,8 +103,10 @@ class VdotApiClient {
 
     if (kDebugMode) {
       // Lengths only — never log the secret value itself.
-      print('🔑 [vdot] Token exchange creds: client_id="$_clientId" '
-          '(len ${_clientId.length}), client_secret len ${_clientSecret.length}');
+      print(
+        '🔑 [vdot] Token exchange creds: client_id="$_clientId" '
+        '(len ${_clientId.length}), client_secret len ${_clientSecret.length}',
+      );
     }
 
     final response = await _httpClient.post(
@@ -138,7 +140,7 @@ class VdotApiClient {
       // obvious in logs/Sentry without re-deriving it each time.
       final hint = reason.contains('invalid_payload')
           ? ' (missing/empty client_id or client_secret, or wrong body '
-              'content-type — see VdotApiClient)'
+                'content-type — see VdotApiClient)'
           : '';
       throw VdotApiException(
         'Token exchange failed: $reason$hint',
@@ -206,8 +208,10 @@ class VdotApiClient {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return VdotTokenResponse.fromJson(json);
     } on SocketException catch (e) {
-      throw NetworkException('No internet connection: ${e.message}',
-          provider: _provider);
+      throw NetworkException(
+        'No internet connection: ${e.message}',
+        provider: _provider,
+      );
     } on TimeoutException catch (_) {
       throw NetworkException('Connection timed out', provider: _provider);
     }
@@ -333,11 +337,9 @@ class VdotApiClient {
       ..headers['Authorization'] = 'Bearer $accessToken'
       ..headers['Accept'] = 'application/json'
       ..fields['uploadId'] = uploadId
-      ..files.add(http.MultipartFile.fromBytes(
-        'file',
-        fileBytes,
-        filename: fileName,
-      ));
+      ..files.add(
+        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
+      );
     if (sourceId != null) request.fields['sourceId'] = sourceId;
     if (sourceName != null) request.fields['sourceName'] = sourceName;
 
@@ -356,9 +358,9 @@ class VdotApiClient {
   }
 
   Map<String, String> _authedHeaders(String accessToken) => {
-        'Authorization': 'Bearer $accessToken',
-        'Accept': 'application/json',
-      };
+    'Authorization': 'Bearer $accessToken',
+    'Accept': 'application/json',
+  };
 
   void _handleErrorResponse(http.Response response, String context) {
     final error = HttpRetryClient.mapStatusToException(
@@ -404,10 +406,8 @@ class VdotTokenResponse {
     }
     return VdotTokenResponse(
       accessToken: accessToken,
-      refreshToken:
-          (json['refreshToken'] ?? json['refresh_token']) as String?,
-      expiresIn:
-          ((json['expiresIn'] ?? json['expires_in']) as num?)?.toInt(),
+      refreshToken: (json['refreshToken'] ?? json['refresh_token']) as String?,
+      expiresIn: ((json['expiresIn'] ?? json['expires_in']) as num?)?.toInt(),
       tokenType: (json['tokenType'] ?? json['token_type']) as String?,
     );
   }
@@ -425,16 +425,12 @@ class VdotTokenResponse {
 
 /// Result of a POST to either of the `/upload-gps` endpoints.
 class VdotGpsUploadResponse {
-  const VdotGpsUploadResponse({
-    required this.success,
-    required this.message,
-  });
+  const VdotGpsUploadResponse({required this.success, required this.message});
 
   factory VdotGpsUploadResponse.fromJson(Map<String, dynamic> json) {
     return VdotGpsUploadResponse(
       success: (json['Success'] ?? json['success']) as bool? ?? false,
-      message:
-          (json['Message'] ?? json['message']) as String? ?? '',
+      message: (json['Message'] ?? json['message']) as String? ?? '',
     );
   }
 

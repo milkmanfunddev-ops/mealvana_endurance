@@ -38,9 +38,9 @@ class AppStartupErrorWidget extends StatelessWidget {
                   color: AppTheme.highlight600,
                 ),
               ),
-              
+
               SizedBox(height: 32.h),
-              
+
               // Error title
               Text(
                 'Something went wrong',
@@ -51,9 +51,9 @@ class AppStartupErrorWidget extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               SizedBox(height: 16.h),
-              
+
               // Error message
               Text(
                 message,
@@ -63,9 +63,9 @@ class AppStartupErrorWidget extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               SizedBox(height: 40.h),
-              
+
               // Retry button
               PrimaryButton(
                 text: 'Try Again',
@@ -73,9 +73,9 @@ class AppStartupErrorWidget extends StatelessWidget {
                 width: 200.w,
                 height: 48.h,
               ),
-              
+
               SizedBox(height: 24.h),
-              
+
               // Help text
               Text(
                 'If the problem persists, please check your internet connection.',

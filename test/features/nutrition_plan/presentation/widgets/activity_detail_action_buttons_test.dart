@@ -108,9 +108,7 @@ void main() {
     testWidgets('renders the completed card with rating, carbs and notes', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        wrap(buildCompletedState(durationMinutes: 120)),
-      );
+      await tester.pumpWidget(wrap(buildCompletedState(durationMinutes: 120)));
 
       // Completed activities render the rich completed card.
       expect(find.byType(ActivityCompletedCard), findsOneWidget);
@@ -127,12 +125,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        wrap(
-          buildCompletedState(
-            durationMinutes: 80,
-            nutritionRating: null,
-          ),
-        ),
+        wrap(buildCompletedState(durationMinutes: 80, nutritionRating: null)),
       );
 
       expect(find.byType(ActivityCompletedCard), findsOneWidget);
@@ -145,12 +138,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        wrap(
-          buildCompletedState(
-            durationMinutes: 120,
-            completionNotes: null,
-          ),
-        ),
+        wrap(buildCompletedState(durationMinutes: 120, completionNotes: null)),
       );
 
       expect(find.byType(ActivityCompletedCard), findsOneWidget);

@@ -33,6 +33,10 @@ class AppConfig {
     required this.revenueCatApiKeyApple,
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
+    this.revenueCatApiKeyTest = '',
+    this.describeMealEnabled = false,
+    this.coachInsightsEnabled = false,
+    this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
   });
@@ -47,8 +51,9 @@ class AppConfig {
   /// publishable key (`sb_publishable_…`) when present, falling back to the
   /// legacy anon JWT — so the legacy anon key can eventually be disabled once
   /// every build ships the publishable key.
-  String get supabaseClientKey =>
-      supabasePublishableKey.isNotEmpty ? supabasePublishableKey : supabaseAnonKey;
+  String get supabaseClientKey => supabasePublishableKey.isNotEmpty
+      ? supabasePublishableKey
+      : supabaseAnonKey;
 
   // Sentry configuration
   final String sentryDsn;
@@ -95,16 +100,35 @@ class AppConfig {
   String get vdotAuthBaseUrl => 'https://app.vdoto2.com';
 
   /// Base host for the V.O2 REST API.
-  String get vdotApiBaseUrl =>
-      vdotUseSandbox ? 'https://api.sandbox.vdoto2.com' : 'https://api.vdoto2.com';
+  String get vdotApiBaseUrl => vdotUseSandbox
+      ? 'https://api.sandbox.vdoto2.com'
+      : 'https://api.vdoto2.com';
 
   // Environment configuration
   final bool devModeEnabled;
   final String appEnvironment; // 'dev' or 'prod'
 
+  /// Opt-in: send real analytics from dev builds to the dev Mixpanel project
+  /// ("Mealvana Endurance Dev") instead of the no-op tracker. Verification
+  /// sandbox only — prod remains the analysis target.
+  final bool analyticsDevEnabled;
+
   // RevenueCat (AI Credit Packs)
   final String revenueCatApiKeyApple;
   final String revenueCatApiKeyGoogle;
+
+  /// RevenueCat **Test Store** public key (`test_…`), for exercising the whole
+  /// purchase → webhook → wallet path without a real store.
+  ///
+  /// The Test Store is platform-agnostic and completes purchases instantly with
+  /// no payment method, which is the only way to test buying on a simulator —
+  /// StoreKit returns no products there without a sandbox account or a
+  /// `.storekit` config file.
+  ///
+  /// Honoured in dev builds only (see [revenueCatApiKey]); a prod build ignores
+  /// it entirely even if the var is set, so a stray value can never route real
+  /// customers to a fake store.
+  final String revenueCatApiKeyTest;
 
   /// Feature flag controlling AI credit purchasing UI.
   ///
@@ -112,11 +136,29 @@ class AppConfig {
   /// enabled via the `AI_CREDITS_ENABLED=true` env var.
   final bool aiCreditsEnabled;
 
+  /// Release gate for text/photo meal analysis entry points.
+  ///
+  /// Defaults off in every real build so an omitted environment variable
+  /// cannot accidentally expose a metered AI feature.
+  final bool describeMealEnabled;
+
+  /// Release gate for Formula Kit coach insights.
+  ///
+  /// Defaults off for the same fail-closed cost protection as
+  /// [describeMealEnabled].
+  final bool coachInsightsEnabled;
+
   /// Platform-appropriate RevenueCat public API key.
   ///
   /// Returns the Apple key on iOS/macOS and the Google key on Android.
   /// Empty string on web or when the keys have not been configured.
   String get revenueCatApiKey {
+    // Dev opt-in: a Test Store key wins over the real store key so purchases
+    // can be exercised end to end without paying. Gated on isDevelopment so
+    // this can never take effect in a production build.
+    if (isDevelopment && revenueCatApiKeyTest.isNotEmpty) {
+      return revenueCatApiKeyTest;
+    }
     if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
       return revenueCatApiKeyApple;
@@ -179,6 +221,8 @@ class AppConfig {
             ? 'df6e8dd4f3dc1363fa194a156298b16c' // Dev token
             : 'bd8fe50bb67b1dd0860351e6297347db', // Prod token
       ),
+      analyticsDevEnabled:
+          dotenv.get('ANALYTICS_DEV_ENABLED', fallback: 'false') == 'true',
       oneSignalAppId: dotenv.get('ONESIGNAL_APP_ID', fallback: ''),
 
       // Wiredash (User Feedback) configuration
@@ -243,8 +287,25 @@ class AppConfig {
         'REVENUECAT_API_KEY_GOOGLE',
         fallback: '',
       ),
+      revenueCatApiKeyTest: dotenv.get('REVENUECAT_API_KEY_TEST', fallback: ''),
       aiCreditsEnabled:
           dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
+      // AI surfaces default ON for dev builds (2026-07-22, Lee): dev is the
+      // proving ground for Describe/Photo meal logging and formula coach
+      // insights. An explicit env value still wins in either direction, and
+      // prod keeps the OFF fallback until the release-gating decision flips.
+      describeMealEnabled:
+          dotenv.get(
+            'DESCRIBE_MEAL_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
+      coachInsightsEnabled:
+          dotenv.get(
+            'COACH_INSIGHTS_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -283,6 +344,9 @@ class AppConfig {
     String revenueCatApiKeyApple = '',
     String revenueCatApiKeyGoogle = '',
     bool aiCreditsEnabled = false,
+    bool describeMealEnabled = true,
+    bool coachInsightsEnabled = true,
+    bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
   }) {
@@ -317,6 +381,9 @@ class AppConfig {
       revenueCatApiKeyApple: revenueCatApiKeyApple,
       revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
       aiCreditsEnabled: aiCreditsEnabled,
+      describeMealEnabled: describeMealEnabled,
+      coachInsightsEnabled: coachInsightsEnabled,
+      analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
     );
@@ -409,6 +476,12 @@ class AppConfig {
 
       // Analytics configuration
       mixpanelProjectToken: effectiveMixpanelToken,
+      analyticsDevEnabled:
+          const String.fromEnvironment(
+            'ANALYTICS_DEV_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
       oneSignalAppId: oneSignalAppId,
 
       // Wiredash (User Feedback)
@@ -487,12 +560,26 @@ class AppConfig {
         'REVENUECAT_API_KEY_GOOGLE',
         defaultValue: '',
       ),
+      revenueCatApiKeyTest: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_TEST',
+        defaultValue: '',
+      ),
       aiCreditsEnabled:
           const String.fromEnvironment(
             'AI_CREDITS_ENABLED',
             defaultValue: 'false',
           ) ==
           'true',
+      // Same dev-default-ON rule as fromEnv: an explicit define wins, an
+      // absent one falls back to the flavor (dev shows the AI surfaces).
+      describeMealEnabled:
+          const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') != ''
+          ? const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') == 'true'
+          : isDevMode,
+      coachInsightsEnabled:
+          const String.fromEnvironment('COACH_INSIGHTS_ENABLED') != ''
+          ? const String.fromEnvironment('COACH_INSIGHTS_ENABLED') == 'true'
+          : isDevMode,
 
       // Debug settings
       enableDebugLogging: kDebugMode,

@@ -6,8 +6,10 @@ class CyclingParameters {
   final String terrain; // 'flat', 'rolling', 'hilly', 'mountainous'
   final String indoorOutdoor; // 'indoor', 'outdoor'
   final int timeBeforeMinutes;
-  final String? intensityTarget; // 'recovery', 'endurance', 'tempo', 'threshold', 'vo2max'
-  final String? sessionGoal; // 'base_building', 'race_prep', 'recovery', 'intervals'
+  final String?
+  intensityTarget; // 'recovery', 'endurance', 'tempo', 'threshold', 'vo2max'
+  final String?
+  sessionGoal; // 'base_building', 'race_prep', 'recovery', 'intervals'
   final int? elevationGainFt;
 
   const CyclingParameters({

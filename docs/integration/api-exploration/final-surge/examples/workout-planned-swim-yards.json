@@ -1,0 +1,12 @@
+{
+  "WorkoutKey": "swim-yards",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=test&id=swim-yards",
+  "WorkoutDate": "2025-12-28T00:00:00",
+  "WorkoutTitle": "Easy Swim",
+  "WorkoutDescription": null,
+  "WorkoutTypeName": "Swim",
+  "WorkoutIcon": 3,
+  "PlannedTime": 1800,
+  "PlannedDistance": 1650.0,
+  "PlannedDistanceType": "yd"
+}

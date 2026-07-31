@@ -27,6 +27,9 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/fuel_log_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/new_activity_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/swimming_input_screen.dart';
+import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_day_detail_controller.dart';
+import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
+import 'package:mealvana_endurance/shared/database/app_database.dart' as db;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../helpers/widget_test_harness.dart';
@@ -122,11 +125,7 @@ void main() {
     testWidgets('NewActivityScreen builds (loading/initial state)', (
       tester,
     ) async {
-      await smokeScreen(
-        tester,
-        const NewActivityScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const NewActivityScreen(), settle: false);
     });
 
     // -----------------------------------------------------------------------
@@ -203,27 +202,15 @@ void main() {
     // at teardown — unblocking these three smoke tests. settle:false avoids the
     // perpetual location/weather fetch these screens kick off in initState.
     testWidgets('AdjustMacrosScreen builds (initial state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const AdjustMacrosScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const AdjustMacrosScreen(), settle: false);
     });
 
     testWidgets('CyclingInputScreen builds (initial state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const CyclingInputScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const CyclingInputScreen(), settle: false);
     });
 
     testWidgets('SwimmingInputScreen builds (initial state)', (tester) async {
-      await smokeScreen(
-        tester,
-        const SwimmingInputScreen(),
-        settle: false,
-      );
+      await smokeScreen(tester, const SwimmingInputScreen(), settle: false);
     });
 
     // -----------------------------------------------------------------------
@@ -297,5 +284,61 @@ void main() {
         CarbLoadingProtocolSelectionScreen(event: _minimalEvent()),
       );
     });
+
+    // -----------------------------------------------------------------------
+    // 12. CarbLoadingDayDetailPage
+    // -----------------------------------------------------------------------
+    // Takes a Drift CarbLoadingDay row as a constructor param and watches the
+    // carbLoadingDayDetailControllerProvider family (the real build() runs
+    // ensureSynced + repository/DB queries). The family is pinned to a
+    // never-completing future so the loading branch (Center + spinner) renders
+    // deterministically. initState fires an analytics event — covered by the
+    // harness's mocked AppExternalDeps. settle:false for the perpetual spinner.
+    testWidgets('CarbLoadingDayDetailPage builds (loading state)', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        CarbLoadingDayDetailPage(carbLoadingDay: _minimalCarbLoadingDay()),
+        overrides: [
+          carbLoadingDayDetailControllerProvider.overrideWith(
+            _LoadingCarbLoadingDayDetailController.new,
+          ),
+        ],
+        settle: false,
+      );
+    });
   });
 }
+
+/// Pins CarbLoadingDayDetailController to AsyncLoading forever so the page's
+/// loading branch renders deterministically without DB/Supabase.
+class _LoadingCarbLoadingDayDetailController
+    extends CarbLoadingDayDetailController {
+  @override
+  Future<CarbLoadingDayDetailState> build(String carbLoadingDayId) =>
+      Completer<CarbLoadingDayDetailState>().future;
+}
+
+/// Minimal Drift CarbLoadingDay row for the page's constructor param (only
+/// the app-bar title/date and analytics read it while the controller loads).
+db.CarbLoadingDay _minimalCarbLoadingDay() => db.CarbLoadingDay(
+  id: 'smoke-day-id',
+  carbLoadingPlanId: 'smoke-plan-id',
+  planDate: DateTime(2026, 7, 20),
+  dayNumber: 1,
+  carbTargetGrams: 500,
+  carbProtocolGPerKg: 8.0,
+  mealCount: 6,
+  breakfastPercent: 0.25,
+  morningSnackPercent: 0.10,
+  lunchPercent: 0.25,
+  afternoonSnackPercent: 0.10,
+  dinnerPercent: 0.20,
+  eveningSnackPercent: 0.10,
+  loggedCarbsGrams: 0,
+  loggedCalories: 0,
+  completed: false,
+  needsUpload: false,
+  localUpdatedAt: DateTime(2026, 7, 20),
+);

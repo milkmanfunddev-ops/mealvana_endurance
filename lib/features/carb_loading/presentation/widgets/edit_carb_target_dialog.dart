@@ -63,14 +63,18 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
   void _updatePerKgFromDaily() {
     if (!_isEditingPerKg) {
       final dailyTarget = int.tryParse(_dailyTargetController.text) ?? 0;
-      final carbsPerKg = widget.bodyWeightKg > 0 ? dailyTarget / widget.bodyWeightKg : 0;
+      final carbsPerKg = widget.bodyWeightKg > 0
+          ? dailyTarget / widget.bodyWeightKg
+          : 0;
       _carbsPerKgController.text = carbsPerKg.toStringAsFixed(1);
     }
   }
 
   void _onSave() {
-    final carbsPerKg = double.tryParse(_carbsPerKgController.text) ?? widget.currentCarbsPerKg;
-    final dailyTarget = int.tryParse(_dailyTargetController.text) ?? widget.currentDailyTargetG;
+    final carbsPerKg =
+        double.tryParse(_carbsPerKgController.text) ?? widget.currentCarbsPerKg;
+    final dailyTarget =
+        int.tryParse(_dailyTargetController.text) ?? widget.currentDailyTargetG;
 
     widget.onSave(carbsPerKg, dailyTarget);
     Navigator.of(context).pop();
@@ -83,7 +87,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppColors.blackberryLight : AppColors.cream;
+    final backgroundColor = isDark
+        ? AppColors.blackberryLight
+        : AppColors.cream;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final secondaryTextColor = isDark
         ? AppColors.cream.withValues(alpha: 0.7)
@@ -96,9 +102,7 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
       onTap: _dismissKeyboard,
       child: Dialog(
         backgroundColor: backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.cardRadius,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
         insetPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.xl,
@@ -139,7 +143,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
 
                   // Primary input field (highlighted)
                   Text(
-                    _isEditingPerKg ? 'Carbs per kg bodyweight' : 'Total daily carbs',
+                    _isEditingPerKg
+                        ? 'Carbs per kg bodyweight'
+                        : 'Total daily carbs',
                     style: AppTextStyles.smallLabel.copyWith(
                       color: textColor,
                       fontWeight: FontWeight.w600,
@@ -147,7 +153,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   _buildInputField(
-                    controller: _isEditingPerKg ? _carbsPerKgController : _dailyTargetController,
+                    controller: _isEditingPerKg
+                        ? _carbsPerKgController
+                        : _dailyTargetController,
                     hintText: _isEditingPerKg ? '8.0' : '560',
                     suffixText: _isEditingPerKg ? 'g/kg' : 'g',
                     textColor: textColor,
@@ -158,7 +166,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
 
                   // Secondary display field (calculated)
                   Text(
-                    _isEditingPerKg ? 'Total daily carbs' : 'Carbs per kg bodyweight',
+                    _isEditingPerKg
+                        ? 'Total daily carbs'
+                        : 'Carbs per kg bodyweight',
                     style: AppTextStyles.smallLabel.copyWith(
                       color: secondaryTextColor,
                     ),
@@ -185,7 +195,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
                         child: TextButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
+                            ),
                           ),
                           child: Text(
                             'Cancel',
@@ -247,7 +259,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: _isEditingPerKg ? AppColors.orange : Colors.transparent,
+                  color: _isEditingPerKg
+                      ? AppColors.orange
+                      : Colors.transparent,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(19),
                     bottomLeft: Radius.circular(19),
@@ -273,7 +287,9 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: !_isEditingPerKg ? AppColors.orange : Colors.transparent,
+                  color: !_isEditingPerKg
+                      ? AppColors.orange
+                      : Colors.transparent,
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(19),
                     bottomRight: Radius.circular(19),
@@ -393,24 +409,20 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
       decoration: BoxDecoration(
         color: AppColors.electrolyte.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.electrolyte.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.electrolyte.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline,
-            size: 16,
-            color: AppColors.electrolyte,
-          ),
+          Icon(Icons.info_outline, size: 16, color: AppColors.electrolyte),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
               '8-12g/kg per day during carb loading. Higher for longer races.',
               style: AppTextStyles.smallLabel.copyWith(
-                color: isDark ? AppColors.electrolyte : AppColors.blackberry.withValues(alpha: 0.8),
+                color: isDark
+                    ? AppColors.electrolyte
+                    : AppColors.blackberry.withValues(alpha: 0.8),
               ),
             ),
           ),

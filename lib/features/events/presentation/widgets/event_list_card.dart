@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../../shared/utils/location_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../activities/domain/activity.dart';
 import '../../domain/event.dart';
 import '../screens/event_detail_screen.dart';
@@ -43,15 +44,15 @@ class EventListCard extends StatelessWidget {
     return Dismissible(
       key: ValueKey(event.id),
       direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
-          borderRadius: AppRadius.cardRadius,
-        ),
+      // Radius + margin mirror the foreground [BaseCard] so the reveal is
+      // card-shaped rather than a square-cornered slab.
+      background: const SwipeActionBackground(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const FaIcon(
+        color: AppColors.dragonfruit,
+        borderRadius: AppRadius.cardRadius,
+        margin: EdgeInsets.only(bottom: AppSpacing.md),
+        padding: EdgeInsets.only(right: AppSpacing.lg),
+        icon: FaIcon(
           FontAwesomeIcons.trash,
           color: Colors.white,
           size: AppIconSizes.md,

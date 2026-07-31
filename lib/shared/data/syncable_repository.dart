@@ -6,22 +6,13 @@ class SyncResult {
   final int count;
   final String? error;
 
-  const SyncResult({
-    required this.success,
-    required this.count,
-    this.error,
-  });
+  const SyncResult({required this.success, required this.count, this.error});
 
-  factory SyncResult.successful(int count) => SyncResult(
-        success: true,
-        count: count,
-      );
+  factory SyncResult.successful(int count) =>
+      SyncResult(success: true, count: count);
 
-  factory SyncResult.failed(String error) => SyncResult(
-        success: false,
-        count: 0,
-        error: error,
-      );
+  factory SyncResult.failed(String error) =>
+      SyncResult(success: false, count: 0, error: error);
 }
 
 /// Result of an upload operation
@@ -30,27 +21,16 @@ class UploadResult {
   final int count;
   final String? error;
 
-  const UploadResult({
-    required this.success,
-    required this.count,
-    this.error,
-  });
+  const UploadResult({required this.success, required this.count, this.error});
 
-  factory UploadResult.successful(int count) => UploadResult(
-        success: true,
-        count: count,
-      );
+  factory UploadResult.successful(int count) =>
+      UploadResult(success: true, count: count);
 
-  factory UploadResult.nothingToUpload() => const UploadResult(
-        success: true,
-        count: 0,
-      );
+  factory UploadResult.nothingToUpload() =>
+      const UploadResult(success: true, count: 0);
 
-  factory UploadResult.failed(String error) => UploadResult(
-        success: false,
-        count: 0,
-        error: error,
-      );
+  factory UploadResult.failed(String error) =>
+      UploadResult(success: false, count: 0, error: error);
 }
 
 /// Mixin for repositories that support synchronization.

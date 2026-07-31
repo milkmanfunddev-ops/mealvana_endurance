@@ -157,6 +157,11 @@ class AuthListenerService {
     }
 
     try {
+      // Clear the Mixpanel identity so the next account on this device gets a
+      // fresh distinct_id instead of inheriting the outgoing user's profile.
+      // Skipped for onboarding sign-outs above, which resume as the same user.
+      await _analytics.resetUser();
+
       // Reset sync freshness state so next sign-in performs a full repo sync.
       await _ref
           .read(syncCoordinatorProvider.notifier)

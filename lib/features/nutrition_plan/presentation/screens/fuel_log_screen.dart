@@ -196,8 +196,15 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
       );
     }
 
+    // Resolution order matters:
+    //  1. in-memory edits (active logging session),
+    //  2. the activity's saved fuel log (so after Save — when the in-memory
+    //     copy is cleared — the carbs/hr card shows the persisted actual
+    //     quantities instead of reverting to planned),
+    //  3. a fresh copy from the plan (first-time logging, no saved data).
     final fuelLog =
         state.fuelLogData ??
+        _tryLoadStoredFuelLog(state.activity?.fuelLogData) ??
         (plan != null ? FuelLogData.fromNutritionPlan(plan) : null);
     if (plan == null || fuelLog == null) {
       return const Center(child: CircularProgressIndicator());
@@ -290,15 +297,13 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
           title: sectionTitle,
           items: sectionItems,
           sectionColor: sectionColor,
-          subPhaseGroups: subPhaseGroups?.map(
-            (k, v) => MapEntry(k, v.cast()),
-          ),
+          subPhaseGroups: subPhaseGroups?.map((k, v) => MapEntry(k, v.cast())),
           isViewOnly: false,
-          onIncrement: (foodId, secId) {
-            _controller().updateFuelLogItemQuantity(foodId, secId, 0.5);
+          onIncrement: (item) {
+            _controller().updateFuelLogItemQuantity(item, 0.5);
           },
-          onDecrement: (foodId, secId) {
-            _controller().updateFuelLogItemQuantity(foodId, secId, -0.5);
+          onDecrement: (item) {
+            _controller().updateFuelLogItemQuantity(item, -0.5);
           },
           onAddFood: () => _addFood(context, sectionId),
         ),
@@ -306,6 +311,18 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
     }
 
     return Column(children: sectionWidgets);
+  }
+
+  /// Deserialize the activity's saved fuel-log JSON, or null if absent/invalid.
+  /// Takes the raw map (not the [Activity]) so the screen needn't import the
+  /// activity domain type.
+  FuelLogData? _tryLoadStoredFuelLog(Map<String, dynamic>? raw) {
+    if (raw == null) return null;
+    try {
+      return FuelLogData.fromJson(raw);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _initializeFuelLogIfReady(ActivityDetailState state) {

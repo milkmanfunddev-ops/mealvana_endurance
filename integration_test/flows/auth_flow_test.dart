@@ -1,4 +1,4 @@
-/// Auth + login walk — first new integration test built on the
+/// Auth + login walk — the explicit email-login test built on the
 /// post-instrumentation ValueKey infrastructure.
 ///
 /// What it verifies:
@@ -6,95 +6,118 @@
 ///   - `welcome.log_in_button` → routes to the login-options sheet.
 ///   - `login_options.email_button` → routes to the email-login form.
 ///   - `login.email_field` / `login.password_field` accept input.
-///   - `login.log_in_button` → submits and ultimately lands on the
-///     calendar (`calendar.*` keys appear).
+///   - `login.log_in_button` → submits and ultimately lands on the tabs
+///     shell (`bottom_nav.timeline_tab`).
 ///
-/// This replaces the previous mobile-mcp-driven rewalk that was
-/// blocked by coordinate-based synthetic taps not reaching the
-/// Log In button. `find.byKey()` resolves widgets through the
-/// widget tree directly, sidestepping the hit-test issue entirely.
+/// Unlike every other flow, this test does NOT call the shared
+/// ensureAuthenticated() — the manual login walk IS the thing under test.
+/// It still boots through the shared launcher (helpers/flow_launcher.dart)
+/// so the right flavor entrypoint runs, and reads the flavor-matched
+/// credentials from TestConfig.loginEmail/loginPassword (injected via
+/// --dart-define-from-file=secrets/integration_test.env). With no
+/// credentials for the current flavor it self-skips.
 ///
-/// How to run:
-///   flutter test integration_test/flows/01_auth_flow_test.dart \
-///     -d "iPhone 15 Pro Max" \
-///     --dart-define-from-file=.env.dev.local
-///
-/// Requirements:
-///   - test@test.com / test must exist in dev Supabase.
-///   - Simulator must be booted before invocation.
-///   - Network access to the dev Supabase instance.
+/// Run:
+///   patrol test --target integration_test/flows/auth_flow_test.dart \
+///     --flavor dev \
+///     --dart-define-from-file=.env.dev.local \
+///     --dart-define-from-file=secrets/integration_test.env \
+///     --device "iPhone 17 Pro"
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
-import 'package:mealvana_endurance/main_dev.dart' as app;
 
-const _testEmail = 'test@test.com';
-const _testPassword = 'test';
+import '../helpers/flow_launcher.dart';
+import '../helpers/test_config.dart';
 
 void main() {
-  // NOTE: test@test.com / test is a PROD account. Run this against a prod build,
-  // or repoint at a dev-seeded account. For the dev smoke test prefer
-  // onboarding_signup_flow_test.dart, which creates a fresh dev user.
   patrolTest(
-    'login as test@test.com lands on calendar',
+    'email login walk lands on the tabs shell',
     ($) async {
-      final tester = $.tester;
-      await app.main();
-      await tester.pumpAndSettle(const Duration(seconds: 30));
+      await launchApp();
+      // Do NOT pumpAndSettle: startup may show a persistent spinner. Poll
+      // with plain pumps for either an existing session (sentinel) or the
+      // welcome screen.
+      const welcome = ValueKey('welcome.log_in_button');
+      var authed = false;
+      var onWelcome = false;
+      for (var i = 0; i < 180; i++) {
+        await $.pump(const Duration(milliseconds: 500));
+        if ($(authSentinel).exists) {
+          authed = true;
+          break;
+        }
+        if ($(welcome).exists) {
+          onWelcome = true;
+          break;
+        }
+      }
 
-      // If the app launches already logged in (re-run on a hot
-      // simulator), the calendar will be present and the welcome
-      // keys absent. Skip the login walk in that case.
-      final calendarPresent = find.byKey(
-        const ValueKey('fuel_timeline.settings'),
-      ).evaluate().isNotEmpty;
-
-      if (calendarPresent) {
-        // Already on calendar — nothing to assert beyond presence.
-        expect(find.byKey(const ValueKey('fuel_timeline.settings')),
-            findsOneWidget);
+      if (authed) {
+        // Re-run on a hot simulator with a persisted session — the login walk
+        // is not reachable. Presence of the shell is all we can assert.
+        expect($(authSentinel), findsOneWidget);
         return;
       }
 
+      expect(
+        onWelcome,
+        isTrue,
+        reason:
+            'Neither the tabs shell nor the welcome screen appeared '
+            'within 90 s of launch.',
+      );
+
+      if (!TestConfig.hasLoginCredentials) {
+        markTestSkipped(
+          'No ${TestConfig.isProd ? 'INTEGRATION_TEST_PROD_EMAIL/PASSWORD' : 'INTEGRATION_TEST_EMAIL/PASSWORD'} '
+          'provided — cannot exercise the login walk. Pass '
+          '--dart-define-from-file=secrets/integration_test.env to run.',
+        );
+        return;
+      }
+
+      // ---- The explicit manual login walk (the thing under test) --------
       // Welcome → Login options
-      await tester.tap(find.byKey(const ValueKey('welcome.log_in_button')));
-      await tester.pumpAndSettle();
+      await $(welcome).tap();
+      await $(
+        const ValueKey('login_options.email_button'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 15));
 
       // Login options → email login
-      await tester.tap(
-        find.byKey(const ValueKey('login_options.email_button')),
-      );
-      await tester.pumpAndSettle();
+      await $(const ValueKey('login_options.email_button')).tap();
+      await $(
+        const ValueKey('login.email_field'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 15));
 
       // Fill credentials
-      await tester.enterText(
-        find.byKey(const ValueKey('login.email_field')),
-        _testEmail,
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('login.password_field')),
-        _testPassword,
-      );
-      await tester.pumpAndSettle();
+      await $(
+        const ValueKey('login.email_field'),
+      ).enterText(TestConfig.loginEmail);
+      await $(
+        const ValueKey('login.password_field'),
+      ).enterText(TestConfig.loginPassword);
 
-      // Submit
-      await tester.tap(find.byKey(const ValueKey('login.log_in_button')));
+      // Submit — noSettle so a post-login loading spinner cannot burn the
+      // settle timeout; the sentinel wait below gates on the landed shell.
+      await $(
+        const ValueKey('login.log_in_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
 
-      // Allow Supabase round-trip + redirect to calendar.
-      await tester.pumpAndSettle(const Duration(seconds: 30));
-
-      // Verify we landed on the calendar.
+      // Allow the Supabase round-trip + redirect to the tabs shell.
+      await $(
+        authSentinel,
+      ).waitUntilVisible(timeout: const Duration(seconds: 60));
       expect(
-        find.byKey(const ValueKey('fuel_timeline.settings')),
+        $(authSentinel),
         findsOneWidget,
         reason:
-            'Expected the Fuel Timeline dashboard after login. If this fails, '
-            'dump the tree with `debugDumpApp()` and check what screen we '
-            'landed on.',
+            'Expected the tabs shell nav bar after login. If this fails, dump '
+            'the tree with `debugDumpApp()` and check what screen we landed on.',
       );
     },
-    timeout: const Timeout(Duration(minutes: 3)),
+    timeout: const Timeout(Duration(minutes: 6)),
   );
 }

@@ -24,8 +24,8 @@ class AppContent {
       environment: json['environment'] ?? 'production',
       locale: json['locale'] ?? 'en',
       content: Map<String, dynamic>.from(json['content'] ?? {}),
-      lastUpdated: json['last_updated'] != null 
-          ? DateTime.parse(json['last_updated']) 
+      lastUpdated: json['last_updated'] != null
+          ? DateTime.parse(json['last_updated'])
           : DateTime.now(),
       isActive: json['is_active'] ?? true,
     );
@@ -48,7 +48,7 @@ class AppContent {
   String? getValue(String key, {String? defaultValue}) {
     final parts = key.split('.');
     dynamic value = content;
-    
+
     for (final part in parts) {
       if (value is Map) {
         value = value[part];
@@ -56,7 +56,7 @@ class AppContent {
         return defaultValue;
       }
     }
-    
+
     return value?.toString() ?? defaultValue;
   }
 

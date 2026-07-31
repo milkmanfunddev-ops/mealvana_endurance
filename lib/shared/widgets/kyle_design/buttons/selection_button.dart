@@ -82,8 +82,8 @@ class KyleSelectionButton<T> extends ConsumerWidget {
             color: isSelected
                 ? (isDark ? AppColors.cream : AppColors.blackberry)
                 : (isDark
-                    ? AppColors.cream.withValues(alpha: 0.3)
-                    : AppColors.blackberry.withValues(alpha: 0.3)),
+                      ? AppColors.cream.withValues(alpha: 0.3)
+                      : AppColors.blackberry.withValues(alpha: 0.3)),
             width: 2,
           ),
           borderRadius: AppRadius.inputRadius,
@@ -99,8 +99,8 @@ class KyleSelectionButton<T> extends ConsumerWidget {
                     color: isSelected
                         ? (isDark ? AppColors.blackberry : AppColors.cream)
                         : (isDark
-                            ? AppColors.cream.withValues(alpha: 0.5)
-                            : AppColors.blackberry.withValues(alpha: 0.5)),
+                              ? AppColors.cream.withValues(alpha: 0.5)
+                              : AppColors.blackberry.withValues(alpha: 0.5)),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -112,8 +112,8 @@ class KyleSelectionButton<T> extends ConsumerWidget {
                       color: isSelected
                           ? (isDark ? AppColors.blackberry : AppColors.cream)
                           : (isDark
-                              ? AppColors.cream.withValues(alpha: 0.5)
-                              : AppColors.blackberry.withValues(alpha: 0.5)),
+                                ? AppColors.cream.withValues(alpha: 0.5)
+                                : AppColors.blackberry.withValues(alpha: 0.5)),
                     ),
                   ),
                 ],
@@ -125,8 +125,8 @@ class KyleSelectionButton<T> extends ConsumerWidget {
                   color: isSelected
                       ? (isDark ? AppColors.blackberry : AppColors.cream)
                       : (isDark
-                          ? AppColors.cream.withValues(alpha: 0.7)
-                          : AppColors.blackberry.withValues(alpha: 0.7)),
+                            ? AppColors.cream.withValues(alpha: 0.7)
+                            : AppColors.blackberry.withValues(alpha: 0.7)),
                   fontWeight: FontWeight.w600,
                 ),
               ),

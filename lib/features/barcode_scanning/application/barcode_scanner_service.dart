@@ -23,10 +23,10 @@ class BarcodeScannerService {
     required FoodMappingService mappingService,
     required AppDatabase database,
     required AppLogger logger,
-  })  : _barcodeService = barcodeService,
-        _mappingService = mappingService,
-        _database = database,
-        _logger = logger;
+  }) : _barcodeService = barcodeService,
+       _mappingService = mappingService,
+       _database = database,
+       _logger = logger;
 
   /// Scan a barcode and return a Food model if successful
   /// Returns null if the product is not found or there's an error
@@ -84,10 +84,7 @@ class BarcodeScannerService {
         );
 
       case BarcodeResultError(:final message):
-        return BarcodeScanResult.error(
-          barcode: cleanBarcode,
-          message: message,
-        );
+        return BarcodeScanResult.error(barcode: cleanBarcode, message: message);
     }
   }
 
@@ -104,7 +101,6 @@ class BarcodeScannerService {
 
       // Cache to database
       await _database.foodsDao.cacheFoods([foodData]);
-
     } catch (e) {
       _logger.error(
         'Error caching scanned food',
@@ -253,10 +249,7 @@ final class BarcodeScanResultError extends BarcodeScanResult {
   @override
   final String message;
 
-  const BarcodeScanResultError({
-    required super.barcode,
-    required this.message,
-  });
+  const BarcodeScanResultError({required super.barcode, required this.message});
 }
 
 /// Invalid barcode format result

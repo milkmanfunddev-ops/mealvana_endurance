@@ -26,7 +26,7 @@ final class DailyMacroServiceProvider
         argument: null,
         retry: null,
         name: r'dailyMacroServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -54,4 +54,4 @@ final class DailyMacroServiceProvider
   }
 }
 
-String _$dailyMacroServiceHash() => r'd42a3a1d93c1e662932ef838f192ff4300da58c6';
+String _$dailyMacroServiceHash() => r'3e00aa419c66dc2b11fdd8cb65dbf2a5284eb814';

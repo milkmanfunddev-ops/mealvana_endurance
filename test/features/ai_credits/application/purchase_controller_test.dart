@@ -38,16 +38,32 @@ import 'package:mealvana_endurance/features/ai_credits/application/purchase_cont
 import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
+import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
+/// Stands in for the Supabase auth user id that RevenueCat is identified with.
+const _testUserId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
+
 class _MockRevenueCatService extends Mock implements RevenueCatService {}
 
 class _MockCreditsRepository extends Mock implements CreditsRepository {}
 
-class _FakePackage extends Fake implements Package {}
+/// A [StoreProduct] stub carrying only what the controller reads: the SKU,
+/// which is attached to Sentry reports so a failed purchase names its pack.
+class _FakeStoreProduct extends Fake implements StoreProduct {
+  @override
+  String get identifier => 'mealvana_credits_50';
+}
+
+class _FakePackage extends Fake implements Package {
+  @override
+  StoreProduct get storeProduct => _FakeStoreProduct();
+}
 
 // ---------------------------------------------------------------------------
 // Fallback registration
@@ -65,14 +81,22 @@ void _registerFallbacks() {
 
 typedef _Cleanup = void Function();
 
+late SharedPreferences _prefs;
+
 (ProviderContainer, _Cleanup) _buildContainer({
   required _MockRevenueCatService rcService,
   required _MockCreditsRepository creditsRepo,
 }) {
-  final container = ProviderContainer(overrides: [
-    revenueCatServiceProvider.overrideWithValue(rcService),
-    creditsRepositoryProvider.overrideWithValue(creditsRepo),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      revenueCatServiceProvider.overrideWithValue(rcService),
+      creditsRepositoryProvider.overrideWithValue(creditsRepo),
+      sharedPreferencesProvider.overrideWithValue(_prefs),
+      // Keep the real Sentry SDK out of unit tests; the controller now reports
+      // purchase failures through this provider.
+      sentryReporterProvider.overrideWithValue(const NoopSentryReporter()),
+    ],
+  );
 
   // Subscribe to both providers so they stay alive (not autoDisposed)
   // while async work is in progress.
@@ -109,10 +133,17 @@ void main() {
 
   setUpAll(_registerFallbacks);
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    _prefs = await SharedPreferences.getInstance();
     rcService = _MockRevenueCatService();
     creditsRepo = _MockCreditsRepository();
     fakePackage = _FakePackage();
+    // buy() now refuses to reach the store without a signed-in user and
+    // re-asserts the RevenueCat identity first, so both must be stubbed.
+    when(() => creditsRepo.ensureWallet()).thenAnswer((_) async => null);
+    when(() => creditsRepo.currentUserId).thenReturn(_testUserId);
+    when(() => rcService.logIn(any())).thenAnswer((_) async {});
   });
 
   // -------------------------------------------------------------------------
@@ -121,8 +152,9 @@ void main() {
 
   group('PurchaseController — initial state', () {
     test('initial state is AsyncData(null) — idle', () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -134,8 +166,11 @@ void main() {
       await container.read(purchaseControllerProvider.future);
 
       final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>(),
-          reason: 'Controller must start idle (AsyncData(null)).');
+      expect(
+        state,
+        isA<AsyncData<void>>(),
+        reason: 'Controller must start idle (AsyncData(null)).',
+      );
     });
   });
 
@@ -144,29 +179,40 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('PurchaseController.buy — user cancels', () {
-    test('buy() where purchase returns false → state stays AsyncData (idle)', () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+    test(
+      'buy() where purchase returns false → state stays AsyncData (idle)',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => false);
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(purchaseControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+        await container
+            .read(purchaseControllerProvider.notifier)
+            .buy(fakePackage);
 
-      final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>(),
-          reason: 'A cancelled purchase must not put the controller in error state.');
-    });
+        final state = container.read(purchaseControllerProvider);
+        expect(
+          state,
+          isA<AsyncData<void>>(),
+          reason:
+              'A cancelled purchase must not put the controller in error state.',
+        );
+      },
+    );
 
     test('buy() cancelled — purchase() was called exactly once', () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
       when(() => rcService.purchase(any())).thenAnswer((_) async => false);
 
       final (container, cleanup) = _buildContainer(
@@ -176,17 +222,18 @@ void main() {
       addTearDown(cleanup);
 
       await container.read(purchaseControllerProvider.future);
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+      await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
 
       verify(() => rcService.purchase(fakePackage)).called(1);
     });
 
-    test(
-        'buy() cancelled — fetchWallet not called a second time after cancel '
-        '(no polling when purchase returns false)',
-        () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
+    test('buy() cancelled — fetchWallet not called a second time after cancel '
+        '(no polling when purchase returns false)', () async {
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
       when(() => rcService.purchase(any())).thenAnswer((_) async => false);
 
       final (container, cleanup) = _buildContainer(
@@ -202,7 +249,9 @@ void main() {
       // Reset interaction count after initial builds.
       clearInteractions(creditsRepo);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+      await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
 
       // After cancel, no poll fires — fetchWallet should not be called again.
       verifyNever(() => creditsRepo.fetchWallet());
@@ -214,9 +263,7 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('PurchaseController.buy — success path', () {
-    test(
-        'buy() success → state is AsyncData(null) after purchase',
-        () async {
+    test('buy() success → state is AsyncData(null) after purchase', () async {
       var callCount = 0;
       when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
         callCount++;
@@ -236,16 +283,22 @@ void main() {
       await container.read(creditsControllerProvider.future);
       await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+      await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
 
       final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>(),
-          reason: 'Successful purchase must resolve to AsyncData(null) — idle.');
+      expect(
+        state,
+        isA<AsyncData<void>>(),
+        reason: 'Successful purchase must resolve to AsyncData(null) — idle.',
+      );
     });
 
     test('buy() success → purchase() called exactly once', () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
       when(() => rcService.purchase(any())).thenAnswer((_) async => true);
 
       final (container, cleanup) = _buildContainer(
@@ -257,37 +310,46 @@ void main() {
       await container.read(creditsControllerProvider.future);
       await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+      await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
 
       verify(() => rcService.purchase(fakePackage)).called(1);
     });
 
     test(
-        'buy() success — poll detects balance increase and returns early',
-        () async {
-      var callCount = 0;
-      when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
-        callCount++;
-        return CreditWallet(balance: callCount == 1 ? 50 : 150);
-      });
-      when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+      'buy() success — poll detects balance increase and returns early',
+      () async {
+        var callCount = 0;
+        when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
+          callCount++;
+          return CreditWallet(balance: callCount == 1 ? 50 : 150);
+        });
+        when(() => rcService.purchase(any())).thenAnswer((_) async => true);
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(creditsControllerProvider.future); // count=1 → 50
-      await container.read(purchaseControllerProvider.future);
+        await container.read(creditsControllerProvider.future); // count=1 → 50
+        await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+        await container
+            .read(purchaseControllerProvider.notifier)
+            .buy(fakePackage);
 
-      // After buy, the credits controller should have been refreshed (count > 1).
-      expect(callCount, greaterThan(1),
-          reason: 'buy() must poll creditsController after successful purchase '
-              'to detect the balance update from the RC webhook.');
-    });
+        // After buy, the credits controller should have been refreshed (count > 1).
+        expect(
+          callCount,
+          greaterThan(1),
+          reason:
+              'buy() must poll creditsController after successful purchase '
+              'to detect the balance update from the RC webhook.',
+        );
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -295,12 +357,11 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('PurchaseController.buy — SDK error is silent (false from service)', () {
-    test(
-        'buy() when service returns false (SDK error swallowed) '
-        '→ controller stays in AsyncData, no crash',
-        () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
+    test('buy() when service returns false (SDK error swallowed) '
+        '→ controller stays in AsyncData, no crash', () async {
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
       when(() => rcService.purchase(any())).thenAnswer((_) async => false);
 
       final (container, cleanup) = _buildContainer(
@@ -311,12 +372,18 @@ void main() {
 
       await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+      await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
 
       final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>(),
-          reason: 'SDK errors are swallowed by RevenueCatService and mapped to '
-              'false. PurchaseController treats false as user-cancel — no crash.');
+      expect(
+        state,
+        isA<AsyncData<void>>(),
+        reason:
+            'SDK errors are swallowed by RevenueCatService and mapped to '
+            'false. PurchaseController treats false as user-cancel — no crash.',
+      );
     });
   });
 
@@ -325,96 +392,123 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('PurchaseController.restore', () {
-    test('restore() settles to AsyncData(null) when restore succeeds', () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.restore()).thenAnswer((_) async {});
+    test(
+      'restore() settles to AsyncData(null) when restore succeeds',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+        when(() => rcService.restore()).thenAnswer((_) async {});
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(creditsControllerProvider.future);
-      await container.read(purchaseControllerProvider.future);
+        await container.read(creditsControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
 
-      // restore() includes a real Future.delayed(2s) — this test will be slow
-      // but is necessary to verify the full path without fake timers.
-      await container.read(purchaseControllerProvider.notifier).restore();
+        // restore() includes a real Future.delayed(2s) — this test will be slow
+        // but is necessary to verify the full path without fake timers.
+        await container.read(purchaseControllerProvider.notifier).restore();
 
-      final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>(),
-          reason: 'restore() must settle to idle AsyncData on success.');
-    }, timeout: const Timeout(Duration(seconds: 10)));
-
-    test('restore() calls rcService.restore() exactly once', () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.restore()).thenAnswer((_) async {});
-
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
-
-      await container.read(creditsControllerProvider.future);
-      await container.read(purchaseControllerProvider.future);
-
-      await container.read(purchaseControllerProvider.notifier).restore();
-
-      verify(() => rcService.restore()).called(1);
-    }, timeout: const Timeout(Duration(seconds: 10)));
+        final state = container.read(purchaseControllerProvider);
+        expect(
+          state,
+          isA<AsyncData<void>>(),
+          reason: 'restore() must settle to idle AsyncData on success.',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
 
     test(
-        'restore() — rcService.restore() throwing surfaces as AsyncError',
-        () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.restore()).thenThrow(Exception('restore failed'));
+      'restore() calls rcService.restore() exactly once',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+        when(() => rcService.restore()).thenAnswer((_) async {});
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(creditsControllerProvider.future);
-      await container.read(purchaseControllerProvider.future);
+        await container.read(creditsControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).restore();
+        await container.read(purchaseControllerProvider.notifier).restore();
 
-      final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncError<void>>(),
-          reason: 'If restore() throws through the AsyncValue.guard, state '
-              'must be AsyncError — the exception is not silently dropped.');
-    });
+        verify(() => rcService.restore()).called(1);
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
 
-    test('restore() triggers a wallet refresh', () async {
-      var fetchCount = 0;
-      when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
-        fetchCount++;
-        return CreditWallet(balance: fetchCount * 10);
-      });
-      when(() => rcService.restore()).thenAnswer((_) async {});
+    test(
+      'restore() — rcService.restore() throwing surfaces as AsyncError',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+        when(() => rcService.restore()).thenThrow(Exception('restore failed'));
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(creditsControllerProvider.future); // count=1
-      await container.read(purchaseControllerProvider.future);
+        await container.read(creditsControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
 
-      final countBeforeRestore = fetchCount;
-      await container.read(purchaseControllerProvider.notifier).restore();
+        await container.read(purchaseControllerProvider.notifier).restore();
 
-      expect(fetchCount, greaterThan(countBeforeRestore),
-          reason: 'restore() must call creditsController.refresh() to update '
-              'the displayed balance after the restore completes.');
-    }, timeout: const Timeout(Duration(seconds: 10)));
+        final state = container.read(purchaseControllerProvider);
+        expect(
+          state,
+          isA<AsyncError<void>>(),
+          reason:
+              'If restore() throws through the AsyncValue.guard, state '
+              'must be AsyncError — the exception is not silently dropped.',
+        );
+      },
+    );
+
+    test(
+      'restore() triggers a wallet refresh',
+      () async {
+        var fetchCount = 0;
+        when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
+          fetchCount++;
+          return CreditWallet(balance: fetchCount * 10);
+        });
+        when(() => rcService.restore()).thenAnswer((_) async {});
+
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
+
+        await container.read(creditsControllerProvider.future); // count=1
+        await container.read(purchaseControllerProvider.future);
+
+        final countBeforeRestore = fetchCount;
+        await container.read(purchaseControllerProvider.notifier).restore();
+
+        expect(
+          fetchCount,
+          greaterThan(countBeforeRestore),
+          reason:
+              'restore() must call creditsController.refresh() to update '
+              'the displayed balance after the restore completes.',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -423,12 +517,85 @@ void main() {
 
   group('PurchaseController.buy — poll exhaustion', () {
     test(
-        'BUG_CHECK: buy() succeeds but balance never increases '
-        '→ no crash, state is AsyncData (poll exhaustion is non-fatal)',
-        () async {
-      // Balance never changes — simulates webhook delay longer than max poll.
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => const CreditWallet(balance: 100));
+      'BUG_CHECK: buy() succeeds but balance never increases '
+      '→ no crash, state is AsyncData (poll exhaustion is non-fatal)',
+      () async {
+        // Balance never changes — simulates webhook delay longer than max poll.
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => const CreditWallet(balance: 100));
+        when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
+
+        await container.read(creditsControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
+
+        // This will run 5 poll intervals × 1500ms = 7.5 seconds in real time.
+        // We accept the slowness here rather than add fake_async as a new dep.
+        await container
+            .read(purchaseControllerProvider.notifier)
+            .buy(fakePackage);
+
+        final state = container.read(purchaseControllerProvider);
+        expect(
+          state,
+          isA<AsyncData<void>>(),
+          reason:
+              'Poll exhaustion must NOT crash the controller or produce '
+              'AsyncError. User already paid — a silent non-update is acceptable.',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // buy() — the returned PurchaseOutcome
+  //
+  // These pin the distinction the UI depends on. The sheet used to infer the
+  // result from a wallet-balance delta, which collapsed three very different
+  // situations into one message — including telling a user who HAD been
+  // charged that nothing was charged.
+  // -------------------------------------------------------------------------
+
+  group('PurchaseController.buy — outcome', () {
+    test('balance increases → PurchaseOutcome.credited', () async {
+      var balance = 100;
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet(balance: balance));
+      when(() => rcService.purchase(any())).thenAnswer((_) async {
+        balance = 150;
+        return true;
+      });
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(creditsControllerProvider.future);
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.credited);
+    });
+
+    test('store confirms but the wallet never moves → '
+        'PurchaseOutcome.purchasedButNotCredited (NOT failed)', () async {
+      // The webhook is late or never lands. The user has paid.
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => const CreditWallet(balance: 100));
       when(() => rcService.purchase(any())).thenAnswer((_) async => true);
 
       final (container, cleanup) = _buildContainer(
@@ -440,15 +607,102 @@ void main() {
       await container.read(creditsControllerProvider.future);
       await container.read(purchaseControllerProvider.future);
 
-      // This will run 5 poll intervals × 1500ms = 7.5 seconds in real time.
-      // We accept the slowness here rather than add fake_async as a new dep.
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
 
-      final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>(),
-          reason: 'Poll exhaustion must NOT crash the controller or produce '
-              'AsyncError. User already paid — a silent non-update is acceptable.');
+      expect(
+        outcome,
+        PurchaseOutcome.purchasedButNotCredited,
+        reason:
+            'Reporting this as `failed` would tell a user who was charged '
+            'that nothing was charged — the specific bug this enum fixes.',
+      );
     }, timeout: const Timeout(Duration(seconds: 30)));
+
+    test('service returns false (cancel or store rejection) → '
+        'PurchaseOutcome.cancelled, and the wallet is never polled', () async {
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => const CreditWallet(balance: 100));
+      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(creditsControllerProvider.future);
+      await container.read(purchaseControllerProvider.future);
+
+      final sw = Stopwatch()..start();
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+      sw.stop();
+
+      expect(outcome, PurchaseOutcome.cancelled);
+      // Returning early matters: polling here would make a cancel take 7.5s.
+      expect(sw.elapsed, lessThan(const Duration(seconds: 2)));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // buy() — authentication precondition
+  //
+  // The RevenueCat webhook maps `app_user_id` onto `auth.users.id`, so a
+  // purchase made without a signed-in user takes money and credits nobody.
+  // -------------------------------------------------------------------------
+
+  group('PurchaseController.buy — requires a signed-in user', () {
+    test('no signed-in user → PurchaseOutcome.notSignedIn and the store is '
+        'never contacted', () async {
+      when(() => creditsRepo.currentUserId).thenReturn(null);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.notSignedIn);
+      verifyNever(() => rcService.purchase(any()));
+    });
+
+    test(
+      'signed-in user → RevenueCat identity is re-asserted before purchasing',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
+
+        await container.read(purchaseControllerProvider.future);
+        await container
+            .read(purchaseControllerProvider.notifier)
+            .buy(fakePackage);
+
+        // logIn runs once at startup, so a user who signed in afterwards would
+        // otherwise still be carrying the anonymous RevenueCat id.
+        verify(() => rcService.logIn(_testUserId)).called(1);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -457,33 +711,37 @@ void main() {
 
   group('PurchaseController.buy — wallet unavailable during buy', () {
     test(
-        'BUG_CHECK: _currentBalance() returns 0 when creditsController throws, '
-        'buy() still proceeds (not blocked by wallet read error)',
-        () async {
-      var callCount = 0;
-      when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
-        callCount++;
-        if (callCount == 1) throw Exception('offline');
-        return const CreditWallet(balance: 0);
-      });
-      when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+      'BUG_CHECK: _currentBalance() returns 0 when creditsController throws, '
+      'buy() still proceeds (not blocked by wallet read error)',
+      () async {
+        var callCount = 0;
+        when(() => creditsRepo.fetchWallet()).thenAnswer((_) async {
+          callCount++;
+          if (callCount == 1) throw Exception('offline');
+          return const CreditWallet(balance: 0);
+        });
+        when(() => rcService.purchase(any())).thenAnswer((_) async => true);
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(purchaseControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
 
-      await container.read(purchaseControllerProvider.notifier).buy(fakePackage);
+        await container
+            .read(purchaseControllerProvider.notifier)
+            .buy(fakePackage);
 
-      // purchase() must have been called — the wallet error did not block it.
-      verify(() => rcService.purchase(fakePackage)).called(1);
+        // purchase() must have been called — the wallet error did not block it.
+        verify(() => rcService.purchase(fakePackage)).called(1);
 
-      final state = container.read(purchaseControllerProvider);
-      expect(state, isA<AsyncData<void>>());
-    }, timeout: const Timeout(Duration(seconds: 30)));
+        final state = container.read(purchaseControllerProvider);
+        expect(state, isA<AsyncData<void>>());
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -492,40 +750,47 @@ void main() {
 
   group('PurchaseController.buy — concurrent call guard', () {
     test(
-        'BUG_CHECK: when buy() is in-flight (AsyncLoading), '
-        'PurchaseController has no internal guard against concurrent calls — '
-        'the UI is responsible for disabling the button when isBusy=true',
-        () async {
-      when(() => creditsRepo.fetchWallet())
-          .thenAnswer((_) async => CreditWallet.zero);
+      'BUG_CHECK: when buy() is in-flight (AsyncLoading), '
+      'PurchaseController has no internal guard against concurrent calls — '
+      'the UI is responsible for disabling the button when isBusy=true',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
 
-      // Make purchase() hang until we complete the completer.
-      final completer = Completer<bool>();
-      when(() => rcService.purchase(any()))
-          .thenAnswer((_) => completer.future);
+        // Make purchase() hang until we complete the completer.
+        final completer = Completer<bool>();
+        when(
+          () => rcService.purchase(any()),
+        ).thenAnswer((_) => completer.future);
 
-      final (container, cleanup) = _buildContainer(
-        rcService: rcService,
-        creditsRepo: creditsRepo,
-      );
-      addTearDown(cleanup);
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
 
-      await container.read(creditsControllerProvider.future);
-      await container.read(purchaseControllerProvider.future);
+        await container.read(creditsControllerProvider.future);
+        await container.read(purchaseControllerProvider.future);
 
-      // Fire first buy() without awaiting.
-      unawaited(
-          container.read(purchaseControllerProvider.notifier).buy(fakePackage));
+        // Fire first buy() without awaiting.
+        unawaited(
+          container.read(purchaseControllerProvider.notifier).buy(fakePackage),
+        );
 
-      // Give the async buy() a tick to start.
-      await Future<void>.microtask(() {});
+        // Give the async buy() a tick to start.
+        await Future<void>.microtask(() {});
 
-      // Verify state is AsyncLoading (purchase in progress).
-      expect(container.read(purchaseControllerProvider), isA<AsyncLoading<void>>());
+        // Verify state is AsyncLoading (purchase in progress).
+        expect(
+          container.read(purchaseControllerProvider),
+          isA<AsyncLoading<void>>(),
+        );
 
-      // Complete the purchase so the container can settle cleanly.
-      completer.complete(false);
-      await Future<void>.delayed(Duration.zero);
-    });
+        // Complete the purchase so the container can settle cleanly.
+        completer.complete(false);
+        await Future<void>.delayed(Duration.zero);
+      },
+    );
   });
 }

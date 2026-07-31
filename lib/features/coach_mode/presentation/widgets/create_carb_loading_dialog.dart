@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../carb_loading/domain/carb_loading_plan_simple.dart';
 import '../../../events/domain/event.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 
 /// Dialog for coaches to create a carb loading plan for an athlete.
 /// Allows event selection, protocol days, race date, and body weight input.
-class CreateCarbLoadingDialog extends StatefulWidget {
+class CreateCarbLoadingDialog extends ConsumerStatefulWidget {
   final List<Event> events;
   final double? athleteWeightPounds;
 
@@ -17,29 +21,50 @@ class CreateCarbLoadingDialog extends StatefulWidget {
   });
 
   @override
-  State<CreateCarbLoadingDialog> createState() =>
+  ConsumerState<CreateCarbLoadingDialog> createState() =>
       _CreateCarbLoadingDialogState();
 }
 
-class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
+class _CreateCarbLoadingDialogState
+    extends ConsumerState<CreateCarbLoadingDialog> {
   Event? _selectedEvent;
   int _protocolDays = 3;
   DateTime _raceDate = DateTime.now().add(const Duration(days: 14));
-  late TextEditingController _weightCtl;
+  // Imperial (canonical) and metric weight controllers — only the one
+  // matching the coach's own unit preference (unitSystemProvider) is
+  // shown/edited; the submitted value is always converted back to
+  // canonical pounds.
+  late TextEditingController _weightLbsCtl;
+  late TextEditingController _weightKgCtl;
 
   @override
   void initState() {
     super.initState();
-    _weightCtl = TextEditingController(
+    _weightLbsCtl = TextEditingController(
       text: widget.athleteWeightPounds?.toStringAsFixed(0) ?? '',
+    );
+    _weightKgCtl = TextEditingController(
+      text: widget.athleteWeightPounds != null
+          ? UnitFormatter.poundsToKg(
+              widget.athleteWeightPounds!,
+            ).toStringAsFixed(0)
+          : '',
     );
   }
 
   @override
   void dispose() {
-    _weightCtl.dispose();
+    _weightLbsCtl.dispose();
+    _weightKgCtl.dispose();
     super.dispose();
   }
+
+  bool get _useMetric =>
+      (ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
+      UnitSystem.metric;
+
+  TextEditingController get _activeWeightCtl =>
+      _useMetric ? _weightKgCtl : _weightLbsCtl;
 
   void _onEventSelected(Event? event) {
     setState(() {
@@ -77,11 +102,21 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final upcomingEvents = widget.events
-        .where((e) =>
-            e.eventDate != null && e.eventDate!.isAfter(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.eventDate!.compareTo(b.eventDate!));
+    // Coach creates a plan for an athlete using the COACH's own unit
+    // preference (unitSystemProvider resolves to the logged-in user).
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
+    final weightCtl = useMetric ? _weightKgCtl : _weightLbsCtl;
+
+    final upcomingEvents =
+        widget.events
+            .where(
+              (e) =>
+                  e.eventDate != null && e.eventDate!.isAfter(DateTime.now()),
+            )
+            .toList()
+          ..sort((a, b) => a.eventDate!.compareTo(b.eventDate!));
 
     return AlertDialog(
       backgroundColor: AppColors.blackberry,
@@ -123,13 +158,15 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                 ),
                 items: [
@@ -137,13 +174,15 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
                     value: null,
                     child: Text('None'),
                   ),
-                  ...upcomingEvents.map((event) => DropdownMenuItem<Event?>(
-                        value: event,
-                        child: Text(
-                          '${event.eventName ?? "Event"} - ${event.eventDate!.month}/${event.eventDate!.day}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
+                  ...upcomingEvents.map(
+                    (event) => DropdownMenuItem<Event?>(
+                      value: event,
+                      child: Text(
+                        '${event.eventName ?? "Event"} - ${event.eventDate!.month}/${event.eventDate!.day}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
                 ],
                 onChanged: _onEventSelected,
               ),
@@ -170,8 +209,7 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
                   decoration: BoxDecoration(
                     color: AppColors.blackberryDark,
                     borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: AppColors.blackberryLight),
+                    border: Border.all(color: AppColors.blackberryLight),
                   ),
                   child: Row(
                     children: [
@@ -216,18 +254,19 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
               const SizedBox(height: 16),
 
               // Body weight
-              const Text(
-                'Body Weight (lbs)',
-                style: TextStyle(
+              Text(
+                useMetric ? 'Body Weight (kg)' : 'Body Weight (lbs)',
+                style: const TextStyle(
                   color: AppColors.textDarkSecondary,
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 4),
               TextField(
-                controller: _weightCtl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                controller: weightCtl,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 style: const TextStyle(color: AppColors.cream, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Enter weight',
@@ -243,18 +282,19 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.blackberryLight),
+                    borderSide: const BorderSide(
+                      color: AppColors.blackberryLight,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.electrolyte),
+                    borderSide: const BorderSide(color: AppColors.electrolyte),
                   ),
                 ),
               ),
@@ -283,19 +323,23 @@ class _CreateCarbLoadingDialogState extends State<CreateCarbLoadingDialog> {
   }
 
   bool _canCreate() {
-    final weight = double.tryParse(_weightCtl.text.trim());
+    final weight = double.tryParse(_activeWeightCtl.text.trim());
     return weight != null && weight > 0;
   }
 
   void _submit() {
-    final weight = double.tryParse(_weightCtl.text.trim());
-    if (weight == null || weight <= 0) return;
+    final entered = double.tryParse(_activeWeightCtl.text.trim());
+    if (entered == null || entered <= 0) return;
+    // Persist canonical pounds regardless of the unit the coach entered.
+    final weightPounds = _useMetric
+        ? UnitFormatter.kgToPounds(entered)
+        : entered;
 
     Navigator.of(context).pop({
       'eventId': _selectedEvent?.id,
       'protocolDays': _protocolDays,
       'raceDate': _raceDate,
-      'bodyWeightPounds': weight,
+      'bodyWeightPounds': weightPounds,
     });
   }
 

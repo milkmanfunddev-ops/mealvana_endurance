@@ -19,16 +19,16 @@ class WorkoutNote {
 
   /// Optional reference to activity ID
   final String? activityId;
-  
+
   /// The text content of the note
   final String noteText;
-  
+
   /// Optional rating (1-5 scale)
   final int? rating;
-  
+
   /// When the note was created
   final DateTime createdAt;
-  
+
   /// When the note was last updated
   final DateTime updatedAt;
 

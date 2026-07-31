@@ -9,12 +9,21 @@
 import {
   garminTimestampToDateString,
   garminTimestampToISO,
+  garminTimestampToLocalNaiveISO,
 } from "./mappers.ts";
 import { isEnduranceSportType } from "./types.ts";
 import type { GarminActivitySummary } from "./types.ts";
 
 /** Postgres unique-violation error code surfaced by PostgREST. */
 const PG_UNIQUE_VIOLATION = "23505";
+
+/**
+ * Postgres "invalid text representation" error code — surfaced when
+ * inserting a value that isn't a member of a target enum type. Used to
+ * detect an `activity_type_enum` that hasn't been migrated to include
+ * 'other' yet, so we can degrade gracefully instead of a hard failure.
+ */
+const PG_INVALID_ENUM_VALUE = "22P02";
 
 type GarminActivityTiming = Pick<
   GarminActivitySummary,
@@ -151,6 +160,13 @@ export function buildGarminCompletionUpdate(
 
   const updateFields: Record<string, unknown> = {
     status: "completed",
+    // Replace the planned start time with the ACTUAL Garmin start time
+    // (bug 3a6e3fdb: a run scheduled for 1:30 PM but started at 12:30 PM
+    // kept showing 1:30 PM). Local-naive form — see garminTimestampToLocalNaiveISO.
+    scheduled_date_time: garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    ),
     completed_at: completionTimestamp,
     updated_at: syncedAt,
     last_synced_at: syncedAt,
@@ -215,10 +231,142 @@ export function buildGarminCompletionUpdate(
   return updateFields;
 }
 
+export type GarminEnrichOutcome =
+  | { kind: "enriched"; activityId: string; fields: string[] }
+  | { kind: "no_gaps" }
+  | { kind: "not_found" }
+  | { kind: "error"; error: unknown };
+
+/** Metric is absent when it was never written or was written as a zero by a
+ * preliminary payload. (A legitimate 0-mi start/stop run also reads as
+ * "absent" here — enrichment only ever fills such a value with richer data
+ * for the SAME garmin_summary_id, so a real abandoned run stays 0.) */
+function metricAbsent(value: unknown): boolean {
+  return value === null || value === undefined || value === 0;
+}
+
+/**
+ * Upgrade an already-completed Garmin activity with richer metrics.
+ *
+ * Garmin fires the `activities` and `activityDetails` webhooks for the same
+ * workout near-simultaneously. Whichever request completes the planned
+ * activity first wins the race; the loser used to be silently discarded —
+ * so when the FIRST payload was preliminary (0 duration / 0 distance) the
+ * richer second payload never landed and the app showed "0 minutes, 0 miles"
+ * forever (bug 3a6e3fdb). This fills metric gaps (null/0) on the completed
+ * row from the losing payload. It never flips status, never touches
+ * scheduled_date_time/completed_at, and callers must not re-notify.
+ */
+export async function enrichCompletedGarminActivity(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+  summaryId: string,
+  mappedActivity: Record<string, unknown>,
+  logPrefix: string,
+): Promise<GarminEnrichOutcome> {
+  try {
+    const { data, error } = await supabase
+      .from("activities")
+      .select(
+        "id, duration_minutes, actual_duration_minutes, distance_meters, " +
+          "distance_miles, actual_distance_miles, average_heart_rate, " +
+          "max_heart_rate, calories_burned, average_pace_minutes_per_mile",
+      )
+      .eq("user_id", userId)
+      .eq("garmin_summary_id", String(summaryId))
+      .eq("status", "completed")
+      .is("deleted_at", null)
+      .limit(1);
+
+    if (error) {
+      console.error(`${logPrefix} Enrich lookup error:`, error);
+      return { kind: "error", error };
+    }
+    if (!data || data.length === 0) {
+      return { kind: "not_found" };
+    }
+
+    const existing = data[0] as Record<string, unknown>;
+    const update: Record<string, unknown> = {};
+
+    const num = (v: unknown): number | null =>
+      typeof v === "number" && Number.isFinite(v) ? v : null;
+
+    const durationMinutes = num(mappedActivity.duration_minutes);
+    if (
+      durationMinutes !== null && durationMinutes > 0 &&
+      metricAbsent(existing.duration_minutes)
+    ) {
+      update.duration_minutes = durationMinutes;
+      update.actual_duration_minutes = durationMinutes;
+    }
+
+    const distanceMeters = num(mappedActivity.distance_meters);
+    if (
+      distanceMeters !== null && distanceMeters > 0 &&
+      metricAbsent(existing.distance_meters) &&
+      metricAbsent(existing.actual_distance_miles)
+    ) {
+      const miles = num(mappedActivity.distance_miles) ??
+        distanceMeters / 1609.34;
+      update.distance_meters = distanceMeters;
+      update.distance_miles = miles;
+      update.actual_distance_miles = miles;
+    }
+
+    const scalarGaps: Array<[string]> = [
+      ["average_heart_rate"],
+      ["max_heart_rate"],
+      ["calories_burned"],
+      ["average_pace_minutes_per_mile"],
+    ];
+    for (const [field] of scalarGaps) {
+      const incoming = num(mappedActivity[field]);
+      if (incoming !== null && incoming > 0 && metricAbsent(existing[field])) {
+        update[field] = incoming;
+      }
+    }
+
+    const fields = Object.keys(update);
+    if (fields.length === 0) {
+      return { kind: "no_gaps" };
+    }
+
+    const syncedAt = new Date().toISOString();
+    update.updated_at = syncedAt;
+    update.last_synced_at = syncedAt;
+    update.garmin_last_synced_at = syncedAt;
+
+    const { error: updateError } = await supabase
+      .from("activities")
+      .update(update)
+      .eq("id", existing.id)
+      .eq("status", "completed");
+
+    if (updateError) {
+      console.error(`${logPrefix} Enrich update error:`, updateError);
+      return { kind: "error", error: updateError };
+    }
+
+    const activityId = String(existing.id);
+    console.log(
+      `${logPrefix} Enriched completed activity ${activityId} with ${
+        fields.join(", ")
+      } from a concurrent Garmin payload`,
+    );
+    return { kind: "enriched", activityId, fields };
+  } catch (err) {
+    console.error(`${logPrefix} Enrich error:`, err);
+    return { kind: "error", error: err };
+  }
+}
+
 export type GarminInsertOutcome =
   | { kind: "inserted"; activityId: string }
   | { kind: "duplicate" } // another push already inserted this summaryId
   | { kind: "skipped_non_endurance"; sportType: string }
+  | { kind: "skipped_enum_not_ready"; sportType: string }
   | { kind: "skipped_no_summary_id" }
   | { kind: "error"; error: unknown };
 
@@ -232,9 +380,14 @@ export type GarminInsertOutcome =
  * (migration 20260506200000). On 23505 we report "duplicate" so the caller
  * skips the notification.
  *
- * Sport gating: only endurance sports (run / bike / swim / triathlon /
- * duathlon / multisport) get auto-created. Walks, strength sessions, and
- * Garmin's "other" bucket have no nutrition context to attach to.
+ * Sport gating: endurance sports (run / bike / swim / triathlon / duathlon /
+ * multisport) get auto-created with full nutrition-plan context. Everything
+ * else Garmin reports (strength, hiking, walking, yoga, etc.) maps to the
+ * generic "other" import-only bucket via [mapGarminSportType] and is now
+ * ALSO auto-created — for visibility/deletion in the activity list, never
+ * with a nutrition plan. Garmin's "transition" legs (T1/T2 within a
+ * multisport activity) are still skipped — they aren't a standalone
+ * activity a user would want listed.
  */
 export async function insertGarminActivityIfMissing(
   // deno-lint-ignore no-explicit-any
@@ -244,7 +397,8 @@ export async function insertGarminActivityIfMissing(
   mappedActivity: Record<string, any>,
 ): Promise<GarminInsertOutcome> {
   const sportType = String(mappedActivity.activity_type ?? "");
-  if (!isEnduranceSportType(sportType)) {
+  const isImportOnlyOther = sportType === "other";
+  if (!isEnduranceSportType(sportType) && !isImportOnlyOther) {
     return { kind: "skipped_non_endurance", sportType };
   }
 
@@ -276,6 +430,20 @@ export async function insertGarminActivityIfMissing(
   if (error) {
     if ((error as { code?: string }).code === PG_UNIQUE_VIOLATION) {
       return { kind: "duplicate" };
+    }
+    // The 'other' activity_type_enum value may not have been migrated onto
+    // this database yet (rollout ordering: this code can deploy before the
+    // `ALTER TYPE activity_type_enum ADD VALUE 'other'` migration runs).
+    // Degrade to a skip instead of surfacing a 500 to Garmin's webhook.
+    if (
+      isImportOnlyOther &&
+      (error as { code?: string }).code === PG_INVALID_ENUM_VALUE
+    ) {
+      console.warn(
+        `[garmin] 'other' activity_type not yet supported by this database's activity_type_enum — skipping import until the enum migration lands.`,
+        error,
+      );
+      return { kind: "skipped_enum_not_ready", sportType };
     }
     return { kind: "error", error };
   }

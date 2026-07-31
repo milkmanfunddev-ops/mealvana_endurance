@@ -15,7 +15,9 @@
  * Secrets:
  *   REVENUECAT_WEBHOOK_SECRET  — shared secret matched against the Authorization header
  *   RC_PRODUCT_CREDITS         — optional JSON map of store product id → credit amount,
- *                                e.g. {"mealvana_credits_100":100,"mealvana_credits_500":500}
+ *                                e.g. {"mealvana_credits_50":50,"mealvana_credits_250":250}
+ *                                NOTE: when set, this REPLACES the defaults below — a stale
+ *                                secret is enough to make every new SKU grant 0 credits.
  *
  * IMPORTANT: the RevenueCat "App User ID" must be the Supabase auth user id
  * (set via Purchases.logIn(userId) in the app) so app_user_id maps to our user.
@@ -34,9 +36,8 @@ const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? '';
 
 /** RC store product id → credits granted. Override via RC_PRODUCT_CREDITS JSON. */
 const DEFAULT_PRODUCT_CREDITS: Record<string, number> = {
-  mealvana_credits_100: 100,
-  mealvana_credits_500: 500,
-  mealvana_credits_1200: 1200,
+  mealvana_credits_50: 50,
+  mealvana_credits_250: 250,
 };
 
 function productCredits(): Record<string, number> {

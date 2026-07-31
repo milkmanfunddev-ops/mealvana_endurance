@@ -55,13 +55,15 @@ Widget _harness({required bool dark}) {
   return ProviderScope(
     overrides: [
       consumedTotalsForDateProvider.overrideWith(
-        (ref, date) => Stream.value(const ConsumedTotals(
-          calories: 1480,
-          carbsG: 188,
-          proteinG: 71,
-          fatG: 52,
-          sodiumMg: 1200,
-        )),
+        (ref, date) => Stream.value(
+          const ConsumedTotals(
+            calories: 1480,
+            carbsG: 188,
+            proteinG: 71,
+            fatG: 52,
+            sodiumMg: 1200,
+          ),
+        ),
       ),
       currentUserProvider.overrideWith((ref) async => null),
     ],

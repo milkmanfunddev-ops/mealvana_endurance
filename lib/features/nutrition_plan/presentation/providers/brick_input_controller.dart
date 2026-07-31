@@ -649,6 +649,19 @@ class BrickInputController extends _$BrickInputController {
     state = state.copyWith(isFasted: isFasted);
   }
 
+  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
+  ///
+  /// The init-from-metadata/event paths already rebuild state with
+  /// `isFasted: false`, but the plain "start fresh" brick path keeps the
+  /// keepAlive leftovers — without this reset, a fasted toggle left ON by a
+  /// previous brick silently zeroes the next one's pre-workout targets.
+  /// See RunningInputController.resetFasted for the full rationale.
+  void resetFasted() {
+    if (state.isFasted) {
+      state = state.copyWith(isFasted: false);
+    }
+  }
+
   /// Update intensity distribution for a specific segment
   void updateSegmentIntensity(String sport, IntensityDistribution intensity) {
     final currentInput = state.segmentInputs[sport];

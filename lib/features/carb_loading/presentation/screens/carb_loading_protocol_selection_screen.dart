@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../events/domain/event.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/content_area.dart';
 
 /// Screen for selecting carb loading protocol
@@ -129,6 +130,20 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
   }
 
   void _selectProtocol(BuildContext context, WidgetRef ref, int days) {
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'carb_loading_protocol_selected',
+            properties: {
+              'protocol': '${days}_day',
+              'protocol_days': days,
+              'event_id': event.id,
+            },
+          );
+    } catch (_) {}
+
     // TODO: Navigate to carb loading plan generation
     // This will be implemented in the next step
     Navigator.pop(context, days);

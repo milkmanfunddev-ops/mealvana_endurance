@@ -1,0 +1,54 @@
+{
+  "activityDetails": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-run-001",
+      "summary": {
+        "userId": "<USER_ID>",
+        "userAccessToken": "<USER_ACCESS_TOKEN>",
+        "summaryId": "act-run-001",
+        "activityType": "running",
+        "activityName": "Easy Morning Run",
+        "durationInSeconds": 2700,
+        "startTimeInSeconds": 1711612800,
+        "startTimeOffsetInSeconds": -18000,
+        "distanceInMeters": 5200,
+        "activeKilocalories": 380,
+        "averageHeartRateInBeatsPerMinute": 142,
+        "maxHeartRateInBeatsPerMinute": 168,
+        "deviceName": "Garmin Forerunner 965"
+      },
+      "samples": [
+        {
+          "startTimeInSeconds": 1711612800,
+          "latitudeInDegree": 39.0997,
+          "longitudeInDegree": -94.5786,
+          "elevationInMeters": 271.4,
+          "heartRate": 118,
+          "speedMetersPerSecond": 1.7,
+          "runCadenceInStepsPerMinute": 164
+        },
+        {
+          "startTimeInSeconds": 1711612860,
+          "latitudeInDegree": 39.1005,
+          "longitudeInDegree": -94.5791,
+          "elevationInMeters": 273.1,
+          "heartRate": 139,
+          "speedMetersPerSecond": 1.95,
+          "runCadenceInStepsPerMinute": 172
+        }
+      ],
+      "laps": [
+        {
+          "startTimeInSeconds": 1711612800,
+          "durationInSeconds": 900,
+          "distanceInMeters": 1700,
+          "averageHeartRate": 136,
+          "maxHeartRate": 152,
+          "averageSpeedInMetersPerSecond": 1.89
+        }
+      ]
+    }
+  ]
+}

@@ -8,19 +8,18 @@ class Event {
     this.activityId, // Now nullable - events can exist without activities
     required this.eventType, // Event type: running, cycling, swimming, triathlon, duathlon, multisport
     this.eventSubtype,
-    
+
     // Event details
     this.eventName,
     this.location,
     this.registrationUrl,
     this.eventDate, // Primary event date for calendar
     this.startTime, // Optional precise start time
-    
     // Goals and targets
     this.goalTimeMinutes,
     this.goalPaceMinutesPerMile,
     this.predictedFinishTimeMinutes,
-    
+
     // Carb loading configuration
     this.hasCarbLoading = false,
     this.carbLoadingDays,
@@ -34,12 +33,12 @@ class Event {
     this.bibNumber,
     this.waveStartTime,
     this.packetPickupInfo,
-    
+
     // Results
     this.actualFinishTimeMinutes,
     this.finalPlacement,
     this.ageGroupPlacement,
-    
+
     // Metadata
     required this.createdAt,
     required this.updatedAt,
@@ -50,23 +49,26 @@ class Event {
   });
 
   final String id;
-  final String userId; // User ID for direct filtering (eliminates need for joins)
+  final String
+  userId; // User ID for direct filtering (eliminates need for joins)
   final String? activityId; // Nullable - events can exist without activities
-  final ActivityType eventType; // Event type: running, cycling, swimming, triathlon, duathlon, multisport
-  final String? eventSubtype; // Race distance: 'marathon', 'half_marathon', '10k', etc.
-  
+  final ActivityType
+  eventType; // Event type: running, cycling, swimming, triathlon, duathlon, multisport
+  final String?
+  eventSubtype; // Race distance: 'marathon', 'half_marathon', '10k', etc.
+
   // Event details
   final String? eventName;
   final String? location;
   final String? registrationUrl;
   final DateTime? eventDate; // Primary event date for calendar displays
   final String? startTime; // Optional precise start time with timezone
-  
+
   // Goals and targets
   final int? goalTimeMinutes;
   final double? goalPaceMinutesPerMile;
   final int? predictedFinishTimeMinutes;
-  
+
   // Carb loading configuration
   final bool hasCarbLoading;
   final int? carbLoadingDays;
@@ -80,12 +82,12 @@ class Event {
   final String? bibNumber;
   final String? waveStartTime;
   final String? packetPickupInfo;
-  
+
   // Results
   final int? actualFinishTimeMinutes;
   final int? finalPlacement;
   final int? ageGroupPlacement;
-  
+
   // Metadata
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -113,7 +115,8 @@ class Event {
       'hasCarbLoading': hasCarbLoading,
       'carbLoadingDays': carbLoadingDays,
       'carbLoadingStartDate': carbLoadingStartDate?.toIso8601String(),
-      'hasNutritionPlan': hasNutritionPlan, // OBSOLETE: kept for backward compatibility
+      'hasNutritionPlan':
+          hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       'bibNumber': bibNumber,
       'waveStartTime': waveStartTime,
       'packetPickupInfo': packetPickupInfo,
@@ -167,8 +170,10 @@ class Event {
       eventDate: eventDate ?? this.eventDate,
       startTime: startTime ?? this.startTime,
       goalTimeMinutes: goalTimeMinutes ?? this.goalTimeMinutes,
-      goalPaceMinutesPerMile: goalPaceMinutesPerMile ?? this.goalPaceMinutesPerMile,
-      predictedFinishTimeMinutes: predictedFinishTimeMinutes ?? this.predictedFinishTimeMinutes,
+      goalPaceMinutesPerMile:
+          goalPaceMinutesPerMile ?? this.goalPaceMinutesPerMile,
+      predictedFinishTimeMinutes:
+          predictedFinishTimeMinutes ?? this.predictedFinishTimeMinutes,
       hasCarbLoading: hasCarbLoading ?? this.hasCarbLoading,
       carbLoadingDays: carbLoadingDays ?? this.carbLoadingDays,
       carbLoadingStartDate: carbLoadingStartDate ?? this.carbLoadingStartDate,
@@ -176,7 +181,8 @@ class Event {
       bibNumber: bibNumber ?? this.bibNumber,
       waveStartTime: waveStartTime ?? this.waveStartTime,
       packetPickupInfo: packetPickupInfo ?? this.packetPickupInfo,
-      actualFinishTimeMinutes: actualFinishTimeMinutes ?? this.actualFinishTimeMinutes,
+      actualFinishTimeMinutes:
+          actualFinishTimeMinutes ?? this.actualFinishTimeMinutes,
       finalPlacement: finalPlacement ?? this.finalPlacement,
       ageGroupPlacement: ageGroupPlacement ?? this.ageGroupPlacement,
       createdAt: createdAt ?? this.createdAt,
@@ -268,7 +274,7 @@ extension EventExtensions on Event {
     }
     return sportName;
   }
-  
+
   /// Get formatted goal time if available
   String? get formattedGoalTime {
     if (goalTimeMinutes == null) return null;
@@ -279,7 +285,7 @@ extension EventExtensions on Event {
     }
     return "${minutes}m";
   }
-  
+
   /// Get formatted goal pace if available
   String? get formattedGoalPace {
     if (goalPaceMinutesPerMile == null) return null;
@@ -287,10 +293,10 @@ extension EventExtensions on Event {
     final seconds = ((goalPaceMinutesPerMile! - minutes) * 60).round();
     return "$minutes:${seconds.toString().padLeft(2, '0')}/mi";
   }
-  
+
   /// Check if event has results
   bool get hasResults => actualFinishTimeMinutes != null;
-  
+
   /// Get formatted actual time if available
   String? get formattedActualTime {
     if (actualFinishTimeMinutes == null) return null;

@@ -17,7 +17,7 @@ import type { PreWorkoutTemplate, PreWorkoutTargets } from './types.ts';
 function makeTopUpTemplate(overrides: Partial<PreWorkoutTemplate> & { id: string; name: string }): PreWorkoutTemplate {
   return {
     base_category: 'Quick Grab',
-    time_window: '0-30 min',
+    time_window: '< 30 min',
     digestion_speed: 'fast',
     allergens: [],
     serving_unit: 'piece',

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../providers/macro_targets_controller.dart';
 import '../../../domain/macro_targets.dart' as domain;
-import '../../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 /// Edit Macros Dialog
 /// Allows user to manually edit all macro targets

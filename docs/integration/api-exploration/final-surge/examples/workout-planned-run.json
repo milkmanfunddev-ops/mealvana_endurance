@@ -1,0 +1,22 @@
+{
+  "WorkoutKey": "79f28709-f623-4cb5-b99a-4c3161e6d20f",
+  "WorkoutURL": "https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=79f28709-f623-4cb5-b99a-4c3161e6d20f",
+  "WorkoutDate": "2025-12-23T00:00:00",
+  "WorkoutTime": null,
+  "WorkoutCode": null,
+  "WorkoutTitle": "Marathon Tempo",
+  "WorkoutDescription": "@ 8:00\n\nEasy warmup, then marathon pace",
+  "WorkoutTypeName": "Run",
+  "WorkoutSubTypeName": "Tempo",
+  "WorkoutCompleted": false,
+  "WorkoutRace": false,
+  "WorkoutIcon": 1,
+  "PlannedTime": 4800,
+  "PlannedDistance": 10.0,
+  "PlannedDistanceType": "mi",
+  "PlannedPace": null,
+  "PlannedPaceType": null,
+  "ActualTime": null,
+  "ActualDistanceMeters": null,
+  "HasStructuredWorkout": false
+}

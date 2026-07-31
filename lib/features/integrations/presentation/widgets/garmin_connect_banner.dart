@@ -39,16 +39,19 @@ class _GarminConnectBannerState extends ConsumerState<GarminConnectBanner> {
     // Hide when Garmin is already connected.
     final isConnected = ref
         .watch(isGarminConnectedProvider(userId))
-        .maybeWhen(
-          data: (v) => v,
-          orElse: () => false,
-        );
+        .maybeWhen(data: (v) => v, orElse: () => false);
     if (isConnected) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     return BaseCard(
+      // The banner owns the gap to whatever follows it, so the spacing
+      // disappears along with the banner on the three self-hiding paths
+      // above (dismissed / signed out / already connected). A SizedBox in
+      // the parent Column instead would leave a doubled dead band whenever
+      // the banner is hidden, which is the common case.
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       backgroundColor: isDark
           ? AppColors.electrolyte.withValues(alpha: 0.12)
           : AppColors.electrolyte.withValues(alpha: 0.08),
@@ -95,19 +98,29 @@ class _GarminConnectBannerState extends ConsumerState<GarminConnectBanner> {
               ],
             ),
           ),
-          // Dismiss button
-          GestureDetector(
-            key: const ValueKey('garmin_banner.dismiss'),
-            onTap: () async {
-              await ref.read(preferencesServiceProvider).dismissGarminBanner();
-              if (mounted) setState(() {});
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.sm),
-              child: Icon(
-                Icons.close,
-                size: 18,
-                color: textColor.withValues(alpha: 0.5),
+          // Dismiss button. Semantics(button:) so VoiceOver/TalkBack expose a
+          // tappable "Dismiss" control — a bare GestureDetector+Icon has no
+          // semantics node, leaving screen-reader users unable to dismiss a
+          // banner that never re-appears once shown. Same pattern as
+          // PinToggle (pin_toggle.dart).
+          Semantics(
+            button: true,
+            label: 'Dismiss Garmin banner',
+            child: GestureDetector(
+              key: const ValueKey('garmin_banner.dismiss'),
+              onTap: () async {
+                await ref
+                    .read(preferencesServiceProvider)
+                    .dismissGarminBanner();
+                if (mounted) setState(() {});
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.sm),
+                child: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: textColor.withValues(alpha: 0.5),
+                ),
               ),
             ),
           ),

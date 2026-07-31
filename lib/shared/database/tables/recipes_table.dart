@@ -29,7 +29,8 @@ class RecipesTable extends Table {
 
   // Per-serving nutrition.
   RealColumn get calories => real().withDefault(const Constant(0))();
-  RealColumn get carbsG => real().withDefault(const Constant(0)).named('carbs_g')();
+  RealColumn get carbsG =>
+      real().withDefault(const Constant(0)).named('carbs_g')();
   RealColumn get proteinG =>
       real().withDefault(const Constant(0)).named('protein_g')();
   RealColumn get fatG => real().withDefault(const Constant(0)).named('fat_g')();

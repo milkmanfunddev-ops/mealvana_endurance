@@ -179,6 +179,9 @@ jobs:
           dart run build_runner build --delete-conflicting-outputs
 
       - name: Install patrol_cli (pinned — unpinned installs an incompatible CLI)
+        # MUST match the `patrol` package (pubspec.lock: 4.6.1 pairs with CLI
+        # 4.4.0). An unpinned activate pulls 4.5.x, which prints "Version
+        # incompatibility detected!" and refuses to run.
         run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
 
       - name: Boot iOS simulator
@@ -197,12 +200,14 @@ jobs:
       # Xcode host each time — minutes of wall-clock and gigabytes of disk per
       # flow on this machine.
       #
-      # Two flows are deliberately NOT in this list:
+      # Three flows are deliberately NOT in this list:
       #   • google_login_flow_test  — drives the native Google OAuth sheet, which
       #     needs a real Google account and interactive consent.
       #   • onboarding_signup_flow_test — requires a clean install with no
       #     session, which it cannot have once an earlier flow has logged in.
-      # Run those two by hand against a freshly-erased simulator.
+      #   • jade_chat_flow_test — drives the Jade LLM chat surface, which bills
+      #     real tokens per run and is non-deterministic. See the AI note below.
+      # Run those three by hand against a freshly-erased simulator.
       #
       # No AI/LLM surface is exercised anywhere here: the meal-log flow uses the
       # sheet's Manual tab (not Describe), and the activities flow uses the
@@ -215,13 +220,18 @@ jobs:
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
             --target integration_test/flows/fuel_timeline_flow_test.dart \
-            --target integration_test/flows/meal_log_flow_test.dart \
+            --target integration_test/flows/meal_log_build_flow_test.dart \
+            --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \
             --target integration_test/flows/events_crud_flow_test.dart \
+            --target integration_test/flows/event_checklist_carbload_flow_test.dart \
             --target integration_test/flows/formula_pin_flow_test.dart \
             --target integration_test/flows/formula_create_pin_flow_test.dart \
             --target integration_test/flows/settings_persist_flow_test.dart \
+            --target integration_test/flows/settings_sweep_flow_test.dart \
             --target integration_test/flows/integrations_connect_flow_test.dart \
+            --target integration_test/flows/learn_flow_test.dart \
+            --target integration_test/flows/paywall_render_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=secrets/integration_test.env \
             -d "$PATROL_DEVICE"

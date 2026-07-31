@@ -21,12 +21,15 @@ generate-nutrition-plan-v3/
 ├── before-phase-db.ts           (84 lines)   DB queries: pre_workout_templates, template_foods
 ├── before-phase-substitution.ts (221 lines)  User food matching by product_type + carb profile
 ├── before-phase-explosion.ts    (323 lines)  Component explosion + macro normalization
-├── during-phase.ts              (339 lines)  Rule-based solver + electrolyte post-processing
-├── lp-phase.ts                  (307 lines)  LP solver orchestration (after + LP fallback)
-├── by-hour-apportionment.ts     (337 lines)  Deprecated server-side by-hour placement
+├── during-phase.ts              (725 lines)  Personal-formula pin -> template solver -> rule solver -> gap-fill/shortfall closing pass
+├── lp-phase.ts                  (~190 lines) LP solver orchestration (after phase only — no during-phase LP tier as of 2026-07-21)
+├── plan-generation-log.ts       (113 lines)  Per-plan ledger row (targets vs delivered, during-cascade path, shortfalls, pin decisions)
 ├── validation.ts                (144 lines)  Phase result validation
 └── brick-handler.ts             (485 lines)  Brick workout multi-segment handler
 ```
+`by-hour-apportionment.ts` was deleted 2026-07-21 (its only caller, the during-phase LP tier, was
+deleted with it). The shared `during-gap-fill.ts` (closing-pass carb top-up) lives under
+`_shared/nutrition/`, see below.
 
 ### generate-macros-v4/ (Macro Target Calculation)
 ```
@@ -45,6 +48,7 @@ _shared/nutrition/
 ├── constants.ts             (183 lines)  MACRO_CONSTRAINT_RANGES, weights, thresholds
 ├── lp-solver.ts             (449 lines)  buildLPModel() + solveLPModel()
 ├── during-rule-solver.ts    (671 lines)  Deterministic rule-based during solver
+├── during-gap-fill.ts       (210 lines)  During-phase closing carb gap-fill (append-only, gut-cap clamped)
 ├── greedy-fallback.ts       (378 lines)  Greedy fallback when LP fails
 ├── food-queries.ts          (376 lines)  Legacy food table queries
 ├── food-utils.ts            (115 lines)  Food utility functions
@@ -73,6 +77,7 @@ _shared/nutrition/
 | `pre_workout_templates` | before-phase-db.ts, generate-macros-v4/index.ts | Before-phase meal/drink/electrolyte templates |
 | `user_foods` | before-phase-substitution.ts, template-food-queries.ts | User's custom foods for substitution |
 | `users` | before-phase-substitution.ts | Device ID → user ID lookup |
+| `plan_generation_log` | plan-generation-log.ts | Per-plan ledger (targets vs delivered, during-cascade path, shortfalls, pin decisions); service-role only, best-effort write |
 
 ## Test Inventory
 
@@ -84,6 +89,9 @@ _shared/nutrition/
 | 3 | `_shared/nutrition/lp-solver.test.ts` | LP solver unit tests | `deno test --allow-write <file>` |
 | 4 | `generate-nutrition-plan-v3/before-phase-filtering.test.ts` | Before-phase template filtering | `deno test --allow-write <file>` |
 | 5 | `generate-macros-v4/pre-workout.test.ts` | Algorithm C unit tests | `deno test --allow-write <file>` |
+| 6 | `generate-nutrition-plan-v3/during-invariant-matrix.test.ts` | During cascade invariant matrix (activity × duration × gut level, incl. null/'medium'): carbs >= 90% of target OR a carbs shortfall reported (bug 3a3e3fdb) | `deno test --allow-write <file>` |
+
+(Note: this table predates several other test files added since — see `run-algorithm-tests.sh` for the full, current §1 list.)
 
 ### E2E Tests (need SUPABASE_URL + SUPABASE_ANON_KEY)
 | # | File | Description | Run Command |

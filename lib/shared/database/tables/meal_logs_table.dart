@@ -22,8 +22,10 @@ class MealLogsTable extends Table {
   /// match the Supabase DATE column without timezone drift.
   TextColumn get logDate => text().named('log_date')();
 
-  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'.
-  TextColumn get slot => text()();
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack', or NULL when the user leaves
+  /// the meal untagged (optional since schema v14 — see the build-a-meal
+  /// redesign notes on [AppDatabase.migration]).
+  TextColumn get slot => text().nullable()();
 
   /// Display title, e.g. "Oatmeal + banana".
   TextColumn get name => text()();

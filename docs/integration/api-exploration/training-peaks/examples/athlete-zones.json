@@ -1,0 +1,65 @@
+{
+  "_comment": "GET /v1/athlete/profile/zones. Zone values are illustrative. HR zones are in bpm. Speed zones are in METRES PER SECOND. Power zones are in watts. SpeedZones is keyed per sport (Default/Run/Swim/...); HeartRateZones and PowerZones expose Default.",
+  "HeartRateZones": {
+    "Default": {
+      "Threshold": 164,
+      "MaxHeartRate": 192,
+      "RestingHeartRate": 48,
+      "WorkoutType": "Default",
+      "Zones": [
+        { "Label": "1 - Recovery",        "Minimum": 48,  "Maximum": 114 },
+        { "Label": "2 - Aerobic",         "Minimum": 115, "Maximum": 143 },
+        { "Label": "3 - Tempo",           "Minimum": 144, "Maximum": 156 },
+        { "Label": "4 - SubThreshold",    "Minimum": 157, "Maximum": 164 },
+        { "Label": "5a - SuperThreshold", "Minimum": 165, "Maximum": 172 },
+        { "Label": "5b - Aerobic Cap",    "Minimum": 173, "Maximum": 182 },
+        { "Label": "5c - Anaerobic Cap",  "Minimum": 183, "Maximum": 192 }
+      ]
+    }
+  },
+  "SpeedZones": {
+    "Default": {
+      "Threshold": 4.02,
+      "Zones": [
+        { "Label": "1", "Minimum": 0.00, "Maximum": 2.85 },
+        { "Label": "2", "Minimum": 2.85, "Maximum": 3.40 },
+        { "Label": "3", "Minimum": 3.40, "Maximum": 3.80 },
+        { "Label": "4", "Minimum": 3.80, "Maximum": 4.02 },
+        { "Label": "5", "Minimum": 4.02, "Maximum": 5.50 }
+      ]
+    },
+    "Run": {
+      "Threshold": 4.02,
+      "Zones": [
+        { "Label": "1", "Minimum": 0.00, "Maximum": 2.85 },
+        { "Label": "2", "Minimum": 2.85, "Maximum": 3.40 },
+        { "Label": "3", "Minimum": 3.40, "Maximum": 3.80 },
+        { "Label": "4", "Minimum": 3.80, "Maximum": 4.02 },
+        { "Label": "5", "Minimum": 4.02, "Maximum": 5.50 }
+      ]
+    },
+    "Swim": {
+      "Threshold": 1.25,
+      "Zones": [
+        { "Label": "1", "Minimum": 0.00, "Maximum": 0.95 },
+        { "Label": "2", "Minimum": 0.95, "Maximum": 1.10 },
+        { "Label": "3", "Minimum": 1.10, "Maximum": 1.20 },
+        { "Label": "4", "Minimum": 1.20, "Maximum": 1.25 },
+        { "Label": "5", "Minimum": 1.25, "Maximum": 1.70 }
+      ]
+    }
+  },
+  "PowerZones": {
+    "Default": {
+      "Threshold": 250,
+      "Zones": [
+        { "Label": "1", "Minimum": 0,   "Maximum": 137 },
+        { "Label": "2", "Minimum": 138, "Maximum": 187 },
+        { "Label": "3", "Minimum": 188, "Maximum": 225 },
+        { "Label": "4", "Minimum": 226, "Maximum": 262 },
+        { "Label": "5", "Minimum": 263, "Maximum": 300 },
+        { "Label": "6", "Minimum": 301, "Maximum": 9999 }
+      ]
+    }
+  }
+}

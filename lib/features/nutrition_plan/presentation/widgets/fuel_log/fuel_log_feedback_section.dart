@@ -15,6 +15,7 @@ class FuelLogFeedbackSection extends StatefulWidget {
     this.duringCarbRateGPerH,
     this.activity,
     this.fuelLog,
+    this.showCarbsPerHourCard = true,
     required this.onRatingChanged,
     required this.onNutritionRatingChanged,
     required this.onNotesChanged,
@@ -32,6 +33,10 @@ class FuelLogFeedbackSection extends StatefulWidget {
   /// (with same-sport baseline trend) replaces the plain rate line.
   final Activity? activity;
   final FuelLogData? fuelLog;
+
+  /// When false, the embedded carbs/hr card is suppressed (the caller is
+  /// showing it elsewhere — e.g. a top dashboard on the revisit-edit view).
+  final bool showCarbsPerHourCard;
 
   final ValueChanged<int> onRatingChanged;
   final ValueChanged<int?> onNutritionRatingChanged;
@@ -129,10 +134,9 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
                   isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
                   color: isSelected
                       ? AppColors.orange
-                      : Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.3),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.3),
                   size: 36,
                 ),
               ),
@@ -155,7 +159,9 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        if (widget.activity != null && widget.fuelLog != null)
+        if (widget.showCarbsPerHourCard &&
+            widget.activity != null &&
+            widget.fuelLog != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: CarbsPerHourCard(
@@ -164,7 +170,8 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
               targetGPerH: widget.duringCarbRateGPerH,
             ),
           )
-        else if (widget.duringCarbRateGPerH != null)
+        else if (widget.showCarbsPerHourCard &&
+            widget.duringCarbRateGPerH != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Text(
@@ -192,14 +199,11 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
                   borderRadius: AppRadius.smRadius,
                   color: isSelected
                       ? AppColors.orange.withValues(alpha: 0.15)
-                      : Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.05),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.orange
-                        : Colors.transparent,
+                    color: isSelected ? AppColors.orange : Colors.transparent,
                     width: 1.5,
                   ),
                 ),
@@ -213,8 +217,9 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
                       style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 10,
                         color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w400,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w400,
                       ),
                     ),
                   ],
@@ -245,18 +250,16 @@ class _FuelLogFeedbackSectionState extends State<FuelLogFeedbackSection> {
           decoration: InputDecoration(
             hintText: 'How did the nutrition feel? Any GI issues?',
             hintStyle: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.4),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             border: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
               borderSide: BorderSide(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             contentPadding: AppSpacing.inputPadding,

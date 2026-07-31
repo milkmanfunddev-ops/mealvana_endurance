@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../daily_macros/domain/enums.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
@@ -24,6 +27,7 @@ class _NutritionProfileScreenState
   final _weightController = TextEditingController();
   final _heightFeetController = TextEditingController();
   final _heightInchesController = TextEditingController();
+  final _heightCmController = TextEditingController();
   final _bodyFatController = TextEditingController();
   final _weeklyHoursController = TextEditingController();
 
@@ -34,6 +38,12 @@ class _NutritionProfileScreenState
   bool _weightFromGarmin = false;
   bool _bodyFatFromGarmin = false;
   bool _isSaving = false;
+
+  // Mirrors the user's unitSystemProvider preference. Kept as local state
+  // (rather than watched directly in build) so the weight/height fields can
+  // be converted in place — via `ref.listen` below — if the preference
+  // changes elsewhere while this screen is open.
+  bool _useMetric = false;
 
   @override
   void initState() {
@@ -46,9 +56,46 @@ class _NutritionProfileScreenState
     _weightController.dispose();
     _heightFeetController.dispose();
     _heightInchesController.dispose();
+    _heightCmController.dispose();
     _bodyFatController.dispose();
     _weeklyHoursController.dispose();
     super.dispose();
+  }
+
+  /// Converts whatever is currently entered in the weight/height fields
+  /// to match [toMetric], so a mid-session unit-preference change doesn't
+  /// silently mismatch the displayed value against its label. Best-effort —
+  /// unparsable/empty fields are left untouched.
+  void _convertFieldsForUnitChange({required bool toMetric}) {
+    if (toMetric) {
+      final lbs = double.tryParse(_weightController.text);
+      if (lbs != null) {
+        _weightController.text = UnitFormatter.poundsToKg(
+          lbs,
+        ).toStringAsFixed(1);
+      }
+      final feet = int.tryParse(_heightFeetController.text);
+      final inches = int.tryParse(_heightInchesController.text);
+      if (feet != null && inches != null) {
+        final totalInches = (feet * 12) + inches;
+        _heightCmController.text = UnitFormatter.totalInchesToCm(
+          totalInches,
+        ).toString();
+      }
+    } else {
+      final kg = double.tryParse(_weightController.text);
+      if (kg != null) {
+        _weightController.text = UnitFormatter.kgToPounds(
+          kg,
+        ).toStringAsFixed(0);
+      }
+      final cm = int.tryParse(_heightCmController.text);
+      if (cm != null) {
+        final (feet, inches) = UnitFormatter.cmToFeetInches(cm);
+        _heightFeetController.text = feet.toString();
+        _heightInchesController.text = inches.toString();
+      }
+    }
   }
 
   Future<void> _loadCurrentValues() async {
@@ -56,6 +103,9 @@ class _NutritionProfileScreenState
     final profile = await userRepository.getCurrentUser();
     if (profile == null || !mounted) return;
 
+    // Populate fields in imperial (the canonical storage unit) first, so the
+    // screen renders immediately without waiting on the unit-preference
+    // lookup below.
     setState(() {
       _weightController.text = profile.weightPounds.toStringAsFixed(0);
       _heightFeetController.text = profile.heightFeet.toString();
@@ -71,6 +121,21 @@ class _NutritionProfileScreenState
       _carbCycleOptIn = profile.carbCycleOptIn;
       _trainingPhase = profile.trainingPhase;
     });
+
+    // Apply the user's unit preference to the weight/height display.
+    // Best-effort — falls back to the imperial display set above if the
+    // preference can't be resolved.
+    try {
+      final unitSystem = await ref.read(unitSystemProvider.future);
+      if (unitSystem == UnitSystem.metric && mounted) {
+        setState(() {
+          _convertFieldsForUnitChange(toMetric: true);
+          _useMetric = true;
+        });
+      }
+    } catch (_) {
+      // Non-fatal — default to imperial display.
+    }
 
     // Garmin auto-fill: if Garmin's latest body-comp reading is authoritative
     // (newer than the user's manual entry, within 30-day staleness window),
@@ -89,9 +154,12 @@ class _NutritionProfileScreenState
         userUpdatedAt: profile.weightPoundsUpdatedAt,
       );
       if (weightAuthoritative && garminData.weightKg != null) {
-        final garminLbs = (garminData.weightKg! * 2.20462).round();
         setState(() {
-          _weightController.text = garminLbs.toString();
+          _weightController.text = _useMetric
+              ? garminData.weightKg!.toStringAsFixed(1)
+              : UnitFormatter.kgToPounds(
+                  garminData.weightKg!,
+                ).round().toString();
           _weightFromGarmin = true;
         });
       }
@@ -121,9 +189,29 @@ class _NutritionProfileScreenState
       final profile = await userRepository.getCurrentUser();
       if (profile == null) return;
 
-      final weightLbs = double.tryParse(_weightController.text);
-      final heightFeet = int.tryParse(_heightFeetController.text);
-      final heightInches = int.tryParse(_heightInchesController.text);
+      // Convert display values (which are in whatever unit the user is
+      // viewing) back to the canonical storage units: pounds + feet/inches.
+      final weightEntered = double.tryParse(_weightController.text);
+      final weightLbs = weightEntered == null
+          ? null
+          : (_useMetric
+                ? UnitFormatter.kgToPounds(weightEntered)
+                : weightEntered);
+
+      int? heightFeet;
+      int? heightInches;
+      if (_useMetric) {
+        final cm = int.tryParse(_heightCmController.text);
+        if (cm != null) {
+          final converted = UnitFormatter.cmToFeetInches(cm);
+          heightFeet = converted.$1;
+          heightInches = converted.$2;
+        }
+      } else {
+        heightFeet = int.tryParse(_heightFeetController.text);
+        heightInches = int.tryParse(_heightInchesController.text);
+      }
+
       final bodyFat = double.tryParse(_bodyFatController.text);
       final weeklyHours = double.tryParse(_weeklyHoursController.text);
 
@@ -131,11 +219,12 @@ class _NutritionProfileScreenState
       // away from whatever Garmin auto-filled. If the displayed value still
       // matches Garmin's reading, leave the timestamp on Garmin's so the
       // edge-function resolver can still resolve weight correctly.
-      final weightChanged = weightLbs != null &&
+      final weightChanged =
+          weightLbs != null &&
           !_weightFromGarmin &&
           weightLbs != profile.weightPounds;
-      final bodyFatChanged = bodyFat != profile.bodyFatPct &&
-          !_bodyFatFromGarmin;
+      final bodyFatChanged =
+          bodyFat != profile.bodyFatPct && !_bodyFatFromGarmin;
 
       final updated = profile.copyWith(
         weightPounds: weightLbs ?? profile.weightPounds,
@@ -180,6 +269,19 @@ class _NutritionProfileScreenState
 
   @override
   Widget build(BuildContext context) {
+    // React to unit-preference changes made elsewhere (e.g. another settings
+    // screen) while this screen is mounted — convert the displayed values in
+    // place so they never mismatch their unit label.
+    ref.listen<AsyncValue<UnitSystem>>(unitSystemProvider, (previous, next) {
+      final newUseMetric = next.value == UnitSystem.metric;
+      if (newUseMetric != _useMetric) {
+        setState(() {
+          _convertFieldsForUnitChange(toMetric: newUseMetric);
+          _useMetric = newUseMetric;
+        });
+      }
+    });
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -343,12 +445,10 @@ class _NutritionProfileScreenState
       child: KyleInputField(
         key: const ValueKey('body_composition.weight_field'),
         controller: _weightController,
-        hintText: 'e.g., 165',
-        suffixText: 'lbs',
+        hintText: _useMetric ? 'e.g., 75' : 'e.g., 165',
+        suffixText: _useMetric ? 'kg' : 'lbs',
         keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-        ],
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (_) {
           // User edit supersedes Garmin — clear the chip and mark dirty.
           if (_weightFromGarmin) {
@@ -361,6 +461,19 @@ class _NutritionProfileScreenState
   }
 
   Widget _buildHeightInput(BuildContext context) {
+    if (_useMetric) {
+      return BaseCard(
+        child: KyleInputField(
+          key: const ValueKey('body_composition.height_cm_field'),
+          controller: _heightCmController,
+          hintText: 'cm',
+          suffixText: 'cm',
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (_) => _markChanged(),
+        ),
+      );
+    }
     return BaseCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,9 +485,7 @@ class _NutritionProfileScreenState
               hintText: 'ft',
               suffixText: 'ft',
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (_) => _markChanged(),
             ),
           ),
@@ -386,9 +497,7 @@ class _NutritionProfileScreenState
               hintText: 'in',
               suffixText: 'in',
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (_) => _markChanged(),
             ),
           ),

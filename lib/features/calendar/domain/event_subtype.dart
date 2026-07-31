@@ -25,41 +25,146 @@ class EventSubtype {
     EventSubtype(name: '10k', displayName: '10K (6.2 mi)', distanceMiles: 6.2),
     EventSubtype(name: '15k', displayName: '15K (9.3 mi)', distanceMiles: 9.3),
     EventSubtype(name: '10_mile', displayName: '10 Mile', distanceMiles: 10.0),
-    EventSubtype(name: 'half_marathon', displayName: 'Half Marathon (13.1 mi)', distanceMiles: 13.1),
-    EventSubtype(name: '25k', displayName: '25K (15.5 mi)', distanceMiles: 15.5),
-    EventSubtype(name: '30k', displayName: '30K (18.6 mi)', distanceMiles: 18.6),
-    EventSubtype(name: 'marathon', displayName: 'Marathon (26.2 mi)', distanceMiles: 26.2),
-    EventSubtype(name: 'ultra_50k', displayName: '50K Ultra (31 mi)', distanceMiles: 31.0),
-    EventSubtype(name: 'ultra_50m', displayName: '50 Mile Ultra', distanceMiles: 50.0),
-    EventSubtype(name: 'ultra_100k', displayName: '100K Ultra (62 mi)', distanceMiles: 62.0),
-    EventSubtype(name: 'ultra_100m', displayName: '100 Mile Ultra', distanceMiles: 100.0),
-    EventSubtype(name: 'ultra_12h', displayName: '12 Hour Ultra', distanceMiles: null),
-    EventSubtype(name: 'ultra_24h', displayName: '24 Hour Ultra', distanceMiles: null),
-    EventSubtype(name: 'custom', displayName: 'Custom Distance', distanceMiles: null),
+    EventSubtype(
+      name: 'half_marathon',
+      displayName: 'Half Marathon (13.1 mi)',
+      distanceMiles: 13.1,
+    ),
+    EventSubtype(
+      name: '25k',
+      displayName: '25K (15.5 mi)',
+      distanceMiles: 15.5,
+    ),
+    EventSubtype(
+      name: '30k',
+      displayName: '30K (18.6 mi)',
+      distanceMiles: 18.6,
+    ),
+    EventSubtype(
+      name: 'marathon',
+      displayName: 'Marathon (26.2 mi)',
+      distanceMiles: 26.2,
+    ),
+    EventSubtype(
+      name: 'ultra_50k',
+      displayName: '50K Ultra (31 mi)',
+      distanceMiles: 31.0,
+    ),
+    EventSubtype(
+      name: 'ultra_50m',
+      displayName: '50 Mile Ultra',
+      distanceMiles: 50.0,
+    ),
+    EventSubtype(
+      name: 'ultra_100k',
+      displayName: '100K Ultra (62 mi)',
+      distanceMiles: 62.0,
+    ),
+    EventSubtype(
+      name: 'ultra_100m',
+      displayName: '100 Mile Ultra',
+      distanceMiles: 100.0,
+    ),
+    EventSubtype(
+      name: 'ultra_12h',
+      displayName: '12 Hour Ultra',
+      distanceMiles: null,
+    ),
+    EventSubtype(
+      name: 'ultra_24h',
+      displayName: '24 Hour Ultra',
+      distanceMiles: null,
+    ),
+    EventSubtype(
+      name: 'custom',
+      displayName: 'Custom Distance',
+      distanceMiles: null,
+    ),
   ];
 
   /// Cycling event subtypes
   static const cyclingEvents = [
     EventSubtype(name: '10k', displayName: '10K (6.2 mi)', distanceMiles: 6.2),
-    EventSubtype(name: '20k', displayName: '20K (12.4 mi)', distanceMiles: 12.4),
-    EventSubtype(name: '40k_tt', displayName: '40K Time Trial (24.9 mi)', distanceMiles: 24.9),
+    EventSubtype(
+      name: '20k',
+      displayName: '20K (12.4 mi)',
+      distanceMiles: 12.4,
+    ),
+    EventSubtype(
+      name: '40k_tt',
+      displayName: '40K Time Trial (24.9 mi)',
+      distanceMiles: 24.9,
+    ),
     EventSubtype(name: '50k', displayName: '50K (31 mi)', distanceMiles: 31.0),
-    EventSubtype(name: 'half_century', displayName: 'Half Century (50 mi)', distanceMiles: 50.0),
-    EventSubtype(name: 'metric_century', displayName: 'Metric Century (100K / 62 mi)', distanceMiles: 62.0),
-    EventSubtype(name: 'century', displayName: 'Century (100 mi)', distanceMiles: 100.0),
-    EventSubtype(name: 'gran_fondo', displayName: 'Gran Fondo (70-100+ mi)', distanceMiles: 85.0),
-    EventSubtype(name: '200k', displayName: '200K (124 mi)', distanceMiles: 124.0),
-    EventSubtype(name: 'custom', displayName: 'Custom Distance', distanceMiles: null),
+    EventSubtype(
+      name: 'half_century',
+      displayName: 'Half Century (50 mi)',
+      distanceMiles: 50.0,
+    ),
+    EventSubtype(
+      name: 'metric_century',
+      displayName: 'Metric Century (100K / 62 mi)',
+      distanceMiles: 62.0,
+    ),
+    EventSubtype(
+      name: 'century',
+      displayName: 'Century (100 mi)',
+      distanceMiles: 100.0,
+    ),
+    EventSubtype(
+      name: 'gran_fondo',
+      displayName: 'Gran Fondo (70-100+ mi)',
+      distanceMiles: 85.0,
+    ),
+    EventSubtype(
+      name: '200k',
+      displayName: '200K (124 mi)',
+      distanceMiles: 124.0,
+    ),
+    EventSubtype(
+      name: 'custom',
+      displayName: 'Custom Distance',
+      distanceMiles: null,
+    ),
   ];
 
   /// Swimming event subtypes
   static const swimmingEvents = [
-    EventSubtype(name: '1k', displayName: '1K Open Water', distanceMiles: 0.62, swimDistanceMeters: 1000),
-    EventSubtype(name: '1.5k', displayName: '1.5K Open Water', distanceMiles: 0.93, swimDistanceMeters: 1500),
-    EventSubtype(name: '2.5k', displayName: '2.5K Open Water', distanceMiles: 1.55, swimDistanceMeters: 2500),
-    EventSubtype(name: '5k', displayName: '5K Open Water', distanceMiles: 3.1, swimDistanceMeters: 5000),
-    EventSubtype(name: '10k', displayName: '10K Open Water', distanceMiles: 6.2, swimDistanceMeters: 10000),
-    EventSubtype(name: 'custom', displayName: 'Custom Distance', distanceMiles: null),
+    EventSubtype(
+      name: '1k',
+      displayName: '1K Open Water',
+      distanceMiles: 0.62,
+      swimDistanceMeters: 1000,
+    ),
+    EventSubtype(
+      name: '1.5k',
+      displayName: '1.5K Open Water',
+      distanceMiles: 0.93,
+      swimDistanceMeters: 1500,
+    ),
+    EventSubtype(
+      name: '2.5k',
+      displayName: '2.5K Open Water',
+      distanceMiles: 1.55,
+      swimDistanceMeters: 2500,
+    ),
+    EventSubtype(
+      name: '5k',
+      displayName: '5K Open Water',
+      distanceMiles: 3.1,
+      swimDistanceMeters: 5000,
+    ),
+    EventSubtype(
+      name: '10k',
+      displayName: '10K Open Water',
+      distanceMiles: 6.2,
+      swimDistanceMeters: 10000,
+    ),
+    EventSubtype(
+      name: 'custom',
+      displayName: 'Custom Distance',
+      distanceMiles: null,
+    ),
   ];
 
   /// Triathlon event subtypes

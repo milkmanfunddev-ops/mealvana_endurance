@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../jade/presentation/widgets/jade_thinking_status.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../application/meal_ai_service.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 
 /// Natural-language meal description screen.
 ///
@@ -15,8 +19,7 @@ class DescribeMealScreen extends ConsumerStatefulWidget {
   const DescribeMealScreen({super.key});
 
   @override
-  ConsumerState<DescribeMealScreen> createState() =>
-      _DescribeMealScreenState();
+  ConsumerState<DescribeMealScreen> createState() => _DescribeMealScreenState();
 }
 
 class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
@@ -30,8 +33,7 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       _logDate = extra?['logDate'] as String? ?? _todayDateString();
       _initialized = true;
     }
@@ -51,14 +53,37 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
   }
 
   Future<void> _analyze() async {
-    if (!_formKey.currentState!.validate()) return;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    analytics.track('meal_ai_action_tapped', properties: {'method': 'text'});
+    if (!_formKey.currentState!.validate()) {
+      analytics.track(
+        'meal_ai_validation_failed',
+        properties: {'method': 'text'},
+      );
+      return;
+    }
 
     setState(() => _isAnalyzing = true);
+    analytics.track('meal_ai_started', properties: {'method': 'text'});
+    final stopwatch = Stopwatch()..start();
 
     try {
       final service = ref.read(mealAiServiceProvider);
-      final result = await service.describeMeal(
-        _descriptionCtrl.text.trim(),
+      final result = await service.describeMeal(_descriptionCtrl.text.trim());
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_completed',
+        properties: {
+          'method': 'text',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+          'input_tokens': result.inputTokens,
+          'output_tokens': result.outputTokens,
+          'total_tokens': result.totalTokens,
+          if (result.model != null) 'model': result.model,
+          if (result.costUsd != null) 'cost_usd': result.costUsd,
+          'confidence': result.confidence.name,
+          'item_count': result.items.length,
+        },
       );
 
       if (!mounted) return;
@@ -72,14 +97,43 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
         },
       );
     } on InsufficientCreditsException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': 'insufficient_credits',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': e.kind.name,
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (!mounted) return;
       MealvanaSnackbar.showError(context, e.userMessage);
     } catch (_) {
+      stopwatch.stop();
+      analytics.track(
+        'meal_ai_failed',
+        properties: {
+          'method': 'text',
+          'error_type': 'unknown',
+          'latency_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
       if (mounted) {
         MealvanaSnackbar.showError(
-            context, 'Something went wrong. Please try again.');
+          context,
+          'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -97,72 +151,111 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
         title: const Text('Describe to Jade'),
         elevation: 0,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: AppSpacing.screenPaddingHorizontal,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      // While Jade works the page does not get covered — the editor collapses
+      // to a quiet echo of what was typed and the answer's skeleton takes the
+      // space the button had, so the wait happens where the result will land.
+      body: SingleChildScrollView(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppSpacing.md),
+              // Prompt on the left, token balance on the right — the cost
+              // of the action sits next to the description of it.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Describe what you ate and Jade will estimate the macros.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark
-                          ? AppColors.cream.withValues(alpha: 0.65)
-                          : AppColors.blackberry.withValues(alpha: 0.65),
+                  Expanded(
+                    child: Text(
+                      'Describe what you ate and Jade will estimate the '
+                      'macros.',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark
+                            ? AppColors.cream.withValues(alpha: 0.65)
+                            : AppColors.blackberry.withValues(alpha: 0.65),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  TextFormField(
-                    controller: _descriptionCtrl,
-                    maxLines: 6,
-                    minLines: 4,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'What did you eat?',
-                      hintText:
-                          'e.g. A bowl of oatmeal with blueberries and a tablespoon of honey, plus a large coffee with oat milk.',
-                      border: OutlineInputBorder(),
-                      alignLabelWithHint: true,
-                    ),
-                    validator: (v) =>
-                        (v == null || v.trim().length < 5)
-                            ? 'Please describe your meal'
-                            : null,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  KylePrimaryButton(
-                    text: 'Analyze',
-                    isLoading: _isAnalyzing,
-                    onPressed: _isAnalyzing ? null : _analyze,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(width: AppSpacing.md),
+                  const TokenPill(),
                 ],
               ),
-            ),
-          ),
-          if (_isAnalyzing)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(color: Colors.white),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Jade is thinking...',
-                      style:
-                          AppTextStyles.bodyLarge.copyWith(color: Colors.white),
-                    ),
-                  ],
+              const SizedBox(height: AppSpacing.lg),
+              if (_isAnalyzing)
+                _DescriptionEcho(text: _descriptionCtrl.text.trim())
+              else
+                TextFormField(
+                  controller: _descriptionCtrl,
+                  maxLines: 6,
+                  minLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'What did you eat?',
+                    hintText:
+                        'e.g. A bowl of oatmeal with blueberries and a tablespoon of honey, plus a large coffee with oat milk.',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (v) => (v == null || v.trim().length < 5)
+                      ? 'Please describe your meal'
+                      : null,
                 ),
-              ),
-            ),
-        ],
+              const SizedBox(height: AppSpacing.xl),
+              if (_isAnalyzing)
+                const MealAnalysisSkeleton(
+                  phases: JadeThinkingStatus.describePhases,
+                )
+              else
+                // The Analyze button carries its own price: "Analyze 🍪 1".
+                // The chip is laid out after the label rather than stacked
+                // over it, so it can't collide at any text scale.
+                KylePrimaryButton(
+                  text: 'Analyze',
+                  onPressed: _analyze,
+                  trailing: const TokenCostChip(),
+                ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The typed description, shown read-only while Jade reads it.
+///
+/// It replaces the (much taller) editor during the wait so the skeleton below
+/// stays above the fold, while keeping what was sent visible — "Reading your
+/// description…" is a lot more convincing next to the description.
+class _DescriptionEcho extends StatelessWidget {
+  const _DescriptionEcho({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: onSurface.withValues(alpha: 0.12)),
+      ),
+      child: Text(
+        text,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: onSurface.withValues(alpha: 0.7),
+          fontStyle: FontStyle.italic,
+        ),
       ),
     );
   }

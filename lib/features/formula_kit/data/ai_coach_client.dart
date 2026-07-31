@@ -83,11 +83,14 @@ class AiCoachClient {
 
       if (response.status != 200) {
         if (kDebugMode) {
-          debugPrint('[AiCoachClient] ai-coach status ${response.status}: ${response.data}');
+          debugPrint(
+            '[AiCoachClient] ai-coach status ${response.status}: ${response.data}',
+          );
         }
         throw AiCoachException(
           kind: AiCoachFailureKind.serverError,
-          userMessage: _extractError(response.data) ??
+          userMessage:
+              _extractError(response.data) ??
               'Coach insight is unavailable right now. Please try again.',
           debugMessage: 'ai-coach returned status ${response.status}',
         );
@@ -98,7 +101,8 @@ class AiCoachClient {
       if (insight.isEmpty) {
         throw const AiCoachException(
           kind: AiCoachFailureKind.serverError,
-          userMessage: 'Coach insight is unavailable right now. Please try again.',
+          userMessage:
+              'Coach insight is unavailable right now. Please try again.',
           debugMessage: 'ai-coach returned an empty insight',
         );
       }
@@ -107,9 +111,17 @@ class AiCoachClient {
       return CoachInsight(
         insight: insight,
         staleMarker: marker,
-        inputTokens: usage is Map ? (usage['input_tokens'] as num?)?.toInt() ?? 0 : 0,
-        outputTokens: usage is Map ? (usage['output_tokens'] as num?)?.toInt() ?? 0 : 0,
+        inputTokens: usage is Map
+            ? (usage['input_tokens'] as num?)?.toInt() ?? 0
+            : 0,
+        outputTokens: usage is Map
+            ? (usage['output_tokens'] as num?)?.toInt() ?? 0
+            : 0,
         model: usage is Map ? usage['model'] as String? : null,
+        costUsd: usage is Map ? (usage['cost_usd'] as num?)?.toDouble() : null,
+        generationSource: usage is Map
+            ? usage['source'] as String? ?? 'model'
+            : 'model',
       );
     } on AiCoachException {
       rethrow;
@@ -118,7 +130,8 @@ class AiCoachClient {
     } on SocketException catch (e) {
       throw AiCoachException(
         kind: AiCoachFailureKind.offline,
-        userMessage: 'No internet connection. Please check your network and try again.',
+        userMessage:
+            'No internet connection. Please check your network and try again.',
         debugMessage: e.toString(),
       );
     } on FunctionException catch (e) {
@@ -143,7 +156,8 @@ class AiCoachClient {
 
       throw AiCoachException(
         kind: AiCoachFailureKind.serverError,
-        userMessage: 'Coach insight is unavailable right now. Please try again.',
+        userMessage:
+            'Coach insight is unavailable right now. Please try again.',
         debugMessage: 'FunctionException ${e.status}: $e',
       );
     } catch (e) {

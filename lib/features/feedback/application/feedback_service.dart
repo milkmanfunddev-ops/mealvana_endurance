@@ -15,21 +15,26 @@ import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 class FeedbackService {
   FeedbackService(this.ref);
   final Ref ref;
-  
-  
+
   /// Get feedback repository
   FeedbackRepository get _repository => ref.read(feedbackRepositoryProvider);
-  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
+  AnalyticsTracker get _analytics =>
+      ref.read(appExternalDepsProvider).analytics;
   // Google Form URL - your actual form
-  static const String _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfKkSEUYd_vdDKv4iMVT3jPr2v2VWTg5bVkWRxbvFN1HaAFKQ/formResponse';
-  
+  static const String _formUrl =
+      'https://docs.google.com/forms/d/e/1FAIpQLSfKkSEUYd_vdDKv4iMVT3jPr2v2VWTg5bVkWRxbvFN1HaAFKQ/formResponse';
+
   // Form field entry IDs - extracted from your Google Form
-  static const String _satisfactionFieldId = 'entry.326851736';    // "What do you think about this plan?"
-  static const String _appFeedbackFieldId = 'entry.205830727';     // "What do you think about this tiny app?"
-  static const String _suggestionsFieldId = 'entry.1733379717';   // "Suggestions for improvement"
-  static const String _planNameFieldId = 'entry.1956700449';      // "Plan Name"
-  static const String _userNameFieldId = 'entry.536281714';       // "User Name"
-  static const String _timestampFieldId = 'entry.845631390';      // "Submission Time"
+  static const String _satisfactionFieldId =
+      'entry.326851736'; // "What do you think about this plan?"
+  static const String _appFeedbackFieldId =
+      'entry.205830727'; // "What do you think about this tiny app?"
+  static const String _suggestionsFieldId =
+      'entry.1733379717'; // "Suggestions for improvement"
+  static const String _planNameFieldId = 'entry.1956700449'; // "Plan Name"
+  static const String _userNameFieldId = 'entry.536281714'; // "User Name"
+  static const String _timestampFieldId =
+      'entry.845631390'; // "Submission Time"
 
   /// Submit survey response to local database and handle notifications
   Future<bool> submitSurveyResponse({
@@ -83,7 +88,9 @@ class FeedbackService {
       final hasPermission = await NotificationService.requestPermissions();
       if (!hasPermission) {
         if (kDebugMode) {
-          DebugLogger.warning('⚠️ Notification permission denied, cannot schedule reminder');
+          DebugLogger.warning(
+            '⚠️ Notification permission denied, cannot schedule reminder',
+          );
         }
         return;
       }
@@ -98,8 +105,8 @@ class FeedbackService {
         final database = ref.read(appDatabaseProvider);
         final currentUser = await database.userDao.getCurrentUserProfile();
         if (currentUser != null) {
-          final latestPlanActivity =
-              await database.activityDao.getLatestActivityWithNutritionPlan(currentUser.id);
+          final latestPlanActivity = await database.activityDao
+              .getLatestActivityWithNutritionPlan(currentUser.id);
           activityId = latestPlanActivity?.id;
         }
       } catch (e) {
@@ -182,16 +189,16 @@ class FeedbackService {
 
       final response = await http.post(
         Uri.parse(_formUrl),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: simpleData,
       );
 
       if (kDebugMode) {
         DebugLogger.info('📡 Simple test result: ${response.statusCode}');
         if (response.statusCode != 200 && response.statusCode != 302) {
-          DebugLogger.debug('Body preview: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+          DebugLogger.debug(
+            'Body preview: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
+          );
         }
       }
 
@@ -219,12 +226,14 @@ class FeedbackService {
         _suggestionsFieldId: feedback.suggestions ?? '',
         _planNameFieldId: feedback.planName ?? '',
         _userNameFieldId: feedback.userName ?? '',
-        _timestampFieldId: feedback.timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        _timestampFieldId:
+            feedback.timestamp?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
         'submit': 'Submit',
       };
 
       final uri = Uri.parse(_formUrl).replace(queryParameters: queryParams);
-      
+
       if (kDebugMode) {
         DebugLogger.debug('🔗 GET URL: $uri');
       }
@@ -258,8 +267,10 @@ class FeedbackService {
     await _analytics.trackFeedbackSubmitted(
       activityId: null,
       confidenceLevel: _satisfactionToRating(feedback.satisfactionLevel),
-      reuseIntent: 'n/a', // FeedbackResponse doesn't have reuseIntent (that's in SurveyResponse)
-      reminderRequested: false, // FeedbackResponse doesn't have reminderPreference (that's in SurveyResponse)
+      reuseIntent:
+          'n/a', // FeedbackResponse doesn't have reuseIntent (that's in SurveyResponse)
+      reminderRequested:
+          false, // FeedbackResponse doesn't have reminderPreference (that's in SurveyResponse)
       message: feedback.suggestions,
     );
 
@@ -271,7 +282,9 @@ class FeedbackService {
         _suggestionsFieldId: feedback.suggestions ?? '',
         _planNameFieldId: feedback.planName ?? '',
         _userNameFieldId: feedback.userName ?? '',
-        _timestampFieldId: feedback.timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        _timestampFieldId:
+            feedback.timestamp?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
         'submit': 'Submit', // Google Forms often requires this
       };
 
@@ -285,13 +298,16 @@ class FeedbackService {
 
       // Create properly encoded form data
       final encodedData = formData.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .map(
+            (e) =>
+                '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+          )
           .join('&');
-      
+
       if (kDebugMode) {
         DebugLogger.debug('🔗 Encoded form data: $encodedData');
       }
-      
+
       // Submit to Google Forms
       final response = await http.post(
         Uri.parse(_formUrl),
@@ -310,14 +326,16 @@ class FeedbackService {
         if (response.body.length < 1000) {
           DebugLogger.debug('  Body: ${response.body}');
         } else {
-          DebugLogger.debug('  Body: ${response.body.substring(0, 500)}...[truncated]');
+          DebugLogger.debug(
+            '  Body: ${response.body.substring(0, 500)}...[truncated]',
+          );
         }
       }
 
       // Google Forms returns 200 even on success, but redirects to a confirmation page
       // Check if submission was successful (status code 200 or 302 for redirect)
       final success = response.statusCode == 200 || response.statusCode == 302;
-      
+
       if (kDebugMode) {
         if (success) {
           DebugLogger.info('✅ Submission successful!');
@@ -325,7 +343,7 @@ class FeedbackService {
           DebugLogger.error('❌ Submission failed!');
         }
       }
-      
+
       return success;
     } catch (error, stackTrace) {
       if (kDebugMode) {
@@ -339,15 +357,16 @@ class FeedbackService {
 
   /// Alternative method: Submit feedback as JSON to a webhook/API endpoint
   /// Use this if you prefer to process feedback through your own backend
-  Future<bool> submitFeedbackToAPI(FeedbackResponse feedback, {String? apiEndpoint}) async {
+  Future<bool> submitFeedbackToAPI(
+    FeedbackResponse feedback, {
+    String? apiEndpoint,
+  }) async {
     final endpoint = apiEndpoint ?? 'https://your-api.com/api/feedback';
-    
+
     try {
       final response = await http.post(
         Uri.parse(endpoint),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode(feedback.toFormData()),
       );
 
@@ -357,7 +376,7 @@ class FeedbackService {
       return false;
     }
   }
-  
+
   /// Convert satisfaction level to numeric rating for analytics
   int _satisfactionToRating(SatisfactionLevel level) {
     switch (level) {

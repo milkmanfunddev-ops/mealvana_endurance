@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/content_area.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/services/app_external_deps.dart';
 import '../widgets/carb_loading_food_pills.dart';
 import '../widgets/edit_carb_target_dialog.dart';
 import '../providers/carb_loading_day_detail_controller.dart';
@@ -27,6 +28,27 @@ class CarbLoadingDayDetailPage extends ConsumerStatefulWidget {
 class _CarbLoadingDayDetailPageState
     extends ConsumerState<CarbLoadingDayDetailPage> {
   @override
+  void initState() {
+    super.initState();
+    // In initState, not build(): build() re-runs on every controller state
+    // change (each food added, each target edit), which would report one "day
+    // viewed" per interaction instead of one per visit.
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'carb_loading_day_viewed',
+            properties: {
+              'day_id': widget.carbLoadingDay.id,
+              'day_number': widget.carbLoadingDay.dayNumber,
+              'carb_target_grams': widget.carbLoadingDay.carbTargetGrams,
+            },
+          );
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(
       carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id),
@@ -40,27 +62,48 @@ class _CarbLoadingDayDetailPageState
         leading: CustomAppBarBackButton(
           key: const ValueKey('carb_plan_day.back_button'),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              key: const ValueKey('carb_plan_day.title'),
-              'Carb Loading Day ${widget.carbLoadingDay.dayNumber}',
-              style: AppTextStyles.subtitle.copyWith(
-                color: isDark ? AppColors.cream : AppColors.blackberry,
+        // ITEM 17 fix: the title Column was crowded by the back button, Done
+        // button, and PopupMenu, and the top line used a wide display font
+        // (AppTextStyles.subtitle / Compadre) with no overflow handling,
+        // truncating to "...". FittedBox scales the whole title block down
+        // to fit the remaining space instead of clipping it, and the top
+        // line now has an explicit ellipsis/maxLines fallback as a safety net.
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                key: const ValueKey('carb_plan_day.title'),
+                'Carb Loading Day ${widget.carbLoadingDay.dayNumber}',
+                // Switched from AppTextStyles.subtitle (Compadre, a wide
+                // display font) to foodTitle (Apercu) — narrower per
+                // character so it competes less with the crowded back
+                // button / Done button / popup menu around it.
+                style: AppTextStyles.foodTitle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-            ),
-            Text(
-              key: const ValueKey('carb_plan_day.date_label'),
-              DateFormat('EEEE, MMM d').format(widget.carbLoadingDay.planDate),
-              style: AppTextStyles.smallLabel.copyWith(
-                color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.7)
-                    : AppColors.blackberry.withValues(alpha: 0.7),
+              Text(
+                key: const ValueKey('carb_plan_day.date_label'),
+                DateFormat(
+                  'EEEE, MMM d',
+                ).format(widget.carbLoadingDay.planDate),
+                style: AppTextStyles.smallLabel.copyWith(
+                  color: isDark
+                      ? AppColors.cream.withValues(alpha: 0.7)
+                      : AppColors.blackberry.withValues(alpha: 0.7),
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
         elevation: 0,
@@ -70,7 +113,21 @@ class _CarbLoadingDayDetailPageState
         actions: [
           TextButton(
             key: const ValueKey('carb_plan_day.done_button'),
-            onPressed: () => context.go('/main?tab=events'),
+            onPressed: () {
+              // ITEM 19 fix: this page is always pushed imperatively
+              // (Navigator.push / pushReplacement from coach portal, activities,
+              // and events flows) — it is never on the GoRouter page stack.
+              // Using context.go()/context.pop() here mixes declarative GoRouter
+              // navigation with an imperatively-pushed page, which throws
+              // GoError("There is nothing to pop"). A plain guarded Navigator
+              // pop correctly returns to whichever screen pushed this page,
+              // matching pushReplacement's "back goes to the previous screen"
+              // intent for all three call sites.
+              final navigator = Navigator.of(context);
+              if (navigator.canPop()) {
+                navigator.pop();
+              }
+            },
             child: Text(
               'Done',
               style: AppTextStyles.buttonTertiary.copyWith(
@@ -814,6 +871,11 @@ class _CarbLoadingDayDetailPageState
   void _markDayComplete(BuildContext context) {
     // TODO: Mark day as complete in database
     MealvanaSnackbar.showSuccess(context, 'Day marked as complete!');
-    Navigator.of(context).pop();
+    // Guarded for the same reason as the Done button (ITEM 19): this page is
+    // always pushed imperatively, never via GoRouter.
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
   }
 }

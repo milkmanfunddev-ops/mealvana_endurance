@@ -124,9 +124,7 @@ class CarbsPerHourService {
     }
 
     final isBuilding = baseline.count < unlockThreshold;
-    final trend = isBuilding
-        ? const <double>[]
-        : [...baseline.history, rate];
+    final trend = isBuilding ? const <double>[] : [...baseline.history, rate];
 
     return CarbsPerHourSummary(
       state: isBuilding
@@ -148,7 +146,9 @@ class CarbsPerHourService {
 
   /// Reduce recent same-sport activities (most-recent-first) into a baseline:
   /// qualifying per-session rates trimmed to the trend window, chronological.
-  CarbsPerHourBaseline baselineFromHistory(List<Activity> recentMostRecentFirst) {
+  CarbsPerHourBaseline baselineFromHistory(
+    List<Activity> recentMostRecentFirst,
+  ) {
     final rates = <double>[];
     for (final activity in recentMostRecentFirst) {
       if (exclusionReason(activity) != CarbsHrExclusionReason.none) continue;
@@ -158,8 +158,7 @@ class CarbsPerHourService {
     }
     // rates is most-recent-first; take the window's worth of priors and flip
     // to oldest → newest for the sparkline.
-    final history =
-        rates.take(priorTrendPoints).toList().reversed.toList();
+    final history = rates.take(priorTrendPoints).toList().reversed.toList();
     return CarbsPerHourBaseline(history: history, count: rates.length);
   }
 }

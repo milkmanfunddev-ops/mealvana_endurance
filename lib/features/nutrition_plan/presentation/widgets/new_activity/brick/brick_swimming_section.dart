@@ -22,6 +22,7 @@ class BrickSwimmingSection extends StatelessWidget {
     super.key,
     required this.segment,
     required this.onChanged,
+    this.useImperial = false,
   });
 
   /// Current segment data (null if new)
@@ -29,6 +30,9 @@ class BrickSwimmingSection extends StatelessWidget {
 
   /// Callback when any field changes
   final ValueChanged<BrickSegment> onChanged;
+
+  /// Whether to display/edit temperature in Fahrenheit instead of Celsius.
+  final bool useImperial;
 
   void _updateSegment({
     double? distanceMeters,
@@ -38,7 +42,8 @@ class BrickSwimmingSection extends StatelessWidget {
     double? waterTempC,
     String? intensity,
   }) {
-    final current = segment ??
+    final current =
+        segment ??
         const BrickSegment(
           sport: 'swimming',
           order: 1,
@@ -96,8 +101,9 @@ class BrickSwimmingSection extends StatelessWidget {
                   : _WaterType.openWater,
               onChanged: (type) {
                 _updateSegment(
-                  poolOrOpenWater:
-                      type == _WaterType.pool ? 'pool' : 'open_water',
+                  poolOrOpenWater: type == _WaterType.pool
+                      ? 'pool'
+                      : 'open_water',
                 );
               },
             ),
@@ -110,7 +116,8 @@ class BrickSwimmingSection extends StatelessWidget {
         KylePlusMinusControl(
           label: 'Distance',
           value: distanceMeters.round(),
-          onChanged: (value) => _updateSegment(distanceMeters: value.toDouble()),
+          onChanged: (value) =>
+              _updateSegment(distanceMeters: value.toDouble()),
           min: 100,
           max: 20000,
           step: 100,
@@ -146,16 +153,18 @@ class BrickSwimmingSection extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // Water Temperature (°C)
+        // Water Temperature (°C, shown in °F when useImperial)
         KylePlusMinusDecimalControl(
           label: 'Water Temperature',
-          value: waterTempC,
-          onChanged: (value) => _updateSegment(waterTempC: value),
-          min: 10.0,
-          max: 35.0,
-          step: 0.5,
-          decimalPlaces: 1,
-          unit: '°C',
+          value: useImperial ? (waterTempC * 9 / 5) + 32 : waterTempC,
+          onChanged: (value) => _updateSegment(
+            waterTempC: useImperial ? (value - 32) * 5 / 9 : value,
+          ),
+          min: useImperial ? 50.0 : 10.0,
+          max: useImperial ? 95.0 : 35.0,
+          step: useImperial ? 1.0 : 0.5,
+          decimalPlaces: useImperial ? 0 : 1,
+          unit: useImperial ? '°F' : '°C',
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -178,10 +187,7 @@ class BrickSwimmingSection extends StatelessWidget {
 }
 
 /// Water type enum for segmented control
-enum _WaterType {
-  pool,
-  openWater,
-}
+enum _WaterType { pool, openWater }
 
 /// Kyle-styled dropdown component (reused from swimming_tab_content.dart)
 class _KyleDropdown extends StatelessWidget {

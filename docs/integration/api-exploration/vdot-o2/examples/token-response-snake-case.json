@@ -1,0 +1,7 @@
+{
+  "_comment": "Reconstructed from the client parser — not a captured vendor payload. The snake_case variant documented in the VDOT O2 wiki. The live API has been observed to send camelCase (see token-response.json). Credentials redacted.",
+  "access_token": "<ACCESS_TOKEN>",
+  "refresh_token": "<REFRESH_TOKEN>",
+  "expires_in": 3600,
+  "token_type": "Bearer"
+}

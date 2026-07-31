@@ -86,7 +86,8 @@ class CarbLoadingFood {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
-      mealTypes: (json['meal_types'] as List<dynamic>?)
+      mealTypes:
+          (json['meal_types'] as List<dynamic>?)
               ?.map((id) => MealType.fromId(id as int))
               .toList() ??
           [],

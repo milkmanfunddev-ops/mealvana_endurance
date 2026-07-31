@@ -24,16 +24,13 @@ class CoachAthleteRelationshipsTable extends Table {
       dateTime().withDefault(currentDateAndTime).named('requested_at')();
 
   /// When the relationship was accepted (null if pending/declined)
-  DateTimeColumn get acceptedAt =>
-      dateTime().nullable().named('accepted_at')();
+  DateTimeColumn get acceptedAt => dateTime().nullable().named('accepted_at')();
 
   /// When the relationship was declined (null if not declined)
-  DateTimeColumn get declinedAt =>
-      dateTime().nullable().named('declined_at')();
+  DateTimeColumn get declinedAt => dateTime().nullable().named('declined_at')();
 
   /// When the relationship was archived (null if not archived)
-  DateTimeColumn get archivedAt =>
-      dateTime().nullable().named('archived_at')();
+  DateTimeColumn get archivedAt => dateTime().nullable().named('archived_at')();
 
   /// When the record was created
   DateTimeColumn get createdAt =>
@@ -51,9 +48,9 @@ class CoachAthleteRelationshipsTable extends Table {
 
   @override
   List<String> get customConstraints => [
-        'UNIQUE(coach_user_id, athlete_user_id)',
-        "CHECK (status IN ('pending', 'active', 'declined', 'archived'))",
-        "CHECK (requested_by IN ('coach', 'athlete'))",
-        "CHECK (coach_user_id != athlete_user_id)",
-      ];
+    'UNIQUE(coach_user_id, athlete_user_id)',
+    "CHECK (status IN ('pending', 'active', 'declined', 'archived'))",
+    "CHECK (requested_by IN ('coach', 'athlete'))",
+    "CHECK (coach_user_id != athlete_user_id)",
+  ];
 }

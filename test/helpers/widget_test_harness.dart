@@ -24,6 +24,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
@@ -69,7 +70,7 @@ Override mockAppExternalDeps() {
 /// A Riverpod override that provides a no-op [SharedPreferences] mock.
 ///
 /// Added to [smokeScreen] defaults so that build-time reads of
-/// [sharedPreferencesProvider] (e.g. from [AnalyticsExcludedNotifier] or
+/// [sharedPreferencesProvider] (e.g. from [AnalyticsConsentNotifier] or
 /// [AppThemeModeNotifier]) don't throw [UnimplementedError] in widget tests.
 Override mockSharedPreferences() {
   final prefs = MockSharedPreferences();
@@ -112,8 +113,11 @@ Future<void> pumpSeeded(
     ProviderScope(
       overrides: [
         mockAppExternalDeps(),
+        appConfigProvider.overrideWithValue(AppConfig.forTesting()),
         inMemoryDatabaseOverride(db),
-        preferencesServiceProvider.overrideWith((ref) => PreferencesService(prefs)),
+        preferencesServiceProvider.overrideWith(
+          (ref) => PreferencesService(prefs),
+        ),
         currentUserProvider.overrideWith((ref) async => null),
         ...overrides,
       ],
@@ -139,11 +143,11 @@ const List<Size> kSmokeSizes = [
 /// `.sp/.h/.w` extensions resolve instead of throwing `LateInitializationError`)
 /// + a MaterialApp. Mirrors `root_app_widget.dart` (designSize 393×852).
 Widget wrapForTest(Widget screen) => ScreenUtilInit(
-      designSize: const Size(393, 852),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (_, __) => MaterialApp(home: screen),
-    );
+  designSize: const Size(393, 852),
+  minTextAdapt: true,
+  splitScreenMode: true,
+  builder: (_, __) => MaterialApp(home: screen),
+);
 
 /// Pump [screen] across [sizes] and assert it builds without throwing.
 ///
@@ -169,11 +173,14 @@ Future<void> smokeScreen(
   List<Size> overflowSizes = const [standardPhoneSize],
   bool withAppDeps = true,
   bool settle = true,
+  AppConfig? appConfig,
 }) async {
   final allOverrides = <Override>[
     if (withAppDeps) mockAppExternalDeps(),
+    if (withAppDeps)
+      appConfigProvider.overrideWithValue(appConfig ?? AppConfig.forTesting()),
     // Provide a default SharedPreferences mock so build-time reads of
-    // sharedPreferencesProvider (e.g. analyticsExcludedProvider,
+    // sharedPreferencesProvider (e.g. analyticsConsentProvider,
     // kyleThemeModeProvider) don't throw UnimplementedError. Individual
     // tests that need custom prefs behaviour can pass their own override
     // in [overrides]; it will appear later in the list and take precedence.
@@ -187,7 +194,8 @@ Future<void> smokeScreen(
   for (final size in sizes) {
     final captured = <String>[];
     final previousOnError = FlutterError.onError;
-    FlutterError.onError = (details) => captured.add(details.exceptionAsString());
+    FlutterError.onError = (details) =>
+        captured.add(details.exceptionAsString());
 
     try {
       tester.view.physicalSize = size;
@@ -208,7 +216,11 @@ Future<void> smokeScreen(
     }
 
     // Also drain anything the binding recorded directly.
-    for (dynamic e = tester.takeException(); e != null; e = tester.takeException()) {
+    for (
+      dynamic e = tester.takeException();
+      e != null;
+      e = tester.takeException()
+    ) {
       captured.add(e.toString());
     }
 
@@ -216,7 +228,8 @@ Future<void> smokeScreen(
     expect(
       crashes,
       isEmpty,
-      reason: '${screen.runtimeType} threw during build/layout at $size:\n'
+      reason:
+          '${screen.runtimeType} threw during build/layout at $size:\n'
           '${crashes.join('\n\n')}',
     );
 
@@ -226,7 +239,8 @@ Future<void> smokeScreen(
       expect(
         overflows,
         isEmpty,
-        reason: '${screen.runtimeType} render overflow at $size:\n'
+        reason:
+            '${screen.runtimeType} render overflow at $size:\n'
             '${overflows.join('\n')}',
       );
     }

@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
+import 'package:mealvana_endurance/shared/widgets/swipe_action_background.dart';
 
 import '../../application/formula_library_controller.dart';
 import '../../application/formula_pin_controller.dart';
@@ -140,9 +141,7 @@ class _BodyState extends ConsumerState<_Body> {
   List<String> _activeFilterLabels() {
     final f = widget.state.filter;
     if (f.phase == FormulaPhase.before) {
-      return [
-        if (f.beforeSubPhase != null) f.beforeSubPhase!.displayLabel,
-      ];
+      return [if (f.beforeSubPhase != null) f.beforeSubPhase!.displayLabel];
     }
     if (f.phase == FormulaPhase.during) {
       return [
@@ -166,7 +165,9 @@ class _BodyState extends ConsumerState<_Body> {
     // Pinned-only stacks on top of the controller's chip/dietary filters
     // (Q3a from design). We do the pin filtering here so the controller stays
     // decoupled from the pin store — the screen composes both providers.
-    final pinIds = ref.watch(formulaPinControllerProvider).maybeWhen(
+    final pinIds = ref
+        .watch(formulaPinControllerProvider)
+        .maybeWhen(
           data: (s) => s.pinnedTemplateIds,
           orElse: () => const <String>{},
         );
@@ -174,29 +175,32 @@ class _BodyState extends ConsumerState<_Body> {
 
     final visibleBefore = pinnedOnly
         ? state.filteredBeforeFormulas
-            .where((f) => pinIds.contains(f.id))
-            .toList()
+              .where((f) => pinIds.contains(f.id))
+              .toList()
         : state.filteredBeforeFormulas;
     final visibleDuring = pinnedOnly
         ? state.filteredDuringFormulas
-            .where((f) => pinIds.contains(f.id))
-            .toList()
+              .where((f) => pinIds.contains(f.id))
+              .toList()
         : state.filteredDuringFormulas;
     final visibleAfter = pinnedOnly
         ? state.filteredAfterFormulas
-            .where((f) => pinIds.contains(f.id))
-            .toList()
+              .where((f) => pinIds.contains(f.id))
+              .toList()
         : state.filteredAfterFormulas;
 
     // Pin counts per phase from the *unfiltered* lists, used by empty-state
     // copy to differentiate "you have no pins" from "your pins don't match
     // these filters."
-    final pinnedBeforeCount =
-        state.beforeFormulas.where((f) => pinIds.contains(f.id)).length;
-    final pinnedDuringCount =
-        state.duringFormulas.where((f) => pinIds.contains(f.id)).length;
-    final pinnedAfterCount =
-        state.afterFormulas.where((f) => pinIds.contains(f.id)).length;
+    final pinnedBeforeCount = state.beforeFormulas
+        .where((f) => pinIds.contains(f.id))
+        .length;
+    final pinnedDuringCount = state.duringFormulas
+        .where((f) => pinIds.contains(f.id))
+        .length;
+    final pinnedAfterCount = state.afterFormulas
+        .where((f) => pinIds.contains(f.id))
+        .length;
 
     final visibleCount = switch (phase) {
       FormulaPhase.before => visibleBefore.length,
@@ -267,8 +271,7 @@ class _BodyState extends ConsumerState<_Body> {
                   keyOf: (v) => ValueKey(
                     'formula_kit.chip.after_travel_friendliness.${v.name}',
                   ),
-                  isSelected: (v) =>
-                      state.filter.afterTravelFriendliness == v,
+                  isSelected: (v) => state.filter.afterTravelFriendliness == v,
                   onToggled: controller.toggleAfterTravelFriendliness,
                 ),
               const SizedBox(height: AppSpacing.sm),
@@ -289,20 +292,20 @@ class _BodyState extends ConsumerState<_Body> {
             onNotification: _onScroll,
             child: switch (phase) {
               FormulaPhase.before => _BeforeList(
-                  formulas: visibleBefore,
-                  pinnedOnly: pinnedOnly,
-                  pinnedInPhaseCount: pinnedBeforeCount,
-                ),
+                formulas: visibleBefore,
+                pinnedOnly: pinnedOnly,
+                pinnedInPhaseCount: pinnedBeforeCount,
+              ),
               FormulaPhase.during => _DuringList(
-                  formulas: visibleDuring,
-                  pinnedOnly: pinnedOnly,
-                  pinnedInPhaseCount: pinnedDuringCount,
-                ),
+                formulas: visibleDuring,
+                pinnedOnly: pinnedOnly,
+                pinnedInPhaseCount: pinnedDuringCount,
+              ),
               FormulaPhase.after => _AfterList(
-                  formulas: visibleAfter,
-                  pinnedOnly: pinnedOnly,
-                  pinnedInPhaseCount: pinnedAfterCount,
-                ),
+                formulas: visibleAfter,
+                pinnedOnly: pinnedOnly,
+                pinnedInPhaseCount: pinnedAfterCount,
+              ),
             },
           ),
         ),
@@ -324,7 +327,9 @@ List<Widget> _yourFormulasSection(
   // Apply the same active chip / pinned-only filters the system lists use, so
   // "Your Formulas" filters in step with the rest of the screen.
   final filter = ref.watch(formulaLibraryControllerProvider).value?.filter;
-  final pinIds = ref.watch(formulaPinControllerProvider).maybeWhen(
+  final pinIds = ref
+      .watch(formulaPinControllerProvider)
+      .maybeWhen(
         data: (s) => s.pinnedTemplateIds,
         orElse: () => const <String>{},
       );
@@ -356,7 +361,9 @@ List<Widget> _yourFormulasSection(
     return true;
   }
 
-  final personal = ref.watch(personalFormulasControllerProvider).maybeWhen(
+  final personal = ref
+      .watch(personalFormulasControllerProvider)
+      .maybeWhen(
         data: (all) => all
             .where((f) => f.phase == phase)
             .where(matchesFilter)
@@ -370,19 +377,22 @@ List<Widget> _yourFormulasSection(
         Expanded(
           child: Text(
             'Your Formulas',
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: scheme.onSurface,
-            ),
+            style: AppTextStyles.sectionTitle.copyWith(color: scheme.onSurface),
           ),
         ),
         TextButton.icon(
           key: ValueKey(
             'formula_kit.your_formulas_new_${phase.analyticsValue}',
           ),
-          onPressed: () => context.push(
-            '/settings/food-preferences/formula-library/personal/create',
-            extra: {'phase': phase},
-          ),
+          onPressed: () {
+            ref
+                .read(formulaLibraryControllerProvider.notifier)
+                .trackCreateStarted(phase: phase, source: 'library_new_button');
+            context.push(
+              '/settings/food-preferences/formula-library/personal/create',
+              extra: {'phase': phase},
+            );
+          },
           icon: const Icon(Icons.add, size: 18),
           label: const Text('New'),
         ),
@@ -394,8 +404,9 @@ List<Widget> _yourFormulasSection(
         child: Text(
           'Build your own ${phase.displayLabel.toLowerCase()} formula and pin '
           'it so your plans use it.',
-          style: AppTextStyles.bodyMedium
-              .copyWith(color: scheme.onSurfaceVariant),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       )
     else
@@ -407,27 +418,15 @@ List<Widget> _yourFormulasSection(
           child: Dismissible(
             key: ValueKey('formula_kit.personal_dismiss_${f.id}'),
             direction: DismissDirection.endToStart,
-            background: Container(
+            // Radius matches PersonalFormulaCard's, so the reveal is
+            // card-shaped rather than a square-cornered slab.
+            background: const SwipeActionBackground(
               alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.dragonfruit,
-                borderRadius: AppRadius.cardRadius,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Delete',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  const Icon(Icons.delete_outline, color: Colors.white),
-                ],
-              ),
+              color: AppColors.dragonfruit,
+              borderRadius: AppRadius.cardRadius,
+              padding: EdgeInsets.only(right: AppSpacing.lg),
+              icon: Icon(Icons.delete_outline, color: Colors.white),
+              label: 'Delete',
             ),
             // Confirm + delete via state rebuild; return false so the
             // Dismissible itself never animates away (avoids double-removal).
@@ -671,8 +670,9 @@ class _LibraryEmptyState extends ConsumerWidget {
             'formula_kit.${phase.analyticsValue}_empty_clear_filters',
           ),
           onPressed: () {
-            final controller =
-                ref.read(formulaLibraryControllerProvider.notifier);
+            final controller = ref.read(
+              formulaLibraryControllerProvider.notifier,
+            );
             controller.clearPhaseChipFilters();
             controller.clearMoreFilters();
           },
@@ -711,11 +711,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(
-              icon,
-              size: 32,
-              color: scheme.onSurfaceVariant,
-            ),
+            FaIcon(icon, size: 32, color: scheme.onSurfaceVariant),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
@@ -747,14 +743,10 @@ class _PinnedOnlyButton extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final isActive = ref
         .watch(formulaLibraryControllerProvider)
-        .maybeWhen(
-          data: (s) => s.filter.pinnedOnly,
-          orElse: () => false,
-        );
-    final pinnedCount = ref.watch(formulaPinControllerProvider).maybeWhen(
-          data: (s) => s.pinnedTemplateIds.length,
-          orElse: () => 0,
-        );
+        .maybeWhen(data: (s) => s.filter.pinnedOnly, orElse: () => false);
+    final pinnedCount = ref
+        .watch(formulaPinControllerProvider)
+        .maybeWhen(data: (s) => s.pinnedTemplateIds.length, orElse: () => 0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),

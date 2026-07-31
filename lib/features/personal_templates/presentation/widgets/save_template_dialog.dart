@@ -54,27 +54,24 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
-        'Save as Template',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+        'Save as Routine',
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Save your food selections as a reusable ${widget.activityTypeDisplay.toLowerCase()} template.',
+            'Save your food selections as a reusable ${widget.activityTypeDisplay.toLowerCase()} routine.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(
@@ -82,7 +79,7 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
             autofocus: true,
             maxLength: 50,
             decoration: InputDecoration(
-              labelText: 'Template Name',
+              labelText: 'Routine Name',
               hintText: 'e.g., Saturday Long Run',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -101,7 +98,7 @@ class _SaveTemplateDialogState extends State<SaveTemplateDialog> {
         ),
         const SizedBox(width: AppSpacing.sm),
         KylePrimaryButton(
-          text: 'Save Template',
+          text: 'Save Routine',
           isFullWidth: false,
           onPressed: _onSave,
         ),

@@ -79,7 +79,9 @@ class DatabaseVerification {
 
       // Query food_preferences count
       final foodPrefsResponse = await http.get(
-        Uri.parse('$baseUrl/rest/v1/food_preferences?user_id=eq.$userId&select=id'),
+        Uri.parse(
+          '$baseUrl/rest/v1/food_preferences?user_id=eq.$userId&select=id',
+        ),
         headers: headers,
       );
 
@@ -99,7 +101,9 @@ class DatabaseVerification {
         final data = jsonDecode(activitiesResponse.body) as List;
         activitiesCount = data.length;
       } else {
-        TestLogger.logInfo('Activities query failed: ${activitiesResponse.statusCode}');
+        TestLogger.logInfo(
+          'Activities query failed: ${activitiesResponse.statusCode}',
+        );
       }
 
       if (eventsResponse.statusCode == 200) {
@@ -113,14 +117,18 @@ class DatabaseVerification {
         final data = jsonDecode(foodPrefsResponse.body) as List;
         foodPrefsCount = data.length;
       } else {
-        TestLogger.logInfo('Food prefs query failed: ${foodPrefsResponse.statusCode}');
+        TestLogger.logInfo(
+          'Food prefs query failed: ${foodPrefsResponse.statusCode}',
+        );
       }
 
       if (userFoodsResponse.statusCode == 200) {
         final data = jsonDecode(userFoodsResponse.body) as List;
         userFoodsCount = data.length;
       } else {
-        TestLogger.logInfo('User foods query failed: ${userFoodsResponse.statusCode}');
+        TestLogger.logInfo(
+          'User foods query failed: ${userFoodsResponse.statusCode}',
+        );
       }
 
       final counts = DatabaseCounts(
@@ -254,9 +262,7 @@ class DatabaseVerification {
 
     // Check event count
     if (counts.events >= expectedMinEvents) {
-      TestLogger.logSuccess(
-        'Events: ${counts.events} >= $expectedMinEvents',
-      );
+      TestLogger.logSuccess('Events: ${counts.events} >= $expectedMinEvents');
     } else {
       TestLogger.logError(
         'Events: ${counts.events} < $expectedMinEvents (FAIL)',
@@ -290,7 +296,9 @@ class DatabaseVerification {
 
     // For now, return null and we'll implement this when we have access
     // to the provider container
-    TestLogger.logInfo('getCurrentUserId: Not implemented for integration tests');
+    TestLogger.logInfo(
+      'getCurrentUserId: Not implemented for integration tests',
+    );
     return null;
   }
 }

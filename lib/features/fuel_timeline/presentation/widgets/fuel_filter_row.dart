@@ -26,7 +26,11 @@ class FuelFilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const onSurface = AppColors.cream;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    // The selected pill fill is `onSurface`; its text needs to contrast
+    // against that fill, i.e. the *other* theme's onSurface value.
+    final surfaceBg = isDark ? AppColors.blackberry : AppColors.cream;
     return Row(
       children: [
         Expanded(
@@ -39,14 +43,27 @@ class FuelFilterRow extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _segment(context, 'All', FuelTimelineFilter.all, onSurface),
+                _segment(
+                  context,
+                  'All',
+                  FuelTimelineFilter.all,
+                  onSurface,
+                  surfaceBg,
+                ),
                 _segment(
                   context,
                   'Workout',
                   FuelTimelineFilter.workout,
                   onSurface,
+                  surfaceBg,
                 ),
-                _segment(context, 'Meals', FuelTimelineFilter.meals, onSurface),
+                _segment(
+                  context,
+                  'Meals',
+                  FuelTimelineFilter.meals,
+                  onSurface,
+                  surfaceBg,
+                ),
               ],
             ),
           ),
@@ -80,6 +97,7 @@ class FuelFilterRow extends StatelessWidget {
     String label,
     FuelTimelineFilter value,
     Color onSurface,
+    Color surfaceBg,
   ) {
     final selected = filter == value;
     return Expanded(
@@ -90,15 +108,13 @@ class FuelFilterRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? AppColors.cream : Colors.transparent,
+            color: selected ? onSurface : Colors.transparent,
             borderRadius: BorderRadius.circular(100),
           ),
           child: Text(
             label,
             style: FtType.pill.copyWith(
-              color: selected
-                  ? AppColors.blackberry
-                  : onSurface.withValues(alpha: 0.65),
+              color: selected ? surfaceBg : onSurface.withValues(alpha: 0.65),
             ),
           ),
         ),
@@ -115,7 +131,8 @@ class FuelFilterRow extends StatelessWidget {
     required VoidCallback onTap,
     required String tooltip,
   }) {
-    const onSurface = AppColors.cream;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     return Tooltip(
       message: tooltip,
       child: GestureDetector(

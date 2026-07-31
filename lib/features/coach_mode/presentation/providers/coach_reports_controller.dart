@@ -31,8 +31,7 @@ class SectionMacros {
     this.calories,
   });
 
-  int get estimatedCalories =>
-      calories ?? (carbs * 4 + protein * 4 + fat * 9);
+  int get estimatedCalories => calories ?? (carbs * 4 + protein * 4 + fat * 9);
 }
 
 /// Per-activity report row
@@ -176,8 +175,9 @@ class CoachReportsState {
   }) {
     return CoachReportsState(
       overviews: overviews ?? this.overviews,
-      selectedReport:
-          clearSelectedReport ? null : (selectedReport ?? this.selectedReport),
+      selectedReport: clearSelectedReport
+          ? null
+          : (selectedReport ?? this.selectedReport),
       selectedRelationshipId: clearSelectedRelationshipId
           ? null
           : (selectedRelationshipId ?? this.selectedRelationshipId),
@@ -198,20 +198,23 @@ class ReportsDateRange {
   final DateTime? _customEnd;
 
   const ReportsDateRange.thisWeek()
-      : type = ReportsDateRangeType.thisWeek,
-        _customStart = null,
-        _customEnd = null;
+    : type = ReportsDateRangeType.thisWeek,
+      _customStart = null,
+      _customEnd = null;
 
   const ReportsDateRange.lastWeek()
-      : type = ReportsDateRangeType.lastWeek,
-        _customStart = null,
-        _customEnd = null;
+    : type = ReportsDateRangeType.lastWeek,
+      _customStart = null,
+      _customEnd = null;
 
   ReportsDateRange.custom(DateTime start, DateTime end)
-      : type = ReportsDateRangeType.custom,
-        _customStart = DateTime(start.year, start.month, start.day),
-        _customEnd =
-            DateTime(end.year, end.month, end.day).add(const Duration(days: 1));
+    : type = ReportsDateRangeType.custom,
+      _customStart = DateTime(start.year, start.month, start.day),
+      _customEnd = DateTime(
+        end.year,
+        end.month,
+        end.day,
+      ).add(const Duration(days: 1));
 
   DateTime get resolvedStart {
     final now = DateTime.now();
@@ -277,8 +280,11 @@ class CoachReportsController extends _$CoachReportsController {
           .where((a) => a.athleteUserId.isNotEmpty)
           .map((a) => _syncService.syncAthleteData(a.athleteUserId)),
     ).catchError((e) {
-      _logger.warning('Some athlete syncs failed',
-          context: 'COACH_REPORTS', error: e);
+      _logger.warning(
+        'Some athlete syncs failed',
+        context: 'COACH_REPORTS',
+        error: e,
+      );
       return <void>[];
     });
 
@@ -289,15 +295,17 @@ class CoachReportsController extends _$CoachReportsController {
       if (athleteId.isEmpty) continue;
 
       try {
-        final activities = await (db.select(db.activitiesTable)
-              ..where((t) =>
-                  t.userId.equals(athleteId) &
-                  t.deletedAt.isNull() &
-                  t.scheduledDateTime
-                      .isBiggerOrEqualValue(range.resolvedStart) &
-                  t.scheduledDateTime
-                      .isSmallerThanValue(range.resolvedEnd)))
-            .get();
+        final activities =
+            await (db.select(db.activitiesTable)..where(
+                  (t) =>
+                      t.userId.equals(athleteId) &
+                      t.deletedAt.isNull() &
+                      t.scheduledDateTime.isBiggerOrEqualValue(
+                        range.resolvedStart,
+                      ) &
+                      t.scheduledDateTime.isSmallerThanValue(range.resolvedEnd),
+                ))
+                .get();
 
         final planned = activities.length;
         final completed = activities
@@ -306,8 +314,9 @@ class CoachReportsController extends _$CoachReportsController {
 
         // Count fuel logs
         final fuelLogsCount = activities
-            .where((a) =>
-                a.fuelLogData != null && a.fuelLogData!.trim().isNotEmpty)
+            .where(
+              (a) => a.fuelLogData != null && a.fuelLogData!.trim().isNotEmpty,
+            )
             .length;
 
         // Compute avg adherence from fuel logs
@@ -328,44 +337,59 @@ class CoachReportsController extends _$CoachReportsController {
           }
         }
         if (adherenceValues.isNotEmpty) {
-          avgAdherence = adherenceValues.reduce((a, b) => a + b) /
-              adherenceValues.length;
+          avgAdherence =
+              adherenceValues.reduce((a, b) => a + b) / adherenceValues.length;
         }
 
         // Upcoming events (next event, no upper bound)
-        final events = await (db.select(db.eventsTable)
-              ..where((t) =>
-                  t.userId.equals(athleteId) &
-                  t.eventDate.isBiggerOrEqualValue(today))
-              ..orderBy([(t) => OrderingTerm.asc(t.eventDate)])
-              ..limit(1))
-            .get();
+        final events =
+            await (db.select(db.eventsTable)
+                  ..where(
+                    (t) =>
+                        t.userId.equals(athleteId) &
+                        t.eventDate.isBiggerOrEqualValue(today),
+                  )
+                  ..orderBy([(t) => OrderingTerm.asc(t.eventDate)])
+                  ..limit(1))
+                .get();
 
         // Last completed activity (across all time, not just date range)
-        final lastCompleted = await (db.select(db.activitiesTable)
-              ..where((t) =>
-                  t.userId.equals(athleteId) &
-                  t.deletedAt.isNull() &
-                  (t.completedAt.isNotNull() | t.status.equals('completed')))
-              ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)])
-              ..limit(1))
-            .getSingleOrNull();
+        final lastCompleted =
+            await (db.select(db.activitiesTable)
+                  ..where(
+                    (t) =>
+                        t.userId.equals(athleteId) &
+                        t.deletedAt.isNull() &
+                        (t.completedAt.isNotNull() |
+                            t.status.equals('completed')),
+                  )
+                  ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)])
+                  ..limit(1))
+                .getSingleOrNull();
 
-        overviews.add(AthleteOverview(
-          relationship: athlete,
-          activitiesPlanned: planned,
-          activitiesCompleted: completed,
-          fuelLogsCount: fuelLogsCount,
-          avgAdherence: avgAdherence,
-          nextEventName: events.isNotEmpty ? events.first.eventName : null,
-          nextEventDate: events.isNotEmpty ? events.first.eventDate : null,
-          lastCompletedActivityName: lastCompleted?.title,
-          lastCompletedDate: lastCompleted?.completedAt ??
-              (lastCompleted != null ? lastCompleted.scheduledDateTime : null),
-        ));
+        overviews.add(
+          AthleteOverview(
+            relationship: athlete,
+            activitiesPlanned: planned,
+            activitiesCompleted: completed,
+            fuelLogsCount: fuelLogsCount,
+            avgAdherence: avgAdherence,
+            nextEventName: events.isNotEmpty ? events.first.eventName : null,
+            nextEventDate: events.isNotEmpty ? events.first.eventDate : null,
+            lastCompletedActivityName: lastCompleted?.title,
+            lastCompletedDate:
+                lastCompleted?.completedAt ??
+                (lastCompleted != null
+                    ? lastCompleted.scheduledDateTime
+                    : null),
+          ),
+        );
       } catch (e) {
-        _logger.warning('Failed to load overview for $athleteId',
-            context: 'COACH_REPORTS', error: e);
+        _logger.warning(
+          'Failed to load overview for $athleteId',
+          context: 'COACH_REPORTS',
+          error: e,
+        );
         overviews.add(AthleteOverview(relationship: athlete));
       }
     }
@@ -385,19 +409,26 @@ class CoachReportsController extends _$CoachReportsController {
 
     // Sync this athlete's data
     await _syncService.syncAthleteData(athleteId).catchError((e) {
-      _logger.warning('Sync failed for $athleteId',
-          context: 'COACH_REPORTS', error: e);
+      _logger.warning(
+        'Sync failed for $athleteId',
+        context: 'COACH_REPORTS',
+        error: e,
+      );
     });
 
-    final activities = await (db.select(db.activitiesTable)
-          ..where((t) =>
-              t.userId.equals(athleteId) &
-              t.deletedAt.isNull() &
-              t.scheduledDateTime
-                  .isBiggerOrEqualValue(range.resolvedStart) &
-              t.scheduledDateTime.isSmallerThanValue(range.resolvedEnd))
-          ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)]))
-        .get();
+    final activities =
+        await (db.select(db.activitiesTable)
+              ..where(
+                (t) =>
+                    t.userId.equals(athleteId) &
+                    t.deletedAt.isNull() &
+                    t.scheduledDateTime.isBiggerOrEqualValue(
+                      range.resolvedStart,
+                    ) &
+                    t.scheduledDateTime.isSmallerThanValue(range.resolvedEnd),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)]))
+            .get();
 
     final activityItems = <ActivityReportItem>[];
     final adherenceValues = <double>[];
@@ -428,10 +459,12 @@ class CoachReportsController extends _$CoachReportsController {
             plannedTotalCarbs = (macroTargets['carbs'] as num?)?.toInt();
             plannedTotalCalories = (macroTargets['calories'] as num?)?.toInt();
           }
-          plannedTotalCarbs ??= (plannedBefore?.carbs ?? 0) +
+          plannedTotalCarbs ??=
+              (plannedBefore?.carbs ?? 0) +
               (plannedDuring?.carbs ?? 0) +
               (plannedAfter?.carbs ?? 0);
-          plannedTotalCalories ??= (plannedBefore?.estimatedCalories ?? 0) +
+          plannedTotalCalories ??=
+              (plannedBefore?.estimatedCalories ?? 0) +
               (plannedDuring?.estimatedCalories ?? 0) +
               (plannedAfter?.estimatedCalories ?? 0);
           if (plannedTotalCalories == 0) plannedTotalCalories = null;
@@ -456,7 +489,8 @@ class CoachReportsController extends _$CoachReportsController {
             actualDuring = ad;
             actualAfter = aa;
             actualTotalCarbs = ab.carbs + ad.carbs + aa.carbs;
-            actualTotalCalories = ab.estimatedCalories +
+            actualTotalCalories =
+                ab.estimatedCalories +
                 ad.estimatedCalories +
                 aa.estimatedCalories;
             if (actualTotalCalories == 0) actualTotalCalories = null;
@@ -465,8 +499,11 @@ class CoachReportsController extends _$CoachReportsController {
             nutritionRating = fuelLog.nutritionRating;
             notes = fuelLog.notes;
           } catch (e) {
-            _logger.warning('Failed to parse fuel log for ${a.id}',
-                context: 'COACH_REPORTS', error: e);
+            _logger.warning(
+              'Failed to parse fuel log for ${a.id}',
+              context: 'COACH_REPORTS',
+              error: e,
+            );
           }
         }
       }
@@ -476,44 +513,50 @@ class CoachReportsController extends _$CoachReportsController {
           plannedTotalCalories != null &&
           plannedTotalCalories > 0 &&
           actualTotalCalories != null) {
-        adherenceValues
-            .add((actualTotalCalories / plannedTotalCalories).clamp(0.0, 2.0));
+        adherenceValues.add(
+          (actualTotalCalories / plannedTotalCalories).clamp(0.0, 2.0),
+        );
       }
 
-      activityItems.add(ActivityReportItem(
-        activityId: a.id,
-        name: a.title,
-        activityType: a.activityType,
-        scheduledDate: a.scheduledDateTime,
-        durationMinutes: a.durationMinutes,
-        distanceMiles: a.distanceMiles,
-        status: a.status,
-        isCompleted: isCompleted,
-        plannedBefore: plannedBefore,
-        plannedDuring: plannedDuring,
-        plannedAfter: plannedAfter,
-        plannedTotalCarbs: plannedTotalCarbs,
-        plannedTotalCalories: plannedTotalCalories,
-        actualBefore: actualBefore,
-        actualDuring: actualDuring,
-        actualAfter: actualAfter,
-        actualTotalCarbs: actualTotalCarbs,
-        actualTotalCalories: actualTotalCalories,
-        hasFuelLog: hasFuelLog,
-        satisfactionRating: satisfactionRating,
-        nutritionRating: nutritionRating,
-        notes: notes,
-      ));
+      activityItems.add(
+        ActivityReportItem(
+          activityId: a.id,
+          name: a.title,
+          activityType: a.activityType,
+          scheduledDate: a.scheduledDateTime,
+          durationMinutes: a.durationMinutes,
+          distanceMiles: a.distanceMiles,
+          status: a.status,
+          isCompleted: isCompleted,
+          plannedBefore: plannedBefore,
+          plannedDuring: plannedDuring,
+          plannedAfter: plannedAfter,
+          plannedTotalCarbs: plannedTotalCarbs,
+          plannedTotalCalories: plannedTotalCalories,
+          actualBefore: actualBefore,
+          actualDuring: actualDuring,
+          actualAfter: actualAfter,
+          actualTotalCarbs: actualTotalCarbs,
+          actualTotalCalories: actualTotalCalories,
+          hasFuelLog: hasFuelLog,
+          satisfactionRating: satisfactionRating,
+          nutritionRating: nutritionRating,
+          notes: notes,
+        ),
+      );
     }
 
     // Upcoming events (next event, no upper bound)
-    final events = await (db.select(db.eventsTable)
-          ..where((t) =>
-              t.userId.equals(athleteId) &
-              t.eventDate.isBiggerOrEqualValue(today))
-          ..orderBy([(t) => OrderingTerm.asc(t.eventDate)])
-          ..limit(1))
-        .get();
+    final events =
+        await (db.select(db.eventsTable)
+              ..where(
+                (t) =>
+                    t.userId.equals(athleteId) &
+                    t.eventDate.isBiggerOrEqualValue(today),
+              )
+              ..orderBy([(t) => OrderingTerm.asc(t.eventDate)])
+              ..limit(1))
+            .get();
 
     final completed = activities
         .where((a) => a.completedAt != null || a.status == 'completed')
@@ -552,10 +595,12 @@ class CoachReportsController extends _$CoachReportsController {
         ?.relationship;
     if (athlete == null) return;
 
-    state = AsyncValue.data(current.copyWith(
-      selectedRelationshipId: relationshipId,
-      clearSelectedReport: true,
-    ));
+    state = AsyncValue.data(
+      current.copyWith(
+        selectedRelationshipId: relationshipId,
+        clearSelectedReport: true,
+      ),
+    );
 
     // Load detail in background, update state when ready
     state = await AsyncValue.guard(() async {
@@ -571,10 +616,12 @@ class CoachReportsController extends _$CoachReportsController {
   void backToOverview() {
     final current = state.value;
     if (current == null) return;
-    state = AsyncValue.data(current.copyWith(
-      clearSelectedRelationshipId: true,
-      clearSelectedReport: true,
-    ));
+    state = AsyncValue.data(
+      current.copyWith(
+        clearSelectedRelationshipId: true,
+        clearSelectedReport: true,
+      ),
+    );
   }
 
   /// Switch date range and reload
@@ -588,7 +635,8 @@ class CoachReportsController extends _$CoachReportsController {
     final current = state.value;
     final range = current?.dateRange ?? const ReportsDateRange.thisWeek();
 
-    if (current?.selectedRelationshipId != null && current?.selectedReport != null) {
+    if (current?.selectedRelationshipId != null &&
+        current?.selectedReport != null) {
       // Refresh the selected athlete's detail
       state = const AsyncLoading();
       state = await AsyncValue.guard(() async {
@@ -702,16 +750,20 @@ class CoachReportsController extends _$CoachReportsController {
     int carbs = 0, protein = 0, fat = 0;
     for (final item in items) {
       if (item is! Map<String, dynamic>) continue;
-      final info = item['nutritional_info'] as Map<String, dynamic>? ??
+      final info =
+          item['nutritional_info'] as Map<String, dynamic>? ??
           item['nutritionalInfo'] as Map<String, dynamic>?;
       if (info == null) continue;
-      carbs += (info['carbs'] as num?)?.toInt() ??
+      carbs +=
+          (info['carbs'] as num?)?.toInt() ??
           (info['carbs_g'] as num?)?.toInt() ??
           0;
-      protein += (info['protein'] as num?)?.toInt() ??
+      protein +=
+          (info['protein'] as num?)?.toInt() ??
           (info['protein_g'] as num?)?.toInt() ??
           0;
-      fat += (info['fat'] as num?)?.toInt() ??
+      fat +=
+          (info['fat'] as num?)?.toInt() ??
           (info['fat_g'] as num?)?.toInt() ??
           0;
     }
@@ -719,7 +771,9 @@ class CoachReportsController extends _$CoachReportsController {
   }
 
   SectionMacros _computeActualSectionMacros(
-      FuelLogData fuelLog, String sectionId) {
+    FuelLogData fuelLog,
+    String sectionId,
+  ) {
     final items = fuelLog.itemsForSection(sectionId);
     int carbs = 0, protein = 0, fat = 0, calories = 0;
     for (final item in items) {
@@ -748,8 +802,10 @@ class CoachReportsController extends _$CoachReportsController {
     // Fall back to summing sections
     final sections = _parseSections(map);
     if (sections.isEmpty) return null;
-    final total = sections.values
-        .fold<int>(0, (sum, s) => sum + s.estimatedCalories);
+    final total = sections.values.fold<int>(
+      0,
+      (sum, s) => sum + s.estimatedCalories,
+    );
     return total > 0 ? total : null;
   }
 

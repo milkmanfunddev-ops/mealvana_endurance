@@ -17,34 +17,42 @@ import 'package:test/test.dart';
 
 void main() {
   group('migration idempotency (re-run safety)', () {
-    test('re-running onUpgrade from v11 is a no-op when the v12 columns exist',
-        () async {
-      // onCreate builds the CURRENT schema, so coach_insight_text already exists.
-      final db = AppDatabase.memory();
-      addTearDown(db.close);
+    test(
+      're-running onUpgrade from v11 is a no-op when the v12 columns exist',
+      () async {
+        // onCreate builds the CURRENT schema, so coach_insight_text already exists.
+        final db = AppDatabase.memory();
+        addTearDown(db.close);
 
-      final before =
-          await db.customSelect('PRAGMA table_info(personal_formulas)').get();
-      expect(
-        before.any((r) => r.read<String>('name') == 'coach_insight_text'),
-        isTrue,
-        reason: 'onCreate should have produced the v12 column',
-      );
+        final before = await db
+            .customSelect('PRAGMA table_info(personal_formulas)')
+            .get();
+        expect(
+          before.any((r) => r.read<String>('name') == 'coach_insight_text'),
+          isTrue,
+          reason: 'onCreate should have produced the v12 column',
+        );
 
-      // Simulate the web re-run: user_version stuck at 11, onUpgrade fires again.
-      // Before the fix this threw "duplicate column name: coach_insight_text".
-      await expectLater(
-        db.migration.onUpgrade!(db.createMigrator(), 11, db.schemaVersion),
-        completes,
-      );
+        // Simulate the web re-run: user_version stuck at 11, onUpgrade fires again.
+        // Before the fix this threw "duplicate column name: coach_insight_text".
+        await expectLater(
+          db.migration.onUpgrade!(db.createMigrator(), 11, db.schemaVersion),
+          completes,
+        );
 
-      final after =
-          await db.customSelect('PRAGMA table_info(personal_formulas)').get();
-      expect(after.any((r) => r.read<String>('name') == 'coach_insight_text'),
-          isTrue);
-      expect(after.any((r) => r.read<String>('name') == 'coach_insight_marker'),
-          isTrue);
-    });
+        final after = await db
+            .customSelect('PRAGMA table_info(personal_formulas)')
+            .get();
+        expect(
+          after.any((r) => r.read<String>('name') == 'coach_insight_text'),
+          isTrue,
+        );
+        expect(
+          after.any((r) => r.read<String>('name') == 'coach_insight_marker'),
+          isTrue,
+        );
+      },
+    );
 
     test('re-running the full ladder (from v6) is idempotent', () async {
       final db = AppDatabase.memory();

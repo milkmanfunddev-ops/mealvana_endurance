@@ -9,10 +9,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 ///
 /// Returns true if user confirms ungrouping, false if cancelled.
 class BrickUngroupDialog extends StatelessWidget {
-  const BrickUngroupDialog({
-    super.key,
-    required this.segmentCount,
-  });
+  const BrickUngroupDialog({super.key, required this.segmentCount});
 
   final int segmentCount;
 

@@ -144,9 +144,12 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
         sodiumMg: (json['sodium_mg'] as num).toDouble(),
         fluidMl: (json['fluid_ml'] as num).toDouble(),
         templateType: json['template_type'] as String,
-        componentFoodNames:
-            Value(_arrayToJsonString(json['component_food_names'])),
-        componentQuantities: Value(_jsonbToString(json['component_quantities'])),
+        componentFoodNames: Value(
+          _arrayToJsonString(json['component_food_names']),
+        ),
+        componentQuantities: Value(
+          _jsonbToString(json['component_quantities']),
+        ),
         excludedDiets: Value(_arrayToJsonString(json['excluded_diets'])),
         createdAt: Value(
           DateTime.tryParse(json['created_at'] as String? ?? '') ??
@@ -191,8 +194,8 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
 
 final preWorkoutTemplatesRepositoryProvider =
     Provider<PreWorkoutTemplatesRepository>((ref) {
-  final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
-  final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return PreWorkoutTemplatesRepository(supabase, database, logger: logger);
-});
+      final database = ref.watch(appDatabaseProvider);
+      final logger = ref.watch(appLoggerProvider);
+      final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
+      return PreWorkoutTemplatesRepository(supabase, database, logger: logger);
+    });

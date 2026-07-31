@@ -40,7 +40,11 @@ extension IntegrationTestHelpers on WidgetTester {
   /// Tap a widget by key and wait for the UI to settle
   Future<void> tapByKey(String key) async {
     final finder = find.byKey(Key(key));
-    expect(finder, findsOneWidget, reason: 'Expected to find widget with key: $key');
+    expect(
+      finder,
+      findsOneWidget,
+      reason: 'Expected to find widget with key: $key',
+    );
     await tap(finder);
     await pumpAndSettle();
   }
@@ -48,7 +52,11 @@ extension IntegrationTestHelpers on WidgetTester {
   /// Tap a widget by text and wait for the UI to settle
   Future<void> tapByText(String text) async {
     final finder = find.text(text);
-    expect(finder, findsWidgets, reason: 'Expected to find widget with text: $text');
+    expect(
+      finder,
+      findsWidgets,
+      reason: 'Expected to find widget with text: $text',
+    );
     await tap(finder.first);
     await pumpAndSettle();
   }
@@ -56,7 +64,11 @@ extension IntegrationTestHelpers on WidgetTester {
   /// Tap a widget by icon and wait for the UI to settle
   Future<void> tapByIcon(IconData icon) async {
     final finder = find.byIcon(icon);
-    expect(finder, findsWidgets, reason: 'Expected to find widget with icon: $icon');
+    expect(
+      finder,
+      findsWidgets,
+      reason: 'Expected to find widget with icon: $icon',
+    );
     await tap(finder.first);
     await pumpAndSettle();
   }
@@ -64,7 +76,11 @@ extension IntegrationTestHelpers on WidgetTester {
   /// Enter text into a text field by key
   Future<void> enterTextByKey(String key, String text) async {
     final finder = find.byKey(Key(key));
-    expect(finder, findsOneWidget, reason: 'Expected to find text field with key: $key');
+    expect(
+      finder,
+      findsOneWidget,
+      reason: 'Expected to find text field with key: $key',
+    );
     await enterText(finder, text);
     await pumpAndSettle();
   }
@@ -81,7 +97,11 @@ extension IntegrationTestHelpers on WidgetTester {
         }
         return false;
       });
-      expect(decoratedFinder, findsWidgets, reason: 'Expected to find text field with hint: $hint');
+      expect(
+        decoratedFinder,
+        findsWidgets,
+        reason: 'Expected to find text field with hint: $hint',
+      );
       await enterText(decoratedFinder.first, text);
     } else {
       await enterText(finder.first, text);
@@ -115,8 +135,11 @@ extension IntegrationTestHelpers on WidgetTester {
       scrollCount++;
     }
 
-    expect(finder, findsWidgets,
-        reason: 'Could not find widget after $maxScrolls scrolls');
+    expect(
+      finder,
+      findsWidgets,
+      reason: 'Could not find widget after $maxScrolls scrolls',
+    );
   }
 
   /// Wait for a widget to appear with timeout
@@ -149,12 +172,20 @@ extension IntegrationTestHelpers on WidgetTester {
 
   /// Verify text is visible on screen
   void expectText(String text, {String? reason}) {
-    expect(find.text(text), findsWidgets, reason: reason ?? 'Expected to find text: $text');
+    expect(
+      find.text(text),
+      findsWidgets,
+      reason: reason ?? 'Expected to find text: $text',
+    );
   }
 
   /// Verify text is not visible on screen
   void expectNoText(String text, {String? reason}) {
-    expect(find.text(text), findsNothing, reason: reason ?? 'Expected not to find text: $text');
+    expect(
+      find.text(text),
+      findsNothing,
+      reason: reason ?? 'Expected not to find text: $text',
+    );
   }
 
   /// Take a screenshot with a label (for debugging)
@@ -209,10 +240,7 @@ extension IntegrationTestHelpers on WidgetTester {
   }
 
   /// Assert condition or fail with screenshot
-  Future<void> mustBeTrue(
-    bool condition, {
-    required String reason,
-  }) async {
+  Future<void> mustBeTrue(bool condition, {required String reason}) async {
     if (!condition) {
       await screenshot('FAIL_$reason');
       throw TestFailure('FAIL: $reason');
@@ -309,15 +337,20 @@ class ScreenshotHelper {
           .replaceAll(RegExp(r'_+'), '_')
           .toLowerCase();
 
-      final filename = '${_screenshotCounter.toString().padLeft(3, '0')}_$sanitizedLabel';
+      final filename =
+          '${_screenshotCounter.toString().padLeft(3, '0')}_$sanitizedLabel';
 
       // Capture screenshot using the binding
       final bytes = await _binding!.takeScreenshot(filename);
 
       if (bytes.isNotEmpty) {
-        debugPrint('  [SCREENSHOT] Captured: $filename (${bytes.length} bytes)');
+        debugPrint(
+          '  [SCREENSHOT] Captured: $filename (${bytes.length} bytes)',
+        );
       } else {
-        debugPrint('  [SCREENSHOT] Captured: $filename (empty - may be CI environment)');
+        debugPrint(
+          '  [SCREENSHOT] Captured: $filename (empty - may be CI environment)',
+        );
       }
     } catch (e) {
       debugPrint('  [SCREENSHOT] Failed to capture $label: $e');

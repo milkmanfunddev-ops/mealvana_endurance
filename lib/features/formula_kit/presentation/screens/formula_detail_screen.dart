@@ -6,7 +6,10 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../application/formula_library_controller.dart';
 import '../../application/personal_formulas_controller.dart';
 import '../../domain/formula_macros.dart';
@@ -24,11 +27,7 @@ import '../widgets/pin_toggle.dart';
 ///
 /// Edit / personalize / favorite affordances land in PR 2-5.
 class FormulaDetailScreen extends ConsumerStatefulWidget {
-  const FormulaDetailScreen({
-    super.key,
-    required this.id,
-    required this.phase,
-  });
+  const FormulaDetailScreen({super.key, required this.id, required this.phase});
 
   final String id;
   final FormulaPhase phase;
@@ -51,15 +50,21 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     if (!_trackedView) {
       asyncState.whenData((state) {
         final found = switch (widget.phase) {
-          FormulaPhase.before => state.beforeFormulas
-              .cast<BeforeFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
-          FormulaPhase.during => state.duringFormulas
-              .cast<DuringFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
-          FormulaPhase.after => state.afterFormulas
-              .cast<AfterFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null),
+          FormulaPhase.before =>
+            state.beforeFormulas.cast<BeforeFormulaView?>().firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            ),
+          FormulaPhase.during =>
+            state.duringFormulas.cast<DuringFormulaView?>().firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            ),
+          FormulaPhase.after =>
+            state.afterFormulas.cast<AfterFormulaView?>().firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            ),
         };
         if (found != null) {
           _trackedView = true;
@@ -78,7 +83,9 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     }
 
     return AdaptivePageScaffold(
-      key: ValueKey('formula_kit.detail_screen.${widget.phase.name}.${widget.id}'),
+      key: ValueKey(
+        'formula_kit.detail_screen.${widget.phase.name}.${widget.id}',
+      ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, asyncState),
       contentWidth: AdaptiveContentWidth.standard,
@@ -93,28 +100,19 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
             case FormulaPhase.before:
               final formula = state.beforeFormulas
                   .cast<BeforeFormulaView?>()
-                  .firstWhere(
-                    (f) => f?.id == widget.id,
-                    orElse: () => null,
-                  );
+                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
               if (formula == null) return const _NotFoundView();
               return _BeforeDetailBody(formula: formula);
             case FormulaPhase.during:
               final formula = state.duringFormulas
                   .cast<DuringFormulaView?>()
-                  .firstWhere(
-                    (f) => f?.id == widget.id,
-                    orElse: () => null,
-                  );
+                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
               if (formula == null) return const _NotFoundView();
               return _DuringDetailBody(formula: formula);
             case FormulaPhase.after:
               final formula = state.afterFormulas
                   .cast<AfterFormulaView?>()
-                  .firstWhere(
-                    (f) => f?.id == widget.id,
-                    orElse: () => null,
-                  );
+                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
               if (formula == null) return const _NotFoundView();
               return _AfterDetailBody(formula: formula);
           }
@@ -136,26 +134,17 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         case FormulaPhase.before:
           beforeFormula = state.beforeFormulas
               .cast<BeforeFormulaView?>()
-              .firstWhere(
-                (f) => f?.id == widget.id,
-                orElse: () => null,
-              );
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
           title = beforeFormula != null ? beforeFormula!.name : 'Not found';
         case FormulaPhase.during:
           duringFormula = state.duringFormulas
               .cast<DuringFormulaView?>()
-              .firstWhere(
-                (f) => f?.id == widget.id,
-                orElse: () => null,
-              );
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
           title = duringFormula != null ? duringFormula!.formula : 'Not found';
         case FormulaPhase.after:
           afterFormula = state.afterFormulas
               .cast<AfterFormulaView?>()
-              .firstWhere(
-                (f) => f?.id == widget.id,
-                orElse: () => null,
-              );
+              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
           title = afterFormula != null ? afterFormula!.name : 'Not found';
       }
     });
@@ -183,22 +172,30 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       );
     }
 
-    final hasFormula = beforeFormula != null ||
-        duringFormula != null ||
-        afterFormula != null;
+    final hasFormula =
+        beforeFormula != null || duringFormula != null || afterFormula != null;
 
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: const CustomAppBarBackButton(),
-      title: Text(
-        title,
-        key: const ValueKey('formula_kit.detail_title'),
-        style: AppTextStyles.sectionTitle.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
+      // FittedBox scales the title down instead of ellipsizing long formula
+      // names (item 17, 2026-07-04) — mirrors the pattern used by
+      // fuel_timeline_day_header.dart.
+      title: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          key: const ValueKey('formula_kit.detail_title'),
+          softWrap: false,
+          maxLines: 1,
+          style: AppTextStyles.sectionTitle.copyWith(
+            fontSize: 17,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
-        overflow: TextOverflow.ellipsis,
       ),
       actions: [
         if (hasFormula)
@@ -233,9 +230,28 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     DuringFormulaView? during,
     AfterFormulaView? after,
   }) async {
+    final library = ref.read(formulaLibraryControllerProvider.notifier);
+    final tappedId = before?.id ?? during?.id ?? after?.id ?? '';
+    final tappedPhase = before != null
+        ? FormulaPhase.before
+        : during != null
+        ? FormulaPhase.during
+        : FormulaPhase.after;
+    await library.trackForkStarted(
+      sourceTemplateId: tappedId,
+      phase: tappedPhase,
+    );
+
     final userRepo = await ref.read(userRepositoryProvider.future);
     final userId = (await userRepo.getCurrentUser())?.id;
-    if (userId == null) return;
+    if (userId == null) {
+      await library.trackForkFailed(
+        sourceTemplateId: tappedId,
+        phase: tappedPhase,
+        reason: 'no_user',
+      );
+      return;
+    }
     final now = DateTime.now();
 
     // Resolve phase + source + scope from whichever view was supplied.
@@ -273,6 +289,11 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       activities = after.activityTypes;
       travelFriendliness = after.travelFriendliness;
     } else {
+      await library.trackForkFailed(
+        sourceTemplateId: tappedId,
+        phase: tappedPhase,
+        reason: 'no_source_view',
+      );
       return;
     }
 
@@ -309,10 +330,22 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     final saved = await ref
         .read(personalFormulasControllerProvider.notifier)
         .createFormula(draft);
-    if (saved == null || !context.mounted) return;
+    if (saved == null) {
+      await library.trackForkFailed(
+        sourceTemplateId: tappedId,
+        phase: tappedPhase,
+        reason: 'save_failed',
+      );
+      return;
+    }
+    if (!context.mounted) return;
     MealvanaSnackbar.showSuccess(context, 'Added to Your Formulas');
-    // Open the editor directly (personal/:id IS the editor).
-    context.push(
+    // Open the editor directly (personal/:id IS the editor). Use
+    // pushReplacement (not push) so the read-only system-formula detail
+    // screen is swapped out of the stack rather than left underneath —
+    // otherwise the editor's Save button pops back onto the detail screen
+    // instead of the formula library list (item 10, 2026-07-04).
+    context.pushReplacement(
       '/settings/food-preferences/formula-library/personal/${saved.id}',
     );
   }
@@ -380,8 +413,11 @@ class _BeforeDetailBody extends StatelessWidget {
               ),
             )
           else
-            for (var i = 0; i < formula.componentDisplayStrings.length;
-                i++) ...[
+            for (
+              var i = 0;
+              i < formula.componentDisplayStrings.length;
+              i++
+            ) ...[
               if (i > 0) const SizedBox(height: AppSpacing.xs),
               _ComponentRow(label: formula.componentDisplayStrings[i]),
             ],
@@ -480,8 +516,7 @@ class _DuringDetailBody extends StatelessWidget {
                   child: _LabeledList(
                     label: 'Gut training',
                     items: formula.gutTrainingLevels
-                        .map((g) =>
-                            '${g[0].toUpperCase()}${g.substring(1)}')
+                        .map((g) => '${g[0].toUpperCase()}${g.substring(1)}')
                         .toList(),
                   ),
                 ),
@@ -512,8 +547,7 @@ class _DuringDetailBody extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.orange.withValues(alpha: 0.10),
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.sm),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Row(
                       children: [
@@ -616,8 +650,7 @@ class _AfterDetailBody extends StatelessWidget {
                   label: _humanize(formula.travelFriendliness!),
                   color: AppColors.electrolyte,
                 ),
-              if (formula.prepEffort != null &&
-                  formula.prepEffort!.isNotEmpty)
+              if (formula.prepEffort != null && formula.prepEffort!.isNotEmpty)
                 _InfoPill(
                   label: _humanize(formula.prepEffort!),
                   color: AppColors.electrolyte,
@@ -657,8 +690,11 @@ class _AfterDetailBody extends StatelessWidget {
               ),
             )
           else
-            for (var i = 0; i < formula.componentDisplayStrings.length;
-                i++) ...[
+            for (
+              var i = 0;
+              i < formula.componentDisplayStrings.length;
+              i++
+            ) ...[
               if (i > 0) const SizedBox(height: AppSpacing.xs),
               _ComponentRow(label: formula.componentDisplayStrings[i]),
             ],
@@ -854,7 +890,7 @@ class _LabeledList extends StatelessWidget {
   }
 }
 
-class _MacrosCard extends StatelessWidget {
+class _MacrosCard extends ConsumerWidget {
   const _MacrosCard({
     required this.calories,
     required this.carbs,
@@ -872,7 +908,10 @@ class _MacrosCard extends StatelessWidget {
   final double fluid;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
     return BaseCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -880,24 +919,35 @@ class _MacrosCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: _Macro(label: 'Cal', value: '$calories')),
                 Expanded(
-                    child: _Macro(label: 'Carbs', value: '${carbs.round()}g')),
+                  child: _Macro(label: 'Cal', value: '$calories'),
+                ),
                 Expanded(
-                    child:
-                        _Macro(label: 'Protein', value: '${protein.round()}g')),
-                Expanded(child: _Macro(label: 'Fat', value: '${fat.round()}g')),
+                  child: _Macro(label: 'Carbs', value: '${carbs.round()}g'),
+                ),
+                Expanded(
+                  child: _Macro(label: 'Protein', value: '${protein.round()}g'),
+                ),
+                Expanded(
+                  child: _Macro(label: 'Fat', value: '${fat.round()}g'),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
-                    child: _Macro(
-                        label: 'Sodium', value: '${sodium.round()}mg')),
+                  child: _Macro(label: 'Sodium', value: '${sodium.round()}mg'),
+                ),
                 Expanded(
-                    child:
-                        _Macro(label: 'Fluid', value: '${fluid.round()}mL')),
+                  child: _Macro(
+                    label: 'Fluid',
+                    value: UnitFormatter.formatFluids(
+                      fluid,
+                      useImperial: !useMetric,
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 const Spacer(),
               ],
@@ -961,8 +1011,7 @@ class _DietTags extends StatelessWidget {
           spacing: AppSpacing.xs,
           runSpacing: AppSpacing.xs,
           children: [
-            for (final a in allergens)
-              _Tag(label: 'Contains $a'),
+            for (final a in allergens) _Tag(label: 'Contains $a'),
             for (final d in excludedDiets)
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -1014,10 +1063,7 @@ class _NotFoundView extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'Formula not found.',
-              style: AppTextStyles.subtitle,
-            ),
+            Text('Formula not found.', style: AppTextStyles.subtitle),
           ],
         ),
       ),

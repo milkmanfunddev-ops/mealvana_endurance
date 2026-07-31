@@ -24,12 +24,14 @@ class FoodIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconSize = size ?? 48.w;
-    
+
     // Debug logging
     if (imageUrl == null || imageUrl!.isEmpty) {
-      DebugLogger.warning('   ⚠️  No image URL provided, showing fallback icon');
+      DebugLogger.warning(
+        '   ⚠️  No image URL provided, showing fallback icon',
+      );
     }
-    
+
     return Container(
       width: iconSize,
       height: iconSize,
@@ -37,10 +39,7 @@ class FoodIcon extends StatelessWidget {
         color: backgroundColor ?? AppTheme.baseWhite,
         shape: BoxShape.circle,
         border: borderColor != null
-            ? Border.all(
-                color: borderColor!,
-                width: borderWidth ?? 2.0,
-              )
+            ? Border.all(color: borderColor!, width: borderWidth ?? 2.0)
             : null,
         boxShadow: [
           BoxShadow(
@@ -68,15 +67,19 @@ class FoodIcon extends StatelessWidget {
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
                           ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
+                                loadingProgress.expectedTotalBytes!
                           : null,
                       strokeWidth: 2.0,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary600),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.primary600,
+                      ),
                     ),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  DebugLogger.error('❌ FoodIcon: Failed to load image: $imageUrl');
+                  DebugLogger.error(
+                    '❌ FoodIcon: Failed to load image: $imageUrl',
+                  );
                   DebugLogger.error('   Error: $error');
                   DebugLogger.debug('   StackTrace: $stackTrace');
                   // Fallback icon if image fails to load

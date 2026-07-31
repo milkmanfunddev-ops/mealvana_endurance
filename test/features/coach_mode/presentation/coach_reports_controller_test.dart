@@ -31,16 +31,18 @@ void main() {
       expect(s.estimatedCalories, 0);
     });
 
-    test('fat contributes 9 cal/g while carbs and protein contribute 4 cal/g',
-        () {
-      const fatOnly = SectionMacros(carbs: 0, protein: 0, fat: 10);
-      const carbOnly = SectionMacros(carbs: 10, protein: 0, fat: 0);
-      const protOnly = SectionMacros(carbs: 0, protein: 10, fat: 0);
+    test(
+      'fat contributes 9 cal/g while carbs and protein contribute 4 cal/g',
+      () {
+        const fatOnly = SectionMacros(carbs: 0, protein: 0, fat: 10);
+        const carbOnly = SectionMacros(carbs: 10, protein: 0, fat: 0);
+        const protOnly = SectionMacros(carbs: 0, protein: 10, fat: 0);
 
-      expect(fatOnly.estimatedCalories, 90);
-      expect(carbOnly.estimatedCalories, 40);
-      expect(protOnly.estimatedCalories, 40);
-    });
+        expect(fatOnly.estimatedCalories, 90);
+        expect(carbOnly.estimatedCalories, 40);
+        expect(protOnly.estimatedCalories, 40);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -74,35 +76,31 @@ void main() {
     });
 
     test('adherence is null when plannedTotalCalories is null', () {
-      final item = _item(
-        plannedTotalCalories: null,
-        actualTotalCalories: 400,
-      );
+      final item = _item(plannedTotalCalories: null, actualTotalCalories: 400);
       expect(item.adherence, isNull);
     });
 
-    test('adherence is null when plannedTotalCalories is 0 (div-by-zero guard)',
-        () {
-      final item = _item(
-        plannedTotalCalories: 0,
-        actualTotalCalories: 400,
-      );
-      expect(item.adherence, isNull,
-          reason: 'Division by zero must be guarded: 0 planned calories '
-              'produces null adherence, not infinity.');
-    });
+    test(
+      'adherence is null when plannedTotalCalories is 0 (div-by-zero guard)',
+      () {
+        final item = _item(plannedTotalCalories: 0, actualTotalCalories: 400);
+        expect(
+          item.adherence,
+          isNull,
+          reason:
+              'Division by zero must be guarded: 0 planned calories '
+              'produces null adherence, not infinity.',
+        );
+      },
+    );
 
     test('adherence is null when actualTotalCalories is null', () {
-      final item = _item(
-        plannedTotalCalories: 500,
-        actualTotalCalories: null,
-      );
+      final item = _item(plannedTotalCalories: 500, actualTotalCalories: null);
       expect(item.adherence, isNull);
     });
 
     test('adherence is 1.0 when actual equals planned', () {
-      final item =
-          _item(plannedTotalCalories: 500, actualTotalCalories: 500);
+      final item = _item(plannedTotalCalories: 500, actualTotalCalories: 500);
       expect(item.adherence, closeTo(1.0, 0.001));
     });
 
@@ -112,22 +110,19 @@ void main() {
     });
 
     test('adherence is clamped to 2.0 when actual greatly exceeds planned', () {
-      final item =
-          _item(plannedTotalCalories: 100, actualTotalCalories: 5000);
+      final item = _item(plannedTotalCalories: 100, actualTotalCalories: 5000);
       expect(item.adherence, closeTo(2.0, 0.001));
     });
 
     test('under-fueling produces adherence between 0 and 1', () {
       // 400 actual / 500 planned = 0.8
-      final item =
-          _item(plannedTotalCalories: 500, actualTotalCalories: 400);
+      final item = _item(plannedTotalCalories: 500, actualTotalCalories: 400);
       expect(item.adherence, closeTo(0.8, 0.001));
     });
 
     test('slight over-fueling produces adherence between 1 and 2', () {
       // 600 actual / 500 planned = 1.2
-      final item =
-          _item(plannedTotalCalories: 500, actualTotalCalories: 600);
+      final item = _item(plannedTotalCalories: 500, actualTotalCalories: 600);
       expect(item.adherence, closeTo(1.2, 0.001));
     });
   });
@@ -141,8 +136,11 @@ void main() {
       final range = const ReportsDateRange.thisWeek();
       final start = range.resolvedStart;
       // Monday = weekday 1 in Dart
-      expect(start.weekday, DateTime.monday,
-          reason: 'thisWeek should start on Monday');
+      expect(
+        start.weekday,
+        DateTime.monday,
+        reason: 'thisWeek should start on Monday',
+      );
     });
 
     test('thisWeek resolvedEnd is 7 days after resolvedStart', () {
@@ -155,8 +153,11 @@ void main() {
       final range = const ReportsDateRange.lastWeek();
       final thisWeekStart = const ReportsDateRange.thisWeek().resolvedStart;
       final diff = thisWeekStart.difference(range.resolvedStart).inDays;
-      expect(diff, 7,
-          reason: 'lastWeek.start must be exactly 7 days before thisWeek.start');
+      expect(
+        diff,
+        7,
+        reason: 'lastWeek.start must be exactly 7 days before thisWeek.start',
+      );
     });
 
     test('lastWeek resolvedEnd is 7 days after lastWeek.start', () {
@@ -187,8 +188,11 @@ void main() {
 
       // An activity scheduled on the start day should be >= resolvedStart
       final onStart = DateTime(2026, 6, 1, 9, 0);
-      expect(onStart.isAtSameMomentAs(range.resolvedStart) ||
-          onStart.isAfter(range.resolvedStart), isTrue);
+      expect(
+        onStart.isAtSameMomentAs(range.resolvedStart) ||
+            onStart.isAfter(range.resolvedStart),
+        isTrue,
+      );
 
       // An activity scheduled on the end day should be < resolvedEnd
       final onEnd = DateTime(2026, 6, 7, 23, 59);
@@ -244,22 +248,26 @@ void main() {
       expect(cleared.selectedRelationshipId, 'rel-1');
     });
 
-    test('copyWith clearSelectedRelationshipId nulls out selectedRelationshipId',
-        () {
-      const state = CoachReportsState(selectedRelationshipId: 'rel-1');
-      final cleared = state.copyWith(clearSelectedRelationshipId: true);
-      expect(cleared.selectedRelationshipId, isNull);
-    });
+    test(
+      'copyWith clearSelectedRelationshipId nulls out selectedRelationshipId',
+      () {
+        const state = CoachReportsState(selectedRelationshipId: 'rel-1');
+        final cleared = state.copyWith(clearSelectedRelationshipId: true);
+        expect(cleared.selectedRelationshipId, isNull);
+      },
+    );
 
     test(
-        'copyWith with new dateRange replaces dateRange while preserving other fields',
-        () {
-      const state = CoachReportsState(selectedRelationshipId: 'rel-1');
-      final updated =
-          state.copyWith(dateRange: const ReportsDateRange.lastWeek());
-      expect(updated.dateRange.type, ReportsDateRangeType.lastWeek);
-      expect(updated.selectedRelationshipId, 'rel-1');
-    });
+      'copyWith with new dateRange replaces dateRange while preserving other fields',
+      () {
+        const state = CoachReportsState(selectedRelationshipId: 'rel-1');
+        final updated = state.copyWith(
+          dateRange: const ReportsDateRange.lastWeek(),
+        );
+        expect(updated.dateRange.type, ReportsDateRangeType.lastWeek);
+        expect(updated.selectedRelationshipId, 'rel-1');
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -333,20 +341,24 @@ void main() {
     });
 
     test(
-        'BUG CHECK — single activity with 0 planned calories must not contribute to adherence',
-        () {
-      // If plannedTotalCalories == 0 and actualTotalCalories == 300, the item
-      // must NOT add to adherenceValues (would produce infinity).
-      // The controller checks: plannedTotalCalories > 0 before computing.
-      const plannedCalories = 0;
-      const actualCalories = 300;
+      'BUG CHECK — single activity with 0 planned calories must not contribute to adherence',
+      () {
+        // If plannedTotalCalories == 0 and actualTotalCalories == 300, the item
+        // must NOT add to adherenceValues (would produce infinity).
+        // The controller checks: plannedTotalCalories > 0 before computing.
+        const plannedCalories = 0;
+        const actualCalories = 300;
 
-      final wouldBeAdded = plannedCalories > 0 && actualCalories != null;
-      expect(wouldBeAdded, isFalse,
+        final wouldBeAdded = plannedCalories > 0 && actualCalories != null;
+        expect(
+          wouldBeAdded,
+          isFalse,
           reason:
               'An activity with 0 planned calories must not contribute to adherence '
-              'computation — it would cause a division by zero.');
-    });
+              'computation — it would cause a division by zero.',
+        );
+      },
+    );
   });
 }
 

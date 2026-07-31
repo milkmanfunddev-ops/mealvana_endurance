@@ -91,7 +91,8 @@ void main() {
 
       test('sum equals 100', () {
         final distribution = IntensityDistribution.defaultDistribution();
-        final sum = distribution.conversationalPct +
+        final sum =
+            distribution.conversationalPct +
             distribution.tempoPct +
             distribution.allOutPct;
 
@@ -102,10 +103,7 @@ void main() {
     group('copyWith', () {
       test('copies with valid changes that maintain sum of 100', () {
         final original = IntensityDistribution.defaultDistribution();
-        final updated = original.copyWith(
-          conversationalPct: 60,
-          tempoPct: 30,
-        );
+        final updated = original.copyWith(conversationalPct: 60, tempoPct: 30);
 
         expect(updated.conversationalPct, 60);
         expect(updated.tempoPct, 30);
@@ -160,7 +158,10 @@ void main() {
         // allOut -= 10 * (10/30) = 10 - 3.33 ≈ 7
         expect(adjusted.conversationalPct, 80);
         expect(adjusted.tempoPct + adjusted.allOutPct, 20);
-        expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct, 100);
+        expect(
+          adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+          100,
+        );
       });
 
       test('adjusts when tempo decreases', () {
@@ -176,7 +177,10 @@ void main() {
         // allOut += 10 * (10/80) = 10 + 1.25 ≈ 11
         expect(adjusted.tempoPct, 10);
         expect(adjusted.conversationalPct + adjusted.allOutPct, 90);
-        expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct, 100);
+        expect(
+          adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+          100,
+        );
       });
 
       test('adjusts when allOut increases to maximum', () {
@@ -188,7 +192,10 @@ void main() {
         expect(adjusted.allOutPct, 100);
         expect(adjusted.conversationalPct, 0);
         expect(adjusted.tempoPct, 0);
-        expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct, 100);
+        expect(
+          adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+          100,
+        );
       });
 
       test('handles edge case when zone changes to 0', () {
@@ -203,7 +210,10 @@ void main() {
 
         expect(adjusted.allOutPct, 0);
         expect(adjusted.conversationalPct + adjusted.tempoPct, 100);
-        expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct, 100);
+        expect(
+          adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+          100,
+        );
       });
 
       test('handles edge case when only one zone has value', () {
@@ -220,7 +230,10 @@ void main() {
         expect(adjusted.conversationalPct, 80);
         expect(adjusted.tempoPct, 10);
         expect(adjusted.allOutPct, 10);
-        expect(adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct, 100);
+        expect(
+          adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct,
+          100,
+        );
       });
 
       test('normalizes when sum is not exactly 100', () {
@@ -234,7 +247,8 @@ void main() {
         // Adjust and verify normalization
         final adjusted = original.adjustProportionally(conversationalPct: 50);
 
-        final sum = adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct;
+        final sum =
+            adjusted.conversationalPct + adjusted.tempoPct + adjusted.allOutPct;
         expect(sum, 100, reason: 'Sum should be normalized to 100');
       });
 
@@ -312,7 +326,8 @@ void main() {
         distribution = distribution.adjustProportionally(tempoPct: 15);
         distribution = distribution.adjustProportionally(allOutPct: 20);
 
-        final sum = distribution.conversationalPct +
+        final sum =
+            distribution.conversationalPct +
             distribution.tempoPct +
             distribution.allOutPct;
 
@@ -348,11 +363,7 @@ void main() {
 
     group('fromJson', () {
       test('deserializes correctly', () {
-        final json = {
-          'conversationalPct': 70,
-          'tempoPct': 20,
-          'allOutPct': 10,
-        };
+        final json = {'conversationalPct': 70, 'tempoPct': 20, 'allOutPct': 10};
         final distribution = IntensityDistribution.fromJson(json);
 
         expect(distribution.conversationalPct, 70);

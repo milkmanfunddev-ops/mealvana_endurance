@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../../../nutrition_plan/domain/food_item_data.dart';
 import '../../../nutrition_plan/domain/solver_food.dart';
@@ -48,8 +49,10 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   bool _seeded = false;
   bool _saving = false;
 
-  late final _provider =
-      formulaEditorControllerProvider(widget.formulaId, widget.phase);
+  late final _provider = formulaEditorControllerProvider(
+    widget.formulaId,
+    widget.phase,
+  );
 
   @override
   void dispose() {
@@ -59,10 +62,10 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   }
 
   String _categoryFor(FormulaPhase phase) => switch (phase) {
-        FormulaPhase.before => 'before_run',
-        FormulaPhase.during => 'during_run',
-        FormulaPhase.after => 'after_run',
-      };
+    FormulaPhase.before => 'before_run',
+    FormulaPhase.during => 'during_run',
+    FormulaPhase.after => 'after_run',
+  };
 
   /// The phase currently in the draft (editable), falling back to the route's
   /// initial phase before the draft loads.
@@ -73,6 +76,9 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   Widget build(BuildContext context) {
     final asyncDraft = ref.watch(_provider);
     final scheme = Theme.of(context).colorScheme;
+    final coachInsightsEnabled = ref.watch(
+      appConfigProvider.select((config) => config.coachInsightsEnabled),
+    );
 
     return AdaptivePageScaffold(
       key: ValueKey('formula_kit.editor_screen.${widget.formulaId ?? 'new'}'),
@@ -83,9 +89,23 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: const CustomAppBarBackButton(),
-        title: Text(
-          widget.formulaId == null ? 'New formula' : 'Edit formula',
-          style: AppTextStyles.sectionTitle.copyWith(color: scheme.onSurface),
+        // FittedBox scales the title down instead of ellipsizing (item 17,
+        // 2026-07-04) — mirrors the pattern used by
+        // fuel_timeline_day_header.dart. This title is currently a static
+        // "New/Edit formula" label, but the smaller/narrower style keeps it
+        // consistent with the detail screen's app bar.
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            widget.formulaId == null ? 'New formula' : 'Edit formula',
+            softWrap: false,
+            maxLines: 1,
+            style: AppTextStyles.sectionTitle.copyWith(
+              fontSize: 17,
+              color: scheme.onSurface,
+            ),
+          ),
         ),
       ),
       body: asyncDraft.when(
@@ -93,8 +113,10 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
           child: CircularProgressIndicator(color: AppColors.electrolyte),
         ),
         error: (e, _) => Center(
-          child: Text('Couldn\'t open the editor.\n$e',
-              textAlign: TextAlign.center),
+          child: Text(
+            'Couldn\'t open the editor.\n$e',
+            textAlign: TextAlign.center,
+          ),
         ),
         data: (draft) {
           if (!_seeded) {
@@ -159,8 +181,9 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                         ),
                         child: Text(
                           'No foods yet. Tap "Add Food" to build your formula.',
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(color: scheme.onSurfaceVariant),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       )
                     else
@@ -169,7 +192,10 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: DismissibleFoodItem(
                             key: ValueKey('formula_kit.editor_row_$i'),
-                            food: _foodItemFromComponent(draft.components[i], i),
+                            food: _foodItemFromComponent(
+                              draft.components[i],
+                              i,
+                            ),
                             category: _categoryFor(draft.phase),
                             showQuantity: draft.phase != FormulaPhase.during,
                             onSwap: () =>
@@ -186,7 +212,8 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                     ),
                     // Coach insight — only meaningful once the formula has at
                     // least one component (the edge function requires it).
-                    if (draft.components.isNotEmpty) ...[
+                    if (coachInsightsEnabled &&
+                        draft.components.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.lg),
                       CoachInsightPanel(
                         insightContext: _insightContextFor(draft),
@@ -198,8 +225,7 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                     const SizedBox(height: AppSpacing.xs),
                     TextField(
                       controller: _notesController,
-                      onChanged: (v) =>
-                          notifier.setNotes(v.isEmpty ? null : v),
+                      onChanged: (v) => notifier.setNotes(v.isEmpty ? null : v),
                       maxLines: 3,
                       decoration: const InputDecoration(
                         hintText: 'When to use it, prep tips…',
@@ -233,7 +259,9 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
       extra: {'category': _categoryFor(_currentPhase), 'returnSelection': true},
     );
     if (result == null || !mounted) return;
-    ref.read(_provider.notifier).addComponent(
+    ref
+        .read(_provider.notifier)
+        .addComponent(
           result.food,
           result.quantity,
           isUserFood: result.isUserFood,
@@ -251,7 +279,9 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
       },
     );
     if (result == null || !mounted) return;
-    ref.read(_provider.notifier).replaceComponent(
+    ref
+        .read(_provider.notifier)
+        .replaceComponent(
           index,
           result.food,
           result.quantity,
@@ -338,8 +368,11 @@ class _ScopeSection extends StatelessWidget {
   final FormulaDraft draft;
   final FormulaEditorController notifier;
 
-  void _toggleInList(List<String>? current, String value,
-      void Function(List<String>?) set) {
+  void _toggleInList(
+    List<String>? current,
+    String value,
+    void Function(List<String>?) set,
+  ) {
     final next = [...?current];
     if (next.contains(value)) {
       next.remove(value);
@@ -383,7 +416,10 @@ class _ScopeSection extends StatelessWidget {
               isSelected: (v) =>
                   draft.activities?.contains(v.storageValue) ?? false,
               onToggled: (v) => _toggleInList(
-                  draft.activities, v.storageValue, notifier.setActivities),
+                draft.activities,
+                v.storageValue,
+                notifier.setActivities,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             _Label('Duration'),
@@ -394,7 +430,10 @@ class _ScopeSection extends StatelessWidget {
               isSelected: (v) =>
                   draft.durations?.contains(v.storageValue) ?? false,
               onToggled: (v) => _toggleInList(
-                  draft.durations, v.storageValue, notifier.setDurations),
+                draft.durations,
+                v.storageValue,
+                notifier.setDurations,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
           ],
@@ -411,7 +450,10 @@ class _ScopeSection extends StatelessWidget {
               isSelected: (v) =>
                   draft.activities?.contains(v.storageValue) ?? false,
               onToggled: (v) => _toggleInList(
-                  draft.activities, v.storageValue, notifier.setActivities),
+                draft.activities,
+                v.storageValue,
+                notifier.setActivities,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             _Label('Travel'),
@@ -444,23 +486,24 @@ class _MacroTotals extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     Widget cell(String value, String label) => Column(
-          children: [
-            Text(
-              value,
-              style: AppTextStyles.dataNumber.copyWith(
-                color: AppColors.electrolyte,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTextStyles.smallLabel
-                  .copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ],
-        );
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: AppColors.electrolyte,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(

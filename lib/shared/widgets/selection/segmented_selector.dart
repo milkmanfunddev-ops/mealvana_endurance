@@ -60,10 +60,7 @@ class SegmentedSelector<T> extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surfaceLightSecondary,
             borderRadius: AppRadius.segmentedControlRadius,
-            border: Border.all(
-              color: AppColors.borderLightSecondary,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.borderLightSecondary, width: 1),
           ),
           padding: const EdgeInsets.all(4),
           child: Row(
@@ -166,11 +163,7 @@ class _SegmentButton<T> extends StatelessWidget {
 
 /// Data class for segmented selector options
 class SegmentedOption<T> {
-  const SegmentedOption({
-    required this.value,
-    required this.label,
-    this.icon,
-  });
+  const SegmentedOption({required this.value, required this.label, this.icon});
 
   final T value;
   final String label;
@@ -215,10 +208,8 @@ class NumericSegmentedSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final options = List.generate(
       max - min + 1,
-      (index) => SegmentedOption<int>(
-        value: min + index,
-        label: '${min + index}',
-      ),
+      (index) =>
+          SegmentedOption<int>(value: min + index, label: '${min + index}'),
     );
 
     return SegmentedSelector<int>(

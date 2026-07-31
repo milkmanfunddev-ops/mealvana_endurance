@@ -14,18 +14,11 @@ library;
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 
 /// Represents a training intensity zone
-enum IntensityZone {
-  conversational,
-  tempo,
-  allOut,
-}
+enum IntensityZone { conversational, tempo, allOut }
 
 /// Represents a segment of a structured workout
 class WorkoutSegment {
-  const WorkoutSegment({
-    required this.durationSeconds,
-    required this.zone,
-  });
+  const WorkoutSegment({required this.durationSeconds, required this.zone});
 
   /// Duration of this segment in seconds
   final int durationSeconds;
@@ -59,11 +52,8 @@ class IntensityDistributionMapper {
   // ===========================================================================
 
   /// Easy/Recovery workout pattern: 95% conversational, 5% tempo, 0% all-out
-  static const IntensityDistribution patternEasyRecovery = IntensityDistribution(
-    conversationalPct: 95,
-    tempoPct: 5,
-    allOutPct: 0,
-  );
+  static const IntensityDistribution patternEasyRecovery =
+      IntensityDistribution(conversationalPct: 95, tempoPct: 5, allOutPct: 0);
 
   /// Long Run/Endurance pattern: 80% conversational, 15% tempo, 5% all-out
   static const IntensityDistribution patternLongRun = IntensityDistribution(
@@ -252,7 +242,8 @@ class IntensityDistributionMapper {
     }
 
     // Calculate percentages
-    var conversationalPct = ((conversationalSeconds / totalSeconds) * 100).round();
+    var conversationalPct = ((conversationalSeconds / totalSeconds) * 100)
+        .round();
     var tempoPct = ((tempoSeconds / totalSeconds) * 100).round();
     var allOutPct = ((allOutSeconds / totalSeconds) * 100).round();
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/meal_analysis_result.dart';
+import '../../domain/portion_quantity.dart';
 
 /// An editable list of [MealAnalysisItem]s.
 ///
@@ -45,14 +46,11 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
     );
   }
 
-  int get _totalCalories =>
-      _items.fold(0, (sum, item) => sum + item.calories);
-  double get _totalCarbG =>
-      _items.fold(0.0, (sum, item) => sum + item.carbG);
+  int get _totalCalories => _items.fold(0, (sum, item) => sum + item.calories);
+  double get _totalCarbG => _items.fold(0.0, (sum, item) => sum + item.carbG);
   double get _totalProteinG =>
       _items.fold(0.0, (sum, item) => sum + item.proteinG);
-  double get _totalFatG =>
-      _items.fold(0.0, (sum, item) => sum + item.fatG);
+  double get _totalFatG => _items.fold(0.0, (sum, item) => sum + item.fatG);
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +66,10 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
-              title: Text(item.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              title: Text(
+                item.name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(
                 '${item.portion} · ${item.calories} kcal  '
                 'C ${item.carbG.toStringAsFixed(0)}g  '
@@ -103,8 +103,9 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
                   'C ${_totalCarbG.toStringAsFixed(0)}g  '
                   'P ${_totalProteinG.toStringAsFixed(0)}g  '
                   'F ${_totalFatG.toStringAsFixed(0)}g',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -125,6 +126,13 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
 /// dialog captures that portion's leading number as the baseline quantity and
 /// lets the user change the **Quantity** field to scale every macro
 /// proportionally, mirroring the ratio approach in `TemplateScalingService`.
+///
+/// While editing, the Portion label is never rewritten (bug 39fe3fdb): it
+/// keeps showing the unit portion (e.g. "1 cup") and the Quantity field alone
+/// communicates how many were eaten. Because the persisted portion string is
+/// the only place quantity is stored, [_persistedPortion] folds the chosen
+/// quantity back into the portion at save time (e.g. "2 cup"), so saved rows
+/// render the eaten amount exactly as before.
 class _EditItemDialog extends StatefulWidget {
   const _EditItemDialog({required this.item, required this.onSave});
 
@@ -146,7 +154,6 @@ class _EditItemDialogState extends State<_EditItemDialog> {
   late final TextEditingController _sodiumCtrl;
 
   late final double _baseQty;
-  late final String _basePortion;
   late final double _baseCal;
   late final double _baseCarb;
   late final double _baseProt;
@@ -165,14 +172,13 @@ class _EditItemDialogState extends State<_EditItemDialog> {
     _fatCtrl = TextEditingController(text: item.fatG.toStringAsFixed(1));
     _sodiumCtrl = TextEditingController(text: item.sodiumMg.toStringAsFixed(0));
 
-    _baseQty = _parseLeadingQuantity(item.portion) ?? 1.0;
-    _basePortion = item.portion;
+    _baseQty = 1.0;
     _baseCal = item.calories.toDouble();
     _baseCarb = item.carbG;
     _baseProt = item.proteinG;
     _baseFat = item.fatG;
     _baseSodium = item.sodiumMg;
-    _qtyCtrl = TextEditingController(text: _fmtQty(_baseQty));
+    _qtyCtrl = TextEditingController(text: fmtQty(_baseQty));
     _qtyCtrl.addListener(_recompute);
   }
 
@@ -198,17 +204,29 @@ class _EditItemDialogState extends State<_EditItemDialog> {
     _protCtrl.text = (_baseProt * ratio).toStringAsFixed(1);
     _fatCtrl.text = (_baseFat * ratio).toStringAsFixed(1);
     _sodiumCtrl.text = (_baseSodium * ratio).toStringAsFixed(0);
-    final rewritten = _replaceLeadingQuantity(_basePortion, qty);
-    if (rewritten != null) _portionCtrl.text = rewritten;
+    // The Portion label is deliberately NOT rewritten here — it stays at the
+    // unit portion while Quantity communicates the amount (bug 39fe3fdb). The
+    // quantity is folded into the persisted portion in [_persistedPortion].
+  }
+
+  /// The portion string to persist: the Portion text with the chosen Quantity
+  /// folded into its leading number, so the saved row still renders the eaten
+  /// amount ("2 cup · 400 kcal"). When Quantity is untouched (or invalid) the
+  /// Portion text is saved verbatim, preserving manual portion edits.
+  String _persistedPortion() {
+    final text = _portionCtrl.text.trim();
+    final qty = double.tryParse(_qtyCtrl.text.trim());
+    if (qty == null || qty <= 0 || qty == _baseQty) return text;
+    final portionQty = parseLeadingQuantity(text) ?? 1.0;
+    return replaceLeadingQuantity(text, portionQty * qty) ?? text;
   }
 
   void _save() {
     final item = widget.item;
+    final persistedPortion = _persistedPortion();
     final updated = MealAnalysisItem(
       name: _nameCtrl.text.trim().isEmpty ? item.name : _nameCtrl.text.trim(),
-      portion: _portionCtrl.text.trim().isEmpty
-          ? item.portion
-          : _portionCtrl.text.trim(),
+      portion: persistedPortion.isEmpty ? item.portion : persistedPortion,
       calories: int.tryParse(_calCtrl.text) ?? item.calories,
       carbG: double.tryParse(_carbCtrl.text) ?? item.carbG,
       proteinG: double.tryParse(_protCtrl.text) ?? item.proteinG,
@@ -231,8 +249,11 @@ class _EditItemDialogState extends State<_EditItemDialog> {
             const SizedBox(height: 8),
             _field('Portion', _portionCtrl),
             const SizedBox(height: 8),
-            _numField('Quantity', _qtyCtrl,
-                helperText: 'Scales the nutrients below'),
+            _numField(
+              'Quantity',
+              _qtyCtrl,
+              helperText: 'Scales the nutrients below',
+            ),
             const SizedBox(height: 8),
             _numField('Calories', _calCtrl),
             const SizedBox(height: 8),
@@ -251,10 +272,7 @@ class _EditItemDialogState extends State<_EditItemDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        TextButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }
@@ -265,14 +283,16 @@ class _EditItemDialogState extends State<_EditItemDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
 
-  Widget _numField(String label, TextEditingController ctrl,
-      {String? helperText}) {
+  Widget _numField(
+    String label,
+    TextEditingController ctrl, {
+    String? helperText,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -283,34 +303,8 @@ class _EditItemDialogState extends State<_EditItemDialog> {
         labelText: label,
         helperText: helperText,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
-  }
-
-  /// Parses the leading numeric quantity from a portion string, e.g. "2 cups"
-  /// → 2.0, "1.5 oz" → 1.5. Returns null when the portion has no leading
-  /// number (e.g. "a handful").
-  double? _parseLeadingQuantity(String portion) {
-    final match = RegExp(r'^\s*(\d+(?:\.\d+)?)').firstMatch(portion);
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  /// Rewrites the leading number of [portion] to [qty], preserving the unit
-  /// suffix (e.g. "1 cup" + 2 → "2 cup"). Returns null when there is no leading
-  /// number to replace, leaving the caller's portion text untouched.
-  String? _replaceLeadingQuantity(String portion, double qty) {
-    final match =
-        RegExp(r'^(\s*)(\d+(?:\.\d+)?)(.*)$').firstMatch(portion);
-    if (match == null) return null;
-    return '${match.group(1)}${_fmtQty(qty)}${match.group(3)}';
-  }
-
-  /// Formats a quantity without a trailing ".0" for whole numbers.
-  String _fmtQty(double qty) {
-    if (qty == qty.roundToDouble()) return qty.toInt().toString();
-    return qty.toString();
   }
 }

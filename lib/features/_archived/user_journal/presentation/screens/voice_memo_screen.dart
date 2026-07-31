@@ -12,11 +12,7 @@ import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 /// Screen for users to view and add workout notes about their nutrition plan
 /// Displays a list of notes with timestamps and supports speech-to-text input
 class VoiceMemoScreen extends ConsumerStatefulWidget {
-  const VoiceMemoScreen({
-    super.key,
-    required this.activityId,
-    this.rating,
-  });
+  const VoiceMemoScreen({super.key, required this.activityId, this.rating});
 
   final String activityId;
   final int? rating;
@@ -40,10 +36,10 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
     _textController = TextEditingController();
     _textFieldFocusNode = FocusNode();
     _activityId = widget.activityId;
-    
+
     // Show new note entry by default if coming from plan rating
     _showNewNoteEntry = widget.rating != null;
-    
+
     _textController.addListener(() {
       if (!_hasChanges && _textController.text.isNotEmpty) {
         setState(() {
@@ -51,7 +47,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
         });
       }
     });
-    
+
     // Load notes when screen initializes
     _loadNotes();
   }
@@ -117,26 +113,22 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
                 _buildNewNoteEntry(),
                 SizedBox(height: 24.h),
               ],
-              
+
               // Notes list section
-              Expanded(
-                child: _buildNotesList(),
-              ),
+              Expanded(child: _buildNotesList()),
             ],
           ),
         ),
       ),
       // Floating action button to add new note
-      floatingActionButton: _showNewNoteEntry 
+      floatingActionButton: _showNewNoteEntry
           ? null
           : FloatingActionButton(
-              heroTag: "workout-notes-fab", // Unique hero tag to avoid conflicts
+              heroTag:
+                  "workout-notes-fab", // Unique hero tag to avoid conflicts
               onPressed: _showNewNoteInput,
               backgroundColor: AppTheme.primary900,
-              child: Icon(
-                Icons.add,
-                color: AppTheme.baseWhite,
-              ),
+              child: Icon(Icons.add, color: AppTheme.baseWhite),
             ),
     );
   }
@@ -148,7 +140,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
       _textController.clear();
       _hasChanges = false;
     });
-    
+
     // Focus the text field after a brief delay to ensure the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_textFieldFocusNode);
@@ -158,17 +150,14 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   /// Build the new note entry widget
   Widget _buildNewNoteEntry() {
     final controllerState = ref.watch(voiceMemoControllerProvider);
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: AppTheme.primary50, // Light blue background from AppTheme
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: AppTheme.primary100,
-          width: 1,
-        ),
+        border: Border.all(color: AppTheme.primary100, width: 1),
       ),
       child: Column(
         children: [
@@ -191,9 +180,9 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
               height: 1.5,
             ),
           ),
-          
+
           SizedBox(height: 16.h),
-          
+
           // Controls row with microphone and save button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -207,8 +196,8 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
                       padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
                         color: controllerState.maybeWhen(
-                          data: (state) => state.isListening 
-                              ? AppTheme.warningColor 
+                          data: (state) => state.isListening
+                              ? AppTheme.warningColor
                               : AppTheme.primary900,
                           orElse: () => AppTheme.primary900,
                         ),
@@ -216,9 +205,8 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
                       ),
                       child: Icon(
                         controllerState.maybeWhen(
-                          data: (state) => state.isListening 
-                              ? Icons.stop 
-                              : Icons.mic,
+                          data: (state) =>
+                              state.isListening ? Icons.stop : Icons.mic,
                           orElse: () => Icons.mic,
                         ),
                         color: AppTheme.baseWhite,
@@ -253,7 +241,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
                   ),
                 ],
               ),
-              
+
               // Save and Cancel buttons
               Row(
                 children: [
@@ -271,7 +259,8 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
                       orElse: () => 'Save',
                     ),
                     onPressed: controllerState.maybeWhen(
-                      data: (state) => state.isSaving ? null : _handleSaveNewNote,
+                      data: (state) =>
+                          state.isSaving ? null : _handleSaveNewNote,
                       orElse: () => _handleSaveNewNote,
                     ),
                     isLoading: controllerState.maybeWhen(
@@ -295,12 +284,10 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   Widget _buildNotesList() {
     if (_isLoadingNotes) {
       return Center(
-        child: CircularProgressIndicator(
-          color: AppTheme.primary600,
-        ),
+        child: CircularProgressIndicator(color: AppTheme.primary600),
       );
     }
-    
+
     if (_notes.isEmpty) {
       return Center(
         child: Column(
@@ -331,7 +318,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
         ),
       );
     }
-    
+
     return ListView.separated(
       itemCount: _notes.length,
       separatorBuilder: (context, index) => SizedBox(height: 16.h),
@@ -345,7 +332,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   /// Build an individual note item
   Widget _buildNoteItem(WorkoutNote note) {
     final timeAgo = _formatTimeAgo(note.createdAt);
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
@@ -369,9 +356,9 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
               height: 1.4,
             ),
           ),
-          
+
           SizedBox(height: 12.h),
-          
+
           // Timestamp and edit options
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -383,7 +370,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
                   color: AppTheme.baseGrey,
                 ),
               ),
-              
+
               // Edit button
               GestureDetector(
                 onTap: () => _editNote(note),
@@ -404,7 +391,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   String _formatTimeAgo(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
     } else if (difference.inHours > 0) {
@@ -457,14 +444,17 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   Future<void> _handleSaveNewNote() async {
     final notes = _textController.text.trim();
     if (notes.isEmpty) {
-      MealvanaSnackbar.showWarning(context, 'Please enter some notes before saving');
+      MealvanaSnackbar.showWarning(
+        context,
+        'Please enter some notes before saving',
+      );
       return;
     }
 
     try {
       final controller = ref.read(voiceMemoControllerProvider.notifier);
       await controller.saveNotes(_activityId, notes);
-      
+
       if (mounted) {
         // Hide the new note entry and clear the form
         setState(() {
@@ -472,10 +462,10 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
           _textController.clear();
           _hasChanges = false;
         });
-        
+
         // Refresh the notes list after saving
         await _loadNotes();
-        
+
         // Show success message
         MealvanaSnackbar.showInfo(context, 'Note saved successfully!');
       }
@@ -491,13 +481,13 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
     // TODO: Implement edit functionality
     MealvanaSnackbar.showInfo(context, 'Edit functionality coming soon');
   }
-  
+
   /// Load notes from the controller
   Future<void> _loadNotes() async {
     setState(() {
       _isLoadingNotes = true;
     });
-    
+
     try {
       final controller = ref.read(voiceMemoControllerProvider.notifier);
       final notes = await controller.getNotes();
@@ -518,7 +508,7 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
   void _toggleSpeechRecognition() {
     final controller = ref.read(voiceMemoControllerProvider.notifier);
     final state = ref.read(voiceMemoControllerProvider);
-    
+
     state.whenData((data) {
       if (data.isListening) {
         controller.stopListening();
@@ -528,8 +518,10 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
           final currentText = _textController.text;
           final newText = currentText.isEmpty ? text : '$currentText $text';
           _textController.text = newText;
-          _textController.selection = TextSelection.collapsed(offset: newText.length);
-          
+          _textController.selection = TextSelection.collapsed(
+            offset: newText.length,
+          );
+
           if (!_hasChanges) {
             setState(() {
               _hasChanges = true;
@@ -539,6 +531,4 @@ class _VoiceMemoScreenState extends ConsumerState<VoiceMemoScreen> {
       }
     });
   }
-
-
 }

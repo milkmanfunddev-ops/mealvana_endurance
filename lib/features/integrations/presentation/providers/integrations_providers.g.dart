@@ -315,7 +315,7 @@ final class FinalSurgeSyncServiceProvider
 }
 
 String _$finalSurgeSyncServiceHash() =>
-    r'f49896992377053541a17a5dc89cdecd7594288f';
+    r'dcafcd6ae9db3b39f76580800e84cb78c9c4b4fb';
 
 /// Provider to get Final Surge integration for a user
 
@@ -761,7 +761,7 @@ final class TrainingPeaksSyncServiceProvider
 }
 
 String _$trainingPeaksSyncServiceHash() =>
-    r'b52b93f4c6b35c7a3d5c879adfec78add94d6d44';
+    r'4bd76ececa514f245d6075c4fbc317bbd5d16bea';
 
 /// Provider to get TrainingPeaks integration for a user
 
@@ -1617,4 +1617,365 @@ final class VdotSyncServiceProvider
   }
 }
 
-String _$vdotSyncServiceHash() => r'd5bd0a1549f8553754f5655fb2f91c55eadaaa3d';
+String _$vdotSyncServiceHash() => r'e2c2d14c1f8563fa9afad9cfcc30331606670861';
+
+/// Provider for the Runna ICS feed HTTP client. No OAuth — the calendar
+/// subscription URL itself carries the token.
+
+@ProviderFor(runnaIcsClient)
+const runnaIcsClientProvider = RunnaIcsClientProvider._();
+
+/// Provider for the Runna ICS feed HTTP client. No OAuth — the calendar
+/// subscription URL itself carries the token.
+
+final class RunnaIcsClientProvider
+    extends $FunctionalProvider<RunnaIcsClient, RunnaIcsClient, RunnaIcsClient>
+    with $Provider<RunnaIcsClient> {
+  /// Provider for the Runna ICS feed HTTP client. No OAuth — the calendar
+  /// subscription URL itself carries the token.
+  const RunnaIcsClientProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'runnaIcsClientProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$runnaIcsClientHash();
+
+  @$internal
+  @override
+  $ProviderElement<RunnaIcsClient> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RunnaIcsClient create(Ref ref) {
+    return runnaIcsClient(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RunnaIcsClient value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RunnaIcsClient>(value),
+    );
+  }
+}
+
+String _$runnaIcsClientHash() => r'baa70f94ecb6b230244c6afb3c93b6fbd70ae7dc';
+
+/// Provider for the Runna ICS parser (pure RFC 5545 subset).
+
+@ProviderFor(runnaIcsParser)
+const runnaIcsParserProvider = RunnaIcsParserProvider._();
+
+/// Provider for the Runna ICS parser (pure RFC 5545 subset).
+
+final class RunnaIcsParserProvider
+    extends $FunctionalProvider<RunnaIcsParser, RunnaIcsParser, RunnaIcsParser>
+    with $Provider<RunnaIcsParser> {
+  /// Provider for the Runna ICS parser (pure RFC 5545 subset).
+  const RunnaIcsParserProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'runnaIcsParserProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$runnaIcsParserHash();
+
+  @$internal
+  @override
+  $ProviderElement<RunnaIcsParser> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RunnaIcsParser create(Ref ref) {
+    return runnaIcsParser(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RunnaIcsParser value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RunnaIcsParser>(value),
+    );
+  }
+}
+
+String _$runnaIcsParserHash() => r'edb55b7e1bffb9f7ad9f8364242645568d176bcb';
+
+/// Provider for the Runna transformer (ICS event → Activity).
+
+@ProviderFor(runnaTransformer)
+const runnaTransformerProvider = RunnaTransformerProvider._();
+
+/// Provider for the Runna transformer (ICS event → Activity).
+
+final class RunnaTransformerProvider
+    extends
+        $FunctionalProvider<
+          RunnaTransformer,
+          RunnaTransformer,
+          RunnaTransformer
+        >
+    with $Provider<RunnaTransformer> {
+  /// Provider for the Runna transformer (ICS event → Activity).
+  const RunnaTransformerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'runnaTransformerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$runnaTransformerHash();
+
+  @$internal
+  @override
+  $ProviderElement<RunnaTransformer> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RunnaTransformer create(Ref ref) {
+    return runnaTransformer(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RunnaTransformer value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RunnaTransformer>(value),
+    );
+  }
+}
+
+String _$runnaTransformerHash() => r'44a550485270d2e36c7faa28627aed569dda6e0d';
+
+/// Provider for the Runna sync service.
+
+@ProviderFor(runnaSyncService)
+const runnaSyncServiceProvider = RunnaSyncServiceProvider._();
+
+/// Provider for the Runna sync service.
+
+final class RunnaSyncServiceProvider
+    extends
+        $FunctionalProvider<
+          RunnaSyncService,
+          RunnaSyncService,
+          RunnaSyncService
+        >
+    with $Provider<RunnaSyncService> {
+  /// Provider for the Runna sync service.
+  const RunnaSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'runnaSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$runnaSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<RunnaSyncService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RunnaSyncService create(Ref ref) {
+    return runnaSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RunnaSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RunnaSyncService>(value),
+    );
+  }
+}
+
+String _$runnaSyncServiceHash() => r'50df4a68fbc647e70638033485e0aefd53bf5261';
+
+/// Provider to get the Runna integration for a user.
+
+@ProviderFor(runnaIntegration)
+const runnaIntegrationProvider = RunnaIntegrationFamily._();
+
+/// Provider to get the Runna integration for a user.
+
+final class RunnaIntegrationProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<IntegrationModel?>,
+          IntegrationModel?,
+          FutureOr<IntegrationModel?>
+        >
+    with
+        $FutureModifier<IntegrationModel?>,
+        $FutureProvider<IntegrationModel?> {
+  /// Provider to get the Runna integration for a user.
+  const RunnaIntegrationProvider._({
+    required RunnaIntegrationFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'runnaIntegrationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$runnaIntegrationHash();
+
+  @override
+  String toString() {
+    return r'runnaIntegrationProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<IntegrationModel?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<IntegrationModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return runnaIntegration(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RunnaIntegrationProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$runnaIntegrationHash() => r'ee8f580ffb35ee91681d21c93d9c64b7742f14ff';
+
+/// Provider to get the Runna integration for a user.
+
+final class RunnaIntegrationFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<IntegrationModel?>, String> {
+  const RunnaIntegrationFamily._()
+    : super(
+        retry: null,
+        name: r'runnaIntegrationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to get the Runna integration for a user.
+
+  RunnaIntegrationProvider call(String userId) =>
+      RunnaIntegrationProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'runnaIntegrationProvider';
+}
+
+/// Provider to check whether Runna is connected for a user.
+
+@ProviderFor(isRunnaConnected)
+const isRunnaConnectedProvider = IsRunnaConnectedFamily._();
+
+/// Provider to check whether Runna is connected for a user.
+
+final class IsRunnaConnectedProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Provider to check whether Runna is connected for a user.
+  const IsRunnaConnectedProvider._({
+    required IsRunnaConnectedFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'isRunnaConnectedProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$isRunnaConnectedHash();
+
+  @override
+  String toString() {
+    return r'isRunnaConnectedProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return isRunnaConnected(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsRunnaConnectedProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$isRunnaConnectedHash() => r'96a94ede6fd0a3d3a3668d48c734e7ac75747234';
+
+/// Provider to check whether Runna is connected for a user.
+
+final class IsRunnaConnectedFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
+  const IsRunnaConnectedFamily._()
+    : super(
+        retry: null,
+        name: r'isRunnaConnectedProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to check whether Runna is connected for a user.
+
+  IsRunnaConnectedProvider call(String userId) =>
+      IsRunnaConnectedProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'isRunnaConnectedProvider';
+}

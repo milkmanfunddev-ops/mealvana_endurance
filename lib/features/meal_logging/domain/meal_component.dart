@@ -44,14 +44,14 @@ class MealComponent {
   /// Serialize to the canonical JSON shape stored in `meal_logs.items` /
   /// `saved_meals.items`. Sent to Supabase as-is inside a JSONB array.
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'portion': portion,
-        if (calories != null) 'calories': calories,
-        if (carbG != null) 'carb_g': carbG,
-        if (proteinG != null) 'protein_g': proteinG,
-        if (fatG != null) 'fat_g': fatG,
-        if (sodiumMg != null) 'sodium_mg': sodiumMg,
-      };
+    'name': name,
+    'portion': portion,
+    if (calories != null) 'calories': calories,
+    if (carbG != null) 'carb_g': carbG,
+    if (proteinG != null) 'protein_g': proteinG,
+    if (fatG != null) 'fat_g': fatG,
+    if (sodiumMg != null) 'sodium_mg': sodiumMg,
+  };
 
   /// Deserialize from the JSON shape stored in `meal_logs.items` /
   /// `saved_meals.items`.

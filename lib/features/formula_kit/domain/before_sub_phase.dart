@@ -15,23 +15,23 @@ enum BeforeSubPhase {
   /// Logical bucket id used in analytics and filter state. Not a column
   /// value — see `fromTimeWindow` for how the bucket is derived.
   String get storageValue => switch (this) {
-        BeforeSubPhase.meal => 'full_meal',
-        BeforeSubPhase.snack => 'snack',
-        BeforeSubPhase.topUp => 'top_up',
-      };
+    BeforeSubPhase.meal => 'full_meal',
+    BeforeSubPhase.snack => 'snack',
+    BeforeSubPhase.topUp => 'top_up',
+  };
 
   String get displayLabel => switch (this) {
-        BeforeSubPhase.meal => 'Meal',
-        BeforeSubPhase.snack => 'Snack',
-        BeforeSubPhase.topUp => 'Top-up',
-      };
+    BeforeSubPhase.meal => 'Meal',
+    BeforeSubPhase.snack => 'Snack',
+    BeforeSubPhase.topUp => 'Top-up',
+  };
 
   /// Sub-label shown under the chip in the design ("Light, easy", etc.).
   String get subDisplayLabel => switch (this) {
-        BeforeSubPhase.meal => 'Full meal',
-        BeforeSubPhase.snack => 'Light snack',
-        BeforeSubPhase.topUp => 'Quick top-up',
-      };
+    BeforeSubPhase.meal => 'Full meal',
+    BeforeSubPhase.snack => 'Light snack',
+    BeforeSubPhase.topUp => 'Quick top-up',
+  };
 
   static BeforeSubPhase? fromStorageValue(String? value) {
     return switch (value) {
@@ -69,7 +69,7 @@ enum FormulaDigestionSpeed {
   String get storageValue => name;
 
   String get displayLabel => switch (this) {
-        FormulaDigestionSpeed.fast => 'Fast',
-        FormulaDigestionSpeed.medium => 'Medium',
-      };
+    FormulaDigestionSpeed.fast => 'Fast',
+    FormulaDigestionSpeed.medium => 'Medium',
+  };
 }

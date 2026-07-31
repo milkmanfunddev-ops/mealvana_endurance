@@ -15,7 +15,8 @@ import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
-import '../utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets
@@ -74,7 +75,16 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         children: [
           CustomAppBarBackButton(
             key: const ValueKey('adjust_macros.back_button'),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+              // "There is nothing to pop" when this screen is reached
+              // without a poppable route on the stack.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/main');
+              }
+            },
             margin: EdgeInsets.zero,
             iconColor: Theme.of(context).colorScheme.onSurface,
             backgroundColor: Theme.of(
@@ -196,6 +206,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final brickFormState = ref.watch(brickInputControllerProvider);
     final segmentInputs = brickFormState.segmentInputs;
     final sportOrder = brickFormState.sportOrder;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     // Filter to only selected sports in order
     final orderedSelectedSports = sportOrder
@@ -242,14 +255,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
               break;
             case 'cycling':
               final speed = input.speedMph ?? 15.0;
-              pace = '${speed.toStringAsFixed(1)} mph';
+              pace = UnitFormatter.formatSpeed(speed, useMetric: useMetric);
               sportLabel = 'BIKE';
               break;
             case 'running':
               final paceMin = input.paceMinutesPerMile ?? 9.0;
-              final minutes = paceMin.floor();
-              final seconds = ((paceMin - minutes) * 60).round();
-              pace = '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
+              pace = UnitFormatter.formatPace(
+                paceMin,
+                unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+              );
               sportLabel = 'RUN';
               break;
             default:
@@ -335,10 +349,20 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   ) {
     // Use the standard MacroTargetsTable for brick workouts
     // Shows same layout as running/cycling/swimming tabs
+    //
+    // Fluids are stored in mL, so they need the same unit conversion the
+    // single-sport path does above — without it the table rendered raw
+    // millilitres under an "oz" header (a 3.5 h brick read "3105oz").
+    final useMetric = state.unitSystem == UnitSystem.metric;
+
+    int fluids(double ml) =>
+        useMetric ? ml.round() : (ml * UnitFormatter.kFlOzPerMl).round();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: MacroTargetsTable(
         title: 'Your Nutritional Targets',
+        useMetric: useMetric,
         macroData: MacroTableData(
           preCarbs: macros.preRun.carbsG.round(),
           duringCarbs: macros.duringRun.carbTotalG.round(),
@@ -346,9 +370,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preProtein: macros.preRun.proteinG.round(),
           duringProtein: 0,
           postProtein: macros.postRun.proteinG.round(),
-          preFluids: macros.preRun.fluidsMl.round(),
-          duringFluids: macros.duringRun.fluidTotalMl.round(),
-          postFluids: macros.postRun.fluidsMl.round(),
+          preFluids: fluids(macros.preRun.fluidsMl),
+          duringFluids: fluids(macros.duringRun.fluidTotalMl),
+          postFluids: fluids(macros.postRun.fluidsMl),
           preSodium: macros.preRun.sodiumMg.round(),
           duringSodium: macros.duringRun.sodiumTotalMg.round(),
           postSodium: macros.postRun.sodiumMg.round(),
@@ -461,7 +485,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           const SizedBox(height: AppSpacing.lg),
           KyleSecondaryButton(
             text: 'Go Back',
-            onPressed: () => context.pop(),
+            onPressed: () {
+              // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+              // "There is nothing to pop" from the error-state Go Back button.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/main');
+              }
+            },
           ),
         ],
       ),
@@ -500,7 +532,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             const SizedBox(height: AppSpacing.lg),
             KyleSecondaryButton(
               text: 'Go Back',
-              onPressed: () => context.pop(),
+              onPressed: () {
+                // Sentry MEALVANA-ENDURANCE-DEV-5R: guard against GoError
+                // "There is nothing to pop" from the no-data-state Go Back button.
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/main');
+                }
+              },
             ),
           ],
         ),

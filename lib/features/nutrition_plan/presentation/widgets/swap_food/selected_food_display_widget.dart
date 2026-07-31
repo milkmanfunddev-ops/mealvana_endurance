@@ -68,7 +68,9 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
                         Text(
                           food.description!,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -112,11 +114,20 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _NutrientRow(label: 'Carbohydrates', value: '${totalCarbs.toStringAsFixed(1)} g'),
+                  _NutrientRow(
+                    label: 'Carbohydrates',
+                    value: '${totalCarbs.toStringAsFixed(1)} g',
+                  ),
                   const SizedBox(height: AppSpacing.sm),
-                  _NutrientRow(label: 'Protein', value: '${totalProtein.toStringAsFixed(1)} g'),
+                  _NutrientRow(
+                    label: 'Protein',
+                    value: '${totalProtein.toStringAsFixed(1)} g',
+                  ),
                   const SizedBox(height: AppSpacing.sm),
-                  _NutrientRow(label: 'Fat', value: '${totalFat.toStringAsFixed(1)} g'),
+                  _NutrientRow(
+                    label: 'Fat',
+                    value: '${totalFat.toStringAsFixed(1)} g',
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   _NutrientRow(label: 'Calories', value: '$totalCalories kcal'),
                 ],
@@ -199,14 +210,38 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
 
     // Check if this is likely a user-imported food
     final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
+      'apple',
+      'applesauce',
+      'purée',
+      'bagel',
+      'banana',
+      'berr',
+      'chocolate milk',
+      'coconut water',
+      'coffee',
+      'date',
+      'electrolyte drink',
+      'electrolyte tablet',
+      'energy bar',
+      'energy chew',
+      'energy waffle',
+      'stroopwafel',
+      'fig bar',
+      'gel',
+      'oatmeal',
+      'orange juice',
+      'peanut butter',
+      'pickle juice',
+      'pretzel',
+      'protein bar',
+      'protein powder',
+      'protein shake',
+      'salt packet',
+      'sports drink',
+      'toast',
+      'trail mix',
+      'water',
+      'yogurt',
     ];
 
     // If none of the generic food keywords match, it's likely user-imported
@@ -223,14 +258,38 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
     final name = foodName.toLowerCase();
 
     final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
+      'apple',
+      'applesauce',
+      'purée',
+      'bagel',
+      'banana',
+      'berr',
+      'chocolate milk',
+      'coconut water',
+      'coffee',
+      'date',
+      'electrolyte drink',
+      'electrolyte tablet',
+      'energy bar',
+      'energy chew',
+      'energy waffle',
+      'stroopwafel',
+      'fig bar',
+      'gel',
+      'oatmeal',
+      'orange juice',
+      'peanut butter',
+      'pickle juice',
+      'pretzel',
+      'protein bar',
+      'protein powder',
+      'protein shake',
+      'salt packet',
+      'sports drink',
+      'toast',
+      'trail mix',
+      'water',
+      'yogurt',
     ];
 
     // User-imported foods get orange color
@@ -248,10 +307,7 @@ class _NutrientRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _NutrientRow({
-    required this.label,
-    required this.value,
-  });
+  const _NutrientRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

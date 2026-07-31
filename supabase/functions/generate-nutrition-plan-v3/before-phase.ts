@@ -34,8 +34,11 @@ import {
   fluidSodiumDeficits,
 } from "../_shared/nutrition/pin-backfill.ts";
 import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
+import { logFormulaCascade } from "../_shared/nutrition/formula-decision.ts";
+import { applyElectrolyteWaterPairing } from "../_shared/nutrition/electrolyte-water-pairing.ts";
 
 import { fetchPreWorkoutTemplates, fetchTemplateFoodsByName } from "./before-phase-db.ts";
+import { reconcileBeforePhaseAfterPins } from "./before-phase-reconcile.ts";
 import { fetchUserFoodsForBefore, findSubstitutions } from "./before-phase-substitution.ts";
 import { phaseResultToSubPhaseResult } from "./before-phase-explosion.ts";
 
@@ -79,6 +82,14 @@ interface BeforePhaseInput {
    * their matching sub-phase slot after Algorithm C runs (per-slot, since the
    * before phase can return meal + snack + top_up). Formula Kit personalization. */
   personal_formula_pins?: PersonalFormulaPin[];
+  /** Client opt-in for default-formula telemetry on the before phase. Was
+   * silently dropped on this fallback path until 2026-07-29: plan-v3 called
+   * `selectPreWorkoutFoods` without it, so a plan generated WITHOUT
+   * `pre_run_selections` (no macros-v4 round-trip — e.g. a re-generate, or the
+   * brick handler) lost every before-phase `pin_decision` for an unpinned
+   * user. Now that the client no longer pre-computes auto-pins, that was the
+   * common path. */
+  emit_ephemeral_default_formula?: boolean;
 }
 
 function inferMealType(hoursBefore: number, isFasted: boolean): string {
@@ -214,6 +225,7 @@ export async function generateBeforePhaseV3(
       input.disliked_foods ?? [],
       input.allergies,
       input.pinned_food_template_ids,
+      input.emit_ephemeral_default_formula === true,
     );
   }
 
@@ -306,6 +318,7 @@ export async function generateBeforePhaseV3(
   //   • a pin whose timing isn't an active sub-phase this plan doesn't fire;
   //   • an untagged before pin is skipped (timing is required).
   const personalPins = input.personal_formula_pins;
+  const pinnedSlots = new Set<"meal" | "snack" | "top_up">();
   if (personalPins && personalPins.length > 0) {
     const activeSlots = getActiveSubPhases(input.hours_before);
     // Essential foods (water/salt) for the fluid/sodium backfill — fetched
@@ -330,7 +343,42 @@ export async function generateBeforePhaseV3(
         getSubPhaseTimingLabel(slot, input.hours_before),
         slotTargets.carbs_g,
       );
-      if (foods.length === 0) continue; // empty formula → keep algorithmic
+      if (foods.length === 0) {
+        // Matched pin, but the formula rendered zero components (e.g. an
+        // empty/corrupt `components` array on the pinned row) — previously
+        // this silently fell through to the algorithmic selection with no
+        // trace in logs or the wire response (item 12, 2026-07-04). Surface
+        // it on both channels so it's actually debuggable/visible to the
+        // client's pin banner.
+        console.warn(
+          `[PLAN-V3] Before ${slot}: pinned personal formula "${formula.name}" ` +
+            `(${formula.id}) matched scope but rendered 0 components — ` +
+            `keeping algorithmic selection for this slot`,
+        );
+        const existing = slot === "meal"
+          ? beforeResult.meal
+          : slot === "snack"
+          ? beforeResult.snack
+          : beforeResult.top_up;
+        if (existing) {
+          existing.pin_decision = {
+            used_pin: false,
+            decision_source: "default_formula",
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: "personal_formula_empty",
+            default_fallthrough_reason: "personal_formula_empty",
+            pin_set_size: 1,
+          };
+        }
+        logFormulaCascade({
+          phase: `before:${slot}`,
+          source: "default_formula",
+          reason: "personal_formula_empty",
+          pinSetSize: 1,
+        });
+        continue; // empty formula → keep algorithmic
+      }
 
       // Failsafe: backfill fluids/sodium up to the slot's targets — the
       // overlay bypasses Algorithm C's fill steps (see pin-backfill.ts).
@@ -356,16 +404,25 @@ export async function generateBeforePhaseV3(
         template_name: formula.name,
         pin_decision: {
           used_pin: true,
+          decision_source: "personal_formula",
           pinned_template_id: formula.id,
           pinned_template_name: formula.name,
           fallthrough_reason: null,
           pin_set_size: 1,
         },
       };
+      logFormulaCascade({
+        phase: `before:${slot}`,
+        source: "personal_formula",
+        templateId: formula.id,
+        templateName: formula.name,
+        pinSetSize: 1,
+      });
 
       if (slot === "meal") beforeResult.meal = pinnedSubPhase;
       else if (slot === "snack") beforeResult.snack = pinnedSubPhase;
       else if (slot === "top_up") beforeResult.top_up = pinnedSubPhase;
+      pinnedSlots.add(slot);
 
       console.log(
         `[PLAN-V3] Before ${slot}: honoring pinned personal formula ` +
@@ -375,5 +432,84 @@ export async function generateBeforePhaseV3(
     }
   }
 
+  // 9. Reconcile the phase after pin overlays: Algorithm C sized the top_up's
+  // drink/electrolyte against ITS OWN meal + snack; when pins replaced those
+  // slots, the stale gap-fill can push the phase outside every range at once
+  // (bug 3abe3fdb754c818c93e8fbbd801dae8e). Trims non-pinned excess toward
+  // the targets and fills a carb-floor gap from the universal add-on pool.
+  if (pinnedSlots.size > 0) {
+    reconcileBeforePhaseAfterPins(
+      beforeResult,
+      targets,
+      pinnedSlots,
+      new Set(input.disliked_foods ?? []),
+    );
+  }
+
+  // 10. Invariant: an electrolyte never ships without water alongside it.
+  //
+  // Algorithm C picks the top_up drink (`pickDrink`) and the electrolyte
+  // (`pickElectrolyte`) INDEPENDENTLY — `pickDrink` returning null does not
+  // stop `pickElectrolyte` from firing, so a dry tablet can land in a slot
+  // with no drink at all. This pass is what closes that gap; see
+  // `electrolyte-water-pairing.ts`.
+  //
+  // The before phase has no per-slot fluid band (SubPhaseTargets carries only
+  // a point `water_ml`), so the ceiling is the PHASE-level `water_high_ml`
+  // less whatever the other slots already deliver.
+  await ensureBeforePhaseWaterPairing(supabase, beforeResult, targets, input);
+
   return beforeResult;
+}
+
+/** Total fluid across every before sub-phase. */
+function beforePhaseFluidMl(result: BeforePhaseResult): number {
+  return (["meal", "snack", "top_up"] as const).reduce(
+    (sum, slot) =>
+      sum +
+      (result[slot]?.foods ?? []).reduce((s, f) => s + (f.fluids_ml || 0), 0),
+    0,
+  );
+}
+
+/**
+ * Apply the electrolyte↔water pairing invariant to each before sub-phase,
+ * charging every addition against the shared phase fluid ceiling.
+ */
+async function ensureBeforePhaseWaterPairing(
+  supabase: ReturnType<typeof createServiceClient>,
+  result: BeforePhaseResult,
+  targets: PreWorkoutTargets,
+  input: BeforePhaseInput,
+): Promise<void> {
+  let essentialsPool: Awaited<ReturnType<typeof getEssentialFoods>> | null =
+    null;
+  const loadPool = async () => {
+    essentialsPool ??= await getEssentialFoods(supabase, "running", "before");
+    return essentialsPool;
+  };
+
+  for (const slot of ["meal", "snack", "top_up"] as const) {
+    const subPhase = result[slot];
+    if (!subPhase || subPhase.foods.length === 0) continue;
+
+    const slotFluid = subPhase.foods.reduce(
+      (s, f) => s + (f.fluids_ml || 0),
+      0,
+    );
+    const otherSlotsFluid = beforePhaseFluidMl(result) - slotFluid;
+    const ceiling = targets.water_high_ml != null
+      ? Math.max(0, targets.water_high_ml - otherSlotsFluid)
+      : undefined;
+
+    subPhase.foods = await applyElectrolyteWaterPairing(
+      subPhase.foods,
+      {
+        fluidCeilingMl: ceiling,
+        timing: getSubPhaseTimingLabel(slot, input.hours_before),
+        logPrefix: `[PLAN-V3] Before ${slot}`,
+      },
+      loadPool,
+    );
+  }
 }

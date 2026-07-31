@@ -33,7 +33,9 @@ class PinToggleBefore extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _PinIconButton(
-      isPinned: ref.watch(formulaPinControllerProvider).maybeWhen(
+      isPinned: ref
+          .watch(formulaPinControllerProvider)
+          .maybeWhen(
             data: (s) => s.pinnedTemplateIds.contains(formula.id),
             orElse: () => false,
           ),
@@ -63,7 +65,9 @@ class PinToggleDuring extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _PinIconButton(
-      isPinned: ref.watch(formulaPinControllerProvider).maybeWhen(
+      isPinned: ref
+          .watch(formulaPinControllerProvider)
+          .maybeWhen(
             data: (s) => s.pinnedTemplateIds.contains(formula.id),
             orElse: () => false,
           ),
@@ -93,7 +97,9 @@ class PinToggleAfter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _PinIconButton(
-      isPinned: ref.watch(formulaPinControllerProvider).maybeWhen(
+      isPinned: ref
+          .watch(formulaPinControllerProvider)
+          .maybeWhen(
             data: (s) => s.pinnedTemplateIds.contains(formula.id),
             orElse: () => false,
           ),
@@ -128,7 +134,9 @@ class PinTogglePersonalFormula extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _PinIconButton(
-      isPinned: ref.watch(formulaPinControllerProvider).maybeWhen(
+      isPinned: ref
+          .watch(formulaPinControllerProvider)
+          .maybeWhen(
             data: (s) => s.pinnedTemplateIds.contains(formulaId),
             orElse: () => false,
           ),

@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../services/performance_telemetry.dart';
+
 // Platform-specific connection implementations
 import 'connection_native.dart' if (dart.library.html) 'connection_web.dart';
 
@@ -174,6 +176,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 14: build-a-meal redesign — `meal_logs.slot` becomes
+  /// optional (nullable). SQLite has no `ALTER COLUMN ... DROP NOT NULL`, so
+  /// the `from < 14` step rebuilds the table (rename → recreate via the
+  /// current `mealLogsTable` definition, which is now nullable → copy rows →
+  /// drop the renamed original). Guarded on the live column's `notnull` flag
+  /// (via PRAGMA table_info) so it's safe to re-run if a web `user_version`
+  /// hiccup replays this step. Matching Supabase SQL (dev + prod):
+  /// `ALTER TABLE meal_logs ALTER COLUMN slot DROP NOT NULL;` (see the
+  /// meal-logging redesign notes — NOT bundled with this migration, applied
+  /// out-of-band by the orchestrator).
+  ///
+  /// v14 also adds `activities.is_fasted` (INTEGER NOT NULL DEFAULT 0) so a
+  /// plan generated fasted regenerates fasted. Folded into the existing v14
+  /// step (not a v15 bump) because v14 has not shipped to any user. The
+  /// matching Supabase column (`activities.is_fasted boolean not null
+  /// default false`) already exists on dev + prod.
+  ///
   /// Schema version 11: meal logging + Jade groundwork. Adds three tables:
   ///   • meal_logs   — logged meals on the Daily Macros tab (offline-first,
   ///     soft-deleted via is_deleted, needs_upload dirty tracking)
@@ -226,7 +245,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 12;
+  int get schemaVersion => 15;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -267,7 +286,9 @@ class AppDatabase extends _$AppDatabase {
 
         Future<void> addColumn(String table, String column, String type) async {
           if (!await columnExists(table, column)) {
-            await customStatement('ALTER TABLE $table ADD COLUMN $column $type');
+            await customStatement(
+              'ALTER TABLE $table ADD COLUMN $column $type',
+            );
           }
         }
 
@@ -285,12 +306,29 @@ class AppDatabase extends _$AppDatabase {
           }
         }
 
+        /// Returns true when [column] on [table] is currently declared
+        /// `NOT NULL` (PRAGMA table_info's `notnull` flag). Used to guard the
+        /// "make a column nullable" rebuild below so it's idempotent even if a
+        /// web `user_version` hiccup replays the `from < N` step.
+        Future<bool> columnIsNotNull(String table, String column) async {
+          final rows = await customSelect('PRAGMA table_info($table)').get();
+          for (final r in rows) {
+            if (r.read<String>('name') == column) {
+              return r.read<int>('notnull') == 1;
+            }
+          }
+          return false;
+        }
+
         // v7: Add sweat profile + body-comp precedence columns to users.
         if (from < 7) {
           await addColumn('users', 'sweat_sodium', 'TEXT');
           await addColumn('users', 'known_sweat_rate_ml_per_hour', 'INTEGER');
           await addColumn(
-              'users', 'known_sodium_concentration_mg_per_liter', 'INTEGER');
+            'users',
+            'known_sodium_concentration_mg_per_liter',
+            'INTEGER',
+          );
           await addColumn('users', 'sweat_test_date', 'INTEGER');
           await addColumn('users', 'sweat_test_source', 'TEXT');
           await addColumn('users', 'weight_pounds_updated_at', 'INTEGER');
@@ -303,7 +341,10 @@ class AppDatabase extends _$AppDatabase {
         // had no integrations table before this, so we need to seed it.
         if (from < 8) {
           await addColumn(
-              'integrations', 'needs_upload', 'INTEGER NOT NULL DEFAULT 1');
+            'integrations',
+            'needs_upload',
+            'INTEGER NOT NULL DEFAULT 1',
+          );
         }
 
         // v9: Formula Kit local tables — during/pre/post workout template
@@ -335,6 +376,92 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('personal_formulas', 'coach_insight_text', 'TEXT');
           await addColumn('personal_formulas', 'coach_insight_marker', 'TEXT');
         }
+
+        // v13: Mirror `selection_priority` onto the local during-workout
+        // template table so the client-side default-formula selector (used to
+        // seed onboarding pins) can rank by it, matching the post table.
+        if (from < 13) {
+          await addColumn(
+            'during_workout_templates',
+            'selection_priority',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+
+        // v14 (part 2): persist the fasted flag the nutrition plan was
+        // generated with. addColumn is idempotent, so a web user_version
+        // replay of this step is harmless.
+        if (from < 14) {
+          await addColumn(
+            'activities',
+            'is_fasted',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+
+        // v14: build-a-meal redesign — meal_logs.slot becomes optional.
+        // SQLite can't ALTER COLUMN to drop NOT NULL, so rebuild the table:
+        // rename the old one aside, recreate via the (now-nullable) current
+        // `mealLogsTable` definition, copy rows across, drop the renamed
+        // original. Guarded on the live NOT NULL flag + a resumable temp-table
+        // check so a web user_version replay can't crash on a half-done
+        // rebuild or double-copy rows.
+        if (from < 14) {
+          const tempName = 'meal_logs_pre_v14';
+          if (await tableExists('meal_logs') &&
+              await columnIsNotNull('meal_logs', 'slot')) {
+            if (!await tableExists(tempName)) {
+              await customStatement(
+                'ALTER TABLE meal_logs RENAME TO $tempName',
+              );
+            }
+            if (!await tableExists('meal_logs')) {
+              await m.createTable(mealLogsTable);
+            }
+            if (await tableExists(tempName)) {
+              await customStatement('''
+                INSERT OR IGNORE INTO meal_logs (
+                  id, user_id, log_date, slot, name, source, items,
+                  calories, carbs_g, protein_g, fat_g, sodium_mg,
+                  photo_path, recipe_id, saved_meal_id, notes, eaten_at,
+                  created_at, updated_at, is_deleted, needs_upload,
+                  local_updated_at
+                )
+                SELECT
+                  id, user_id, log_date, slot, name, source, items,
+                  calories, carbs_g, protein_g, fat_g, sodium_mg,
+                  photo_path, recipe_id, saved_meal_id, notes, eaten_at,
+                  created_at, updated_at, is_deleted, needs_upload,
+                  local_updated_at
+                FROM $tempName
+              ''');
+              await customStatement('DROP TABLE $tempName');
+            }
+          }
+        }
+
+        // v15: repair `activities.is_fasted` on installs that were already at
+        // v14 when that column was introduced.
+        //
+        // The column was originally added inside the `from < 14` step above
+        // ("v14 (part 2)"). Devices that had ALREADY migrated to v14 before
+        // that step existed never re-run it — Drift skips onUpgrade entirely
+        // when `from == to` — so they sat at schemaVersion 14 with the column
+        // missing. The startup integrity check then found
+        //   Table "activities" missing columns: is_fasted
+        // and WIPED the local database to recover, losing any unsynced local
+        // data (Sentry MEALVANA-ENDURANCE-DEV-60 / DEV-61, 4 users).
+        //
+        // Bumping to 15 is what actually fixes it: it forces onUpgrade to run
+        // again for those installs. addColumn is idempotent, so devices that
+        // already picked the column up via the v14 path are unaffected.
+        if (from < 15) {
+          await addColumn(
+            'activities',
+            'is_fasted',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+        }
       },
 
       // Called when database is first created (version 0 -> current)
@@ -349,11 +476,7 @@ class AppDatabase extends _$AppDatabase {
             .toSet();
 
         // Seed tables (already have data - must NOT be recreated)
-        final seedTables = {
-          'foods',
-          'carb_loading_foods',
-          'user_foods',
-        };
+        final seedTables = {'foods', 'carb_loading_foods', 'user_foods'};
 
         // For each table definition, manually create with IF NOT EXISTS
         for (final table in allTables) {
@@ -385,17 +508,31 @@ class AppDatabase extends _$AppDatabase {
         if (!details.wasCreated) {
           // Repair the integrations.provider CHECK in place before validating.
           // CHECK constraints are baked into the table at CREATE time, so
-          // adding 'vdot' to the Dart definition doesn't update tables that
-          // already exist on-device. We keep schemaVersion at 9, so this
-          // idempotent repair (not a version bump) is what fixes existing
-          // installs that reject `provider = 'vdot'` inserts.
-          await _ensureIntegrationsProviderCheck();
+          // adding a provider (first 'vdot', later 'runna') to the Dart
+          // definition doesn't update tables that already exist on-device. We
+          // deliberately do NOT bump schemaVersion for this CHECK fix, so this
+          // idempotent in-place repair (not a version bump) is what fixes
+          // existing installs that reject inserts for the new provider.
+          await PerformanceTelemetry.measure(
+            'database.ensure_integrations_constraint',
+            _ensureIntegrationsProviderCheck,
+            threshold: const Duration(milliseconds: 500),
+          );
 
-          await _validateSchemaIntegrity();
+          await PerformanceTelemetry.measure(
+            'database.validate_schema',
+            _validateSchemaIntegrity,
+            data: {'table_count': allTables.length},
+            threshold: const Duration(milliseconds: 500),
+          );
         }
 
         // Normalize any legacy timestamp strings in user_foods to Unix millis
-        await foodsDao.normalizeUserFoodTimestamps();
+        await PerformanceTelemetry.measure(
+          'database.normalize_user_food_timestamps',
+          foodsDao.normalizeUserFoodTimestamps,
+          threshold: const Duration(milliseconds: 500),
+        );
       },
     );
   }
@@ -437,9 +574,13 @@ class AppDatabase extends _$AppDatabase {
             .map((col) => col.$name)
             .toSet();
 
-        final missingColumns = expectedColumnNames.difference(actualColumnNames);
+        final missingColumns = expectedColumnNames.difference(
+          actualColumnNames,
+        );
         if (missingColumns.isNotEmpty) {
-          errors.add('Table "$tableName" missing columns: ${missingColumns.join(', ')}');
+          errors.add(
+            'Table "$tableName" missing columns: ${missingColumns.join(', ')}',
+          );
         }
       } catch (e) {
         errors.add('Failed to validate table "$tableName": $e');
@@ -454,7 +595,12 @@ class AppDatabase extends _$AppDatabase {
         print('🗑️ Deleting corrupted database to force fresh sync...');
       }
 
-      await deleteAndResync();
+      await deleteAndResync(
+        reason: 'schema_integrity_validation_failed',
+        oldSchemaVersion: schemaVersion,
+        newSchemaVersion: schemaVersion,
+        context: errors.take(3).join(' | '),
+      );
 
       throw DatabaseSchemaException(
         'Database schema is corrupted or incomplete. The app will resync data from the server.',
@@ -467,26 +613,35 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Ensure the `integrations.provider` CHECK constraint allows 'vdot'.
+  /// Ensure the `integrations.provider` CHECK constraint allows every
+  /// provider the app can write ('vdot' was added first, 'runna' later).
   ///
   /// SQLite stores CHECK constraints as part of the table's CREATE statement,
-  /// so editing the Dart table definition (which now lists 'vdot') does NOT
-  /// alter tables that were created before 'vdot' was added — those keep
-  /// rejecting `provider = 'vdot'` inserts with a CHECK failure (code 275).
-  /// Bumping schemaVersion would trigger a delete-and-resync, but we're
-  /// deliberately staying on v9, so instead we repair the constraint in place:
-  /// detect a stale CHECK and, if found, rebuild the table preserving its rows.
-  /// Idempotent — once the CHECK includes 'vdot' this is a no-op on open.
+  /// so editing the Dart table definition does NOT alter tables that already
+  /// exist on-device — those keep rejecting inserts for the new provider with
+  /// a CHECK failure (code 275). Bumping schemaVersion would trigger a
+  /// delete-and-resync, so instead we repair the constraint in place: detect
+  /// a stale CHECK and, if found, rebuild the table preserving its rows.
+  /// Idempotent — once the CHECK includes all required providers this is a
+  /// no-op on open.
   Future<void> _ensureIntegrationsProviderCheck() async {
     final rows = await customSelect(
       "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'integrations'",
     ).get();
     if (rows.isEmpty) return; // missing table is handled by schema validation
     final createSql = rows.first.read<String?>('sql') ?? '';
-    if (createSql.contains("'vdot'")) return; // already up to date
+    // Providers added after the table first shipped — extend this list when a
+    // new provider value is added to the CHECK in integrations_table.dart.
+    const requiredProviders = ["'vdot'", "'runna'"];
+    if (requiredProviders.every(createSql.contains)) {
+      return; // already up to date
+    }
 
     if (kDebugMode) {
-      print('🔧 Rebuilding integrations table to add \'vdot\' to provider CHECK');
+      print(
+        '🔧 Rebuilding integrations table to refresh the provider CHECK '
+        '(needs: $requiredProviders)',
+      );
     }
 
     // FK toggling must happen outside a transaction; the rebuild itself is a
@@ -571,12 +726,12 @@ class AppDatabase extends _$AppDatabase {
 
     // Check for common schema-related error patterns
     return errorString.contains('check constraint failed') ||
-           errorString.contains('no such column') ||
-           errorString.contains('no such table') ||
-           errorString.contains('foreign key constraint failed') ||
-           errorString.contains('constraint failed') ||
-           errorString.contains('has no column named') ||
-           errorString.contains('table') && errorString.contains('has no column');
+        errorString.contains('no such column') ||
+        errorString.contains('no such table') ||
+        errorString.contains('foreign key constraint failed') ||
+        errorString.contains('constraint failed') ||
+        errorString.contains('has no column named') ||
+        errorString.contains('table') && errorString.contains('has no column');
   }
 
   /// Handle a schema error by closing DB, deleting files, and triggering resync
@@ -611,10 +766,14 @@ class AppDatabase extends _$AppDatabase {
     // Circuit breaker: only attempt recovery once per app session
     if (_schemaRecoveryAttempted) {
       if (kDebugMode) {
-        print('🔧 Schema error detected but recovery already attempted this session');
+        print(
+          '🔧 Schema error detected but recovery already attempted this session',
+        );
         print('   Context: ${context ?? 'unknown'}');
         print('   Error: $error');
-        print('   → Not retrying to prevent infinite loop. Please fix the Drift schema.');
+        print(
+          '   → Not retrying to prevent infinite loop. Please fix the Drift schema.',
+        );
       }
       // Don't retry, just rethrow the original error
       return;
@@ -624,7 +783,9 @@ class AppDatabase extends _$AppDatabase {
     _schemaRecoveryAttempted = true;
 
     if (kDebugMode) {
-      print('🔧 Schema error detected - deleting database and resyncing (one-time recovery)');
+      print(
+        '🔧 Schema error detected - deleting database and resyncing (one-time recovery)',
+      );
       print('   Context: ${context ?? 'unknown'}');
       print('   Error: $error');
     }
@@ -645,7 +806,11 @@ class AppDatabase extends _$AppDatabase {
     }
 
     // Delete the database files
-    await deleteAndResync();
+    await deleteAndResync(
+      reason: 'runtime_schema_error',
+      oldSchemaVersion: database?.schemaVersion,
+      context: context ?? error.runtimeType.toString(),
+    );
 
     // Throw exception to signal app needs to reinitialize database
     throw DatabaseSchemaException(
@@ -661,7 +826,18 @@ class AppDatabase extends _$AppDatabase {
   /// 2. Delete corrupted file
   /// 3. Re-initialize fresh database
   /// 4. Trigger full sync from Supabase
-  static Future<void> deleteAndResync() async {
+  static Future<void> deleteAndResync({
+    required String reason,
+    int? oldSchemaVersion,
+    int? newSchemaVersion,
+    String? context,
+  }) async {
+    PerformanceTelemetry.recordDatabaseReset(
+      reason: reason,
+      oldSchemaVersion: oldSchemaVersion,
+      newSchemaVersion: newSchemaVersion,
+      context: context,
+    );
     // On web there is no database file to delete — the drift data lives in
     // OPFS / IndexedDB, and there is no supported cross-implementation delete
     // we can call here. Recovery-by-file-deletion is native-only. Surface an

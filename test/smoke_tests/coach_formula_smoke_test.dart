@@ -150,9 +150,7 @@ void main() {
         tester,
         const CoachPortalScreen(),
         overrides: [
-          coachPortalControllerProvider.overrideWith(
-            CoachPortalController.new,
-          ),
+          coachPortalControllerProvider.overrideWith(CoachPortalController.new),
           coachDashboardControllerProvider.overrideWith(
             _EmptyDashboardController.new,
           ),
@@ -163,8 +161,9 @@ void main() {
 
     // CoachRegistrationScreen: pure form UI + coachRegistrationControllerProvider
     // (async void, idles on load). Seed with the no-op controller.
-    testWidgets('CoachRegistrationScreen renders without overflow',
-        (tester) async {
+    testWidgets('CoachRegistrationScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const CoachRegistrationScreen(),
@@ -177,8 +176,9 @@ void main() {
     });
 
     // CoachDirectoryScreen: empty list → static "No Coaches Available" view.
-    testWidgets('CoachDirectoryScreen renders without overflow',
-        (tester) async {
+    testWidgets('CoachDirectoryScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const CoachDirectoryScreen(),
@@ -204,8 +204,9 @@ void main() {
     });
 
     // AthleteFeedbackScreen: empty → static "No Messages Yet" view.
-    testWidgets('AthleteFeedbackScreen renders without overflow',
-        (tester) async {
+    testWidgets('AthleteFeedbackScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const AthleteFeedbackScreen(),
@@ -224,16 +225,18 @@ void main() {
         tester,
         const CoachChatScreen(relationshipId: 'rel-test-001'),
         overrides: [
-          coachChatControllerProvider('rel-test-001').overrideWith(
-            _EmptyChatControllerFactory.new,
-          ),
+          coachChatControllerProvider(
+            'rel-test-001',
+          ).overrideWith(_EmptyChatControllerFactory.new),
         ],
       );
     });
 
     // CoachDashboardScreen: seeded empty (isCoach = false) → "Become a Coach"
     // static view with a FilledButton.
-    testWidgets('CoachDashboardScreen renders without overflow', (tester) async {
+    testWidgets('CoachDashboardScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const CoachDashboardScreen(),
@@ -254,9 +257,9 @@ void main() {
         tester,
         const AthleteDetailScreen(relationshipId: 'rel-test-001'),
         overrides: [
-          athleteDetailControllerProvider('rel-test-001').overrideWith(
-            _MinimalAthleteDetailControllerFactory.new,
-          ),
+          athleteDetailControllerProvider(
+            'rel-test-001',
+          ).overrideWith(_MinimalAthleteDetailControllerFactory.new),
           calendarViewProvider.overrideWith(CalendarViewNotifier.new),
         ],
         // FINDING: AthleteDetailScreen embeds DefaultTabController +
@@ -272,7 +275,9 @@ void main() {
     // FormulaLibraryScreen: complex multi-provider screen. Seeds empty library
     // + no pins + no personal formulas → shows "Your Formulas" section (empty)
     // and library empty-state for the Before phase.
-    testWidgets('FormulaLibraryScreen renders without overflow', (tester) async {
+    testWidgets('FormulaLibraryScreen renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
         const FormulaLibraryScreen(),
@@ -280,9 +285,7 @@ void main() {
           formulaLibraryControllerProvider.overrideWith(
             _EmptyLibraryController.new,
           ),
-          formulaPinControllerProvider.overrideWith(
-            _EmptyPinController.new,
-          ),
+          formulaPinControllerProvider.overrideWith(_EmptyPinController.new),
           personalFormulasControllerProvider.overrideWith(
             _EmptyPersonalFormulasController.new,
           ),
@@ -293,41 +296,39 @@ void main() {
     // FormulaDetailScreen: requires id + phase. With empty library state the
     // formula lookup returns null → renders _NotFoundView (graceful fallback).
     testWidgets(
-        'FormulaDetailScreen renders not-found view gracefully without overflow',
-        (tester) async {
-      await smokeScreen(
-        tester,
-        const FormulaDetailScreen(
-          id: 'test-formula-id',
-          phase: FormulaPhase.during,
-        ),
-        overrides: [
-          formulaLibraryControllerProvider.overrideWith(
-            _EmptyLibraryController.new,
+      'FormulaDetailScreen renders not-found view gracefully without overflow',
+      (tester) async {
+        await smokeScreen(
+          tester,
+          const FormulaDetailScreen(
+            id: 'test-formula-id',
+            phase: FormulaPhase.during,
           ),
-          formulaPinControllerProvider.overrideWith(
-            _EmptyPinController.new,
-          ),
-        ],
-      );
-    });
+          overrides: [
+            formulaLibraryControllerProvider.overrideWith(
+              _EmptyLibraryController.new,
+            ),
+            formulaPinControllerProvider.overrideWith(_EmptyPinController.new),
+          ],
+        );
+      },
+    );
 
     // FormulaEditorScreen: null formulaId = create-new mode. Seeds empty draft.
     // "Save formula" button is disabled (canSave = false for empty draft).
     // CoachInsightPanel is hidden (components empty) so coachInsightProvider
     // is not triggered.
-    testWidgets('FormulaEditorScreen (create new) renders without overflow',
-        (tester) async {
+    testWidgets('FormulaEditorScreen (create new) renders without overflow', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
-        const FormulaEditorScreen(
-          formulaId: null,
-          phase: FormulaPhase.during,
-        ),
+        const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.during),
         overrides: [
-          formulaEditorControllerProvider(null, FormulaPhase.during).overrideWith(
-            _EmptyEditorControllerFactory.new,
-          ),
+          formulaEditorControllerProvider(
+            null,
+            FormulaPhase.during,
+          ).overrideWith(_EmptyEditorControllerFactory.new),
         ],
       );
     });
@@ -488,7 +489,10 @@ class _EmptyPersonalFormulasController extends PersonalFormulasController {
   FutureOr<List<PersonalFormula>> build() async => const [];
 
   @override
-  Future<PersonalFormula?> createFormula(PersonalFormula draft) async => null;
+  Future<PersonalFormula?> createFormula(
+    PersonalFormula draft, {
+    int? quantityEditCount,
+  }) async => null;
 
   @override
   Future<void> deleteFormula(String id) async {}
@@ -522,11 +526,7 @@ class _EmptyEditorControllerFactory extends FormulaEditorController {
   void setNotes(String? notes) {}
 
   @override
-  void addComponent(
-    Food food,
-    double quantity, {
-    required bool isUserFood,
-  }) {}
+  void addComponent(Food food, double quantity, {required bool isUserFood}) {}
 
   @override
   void removeComponent(int index) {}

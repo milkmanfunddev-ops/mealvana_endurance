@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    hide AuthUser, AuthException;
 import '../../../shared/services/device_info_service.dart';
 import '../data/auth_repository_edge.dart';
 import '../domain/user_preferences.dart';
@@ -19,14 +20,17 @@ class AuthService {
   final Ref ref;
 
   /// Get the user repository (async)
-  Future<UserRepository> get _userRepository async => await ref.read(userRepositoryProvider.future);
-  
+  Future<UserRepository> get _userRepository async =>
+      await ref.read(userRepositoryProvider.future);
+
   /// Get the Edge Function auth repository
-  AuthRepositoryEdge get _authRepositoryEdge => ref.read(authRepositoryEdgeProvider);
+  AuthRepositoryEdge get _authRepositoryEdge =>
+      ref.read(authRepositoryEdgeProvider);
 
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
-  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
+  SupabaseClient get _supabase =>
+      ref.read(appExternalDepsProvider).supabaseClient;
 
   /// Create a new user profile during onboarding using Supabase Auth
   /// Uses anonymous auth session created during app startup
@@ -44,7 +48,8 @@ class AuthService {
     GutTraining? gutTraining,
     UnitSystem unitSystem = UnitSystem.imperial,
     Map<String, FoodPreference>? foodPreferences,
-    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    String authProvider =
+        'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
     String? firstName,
     String? lastName,
@@ -78,10 +83,7 @@ class AuthService {
       _logger.info(
         'Creating new user with Supabase auth ID',
         context: 'AUTH',
-        data: {
-          'device_id': deviceId,
-          'user_id': effectiveUserId,
-        },
+        data: {'device_id': deviceId, 'user_id': effectiveUserId},
       );
 
       // Get app version
@@ -103,7 +105,8 @@ class AuthService {
         runsWithWaterBottle: runsWithWaterBottle,
         gutTraining: gutTraining ?? GutTraining.moderate,
         unitSystem: unitSystem,
-        onboardingCompleted: true, // Set true immediately so user can proceed even if later steps fail
+        onboardingCompleted:
+            true, // Set true immediately so user can proceed even if later steps fail
         appVersion: appVersion,
         createdAt: now,
         updatedAt: now,
@@ -178,32 +181,31 @@ class AuthService {
     try {
       final userRepo = await ref.read(userRepositoryProvider.future);
       final user = await userRepo.getCurrentUser();
-      
+
       // Check if user exists but has empty device ID - fix it
       if (user != null && (user.id.isEmpty || user.id.trim().isEmpty)) {
-        
         // Generate a new device ID
         final newDeviceId = await _getDeviceId();
-        
+
         // Update the user with the new device ID
         final updatedUser = user.copyWith(
           id: newDeviceId,
           updatedAt: DateTime.now(),
         );
-        
+
         // Save the updated user locally
         await userRepo.updateUserProfile(updatedUser);
-        
+
         // Also update in Supabase if the user exists there
         try {
           await _authRepositoryEdge.updateUser(updatedUser);
         } catch (e) {
           // Continue anyway since local update succeeded
         }
-        
+
         return updatedUser;
       }
-      
+
       return user;
     } catch (e, stackTrace) {
       // Critical: Can't get current user - this affects the entire app
@@ -220,7 +222,7 @@ class AuthService {
       return null;
     }
   }
-  
+
   /// Get device ID for user identification
   /// Uses the shared DeviceInfoService to prevent concurrent DeviceInfoPlugin calls
   Future<String> _getDeviceId() async {
@@ -230,7 +232,7 @@ class AuthService {
     }
     return DeviceInfoService.instance.deviceId;
   }
-  
+
   /// Update user profile
   Future<void> updateUserProfile(UserProfile profile) async {
     final userRepo = await _userRepository;
@@ -311,10 +313,7 @@ class AuthService {
   }
 
   /// Update allergies for a user
-  Future<void> updateAllergies(
-    String userId,
-    List<Allergy> allergies,
-  ) async {
+  Future<void> updateAllergies(String userId, List<Allergy> allergies) async {
     // Get current user profile
     final currentUser = await getCurrentUser();
     if (currentUser == null) {
@@ -343,7 +342,7 @@ class AuthService {
   Future<bool> hasCompletedOnboarding() async {
     final user = await getCurrentUser();
     if (user == null) return false;
-    
+
     // Check the onboardingCompleted flag from UserProfile
     return user.onboardingCompleted;
   }
@@ -361,11 +360,15 @@ class AuthService {
     String source = 'manual',
   }) async {
     // userId is Supabase auth UUID (from auth.currentUser.id)
-    final deviceId = userId; // Keep variable name for backwards compatibility in logs
+    final deviceId =
+        userId; // Keep variable name for backwards compatibility in logs
 
-    final normalizedLevels = sliderLevels ??
-        preferences.map((food, preference) =>
-            MapEntry(food, sliderLevelForPreference(preference)));
+    final normalizedLevels =
+        sliderLevels ??
+        preferences.map(
+          (food, preference) =>
+              MapEntry(food, sliderLevelForPreference(preference)),
+        );
 
     try {
       _logger.info(
@@ -386,9 +389,7 @@ class AuthService {
       // Mark user profile for background upload (onboardingCompleted already set in createUser)
       final user = await getCurrentUser();
       if (user != null) {
-        final updatedUser = user.copyWith(
-          updatedAt: DateTime.now(),
-        );
+        final updatedUser = user.copyWith(updatedAt: DateTime.now());
         // Mark for background upload - DataSyncService will sync user profile + food preferences
         await userRepo.updateUserProfile(updatedUser, needsUpload: true);
 
@@ -420,12 +421,18 @@ class AuthService {
           'preferences_count': preferences.length.toString(),
         },
       );
-      throw Exception('Failed to save food preferences. Please check your internet connection and try again.');
+      throw Exception(
+        'Failed to save food preferences. Please check your internet connection and try again.',
+      );
     }
   }
 
   /// Update a single food preference
-  Future<void> updateFoodPreference(String userId, String foodId, FoodPreference preference) async {
+  Future<void> updateFoodPreference(
+    String userId,
+    String foodId,
+    FoodPreference preference,
+  ) async {
     final userRepo = await _userRepository;
     await userRepo.updateFoodPreference(userId, foodId, preference);
   }
@@ -454,14 +461,24 @@ class AuthService {
   /// Used when allergies or dietary preferences are removed to undo auto-avoids
   /// [source] - The source to match (e.g., 'allergy:gluten', 'dietary:vegan')
   /// Returns the number of preferences removed
-  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
+  Future<int> removeFoodPreferencesBySource(
+    String userId,
+    String source,
+  ) async {
     try {
       final userRepo = await _userRepository;
-      final removedCount = await userRepo.removeFoodPreferencesBySource(userId, source);
+      final removedCount = await userRepo.removeFoodPreferencesBySource(
+        userId,
+        source,
+      );
       _logger.info(
         'Removed $removedCount food preferences with source: $source',
         context: 'AUTH',
-        data: {'userId': userId, 'source': source, 'removedCount': removedCount},
+        data: {
+          'userId': userId,
+          'source': source,
+          'removedCount': removedCount,
+        },
       );
       return removedCount;
     } catch (e) {
@@ -541,7 +558,6 @@ class AuthService {
     }
   }
 
-
   /// Reset all user data (for testing or re-onboarding)
   Future<void> resetUserData() async {
     final userRepo = await _userRepository;
@@ -554,7 +570,7 @@ class AuthService {
     if (user == null) return null;
 
     final preferences = await getFoodPreferences(user.id);
-    
+
     return {
       'id': user.id,
       'age': user.age,

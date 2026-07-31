@@ -61,7 +61,6 @@ enum ExplanationPhase { before, during, after, transition1, transition2 }
 /// Pure Dart class - no Riverpod, no async. Takes macro targets and user data
 /// and returns structured explanation data derived from algorithm-v4.md.
 
-
 class MacroExplanationService {
   const MacroExplanationService();
   String getSheetTitle(ExplanationPhase phase, String? sportLabel) {
@@ -116,9 +115,9 @@ class MacroExplanationService {
           actuals,
         );
       case ExplanationPhase.transition1:
-        return _transitionExplanations(1, actuals);
+        return _transitionExplanations(1, actuals, useImperial: useImperial);
       case ExplanationPhase.transition2:
-        return _transitionExplanations(2, actuals);
+        return _transitionExplanations(2, actuals, useImperial: useImperial);
     }
   }
 
@@ -136,6 +135,10 @@ class MacroExplanationService {
       case ActivityType.multisport:
       case ActivityType.brick:
         return 70; // brick/multi-sport segments use per-segment sport
+      case ActivityType.other:
+        // Import-only activity type — never reaches nutrition plan
+        // generation, but return a safe, conservative default.
+        return 0;
     }
   }
 
@@ -155,6 +158,8 @@ class MacroExplanationService {
         return 'multisport';
       case ActivityType.brick:
         return 'brick';
+      case ActivityType.other:
+        return 'workout';
     }
   }
 
@@ -225,12 +230,15 @@ class MacroExplanationService {
     required double bodyWeightKg,
     BrickSegmentMacroTarget? brickSegment,
     bool isBrick = false,
+    bool useImperial = false,
   }) {
     switch (phase) {
       case ExplanationPhase.before:
         return {
-          Scenario.singleSport:
-              _preWorkoutSodiumTransparency(macroTargets: macroTargets),
+          Scenario.singleSport: _preWorkoutSodiumTransparency(
+            macroTargets: macroTargets,
+            useImperial: useImperial,
+          ),
         };
 
       case ExplanationPhase.during:
@@ -242,9 +250,13 @@ class MacroExplanationService {
           return _brickSegmentSodiumMap(
             macroTargets: macroTargets,
             segment: brickSegment,
+            useImperial: useImperial,
           );
         }
-        return _singleSportSodiumMap(macroTargets: macroTargets);
+        return _singleSportSodiumMap(
+          macroTargets: macroTargets,
+          useImperial: useImperial,
+        );
 
       case ExplanationPhase.transition1:
       case ExplanationPhase.transition2:
@@ -252,6 +264,7 @@ class MacroExplanationService {
           Scenario.t1t2: _transitionSodiumTransparency(
             phase: phase,
             macroTargets: macroTargets,
+            useImperial: useImperial,
           ),
         };
 

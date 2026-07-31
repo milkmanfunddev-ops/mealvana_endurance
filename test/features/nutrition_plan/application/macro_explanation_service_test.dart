@@ -25,8 +25,11 @@ void main() {
 
         expect(map, isNotNull);
         expect(map!.containsKey(Scenario.singleSport), isTrue);
-        expect(map.containsKey(Scenario.knownRate), isFalse,
-            reason: 'knownRate should only appear when isTested = true');
+        expect(
+          map.containsKey(Scenario.knownRate),
+          isFalse,
+          reason: 'knownRate should only appear when isTested = true',
+        );
       },
     );
 
@@ -46,13 +49,13 @@ void main() {
 
         expect(map, isNotNull);
         expect(map!.containsKey(Scenario.singleSport), isTrue);
-        expect(map.containsKey(Scenario.knownRate), isTrue,
-            reason: 'knownRate must appear when isTested = true');
-        // Each scenario's transparency data must be distinct objects
         expect(
-          map[Scenario.singleSport] != map[Scenario.knownRate],
+          map.containsKey(Scenario.knownRate),
           isTrue,
+          reason: 'knownRate must appear when isTested = true',
         );
+        // Each scenario's transparency data must be distinct objects
+        expect(map[Scenario.singleSport] != map[Scenario.knownRate], isTrue);
       },
     );
 
@@ -75,10 +78,13 @@ void main() {
 
         expect(singleSportBlurb, isNotNull);
         expect(knownRateBlurb, isNotNull);
-        expect(singleSportBlurb, isNot(equals(knownRateBlurb)),
-            reason:
-                'Each scenario must have distinct explanatory copy so tabs show '
-                'different content');
+        expect(
+          singleSportBlurb,
+          isNot(equals(knownRateBlurb)),
+          reason:
+              'Each scenario must have distinct explanatory copy so tabs show '
+              'different content',
+        );
         // Known-rate blurb must mention the test
         expect(knownRateBlurb, contains('sweat test'));
       },

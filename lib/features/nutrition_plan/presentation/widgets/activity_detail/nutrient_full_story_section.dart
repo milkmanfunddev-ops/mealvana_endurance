@@ -26,12 +26,18 @@ class NutrientFullStorySection extends ConsumerStatefulWidget {
   const NutrientFullStorySection({
     super.key,
     required this.data,
+    this.planId,
     this.onSettingsChanged,
     this.onEditKnownSweatRate,
     this.onEditKnownSodiumConcentration,
   });
 
   final NutrientTransparencyData data;
+
+  /// Id of the activity whose plan this sheet is explaining, reported as
+  /// `plan_id` on `nutrition_transparency_viewed`.
+  final String? planId;
+
   final VoidCallback? onSettingsChanged;
 
   /// TODO(phase5): wire up to sweat-rate edit flow.
@@ -72,8 +78,9 @@ class _NutrientFullStorySectionState
     if (oldWidget.data.currentPersonalTargetGPerH !=
         widget.data.currentPersonalTargetGPerH) {
       final val = widget.data.currentPersonalTargetGPerH;
-      _personalTargetController.text =
-          val != null ? val.round().toString() : '';
+      _personalTargetController.text = val != null
+          ? val.round().toString()
+          : '';
     }
   }
 
@@ -85,12 +92,32 @@ class _NutrientFullStorySectionState
     super.dispose();
   }
 
+  /// Fires when the athlete opens "The Full Story" — one of the consumption
+  /// surfaces we were previously blind to.
+  void _trackTransparencyViewed() {
+    try {
+      final planId = widget.planId;
+      ref
+          .read(analyticsTrackerProvider)
+          .track(
+            'nutrition_transparency_viewed',
+            properties: {
+              'nutrient': widget.data.nutrientLabel,
+              'phase': widget.data.phase,
+              'is_tested': widget.data.isTested,
+              if (planId != null) 'plan_id': planId,
+            },
+          );
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.data.nutrientColor;
 
     return TransparencyAccordion(
       title: 'The Full Story',
+      onExpanded: _trackTransparencyViewed,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -114,18 +141,12 @@ class _NutrientFullStorySectionState
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.22),
-        ),
+        border: Border.all(color: accentColor.withValues(alpha: 0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.science_outlined,
-            size: 12,
-            color: accentColor,
-          ),
+          Icon(Icons.science_outlined, size: 12, color: accentColor),
           const SizedBox(width: 4),
           Text(
             'TESTED \u2713',
@@ -157,8 +178,9 @@ class _NutrientFullStorySectionState
   Widget _buildStorySection(BuildContext context, StorySection section) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryText = isDark ? AppColors.textDark : AppColors.textLight;
-    final secondaryText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
     final dimText = isDark
         ? Colors.white.withValues(alpha: 0.4)
         : Colors.black.withValues(alpha: 0.4);
@@ -209,8 +231,7 @@ class _NutrientFullStorySectionState
             runSpacing: 5,
             children: section.dataChips.map((chip) {
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.04)
@@ -357,8 +378,9 @@ class _NutrientFullStorySectionState
 
   Widget _buildTransparencyNote(BuildContext context, String note) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final warningColor =
-        isDark ? const Color(0xFFF0C87E) : const Color(0xFFD4A84E);
+    final warningColor = isDark
+        ? const Color(0xFFF0C87E)
+        : const Color(0xFFD4A84E);
 
     return Container(
       decoration: BoxDecoration(
@@ -410,22 +432,27 @@ class _NutrientFullStorySectionState
     for (int i = 0; i < parts.length; i++) {
       if (parts[i].isEmpty) continue;
       final isBold = i % 2 == 1;
-      spans.add(TextSpan(
-        text: parts[i],
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
-          color: isBold ? boldColor : normalColor,
-          height: height,
+      spans.add(
+        TextSpan(
+          text: parts[i],
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+            color: isBold ? boldColor : normalColor,
+            height: height,
+          ),
         ),
-      ));
+      );
     }
     return RichText(text: TextSpan(children: spans));
   }
 
   /// Renders a data chip with the label (before ·) in nutrient accent color.
   Widget _buildChipRichText(
-      String chip, Color secondaryText, Color accentColor) {
+    String chip,
+    Color secondaryText,
+    Color accentColor,
+  ) {
     final dotIndex = chip.indexOf(' \u00b7 ');
     if (dotIndex == -1) {
       // No separator — render plain
@@ -468,8 +495,8 @@ class _NutrientFullStorySectionState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = widget.data.nutrientColor;
     final settingsAsync = ref.watch(settingsControllerProvider);
-    final currentGut = settingsAsync.value?.gutTrainingLevel ??
-        GutTraining.moderate;
+    final currentGut =
+        settingsAsync.value?.gutTrainingLevel ?? GutTraining.moderate;
     final selectedGut = _pendingGutTraining ?? currentGut;
 
     return Container(
@@ -530,7 +557,10 @@ class _NutrientFullStorySectionState
   }
 
   Widget _buildGutChips(
-      BuildContext context, GutTraining selected, Color accentColor) {
+    BuildContext context,
+    GutTraining selected,
+    Color accentColor,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
@@ -546,24 +576,22 @@ class _NutrientFullStorySectionState
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
-                left: level == GutTraining.low ? 0 : 3,
-                right: level == GutTraining.high ? 0 : 3),
+              left: level == GutTraining.low ? 0 : 3,
+              right: level == GutTraining.high ? 0 : 3,
+            ),
             child: GestureDetector(
               onTap: () => setState(() => _pendingGutTraining = level),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
+                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? accentColor.withValues(alpha: 0.09)
-                      : null,
+                  color: isActive ? accentColor.withValues(alpha: 0.09) : null,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isActive
                         ? accentColor.withValues(alpha: 0.22)
                         : isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.black.withValues(alpha: 0.08),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.08),
                   ),
                 ),
                 child: Column(
@@ -576,8 +604,8 @@ class _NutrientFullStorySectionState
                         color: isActive
                             ? accentColor
                             : isDark
-                                ? AppColors.textDarkSecondary
-                                : AppColors.textLightSecondary,
+                            ? AppColors.textDarkSecondary
+                            : AppColors.textLightSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -589,8 +617,8 @@ class _NutrientFullStorySectionState
                         color: isActive
                             ? accentColor.withValues(alpha: 0.7)
                             : isDark
-                                ? Colors.white.withValues(alpha: 0.4)
-                                : Colors.black.withValues(alpha: 0.4),
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : Colors.black.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -645,8 +673,9 @@ class _NutrientFullStorySectionState
                 width: 72,
                 child: TextFormField(
                   controller: _personalTargetController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                   ],
@@ -667,7 +696,9 @@ class _NutrientFullStorySectionState
                       letterSpacing: 0.5,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 7),
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
@@ -783,8 +814,9 @@ class _NutrientFullStorySectionState
                 width: 80,
                 child: TextFormField(
                   controller: _knownSweatRateController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                   ],
@@ -804,7 +836,9 @@ class _NutrientFullStorySectionState
                       fontSize: 12,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 7),
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
@@ -829,11 +863,14 @@ class _NutrientFullStorySectionState
               const SizedBox(width: 8),
               // Unit toggle: mL/hr ↔ oz/hr
               GestureDetector(
-                onTap: () => setState(() =>
-                    _useImperialSweatRate = !_useImperialSweatRate),
+                onTap: () => setState(
+                  () => _useImperialSweatRate = !_useImperialSweatRate,
+                ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 9, vertical: 6),
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(7),
                     border: Border.all(
@@ -935,9 +972,7 @@ class _NutrientFullStorySectionState
                 child: TextFormField(
                   controller: _knownSodiumConcController,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'monospace',
@@ -954,7 +989,9 @@ class _NutrientFullStorySectionState
                       fontSize: 12,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 7),
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
@@ -1023,8 +1060,7 @@ class _NutrientFullStorySectionState
         ? (value * 29.5735).round()
         : value.round();
 
-    final sweatController =
-        ref.read(sweatProfileControllerProvider.notifier);
+    final sweatController = ref.read(sweatProfileControllerProvider.notifier);
     sweatController.setKnownSweatRate(mlPerHour);
     final error = await sweatController.save();
 
@@ -1046,8 +1082,7 @@ class _NutrientFullStorySectionState
     final value = int.tryParse(text);
     if (value == null || value <= 0) return;
 
-    final sweatController =
-        ref.read(sweatProfileControllerProvider.notifier);
+    final sweatController = ref.read(sweatProfileControllerProvider.notifier);
     sweatController.setKnownSodiumConcentration(value);
     final error = await sweatController.save();
 
@@ -1072,9 +1107,7 @@ class _NutrientFullStorySectionState
         decoration: BoxDecoration(
           color: accentColor.withValues(alpha: 0.09),
           borderRadius: BorderRadius.circular(7),
-          border: Border.all(
-            color: accentColor.withValues(alpha: 0.22),
-          ),
+          border: Border.all(color: accentColor.withValues(alpha: 0.22)),
         ),
         child: Text(
           'Save',
@@ -1171,15 +1204,18 @@ class _NutrientFullStorySectionState
     if (s.contains('run')) {
       final current = base.duringRun ?? const DuringActivityOverrides();
       return base.copyWith(
-          duringRun: () => current.copyWith(carbRateGPerH: () => value));
+        duringRun: () => current.copyWith(carbRateGPerH: () => value),
+      );
     } else if (s.contains('cycl') || s.contains('bike')) {
       final current = base.duringCycling ?? const DuringActivityOverrides();
       return base.copyWith(
-          duringCycling: () => current.copyWith(carbRateGPerH: () => value));
+        duringCycling: () => current.copyWith(carbRateGPerH: () => value),
+      );
     } else if (s.contains('swim')) {
       final current = base.duringSwimming ?? const DuringActivityOverrides();
       return base.copyWith(
-          duringSwimming: () => current.copyWith(carbRateGPerH: () => value));
+        duringSwimming: () => current.copyWith(carbRateGPerH: () => value),
+      );
     }
     return base;
   }
@@ -1194,26 +1230,29 @@ class _NutrientFullStorySectionState
       final current = base.duringRun;
       if (current == null) return base;
       return base.copyWith(
-          duringRun: () => DuringActivityOverrides(
-                sodiumRateMgPerH: current.sodiumRateMgPerH,
-                fluidRateMlPerH: current.fluidRateMlPerH,
-              ));
+        duringRun: () => DuringActivityOverrides(
+          sodiumRateMgPerH: current.sodiumRateMgPerH,
+          fluidRateMlPerH: current.fluidRateMlPerH,
+        ),
+      );
     } else if (s.contains('cycl') || s.contains('bike')) {
       final current = base.duringCycling;
       if (current == null) return base;
       return base.copyWith(
-          duringCycling: () => DuringActivityOverrides(
-                sodiumRateMgPerH: current.sodiumRateMgPerH,
-                fluidRateMlPerH: current.fluidRateMlPerH,
-              ));
+        duringCycling: () => DuringActivityOverrides(
+          sodiumRateMgPerH: current.sodiumRateMgPerH,
+          fluidRateMlPerH: current.fluidRateMlPerH,
+        ),
+      );
     } else if (s.contains('swim')) {
       final current = base.duringSwimming;
       if (current == null) return base;
       return base.copyWith(
-          duringSwimming: () => DuringActivityOverrides(
-                sodiumRateMgPerH: current.sodiumRateMgPerH,
-                fluidRateMlPerH: current.fluidRateMlPerH,
-              ));
+        duringSwimming: () => DuringActivityOverrides(
+          sodiumRateMgPerH: current.sodiumRateMgPerH,
+          fluidRateMlPerH: current.fluidRateMlPerH,
+        ),
+      );
     }
     return base;
   }

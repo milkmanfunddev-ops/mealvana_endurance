@@ -24,6 +24,7 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
     this.onContinue,
     this.onBack,
     this.onSportsChanged,
+    this.stepIndex,
   });
 
   /// Callback to advance to next page (optional for PageView mode)
@@ -31,6 +32,10 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back to previous page (optional for PageView mode)
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null outside onboarding.
+  final int? stepIndex;
 
   /// Callback when sports selection changes (for PageView to rebuild pages)
   final void Function(Set<String>)? onSportsChanged;
@@ -57,7 +62,10 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
         .analytics
         .track(
           'screen_viewed',
-          properties: {'screen_name': 'Sports Selection Onboarding'},
+          properties: {
+            'screen_name': 'Sports Selection Onboarding',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
         );
   }
 

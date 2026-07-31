@@ -1,0 +1,5 @@
+{
+  "_comment": "OBSERVED against the live token endpoint (HTTP 400). The payload shape AND credentials were accepted, but the authorization code itself is bad: expired, already used, corrupted by the '+' decoding issue, or the client_secret value is wrong-but-present. Note this is NOT the RFC 6749 error shape.",
+  "status": "NOK",
+  "error": "invalid_code"
+}

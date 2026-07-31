@@ -6,10 +6,7 @@ import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.d
 
 /// Analytics event record
 class AnalyticsEvent {
-  const AnalyticsEvent({
-    required this.name,
-    this.properties,
-  });
+  const AnalyticsEvent({required this.name, this.properties});
 
   final String name;
   final Map<String, dynamic>? properties;
@@ -67,15 +64,17 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
     bool? runsWithWaterBottle,
     String? gutTrainingLevel,
   }) async {
-    identifications.add(UserIdentification(
-      userId: userId,
-      properties: properties,
-      gender: gender,
-      age: age,
-      weightPounds: weightPounds,
-      runsWithWaterBottle: runsWithWaterBottle,
-      gutTrainingLevel: gutTrainingLevel,
-    ));
+    identifications.add(
+      UserIdentification(
+        userId: userId,
+        properties: properties,
+        gender: gender,
+        age: age,
+        weightPounds: weightPounds,
+        runsWithWaterBottle: runsWithWaterBottle,
+        gutTrainingLevel: gutTrainingLevel,
+      ),
+    );
   }
 
   @override
@@ -84,7 +83,10 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
   }
 
   @override
-  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+  Future<void> track(
+    String eventName, {
+    Map<String, dynamic>? properties,
+  }) async {
     events.add(AnalyticsEvent(name: eventName, properties: properties));
   }
 
@@ -101,7 +103,6 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
   @override
   Future<void> markInternal() async {}
 
-
   // Test helpers
   bool get isInitialized => _initialized;
   bool get wasUserReset => _userReset;
@@ -110,8 +111,7 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
   UserIdentification? get lastIdentifiedUser =>
       identifications.isNotEmpty ? identifications.last : null;
 
-  AnalyticsEvent? get lastEvent =>
-      events.isNotEmpty ? events.last : null;
+  AnalyticsEvent? get lastEvent => events.isNotEmpty ? events.last : null;
 
   /// Find events by name
   List<AnalyticsEvent> findEvents(String name) {

@@ -13,15 +13,21 @@ class FoodPreferenceResolver {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   /// Resolve food preferences, falling back to a small, safe default set when none are saved.
-  Future<PreferenceResolutionResult> resolveFoodPreferences(String userId) async {
+  Future<PreferenceResolutionResult> resolveFoodPreferences(
+    String userId,
+  ) async {
     var preferences = await _authService.getFoodPreferences(userId);
     if (preferences != null && preferences.isNotEmpty) {
-      return PreferenceResolutionResult(preferences: preferences, usedDefaults: false);
+      return PreferenceResolutionResult(
+        preferences: preferences,
+        usedDefaults: false,
+      );
     }
 
     // Use defaults instead of failing, and try to persist them for future calls.
     final defaults = buildDefaultFoodPreferences();
-    _logger.warning('No food preferences found. Using default set for LLM generation.',
+    _logger.warning(
+      'No food preferences found. Using default set for LLM generation.',
       context: 'FOOD_PREFERENCE_RESOLVER',
       data: {'default_count': defaults.length},
     );
@@ -36,20 +42,25 @@ class FoodPreferenceResolver {
         defaults,
         sliderLevels: defaultLevels,
       );
-      _logger.info('Default food preferences saved for user',
+      _logger.info(
+        'Default food preferences saved for user',
         context: 'FOOD_PREFERENCE_RESOLVER',
         data: {'user_id': userId, 'count': defaults.length},
       );
     } catch (e, stackTrace) {
       // Non-fatal: proceed with defaults even if persistence fails.
-      _logger.warning('Failed to persist default food preferences',
+      _logger.warning(
+        'Failed to persist default food preferences',
         context: 'FOOD_PREFERENCE_RESOLVER',
         error: e,
         stackTrace: stackTrace,
       );
     }
 
-    return PreferenceResolutionResult(preferences: defaults, usedDefaults: true);
+    return PreferenceResolutionResult(
+      preferences: defaults,
+      usedDefaults: true,
+    );
   }
 
   /// Build default food preferences for users who haven't set any

@@ -583,9 +583,7 @@ class _PortalAthleteDetailPanelState
 
     try {
       await ref
-          .read(
-            athleteDetailControllerProvider(widget.relationshipId).notifier,
-          )
+          .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
           .deleteCarbLoadingPlan(eventId: carbEvent.id);
 
       if (mounted) {

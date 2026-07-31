@@ -7,6 +7,7 @@ import '../../activities/presentation/providers/activities_controller.dart';
 import '../../../shared/data/syncable_repository.dart' as syncable_repo;
 import '../../../shared/services/app_external_deps.dart';
 import '../application/final_surge_sync_service.dart';
+import '../application/runna_sync_service.dart';
 import '../application/training_peaks_sync_service.dart';
 import '../application/vdot_sync_service.dart';
 import 'providers/connect_training_controller.dart';
@@ -249,6 +250,13 @@ Future<void> syncGarmin(
   }
 
   syncable_repo.SyncResult result = syncable_repo.SyncResult.successful(0);
+  // Whether the Garmin backfill call itself succeeded. Garmin's backfill API
+  // frequently returns a transient 502/503/429 (Sentry MEALVANA-ENDURANCE-DEV-47/-5P)
+  // — triggerGarminBackfill() already handles that gracefully (schedules a
+  // retry, doesn't throw) and returns false rather than crashing. Track the
+  // result so we don't tell the user "Refreshed" when the body-comp portion
+  // actually failed.
+  var backfillSucceeded = true;
   try {
     final repo = ref.read(activitiesRepositoryProvider);
     result = await repo.syncFromRemote(userId);
@@ -264,7 +272,7 @@ Future<void> syncGarmin(
     // seconds, which then mirrors weight/body fat into users.* so it
     // shows up in Preferences and the macro calc.
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.triggerGarminBackfill();
+    backfillSucceeded = await controller.triggerGarminBackfill();
   } finally {
     if (showLoadingSnackbar) {
       messenger?.hideCurrentSnackBar();
@@ -282,6 +290,19 @@ Future<void> syncGarmin(
     return;
   }
 
+  if (!backfillSucceeded) {
+    // Activities refreshed fine, but Garmin's backfill call itself failed
+    // (transient upstream error) — it's already scheduled to retry
+    // automatically, so this is informational, not an error.
+    MealvanaSnackbar.showInfo(
+      context,
+      'Activities refreshed. Weight/body data sync is temporarily delayed '
+      '— we\'ll retry automatically.',
+      duration: const Duration(seconds: 4),
+    );
+    return;
+  }
+
   // Garmin syncs land in Supabase via webhook — there's no per-call
   // "new vs existing" delta available here. Show the reassurance message
   // explaining the architecture instead.
@@ -290,6 +311,71 @@ Future<void> syncGarmin(
     'Refreshed. Weight and activity data may take a few seconds to land.',
     duration: const Duration(seconds: 4),
   );
+}
+
+/// Syncs Runna workouts (calendar feed) and shows appropriate feedback.
+Future<void> syncRunna(
+  BuildContext context,
+  WidgetRef ref, {
+  bool showLoadingSnackbar = true,
+}) async {
+  final currentState = ref.read(connectTrainingControllerProvider).value;
+  if (currentState?.syncingProvider == 'runna' ||
+      currentState?.isImporting == true) {
+    if (context.mounted) {
+      MealvanaSnackbar.showInfo(
+        context,
+        'Runna sync is already in progress',
+        duration: const Duration(seconds: 2),
+      );
+    }
+    return;
+  }
+
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  if (showLoadingSnackbar) {
+    MealvanaSnackbar.showLoading(context, 'Syncing Runna workouts...');
+  }
+
+  RunnaSyncResult result = const RunnaSyncResult(success: true);
+  try {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    result = await controller.importRunnaWorkouts();
+  } finally {
+    if (showLoadingSnackbar) {
+      messenger?.hideCurrentSnackBar();
+    }
+  }
+
+  if (!context.mounted) return;
+
+  final state = ref.read(connectTrainingControllerProvider).value;
+  final message = buildWorkoutSyncMessage(
+    newCount: result.newWorkouts,
+    updatedCount: result.updated,
+    deletedCount: result.deleted,
+    unchangedCount: result.skipped,
+  );
+
+  if (result.success && result.hasChanges) {
+    MealvanaSnackbar.showSuccess(
+      context,
+      message,
+      duration: const Duration(seconds: 4),
+    );
+  } else if (!result.success || state?.errorMessage != null) {
+    MealvanaSnackbar.showError(
+      context,
+      'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      duration: const Duration(seconds: 4),
+    );
+  } else {
+    MealvanaSnackbar.showInfo(
+      context,
+      message,
+      duration: const Duration(seconds: 4),
+    );
+  }
 }
 
 /// Syncs V.O2 (VDOT) workouts and shows appropriate feedback.

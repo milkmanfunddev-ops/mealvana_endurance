@@ -1,0 +1,9 @@
+{
+  "_comment": "HTTP 403 Forbidden from PUT /v2/workouts/plan/{id}. The commonest cause is a BASIC (non-premium) athlete: TrainingPeaks does not let basic accounts create or modify future planned workouts. 403 can also mean the athlete is disconnected. The JSON envelope shown is illustrative.",
+  "_status": 403,
+  "_body_illustrative": {
+    "error": "forbidden",
+    "error_description": "Basic athletes cannot modify future planned workouts"
+  },
+  "_notes": "Detect premium status via GET /v1/athlete/profile -> IsPremium. IsPremium is false for basic accounts and excludes trial subscriptions. Premium-only fields return null on read and are ignored on write."
+}

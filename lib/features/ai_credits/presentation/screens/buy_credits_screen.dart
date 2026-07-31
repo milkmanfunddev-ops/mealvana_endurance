@@ -6,6 +6,7 @@ import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
+import '../../domain/credit_packs.dart';
 import '../../domain/credit_wallet.dart';
 
 /// Paywall screen for purchasing AI credit packs.
@@ -129,8 +130,7 @@ class _EnabledBody extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => const _PackagesUnavailable(),
                 data: (offering) {
-                  if (offering == null ||
-                      offering.availablePackages.isEmpty) {
+                  if (offering == null || offering.availablePackages.isEmpty) {
                     return const _PackagesUnavailable();
                   }
                   return _PackageList(
@@ -168,10 +168,7 @@ class _BalanceHeader extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text(
-              'Your Balance',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text('Your Balance', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             walletAsync.when(
               loading: () => const CircularProgressIndicator(),
@@ -179,8 +176,8 @@ class _BalanceHeader extends StatelessWidget {
               data: (wallet) => Text(
                 '${wallet.balance.clamp(0, double.maxFinite).toInt()} credits',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -205,15 +202,12 @@ class _PackageList extends StatelessWidget {
   final bool isBusy;
   final void Function(Package) onBuy;
 
-  /// Extract the credit count from a product identifier like `mealvana_credits_100`.
-  static int? _creditCount(String identifier) {
-    const map = {
-      'mealvana_credits_100': 100,
-      'mealvana_credits_500': 500,
-      'mealvana_credits_1200': 1200,
-    };
-    return map[identifier];
-  }
+  /// Extract the credit count from a product identifier like `mealvana_credits_50`.
+  ///
+  /// Delegates to the shared map rather than repeating it — this screen used to
+  /// carry its own copy, which silently went stale when the packs were resized.
+  static int? _creditCount(String identifier) =>
+      creditsForProductId(identifier);
 
   @override
   Widget build(BuildContext context) {

@@ -6,19 +6,34 @@ import 'package:uuid/uuid.dart';
 /// Example: Day -2, Breakfast: 2x Cereal (28g carbs), 1x Banana (27g carbs)
 @DataClassName('CarbLoadingDayMeal')
 class CarbLoadingDayMealsTable extends Table {
-  TextColumn get id => text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
-  TextColumn get carbLoadingDayId => text().named('carb_loading_day_id')(); // FK to carb_loading_days.id
-  IntColumn get mealTypeId => integer().named('meal_type_id')(); // FK to meal_types.id (1=breakfast, 2=lunch, etc.)
+  TextColumn get id =>
+      text().clientDefault(() => const Uuid().v4())(); // PRIMARY KEY (UUID)
+  TextColumn get carbLoadingDayId =>
+      text().named('carb_loading_day_id')(); // FK to carb_loading_days.id
+  IntColumn get mealTypeId => integer().named(
+    'meal_type_id',
+  )(); // FK to meal_types.id (1=breakfast, 2=lunch, etc.)
 
   // EXACTLY ONE of these must be non-null (enforced by CHECK constraint)
-  TextColumn get carbLoadingFoodId => text().nullable().named('carb_loading_food_id')(); // FK to carb_loading_foods.id (UUID)
-  TextColumn get carbLoadingUserFoodId => text().nullable().named('carb_loading_user_food_id')(); // FK to carb_loading_user_foods.id (UUID)
+  TextColumn get carbLoadingFoodId => text().nullable().named(
+    'carb_loading_food_id',
+  )(); // FK to carb_loading_foods.id (UUID)
+  TextColumn get carbLoadingUserFoodId => text().nullable().named(
+    'carb_loading_user_food_id',
+  )(); // FK to carb_loading_user_foods.id (UUID)
 
-  TextColumn get foodDisplayName => text().nullable().named('food_display_name')(); // Cached food name for display
-  IntColumn get quantity => integer().withDefault(const Constant(1))(); // Number of servings
-  RealColumn get carbsConsumed => real().named('carbs_consumed')(); // Calculated: quantity * carbs_per_serving
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
+  TextColumn get foodDisplayName => text().nullable().named(
+    'food_display_name',
+  )(); // Cached food name for display
+  IntColumn get quantity =>
+      integer().withDefault(const Constant(1))(); // Number of servings
+  RealColumn get carbsConsumed => real().named(
+    'carbs_consumed',
+  )(); // Calculated: quantity * carbs_per_serving
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime).named('created_at')();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime).named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};

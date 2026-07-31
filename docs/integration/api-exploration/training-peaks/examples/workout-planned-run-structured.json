@@ -1,0 +1,21 @@
+{
+  "_comment": "GET /v2/workouts/id/123456789?includeDescription=true - a PLANNED structured run. TotalTimePlanned 0.75 = 45 MINUTES (decimal hours). DistancePlanned 8000.0 = 8 km (METRES). IFPlanned 0.95. Structure is a STRING containing JSON - decode it, and the top level is an array. StructureDisplayUnit indicates the preferred display unit.",
+  "Id": 123456789,
+  "AthleteId": 54321,
+  "WorkoutDay": "2026-07-21T00:00:00",
+  "StartTimePlanned": "2026-07-21T06:30:00",
+  "WorkoutType": "Run",
+  "Title": "Track Intervals",
+  "Description": "4x1000m with recoveries",
+  "TotalTimePlanned": 0.75,
+  "DistancePlanned": 8000.0,
+  "TSSPlanned": 65.0,
+  "IFPlanned": 0.95,
+  "ElevationGainPlanned": 45.0,
+  "CaloriesPlanned": 520.0,
+  "Tags": ["quality", "track"],
+  "StructureDisplayUnit": "kilometer",
+  "Locked": false,
+  "Hidden": false,
+  "Structure": "[{\"Type\":\"Step\",\"Length\":{\"Unit\":\"Minute\",\"Value\":10},\"IntensityClass\":\"WarmUp\",\"Name\":\"Warm Up\",\"IntensityTarget\":{\"Unit\":\"PercentOfFtp\",\"Value\":0.60}},{\"Type\":\"Repetition\",\"RepeatCount\":4,\"Steps\":[{\"Type\":\"Step\",\"Length\":{\"Unit\":\"Minute\",\"Value\":3},\"IntensityClass\":\"Active\",\"IntensityTarget\":{\"Unit\":\"PercentOfFtp\",\"Value\":1.05}},{\"Type\":\"Step\",\"Length\":{\"Unit\":\"Minute\",\"Value\":2},\"IntensityClass\":\"Rest\",\"IntensityTarget\":{\"Unit\":\"PercentOfFtp\",\"Value\":0.55}}]},{\"Type\":\"Step\",\"Length\":{\"Unit\":\"Minute\",\"Value\":10},\"IntensityClass\":\"CoolDown\",\"IntensityTarget\":{\"Unit\":\"PercentOfFtp\",\"Value\":0.60}}]"
+}

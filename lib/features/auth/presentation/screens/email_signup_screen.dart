@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show OtpType;
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -11,6 +12,7 @@ import '../../../content/application/content_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
+import 'verify_email_screen.dart';
 
 /// Email Signup Screen
 /// Allows users to create an account with email and password
@@ -88,20 +90,62 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final authListenerService = ref.read(authListenerServiceProvider);
 
-    // IMPORTANT: During onboarding signup, we ALWAYS create a NEW user.
-    // If there's an existing session (from a previous attempt or old login),
-    // sign out first to start fresh.
-    // Mark this as an onboarding sign-out to preserve cached onboarding data.
-    if (supabase.auth.currentUser != null) {
+    // Two genuinely different flows share this form:
+    //
+    // 1. UPGRADE — there is already an anonymous Supabase session. Its uid IS
+    //    `public.users.id`, and (since anonymous data is synced) that row and
+    //    everything keyed to it exists in Supabase. Signing out and calling
+    //    signUp() would mint a NEW uid and orphan all of it, so link the email
+    //    onto the existing session instead and keep the uid.
+    //
+    // 2. FRESH SIGNUP — no session at all. Nothing to preserve; signUp().
+    //
+    // A non-anonymous session means a real account is already signed in (stale
+    // login / retry): sign out and treat it as a fresh signup.
+    final currentUser = supabase.auth.currentUser;
+    final isAnonymousUpgrade = currentUser != null && currentUser.isAnonymous;
+
+    if (currentUser != null && !isAnonymousUpgrade) {
+      // Mark this as an onboarding sign-out to preserve cached onboarding data.
       authListenerService.markOnboardingSignOut();
       await supabase.auth.signOut();
     }
 
-    // Always use signUp during onboarding - creates a fresh new user
-    final bool success = await controller.signUpWithEmail(
-      email: email,
-      password: password,
-    );
+    bool success = isAnonymousUpgrade
+        ? await controller.linkEmailAccount(email: email, password: password)
+        : await controller.signUpWithEmail(email: email, password: password);
+
+    // Email confirmation is on: the address is attached but not yet proven, so
+    // the upgrade/signup is incomplete. Collect the code first — everything
+    // downstream (onboarding data migration, every RLS-protected write) needs
+    // a settled, authenticated session.
+    if (!success && mounted) {
+      final state = ref.read(postOnboardingAuthControllerProvider);
+      if (state.error is EmailVerificationRequiredException) {
+        final verified = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => VerifyEmailScreen(
+              email: email,
+              // GoTrue models "attach an email to an existing user" as an
+              // email change, so the upgrade code is not a signup code.
+              otpType: isAnonymousUpgrade
+                  ? OtpType.emailChange
+                  : OtpType.signup,
+              // Deferred on the upgrade path only: GoTrue rejects a password
+              // on an anonymous user whose email is still unconfirmed.
+              pendingPassword: isAnonymousUpgrade ? password : null,
+            ),
+            fullscreenDialog: true,
+          ),
+        );
+        if (verified != true) {
+          // User backed out to change address — leave them on the form. The
+          // anonymous account is untouched and still fully usable.
+          return;
+        }
+        success = true;
+      }
+    }
 
     if (success && mounted) {
       // Show success message

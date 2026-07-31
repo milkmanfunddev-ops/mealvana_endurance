@@ -67,17 +67,49 @@ void main() {
     });
 
     test('scales by actual ÷ planned quantity', () {
-      final log = FuelLogData(items: [
-        FuelLogItem(
-          foodId: 'gel',
-          sectionId: 'during_run',
-          plannedQuantity: 4,
-          actualQuantity: 2, // half consumed
-          name: 'Gel',
-          nutritionalInfo: NutritionalInfo(carbs: 80),
-        ),
-      ]);
+      final log = FuelLogData(
+        items: [
+          FuelLogItem(
+            foodId: 'gel',
+            sectionId: 'during_run',
+            plannedQuantity: 4,
+            actualQuantity: 2, // half consumed
+            name: 'Gel',
+            nutritionalInfo: NutritionalInfo(carbs: 80),
+          ),
+        ],
+      );
       expect(_service.duringCarbsG(log), 40);
+    });
+
+    // Regression: workout fuel-log "reverts on Save / resets on reopen"
+    // (Bug Reports 391e3fdb…f591 + …9647). Both fixes rely on the saved
+    // fuel log round-tripping through JSON so an edited actualQuantity is
+    // restored — not reset to the planned amount — when the screen reloads
+    // it from `activity.fuelLogData`.
+    test('edited actualQuantity survives a toJson→fromJson round-trip', () {
+      final edited = FuelLogData(
+        items: [
+          FuelLogItem(
+            foodId: 'gel',
+            sectionId: 'during_run',
+            plannedQuantity: 3,
+            actualQuantity: 4, // user logged one extra gel
+            name: 'Energy Gel',
+            nutritionalInfo: NutritionalInfo(carbs: 30),
+          ),
+        ],
+      );
+      // Live (in-memory) value the dashboard shows: 30 × 4/3 = 40.
+      expect(_service.duringCarbsG(edited), 40);
+
+      // What gets persisted to activity.fuelLogData and reloaded on
+      // re-entry / after Save must preserve the edit (40), not revert to the
+      // planned 30.
+      final reloaded = FuelLogData.fromJson(edited.toJson());
+      expect(reloaded.items.single.actualQuantity, 4);
+      expect(reloaded.items.single.plannedQuantity, 3);
+      expect(_service.duringCarbsG(reloaded), 40);
     });
   });
 
@@ -101,8 +133,10 @@ void main() {
 
   group('exclusionReason', () {
     test('none for an eligible long run', () {
-      expect(_service.exclusionReason(_activity(durationMinutes: 120)),
-          CarbsHrExclusionReason.none);
+      expect(
+        _service.exclusionReason(_activity(durationMinutes: 120)),
+        CarbsHrExclusionReason.none,
+      );
     });
 
     test('swim for swimming', () {
@@ -113,25 +147,30 @@ void main() {
     });
 
     test('tooShort under the 90-minute threshold', () {
-      expect(_service.exclusionReason(_activity(durationMinutes: 80)),
-          CarbsHrExclusionReason.tooShort);
+      expect(
+        _service.exclusionReason(_activity(durationMinutes: 80)),
+        CarbsHrExclusionReason.tooShort,
+      );
     });
 
     test('speedWork from workout subtype', () {
       expect(
         _service.exclusionReason(
-            _activity(durationMinutes: 120, workoutSubtype: 'interval')),
+          _activity(durationMinutes: 120, workoutSubtype: 'interval'),
+        ),
         CarbsHrExclusionReason.speedWork,
       );
     });
 
     test('speedWork from cycling intervals goal', () {
       expect(
-        _service.exclusionReason(_activity(
-          type: ActivityType.cycling,
-          durationMinutes: 120,
-          cyclingSessionGoal: 'intervals',
-        )),
+        _service.exclusionReason(
+          _activity(
+            type: ActivityType.cycling,
+            durationMinutes: 120,
+            cyclingSessionGoal: 'intervals',
+          ),
+        ),
         CarbsHrExclusionReason.speedWork,
       );
     });
@@ -165,8 +204,10 @@ void main() {
       final summary = _service.buildSummary(
         activity: _activity(durationMinutes: 120, actualDurationMinutes: 100),
         fuelLog: _fuelLog(duringCarbs: 90), // 54 g/hr
-        baseline:
-            const CarbsPerHourBaseline(history: [40, 44, 39, 47, 49], count: 5),
+        baseline: const CarbsPerHourBaseline(
+          history: [40, 44, 39, 47, 49],
+          count: 5,
+        ),
         targetGPerH: 60,
       );
       expect(summary.state, CarbsHrState.inBaseline);
@@ -183,8 +224,10 @@ void main() {
       final summary = _service.buildSummary(
         activity: _activity(durationMinutes: 120),
         fuelLog: _fuelLog(duringCarbs: 60), // 30 g/hr
-        baseline:
-            const CarbsPerHourBaseline(history: [40, 44, 39, 47, 49], count: 5),
+        baseline: const CarbsPerHourBaseline(
+          history: [40, 44, 39, 47, 49],
+          count: 5,
+        ),
       );
       expect(summary.isHighestYet, isFalse);
       expect(summary.deltaVsAverage, lessThan(0));

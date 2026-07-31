@@ -95,15 +95,21 @@ void main() {
   group('RecipeType.fromWire', () {
     test('parses each valid wire value back to its enum', () {
       for (final t in RecipeType.values) {
-        expect(RecipeType.fromWire(t.wireValue), t,
-            reason: '"${t.wireValue}" should parse to ${t.name}');
+        expect(
+          RecipeType.fromWire(t.wireValue),
+          t,
+          reason: '"${t.wireValue}" should parse to ${t.name}',
+        );
       }
     });
 
     test('unknown wire value defaults to mains', () {
       expect(RecipeType.fromWire(''), RecipeType.mains);
-      expect(RecipeType.fromWire('preRun'), RecipeType.mains,
-          reason: 'legacy "preRun" is now mapped to mains');
+      expect(
+        RecipeType.fromWire('preRun'),
+        RecipeType.mains,
+        reason: 'legacy "preRun" is now mapped to mains',
+      );
       expect(RecipeType.fromWire('unknown'), RecipeType.mains);
     });
 
@@ -122,16 +128,22 @@ void main() {
 
     test('each type has a non-empty display label', () {
       for (final t in RecipeType.values) {
-        expect(t.displayLabel, isNotEmpty,
-            reason: '${t.name} must have a display label');
+        expect(
+          t.displayLabel,
+          isNotEmpty,
+          reason: '${t.name} must have a display label',
+        );
       }
     });
 
     // All display labels should start with a capital letter.
     test('all display labels start with a capital letter', () {
       for (final t in RecipeType.values) {
-        expect(t.displayLabel[0].toUpperCase(), t.displayLabel[0],
-            reason: '${t.name} display label must start with uppercase');
+        expect(
+          t.displayLabel[0].toUpperCase(),
+          t.displayLabel[0],
+          reason: '${t.name} display label must start with uppercase',
+        );
       }
     });
   });
@@ -178,7 +190,14 @@ void main() {
   group('RecipeNutrition.fromJson / toJson', () {
     test('round-trips without data loss', () {
       final original = _nutrition(
-          calories: 420, carbs: 65, protein: 14, fat: 11, fiber: 6, sugar: 9, sodium: 320);
+        calories: 420,
+        carbs: 65,
+        protein: 14,
+        fat: 11,
+        fiber: 6,
+        sugar: 9,
+        sodium: 320,
+      );
       final json = original.toJson();
       final restored = RecipeNutrition.fromJson(json);
 
@@ -246,8 +265,11 @@ void main() {
     test('sibling fields are not mutated when one field is overridden', () {
       final base = _nutrition(calories: 400, carbs: 60);
       final updated = base.copyWith(calories: 500);
-      expect(updated.carbohydratesGrams, 60,
-          reason: 'carbs must not change when only calories is overridden');
+      expect(
+        updated.carbohydratesGrams,
+        60,
+        reason: 'carbs must not change when only calories is overridden',
+      );
     });
   });
 
@@ -329,10 +351,14 @@ void main() {
       expect(restored.imageUrl, original.imageUrl);
       expect(restored.tags, original.tags);
       expect(restored.isFavorite, original.isFavorite);
-      expect(restored.createdAt?.toIso8601String(),
-          original.createdAt?.toIso8601String());
-      expect(restored.updatedAt?.toIso8601String(),
-          original.updatedAt?.toIso8601String());
+      expect(
+        restored.createdAt?.toIso8601String(),
+        original.createdAt?.toIso8601String(),
+      );
+      expect(
+        restored.updatedAt?.toIso8601String(),
+        original.updatedAt?.toIso8601String(),
+      );
     });
 
     test('workoutFuel type survives round-trip with underscore wire value', () {
@@ -347,8 +373,11 @@ void main() {
       final json = _recipe().toJson();
       json['type'] = 'legacy_general'; // old wire value
       final r = Recipe.fromJson(json);
-      expect(r.type, RecipeType.mains,
-          reason: 'unknown type should fall back to mains');
+      expect(
+        r.type,
+        RecipeType.mains,
+        reason: 'unknown type should fall back to mains',
+      );
     });
 
     test('null tags in JSON → null tags in model', () {
@@ -419,8 +448,7 @@ void main() {
       final favorited = original.copyWith(isFavorite: true);
 
       expect(favorited.isFavorite, isTrue);
-      expect(favorited.id, original.id,
-          reason: 'id must not change');
+      expect(favorited.id, original.id, reason: 'id must not change');
       expect(favorited.name, original.name);
     });
 
@@ -436,22 +464,32 @@ void main() {
       expect(base.copyWith(instructions: ['b']).instructions, ['b']);
       expect(base.copyWith(prepTimeMinutes: 99).prepTimeMinutes, 99);
       expect(base.copyWith(servings: 10).servings, 10);
-      expect(base.copyWith(type: RecipeType.recovery).type, RecipeType.recovery);
+      expect(
+        base.copyWith(type: RecipeType.recovery).type,
+        RecipeType.recovery,
+      );
       expect(base.copyWith(nutrition: newNutrition).nutrition.calories, 9999);
       expect(base.copyWith(imageUrl: 'u').imageUrl, 'u');
       expect(base.copyWith(tags: ['x']).tags, ['x']);
       expect(base.copyWith(isFavorite: true).isFavorite, isTrue);
       expect(
-          base.copyWith(createdAt: DateTime(2099, 1, 1)).createdAt?.year, 2099);
+        base.copyWith(createdAt: DateTime(2099, 1, 1)).createdAt?.year,
+        2099,
+      );
       expect(
-          base.copyWith(updatedAt: DateTime(2099, 12, 31)).updatedAt?.year, 2099);
+        base.copyWith(updatedAt: DateTime(2099, 12, 31)).updatedAt?.year,
+        2099,
+      );
     });
   });
 
   group('Recipe.toString', () {
     test('includes id, name, and type', () {
-      final s = _recipe(id: 'r1', name: 'Oats', type: RecipeType.breakfast)
-          .toString();
+      final s = _recipe(
+        id: 'r1',
+        name: 'Oats',
+        type: RecipeType.breakfast,
+      ).toString();
       expect(s, contains('r1'));
       expect(s, contains('Oats'));
       expect(s, contains('breakfast'));

@@ -87,7 +87,11 @@ export interface MacroShortfall {
   delivered: number;
   target: number;
   unit: "g" | "mg" | "ml";
-  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered" | "template_constraint";
+  reason:
+    | "all_disliked"
+    | "no_diet_match"
+    | "all_templates_filtered"
+    | "template_constraint";
 }
 
 export interface TemplateSolverResult {
@@ -102,6 +106,25 @@ export interface TemplateSolverResult {
 }
 
 export type GutTrainingLevel = "low" | "moderate" | "high";
+
+/**
+ * Coerce an untrusted gut-training value to a valid {@link GutTrainingLevel}.
+ *
+ * The client may omit the field (null profile at generation time) or send a
+ * legacy invalid literal (`'medium'` shipped in 1.21.1). Both used to disable
+ * the whole template/formula tier: a falsy value failed the solver guard, and
+ * a truthy-but-invalid one matched no template's `gut_training_levels` and
+ * silently fell through to the rule solver (bug 3a3e3fdb, Critical).
+ * `moderate` is the physiological middle ground and the long-standing default
+ * elsewhere in the engine (brick handler, by-hour apportionment).
+ */
+export function normalizeGutTrainingLevel(
+  level: string | null | undefined,
+): GutTrainingLevel {
+  return level === "low" || level === "moderate" || level === "high"
+    ? level
+    : "moderate";
+}
 
 // ============================================================================
 // Duration Bracket Matching
@@ -469,7 +492,7 @@ function clampAndRound(
   return Math.max(0, Math.min(upperBound, clamped));
 }
 
-function maxAllowedServingsForDuration(
+export function maxAllowedServingsForDuration(
   food: FoodWithConstraints,
   durationHours: number,
   gutTrainingLevel: GutTrainingLevel,
@@ -508,7 +531,7 @@ function servingCandidatesForFood(
   return [...values].sort((a, b) => a - b);
 }
 
-function addOrUpdateFoodResult(
+export function addOrUpdateFoodResult(
   foods: FoodResult[],
   food: FoodWithConstraints,
   servings: number,
@@ -579,19 +602,44 @@ function scoreTotals(
     actual: number,
     target: number,
     weight: number,
+    low?: number | null,
+    high?: number | null,
   ): number => {
     if (target <= 0) return actual > 0 ? actual * weight : 0;
     const ratio = actual / target;
     const deviation = Math.abs(1 - ratio);
-    const outsidePenalty = ratio < 0.9 || ratio > 1.1 ? 10 : 0;
-    const overPenalty = ratio > 1.1 ? 4 : 0;
+    // "Outside" is the REAL calculated range when the targets carry one; the
+    // 0.9/1.1 band is only the fallback for callers that pass no range. The
+    // squared-deviation term still drives toward the point target inside it.
+    const lowRatio = low != null && low > 0 ? low / target : 0.9;
+    const highRatio = high != null && high > 0 ? high / target : 1.1;
+    const outsidePenalty = ratio < lowRatio || ratio > highRatio ? 10 : 0;
+    const overPenalty = ratio > highRatio ? 4 : 0;
     return (deviation * deviation * 100 + outsidePenalty + overPenalty) *
       weight;
   };
 
-  return metricScore(totals.carbs_g, targets.carbs_g, 4) +
-    metricScore(totals.sodium_mg, targets.sodium_mg, 2) +
-    metricScore(totals.water_ml, targets.water_ml, 1);
+  return metricScore(
+      totals.carbs_g,
+      targets.carbs_g,
+      4,
+      targets.carbs_low_g,
+      targets.carbs_high_g,
+    ) +
+    metricScore(
+      totals.sodium_mg,
+      targets.sodium_mg,
+      2,
+      targets.sodium_low_mg,
+      targets.sodium_high_mg,
+    ) +
+    metricScore(
+      totals.water_ml,
+      targets.water_ml,
+      1,
+      targets.water_low_ml,
+      targets.water_high_ml,
+    );
 }
 
 interface SearchComponent {
@@ -617,6 +665,12 @@ function generateDuringPhaseTemplateBySearch(
   durationMinutes: number,
   gutTrainingLevel: GutTrainingLevel,
   dislikedFoods?: Set<string>,
+  // When true, this template was selected by an explicit pin override. A pin
+  // must win even when the ingredient's max-per-hour cap prevents fully meeting
+  // the macro target — so accept a best-effort result and report the shortfall
+  // instead of returning null. Decoupled from dislikedFoods (bug: pinned
+  // drink-only formula not scheduled for sub-90-min runs).
+  pinOverride?: boolean,
 ): TemplateSolverResult | null {
   const carbRatios = template.component_carb_ratios ?? {};
   const durationHours = durationMinutes / 60;
@@ -769,19 +823,22 @@ function generateDuringPhaseTemplateBySearch(
   };
   recurse(0);
 
-  // When the user has dislikes, accept the best candidate even if validation
-  // fails — the shortfall is a known consequence of preferences, not an
-  // algorithmic failure. The shortfalls field tells the UI to render guidance
-  // instead of silently dropping the phase. Without dislikes, any validation
-  // failure is genuine (template doesn't fit constraints) and should still
-  // return null so the next-best template is tried.
-  const allowPreferenceShortfall =
-    !!dislikedFoods && dislikedFoods.size > 0;
+  // Accept the best candidate even if macro validation fails when EITHER:
+  //  - the user has dislikes (the shortfall is a known consequence of their
+  //    preferences, not an algorithmic failure), OR
+  //  - this template was pin-selected (an explicit pin must win even if an
+  //    ingredient's max-per-hour cap can't fully meet the target).
+  // The shortfalls field tells the UI to render guidance instead of silently
+  // dropping the phase. Absent both, any validation failure is genuine
+  // (template doesn't fit constraints) and should still return null so the
+  // next-best template is tried.
+  const allowShortfall = (!!dislikedFoods && dislikedFoods.size > 0) ||
+    !!pinOverride;
 
   if (!bestFoods) {
     return null;
   }
-  if (bestIssues.length > 0 && !allowPreferenceShortfall) {
+  if (bestIssues.length > 0 && !allowShortfall) {
     console.log(
       `[DURING-TEMPLATE-SEARCH] Best candidate failed validation: ${
         bestIssues.join("; ")
@@ -826,7 +883,7 @@ function generateDuringPhaseTemplateBySearch(
  * Threshold: shortfall is emitted when delivered < 90% of target. Above that
  * the gap is small enough to be noise.
  */
-function collectShortfalls(
+export function collectShortfalls(
   totals: { carbs_g: number; sodium_mg: number; water_ml: number },
   targets: MacroTargets,
   dislikedFoods?: Set<string>,
@@ -834,10 +891,14 @@ function collectShortfalls(
   const out: MacroShortfall[] = [];
   const SHORTFALL_THRESHOLD = 0.9;
   const hasDislikedCause = !!dislikedFoods && dislikedFoods.size > 0;
-  if (
-    targets.sodium_mg > 0 &&
-    totals.sodium_mg < targets.sodium_mg * SHORTFALL_THRESHOLD
-  ) {
+  // The flag floor is the RANGE LOW when the targets carry one — delivery
+  // anywhere inside the acceptable range is not a gap, even when it misses
+  // the point target (reported 2026-07-22: sodium inside its range was
+  // flagged as a "sodium gap"). The 90%-of-target floor remains only as the
+  // fallback for callers that pass no range.
+  const sodiumFloor = targets.sodium_low_mg ??
+    targets.sodium_mg * SHORTFALL_THRESHOLD;
+  if (targets.sodium_mg > 0 && totals.sodium_mg < sodiumFloor) {
     out.push({
       macro: "sodium",
       delivered: Math.round(totals.sodium_mg),
@@ -846,10 +907,9 @@ function collectShortfalls(
       reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
-  if (
-    targets.carbs_g > 0 &&
-    totals.carbs_g < targets.carbs_g * SHORTFALL_THRESHOLD
-  ) {
+  const carbFloor = targets.carbs_low_g ??
+    targets.carbs_g * SHORTFALL_THRESHOLD;
+  if (targets.carbs_g > 0 && totals.carbs_g < carbFloor) {
     out.push({
       macro: "carbs",
       delivered: Math.round(totals.carbs_g),
@@ -858,10 +918,9 @@ function collectShortfalls(
       reason: hasDislikedCause ? "all_disliked" : "template_constraint",
     });
   }
-  if (
-    targets.water_ml > 0 &&
-    totals.water_ml < targets.water_ml * SHORTFALL_THRESHOLD
-  ) {
+  const fluidFloor = targets.water_low_ml ??
+    targets.water_ml * SHORTFALL_THRESHOLD;
+  if (targets.water_ml > 0 && totals.water_ml < fluidFloor) {
     out.push({
       macro: "fluid",
       delivered: Math.round(totals.water_ml),
@@ -894,6 +953,9 @@ export function generateDuringPhaseTemplate(
   durationMinutes: number,
   gutTrainingLevel: GutTrainingLevel,
   dislikedFoods?: Set<string>,
+  // See generateDuringPhaseTemplateBySearch: a pin-selected template accepts a
+  // reported macro shortfall rather than returning null.
+  pinOverride?: boolean,
 ): TemplateSolverResult | null {
   const carbTarget = targets.carbs_g;
   const sodiumTarget = targets.sodium_mg;
@@ -928,6 +990,7 @@ export function generateDuringPhaseTemplate(
     durationMinutes,
     gutTrainingLevel,
     dislikedFoods,
+    pinOverride,
   );
   if (optimizedResult) {
     return optimizedResult;
@@ -1292,13 +1355,13 @@ export function generateDuringPhaseTemplate(
       `fluid=${totals.water_ml.toFixed(0)}ml/${fluidTarget}ml`,
   );
 
-  // Same preference-shortfall escape hatch as the search path: with dislikes
-  // present, accept the partial result and report shortfalls to the UI rather
-  // than dropping the phase entirely.
-  const allowPreferenceShortfall =
-    !!dislikedFoods && dislikedFoods.size > 0;
+  // Same shortfall escape hatch as the search path: with dislikes present OR a
+  // pin override, accept the partial result and report shortfalls to the UI
+  // rather than dropping the phase entirely.
+  const allowShortfall = (!!dislikedFoods && dislikedFoods.size > 0) ||
+    !!pinOverride;
 
-  if (validationIssues.length > 0 && !allowPreferenceShortfall) {
+  if (validationIssues.length > 0 && !allowShortfall) {
     console.warn(
       `[DURING-TEMPLATE] VALIDATION FAILED: ${
         validationIssues.join("; ")

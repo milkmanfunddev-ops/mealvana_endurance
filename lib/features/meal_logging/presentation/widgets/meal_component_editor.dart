@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../domain/meal_component.dart';
+import '../../domain/portion_quantity.dart';
 
 /// An editable list of [MealComponent]s for use in the edit-meal-log flow.
 ///
@@ -13,10 +15,16 @@ class MealComponentEditor extends StatefulWidget {
     super.key,
     required this.initialComponents,
     required this.onComponentsChanged,
+    this.onRequestSwap,
   });
 
   final List<MealComponent> initialComponents;
   final ValueChanged<List<MealComponent>> onComponentsChanged;
+
+  /// Invoked when the user swipes an item to swap it. Given the current
+  /// component, returns a replacement (e.g. via the food-swap picker) or null
+  /// if the user cancels. When null, swipe-to-swap is disabled.
+  final Future<MealComponent?> Function(MealComponent current)? onRequestSwap;
 
   @override
   State<MealComponentEditor> createState() => _MealComponentEditorState();
@@ -46,6 +54,43 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
     );
   }
 
+  void _deleteItem(int index) {
+    setState(() => _items.removeAt(index));
+    widget.onComponentsChanged(List.unmodifiable(_items));
+  }
+
+  Future<void> _swapItem(int index) async {
+    final onRequestSwap = widget.onRequestSwap;
+    if (onRequestSwap == null) return;
+    final replacement = await onRequestSwap(_items[index]);
+    if (replacement == null || !mounted) return;
+    setState(() => _items[index] = replacement);
+    widget.onComponentsChanged(List.unmodifiable(_items));
+  }
+
+  /// Radius + margin mirror the foreground [Card] exactly (theme card shape,
+  /// `vertical: 4` margin) so the reveal never shows square corners.
+  Widget _swipeBg(
+    BuildContext context,
+    Color color,
+    IconData icon,
+    String label,
+    Alignment alignment,
+  ) {
+    return SwipeActionBackground(
+      alignment: alignment,
+      color: color,
+      borderRadius: SwipeActionBackground.cardThemeRadius(context),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      icon: Icon(icon, color: Colors.white, size: 20),
+      label: label,
+      labelStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
   int get _totalCalories =>
       _items.fold(0, (sum, item) => sum + (item.calories ?? 0));
   double get _totalCarbG =>
@@ -66,7 +111,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
         ..._items.asMap().entries.map((entry) {
           final i = entry.key;
           final item = entry.value;
-          return Card(
+          final card = Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
               title: Text(
@@ -81,8 +126,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                     'C ${item.carbG!.toStringAsFixed(0)}g',
                   if (item.proteinG != null)
                     'P ${item.proteinG!.toStringAsFixed(0)}g',
-                  if (item.fatG != null)
-                    'F ${item.fatG!.toStringAsFixed(0)}g',
+                  if (item.fatG != null) 'F ${item.fatG!.toStringAsFixed(0)}g',
                 ].join('  ·  '),
                 style: theme.textTheme.bodySmall,
               ),
@@ -91,13 +135,51 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                 onPressed: () => _editItem(i),
                 tooltip: 'Edit item',
               ),
+              // Tapping anywhere on the row opens the edit dialog, matching
+              // MealLogRow's tap-the-row pattern. Previously only the small
+              // trailing icon worked, so the row felt un-editable (38ee3fdb).
+              onTap: () => _editItem(i),
             ),
+          );
+          // Swipe left→right = delete, swipe right→left = swap (matches the
+          // timeline + Activity Detail food rows). confirmDismiss returns false
+          // so the actions run via callbacks without a structural dismiss.
+          return Dismissible(
+            key: ObjectKey(item),
+            direction: widget.onRequestSwap == null
+                ? DismissDirection.startToEnd
+                : DismissDirection.horizontal,
+            background: _swipeBg(
+              context,
+              theme.colorScheme.error,
+              Icons.delete_outline,
+              'Remove',
+              Alignment.centerLeft,
+            ),
+            secondaryBackground: widget.onRequestSwap == null
+                ? null
+                : _swipeBg(
+                    context,
+                    theme.colorScheme.primary,
+                    Icons.swap_horiz,
+                    'Swap',
+                    Alignment.centerRight,
+                  ),
+            confirmDismiss: (direction) async {
+              if (direction == DismissDirection.startToEnd) {
+                _deleteItem(i);
+              } else if (direction == DismissDirection.endToStart &&
+                  widget.onRequestSwap != null) {
+                _swapItem(i);
+              }
+              return false;
+            },
+            child: card,
           );
         }),
         const SizedBox(height: 8),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
@@ -113,8 +195,9 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                   'C ${_totalCarbG.toStringAsFixed(0)}g  '
                   'P ${_totalProteinG.toStringAsFixed(0)}g  '
                   'F ${_totalFatG.toStringAsFixed(0)}g',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -132,6 +215,13 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
 /// absolute for [MealComponent.portion]; the **Quantity** field scales each
 /// known macro proportionally. Unknown (null) macros stay blank rather than
 /// being fabricated.
+///
+/// While editing, the Portion label is never rewritten (bug 39fe3fdb): it
+/// keeps showing the unit portion (e.g. "1 cup") and the Quantity field alone
+/// communicates how many were eaten. Because the persisted portion string is
+/// the only place quantity is stored, [_persistedPortion] folds the chosen
+/// quantity back into the portion at save time (e.g. "2 cup"), so saved rows
+/// render the eaten amount exactly as before.
 class _EditComponentDialog extends StatefulWidget {
   const _EditComponentDialog({required this.component, required this.onSave});
 
@@ -153,7 +243,6 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
   late final TextEditingController _sodiumCtrl;
 
   late final double _baseQty;
-  late final String _basePortion;
   late final int? _baseCal;
   late final double? _baseCarb;
   late final double? _baseProt;
@@ -167,22 +256,24 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     _nameCtrl = TextEditingController(text: item.name);
     _portionCtrl = TextEditingController(text: item.portion);
     _calCtrl = TextEditingController(text: item.calories?.toString() ?? '');
-    _carbCtrl =
-        TextEditingController(text: item.carbG?.toStringAsFixed(1) ?? '');
-    _protCtrl =
-        TextEditingController(text: item.proteinG?.toStringAsFixed(1) ?? '');
+    _carbCtrl = TextEditingController(
+      text: item.carbG?.toStringAsFixed(1) ?? '',
+    );
+    _protCtrl = TextEditingController(
+      text: item.proteinG?.toStringAsFixed(1) ?? '',
+    );
     _fatCtrl = TextEditingController(text: item.fatG?.toStringAsFixed(1) ?? '');
-    _sodiumCtrl =
-        TextEditingController(text: item.sodiumMg?.toStringAsFixed(0) ?? '');
+    _sodiumCtrl = TextEditingController(
+      text: item.sodiumMg?.toStringAsFixed(0) ?? '',
+    );
 
-    _baseQty = _parseLeadingQuantity(item.portion) ?? 1.0;
-    _basePortion = item.portion;
+    _baseQty = 1.0;
     _baseCal = item.calories;
     _baseCarb = item.carbG;
     _baseProt = item.proteinG;
     _baseFat = item.fatG;
     _baseSodium = item.sodiumMg;
-    _qtyCtrl = TextEditingController(text: _fmtQty(_baseQty));
+    _qtyCtrl = TextEditingController(text: fmtQty(_baseQty));
     _qtyCtrl.addListener(_recompute);
   }
 
@@ -219,17 +310,29 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     if (baseSodium != null) {
       _sodiumCtrl.text = (baseSodium * ratio).toStringAsFixed(0);
     }
-    final rewritten = _replaceLeadingQuantity(_basePortion, qty);
-    if (rewritten != null) _portionCtrl.text = rewritten;
+    // The Portion label is deliberately NOT rewritten here — it stays at the
+    // unit portion while Quantity communicates the amount (bug 39fe3fdb). The
+    // quantity is folded into the persisted portion in [_persistedPortion].
+  }
+
+  /// The portion string to persist: the Portion text with the chosen Quantity
+  /// folded into its leading number, so the saved row still renders the eaten
+  /// amount ("2 cup · 300 kcal"). When Quantity is untouched (or invalid) the
+  /// Portion text is saved verbatim, preserving manual portion edits.
+  String _persistedPortion() {
+    final text = _portionCtrl.text.trim();
+    final qty = double.tryParse(_qtyCtrl.text.trim());
+    if (qty == null || qty <= 0 || qty == _baseQty) return text;
+    final portionQty = parseLeadingQuantity(text) ?? 1.0;
+    return replaceLeadingQuantity(text, portionQty * qty) ?? text;
   }
 
   void _save() {
     final item = widget.component;
+    final persistedPortion = _persistedPortion();
     final updated = MealComponent(
       name: _nameCtrl.text.trim().isEmpty ? item.name : _nameCtrl.text.trim(),
-      portion: _portionCtrl.text.trim().isEmpty
-          ? item.portion
-          : _portionCtrl.text.trim(),
+      portion: persistedPortion.isEmpty ? item.portion : persistedPortion,
       calories: int.tryParse(_calCtrl.text) ?? item.calories,
       carbG: double.tryParse(_carbCtrl.text) ?? item.carbG,
       proteinG: double.tryParse(_protCtrl.text) ?? item.proteinG,
@@ -252,8 +355,11 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
             const SizedBox(height: 8),
             _field('Portion', _portionCtrl),
             const SizedBox(height: 8),
-            _numField('Quantity', _qtyCtrl,
-                helperText: 'Scales the nutrients below'),
+            _numField(
+              'Quantity',
+              _qtyCtrl,
+              helperText: 'Scales the nutrients below',
+            ),
             const SizedBox(height: 8),
             _numField('Calories', _calCtrl),
             const SizedBox(height: 8),
@@ -272,10 +378,7 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        TextButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }
@@ -286,14 +389,16 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
 
-  Widget _numField(String label, TextEditingController ctrl,
-      {String? helperText}) {
+  Widget _numField(
+    String label,
+    TextEditingController ctrl, {
+    String? helperText,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -304,33 +409,8 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
         labelText: label,
         helperText: helperText,
         border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
-  }
-
-  /// Parses the leading numeric quantity from a portion string, e.g. "2 cups"
-  /// → 2.0, "1.5 oz" → 1.5. Returns null when there is no leading number.
-  double? _parseLeadingQuantity(String portion) {
-    final match = RegExp(r'^\s*(\d+(?:\.\d+)?)').firstMatch(portion);
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  /// Rewrites the leading number of [portion] to [qty], preserving the unit
-  /// suffix (e.g. "1 cup" + 2 → "2 cup"). Returns null when there is no leading
-  /// number to replace.
-  String? _replaceLeadingQuantity(String portion, double qty) {
-    final match =
-        RegExp(r'^(\s*)(\d+(?:\.\d+)?)(.*)$').firstMatch(portion);
-    if (match == null) return null;
-    return '${match.group(1)}${_fmtQty(qty)}${match.group(3)}';
-  }
-
-  /// Formats a quantity without a trailing ".0" for whole numbers.
-  String _fmtQty(double qty) {
-    if (qty == qty.roundToDouble()) return qty.toInt().toString();
-    return qty.toString();
   }
 }

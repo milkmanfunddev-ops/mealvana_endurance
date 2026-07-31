@@ -25,10 +25,10 @@ class IntegrationsRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppLogger logger,
     required SentryReporter sentry,
-  })  : _db = database,
-        _supabase = supabase,
-        _logger = logger,
-        _sentry = sentry;
+  }) : _db = database,
+       _supabase = supabase,
+       _logger = logger,
+       _sentry = sentry;
 
   final AppDatabase _db;
   final SupabaseClient _supabase;
@@ -117,15 +117,61 @@ class IntegrationsRepository with SyncableRepository {
     }
   }
 
+  /// Whether `public.users` already has a row for [userId].
+  ///
+  /// Fails **closed**: if the check itself errors (offline, transient), we
+  /// return false and defer the upload rather than attempting an upsert that
+  /// would violate the FK. Deferring is free — the rows stay dirty and retry.
+  Future<bool> _remoteUserExists(String userId) async {
+    try {
+      final row = await _supabase
+          .from('users')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+      return row != null;
+    } catch (e) {
+      _logger.warning(
+        'Could not confirm remote user row; deferring integration upload',
+        context: 'INTEGRATIONS_REPOSITORY',
+        data: {'userId': userId, 'error': e.toString()},
+      );
+      return false;
+    }
+  }
+
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      final dirty = await (_db.select(_db.integrationsTable)
-            ..where((t) =>
-                t.userId.equals(userId) & t.needsUpload.equals(true)))
-          .get();
+      final dirty =
+          await (_db.select(_db.integrationsTable)..where(
+                (t) => t.userId.equals(userId) & t.needsUpload.equals(true),
+              ))
+              .get();
 
       if (dirty.isEmpty) {
+        return UploadResult.nothingToUpload();
+      }
+
+      // Parent-row guard for integrations_user_id_fkey.
+      //
+      // During onboarding the user connects a training provider before the
+      // profile has been written remotely, so this upsert lands before the
+      // `users` row exists and Postgres rejects it with 23503 (Sentry
+      // MEALVANA-ENDURANCE-3W — 339 occurrences, still live on 1.22.0+88).
+      //
+      // The sync graph already declares `integrations: ['users']`, but that
+      // only guarantees the users repository is *asked* to sync first — it
+      // does not guarantee a row was actually produced, which is exactly the
+      // onboarding case. So check for the parent directly and, when it isn't
+      // there yet, leave the rows dirty and defer. They upload on the next
+      // sync once the profile lands, which is the offline-first contract.
+      if (!await _remoteUserExists(userId)) {
+        _logger.info(
+          'Deferring integration upload: user row not yet remote',
+          context: 'INTEGRATIONS_REPOSITORY',
+          data: {'userId': userId, 'deferred': dirty.length},
+        );
         return UploadResult.nothingToUpload();
       }
 
@@ -179,10 +225,11 @@ class IntegrationsRepository with SyncableRepository {
   }
 
   Future<Set<String>> _getDirtyIdsForUser(String userId) async {
-    final dirtyRows = await (_db.select(_db.integrationsTable)
-          ..where(
-              (t) => t.userId.equals(userId) & t.needsUpload.equals(true)))
-        .get();
+    final dirtyRows =
+        await (_db.select(_db.integrationsTable)..where(
+              (t) => t.userId.equals(userId) & t.needsUpload.equals(true),
+            ))
+            .get();
     return dirtyRows.map((r) => r.id).toSet();
   }
 
@@ -248,7 +295,9 @@ class IntegrationsRepository with SyncableRepository {
         updatedAt: now,
       );
 
-      await _db.into(_db.integrationsTable).insert(_toCompanion(saved, dirty: true));
+      await _db
+          .into(_db.integrationsTable)
+          .insert(_toCompanion(saved, dirty: true));
     }
 
     await _pushToSupabase(saved);
@@ -259,11 +308,13 @@ class IntegrationsRepository with SyncableRepository {
   Future<void> deactivateIntegration(String userId, String provider) async {
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
-        .write(IntegrationsTableCompanion(
-      isActive: const Value(false),
-      needsUpload: const Value(true),
-      updatedAt: Value(DateTime.now()),
-    ));
+        .write(
+          IntegrationsTableCompanion(
+            isActive: const Value(false),
+            needsUpload: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
 
     await _pushUserProviderToSupabase(userId, provider);
   }
@@ -309,13 +360,15 @@ class IntegrationsRepository with SyncableRepository {
   }) async {
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
-        .write(IntegrationsTableCompanion(
-      lastSyncAt: Value(DateTime.now()),
-      lastSyncStatus: Value(status),
-      lastSyncError: Value(error),
-      needsUpload: const Value(true),
-      updatedAt: Value(DateTime.now()),
-    ));
+        .write(
+          IntegrationsTableCompanion(
+            lastSyncAt: Value(DateTime.now()),
+            lastSyncStatus: Value(status),
+            lastSyncError: Value(error),
+            needsUpload: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
 
     await _pushUserProviderToSupabase(userId, provider);
   }
@@ -330,13 +383,19 @@ class IntegrationsRepository with SyncableRepository {
   }) async {
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
-        .write(IntegrationsTableCompanion(
-      accessToken: Value(accessToken),
-      refreshToken: refreshToken != null ? Value(refreshToken) : const Value.absent(),
-      tokenExpiresAt: expiresAt != null ? Value(expiresAt) : const Value.absent(),
-      needsUpload: const Value(true),
-      updatedAt: Value(DateTime.now()),
-    ));
+        .write(
+          IntegrationsTableCompanion(
+            accessToken: Value(accessToken),
+            refreshToken: refreshToken != null
+                ? Value(refreshToken)
+                : const Value.absent(),
+            tokenExpiresAt: expiresAt != null
+                ? Value(expiresAt)
+                : const Value.absent(),
+            needsUpload: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
 
     await _pushUserProviderToSupabase(userId, provider);
   }
@@ -349,11 +408,13 @@ class IntegrationsRepository with SyncableRepository {
   }) async {
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
-        .write(IntegrationsTableCompanion(
-      athleteZonesJson: Value(zonesJson),
-      needsUpload: const Value(true),
-      updatedAt: Value(DateTime.now()),
-    ));
+        .write(
+          IntegrationsTableCompanion(
+            athleteZonesJson: Value(zonesJson),
+            needsUpload: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
 
     await _pushUserProviderToSupabase(userId, provider);
   }
@@ -372,13 +433,16 @@ class IntegrationsRepository with SyncableRepository {
     if (fromUserId == toUserId) return 0;
 
     try {
-      final result = await (_db.update(_db.integrationsTable)
-            ..where((t) => t.userId.equals(fromUserId)))
-          .write(IntegrationsTableCompanion(
-        userId: Value(toUserId),
-        needsUpload: const Value(true),
-        updatedAt: Value(DateTime.now()),
-      ));
+      final result =
+          await (_db.update(
+            _db.integrationsTable,
+          )..where((t) => t.userId.equals(fromUserId))).write(
+            IntegrationsTableCompanion(
+              userId: Value(toUserId),
+              needsUpload: const Value(true),
+              updatedAt: Value(DateTime.now()),
+            ),
+          );
 
       // Best-effort push for the migrated rows so Supabase rebases under the
       // new user immediately. uploadDirtyRecords will retry anything missed.
@@ -408,7 +472,10 @@ class IntegrationsRepository with SyncableRepository {
   // Supabase mirroring
   // ==========================================================================
 
-  Future<void> _pushUserProviderToSupabase(String userId, String provider) async {
+  Future<void> _pushUserProviderToSupabase(
+    String userId,
+    String provider,
+  ) async {
     final row = await getIntegration(userId, provider);
     if (row == null) return;
     await _pushToSupabase(row);
@@ -583,13 +650,16 @@ class IntegrationsRepository with SyncableRepository {
       providerAthleteId: Value(json['provider_athlete_id'] as String),
       providerAthleteName: Value(json['provider_athlete_name'] as String?),
       providerAthleteEmail: Value(json['provider_athlete_email'] as String?),
-      providerAthleteWeightKg:
-          Value((json['provider_athlete_weight_kg'] as num?)?.toDouble()),
-      providerAthleteBirthMonth:
-          Value(json['provider_athlete_birth_month'] as String?),
+      providerAthleteWeightKg: Value(
+        (json['provider_athlete_weight_kg'] as num?)?.toDouble(),
+      ),
+      providerAthleteBirthMonth: Value(
+        json['provider_athlete_birth_month'] as String?,
+      ),
       providerAthleteGender: Value(json['provider_athlete_gender'] as String?),
-      providerAthleteBodyFatPct:
-          Value((json['provider_athlete_body_fat_pct'] as num?)?.toDouble()),
+      providerAthleteBodyFatPct: Value(
+        (json['provider_athlete_body_fat_pct'] as num?)?.toDouble(),
+      ),
       athleteZonesJson: Value(_zonesJsonAsString(json['athlete_zones_json'])),
       isActive: Value(json['is_active'] as bool? ?? true),
       lastSyncAt: Value(parseTime(json['last_sync_at'])),

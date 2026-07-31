@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/widgets/swipe_action_background.dart';
 import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
@@ -32,8 +33,14 @@ class SipThroughoutRow extends StatelessWidget {
   final String? selectedFoodId;
 
   /// Called when a food is placed from tray (tap or drop).
-  final void Function(String foodId, TimeSlot slot, double qty,
-      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFromTray;
+  final void Function(
+    String foodId,
+    TimeSlot slot,
+    double qty,
+    TimingCategory? timingCategory,
+    bool isSipThroughout,
+  )?
+  onPlaceFromTray;
 
   /// Called when a food is removed from this row.
   final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
@@ -118,10 +125,9 @@ class SipThroughoutRow extends StatelessWidget {
             style: AppTextStyles.bodySmall.copyWith(
               color: hasTapTarget
                   ? sectionColor
-                  : Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.6),
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               fontSize: 12,
               fontStyle: FontStyle.italic,
             ),
@@ -134,11 +140,7 @@ class SipThroughoutRow extends StatelessWidget {
   Widget _buildPopulatedRow(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          Icons.water_drop,
-          size: 16,
-          color: sectionColor,
-        ),
+        Icon(Icons.water_drop, size: 16, color: sectionColor),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Wrap(
@@ -148,20 +150,25 @@ class SipThroughoutRow extends StatelessWidget {
               final food = foodMap[assignment.foodItemId];
               if (food == null) return const SizedBox.shrink();
 
-              final qty = assignment.adjustedQuantity ??
+              final qty =
+                  assignment.adjustedQuantity ??
                   ByHourApportionmentService.parseQuantity(food);
               final qtyStr = _formatQuantity(qty);
               final name = food.displayName ?? food.name;
 
               return Dismissible(
                 key: ValueKey(
-                    '${assignment.foodItemId}_${assignment.timeSlot}_sip'),
+                  '${assignment.foodItemId}_${assignment.timeSlot}_sip',
+                ),
                 direction: DismissDirection.endToStart,
-                background: Container(
+                // These sip chips are bare text in a Wrap, so the reveal
+                // supplies its own rounding rather than inheriting a card's.
+                background: SwipeActionBackground(
                   alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: AppSpacing.sm),
                   color: Colors.red.withValues(alpha: 0.1),
-                  child: const Icon(Icons.close, size: 16, color: Colors.red),
+                  borderRadius: AppRadius.xsRadius,
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                  icon: const Icon(Icons.close, size: 16, color: Colors.red),
                 ),
                 onDismissed: (_) {
                   onRemoveFromSlot?.call(

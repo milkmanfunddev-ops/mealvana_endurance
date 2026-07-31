@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../domain/daily_macro_targets.dart';
 
 /// Per-line breakdown of TDEE components (RMR, NEAT, Activity) with source
@@ -22,6 +25,9 @@ class EnergySourceBreakdown extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final sources = macros.sources;
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
 
     // The macro edge function returns `weight_kg`/`body_fat_pct`/`sources`
     // only on a fresh calc; cached Drift rows don't carry them. Fall back to
@@ -30,20 +36,19 @@ class EnergySourceBreakdown extends ConsumerWidget {
     final profile = ref.watch(currentUserProvider).asData?.value;
     final garmin = profile == null
         ? null
-        : ref
-              .watch(garminLastBodyCompProvider(profile.id))
-              .asData
-              ?.value;
+        : ref.watch(garminLastBodyCompProvider(profile.id)).asData?.value;
 
     final resolvedWeightKg =
-        macros.weightKg ?? (profile?.weightPounds != null
+        macros.weightKg ??
+        (profile?.weightPounds != null
             ? profile!.weightPounds * 0.453592
             : null);
     final resolvedBodyFatPct = macros.bodyFatPct ?? profile?.bodyFatPct;
 
     // Source flag: trust the fresh calc when we have it, otherwise derive
     // from the same authoritative check the rest of the app uses.
-    final weightFromGarmin = sources?.weightFromGarmin ??
+    final weightFromGarmin =
+        sources?.weightFromGarmin ??
         isGarminAuthoritativeForWeight(
           garmin: garmin,
           userWeightKg: profile != null
@@ -51,7 +56,8 @@ class EnergySourceBreakdown extends ConsumerWidget {
               : null,
           userUpdatedAt: profile?.weightPoundsUpdatedAt,
         );
-    final bodyFatFromGarmin = sources?.bodyFatFromGarmin ??
+    final bodyFatFromGarmin =
+        sources?.bodyFatFromGarmin ??
         isGarminAuthoritativeForBodyFat(
           garmin: garmin,
           userBodyFatPct: profile?.bodyFatPct,
@@ -71,6 +77,7 @@ class EnergySourceBreakdown extends ConsumerWidget {
             weightFromGarmin: weightFromGarmin,
             bodyFatFromGarmin: bodyFatFromGarmin,
             textColor: textColor,
+            useMetric: useMetric,
           ),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -139,6 +146,7 @@ class _BodyCompositionRow extends StatelessWidget {
     required this.weightFromGarmin,
     required this.bodyFatFromGarmin,
     required this.textColor,
+    required this.useMetric,
   });
 
   final double? weightKg;
@@ -146,18 +154,18 @@ class _BodyCompositionRow extends StatelessWidget {
   final bool weightFromGarmin;
   final bool bodyFatFromGarmin;
   final Color textColor;
+  final bool useMetric;
 
   @override
   Widget build(BuildContext context) {
     final pieces = <Widget>[];
 
     if (weightKg != null) {
-      // Display in lbs since the rest of the app uses imperial.
-      final lbs = (weightKg! * 2.20462).round();
+      final pounds = UnitFormatter.kgToPounds(weightKg!);
       pieces.add(
         _ValueWithBadge(
           label: 'Weight',
-          value: '$lbs lbs',
+          value: UnitFormatter.formatWeight(pounds, useMetric: useMetric),
           fromGarmin: weightFromGarmin,
           textColor: textColor,
         ),

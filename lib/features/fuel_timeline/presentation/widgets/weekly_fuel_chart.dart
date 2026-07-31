@@ -21,7 +21,8 @@ class WeeklyFuelChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const onSurface = AppColors.cream;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final series = <_Series>[
       _Series('Cal', onSurface, [for (final d in week) d?.totalCalories]),
       _Series('Carbs', kMacroColorCarbs, [for (final d in week) d?.carbG]),

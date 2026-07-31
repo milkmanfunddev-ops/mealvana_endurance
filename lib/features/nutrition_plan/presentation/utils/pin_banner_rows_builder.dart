@@ -17,10 +17,7 @@ import '../../domain/plan_section.dart';
 /// See `docs/features/formula-kit/PLAN.md` (PinStatusBanner V1 polish,
 /// substep 11) for the rationale behind each state.
 class PinBannerData {
-  const PinBannerData({
-    required this.rows,
-    required this.isOnboarding,
-  });
+  const PinBannerData({required this.rows, required this.isOnboarding});
 
   /// Per-phase rows for the Status mode. Empty in Hidden and Onboarding modes.
   final List<PinStatusBannerRow> rows;
@@ -58,6 +55,23 @@ class PinBannerData {
 /// Pinnable phases: Before sub_phases ∈ {meal, snack, top_up}, the During
 /// section, and the After section. Order matches user-facing flow.
 PinBannerData collectPinBannerRows(List<PlanSection> sections) {
+  // Ephemeral decisions come from the server-side default-formula safety net
+  // (a best-fit system formula chosen at generation time), NOT from a real
+  // user pin. They exist for telemetry only and must stay invisible to this
+  // banner — otherwise an unpinned user would see "Using your pinned
+  // formulas" for a formula they never pinned. Treat ephemeral as absent
+  // until a deliberate "we picked this — pin it?" surface is built.
+  // Formula-first flip, 2026-07-03.
+  //
+  // EXCEPTION (audit 2026-07-18): an ephemeral decision that also carries
+  // `skippedPersonalFormulas` is NOT invisible. That combination means the
+  // user authored a formula for this phase, it was dropped by scope, and the
+  // safety net picked something else — precisely the case that produced
+  // "my formula was ignored" reports with no on-screen trace. Keep the row so
+  // the banner can explain the miss.
+  PinDecision? realDecision(PinDecision? d) =>
+      (d != null && (!d.ephemeral || d.hasSkippedFormulas)) ? d : null;
+
   bool isPinnableSubPhase(String type) =>
       type == 'meal' || type == 'snack' || type == 'top_up';
 
@@ -75,13 +89,13 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
         if (isPinnableSubPhase(sub.subPhaseType)) {
           hasAnyPinnablePhase = true;
         }
-        if (sub.pinDecision != null) hasAnyRealDecision = true;
+        if (realDecision(sub.pinDecision) != null) hasAnyRealDecision = true;
       }
     }
     if (isDuringSection(section.id) || isAfterSection(section.id)) {
       hasAnyPinnablePhase = true;
     }
-    if (section.pinDecision != null) hasAnyRealDecision = true;
+    if (realDecision(section.pinDecision) != null) hasAnyRealDecision = true;
   }
 
   if (!hasAnyPinnablePhase) return PinBannerData.hidden;
@@ -103,7 +117,7 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
     // Before-phase sub-phases each carry their own decision.
     if (section.subPhases != null) {
       for (final sub in section.subPhases!) {
-        final decision = sub.pinDecision;
+        final decision = realDecision(sub.pinDecision);
         if (decision != null) {
           rows.add(
             PinStatusBannerRow(
@@ -122,11 +136,12 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
       }
     }
     // During / After sections carry their decision at the section level.
-    if (section.pinDecision != null) {
+    final sectionDecision = realDecision(section.pinDecision);
+    if (sectionDecision != null) {
       rows.add(
         PinStatusBannerRow(
           label: sectionLabel(section.id),
-          decision: section.pinDecision!,
+          decision: sectionDecision,
         ),
       );
     } else if (isDuringSection(section.id) || isAfterSection(section.id)) {

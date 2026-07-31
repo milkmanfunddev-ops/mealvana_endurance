@@ -361,7 +361,9 @@ void main() {
             mockAppExternalDeps(),
             mockSharedPreferences(),
             preferencesServiceProvider.overrideWithValue(prefs),
-            fuelTimelineDayProvider.overrideWith((ref) async => _seededResult()),
+            fuelTimelineDayProvider.overrideWith(
+              (ref) async => _seededResult(),
+            ),
             dailyMacrosControllerProvider.overrideWith(
               _SeededDailyMacrosController.new,
             ),
@@ -392,7 +394,8 @@ void main() {
         expect(
           find.byKey(const ValueKey('fuel_timeline.add_food')),
           findsOneWidget,
-          reason: 'Add Food button must carry ValueKey("fuel_timeline.add_food")',
+          reason:
+              'Add Food button must carry ValueKey("fuel_timeline.add_food")',
         );
         expect(
           find.byKey(const ValueKey('fuel_timeline.add_activity')),

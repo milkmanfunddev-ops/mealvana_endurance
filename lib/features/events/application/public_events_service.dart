@@ -8,9 +8,7 @@ part 'public_events_service.g.dart';
 /// Provider for PublicEventsService
 @riverpod
 PublicEventsService publicEventsService(Ref ref) {
-  return PublicEventsService(
-    supabaseClient: ref.watch(supabaseClientProvider),
-  );
+  return PublicEventsService(supabaseClient: ref.watch(supabaseClientProvider));
 }
 
 /// Service for searching public events
@@ -20,7 +18,7 @@ class PublicEventsService {
   final SupabaseClient _supabase;
 
   PublicEventsService({required SupabaseClient supabaseClient})
-      : _supabase = supabaseClient;
+    : _supabase = supabaseClient;
 
   /// Search for public events
   ///

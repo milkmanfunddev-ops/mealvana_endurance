@@ -18,7 +18,7 @@
  * a logging failure fail the user's request.
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 export interface AiUsageRow {
   /** auth.users id of the caller. */
@@ -29,6 +29,30 @@ export interface AiUsageRow {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** Actual USD charge reported by the AI Gateway (null when unavailable). */
+  costUsd?: number | null;
+}
+
+/**
+ * Read the actual USD charge reported by Vercel AI Gateway.
+ *
+ * Gateway returns cost as a decimal string in provider metadata. Keep this
+ * parser defensive because direct-provider calls and older SDK responses may
+ * omit the gateway block entirely.
+ */
+export function gatewayCostUsd(providerMetadata: unknown): number | null {
+  if (typeof providerMetadata !== "object" || providerMetadata === null) {
+    return null;
+  }
+  const gateway = (providerMetadata as Record<string, unknown>).gateway;
+  if (typeof gateway !== "object" || gateway === null) return null;
+  const raw = (gateway as Record<string, unknown>).cost;
+  const parsed = typeof raw === "number"
+    ? raw
+    : typeof raw === "string"
+    ? Number.parseFloat(raw)
+    : Number.NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
 /**
@@ -42,15 +66,19 @@ export async function logAiUsage(
   row: AiUsageRow,
 ): Promise<void> {
   try {
-    const { error } = await client.from('ai_usage').insert({
+    const { error } = await client.from("ai_usage").insert({
       user_id: row.userId,
       function_name: row.functionName,
       model: row.model,
       input_tokens: row.inputTokens ?? 0,
       output_tokens: row.outputTokens ?? 0,
+      cost_usd: row.costUsd ?? null,
     });
     if (error) {
-      console.error(`[ai_usage] log error (${row.functionName}):`, error.message);
+      console.error(
+        `[ai_usage] log error (${row.functionName}):`,
+        error.message,
+      );
     }
   } catch (e) {
     console.error(`[ai_usage] log exception (${row.functionName}):`, e);

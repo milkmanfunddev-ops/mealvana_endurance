@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
+import '../../../../../shared/utils/unit_formatter.dart';
 import '../../utils/activity_detail_helpers.dart';
 
 /// Displays scheduled date and time for an activity,
 /// plus optional activity summary (distance/pace/duration)
-/// and tappable date/time editing.
+/// and tappable date/time editing. A small pencil glyph beside each
+/// tappable value is the "this is editable" affordance — matches the
+/// New Activity screen's date/time section.
 class ActivityScheduleInfo extends StatelessWidget {
   const ActivityScheduleInfo({
     super.key,
@@ -26,11 +30,8 @@ class ActivityScheduleInfo extends StatelessWidget {
   final VoidCallback? onDateTap;
   final VoidCallback? onTimeTap;
 
-  String _formatPace(double minutesPerMile) {
-    final mins = minutesPerMile.floor();
-    final secs = ((minutesPerMile - mins) * 60).round();
-    return '$mins:${secs.toString().padLeft(2, '0')}/mi';
-  }
+  String _formatPace(double minutesPerMile) =>
+      '${UnitFormatter.formatMinutesAsMinSec(minutesPerMile)}/mi';
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +119,8 @@ class ActivityScheduleInfo extends StatelessWidget {
   }
 
   Widget _buildDateColumn(BuildContext context) {
+    final isTappable = onDateTap != null;
+    final valueColor = Theme.of(context).colorScheme.onSurface;
     final dateWidget = Column(
       children: [
         Text(
@@ -128,23 +131,42 @@ class ActivityScheduleInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          ActivityDetailHelpers.formatDateShort(scheduledDateTime),
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 20,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ActivityDetailHelpers.formatDateShort(scheduledDateTime),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: valueColor,
+                fontSize: 20,
+              ),
+            ),
+            if (isTappable) ...[
+              const SizedBox(width: 4),
+              FaIcon(
+                FontAwesomeIcons.penToSquare,
+                size: 12,
+                color: valueColor.withValues(alpha: 0.4),
+              ),
+            ],
+          ],
         ),
       ],
     );
 
     if (onDateTap != null) {
-      return GestureDetector(onTap: onDateTap, child: dateWidget);
+      return GestureDetector(
+        onTap: onDateTap,
+        behavior: HitTestBehavior.opaque,
+        child: dateWidget,
+      );
     }
     return dateWidget;
   }
 
   Widget _buildTimeColumn(BuildContext context) {
+    final isTappable = onTimeTap != null;
+    final valueColor = Theme.of(context).colorScheme.onSurface;
     final timeWidget = Column(
       children: [
         Text(
@@ -155,18 +177,35 @@ class ActivityScheduleInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          ActivityDetailHelpers.formatTime(scheduledDateTime),
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 20,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ActivityDetailHelpers.formatTime(scheduledDateTime),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: valueColor,
+                fontSize: 20,
+              ),
+            ),
+            if (isTappable) ...[
+              const SizedBox(width: 4),
+              FaIcon(
+                FontAwesomeIcons.penToSquare,
+                size: 12,
+                color: valueColor.withValues(alpha: 0.4),
+              ),
+            ],
+          ],
         ),
       ],
     );
 
     if (onTimeTap != null) {
-      return GestureDetector(onTap: onTimeTap, child: timeWidget);
+      return GestureDetector(
+        onTap: onTimeTap,
+        behavior: HitTestBehavior.opaque,
+        child: timeWidget,
+      );
     }
     return timeWidget;
   }

@@ -11,10 +11,7 @@ import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 /// Screen for users to rate how well their nutrition plan worked
 /// Shown after a run is completed (via notification or app startup)
 class PlanHowWellScreen extends ConsumerStatefulWidget {
-  const PlanHowWellScreen({
-    super.key,
-    required this.activityId,
-  });
+  const PlanHowWellScreen({super.key, required this.activityId});
 
   final String activityId;
 
@@ -28,7 +25,7 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(planRatingControllerProvider);
-    
+
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
       appBar: AppBar(
@@ -77,7 +74,7 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // SizedBox(height: 32.h),
-                
+
                 // Hand illustration
                 SizedBox(
                   height: 260.h,
@@ -86,9 +83,9 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                
+
                 // SizedBox(height: 24.h),
-                
+
                 // Question text
                 Text(
                   'How well did this plan work for your pre-workout needs?',
@@ -99,9 +96,9 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
                     height: 1.3,
                   ),
                 ),
-                
+
                 SizedBox(height: 32.h),
-                
+
                 // Rating options
                 Column(
                   children: [
@@ -127,34 +124,33 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
                     ),
                   ],
                 ),
-                
+
                 SizedBox(height: 32.h),
-              
-              // Submit button
-              controller.when(
-                loading: () => const CircularProgressIndicator(),
-                error: (error, stack) => Column(
-                  children: [
-                    Text(
-                      'Error: ${error.toString()}',
-                      style: TextStyle(color: AppTheme.warningColor),
-                    ),
-                    SizedBox(height: 16.h),
-                    _buildButtonRow(),
-                  ],
+
+                // Submit button
+                controller.when(
+                  loading: () => const CircularProgressIndicator(),
+                  error: (error, stack) => Column(
+                    children: [
+                      Text(
+                        'Error: ${error.toString()}',
+                        style: TextStyle(color: AppTheme.warningColor),
+                      ),
+                      SizedBox(height: 16.h),
+                      _buildButtonRow(),
+                    ],
+                  ),
+                  data: (_) => _buildButtonRow(),
                 ),
-                data: (_) => _buildButtonRow(),
-              ),
-              
-              SizedBox(height: 24.h),
-            ],
+
+                SizedBox(height: 24.h),
+              ],
             ),
           ),
         ),
       ),
     );
   }
-
 
   Widget _buildRatingOption({
     required int rating,
@@ -182,10 +178,7 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              emoji,
-              style: TextStyle(fontSize: 24.sp),
-            ),
+            Text(emoji, style: TextStyle(fontSize: 24.sp)),
             SizedBox(width: 16.w),
             Text(
               label,
@@ -212,9 +205,9 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
             onPressed: selectedRating != null ? _handleSubmit : null,
           ),
         ),
-        
+
         SizedBox(height: 16.h),
-        
+
         // Skip button
         TextButton(
           onPressed: _handleSkip,
@@ -235,7 +228,8 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
     if (selectedRating == null) return;
 
     try {
-      await ref.read(planRatingControllerProvider.notifier)
+      await ref
+          .read(planRatingControllerProvider.notifier)
           .submitRating(widget.activityId, selectedRating!);
 
       if (!mounted) return;
@@ -254,20 +248,24 @@ class _PlanHowWellScreenState extends ConsumerState<PlanHowWellScreen> {
       }
     }
   }
-  
+
   Future<void> _handleSkip() async {
     try {
       // Mark plan as skipped so it won't show this screen again
-      await ref.read(planRatingControllerProvider.notifier)
+      await ref
+          .read(planRatingControllerProvider.notifier)
           .skipFeedback(widget.activityId);
-      
+
       if (mounted) {
         // Navigate to main tabs
         context.go('/main');
       }
     } catch (error) {
       if (mounted) {
-        MealvanaSnackbar.showWarning(context, 'Failed to skip feedback: $error');
+        MealvanaSnackbar.showWarning(
+          context,
+          'Failed to skip feedback: $error',
+        );
         // Even if skip fails, still navigate away to avoid being stuck
         context.go('/main');
       }

@@ -51,7 +51,9 @@ Future<UserFood> _insertFood(
 }) async {
   final rowId = id ?? _uid();
   final now = DateTime.now();
-  await database.into(database.userFoodsTable).insert(
+  await database
+      .into(database.userFoodsTable)
+      .insert(
         UserFoodsTableCompanion.insert(
           id: rowId,
           deviceId: deviceId,
@@ -73,9 +75,9 @@ Future<UserFood> _insertFood(
           updatedAt: Value(now),
         ),
       );
-  return (database.select(database.userFoodsTable)
-        ..where((t) => t.id.equals(rowId)))
-      .getSingle();
+  return (database.select(
+    database.userFoodsTable,
+  )..where((t) => t.id.equals(rowId))).getSingle();
 }
 
 /// Build a remote Supabase-shape row map the way syncFromRemote would receive.
@@ -142,17 +144,21 @@ void main() {
     mockSupabase = MockSupabaseClient();
     mockSentry = MockSentryReporter();
 
-    when(() => mockSentry.addBreadcrumb(
-          message: any(named: 'message'),
-          category: any(named: 'category'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockSentry.addBreadcrumb(
+        message: any(named: 'message'),
+        category: any(named: 'category'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
 
     repository = UserFoodsRepository(
       database: database,
@@ -193,11 +199,14 @@ void main() {
       expect(await repository.isStale(), isTrue);
     });
 
-    test('getLastSyncTime returns a default timestamp before first sync', () async {
-      // NOTE: the repo returns a default timestamp (≈now), not null, before any
-      // sync has run. Documented behavior, not a crash.
-      expect(await repository.getLastSyncTime(), isA<DateTime>());
-    });
+    test(
+      'getLastSyncTime returns a default timestamp before first sync',
+      () async {
+        // NOTE: the repo returns a default timestamp (≈now), not null, before any
+        // sync has run. Documented behavior, not a crash.
+        expect(await repository.getLastSyncTime(), isA<DateTime>());
+      },
+    );
 
     test('getLastSyncTime returns previously set time', () async {
       final t = DateTime(2026, 6, 1, 12, 0);
@@ -233,22 +242,25 @@ void main() {
       // If Supabase call throws, uploadDirtyRecords returns UploadResult.failed.
       // The count of dirty rows is best validated directly.
       final dirtyRows =
-          await (database.select(database.userFoodsTable)
-                ..where((t) =>
-                    t.userId.equals(_testUserId) & t.needsUpload.equals(true)))
+          await (database.select(database.userFoodsTable)..where(
+                (t) =>
+                    t.userId.equals(_testUserId) & t.needsUpload.equals(true),
+              ))
               .get();
       expect(dirtyRows.length, 2);
     });
 
-    test('dirty flag is true for newly created food row (needsUpload=true)',
-        () async {
-      await _insertFood(database, needsUpload: true);
+    test(
+      'dirty flag is true for newly created food row (needsUpload=true)',
+      () async {
+        await _insertFood(database, needsUpload: true);
 
-      final rows = await (database.select(database.userFoodsTable)
-            ..where((t) => t.needsUpload.equals(true)))
-          .get();
-      expect(rows.length, 1);
-    });
+        final rows = await (database.select(
+          database.userFoodsTable,
+        )..where((t) => t.needsUpload.equals(true))).get();
+        expect(rows.length, 1);
+      },
+    );
   });
 
   // ============================================================
@@ -267,14 +279,13 @@ void main() {
 
       // Verify the dirty set captures this row.
       final dirtyRows =
-          await (database.select(database.userFoodsTable)
-                ..where(
-                  (t) =>
-                      t.id.isIn([dirtyId]) &
-                      t.needsUpload.equals(true) &
-                      (t.userId.equals(_testUserId) |
-                          t.deviceId.equals(_testUserId)),
-                ))
+          await (database.select(database.userFoodsTable)..where(
+                (t) =>
+                    t.id.isIn([dirtyId]) &
+                    t.needsUpload.equals(true) &
+                    (t.userId.equals(_testUserId) |
+                        t.deviceId.equals(_testUserId)),
+              ))
               .get();
 
       expect(dirtyRows.length, 1, reason: 'Dirty row must be detected');
@@ -305,9 +316,9 @@ void main() {
           .into(database.userFoodsTable)
           .insertOnConflictUpdate(companion);
 
-      final found = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(remoteId)))
-          .getSingleOrNull();
+      final found = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(remoteId))).getSingleOrNull();
 
       expect(found, isNotNull);
       expect(found!.name, 'Synced Food');
@@ -328,14 +339,13 @@ void main() {
       // Simulate what _syncRemoteRowsPreservingDirty does for a dirty row:
       final remoteIds = [dirtyId];
       final dirtyRows =
-          await (database.select(database.userFoodsTable)
-                ..where(
-                  (t) =>
-                      t.id.isIn(remoteIds) &
-                      t.needsUpload.equals(true) &
-                      (t.userId.equals(_testUserId) |
-                          t.deviceId.equals(_testUserId)),
-                ))
+          await (database.select(database.userFoodsTable)..where(
+                (t) =>
+                    t.id.isIn(remoteIds) &
+                    t.needsUpload.equals(true) &
+                    (t.userId.equals(_testUserId) |
+                        t.deviceId.equals(_testUserId)),
+              ))
               .get();
       final dirtyIds = dirtyRows.map((row) => row.id).toSet();
 
@@ -343,9 +353,9 @@ void main() {
       expect(dirtyIds.contains(dirtyId), isTrue);
 
       // Confirm row still has local name.
-      final row = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(dirtyId)))
-          .getSingleOrNull();
+      final row = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(dirtyId))).getSingleOrNull();
       expect(row?.name, 'My Local Name');
     });
   });
@@ -366,9 +376,9 @@ void main() {
       const deletedId = '00000000-0000-0000-0000-000000000010';
       await _insertFood(database, id: deletedId, isDeleted: true);
 
-      final found = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(deletedId)))
-          .getSingleOrNull();
+      final found = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(deletedId))).getSingleOrNull();
 
       expect(found, isNotNull);
       expect(found!.isDeleted, isTrue);
@@ -378,35 +388,37 @@ void main() {
       await _insertFood(database, name: 'Active', isDeleted: false);
       await _insertFood(database, name: 'Deleted', isDeleted: true);
 
-      final activeRows = await (database.select(database.userFoodsTable)
-            ..where((t) => t.isDeleted.equals(false)))
-          .get();
+      final activeRows = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.isDeleted.equals(false))).get();
 
       expect(activeRows.length, 1);
       expect(activeRows.first.name, 'Active');
     });
 
-    test('soft-deleted row with needsUpload=true propagates tombstone via sync',
-        () async {
-      await _insertFood(
-        database,
-        isDeleted: true,
-        needsUpload: true,
-        name: 'Offline Delete',
-      );
+    test(
+      'soft-deleted row with needsUpload=true propagates tombstone via sync',
+      () async {
+        await _insertFood(
+          database,
+          isDeleted: true,
+          needsUpload: true,
+          name: 'Offline Delete',
+        );
 
-      final dirtyRows =
-          await (database.select(database.userFoodsTable)
-                ..where(
-                  (t) =>
-                      t.needsUpload.equals(true) &
-                      t.isDeleted.equals(true),
+        final dirtyRows =
+            await (database.select(database.userFoodsTable)..where(
+                  (t) => t.needsUpload.equals(true) & t.isDeleted.equals(true),
                 ))
-              .get();
+                .get();
 
-      expect(dirtyRows.length, 1,
-          reason: 'Soft-deleted dirty row should be visible for upload');
-    });
+        expect(
+          dirtyRows.length,
+          1,
+          reason: 'Soft-deleted dirty row should be visible for upload',
+        );
+      },
+    );
   });
 
   // ============================================================
@@ -479,29 +491,31 @@ void main() {
       );
     });
 
-    test('two foods with same client_food_id but different device_id are allowed',
-        () async {
-      const cid = 'client-food-shared';
-      await _insertFood(
-        database,
-        id: _uid(),
-        deviceId: 'device-A',
-        userId: _testUserId,
-        clientFoodId: cid,
-        name: 'Device A Food',
-      );
-      await _insertFood(
-        database,
-        id: _uid(),
-        deviceId: 'device-B',
-        userId: _testUserId,
-        clientFoodId: cid,
-        name: 'Device B Food',
-      );
+    test(
+      'two foods with same client_food_id but different device_id are allowed',
+      () async {
+        const cid = 'client-food-shared';
+        await _insertFood(
+          database,
+          id: _uid(),
+          deviceId: 'device-A',
+          userId: _testUserId,
+          clientFoodId: cid,
+          name: 'Device A Food',
+        );
+        await _insertFood(
+          database,
+          id: _uid(),
+          deviceId: 'device-B',
+          userId: _testUserId,
+          clientFoodId: cid,
+          name: 'Device B Food',
+        );
 
-      final rows = await database.select(database.userFoodsTable).get();
-      expect(rows.length, 2);
-    });
+        final rows = await database.select(database.userFoodsTable).get();
+        expect(rows.length, 2);
+      },
+    );
   });
 
   // ============================================================
@@ -510,12 +524,16 @@ void main() {
   group('multi-user data isolation', () {
     test('user A cannot see user B foods via userId filter', () async {
       await _insertFood(database, userId: _testUserId, name: 'User A Food');
-      await _insertFood(database, userId: _otherUserId, name: 'User B Food',
-          deviceId: _otherUserId);
+      await _insertFood(
+        database,
+        userId: _otherUserId,
+        name: 'User B Food',
+        deviceId: _otherUserId,
+      );
 
-      final userAFoods = await (database.select(database.userFoodsTable)
-            ..where((t) => t.userId.equals(_testUserId)))
-          .get();
+      final userAFoods = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.userId.equals(_testUserId))).get();
 
       expect(userAFoods.length, 1);
       expect(userAFoods.first.name, 'User A Food');
@@ -523,16 +541,18 @@ void main() {
 
     test('dirty records for user A are separate from user B', () async {
       await _insertFood(database, userId: _testUserId, needsUpload: true);
-      await _insertFood(database, userId: _otherUserId, needsUpload: true,
-          deviceId: _otherUserId);
+      await _insertFood(
+        database,
+        userId: _otherUserId,
+        needsUpload: true,
+        deviceId: _otherUserId,
+      );
 
       final userADirty =
-          await (database.select(database.userFoodsTable)
-                ..where(
-                  (t) =>
-                      t.userId.equals(_testUserId) &
-                      t.needsUpload.equals(true),
-                ))
+          await (database.select(database.userFoodsTable)..where(
+                (t) =>
+                    t.userId.equals(_testUserId) & t.needsUpload.equals(true),
+              ))
               .get();
 
       expect(userADirty.length, 1);
@@ -547,7 +567,9 @@ void main() {
       const id = '00000000-0000-0000-0000-000000000020';
       const cid = 'cid-round-trip-0000000000000000000';
       final now = DateTime.now();
-      await database.into(database.userFoodsTable).insert(
+      await database
+          .into(database.userFoodsTable)
+          .insert(
             UserFoodsTableCompanion.insert(
               id: id,
               deviceId: _testUserId,
@@ -568,9 +590,9 @@ void main() {
             ),
           );
 
-      final row = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(id)))
-          .getSingle();
+      final row = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(id))).getSingle();
 
       expect(row.name, 'Energy Gel');
       expect(row.carbsPerServing, 22.0);
@@ -586,9 +608,9 @@ void main() {
             ..where((t) => t.id.equals(food.id)))
           .write(const UserFoodsTableCompanion(name: Value('Updated Name')));
 
-      final updated = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(food.id)))
-          .getSingle();
+      final updated = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(food.id))).getSingle();
 
       expect(updated.name, 'Updated Name');
     });
@@ -596,13 +618,13 @@ void main() {
     test('hard delete removes row from DB', () async {
       final food = await _insertFood(database, name: 'To Delete');
 
-      await (database.delete(database.userFoodsTable)
-            ..where((t) => t.id.equals(food.id)))
-          .go();
+      await (database.delete(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(food.id))).go();
 
-      final found = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(food.id)))
-          .getSingleOrNull();
+      final found = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(food.id))).getSingleOrNull();
 
       expect(found, isNull);
     });
@@ -610,9 +632,9 @@ void main() {
     test('isDeleted flag can be flipped to true (soft-delete)', () async {
       final food = await _insertFood(database, name: 'Soft Delete Me');
 
-      await (database.update(database.userFoodsTable)
-            ..where((t) => t.id.equals(food.id)))
-          .write(
+      await (database.update(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(food.id))).write(
         UserFoodsTableCompanion(
           isDeleted: const Value(true),
           needsUpload: const Value(true),
@@ -620,78 +642,89 @@ void main() {
         ),
       );
 
-      final updated = await (database.select(database.userFoodsTable)
-            ..where((t) => t.id.equals(food.id)))
-          .getSingle();
+      final updated = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.id.equals(food.id))).getSingle();
 
       expect(updated.isDeleted, isTrue);
       expect(updated.needsUpload, isTrue);
     });
 
-    test('isElectrolyte and toExcludeFromSolver flags are persisted correctly',
-        () async {
-      await _insertFood(
-        database,
-        isElectrolyte: true,
-        toExcludeFromSolver: true,
-      );
+    test(
+      'isElectrolyte and toExcludeFromSolver flags are persisted correctly',
+      () async {
+        await _insertFood(
+          database,
+          isElectrolyte: true,
+          toExcludeFromSolver: true,
+        );
 
-      final row = await database.select(database.userFoodsTable).getSingle();
-      expect(row.isElectrolyte, isTrue);
-      expect(row.toExcludeFromSolver, isTrue);
-    });
+        final row = await database.select(database.userFoodsTable).getSingle();
+        expect(row.isElectrolyte, isTrue);
+        expect(row.toExcludeFromSolver, isTrue);
+      },
+    );
   });
 
   // ============================================================
   // Deduplication behavior via unique constraint
   // ============================================================
   group('deduplication via insertOnConflictUpdate', () {
-    test('insertOnConflictUpdate updates existing row on id conflict', () async {
-      const id = '00000000-0000-0000-0000-000000000030';
-      final now = DateTime.now();
+    test(
+      'insertOnConflictUpdate updates existing row on id conflict',
+      () async {
+        const id = '00000000-0000-0000-0000-000000000030';
+        final now = DateTime.now();
 
-      // Initial insert.
-      await database.into(database.userFoodsTable).insert(
-            UserFoodsTableCompanion.insert(
-              id: id,
-              deviceId: _testUserId,
-              userId: _testUserId,
-              name: 'Original',
-              isElectrolyte: const Value(false),
-              toExcludeFromSolver: const Value(false),
-              isDeleted: const Value(false),
-              needsUpload: const Value(false),
-              createdAt: Value(now),
-              updatedAt: Value(now),
-            ),
-          );
+        // Initial insert.
+        await database
+            .into(database.userFoodsTable)
+            .insert(
+              UserFoodsTableCompanion.insert(
+                id: id,
+                deviceId: _testUserId,
+                userId: _testUserId,
+                name: 'Original',
+                isElectrolyte: const Value(false),
+                toExcludeFromSolver: const Value(false),
+                isDeleted: const Value(false),
+                needsUpload: const Value(false),
+                createdAt: Value(now),
+                updatedAt: Value(now),
+              ),
+            );
 
-      // Upsert with updated name.
-      await database.into(database.userFoodsTable).insertOnConflictUpdate(
-            UserFoodsTableCompanion.insert(
-              id: id,
-              deviceId: _testUserId,
-              userId: _testUserId,
-              name: 'Updated Name',
-              isElectrolyte: const Value(false),
-              toExcludeFromSolver: const Value(false),
-              isDeleted: const Value(false),
-              needsUpload: const Value(false),
-              createdAt: Value(now),
-              updatedAt: Value(now),
-            ),
-          );
+        // Upsert with updated name.
+        await database
+            .into(database.userFoodsTable)
+            .insertOnConflictUpdate(
+              UserFoodsTableCompanion.insert(
+                id: id,
+                deviceId: _testUserId,
+                userId: _testUserId,
+                name: 'Updated Name',
+                isElectrolyte: const Value(false),
+                toExcludeFromSolver: const Value(false),
+                isDeleted: const Value(false),
+                needsUpload: const Value(false),
+                createdAt: Value(now),
+                updatedAt: Value(now),
+              ),
+            );
 
-      final rows = await database.select(database.userFoodsTable).get();
-      expect(rows.length, 1, reason: 'Should only have one row after upsert');
-      expect(rows.first.name, 'Updated Name');
-    });
+        final rows = await database.select(database.userFoodsTable).get();
+        expect(rows.length, 1, reason: 'Should only have one row after upsert');
+        expect(rows.first.name, 'Updated Name');
+      },
+    );
 
     test('insertOrReplace handles conflict on primary key', () async {
       const id = '00000000-0000-0000-0000-000000000031';
       final now = DateTime.now();
 
-      await database.into(database.userFoodsTable).insert(
+      await database
+          .into(database.userFoodsTable)
+          .insert(
             UserFoodsTableCompanion.insert(
               id: id,
               deviceId: _testUserId,
@@ -706,7 +739,9 @@ void main() {
             ),
           );
 
-      await database.into(database.userFoodsTable).insert(
+      await database
+          .into(database.userFoodsTable)
+          .insert(
             UserFoodsTableCompanion.insert(
               id: id,
               deviceId: _testUserId,
@@ -754,39 +789,43 @@ void main() {
       expect(rows, isEmpty);
     });
 
-    test('food with all nullable fields set to null is inserted without error',
-        () async {
-      const id = '00000000-0000-0000-0000-000000000040';
-      final now = DateTime.now();
+    test(
+      'food with all nullable fields set to null is inserted without error',
+      () async {
+        const id = '00000000-0000-0000-0000-000000000040';
+        final now = DateTime.now();
 
-      await expectLater(
-        database.into(database.userFoodsTable).insert(
-              UserFoodsTableCompanion.insert(
-                id: id,
-                deviceId: _testUserId,
-                userId: _testUserId,
-                name: 'Minimal Food',
-                isElectrolyte: const Value(false),
-                toExcludeFromSolver: const Value(false),
-                isDeleted: const Value(false),
-                needsUpload: const Value(false),
-                createdAt: Value(now),
-                updatedAt: Value(now),
-                // All nullable fields omitted.
+        await expectLater(
+          database
+              .into(database.userFoodsTable)
+              .insert(
+                UserFoodsTableCompanion.insert(
+                  id: id,
+                  deviceId: _testUserId,
+                  userId: _testUserId,
+                  name: 'Minimal Food',
+                  isElectrolyte: const Value(false),
+                  toExcludeFromSolver: const Value(false),
+                  isDeleted: const Value(false),
+                  needsUpload: const Value(false),
+                  createdAt: Value(now),
+                  updatedAt: Value(now),
+                  // All nullable fields omitted.
+                ),
               ),
-            ),
-        completes,
-      );
-    });
+          completes,
+        );
+      },
+    );
 
     test('multiple foods for same user can all be read', () async {
       for (var i = 0; i < 5; i++) {
         await _insertFood(database, name: 'Food $i');
       }
 
-      final rows = await (database.select(database.userFoodsTable)
-            ..where((t) => t.userId.equals(_testUserId)))
-          .get();
+      final rows = await (database.select(
+        database.userFoodsTable,
+      )..where((t) => t.userId.equals(_testUserId))).get();
       expect(rows.length, 5);
     });
 
@@ -803,19 +842,21 @@ void main() {
   // Remote row mapper — _mapRemoteUserFoodToCompanion behavior
   // ============================================================
   group('remote row mapper', () {
-    test('categories as List from remote is encoded to JSON string in Drift',
-        () async {
-      // The real mapper does: jsonEncode(list) if List, else as String?
-      // We test the invariant by manually applying the same logic.
-      final remoteCategories = ['before_run', 'during_run'];
-      final stored = remoteCategories is List
-          ? jsonEncode(remoteCategories)
-          : remoteCategories as String?;
+    test(
+      'categories as List from remote is encoded to JSON string in Drift',
+      () async {
+        // The real mapper does: jsonEncode(list) if List, else as String?
+        // We test the invariant by manually applying the same logic.
+        final remoteCategories = ['before_run', 'during_run'];
+        final stored = remoteCategories is List
+            ? jsonEncode(remoteCategories)
+            : remoteCategories as String?;
 
-      expect(stored, isNotNull);
-      final decoded = jsonDecode(stored!) as List;
-      expect(decoded, containsAll(['before_run', 'during_run']));
-    });
+        expect(stored, isNotNull);
+        final decoded = jsonDecode(stored!) as List;
+        expect(decoded, containsAll(['before_run', 'during_run']));
+      },
+    );
 
     test('categories as String from remote is kept as-is', () async {
       // If remote sends a pre-encoded string, it passes through unchanged.

@@ -233,6 +233,7 @@ class BrickNutritionSections extends StatelessWidget {
         sectionColor: sectionColor,
         sectionTitle: displayTitle.toUpperCase(),
         useImperial: useImperial,
+        planId: brick.id,
         categoryPrefix: 'before',
         onSwapFood: (foodId, foodName, cat) =>
             onSwapFood(foodId, foodName, cat),
@@ -269,6 +270,7 @@ class BrickNutritionSections extends StatelessWidget {
           sectionColor: sectionColor,
           sectionTitle: displayTitle.toUpperCase(),
           category: category,
+          planId: brick.id,
           durationMinutes: segmentDuration,
           useImperial: useImperial,
           activityType: ActivityType.fromDbValue(sportType ?? 'running'),
@@ -457,9 +459,11 @@ class BrickNutritionSections extends StatelessWidget {
                   sportLabel: sportLabel,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  planId: brick.id,
                   brickSegment: brickSegment,
                   // Always true for during/transition — we're in BrickNutritionSections
-                  isBrick: phase != ExplanationPhase.before &&
+                  isBrick:
+                      phase != ExplanationPhase.before &&
                       phase != ExplanationPhase.after,
                   onRegenerate: onRegenerate,
                 );

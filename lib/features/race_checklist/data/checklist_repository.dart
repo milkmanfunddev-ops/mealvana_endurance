@@ -23,7 +23,9 @@ class ChecklistRepository {
   ChecklistRepository(this._database, this._logger);
 
   /// Get all checklist items for an event
-  Future<List<domain.ChecklistItem>> getChecklistForEvent(String eventId) async {
+  Future<List<domain.ChecklistItem>> getChecklistForEvent(
+    String eventId,
+  ) async {
     try {
       final query = _database.select(_database.raceChecklistItemsTable)
         ..where((tbl) => tbl.eventId.equals(eventId))
@@ -99,9 +101,9 @@ class ChecklistRepository {
   /// Toggle checked state of a checklist item
   Future<void> toggleItemChecked(String itemId, bool isChecked) async {
     try {
-      await (_database.update(_database.raceChecklistItemsTable)
-            ..where((tbl) => tbl.id.equals(itemId)))
-          .write(
+      await (_database.update(
+        _database.raceChecklistItemsTable,
+      )..where((tbl) => tbl.id.equals(itemId))).write(
         RaceChecklistItemsTableCompanion(
           isChecked: Value(isChecked),
           checkedAt: Value(isChecked ? DateTime.now() : null),
@@ -141,7 +143,9 @@ class ChecklistRepository {
       final result = await query.getSingleOrNull();
       final maxSort = result?.read(maxSortQuery) ?? -1;
 
-      await _database.into(_database.raceChecklistItemsTable).insert(
+      await _database
+          .into(_database.raceChecklistItemsTable)
+          .insert(
             RaceChecklistItemsTableCompanion.insert(
               eventId: eventId,
               userId: userId,
@@ -170,9 +174,9 @@ class ChecklistRepository {
   /// Delete a checklist item
   Future<void> deleteItem(String itemId) async {
     try {
-      await (_database.delete(_database.raceChecklistItemsTable)
-            ..where((tbl) => tbl.id.equals(itemId)))
-          .go();
+      await (_database.delete(
+        _database.raceChecklistItemsTable,
+      )..where((tbl) => tbl.id.equals(itemId))).go();
 
       _logger.info(
         'Deleted checklist item $itemId',
@@ -192,9 +196,9 @@ class ChecklistRepository {
   /// Delete all checklist items for an event (useful for regenerating)
   Future<void> deleteChecklistForEvent(String eventId) async {
     try {
-      await (_database.delete(_database.raceChecklistItemsTable)
-            ..where((tbl) => tbl.eventId.equals(eventId)))
-          .go();
+      await (_database.delete(
+        _database.raceChecklistItemsTable,
+      )..where((tbl) => tbl.eventId.equals(eventId))).go();
 
       _logger.info(
         'Deleted all checklist items for event $eventId',
@@ -214,10 +218,10 @@ class ChecklistRepository {
   /// Delete only nutrition items for an event (used when syncing with nutrition plan)
   Future<void> deleteNutritionItemsForEvent(String eventId) async {
     try {
-      await (_database.delete(_database.raceChecklistItemsTable)
-            ..where((tbl) =>
-                tbl.eventId.equals(eventId) &
-                tbl.category.equals('nutrition')))
+      await (_database.delete(_database.raceChecklistItemsTable)..where(
+            (tbl) =>
+                tbl.eventId.equals(eventId) & tbl.category.equals('nutrition'),
+          ))
           .go();
 
       _logger.debug(

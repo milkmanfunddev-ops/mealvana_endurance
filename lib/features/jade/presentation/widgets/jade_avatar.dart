@@ -10,11 +10,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 ///
 /// Design: Electrolyte (#5DE4D3) fill, Blackberry "J" in Sansita bold.
 class JadeAvatar extends StatefulWidget {
-  const JadeAvatar({
-    super.key,
-    this.size = 40,
-    this.isPulsing = false,
-  });
+  const JadeAvatar({super.key, this.size = 40, this.isPulsing = false});
 
   final double size;
   final bool isPulsing;
@@ -31,20 +27,22 @@ class _JadeAvatarState extends State<JadeAvatar>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _controller.reverse();
-        } else if (status == AnimationStatus.dismissed && widget.isPulsing) {
-          _controller.forward();
-        }
-      });
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 900),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _controller.reverse();
+          } else if (status == AnimationStatus.dismissed && widget.isPulsing) {
+            _controller.forward();
+          }
+        });
 
-    _scale = Tween<double>(begin: 1.0, end: 1.12).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     if (widget.isPulsing) {
       _controller.forward();
@@ -103,10 +101,7 @@ class _JadeAvatarState extends State<JadeAvatar>
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) => Transform.scale(
-        scale: _scale.value,
-        child: child,
-      ),
+      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: disc,
     );
   }

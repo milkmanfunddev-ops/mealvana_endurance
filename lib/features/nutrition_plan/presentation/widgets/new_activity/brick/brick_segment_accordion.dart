@@ -73,7 +73,9 @@ class BrickSegmentAccordion extends StatelessWidget {
             // Header with drag handle, title, and expand/collapse icon
             Semantics(
               button: true,
-              label: expanded ? 'Collapse $sport segment' : 'Expand $sport segment',
+              label: expanded
+                  ? 'Collapse $sport segment'
+                  : 'Expand $sport segment',
               child: InkWell(
                 onTap: onToggle,
                 borderRadius: BorderRadius.circular(12),
@@ -102,7 +104,9 @@ class BrickSegmentAccordion extends StatelessWidget {
                           child: Text(
                             '$order. $sport',
                             style: AppTextStyles.descriptor.copyWith(
-                              color: isDark ? AppColors.cream : AppColors.blackberry,
+                              color: isDark
+                                  ? AppColors.cream
+                                  : AppColors.blackberry,
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),

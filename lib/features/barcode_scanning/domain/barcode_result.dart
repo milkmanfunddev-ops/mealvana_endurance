@@ -39,7 +39,6 @@ sealed class BarcodeResult {
 
   /// Check if the result is an error
   bool get isError => this is BarcodeResultError;
-
 }
 
 /// Successful barcode lookup result
@@ -59,10 +58,8 @@ final class BarcodeResultSuccess extends BarcodeResult {
 final class BarcodeResultNotFound extends BarcodeResult {
   final String _message;
 
-  const BarcodeResultNotFound({
-    required super.barcode,
-    required String message,
-  }) : _message = message;
+  const BarcodeResultNotFound({required super.barcode, required String message})
+    : _message = message;
 
   @override
   String get message => _message;
@@ -72,10 +69,8 @@ final class BarcodeResultNotFound extends BarcodeResult {
 final class BarcodeResultError extends BarcodeResult {
   final String _message;
 
-  const BarcodeResultError({
-    required super.barcode,
-    required String message,
-  }) : _message = message;
+  const BarcodeResultError({required super.barcode, required String message})
+    : _message = message;
 
   @override
   String get message => _message;

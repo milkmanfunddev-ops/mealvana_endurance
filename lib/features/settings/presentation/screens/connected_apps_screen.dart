@@ -9,6 +9,7 @@ import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -26,7 +27,12 @@ import '../../../../shared/widgets/content_area.dart';
 /// - Auto-imports workouts after connecting
 /// - Shows "Connect" for Garmin, "Notify Me" for other coming soon providers
 class ConnectedAppsScreen extends ConsumerStatefulWidget {
-  const ConnectedAppsScreen({super.key, this.onContinue, this.onBack});
+  const ConnectedAppsScreen({
+    super.key,
+    this.onContinue,
+    this.onBack,
+    this.stepIndex,
+  });
 
   /// Callback to advance to next page in onboarding PageView
   /// If null, screen is in settings mode
@@ -34,6 +40,10 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
 
   /// Callback to go back in onboarding PageView
   final VoidCallback? onBack;
+
+  /// Position in the onboarding flow, stamped onto `screen_viewed` so the
+  /// drop-off funnel can order the steps. Null in settings mode.
+  final int? stepIndex;
 
   @override
   ConsumerState<ConnectedAppsScreen> createState() =>
@@ -49,6 +59,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   bool _finalSurgeSynced = false;
   bool _trainingPeaksSynced = false;
   bool _vdotSynced = false;
+  bool _runnaSynced = false;
 
   /// Garmin's "Refresh" doesn't poll Garmin (their API is push-only) — it
   /// just re-fetches activities from Supabase. We track in-flight state so
@@ -58,7 +69,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
   static const List<_ComingSoonProviderConfig> _comingSoonProviders = [
     _ComingSoonProviderConfig(name: 'TriDot', key: 'tridot'),
-    _ComingSoonProviderConfig(name: 'Runna', key: 'runna'),
     _ComingSoonProviderConfig(
       name: 'Strava',
       key: 'strava',
@@ -70,6 +80,24 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   @override
   void initState() {
     super.initState();
+
+    // This is onboarding step 0, and until now it fired no `screen_viewed` at
+    // all — so the funnel had no denominator: we could see users completing
+    // step 0 but never how many reached it. Every other step already tracks
+    // this in initState; match them.
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': isOnboarding
+                ? 'Connect Training Onboarding'
+                : 'Connected Apps Settings',
+            if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+          },
+        );
+
     // Refresh integration status when screen loads (especially important
     // for settings mode after connecting in onboarding)
     if (!isOnboarding) {
@@ -389,8 +417,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           name: 'V.O2',
           isAvailable: true,
           isConnected: data.isVdotConnected,
-          isConnecting:
-              data.isConnecting && data.connectingProvider == 'vdot',
+          isConnecting: data.isConnecting && data.connectingProvider == 'vdot',
           isSyncing: data.syncingProvider == 'vdot',
           athleteName: data.vdotAthleteName,
           lastSyncAt: data.vdotLastSyncAt,
@@ -399,6 +426,25 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onSync: () => _syncVdotWithState(context, ref),
           showSyncButton: data.isVdotConnected,
           hasSynced: _vdotSynced,
+        ),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        // Runna — calendar-feed (.ics) import, no OAuth. "Connect" opens a
+        // dialog where the user pastes their Runna calendar-sync link.
+        IntegrationProviderCard(
+          key: const ValueKey('connected_apps.runna_connect'),
+          name: 'Runna',
+          isAvailable: true,
+          isConnected: data.isRunnaConnected,
+          isConnecting: data.isConnecting && data.connectingProvider == 'runna',
+          isSyncing: data.syncingProvider == 'runna',
+          lastSyncAt: data.runnaLastSyncAt,
+          onConnect: () => _connectRunna(context, ref),
+          onDisconnect: () => _disconnectRunna(context, ref),
+          onSync: () => _syncRunnaWithState(context, ref),
+          showSyncButton: data.isRunnaConnected,
+          hasSynced: _runnaSynced,
         ),
 
         const SizedBox(height: AppSpacing.lg),
@@ -582,8 +628,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           name: 'V.O2',
           isAvailable: true,
           isConnected: data.isVdotConnected,
-          isConnecting:
-              data.isConnecting && data.connectingProvider == 'vdot',
+          isConnecting: data.isConnecting && data.connectingProvider == 'vdot',
           isSyncing: data.syncingProvider == 'vdot',
           athleteName: data.vdotAthleteName,
           lastSyncAt: data.vdotLastSyncAt,
@@ -592,6 +637,24 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectVdot(context, ref),
           showSyncButton: true,
           hasSynced: _vdotSynced,
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // Runna — calendar-feed (.ics) import, no OAuth.
+        IntegrationProviderCard(
+          key: const ValueKey('connect_training.runna_connect'),
+          name: 'Runna',
+          isAvailable: true,
+          isConnected: data.isRunnaConnected,
+          isConnecting: data.isConnecting && data.connectingProvider == 'runna',
+          isSyncing: data.syncingProvider == 'runna',
+          lastSyncAt: data.runnaLastSyncAt,
+          onConnect: () => _connectRunna(context, ref),
+          onSync: () => _syncRunnaWithState(context, ref),
+          onDisconnect: () => _disconnectRunna(context, ref),
+          showSyncButton: true,
+          hasSynced: _runnaSynced,
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -1048,10 +1111,154 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _syncVdotWithState(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  // ============================================================
+  // Runna (calendar feed) handlers
+  // ============================================================
+
+  /// Dialog explaining where to find the Runna calendar link, with a paste
+  /// field. Returns the entered URL or null if cancelled.
+  Future<String?> _showRunnaConnectDialog(BuildContext context) async {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final urlController = TextEditingController();
+
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            title: Text(
+              'Connect Runna',
+              style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'In the Runna app, go to Settings → Calendar sync and copy '
+                  'your calendar link, then paste it below.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  key: const ValueKey('connected_apps.runna_url_field'),
+                  controller: urlController,
+                  autofocus: true,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  style: AppTextStyles.bodySmall.copyWith(color: onSurface),
+                  decoration: const InputDecoration(
+                    hintText: 'webcal://... or https://...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                key: const ValueKey('connected_apps.runna_connect_cancel'),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                key: const ValueKey('connected_apps.runna_connect_confirm'),
+                onPressed: () =>
+                    Navigator.of(dialogContext).pop(urlController.text.trim()),
+                child: const Text('Connect'),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      urlController.dispose();
+    }
+  }
+
+  /// Shared connect flow (settings + onboarding): prompt for the feed URL,
+  /// validate by fetching it, then auto-import — mirroring the V.O2 flow.
+  Future<void> _connectRunna(BuildContext context, WidgetRef ref) async {
+    final feedUrl = await _showRunnaConnectDialog(context);
+    if (feedUrl == null || feedUrl.isEmpty || !context.mounted) return;
+
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectRunna(feedUrl);
+
+    if (!context.mounted) return;
+    if (!success) {
+      final state = ref.read(connectTrainingControllerProvider).value;
+      MealvanaSnackbar.showError(
+        context,
+        state?.errorMessage ?? 'Could not connect Runna',
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
+    MealvanaSnackbar.showSuccess(
+      context,
+      'Runna connected! Importing workouts...',
+    );
+
+    final result = await controller.importRunnaWorkouts();
+    if (!context.mounted) return;
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    final message = buildWorkoutSyncMessage(
+      newCount: result.newWorkouts,
+      updatedCount: result.updated,
+      deletedCount: result.deleted,
+      unchangedCount: result.skipped,
+    );
+
+    if (!result.success) {
+      MealvanaSnackbar.showError(
+        context,
+        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      );
+    } else if (state?.errorMessage != null) {
+      // Synced locally, but the Supabase upload didn't finish — surface it
+      // instead of a false "success"; the controller retries automatically.
+      MealvanaSnackbar.showWarning(context, state!.errorMessage!);
+    } else if (result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
+    } else {
+      MealvanaSnackbar.showInfo(context, message);
+    }
+
+    if (mounted && result.success && state?.errorMessage == null) {
+      setState(() {
+        _runnaSynced = true;
+      });
+    }
+  }
+
+  Future<void> _disconnectRunna(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    await controller.disconnectRunna();
+
+    if (context.mounted) {
+      MealvanaSnackbar.showInfo(context, 'Runna disconnected');
+    }
+  }
+
+  Future<void> _syncRunnaWithState(BuildContext context, WidgetRef ref) async {
+    await syncRunna(context, ref, showLoadingSnackbar: false);
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    if (state?.errorMessage == null && mounted) {
+      setState(() {
+        _runnaSynced = true;
+      });
+    }
+  }
+
+  Future<void> _syncVdotWithState(BuildContext context, WidgetRef ref) async {
     await syncVdot(context, ref, showLoadingSnackbar: false);
 
     final state = ref.read(connectTrainingControllerProvider).value;

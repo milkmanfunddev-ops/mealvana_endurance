@@ -12,7 +12,10 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_slot.dart';
 
 /// Brand accent colour for [slot]'s chip.
-Color slotColor(MealSlot slot) {
+///
+/// Returns a neutral grey for `null` (untagged — slot is optional since the
+/// build-a-meal redesign).
+Color slotColor(MealSlot? slot) {
   switch (slot) {
     case MealSlot.breakfast:
       return AppColors.orange;
@@ -22,5 +25,7 @@ Color slotColor(MealSlot slot) {
       return const Color(0xFF8E6FD8); // brand violet (matches protein accent)
     case MealSlot.snack:
       return AppColors.dragonfruit;
+    case null:
+      return const Color(0xFF9E9E9E); // neutral grey for untagged meals
   }
 }

@@ -42,9 +42,7 @@ class DuringFormulaCard extends StatelessWidget {
                   // During templates are all food templates by design — no
                   // template_type gating needed here.
                   PinToggleDuring(
-                    key: ValueKey(
-                      'formula_kit.during_card_pin_${formula.id}',
-                    ),
+                    key: ValueKey('formula_kit.during_card_pin_${formula.id}'),
                     formula: formula,
                     source: 'card',
                   ),
@@ -56,7 +54,10 @@ class DuringFormulaCard extends StatelessWidget {
                 runSpacing: AppSpacing.xs,
                 children: [
                   for (final a in formula.activityTypes)
-                    _Tag(label: _humanActivity(a), color: AppColors.electrolyte),
+                    _Tag(
+                      label: _humanActivity(a),
+                      color: AppColors.electrolyte,
+                    ),
                   for (final d in formula.durationBrackets)
                     _Tag(label: d, color: AppColors.orange),
                 ],

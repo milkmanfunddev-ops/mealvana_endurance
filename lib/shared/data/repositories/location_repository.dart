@@ -26,7 +26,7 @@ class LocationRepository {
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception(
         'LOCATIONIQ_API_KEY not found in environment variables. '
-        'Make sure .env file is loaded and contains LOCATIONIQ_API_KEY.'
+        'Make sure .env file is loaded and contains LOCATIONIQ_API_KEY.',
       );
     }
     _client = LocationIQClient(apiKey: apiKey);
@@ -42,7 +42,10 @@ class LocationRepository {
   /// ```dart
   /// final results = await repository.searchLocations('Boston, MA');
   /// ```
-  Future<List<LocationIQAutocompleteResult>> searchLocations(String query, {int limit = 5}) async {
+  Future<List<LocationIQAutocompleteResult>> searchLocations(
+    String query, {
+    int limit = 5,
+  }) async {
     try {
       final results = await client.autocomplete.suggest(
         query: query,

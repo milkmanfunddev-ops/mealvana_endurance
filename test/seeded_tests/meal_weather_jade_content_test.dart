@@ -37,9 +37,14 @@ import 'package:mealvana_endurance/features/meal_logging/presentation/screens/re
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 import 'package:mealvana_endurance/features/recipes/application/recipe_service.dart';
 import 'package:mealvana_endurance/features/recipes/domain/recipe.dart';
-import 'package:mealvana_endurance/features/weather/domain/location.dart' as domain;
+import 'package:mealvana_endurance/features/weather/domain/location.dart'
+    as domain;
 import 'package:mealvana_endurance/features/weather/domain/weather_forecast.dart';
 import 'package:mealvana_endurance/features/weather/presentation/screens/weather_detail_screen.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart'
+    show UnitSystem;
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 import '../helpers/widget_test_harness.dart';
@@ -61,14 +66,8 @@ Future<void> _pumpWithExtra(
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => const SizedBox.shrink(),
-      ),
-      GoRoute(
-        path: screenPath,
-        builder: (_, __) => buildScreen(),
-      ),
+      GoRoute(path: '/', builder: (_, __) => const SizedBox.shrink()),
+      GoRoute(path: screenPath, builder: (_, __) => buildScreen()),
     ],
   );
 
@@ -79,6 +78,10 @@ Future<void> _pumpWithExtra(
       overrides: [
         mockAppExternalDeps(),
         inMemoryDatabaseOverride(),
+        // EditMealLogScreen reads appConfigProvider, which throws unless it is
+        // overridden the way main_*.dart does after loading .env. Listed before
+        // [overrides] so callers can still substitute their own config.
+        appConfigProvider.overrideWithValue(AppConfig.forTesting()),
         ...overrides,
       ],
       child: MaterialApp.router(routerConfig: router),
@@ -136,20 +139,23 @@ class _FakeContentService extends Fake implements ContentService {
 
 class _FakeLogger extends Fake implements AppLogger {
   @override
-  void info(String message,
-      {String? context, Map<String, dynamic>? data}) {}
+  void info(String message, {String? context, Map<String, dynamic>? data}) {}
   @override
-  void error(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void error(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
   @override
-  void warning(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void warning(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 }
 
 // =============================================================================
@@ -177,16 +183,15 @@ class _FakeJadeChatRepository extends Fake implements JadeChatRepository {
     String? timezone,
     double? latitude,
     double? longitude,
-  }) async =>
-      JadeSendResult(
-        conversationId: '',
-        // Use async generator so the JadeDoneEvent is delivered across an
-        // event-loop boundary that tester.pump() can advance. Stream.fromIterable
-        // emits synchronously and the event never arrives in the pump cycle.
-        eventStream: (() async* {
-          yield const JadeDoneEvent();
-        })(),
-      );
+  }) async => JadeSendResult(
+    conversationId: '',
+    // Use async generator so the JadeDoneEvent is delivered across an
+    // event-loop boundary that tester.pump() can advance. Stream.fromIterable
+    // emits synchronously and the event never arrives in the pump cycle.
+    eventStream: (() async* {
+      yield const JadeDoneEvent();
+    })(),
+  );
 }
 
 // =============================================================================
@@ -295,6 +300,13 @@ WeatherForecast _seedForecast({
   );
 }
 
+/// Deterministically pins [unitSystemProvider] for [WeatherDetailScreen]
+/// content tests, since the screen now derives imperial/metric from the
+/// provider directly (see `weather_detail_screen.dart`) rather than a
+/// caller-supplied `useImperial` flag.
+Override _unitSystemOverride(UnitSystem unitSystem) =>
+    unitSystemProvider.overrideWith((ref) async => unitSystem);
+
 // =============================================================================
 // 1. RecentSavedPickerScreen — Saved tab
 // =============================================================================
@@ -309,12 +321,9 @@ void main() {
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value([meal]),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value([meal])),
           recentMealsProvider.overrideWith((ref) async => const []),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -340,12 +349,9 @@ void main() {
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value([meal]),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value([meal])),
           recentMealsProvider.overrideWith((ref) async => const []),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -363,20 +369,18 @@ void main() {
       );
     });
 
-    testWidgets('shows "No saved meals yet." when provider returns empty',
-        (tester) async {
+    testWidgets('shows "No saved meals yet." when provider returns empty', (
+      tester,
+    ) async {
       await _pumpWithExtra(
         tester,
         '/picker',
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value(const []),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
           recentMealsProvider.overrideWith((ref) async => const []),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -399,12 +403,9 @@ void main() {
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value(meals),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value(meals)),
           recentMealsProvider.overrideWith((ref) async => const []),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -419,8 +420,9 @@ void main() {
   // ===========================================================================
 
   group('RecentSavedPickerScreen — Recent tab', () {
-    testWidgets('switches to Recent tab and shows recent meal log',
-        (tester) async {
+    testWidgets('switches to Recent tab and shows recent meal log', (
+      tester,
+    ) async {
       final log = _seedMealLog(name: 'Overnight Oats');
       await _pumpWithExtra(
         tester,
@@ -428,12 +430,9 @@ void main() {
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value(const []),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
           recentMealsProvider.overrideWith((ref) async => [log]),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -449,20 +448,18 @@ void main() {
       );
     });
 
-    testWidgets('Recent tab shows "No recent meals." when empty',
-        (tester) async {
+    testWidgets('Recent tab shows "No recent meals." when empty', (
+      tester,
+    ) async {
       await _pumpWithExtra(
         tester,
         '/picker',
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value(const []),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
           recentMealsProvider.overrideWith((ref) async => const []),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -477,8 +474,9 @@ void main() {
       );
     });
 
-    testWidgets('Recent tab shows macro subtitle for a seeded log',
-        (tester) async {
+    testWidgets('Recent tab shows macro subtitle for a seeded log', (
+      tester,
+    ) async {
       final log = _seedMealLog(
         name: 'Overnight Oats',
         calories: 380,
@@ -492,12 +490,9 @@ void main() {
         () => const RecentSavedPickerScreen(),
         extra: {'logDate': '2026-08-15'},
         overrides: [
-          savedMealsProvider.overrideWith(
-            (ref) => Stream.value(const []),
-          ),
+          savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
           recentMealsProvider.overrideWith((ref) async => [log]),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -529,8 +524,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           recipeServiceProvider.overrideWithValue(fakeService),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -559,8 +553,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           recipeServiceProvider.overrideWithValue(fakeService),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -574,8 +567,12 @@ void main() {
     });
 
     testWidgets('renders carbs/protein/fat in recipe subtitle', (tester) async {
-      final recipe =
-          _seedRecipe(name: 'Pre-Race Pasta', carbs: 88, protein: 18, fat: 9);
+      final recipe = _seedRecipe(
+        name: 'Pre-Race Pasta',
+        carbs: 88,
+        protein: 18,
+        fat: 9,
+      );
       final fakeService = _FakeRecipeService([recipe]);
 
       await _pumpWithExtra(
@@ -585,22 +582,31 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           recipeServiceProvider.overrideWithValue(fakeService),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
 
-      expect(find.textContaining('C 88g'), findsOneWidget,
-          reason: 'Carb count must appear in subtitle');
-      expect(find.textContaining('P 18g'), findsOneWidget,
-          reason: 'Protein count must appear in subtitle');
-      expect(find.textContaining('F 9g'), findsOneWidget,
-          reason: 'Fat count must appear in subtitle');
+      expect(
+        find.textContaining('C 88g'),
+        findsOneWidget,
+        reason: 'Carb count must appear in subtitle',
+      );
+      expect(
+        find.textContaining('P 18g'),
+        findsOneWidget,
+        reason: 'Protein count must appear in subtitle',
+      );
+      expect(
+        find.textContaining('F 9g'),
+        findsOneWidget,
+        reason: 'Fat count must appear in subtitle',
+      );
     });
 
-    testWidgets('shows "No recipes found." when service returns empty list',
-        (tester) async {
+    testWidgets('shows "No recipes found." when service returns empty list', (
+      tester,
+    ) async {
       final fakeService = _FakeRecipeService([]);
 
       await _pumpWithExtra(
@@ -610,8 +616,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           recipeServiceProvider.overrideWithValue(fakeService),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -627,7 +632,10 @@ void main() {
       final recipes = [
         _seedRecipe(id: 'r-1', name: 'Pre-Race Pasta'),
         _seedRecipe(
-            id: 'r-2', name: 'Recovery Smoothie', type: RecipeType.recovery),
+          id: 'r-2',
+          name: 'Recovery Smoothie',
+          type: RecipeType.recovery,
+        ),
       ];
       final fakeService = _FakeRecipeService(recipes);
 
@@ -638,8 +646,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           recipeServiceProvider.overrideWithValue(fakeService),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -648,8 +655,9 @@ void main() {
       expect(find.text('Recovery Smoothie'), findsOneWidget);
     });
 
-    testWidgets('renders type filter chips (All, Breakfast, etc.)',
-        (tester) async {
+    testWidgets('renders type filter chips (All, Breakfast, etc.)', (
+      tester,
+    ) async {
       final fakeService = _FakeRecipeService([]);
 
       await _pumpWithExtra(
@@ -659,18 +667,26 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           recipeServiceProvider.overrideWithValue(fakeService),
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
 
-      expect(find.text('All'), findsOneWidget,
-          reason: '"All" filter chip must render');
-      expect(find.text('Breakfast'), findsOneWidget,
-          reason: '"Breakfast" filter chip must render');
-      expect(find.text('Workout Fuel'), findsOneWidget,
-          reason: '"Workout Fuel" filter chip must render');
+      expect(
+        find.text('All'),
+        findsOneWidget,
+        reason: '"All" filter chip must render',
+      );
+      expect(
+        find.text('Breakfast'),
+        findsOneWidget,
+        reason: '"Breakfast" filter chip must render',
+      );
+      expect(
+        find.text('Workout Fuel'),
+        findsOneWidget,
+        reason: '"Workout Fuel" filter chip must render',
+      );
     });
   });
 
@@ -688,8 +704,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -713,8 +728,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -729,8 +743,9 @@ void main() {
       );
     });
 
-    testWidgets('pre-fills carbs/protein/fat fields from seeded MealLog',
-        (tester) async {
+    testWidgets('pre-fills carbs/protein/fat fields from seeded MealLog', (
+      tester,
+    ) async {
       final log = _seedMealLog(carbsG: 62, proteinG: 15, fatG: 8);
 
       await _pumpWithExtra(
@@ -739,8 +754,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -755,16 +769,26 @@ void main() {
         find.widgetWithText(TextFormField, 'Fat (g)'),
       );
 
-      expect(carbField.controller?.text, equals('62.0'),
-          reason: 'Carbs field must be pre-filled');
-      expect(protField.controller?.text, equals('15.0'),
-          reason: 'Protein field must be pre-filled');
-      expect(fatField.controller?.text, equals('8.0'),
-          reason: 'Fat field must be pre-filled');
+      expect(
+        carbField.controller?.text,
+        equals('62.0'),
+        reason: 'Carbs field must be pre-filled',
+      );
+      expect(
+        protField.controller?.text,
+        equals('15.0'),
+        reason: 'Protein field must be pre-filled',
+      );
+      expect(
+        fatField.controller?.text,
+        equals('8.0'),
+        reason: 'Fat field must be pre-filled',
+      );
     });
 
-    testWidgets('shows "Name is required" when name is cleared and saved',
-        (tester) async {
+    testWidgets('shows "Name is required" when name is cleared and saved', (
+      tester,
+    ) async {
       final log = _seedMealLog(name: 'Overnight Oats');
 
       await _pumpWithExtra(
@@ -773,8 +797,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -786,9 +809,10 @@ void main() {
       );
       await tester.pump();
 
-      // Scroll the button into view before tapping — on the default 800x600
-      // test surface it sits below the fold, so a direct tap misses the
-      // hit-test (only warns), _submit() never runs, and validation never fires.
+      // Scroll Save changes into view before tapping — the redesigned edit
+      // screen is taller and on the default 800x600 test surface the button
+      // sits below the fold, so a direct tap misses the hit-test (only warns),
+      // _submit() never runs, and validation never fires.
       await tester.ensureVisible(find.text('Save changes'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save changes'));
@@ -811,8 +835,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -833,8 +856,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -855,8 +877,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: {'log': log},
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -868,8 +889,9 @@ void main() {
       );
     });
 
-    testWidgets('null extra — renders "Edit Meal" title without crashing',
-        (tester) async {
+    testWidgets('null extra — renders "Edit Meal" title without crashing', (
+      tester,
+    ) async {
       // When extra is null, _originalLog is null and the form is mostly empty.
       // The screen must not crash; the name field should be empty.
       await _pumpWithExtra(
@@ -878,8 +900,7 @@ void main() {
         () => const EditMealLogScreen(),
         extra: null,
         overrides: [
-          mealLogControllerProvider
-              .overrideWith(_FakeMealLogController.new),
+          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
       );
@@ -897,13 +918,15 @@ void main() {
   // ===========================================================================
 
   group('WeatherDetailScreen — seeded forecast', () {
-    testWidgets('renders temperature in Celsius from seeded forecast',
-        (tester) async {
+    testWidgets('renders temperature in Celsius when unit pref is metric', (
+      tester,
+    ) async {
       final forecast = _seedForecast(tempC: 18.0);
 
       await pumpSeeded(
         tester,
         WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.metric)],
         settle: true,
       );
 
@@ -915,26 +938,30 @@ void main() {
       );
     });
 
-    testWidgets('renders temperature in Fahrenheit when useImperial=true',
-        (tester) async {
+    testWidgets('renders temperature in Fahrenheit when unit pref is imperial', (
+      tester,
+    ) async {
       // 18°C → (18 * 9/5) + 32 = 64.4 → rounds to 64°F
       final forecast = _seedForecast(tempC: 18.0);
 
       await pumpSeeded(
         tester,
-        WeatherDetailScreen(forecast: forecast, useImperial: true),
+        WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.imperial)],
         settle: true,
       );
 
       expect(
         find.text('64°F'),
         findsWidgets,
-        reason: 'Temperature must be shown in Fahrenheit when useImperial=true',
+        reason:
+            'Temperature must be shown in Fahrenheit when unit pref is imperial',
       );
     });
 
-    testWidgets('renders humidity percentage from seeded forecast',
-        (tester) async {
+    testWidgets('renders humidity percentage from seeded forecast', (
+      tester,
+    ) async {
       final forecast = _seedForecast(humidity: 72);
 
       await pumpSeeded(
@@ -950,8 +977,9 @@ void main() {
       );
     });
 
-    testWidgets('renders weather conditions string from seeded forecast',
-        (tester) async {
+    testWidgets('renders weather conditions string from seeded forecast', (
+      tester,
+    ) async {
       final forecast = _seedForecast(conditions: 'Clear skies');
 
       await pumpSeeded(
@@ -967,13 +995,15 @@ void main() {
       );
     });
 
-    testWidgets('renders wind speed in km/h from seeded forecast',
-        (tester) async {
+    testWidgets('renders wind speed in km/h from seeded forecast', (
+      tester,
+    ) async {
       final forecast = _seedForecast(windSpeedKmh: 15);
 
       await pumpSeeded(
         tester,
         WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.metric)],
         settle: true,
       );
 
@@ -984,14 +1014,16 @@ void main() {
       );
     });
 
-    testWidgets('renders precipitation in mm from seeded forecast',
-        (tester) async {
+    testWidgets('renders precipitation in mm from seeded forecast', (
+      tester,
+    ) async {
       // 0.5 mm → toStringAsFixed(1) → "0.5 mm"
       final forecast = _seedForecast(precipitationMm: 0.5);
 
       await pumpSeeded(
         tester,
         WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.metric)],
         settle: true,
       );
 
@@ -1002,8 +1034,9 @@ void main() {
       );
     });
 
-    testWidgets('renders location displayName when location is provided',
-        (tester) async {
+    testWidgets('renders location displayName when location is provided', (
+      tester,
+    ) async {
       final forecast = _seedForecast();
       const location = domain.Location(
         latitude: 42.36,
@@ -1026,8 +1059,9 @@ void main() {
       );
     });
 
-    testWidgets('renders Forecast source label in Forecast Info card',
-        (tester) async {
+    testWidgets('renders Forecast source label in Forecast Info card', (
+      tester,
+    ) async {
       final forecast = _seedForecast(source: WeatherSource.forecast);
 
       await pumpSeeded(
@@ -1044,9 +1078,9 @@ void main() {
       );
     });
 
-    testWidgets(
-        'renders "No (using defaults)" when forecastAvailable is false',
-        (tester) async {
+    testWidgets('renders "No (using defaults)" when forecastAvailable is false', (
+      tester,
+    ) async {
       final forecast = _seedForecast(forecastAvailable: false);
 
       await pumpSeeded(
@@ -1063,14 +1097,16 @@ void main() {
       );
     });
 
-    testWidgets('Fahrenheit conversion is arithmetically correct: 0°C = 32°F',
-        (tester) async {
+    testWidgets('Fahrenheit conversion is arithmetically correct: 0°C = 32°F', (
+      tester,
+    ) async {
       // BUG TRAP: if the conversion formula is wrong, this catches it.
       final forecast = _seedForecast(tempC: 0.0);
 
       await pumpSeeded(
         tester,
-        WeatherDetailScreen(forecast: forecast, useImperial: true),
+        WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.imperial)],
         settle: true,
       );
 
@@ -1087,7 +1123,8 @@ void main() {
 
       await pumpSeeded(
         tester,
-        WeatherDetailScreen(forecast: forecast, useImperial: true),
+        WeatherDetailScreen(forecast: forecast),
+        overrides: [_unitSystemOverride(UnitSystem.imperial)],
         settle: true,
       );
 
@@ -1124,8 +1161,9 @@ void main() {
       ];
     }
 
-    testWidgets('renders empty state with greeting when no history',
-        (tester) async {
+    testWidgets('renders empty state with greeting when no history', (
+      tester,
+    ) async {
       // NOTE: settle: false — the empty state triggers _maybeRequestOpener()
       // which starts a fake streaming sequence. The _TypingIndicator has a
       // repeating AnimationController so pumpAndSettle never settles. Pump
@@ -1172,8 +1210,9 @@ void main() {
       );
     });
 
-    testWidgets('renders user message bubble from seeded history',
-        (tester) async {
+    testWidgets('renders user message bubble from seeded history', (
+      tester,
+    ) async {
       final now = DateTime.now();
       final conversation = JadeConversation(
         id: 'conv-test',
@@ -1216,8 +1255,9 @@ void main() {
       );
     });
 
-    testWidgets('renders assistant message bubble from seeded history',
-        (tester) async {
+    testWidgets('renders assistant message bubble from seeded history', (
+      tester,
+    ) async {
       final now = DateTime.now();
       final conversation = JadeConversation(
         id: 'conv-test',
@@ -1253,8 +1293,9 @@ void main() {
       );
     });
 
-    testWidgets('renders both user and assistant messages in order',
-        (tester) async {
+    testWidgets('renders both user and assistant messages in order', (
+      tester,
+    ) async {
       final now = DateTime.now();
       final conversation = JadeConversation(
         id: 'conv-order',
@@ -1292,12 +1333,14 @@ void main() {
 
       expect(find.text('How many carbs before a long run?'), findsOneWidget);
       expect(
-          find.text('For a run over 90 minutes, aim for 1-4g/kg.'),
-          findsOneWidget);
+        find.text('For a run over 90 minutes, aim for 1-4g/kg.'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('Jade name appears in app bar from content service',
-        (tester) async {
+    testWidgets('Jade name appears in app bar from content service', (
+      tester,
+    ) async {
       // settle: false — repeating AnimationController in empty state prevents
       // pumpAndSettle from completing. See note above.
       // jade.coach_name defaultValue = 'Jade'

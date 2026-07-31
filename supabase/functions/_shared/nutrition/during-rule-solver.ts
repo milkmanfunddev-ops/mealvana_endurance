@@ -403,29 +403,87 @@ export function generateDuringPhaseRuleBased(
   }
 
   // ---- STEP 4: Hydration (water to meet fluid target) ----
-  const remainingFluid = Math.max(0, fluidTarget - fluidAssigned);
-  if (remainingFluid > 0) {
-    const waterFood = pickWeighted(categorized.hydration, 'Hydration selection');
-    if (waterFood && waterFood.per_serving.water_ml > 0) {
-      let waterServings = capServingsByUpperBounds(
-        waterFood,
-        remainingFluid / waterFood.per_serving.water_ml,
-        carbsAssigned,
-        sodiumAssigned,
-        fluidAssigned,
-        carbUpper,
-        sodiumUpper,
-        fluidUpper,
+  // Keep filling from the hydration pool until the fluid TARGET is reached —
+  // a single pick capped at its max_servings used to strand the total below
+  // the range floor even with more hydration foods available (aim at the
+  // target, land in range; 2026-07-29).
+  {
+    // Dedicated hydration foods first, then any other liquid in the pool
+    // (e.g. an extra half-serving of sports drink) — capped by the carb and
+    // sodium uppers so the top-up never buys fluid at the price of another
+    // macro's ceiling.
+    // Electrolyte drinks may top up fluid only when even their smallest
+    // serving keeps sodium inside the ceiling — a tiny sodium target must
+    // not grow an electrolyte item just to buy water.
+    const liquidExtras = foods.filter(
+      (f) =>
+        f.per_serving.water_ml > 0 &&
+        !categorized.hydration.includes(f) &&
+        (!f.is_electrolyte ||
+          sodiumAssigned + f.per_serving.sodium_mg * (f.min_servings ?? 0.5) <=
+            sodiumUpper),
+    );
+    const hydrationPool = [...categorized.hydration, ...liquidExtras];
+    while (fluidTarget - fluidAssigned > 0 && hydrationPool.length > 0) {
+      const waterFood = hydrationPool.shift();
+      if (!waterFood || waterFood.per_serving.water_ml <= 0) continue;
+
+      const existing = resultFoods.find((r) => r.food_id === waterFood.id);
+      const alreadyTaken = existing?.quantity ?? 0;
+      const maxAdditional = Math.max(
+        0,
+        (waterFood.max_servings ?? Number.POSITIVE_INFINITY) - alreadyTaken,
+      );
+      if (maxAdditional <= 0) continue;
+
+      const waterServings = Math.min(
+        maxAdditional,
+        capServingsByUpperBounds(
+          waterFood,
+          (fluidTarget - fluidAssigned) / waterFood.per_serving.water_ml,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
+        ),
       );
 
+      // clampServings may round UP to the food's minimum increment; never let
+      // that push the total past the fluid (or sodium/carb) ceiling.
+      if (
+        waterServings > 0 &&
+        (fluidAssigned + waterFood.per_serving.water_ml * waterServings >
+          fluidUpper + 1e-6 ||
+          sodiumAssigned + waterFood.per_serving.sodium_mg * waterServings >
+            sodiumUpper + 1e-6 ||
+          carbsAssigned + waterFood.per_serving.carbs_g * waterServings >
+            carbUpper + 1e-6)
+      ) {
+        continue;
+      }
+
       if (waterServings > 0) {
-        const waterResult = buildFoodResult(waterFood, waterServings);
-        resultFoods.push(waterResult);
-        fluidAssigned += waterResult.fluids_ml;
-        sodiumAssigned += waterResult.sodium_mg;
+        const addition = buildFoodResult(waterFood, waterServings);
+        if (existing) {
+          existing.quantity += addition.quantity;
+          existing.carbs_grams += addition.carbs_grams;
+          existing.protein_grams += addition.protein_grams;
+          existing.fat_grams += addition.fat_grams;
+          existing.sodium_mg += addition.sodium_mg;
+          existing.fluids_ml += addition.fluids_ml;
+          existing.calories += addition.calories;
+        } else {
+          resultFoods.push(addition);
+        }
+        fluidAssigned += addition.fluids_ml;
+        sodiumAssigned += addition.sodium_mg;
+        carbsAssigned += addition.carbs_grams;
 
         console.log(
-          `[DURING-RULES] Hydration: ${waterFood.name} x${waterServings} = ${waterResult.fluids_ml}ml`
+          `[DURING-RULES] Hydration: ${waterFood.name} x${waterServings} = ${addition.fluids_ml}ml` +
+            (existing ? ' (topped up existing selection)' : ''),
         );
       }
     }

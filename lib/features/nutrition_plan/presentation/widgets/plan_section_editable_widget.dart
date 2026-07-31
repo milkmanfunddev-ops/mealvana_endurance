@@ -36,9 +36,10 @@ class PlanSectionEditableWidget extends StatefulWidget {
   /// Callers without an activity (e.g. the personal-formula editor) inject their
   /// own add flow here.
   final VoidCallback? onAddFood;
-  
+
   @override
-  State<PlanSectionEditableWidget> createState() => _PlanSectionEditableWidgetState();
+  State<PlanSectionEditableWidget> createState() =>
+      _PlanSectionEditableWidgetState();
 }
 
 class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
@@ -75,9 +76,9 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
             ),
           ],
         ),
-        
+
         SizedBox(height: 12.h),
-        
+
         // Food Items List with swipe functionality
         if (widget.section.foodItems.isEmpty)
           Container(
@@ -105,26 +106,29 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
             final index = entry.key;
             final foodItem = entry.value;
             final isLastItem = index == widget.section.foodItems.length - 1;
-            final isFirstInBeforeRun = _sectionCategory == 'before_run' && index == 0;
-            
+            final isFirstInBeforeRun =
+                _sectionCategory == 'before_run' && index == 0;
+
             return Column(
               children: [
                 SwipeableFoodItem(
                   foodItem: foodItem,
                   category: _sectionCategory,
                   isFirstInBeforeRun: isFirstInBeforeRun,
-                  onQuantityChanged: (newQuantity) => widget.onUpdateQuantity?.call(foodItem.id, newQuantity),
+                  onQuantityChanged: (newQuantity) =>
+                      widget.onUpdateQuantity?.call(foodItem.id, newQuantity),
                   onTap: () => widget.onFoodItemTap?.call(foodItem.id),
-                  onSwap: () => widget.onSwapFood?.call(foodItem.id, foodItem.name),
+                  onSwap: () =>
+                      widget.onSwapFood?.call(foodItem.id, foodItem.name),
                   onDelete: () => widget.onDeleteFood?.call(foodItem.id),
                 ),
                 if (!isLastItem) SizedBox(height: 8.h),
               ],
             );
           }),
-        
+
         SizedBox(height: 12.h),
-        
+
         // Add button aligned to the left
         Align(
           alignment: Alignment.centerLeft,
@@ -140,10 +144,10 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
                 return;
               }
               // Navigate to swap/add screen
-              context.push('/swap-food', extra: {
-                'category': _sectionCategory,
-                'activityId': activityId,
-              });
+              context.push(
+                '/swap-food',
+                extra: {'category': _sectionCategory, 'activityId': activityId},
+              );
             },
           ),
         ),

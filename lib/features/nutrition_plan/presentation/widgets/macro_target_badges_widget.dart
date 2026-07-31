@@ -61,17 +61,23 @@ class MacroTargetBadgesWidget extends StatelessWidget {
 
     final sectionTitle = _getSectionTitleForPhase();
     final section = plan!.sections.firstWhere(
-      (section) => section.title.toLowerCase().contains(sectionTitle.toLowerCase()),
+      (section) =>
+          section.title.toLowerCase().contains(sectionTitle.toLowerCase()),
       orElse: () => PlanSection(id: '', title: '', subtitle: '', foodItems: []),
     );
 
     for (final foodItem in section.foodItems) {
       final nutrition = foodItem.nutritionalInfo;
       if (nutrition != null) {
-        currentValues[MacroType.carbs] = (currentValues[MacroType.carbs]! + (nutrition.carbs ?? 0));
-        currentValues[MacroType.fluids] = (currentValues[MacroType.fluids]! + (nutrition.fluids?.round() ?? 0));
-        currentValues[MacroType.sodium] = (currentValues[MacroType.sodium]! + (nutrition.sodium ?? 0));
-        currentValues[MacroType.protein] = (currentValues[MacroType.protein]! + (nutrition.protein ?? 0));
+        currentValues[MacroType.carbs] =
+            (currentValues[MacroType.carbs]! + (nutrition.carbs ?? 0));
+        currentValues[MacroType.fluids] =
+            (currentValues[MacroType.fluids]! +
+            (nutrition.fluids?.round() ?? 0));
+        currentValues[MacroType.sodium] =
+            (currentValues[MacroType.sodium]! + (nutrition.sodium ?? 0));
+        currentValues[MacroType.protein] =
+            (currentValues[MacroType.protein]! + (nutrition.protein ?? 0));
       }
     }
 
@@ -122,7 +128,9 @@ class MacroTargetBadgesWidget extends StatelessWidget {
     final unit = _getMacroUnit(macroType);
     final rangeText = _getRangeText(macroType);
     final ratioWithUnit = '$current/$target$unit';
-    final label = rangeText != null ? '${ _getMacroLabel(macroType)} ($rangeText)' : _getMacroLabel(macroType);
+    final label = rangeText != null
+        ? '${_getMacroLabel(macroType)} ($rangeText)'
+        : _getMacroLabel(macroType);
     final color = _getMacroColor(macroType);
 
     return Container(
@@ -130,10 +138,7 @@ class MacroTargetBadgesWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -286,16 +291,7 @@ class MacroTargetBadgesWidget extends StatelessWidget {
 }
 
 /// Enum for run phases
-enum RunPhase {
-  beforeRun,
-  duringRun,
-  afterRun,
-}
+enum RunPhase { beforeRun, duringRun, afterRun }
 
 /// Enum for macro types
-enum MacroType {
-  carbs,
-  fluids,
-  sodium,
-  protein,
-}
+enum MacroType { carbs, fluids, sodium, protein }

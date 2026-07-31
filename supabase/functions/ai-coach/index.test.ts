@@ -39,6 +39,7 @@ import {
   type InsightContext,
   type InsightComponent,
 } from '../_shared/coach_insight/insight.ts';
+import { COACH_INSIGHT_MODEL } from '../_shared/ai/model.ts';
 
 // ---------------------------------------------------------------------------
 // Shared test helpers
@@ -399,11 +400,12 @@ describe('F. COACH_INSIGHT_SYSTEM_PROMPT guardrails', () => {
 // ---------------------------------------------------------------------------
 
 describe('G. Model ID wiring', () => {
-  it('COACH_INSIGHT_MODEL defaults to anthropic/claude-haiku-4.5 when env not set', () => {
-    // Import separately to test the env-read logic
-    const model =
-      Deno.env.get('COACH_INSIGHT_MODEL') ?? 'anthropic/claude-haiku-4.5';
-    assertEquals(model, 'anthropic/claude-haiku-4.5');
+  it('COACH_INSIGHT_MODEL resolves to Sonnet when env not set', () => {
+    // Assert the REAL exported constant, not a re-typed copy of the fallback —
+    // an inline `?? 'default'` here is a tautology that passes no matter what
+    // model.ts says, which is how this assertion went stale once already.
+    assertEquals(Deno.env.get('COACH_INSIGHT_MODEL'), undefined);
+    assertEquals(COACH_INSIGHT_MODEL, 'anthropic/claude-sonnet-4.6');
   });
 
   it('COACH_INSIGHT_MODEL respects env override', () => {

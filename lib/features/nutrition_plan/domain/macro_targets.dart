@@ -314,8 +314,7 @@ class BrickSegmentMacroTarget {
       if (carbsRateGPerH != null) 'carbsRateGPerH': carbsRateGPerH,
       if (rawBandLowGPerH != null) 'rawBandLowGPerH': rawBandLowGPerH,
       if (rawBandHighGPerH != null) 'rawBandHighGPerH': rawBandHighGPerH,
-      if (scaledBandLowGPerH != null)
-        'scaledBandLowGPerH': scaledBandLowGPerH,
+      if (scaledBandLowGPerH != null) 'scaledBandLowGPerH': scaledBandLowGPerH,
       if (scaledBandHighGPerH != null)
         'scaledBandHighGPerH': scaledBandHighGPerH,
       if (gutMultiplier != null) 'gutMultiplier': gutMultiplier,
@@ -358,11 +357,11 @@ class BrickSegmentMacroTarget {
       gutMultiplier: (json['gutMultiplier'] as num?)?.toDouble(),
       sportCeilingGPerH: (json['sportCeilingGPerH'] as num?)?.toDouble(),
       brickPenalty: (json['brickPenalty'] as num?)?.toDouble(),
-      cumulativeDurationMin:
-          (json['cumulativeDurationMin'] as num?)?.toDouble(),
+      cumulativeDurationMin: (json['cumulativeDurationMin'] as num?)
+          ?.toDouble(),
       // Hydration/sodium derivation fields (all optional — legacy JSON safe)
-      effectiveSweatRateLPerH:
-          (json['effectiveSweatRateLPerH'] as num?)?.toDouble(),
+      effectiveSweatRateLPerH: (json['effectiveSweatRateLPerH'] as num?)
+          ?.toDouble(),
       sodiumConcMgPerL: (json['sodiumConcMgPerL'] as num?)?.toInt(),
       replacementPercent: (json['replacementPercent'] as num?)?.toDouble(),
       floorMlPerH: (json['floorMlPerH'] as num?)?.toInt(),
@@ -540,8 +539,8 @@ class BrickTransitionMacroTarget {
       waterLowMl: (json['waterLowMl'] as num?)?.toDouble(),
       waterHighMl: (json['waterHighMl'] as num?)?.toDouble(),
       // Hydration/sodium derivation fields (all optional — legacy JSON safe)
-      effectiveSweatRateLPerH:
-          (json['effectiveSweatRateLPerH'] as num?)?.toDouble(),
+      effectiveSweatRateLPerH: (json['effectiveSweatRateLPerH'] as num?)
+          ?.toDouble(),
       sodiumConcMgPerL: (json['sodiumConcMgPerL'] as num?)?.toInt(),
       replacementPercent: (json['replacementPercent'] as num?)?.toDouble(),
       floorMlPerH: (json['floorMlPerH'] as num?)?.toInt(),
@@ -931,7 +930,8 @@ class DuringRunMacros {
       rawBandLowGPerH: rawBandLowGPerH ?? this.rawBandLowGPerH,
       rawBandHighGPerH: rawBandHighGPerH ?? this.rawBandHighGPerH,
       // Hydration/sodium derivation fields
-      effectiveSweatRateLPerH: effectiveSweatRateLPerH ?? this.effectiveSweatRateLPerH,
+      effectiveSweatRateLPerH:
+          effectiveSweatRateLPerH ?? this.effectiveSweatRateLPerH,
       sodiumConcMgPerL: sodiumConcMgPerL ?? this.sodiumConcMgPerL,
       replacementPercent: replacementPercent ?? this.replacementPercent,
       floorMlPerH: floorMlPerH ?? this.floorMlPerH,
@@ -1006,8 +1006,8 @@ class DuringRunMacros {
       rawBandLowGPerH: (json['rawBandLowGPerH'] as num?)?.toDouble(),
       rawBandHighGPerH: (json['rawBandHighGPerH'] as num?)?.toDouble(),
       // Hydration/sodium derivation fields (all optional — legacy JSON safe)
-      effectiveSweatRateLPerH:
-          (json['effectiveSweatRateLPerH'] as num?)?.toDouble(),
+      effectiveSweatRateLPerH: (json['effectiveSweatRateLPerH'] as num?)
+          ?.toDouble(),
       sodiumConcMgPerL: (json['sodiumConcMgPerL'] as num?)?.toInt(),
       replacementPercent: (json['replacementPercent'] as num?)?.toDouble(),
       floorMlPerH: (json['floorMlPerH'] as num?)?.toInt(),

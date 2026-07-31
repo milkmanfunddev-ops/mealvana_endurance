@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../calendar/presentation/providers/calendar_view_provider.dart';
@@ -21,8 +22,6 @@ import '../fuel_timeline_type.dart';
 class FuelTimelineDayHeader extends ConsumerWidget {
   const FuelTimelineDayHeader({super.key});
 
-  static const _cream = AppColors.cream;
-  static const _dim = Color(0x80F5F3ED); // cream @ 0.5
   static const _dot = AppColors.electrolyteDark;
 
   @override
@@ -30,19 +29,30 @@ class FuelTimelineDayHeader extends ConsumerWidget {
     final selected = ref.watch(calendarSelectedDateProvider);
     final mode = ref.watch(calendarViewProvider);
     final isWeek = mode == CalendarViewMode.week;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Foreground flips cream-on-dark / blackberry-on-light; the selected-day
+    // pill fill is the foreground colour with its text as the inverse (the
+    // background it's meant to contrast against).
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    final surfaceBg = isDark ? AppColors.blackberry : AppColors.cream;
+    final dim = onSurface.withValues(alpha: 0.5);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Horizontal inset is 6 (not 20) because the gear is now a 48x48 tap
+        // target: the extra 14 px of button padding replaces the row inset so
+        // the gear glyph still lands ~30 px from the screen edge.
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _toggleRow(context, ref, isWeek),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: _toggleRow(context, ref, isWeek, onSurface, dim),
         ),
         // More breathing room before the month nav (it was crowding BY WEEK).
-        const SizedBox(height: 20),
+        // Trimmed from 20 to 6 to absorb most of the taller (48 px) gear row.
+        const SizedBox(height: 6),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _monthNav(ref, selected, isWeek),
+          child: _monthNav(ref, selected, isWeek, onSurface, isDark),
         ),
         const SizedBox(height: 14),
         // Week strip spreads nearly edge-to-edge so the day numbers aren't
@@ -50,15 +60,21 @@ class FuelTimelineDayHeader extends ConsumerWidget {
         if (isWeek)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _weekStrip(ref, selected),
+            child: _weekStrip(ref, selected, onSurface, surfaceBg),
           ),
         const SizedBox(height: 10),
-        Container(height: 1, color: _cream.withValues(alpha: 0.1)),
+        Container(height: 1, color: onSurface.withValues(alpha: 0.1)),
       ],
     );
   }
 
-  Widget _toggleRow(BuildContext context, WidgetRef ref, bool isWeek) {
+  Widget _toggleRow(
+    BuildContext context,
+    WidgetRef ref,
+    bool isWeek,
+    Color onSurface,
+    Color dim,
+  ) {
     void setMode(CalendarViewMode m) =>
         ref.read(calendarViewProvider.notifier).setView(m);
 
@@ -70,42 +86,64 @@ class FuelTimelineDayHeader extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.only(bottom: 5),
           decoration: active
-              ? const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: _cream, width: 2)),
+              ? BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: onSurface, width: 2),
+                  ),
                 )
               : null,
           child: Text(
             text,
-            style: FtType.byWeek.copyWith(color: active ? _cream : _dim),
+            style: FtType.byWeek.copyWith(color: active ? onSurface : dim),
           ),
         ),
       );
     }
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            label('BY WEEK', isWeek),
-            const SizedBox(width: 26),
-            label('BY MONTH', !isWeek),
-          ],
-        ),
-        Positioned(
-          right: 0,
-          child: GestureDetector(
-            key: const ValueKey('fuel_timeline.settings'),
-            onTap: () => context.push('/settings'),
-            child: const Icon(Icons.settings_outlined, size: 20, color: _cream),
+    // The row is pinned to 48 px tall on purpose. A Stack only sizes itself
+    // from its *non-positioned* children, and a RenderBox never hit-tests a
+    // child outside its own bounds — so before this the gear's tap area was
+    // clipped to the ~22 px height of the BY WEEK / BY MONTH labels no matter
+    // how much padding it carried.
+    return SizedBox(
+      height: 48,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              label('BY WEEK', isWeek),
+              const SizedBox(width: 26),
+              label('BY MONTH', !isWeek),
+            ],
           ),
-        ),
-      ],
+          Positioned(
+            right: 0,
+            child: IconButton(
+              key: const ValueKey('fuel_timeline.settings'),
+              onPressed: () => context.pushOnce('/settings'),
+              tooltip: 'Settings',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              // Match the gear the shared TabsScreen overlay draws on every
+              // other tab so the settings affordance is identical across the
+              // dashboard and the Events/Learn tabs.
+              icon: FaIcon(FontAwesomeIcons.gear, size: 22, color: onSurface),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _monthNav(WidgetRef ref, DateTime selected, bool isWeek) {
+  Widget _monthNav(
+    WidgetRef ref,
+    DateTime selected,
+    bool isWeek,
+    Color onSurface,
+    bool isDark,
+  ) {
     void shift(int dir) {
       final next = isWeek
           ? selected.add(Duration(days: 7 * dir))
@@ -113,28 +151,87 @@ class FuelTimelineDayHeader extends ConsumerWidget {
       ref.read(calendarSelectedDateProvider.notifier).setDate(next);
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    // Jump straight back to the current day. Shown only once the user has
+    // navigated away from today's week (week view) or month (month view),
+    // mirroring the old calendar's "Today" pill.
+    final showToday = !_isCurrentPeriod(selected, isWeek);
+
+    return Stack(
+      alignment: Alignment.center,
       children: [
-        GestureDetector(
-          onTap: () => shift(-1),
-          child: const Icon(Icons.chevron_left, size: 18, color: _cream),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => shift(-1),
+              child: Icon(Icons.chevron_left, size: 18, color: onSurface),
+            ),
+            const SizedBox(width: 18),
+            Text(
+              DateFormat('MMMM yyyy').format(selected),
+              style: FtType.monthTitle.copyWith(color: onSurface),
+            ),
+            const SizedBox(width: 18),
+            GestureDetector(
+              onTap: () => shift(1),
+              child: Icon(Icons.chevron_right, size: 18, color: onSurface),
+            ),
+          ],
         ),
-        const SizedBox(width: 18),
-        Text(
-          DateFormat('MMMM yyyy').format(selected),
-          style: FtType.monthTitle.copyWith(color: _cream),
-        ),
-        const SizedBox(width: 18),
-        GestureDetector(
-          onTap: () => shift(1),
-          child: const Icon(Icons.chevron_right, size: 18, color: _cream),
-        ),
+        if (showToday)
+          Positioned(
+            right: 0,
+            child: GestureDetector(
+              key: const ValueKey('fuel_timeline.today_button'),
+              onTap: () => ref
+                  .read(calendarSelectedDateProvider.notifier)
+                  .setDate(DateTime.now()),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: onSurface.withValues(alpha: isDark ? 0.15 : 0.1),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Text(
+                  'Today',
+                  style: const TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ).copyWith(color: onSurface),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _weekStrip(WidgetRef ref, DateTime selected) {
+  /// Whether [selected] is within the current calendar period — the current
+  /// week when [isWeek], otherwise the current month. Drives the visibility of
+  /// the "Today" shortcut.
+  static bool _isCurrentPeriod(DateTime selected, bool isWeek) {
+    final now = DateTime.now();
+    if (isWeek) {
+      DateTime startOfWeek(DateTime d) {
+        final dayOnly = DateTime(d.year, d.month, d.day);
+        return dayOnly.subtract(Duration(days: dayOnly.weekday % 7));
+      }
+
+      return startOfWeek(selected) == startOfWeek(now);
+    }
+    return selected.year == now.year && selected.month == now.month;
+  }
+
+  Widget _weekStrip(
+    WidgetRef ref,
+    DateTime selected,
+    Color onSurface,
+    Color surfaceBg,
+  ) {
     final startOfWeek = selected.subtract(Duration(days: selected.weekday % 7));
     final week = ref.watch(dailyMacrosControllerProvider).asData?.value;
     final weekly = week?.weeklyMacros ?? const [];
@@ -148,6 +245,8 @@ class FuelTimelineDayHeader extends ConsumerWidget {
               day: startOfWeek.add(Duration(days: i)),
               selected: selected,
               hasData: i < weekly.length && (weekly[i]?.isTrainingDay ?? false),
+              onSurface: onSurface,
+              surfaceBg: surfaceBg,
             ),
           ),
       ],
@@ -159,6 +258,8 @@ class FuelTimelineDayHeader extends ConsumerWidget {
     required DateTime day,
     required DateTime selected,
     required bool hasData,
+    required Color onSurface,
+    required Color surfaceBg,
   }) {
     const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     final isSelected =
@@ -174,7 +275,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
           Text(
             letters[day.weekday % 7],
             style: FtType.dayLetter.copyWith(
-              color: _cream.withValues(alpha: 0.55),
+              color: onSurface.withValues(alpha: 0.55),
             ),
           ),
           const SizedBox(height: 7),
@@ -187,7 +288,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
                       height: 34,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: _cream,
+                        color: onSurface,
                         borderRadius: BorderRadius.circular(11),
                       ),
                       child: FittedBox(
@@ -195,9 +296,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
                         child: Text(
                           '${day.day}',
                           softWrap: false,
-                          style: FtType.dayNumber.copyWith(
-                            color: AppColors.blackberry,
-                          ),
+                          style: FtType.dayNumber.copyWith(color: surfaceBg),
                         ),
                       ),
                     )
@@ -206,7 +305,7 @@ class FuelTimelineDayHeader extends ConsumerWidget {
                       child: Text(
                         '${day.day}',
                         softWrap: false,
-                        style: FtType.dayNumber.copyWith(color: _cream),
+                        style: FtType.dayNumber.copyWith(color: onSurface),
                       ),
                     ),
             ),

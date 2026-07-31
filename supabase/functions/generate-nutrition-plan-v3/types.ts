@@ -2,7 +2,12 @@
  * Types for generate-nutrition-plan-v3
  */
 
-import type { ActivityType, FoodResult, MacroTargets } from "../_shared/nutrition/index.ts";
+import type {
+  ActivityType,
+  FoodResult,
+  MacroTargets,
+} from "../_shared/nutrition/index.ts";
+import type { FormulaDecisionSource } from "../_shared/nutrition/formula-decision.ts";
 import type { PreWorkoutPhaseResult } from "../generate-macros-v4/types.ts";
 
 // ============================================================================
@@ -76,6 +81,12 @@ export interface PlanInputV2 {
       water_high_ml?: number;
     }>;
   };
+  /** Client opt-in for the ephemeral default-formula safety net. When true,
+   * the plan tags the selected system formula as an ephemeral pin on
+   * `pin_decision` (formula-first flip). Only set by clients that keep
+   * ephemeral decisions invisible in the pin banner/analytics; old clients
+   * omit it and receive byte-identical pre-safety-net telemetry. 2026-07-03. */
+  emit_ephemeral_default_formula?: boolean;
 }
 
 // ============================================================================
@@ -126,12 +137,24 @@ export interface PhaseShortfall {
   delivered: number;
   target: number;
   unit: "g" | "mg" | "ml";
-  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered";
+  reason:
+    | "all_disliked"
+    | "no_diet_match"
+    | "all_templates_filtered"
+    | "template_constraint";
 }
 
 export interface LPPhaseResult {
   foods: FoodResult[];
   by_hour_data?: ByHourData | null;
+  /**
+   * INTERNAL: which tier of the during cascade produced the foods
+   * (`personal_formula` | `template` | `rule` | `empty` | `swimming`).
+   * Consumed by the plan-generation ledger for failure-rate analytics.
+   * Deliberately NOT copied onto the wire response — the response builder in
+   * index.ts copies keys explicitly, keeping the client contract unchanged.
+   */
+  generation_path?: string;
   template_metadata?: TemplateMetadata | null;
   /**
    * One entry per macro that fell short of target due to preference filtering.
@@ -148,6 +171,21 @@ export interface LPPhaseResult {
    */
   pin_decision?: {
     used_pin: boolean;
+    /** True when `used_pin` was satisfied by the EPHEMERAL default-formula
+     * safety net (a best-fit system formula selected at generation time)
+     * rather than a real `formula_pins` row. Lets the client distinguish
+     * "we picked a formula for you" from "you pinned this" and, if desired,
+     * nudge the user to pin it. Absent/false for real pins. Formula-first
+     * flip, 2026-07-03 (plan Phase 1 #2). */
+    ephemeral?: boolean;
+    /** Honest provenance: `user_pin` | `personal_formula` | `default_formula`
+     * | `solver`. Added 2026-07-29 when client-side auto-pinning was removed
+     * and computed defaults became the COMMON path — `used_pin`/`ephemeral`
+     * alone conflate "you pinned this" with "we picked this for you", and
+     * neither distinguished a solver fallback from an absent decision.
+     * Additive; older parsers ignore it. See
+     * `_shared/nutrition/formula-decision.ts`. */
+    decision_source?: FormulaDecisionSource;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin
@@ -160,14 +198,48 @@ export interface LPPhaseResult {
      * claims `used_pin: true` while the section served LP foods. Should
      * be unreachable in practice for After once pinnedComponentNames
      * bypass at food-load is in place (PR 3 #35 fix). Formula Kit PR 3
-     * substep 9 follow-up. */
+     * substep 9 follow-up.
+     * `personal_formula_empty` — a pinned PERSONAL formula matched this
+     * scope but rendered zero components (e.g. an empty/corrupt
+     * `components` array), so the section fell through to the normal
+     * template solver. Previously this case was silently indistinguishable
+     * from "no pin at all" — item 12 (personal formulas silently dropped),
+     * 2026-07-04. */
     fallthrough_reason:
       | "no_pin_for_scope"
       | "pinned_template_unrenderable"
+      | "personal_formula_empty"
       | null;
+    /** Why no REAL pin fired, preserved for `default_formula` / `solver`
+     * outcomes. `fallthrough_reason` must stay null while `used_pin` is true
+     * (the Dart `PinDecision` model documents that invariant and the banner's
+     * copy rule depends on it), so the reason rides here rather than being
+     * discarded. 2026-07-29. */
+    default_fallthrough_reason?: string | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase.
      * Drives `plan_used_pin` / `plan_pin_fallthrough` analytics. 0 when pins
      * were supplied but none matched scope. Formula Kit PR 2 substep 7. */
     pin_set_size: number;
+    /**
+     * Pinned PERSONAL formulas the user authored for this phase that were
+     * excluded by activity or duration scope, with the reason for each.
+     *
+     * Rides ALONGSIDE the rest of the decision rather than replacing it: when
+     * a scope-excluded personal formula is followed by a system pin that does
+     * fire, `used_pin` is legitimately `true` for the system pin while this
+     * list still records that the user's own formula was dropped. Without it
+     * the two cases are indistinguishable on the wire, which is what made the
+     * "my formula was ignored" report undiagnosable (audit 2026-07-18).
+     *
+     * Absent when nothing was skipped. Consumed by the activity-detail pin
+     * banner's info affordance.
+     */
+    skipped_personal_formulas?: Array<{
+      id: string;
+      name: string;
+      reason: "activity_out_of_scope" | "duration_out_of_scope";
+      formula_durations: string[] | null;
+      workout_bracket: string | null;
+    }>;
   };
 }

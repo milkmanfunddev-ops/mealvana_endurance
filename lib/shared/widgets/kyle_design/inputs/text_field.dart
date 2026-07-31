@@ -5,7 +5,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-
 /// Text field for Kyle's design system
 /// 46px height with 15px radius and transparent background
 class KyleTextField extends ConsumerStatefulWidget {
@@ -84,7 +83,7 @@ class _KyleTextFieldState extends ConsumerState<KyleTextField> {
             ),
           ),
         ],
-        
+
         // Text field
         TextFormField(
           controller: widget.controller,
@@ -112,7 +111,9 @@ class _KyleTextFieldState extends ConsumerState<KyleTextField> {
             prefixIcon: widget.prefixIcon != null
                 ? Icon(
                     widget.prefixIcon,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
                     size: AppIconSizes.controlIcon,
                   )
                 : null,
@@ -131,16 +132,11 @@ class _KyleTextFieldState extends ConsumerState<KyleTextField> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: Colors.orange,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: Colors.orange, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.dragonfruit,
-              ),
+              borderSide: const BorderSide(color: AppColors.dragonfruit),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
@@ -165,7 +161,9 @@ class _KyleTextFieldState extends ConsumerState<KyleTextField> {
     if (widget.obscureText) {
       return IconButton(
         icon: Icon(
-          _obscureText ? FontAwesomeIcons.eye.data : FontAwesomeIcons.eyeSlash.data,
+          _obscureText
+              ? FontAwesomeIcons.eye.data
+              : FontAwesomeIcons.eyeSlash.data,
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           size: AppIconSizes.controlIcon,
         ),
@@ -176,7 +174,7 @@ class _KyleTextFieldState extends ConsumerState<KyleTextField> {
         },
       );
     }
-    
+
     return widget.suffixIcon;
   }
 }
@@ -261,7 +259,9 @@ class _KyleSearchFieldState extends ConsumerState<KyleSearchField> {
             ? IconButton(
                 icon: FaIcon(
                   FontAwesomeIcons.xmark,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.5),
                   size: AppIconSizes.controlIcon,
                 ),
                 onPressed: () {
@@ -272,22 +272,15 @@ class _KyleSearchFieldState extends ConsumerState<KyleSearchField> {
             : null,
         border: OutlineInputBorder(
           borderRadius: AppRadius.inputRadius,
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-          ),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.inputRadius,
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-          ),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.inputRadius,
-          borderSide: const BorderSide(
-            color: Colors.orange,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Colors.orange, width: 2),
         ),
       ),
     );

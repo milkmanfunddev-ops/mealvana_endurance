@@ -37,8 +37,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
-import 'package:supabase_flutter/supabase_flutter.dart'
-    hide AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_service.dart';
@@ -100,30 +99,48 @@ class _UnmountedBuildContext extends Fake implements BuildContext {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 void _stubLogger(MockAppLogger logger) {
-  when(() => logger.debug(any(),
+  when(
+    () => logger.debug(
+      any(),
       context: any(named: 'context'),
       data: any(named: 'data'),
       error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'))).thenReturn(null);
-  when(() => logger.info(any(),
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenReturn(null);
+  when(
+    () => logger.info(
+      any(),
       context: any(named: 'context'),
-      data: any(named: 'data'))).thenReturn(null);
-  when(() => logger.warning(any(),
+      data: any(named: 'data'),
+    ),
+  ).thenReturn(null);
+  when(
+    () => logger.warning(
+      any(),
       context: any(named: 'context'),
       data: any(named: 'data'),
       error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'))).thenReturn(null);
-  when(() => logger.error(any(),
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenReturn(null);
+  when(
+    () => logger.error(
+      any(),
       context: any(named: 'context'),
       data: any(named: 'data'),
       error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'))).thenReturn(null);
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenReturn(null);
 }
 
 /// Inserts a minimal user profile so userDao.getCurrentUserProfile() is
 /// non-null. Uses only the two required fields from the generated companion.
 Future<void> _insertUserProfile(AppDatabase db) async {
-  await db.into(db.userProfilesTable).insert(
+  await db
+      .into(db.userProfilesTable)
+      .insert(
         UserProfilesTableCompanion.insert(
           id: 'test-user-id',
           deviceId: 'device-001',
@@ -175,32 +192,41 @@ void main() {
     when(() => mockAuth.currentUser).thenReturn(null);
     when(() => mockAuth.currentSession).thenReturn(null);
 
-    when(() => mockSentry.setUserContext(
-          deviceId: any(named: 'deviceId'),
-          appVersion: any(named: 'appVersion'),
-        )).thenAnswer((_) async {});
-    when(() => mockSentry.reportCriticalError(any(),
-          stackTrace: any(named: 'stackTrace'),
-          context: any(named: 'context'),
-          tags: any(named: 'tags'),
-        )).thenAnswer((_) async {});
-    when(() => mockSentry.addBreadcrumb(
-          message: any(named: 'message'),
-          category: any(named: 'category'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockAnalytics.track(any(),
-          properties: any(named: 'properties'),
-        )).thenAnswer((_) async {});
-    when(() => mockAnalytics.identifyUser(
-          any(),
-          properties: any(named: 'properties'),
-          gender: any(named: 'gender'),
-          age: any(named: 'age'),
-          weightPounds: any(named: 'weightPounds'),
-          runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
-          gutTrainingLevel: any(named: 'gutTrainingLevel'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockSentry.setUserContext(
+        deviceId: any(named: 'deviceId'),
+        appVersion: any(named: 'appVersion'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSentry.reportCriticalError(
+        any(),
+        stackTrace: any(named: 'stackTrace'),
+        context: any(named: 'context'),
+        tags: any(named: 'tags'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSentry.addBreadcrumb(
+        message: any(named: 'message'),
+        category: any(named: 'category'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockAnalytics.track(any(), properties: any(named: 'properties')),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockAnalytics.identifyUser(
+        any(),
+        properties: any(named: 'properties'),
+        gender: any(named: 'gender'),
+        age: any(named: 'age'),
+        weightPounds: any(named: 'weightPounds'),
+        runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
+        gutTrainingLevel: any(named: 'gutTrainingLevel'),
+      ),
+    ).thenAnswer((_) async {});
 
     database = AppDatabase.forTesting(NativeDatabase.memory());
   });
@@ -236,10 +262,7 @@ void main() {
 
   group('AppStartupData', () {
     test('default values: not logged-out, no force-upgrade, no resync', () {
-      const data = AppStartupData(
-        user: null,
-        hasCompletedOnboarding: false,
-      );
+      const data = AppStartupData(user: null, hasCompletedOnboarding: false);
       expect(data.isLoggedOut, isFalse);
       expect(data.forceUpgradeRequired, isFalse);
       expect(data.resyncRequired, isFalse);
@@ -283,10 +306,7 @@ void main() {
     });
 
     test('hasCompletedOnboarding reflects constructor value', () {
-      const data = AppStartupData(
-        user: null,
-        hasCompletedOnboarding: true,
-      );
+      const data = AppStartupData(user: null, hasCompletedOnboarding: true);
       expect(data.hasCompletedOnboarding, isTrue);
     });
   });
@@ -302,10 +322,12 @@ void main() {
 
       await service.setSentryUserContext();
 
-      verify(() => mockSentry.setUserContext(
-            deviceId: 'anonymous',
-            appVersion: '1.12.0+60',
-          )).called(1);
+      verify(
+        () => mockSentry.setUserContext(
+          deviceId: 'anonymous',
+          appVersion: '1.12.0+60',
+        ),
+      ).called(1);
 
       container.dispose();
     });
@@ -318,19 +340,23 @@ void main() {
 
       await service.setSentryUserContext();
 
-      verify(() => mockSentry.setUserContext(
-            deviceId: 'user-abc-123',
-            appVersion: '1.12.0+60',
-          )).called(1);
+      verify(
+        () => mockSentry.setUserContext(
+          deviceId: 'user-abc-123',
+          appVersion: '1.12.0+60',
+        ),
+      ).called(1);
 
       container.dispose();
     });
 
     test('does not rethrow when Sentry call fails', () async {
-      when(() => mockSentry.setUserContext(
-            deviceId: any(named: 'deviceId'),
-            appVersion: any(named: 'appVersion'),
-          )).thenThrow(Exception('Sentry network error'));
+      when(
+        () => mockSentry.setUserContext(
+          deviceId: any(named: 'deviceId'),
+          appVersion: any(named: 'appVersion'),
+        ),
+      ).thenThrow(Exception('Sentry network error'));
 
       final container = makeContainer();
       final service = container.read(appStartupServiceProvider);
@@ -347,10 +373,12 @@ void main() {
 
       await service.setSentryUserContext();
 
-      final captured = verify(() => mockSentry.setUserContext(
-            deviceId: any(named: 'deviceId'),
-            appVersion: captureAny(named: 'appVersion'),
-          )).captured;
+      final captured = verify(
+        () => mockSentry.setUserContext(
+          deviceId: any(named: 'deviceId'),
+          appVersion: captureAny(named: 'appVersion'),
+        ),
+      ).captured;
 
       expect(captured.last, contains('+'));
     });
@@ -367,60 +395,70 @@ void main() {
 
       await service.checkUserSession();
 
-      verify(() => mockAnalytics.identifyUser(
-            any(),
-            gender: any(named: 'gender'),
-            age: any(named: 'age'),
-            weightPounds: any(named: 'weightPounds'),
-            runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
-            gutTrainingLevel: any(named: 'gutTrainingLevel'),
-          )).called(greaterThanOrEqualTo(1));
+      verify(
+        () => mockAnalytics.identifyUser(
+          any(),
+          gender: any(named: 'gender'),
+          age: any(named: 'age'),
+          weightPounds: any(named: 'weightPounds'),
+          runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
+          gutTrainingLevel: any(named: 'gutTrainingLevel'),
+        ),
+      ).called(greaterThanOrEqualTo(1));
 
       container.dispose();
     });
 
-    test('identifies user with the correct user id from the database',
-        () async {
-      await _insertUserProfile(database);
+    test(
+      'identifies user with the correct user id from the database',
+      () async {
+        await _insertUserProfile(database);
 
-      final container = makeContainer();
-      final service = container.read(appStartupServiceProvider);
+        final container = makeContainer();
+        final service = container.read(appStartupServiceProvider);
 
-      await service.checkUserSession();
+        await service.checkUserSession();
 
-      final captured = verify(() => mockAnalytics.identifyUser(
+        final captured = verify(
+          () => mockAnalytics.identifyUser(
             captureAny(),
             gender: any(named: 'gender'),
             age: any(named: 'age'),
             weightPounds: any(named: 'weightPounds'),
             runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
             gutTrainingLevel: any(named: 'gutTrainingLevel'),
-          )).captured;
+          ),
+        ).captured;
 
-      expect(captured.last, equals('test-user-id'));
+        expect(captured.last, equals('test-user-id'));
 
-      container.dispose();
-    });
+        container.dispose();
+      },
+    );
 
-    test('does not call identifyUser when no local user profile exists',
-        () async {
-      final container = makeContainer();
-      final service = container.read(appStartupServiceProvider);
+    test(
+      'does not call identifyUser when no local user profile exists',
+      () async {
+        final container = makeContainer();
+        final service = container.read(appStartupServiceProvider);
 
-      await service.checkUserSession();
+        await service.checkUserSession();
 
-      // identifyUser should NOT be called (no user row in DB)
-      verifyNever(() => mockAnalytics.identifyUser(
+        // identifyUser should NOT be called (no user row in DB)
+        verifyNever(
+          () => mockAnalytics.identifyUser(
             any(),
             gender: any(named: 'gender'),
             age: any(named: 'age'),
             weightPounds: any(named: 'weightPounds'),
             runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
             gutTrainingLevel: any(named: 'gutTrainingLevel'),
-          ));
+          ),
+        );
 
-      container.dispose();
-    });
+        container.dispose();
+      },
+    );
 
     test('does not throw when no local user exists', () async {
       final container = makeContainer();
@@ -432,14 +470,16 @@ void main() {
     });
 
     test('does not rethrow analytics errors', () async {
-      when(() => mockAnalytics.identifyUser(
-            any(),
-            gender: any(named: 'gender'),
-            age: any(named: 'age'),
-            weightPounds: any(named: 'weightPounds'),
-            runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
-            gutTrainingLevel: any(named: 'gutTrainingLevel'),
-          )).thenThrow(Exception('analytics down'));
+      when(
+        () => mockAnalytics.identifyUser(
+          any(),
+          gender: any(named: 'gender'),
+          age: any(named: 'age'),
+          weightPounds: any(named: 'weightPounds'),
+          runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
+          gutTrainingLevel: any(named: 'gutTrainingLevel'),
+        ),
+      ).thenThrow(Exception('analytics down'));
 
       await _insertUserProfile(database);
 
@@ -471,7 +511,9 @@ void main() {
 
     test('skips getAllFoods when foods table already has rows', () async {
       // Insert one food row — id must be exactly 36 chars (UUID constraint).
-      await database.into(database.foodsTable).insert(
+      await database
+          .into(database.foodsTable)
+          .insert(
             FoodsTableCompanion.insert(
               id: '00000000-0000-0000-0000-000000000001',
             ),
@@ -490,8 +532,9 @@ void main() {
 
     test('does not rethrow when getAllFoods throws', () async {
       final foodRepo = MockFoodRepository();
-      when(() => foodRepo.getAllFoods())
-          .thenThrow(Exception('network unavailable'));
+      when(
+        () => foodRepo.getAllFoods(),
+      ).thenThrow(Exception('network unavailable'));
 
       final container = makeContainer(foodRepo: foodRepo);
       final service = container.read(appStartupServiceProvider);
@@ -501,8 +544,7 @@ void main() {
       container.dispose();
     });
 
-    test(
-        'does not rethrow when database query itself throws '
+    test('does not rethrow when database query itself throws '
         '(simulated DB error)', () async {
       // Close the DB to force errors on any query
       await database.close();
@@ -578,8 +620,7 @@ void main() {
     });
 
     test('returns false when backup file contains invalid JSON', () async {
-      final backupFile =
-          File('${tempDir.path}/dirty_records_backup.json');
+      final backupFile = File('${tempDir.path}/dirty_records_backup.json');
       await backupFile.writeAsString('{not valid json{{}}');
 
       final container = makeContainer();
@@ -595,8 +636,7 @@ void main() {
       container.dispose();
     });
 
-    test(
-        'returns false when context is not mounted '
+    test('returns false when context is not mounted '
         '(cannot show recovery dialog)', () async {
       // Write a valid backup file so we get past the hasBackup check
       final backup = {
@@ -611,8 +651,7 @@ void main() {
         },
         'upload_errors': [],
       };
-      final backupFile =
-          File('${tempDir.path}/dirty_records_backup.json');
+      final backupFile = File('${tempDir.path}/dirty_records_backup.json');
       await backupFile.writeAsString(backup.toString().replaceAll("'", '"'));
 
       final container = makeContainer();
@@ -672,8 +711,11 @@ void main() {
       };
 
       for (final key in knownKeys) {
-        expect(expectedTables[key], isNotNull,
-            reason: 'Repository key "$key" missing from expected tables map');
+        expect(
+          expectedTables[key],
+          isNotNull,
+          reason: 'Repository key "$key" missing from expected tables map',
+        );
         expect(expectedTables[key], isNotEmpty);
       }
     });

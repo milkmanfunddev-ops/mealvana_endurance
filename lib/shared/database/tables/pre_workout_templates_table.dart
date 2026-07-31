@@ -26,8 +26,7 @@ class PreWorkoutTemplatesTable extends Table {
   TextColumn get digestionSpeed => text().named('digestion_speed')();
 
   /// JSON array of allergens, e.g. `["gluten", "dairy"]`.
-  TextColumn get allergens =>
-      text().withDefault(const Constant('[]'))();
+  TextColumn get allergens => text().withDefault(const Constant('[]'))();
 
   TextColumn get servingUnit => text().named('serving_unit')();
 
@@ -54,9 +53,8 @@ class PreWorkoutTemplatesTable extends Table {
   TextColumn get templateType => text().named('template_type')();
 
   /// JSON array of component food names referenced by this template.
-  TextColumn get componentFoodNames => text()
-      .withDefault(const Constant('[]'))
-      .named('component_food_names')();
+  TextColumn get componentFoodNames =>
+      text().withDefault(const Constant('[]')).named('component_food_names')();
 
   /// JSON object mapping component name → quantity. Stored verbatim.
   TextColumn get componentQuantities =>

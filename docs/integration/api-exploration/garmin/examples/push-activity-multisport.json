@@ -1,0 +1,52 @@
+{
+  "activities": [
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-multi-parent",
+      "activityType": "multi_sport",
+      "activityName": "Sprint Triathlon",
+      "durationInSeconds": 5400,
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": 0,
+      "distanceInMeters": 27000,
+      "isParent": true
+    },
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-multi-swim",
+      "activityType": "open_water_swimming",
+      "activityName": "Swim Leg",
+      "durationInSeconds": 900,
+      "startTimeInSeconds": 1711584000,
+      "startTimeOffsetInSeconds": 0,
+      "distanceInMeters": 750,
+      "parentSummaryId": "act-multi-parent"
+    },
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-multi-bike",
+      "activityType": "cycling",
+      "activityName": "Bike Leg",
+      "durationInSeconds": 2400,
+      "startTimeInSeconds": 1711585200,
+      "startTimeOffsetInSeconds": 0,
+      "distanceInMeters": 20000,
+      "parentSummaryId": "act-multi-parent"
+    },
+    {
+      "userId": "<USER_ID>",
+      "userAccessToken": "<USER_ACCESS_TOKEN>",
+      "summaryId": "act-multi-run",
+      "activityType": "running",
+      "activityName": "Run Leg",
+      "durationInSeconds": 1500,
+      "startTimeInSeconds": 1711588200,
+      "startTimeOffsetInSeconds": 0,
+      "distanceInMeters": 5000,
+      "parentSummaryId": "act-multi-parent"
+    }
+  ]
+}

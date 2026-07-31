@@ -24,14 +24,14 @@ class MockRecipeRepository extends Mock implements RecipeRepository {}
 // ---------------------------------------------------------------------------
 
 RecipeNutrition _nutrition({double calories = 300}) => RecipeNutrition(
-      calories: calories,
-      carbohydratesGrams: 40,
-      proteinGrams: 10,
-      fatGrams: 8,
-      fiberGrams: 3,
-      sugarGrams: 5,
-      sodiumMilligrams: 200,
-    );
+  calories: calories,
+  carbohydratesGrams: 40,
+  proteinGrams: 10,
+  fatGrams: 8,
+  fiberGrams: 3,
+  sugarGrams: 5,
+  sodiumMilligrams: 200,
+);
 
 Recipe _recipe({
   String id = 'r1',
@@ -78,8 +78,7 @@ void main() {
   group('RecipeService — delegation to repository', () {
     test('getAllRecipes delegates to repository', () async {
       final expected = [_recipe(id: 'r1'), _recipe(id: 'r2')];
-      when(() => mockRepo.getAllRecipes())
-          .thenAnswer((_) async => expected);
+      when(() => mockRepo.getAllRecipes()).thenAnswer((_) async => expected);
 
       final result = await service.getAllRecipes();
       expect(result, expected);
@@ -88,8 +87,9 @@ void main() {
 
     test('getRecipesByType delegates to repository', () async {
       final expected = [_recipe(type: RecipeType.recovery)];
-      when(() => mockRepo.getRecipesByType(RecipeType.recovery))
-          .thenAnswer((_) async => expected);
+      when(
+        () => mockRepo.getRecipesByType(RecipeType.recovery),
+      ).thenAnswer((_) async => expected);
 
       final result = await service.getRecipesByType(RecipeType.recovery);
       expect(result, expected);
@@ -98,8 +98,9 @@ void main() {
 
     test('getRecipeById delegates to repository', () async {
       final expected = _recipe(id: 'r99');
-      when(() => mockRepo.getRecipeById('r99'))
-          .thenAnswer((_) async => expected);
+      when(
+        () => mockRepo.getRecipeById('r99'),
+      ).thenAnswer((_) async => expected);
 
       final result = await service.getRecipeById('r99');
       expect(result, expected);
@@ -107,8 +108,9 @@ void main() {
     });
 
     test('getRecipeById returns null when repository returns null', () async {
-      when(() => mockRepo.getRecipeById('missing'))
-          .thenAnswer((_) async => null);
+      when(
+        () => mockRepo.getRecipeById('missing'),
+      ).thenAnswer((_) async => null);
 
       final result = await service.getRecipeById('missing');
       expect(result, isNull);
@@ -130,16 +132,18 @@ void main() {
     });
 
     test('ensureSynced delegates to repository with correct userId', () async {
-      when(() => mockRepo.ensureSynced('user-123', force: false))
-          .thenAnswer((_) async {});
+      when(
+        () => mockRepo.ensureSynced('user-123', force: false),
+      ).thenAnswer((_) async {});
 
       await service.ensureSynced('user-123');
       verify(() => mockRepo.ensureSynced('user-123', force: false)).called(1);
     });
 
     test('ensureSynced passes force=true when requested', () async {
-      when(() => mockRepo.ensureSynced('user-123', force: true))
-          .thenAnswer((_) async {});
+      when(
+        () => mockRepo.ensureSynced('user-123', force: true),
+      ).thenAnswer((_) async {});
 
       await service.ensureSynced('user-123', force: true);
       verify(() => mockRepo.ensureSynced('user-123', force: true)).called(1);
@@ -151,20 +155,24 @@ void main() {
   // =========================================================================
 
   group('searchRecipes', () {
-    test('empty query delegates to getAllRecipes (not searchRecipes)', () async {
-      final all = [_recipe(id: 'r1'), _recipe(id: 'r2')];
-      when(() => mockRepo.getAllRecipes()).thenAnswer((_) async => all);
+    test(
+      'empty query delegates to getAllRecipes (not searchRecipes)',
+      () async {
+        final all = [_recipe(id: 'r1'), _recipe(id: 'r2')];
+        when(() => mockRepo.getAllRecipes()).thenAnswer((_) async => all);
 
-      final result = await service.searchRecipes('');
-      expect(result, all);
-      verify(() => mockRepo.getAllRecipes()).called(1);
-      verifyNever(() => mockRepo.searchRecipes(any()));
-    });
+        final result = await service.searchRecipes('');
+        expect(result, all);
+        verify(() => mockRepo.getAllRecipes()).called(1);
+        verifyNever(() => mockRepo.searchRecipes(any()));
+      },
+    );
 
     test('non-empty query delegates to repository.searchRecipes', () async {
       final expected = [_recipe(id: 'r1')];
-      when(() => mockRepo.searchRecipes('banana'))
-          .thenAnswer((_) async => expected);
+      when(
+        () => mockRepo.searchRecipes('banana'),
+      ).thenAnswer((_) async => expected);
 
       final result = await service.searchRecipes('banana');
       expect(result, expected);
@@ -178,8 +186,11 @@ void main() {
   // =========================================================================
 
   group('filterRecipesByTags', () {
-    final vegan =
-        _recipe(id: 'r1', name: 'Smoothie', tags: ['high-carb', 'vegan']);
+    final vegan = _recipe(
+      id: 'r1',
+      name: 'Smoothie',
+      tags: ['high-carb', 'vegan'],
+    );
     final highCarb = _recipe(id: 'r2', name: 'Oats', tags: ['high-carb']);
     final noTags = _recipe(id: 'r3', name: 'Gel', tags: null);
     final allRecipes = [vegan, highCarb, noTags];
@@ -196,14 +207,18 @@ void main() {
       expect(result.first.id, 'r1');
     });
 
-    test('multi-tag filter requires ALL tags to be present (AND semantics)',
-        () {
-      // Only 'r1' has both 'high-carb' AND 'vegan'.
-      final result =
-          service.filterRecipesByTags(allRecipes, ['high-carb', 'vegan']);
-      expect(result.length, 1);
-      expect(result.first.id, 'r1');
-    });
+    test(
+      'multi-tag filter requires ALL tags to be present (AND semantics)',
+      () {
+        // Only 'r1' has both 'high-carb' AND 'vegan'.
+        final result = service.filterRecipesByTags(allRecipes, [
+          'high-carb',
+          'vegan',
+        ]);
+        expect(result.length, 1);
+        expect(result.first.id, 'r1');
+      },
+    );
 
     test('recipe with null tags is excluded from any tag filter', () {
       final result = service.filterRecipesByTags(allRecipes, ['high-carb']);
@@ -227,29 +242,35 @@ void main() {
 
   group('sortRecipes', () {
     final r1 = _recipe(
-        id: 'r1',
-        name: 'Apple Oats',
-        calories: 300,
-        prepTimeMinutes: 30,
-        createdAt: DateTime(2025, 1, 1));
+      id: 'r1',
+      name: 'Apple Oats',
+      calories: 300,
+      prepTimeMinutes: 30,
+      createdAt: DateTime(2025, 1, 1),
+    );
     final r2 = _recipe(
-        id: 'r2',
-        name: 'Banana Smoothie',
-        calories: 150,
-        prepTimeMinutes: 5,
-        createdAt: DateTime(2025, 3, 1));
+      id: 'r2',
+      name: 'Banana Smoothie',
+      calories: 150,
+      prepTimeMinutes: 5,
+      createdAt: DateTime(2025, 3, 1),
+    );
     final r3 = _recipe(
-        id: 'r3',
-        name: 'Chicken Bowl',
-        calories: 500,
-        prepTimeMinutes: 20,
-        createdAt: DateTime(2025, 2, 1));
+      id: 'r3',
+      name: 'Chicken Bowl',
+      calories: 500,
+      prepTimeMinutes: 20,
+      createdAt: DateTime(2025, 2, 1),
+    );
     final unsorted = [r3, r1, r2];
 
     test('sort by name returns alphabetical order', () {
       final result = service.sortRecipes(unsorted, RecipeSortOption.name);
-      expect(result.map((r) => r.name).toList(),
-          ['Apple Oats', 'Banana Smoothie', 'Chicken Bowl']);
+      expect(result.map((r) => r.name).toList(), [
+        'Apple Oats',
+        'Banana Smoothie',
+        'Chicken Bowl',
+      ]);
       verifyZeroInteractions(mockRepo);
     });
 
@@ -279,8 +300,10 @@ void main() {
     test('sort by newest with null createdAt sorts nulls to end', () {
       final withNull = _recipe(id: 'r-null', createdAt: null);
       final withDate = _recipe(id: 'r-date', createdAt: DateTime(2025, 6, 1));
-      final result =
-          service.sortRecipes([withNull, withDate], RecipeSortOption.newest);
+      final result = service.sortRecipes([
+        withNull,
+        withDate,
+      ], RecipeSortOption.newest);
       // Non-null dates come first; null sorts to end.
       expect(result.first.id, 'r-date');
       expect(result.last.id, 'r-null');
@@ -299,9 +322,11 @@ void main() {
       final b = _recipe(id: 'b', prepTimeMinutes: 15, name: 'Beta');
       final result1 = service.sortRecipes([a, b], RecipeSortOption.prepTime);
       final result2 = service.sortRecipes([a, b], RecipeSortOption.prepTime);
-      expect(result1.map((r) => r.id).toList(),
-          result2.map((r) => r.id).toList(),
-          reason: 'equal-value sort should be deterministic');
+      expect(
+        result1.map((r) => r.id).toList(),
+        result2.map((r) => r.id).toList(),
+        reason: 'equal-value sort should be deterministic',
+      );
     });
 
     test('sort of empty list returns empty list', () {
@@ -324,8 +349,11 @@ void main() {
     test('all four sort options are covered', () {
       // Sanity check: if new sort options are added, the switch in sortRecipes
       // must handle them or a compile error / coverage gap appears.
-      expect(RecipeSortOption.values.length, 4,
-          reason: 'Update sortRecipes switch if new options are added');
+      expect(
+        RecipeSortOption.values.length,
+        4,
+        reason: 'Update sortRecipes switch if new options are added',
+      );
       expect(
         RecipeSortOption.values,
         containsAll([

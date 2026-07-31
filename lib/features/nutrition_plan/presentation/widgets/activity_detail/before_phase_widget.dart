@@ -27,6 +27,7 @@ class BeforePhaseWidget extends StatefulWidget {
     required this.onAddFood,
     this.categoryPrefix = 'before_run',
     this.showSwipeHint = false,
+    this.planId,
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
@@ -65,6 +66,11 @@ class BeforePhaseWidget extends StatefulWidget {
   final void Function(String category) onAddFood;
   final String categoryPrefix;
   final bool showSwipeHint;
+
+  /// Activity id, forwarded to the explanation sheet so transparency views
+  /// can be attributed to a plan.
+  final String? planId;
+
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
@@ -152,7 +158,9 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         bodyWeightKg: widget.bodyWeightKg,
                         sportLabel: widget.sportLabel,
                         useImperial: widget.useImperial,
-                        foods: widget.section.subPhases
+                        planId: widget.planId,
+                        foods:
+                            widget.section.subPhases
                                 ?.expand((sp) => sp.foodItems)
                                 .toList() ??
                             widget.section.foodItems,
@@ -290,7 +298,12 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                             fontSize: 16,
                           ),
                         ),
-                        if (!isExpanded &&
+                        // Collapsed: always show the summary line. Expanded:
+                        // keep the curated template name visible so the
+                        // ingredient rows below read as one item
+                        // (bug 3abe3fdb754c8153).
+                        if ((!isExpanded ||
+                                (subPhase.templateName?.isNotEmpty ?? false)) &&
                             subPhase.templateSummary.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
@@ -334,7 +347,8 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     final foodIndex = entry.key;
                     final food = entry.value;
                     // Use sub-phase-specific category to target the correct sub-phase
-                    final subCategory = '${widget.categoryPrefix}:${subPhase.subPhaseType}';
+                    final subCategory =
+                        '${widget.categoryPrefix}:${subPhase.subPhaseType}';
                     return Padding(
                       padding: EdgeInsets.only(
                         bottom: foodIndex < subPhase.foodItems.length - 1
@@ -348,8 +362,12 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                             widget.onSwapFood(food.id, food.name, subCategory),
                         onDelete: () =>
                             widget.onDeleteFood(food.id, subCategory),
-                        onQuantityChange: (newQuantity) => widget
-                            .onUpdateQuantity(food.id, subCategory, newQuantity),
+                        onQuantityChange: (newQuantity) =>
+                            widget.onUpdateQuantity(
+                              food.id,
+                              subCategory,
+                              newQuantity,
+                            ),
                         showSwipeHint:
                             widget.showSwipeHint &&
                             index == 0 &&
@@ -368,7 +386,9 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                   ],
                   KyleAddFoodButton(
                     text: 'ADD FOOD',
-                    onPressed: () => widget.onAddFood('${widget.categoryPrefix}:${subPhase.subPhaseType}'),
+                    onPressed: () => widget.onAddFood(
+                      '${widget.categoryPrefix}:${subPhase.subPhaseType}',
+                    ),
                   ),
                 ],
               ),
