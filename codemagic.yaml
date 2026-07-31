@@ -278,6 +278,26 @@ definitions:
           echo "forced dev flavor + AI surface flags ON for dev build"
         fi
 
+        # Point dev builds at the RevenueCat app whose bundle id actually
+        # matches them.
+        #
+        # The dev flavor ships `com.milkman.mealvanaendurance.dev`, but
+        # DOTENV_DEV_LOCAL carries the `appl_` key of the RevenueCat app
+        # registered to `com.milkman.mealvanaendurance` — the PROD bundle. A
+        # RevenueCat App Store app validates receipts against its own bundle id,
+        # so the dev build was authenticating as the wrong app and could never
+        # have been served its products, no matter what was provisioned. There
+        # is now a second RevenueCat app for the dev bundle, and this is its key.
+        # Release dev builds use it; debug builds still prefer the Test Store key
+        # (AppConfig gates that on kDebugMode, because RevenueCat refuses
+        # Test Store keys in release binaries).
+        if [ -s .env.dev.local ] && [ -n "${REVENUECAT_API_KEY_APPLE_DEV:-}" ]; then
+          sed -i '' "/^[[:space:]]*#*[[:space:]]*REVENUECAT_API_KEY_APPLE=/d" .env.dev.local 2>/dev/null \
+            || sed -i "/^[[:space:]]*#*[[:space:]]*REVENUECAT_API_KEY_APPLE=/d" .env.dev.local
+          printf 'REVENUECAT_API_KEY_APPLE=%s\n' "$REVENUECAT_API_KEY_APPLE_DEV" >> .env.dev.local
+          echo "pointed REVENUECAT_API_KEY_APPLE at the dev-bundle RevenueCat app"
+        fi
+
         # Diagnostic: prove what the app will actually read. Booleans only, plus
         # presence (never the value) of the RevenueCat key. Without this, "the
         # tokens are missing" is indistinguishable from "the flag is off", and
@@ -286,9 +306,14 @@ definitions:
           echo "--- dev feature flags as built ---"
           grep -E '^(APP_ENVIRONMENT|DEV_MODE_ENABLED|AI_CREDITS_ENABLED|DESCRIBE_MEAL_ENABLED|COACH_INSIGHTS_ENABLED|ANALYTICS_DEV_ENABLED)=' .env.dev.local || echo "  (none found)"
           if grep -q '^REVENUECAT_API_KEY_TEST=test_' .env.dev.local; then
-            echo "  REVENUECAT_API_KEY_TEST: present (test_ prefix)"
+            echo "  REVENUECAT_API_KEY_TEST: present (debug builds only — RevenueCat rejects it in a release binary)"
           else
-            echo "  REVENUECAT_API_KEY_TEST: MISSING or wrong prefix — Test Store purchases will not work"
+            echo "  REVENUECAT_API_KEY_TEST: absent"
+          fi
+          if grep -q '^REVENUECAT_API_KEY_APPLE=appl_' .env.dev.local; then
+            echo "  REVENUECAT_API_KEY_APPLE: present (appl_ prefix) — this is what a TestFlight build uses"
+          else
+            echo "  REVENUECAT_API_KEY_APPLE: MISSING or wrong prefix — the paywall will have no store"
           fi
         fi
 
