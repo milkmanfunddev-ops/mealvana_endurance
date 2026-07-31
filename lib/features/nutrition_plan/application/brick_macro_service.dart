@@ -143,13 +143,23 @@ class BrickMacroService {
         );
       }
 
-      // Track analytics
+      // Track analytics.
+      //
+      // Pace is the blended overall pace (total moving time / total distance),
+      // not 0.0. `distanceMiles` below is already a cross-sport aggregate, so
+      // reporting 37 miles alongside a 0.0 pace is internally inconsistent —
+      // and a literal 0 drags every pace average that includes bricks down.
+      final blendedPaceMinPerMile = macroTargets.metrics.distanceMi > 0
+          ? (macroTargets.metrics.durationH * 60) /
+                macroTargets.metrics.distanceMi
+          : 0.0;
+
       await analytics.trackPlanGenerated(
         deviceId: deviceId,
         activityId: activityId,
         activityType: 'brick',
         distanceMiles: macroTargets.metrics.distanceMi,
-        paceMinutesPerMile: 0.0, // Not applicable for brick
+        paceMinutesPerMile: blendedPaceMinPerMile,
         totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
         totalCarbs: _calculateTotalCarbs(macroTargets),
         beforeRunItems: 1,

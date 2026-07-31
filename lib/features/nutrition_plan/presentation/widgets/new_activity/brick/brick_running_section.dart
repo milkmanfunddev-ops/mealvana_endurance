@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../../../shared/utils/unit_formatter.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../../theme/kyle_design/app_text_styles.dart';
@@ -133,9 +134,7 @@ class _PaceControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Format as M:SS (e.g., 9:00)
-    final minutes = paceMinutes.floor();
-    final seconds = ((paceMinutes - minutes) * 60).round();
-    final formattedPace = '$minutes:${seconds.toString().padLeft(2, '0')}';
+    final formattedPace = UnitFormatter.formatMinutesAsMinSec(paceMinutes);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

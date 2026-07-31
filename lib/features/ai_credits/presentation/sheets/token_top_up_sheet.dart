@@ -5,7 +5,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
-import '../../data/revenuecat_service.dart';
+import '../../domain/credit_packs.dart';
 import '../widgets/token_pill.dart';
 
 /// Show the token top-up sheet.
@@ -24,33 +24,58 @@ Future<void> showTokenTopUpSheet(BuildContext context) {
   );
 }
 
-/// The two packs offered, in the order they're shown.
+/// A purchasable pack, resolved from the live RevenueCat `credits` offering.
 ///
-/// Sizes come from the token-pricing design (50 / 200). The economics behind
-/// them live in the Notion cost-accounting doc; if the model changes, the
-/// pack sizes are the knob — not the per-analysis cost.
-const _packs = <_Pack>[
-  _Pack(tokens: 50, price: r'$4.99', tag: 'Starter', productId: 'tokens_50'),
-  _Pack(
-    tokens: 200,
-    price: r'$19.99',
-    tag: 'Best value',
-    productId: 'tokens_200',
-  ),
-];
-
+/// Packs are *not* hardcoded. They previously were (50/$19.99, 200/$4.99 under
+/// ids `tokens_50`/`tokens_200`), which matched nothing that was ever
+/// provisioned — the store sells `mealvana_credits_100/500/1200` — so the sheet
+/// could never resolve a package and the buy button was permanently inert.
+/// Reading the offering keeps sizes, ids and localized prices in step with the
+/// store by construction.
 class _Pack {
-  const _Pack({
-    required this.tokens,
-    required this.price,
-    required this.tag,
-    required this.productId,
-  });
+  const _Pack({required this.package, required this.tokens, required this.tag});
 
-  final int tokens;
-  final String price;
+  final Package package;
+
+  /// Credits granted, or null when this build doesn't recognise the SKU.
+  final int? tokens;
+
   final String tag;
-  final String productId;
+
+  StoreProduct get product => package.storeProduct;
+
+  /// Localized price straight from the store (never a hardcoded dollar value).
+  String get price => product.priceString;
+
+  String get title =>
+      tokens != null ? '$tokens tokens' : product.title;
+}
+
+/// Build the display list from an offering, largest pack last and tagged.
+List<_Pack> _packsFrom(Offering offering) {
+  final packs = offering.availablePackages
+      .map(
+        (p) => _Pack(
+          package: p,
+          tokens: creditsForProductId(p.storeProduct.identifier),
+          tag: '',
+        ),
+      )
+      .toList();
+
+  // Order by credits so "Best value" is unambiguous; unknown SKUs sort last.
+  packs.sort((a, b) => (a.tokens ?? 1 << 30).compareTo(b.tokens ?? 1 << 30));
+
+  return [
+    for (var i = 0; i < packs.length; i++)
+      _Pack(
+        package: packs[i].package,
+        tokens: packs[i].tokens,
+        tag: packs.length > 1 && i == 0
+            ? 'Starter'
+            : (packs.length > 1 && i == packs.length - 1 ? 'Best value' : ''),
+      ),
+  ];
 }
 
 class _TokenTopUpSheet extends ConsumerStatefulWidget {
@@ -63,6 +88,10 @@ class _TokenTopUpSheet extends ConsumerStatefulWidget {
 class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   int _selected = 0;
   bool _buying = false;
+
+  /// Set when a purchase attempt fails. Rendered inside the sheet rather than
+  /// via a snackbar, which the modal would swallow.
+  String? _error;
 
   /// Non-null once a purchase has landed — switches the sheet to its
   /// celebration state and carries how many tokens were added.
@@ -111,6 +140,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final balance = ref.watch(creditsControllerProvider).value?.balance ?? 0;
     final out = balance <= 0;
+    final offeringAsync = ref.watch(aiCreditOfferingProvider);
 
     return Column(
       key: const ValueKey('packs'),
@@ -137,27 +167,80 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
           ),
         ),
         const SizedBox(height: 22),
-        for (var i = 0; i < _packs.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          _packRow(_packs[i], i, onSurface),
-        ],
-        const SizedBox(height: 20),
-        KylePrimaryButton(
-          key: const ValueKey('tokens.buy'),
-          text:
-              'Get ${_packs[_selected].tokens} tokens · '
-              '${_packs[_selected].price}',
-          isLoading: _buying,
-          onPressed: _buying ? null : _buy,
+        offeringAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 28),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, __) => _unavailable(onSurface),
+          data: (offering) {
+            if (offering == null) return _unavailable(onSurface);
+            final packs = _packsFrom(offering);
+            if (packs.isEmpty) return _unavailable(onSurface);
+
+            // Guard the selection: the offering can change under us between
+            // builds (refresh, locale change), and a stale index would throw.
+            final selected = _selected.clamp(0, packs.length - 1);
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < packs.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  _packRow(packs[i], i, selected, onSurface),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    _error!,
+                    key: const ValueKey('tokens.error'),
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.orange,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                KylePrimaryButton(
+                  key: const ValueKey('tokens.buy'),
+                  text: packs[selected].tokens != null
+                      ? 'Get ${packs[selected].tokens} tokens · '
+                            '${packs[selected].price}'
+                      : 'Buy · ${packs[selected].price}',
+                  isLoading: _buying,
+                  onPressed: _buying ? null : () => _buy(packs[selected]),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _packRow(_Pack pack, int index, Color onSurface) {
-    final isSelected = index == _selected;
+  /// Shown whenever the store has nothing to sell — no offering, an empty
+  /// offering, or a fetch error. This is in-sheet on purpose: the old code
+  /// raised a snackbar against the bottom-sheet context, which never became
+  /// visible above the modal, so a failed tap looked like a dead button.
+  Widget _unavailable(Color onSurface) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 22),
+    child: Text(
+      "Token packs aren't available right now. Please try again later.",
+      key: const ValueKey('tokens.unavailable'),
+      textAlign: TextAlign.center,
+      style: AppTextStyles.bodySmall.copyWith(
+        color: onSurface.withValues(alpha: 0.6),
+      ),
+    ),
+  );
+
+  Widget _packRow(_Pack pack, int index, int selected, Color onSurface) {
+    final isSelected = index == selected;
     return GestureDetector(
-      key: ValueKey('tokens.pack_${pack.tokens}'),
+      key: ValueKey(
+        'tokens.pack_${pack.tokens ?? pack.product.identifier}',
+      ),
       onTap: _buying ? null : () => setState(() => _selected = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
@@ -183,18 +266,19 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${pack.tokens} tokens',
+                    pack.title,
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w700,
                       color: onSurface,
                     ),
                   ),
-                  Text(
-                    pack.tag,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: onSurface.withValues(alpha: 0.5),
+                  if (pack.tag.isNotEmpty)
+                    Text(
+                      pack.tag,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: onSurface.withValues(alpha: 0.5),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -301,23 +385,32 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
 
   // ── Purchase ─────────────────────────────────────────────────────────────
 
-  Future<void> _buy() async {
-    final pack = _packs[_selected];
-    setState(() => _buying = true);
+  /// Purchase [pack]. The package comes straight from the rendered offering,
+  /// so there is no id-matching step that can silently fail.
+  Future<void> _buy(_Pack pack) async {
+    final balanceBefore =
+        ref.read(creditsControllerProvider).value?.balance ?? 0;
+
+    setState(() {
+      _buying = true;
+      _error = null;
+    });
 
     try {
-      final package = await _packageFor(pack);
-      if (package == null) {
+      await ref.read(purchaseControllerProvider.notifier).buy(pack.package);
+
+      // buy() swallows cancellation and store errors into its AsyncValue, so
+      // check it rather than assuming success — otherwise a cancelled purchase
+      // would show the celebration screen.
+      final purchaseState = ref.read(purchaseControllerProvider);
+      if (purchaseState is AsyncError) {
         if (!mounted) return;
-        setState(() => _buying = false);
-        MealvanaSnackbar.showError(
-          context,
-          'That pack isn\'t available right now. Please try again later.',
-        );
+        setState(() {
+          _buying = false;
+          _error = 'Purchase failed. Nothing was charged.';
+        });
         return;
       }
-
-      await ref.read(purchaseControllerProvider.notifier).buy(package);
 
       // The wallet is credited server-side by the RevenueCat webhook, so the
       // balance we want to show only exists after a refetch. Refresh before
@@ -325,29 +418,32 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
       await ref.read(creditsControllerProvider.notifier).refresh();
 
       if (!mounted) return;
+
+      final balanceAfter =
+          ref.read(creditsControllerProvider).value?.balance ?? balanceBefore;
+      final credited = balanceAfter - balanceBefore;
+
+      // A cancelled purchase leaves the balance untouched. Only celebrate when
+      // something actually landed, and report what the wallet really gained
+      // rather than what the pack advertised.
+      if (credited <= 0) {
+        setState(() {
+          _buying = false;
+          _error = 'No charge went through. Your balance is unchanged.';
+        });
+        return;
+      }
+
       setState(() {
         _buying = false;
-        _added = pack.tokens;
+        _added = credited;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _buying = false);
-      MealvanaSnackbar.showError(context, 'Purchase failed. Nothing charged.');
+      setState(() {
+        _buying = false;
+        _error = 'Purchase failed. Nothing was charged.';
+      });
     }
-  }
-
-  /// Resolve the RevenueCat [Package] backing [pack] from the current
-  /// offering. Returns null when the store has no matching product — which is
-  /// the normal case on a simulator or before the products are approved.
-  Future<Package?> _packageFor(_Pack pack) async {
-    final offerings = await ref.read(revenueCatServiceProvider).getOfferings();
-    final packages = offerings?.current?.availablePackages ?? const <Package>[];
-    for (final p in packages) {
-      if (p.storeProduct.identifier.contains(pack.productId) ||
-          p.identifier.contains(pack.productId)) {
-        return p;
-      }
-    }
-    return null;
   }
 }

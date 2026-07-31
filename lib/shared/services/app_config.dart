@@ -33,6 +33,7 @@ class AppConfig {
     required this.revenueCatApiKeyApple,
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
+    this.revenueCatApiKeyTest = '',
     this.describeMealEnabled = false,
     this.coachInsightsEnabled = false,
     this.analyticsDevEnabled = false,
@@ -116,6 +117,19 @@ class AppConfig {
   final String revenueCatApiKeyApple;
   final String revenueCatApiKeyGoogle;
 
+  /// RevenueCat **Test Store** public key (`test_…`), for exercising the whole
+  /// purchase → webhook → wallet path without a real store.
+  ///
+  /// The Test Store is platform-agnostic and completes purchases instantly with
+  /// no payment method, which is the only way to test buying on a simulator —
+  /// StoreKit returns no products there without a sandbox account or a
+  /// `.storekit` config file.
+  ///
+  /// Honoured in dev builds only (see [revenueCatApiKey]); a prod build ignores
+  /// it entirely even if the var is set, so a stray value can never route real
+  /// customers to a fake store.
+  final String revenueCatApiKeyTest;
+
   /// Feature flag controlling AI credit purchasing UI.
   ///
   /// Default false — the paywall and balance chip are hidden until explicitly
@@ -139,6 +153,12 @@ class AppConfig {
   /// Returns the Apple key on iOS/macOS and the Google key on Android.
   /// Empty string on web or when the keys have not been configured.
   String get revenueCatApiKey {
+    // Dev opt-in: a Test Store key wins over the real store key so purchases
+    // can be exercised end to end without paying. Gated on isDevelopment so
+    // this can never take effect in a production build.
+    if (isDevelopment && revenueCatApiKeyTest.isNotEmpty) {
+      return revenueCatApiKeyTest;
+    }
     if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
       return revenueCatApiKeyApple;
@@ -267,6 +287,7 @@ class AppConfig {
         'REVENUECAT_API_KEY_GOOGLE',
         fallback: '',
       ),
+      revenueCatApiKeyTest: dotenv.get('REVENUECAT_API_KEY_TEST', fallback: ''),
       aiCreditsEnabled:
           dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
       // AI surfaces default ON for dev builds (2026-07-22, Lee): dev is the
@@ -537,6 +558,10 @@ class AppConfig {
       ),
       revenueCatApiKeyGoogle: const String.fromEnvironment(
         'REVENUECAT_API_KEY_GOOGLE',
+        defaultValue: '',
+      ),
+      revenueCatApiKeyTest: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_TEST',
         defaultValue: '',
       ),
       aiCreditsEnabled:

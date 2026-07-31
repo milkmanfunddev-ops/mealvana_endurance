@@ -37,17 +37,26 @@ class UnitFormatter {
     return '${miles.toStringAsFixed(1)} mi';
   }
 
+  /// Format a fractional minute count as `M:SS`.
+  ///
+  /// Rounds to whole seconds *first* and then splits, so a value that rounds up
+  /// to a full minute carries instead of overflowing the seconds field. Taking
+  /// `floor()` for the minutes and rounding `(value - minutes) * 60` separately
+  /// renders 3.99995 min as "3:60" — the two halves disagree about which minute
+  /// they are in. Every M:SS site should go through here.
+  static String formatMinutesAsMinSec(double minutes) {
+    final totalSeconds = (minutes * 60).round();
+    final wholeMinutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$wholeMinutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
   static String formatPace(double minPerMile, {required PaceUnit unit}) {
     if (unit == PaceUnit.minPerKm) {
       // 1 min/mile = 0.621371 min/km
-      final minPerKm = minPerMile * 0.621371;
-      final minutes = minPerKm.floor();
-      final seconds = ((minPerKm - minutes) * 60).round();
-      return '$minutes:${seconds.toString().padLeft(2, '0')} /km';
+      return '${formatMinutesAsMinSec(minPerMile * kMilePerKm)} /km';
     }
-    final minutes = minPerMile.floor();
-    final seconds = ((minPerMile - minutes) * 60).round();
-    return '$minutes:${seconds.toString().padLeft(2, '0')} /mi';
+    return '${formatMinutesAsMinSec(minPerMile)} /mi';
   }
 
   // Weight conversion methods

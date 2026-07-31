@@ -667,7 +667,11 @@ class MacroTargetsController extends _$MacroTargetsController {
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
                 isFasted: isFasted,
-                notes: 'Draft activity - nutrition plan being generated',
+                // Keep whatever the user wrote. The "Draft activity…" note
+                // belongs to the create branch, where the row really is a
+                // placeholder; stamping it on an update overwrites real notes
+                // every time the plan is regenerated.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -893,8 +897,8 @@ class MacroTargetsController extends _$MacroTargetsController {
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
                 isFasted: isFasted,
-                notes:
-                    'Draft cycling activity - nutrition plan being generated',
+                // See the running branch: never clobber user notes on update.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -1165,8 +1169,8 @@ class MacroTargetsController extends _$MacroTargetsController {
                 swimmingWaterTempC: waterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
-                notes:
-                    'Draft swimming activity - nutrition plan being generated',
+                // See the running branch: never clobber user notes on update.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -1404,6 +1408,19 @@ class MacroTargetsController extends _$MacroTargetsController {
               fallbackTitle: fallbackTitle,
               requestedTitle: activityTitle ?? eventName,
             );
+            // Carry the brick's provenance across the update. The metadata
+            // built above always says `originalActivityIds: null` /
+            // `createdFromExisting: false`, which is only true for a brick
+            // authored from scratch on the Brick tab. Re-saving a brick that
+            // was grouped from existing workouts would otherwise erase the
+            // record of which activities it came from.
+            final preservedMetadata = brickMetadata.copyWith(
+              originalActivityIds:
+                  existingActivity.brickMetadata?.originalActivityIds,
+              createdFromExisting:
+                  existingActivity.brickMetadata?.createdFromExisting,
+            );
+
             await activitiesService.updateActivity(
               deviceId: deviceId,
               currentUserId: deviceId,
@@ -1411,11 +1428,12 @@ class MacroTargetsController extends _$MacroTargetsController {
                 title: brickTitle,
                 activityType: ActivityType.brick,
                 scheduledDateTime: scheduledDateTime,
-                brickMetadata: brickMetadata,
+                brickMetadata: preservedMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
                 isFasted: isFasted,
-                notes: 'Draft brick activity - nutrition plan being generated',
+                // See the running branch: never clobber user notes on update.
+                notes: existingActivity.notes,
               ),
             );
           }

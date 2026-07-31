@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
+import '../../../../../shared/utils/unit_formatter.dart';
 import '../../utils/activity_detail_helpers.dart';
 
 /// Displays scheduled date and time for an activity,
@@ -29,11 +30,8 @@ class ActivityScheduleInfo extends StatelessWidget {
   final VoidCallback? onDateTap;
   final VoidCallback? onTimeTap;
 
-  String _formatPace(double minutesPerMile) {
-    final mins = minutesPerMile.floor();
-    final secs = ((minutesPerMile - mins) * 60).round();
-    return '$mins:${secs.toString().padLeft(2, '0')}/mi';
-  }
+  String _formatPace(double minutesPerMile) =>
+      '${UnitFormatter.formatMinutesAsMinSec(minutesPerMile)}/mi';
 
   @override
   Widget build(BuildContext context) {

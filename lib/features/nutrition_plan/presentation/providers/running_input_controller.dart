@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
@@ -634,11 +635,9 @@ class RunningInputController extends _$RunningInputController {
     );
 
     // Convert pace to M:SS format
-    final paceMinutePart = currentState.paceMinutes.floor();
-    final paceSecondPart = ((currentState.paceMinutes - paceMinutePart) * 60)
-        .round();
-    final paceText =
-        '$paceMinutePart:${paceSecondPart.toString().padLeft(2, '0')}';
+    final paceText = UnitFormatter.formatMinutesAsMinSec(
+      currentState.paceMinutes,
+    );
 
     DebugLogger.info(
       '⏩ RUNNING CONTROLLER: Delegating to distancePageGutEntryController.generateRunningMacros...',

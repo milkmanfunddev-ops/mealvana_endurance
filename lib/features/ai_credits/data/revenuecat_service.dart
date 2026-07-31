@@ -6,7 +6,10 @@ import '../../../shared/services/app_config.dart';
 
 part 'revenuecat_service.g.dart';
 
-@riverpod
+/// Kept alive because this wraps a process-wide native singleton. Under
+/// autoDispose the instance that startup configured was thrown away, and every
+/// later read built a fresh, unconfigured one.
+@Riverpod(keepAlive: true)
 RevenueCatService revenueCatService(Ref ref) {
   return RevenueCatService(config: ref.watch(appConfigProvider));
 }
@@ -24,7 +27,15 @@ class RevenueCatService {
   RevenueCatService({required AppConfig config}) : _config = config;
 
   final AppConfig _config;
-  bool _configured = false;
+
+  /// Static because [Purchases] is a process-wide native singleton: once it has
+  /// been configured, it is configured for every instance of this wrapper.
+  ///
+  /// This was an instance field, which silently broke the whole paywall — app
+  /// startup configured one instance, and any later instance reported
+  /// `_configured == false`, so [getOfferings] returned null at its guard and
+  /// the UI rendered "packs unavailable" forever.
+  static bool _configured = false;
 
   bool get _canUse =>
       _config.aiCreditsEnabled && _config.revenueCatApiKey.isNotEmpty;
@@ -47,7 +58,16 @@ class RevenueCatService {
   }
 
   /// Whether [key] is a well-formed public SDK key for the current platform.
+  ///
+  /// RevenueCat **Test Store** keys (`test_…`) are deliberately accepted on
+  /// every platform: the Test Store is not a native store, so it has no
+  /// platform-specific key and the SDK handles it directly. Rejecting them here
+  /// is what previously made simulator purchase testing impossible — the guard
+  /// exists to stop a *wrong-platform native* key (e.g. a `goog_` key on iOS)
+  /// reaching `Purchases.configure`, where it raises a fatal error that bypasses
+  /// Dart error handling.
   bool _isKeyValidForPlatform(String key) {
+    if (key.startsWith('test_')) return true;
     final prefix = _requiredKeyPrefix;
     return prefix != null && key.startsWith(prefix);
   }
@@ -115,7 +135,21 @@ class RevenueCatService {
     if (!_configured) return null;
 
     try {
-      return await Purchases.getOfferings();
+      final offerings = await Purchases.getOfferings();
+      if (kDebugMode) {
+        // An empty package list is the single most common reason the paywall
+        // renders "unavailable", and it is indistinguishable from a network
+        // failure without this. Log what the store actually served.
+        final summary = offerings.all.entries
+            .map((e) => '${e.key}(${e.value.availablePackages.length})')
+            .join(', ');
+        debugPrint(
+          '[RevenueCatService] offerings: '
+          '${summary.isEmpty ? '<none>' : summary} '
+          '| current=${offerings.current?.identifier ?? '<none>'}',
+        );
+      }
+      return offerings;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[RevenueCatService] getOfferings error: $e');
