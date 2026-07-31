@@ -26,6 +26,7 @@ class VerifyEmailScreen extends ConsumerStatefulWidget {
     super.key,
     required this.email,
     this.otpType = OtpType.signup,
+    this.pendingPassword,
   });
 
   final String email;
@@ -33,6 +34,11 @@ class VerifyEmailScreen extends ConsumerStatefulWidget {
   /// [OtpType.signup] for a brand-new account, [OtpType.emailChange] when an
   /// anonymous account is being upgraded in place (uid preserved).
   final OtpType otpType;
+
+  /// Upgrade path only. GoTrue refuses to set a password while the address is
+  /// still unconfirmed, so it is carried here and applied once the code is
+  /// accepted. Null on the signup path, where the password is already set.
+  final String? pendingPassword;
 
   @override
   ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
@@ -85,6 +91,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
             email: widget.email,
             token: _codeCtrl.text,
             type: widget.otpType,
+            pendingPassword: widget.pendingPassword,
           );
       if (!mounted) return;
       Navigator.of(context).pop(true);

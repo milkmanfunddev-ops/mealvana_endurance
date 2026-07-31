@@ -131,6 +131,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
               otpType: isAnonymousUpgrade
                   ? OtpType.emailChange
                   : OtpType.signup,
+              // Deferred on the upgrade path only: GoTrue rejects a password
+              // on an anonymous user whose email is still unconfirmed.
+              pendingPassword: isAnonymousUpgrade ? password : null,
             ),
             fullscreenDialog: true,
           ),

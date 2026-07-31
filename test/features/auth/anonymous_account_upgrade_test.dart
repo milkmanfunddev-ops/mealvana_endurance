@@ -351,11 +351,97 @@ void main() {
         // Nothing was flipped: the anonymous account is still fully usable.
         expect(wired.spy.calls, 0);
         verifyNever(() => auth.signOut());
+
+        // Regression: the password must NOT be attempted while the address is
+        // parked in `new_email`. GoTrue answers that with
+        //   422 validation_failed — "Updating password of an anonymous user
+        //   without an email or phone is not allowed"
+        // (verified against the dev project 2026-07-31). Exactly one
+        // updateUser call — the email step — may have happened.
+        verify(() => auth.updateUser(any())).called(1);
       },
     );
   });
 
   group('EmailAuthService.verifyEmailOtp', () {
+    test('deferred password is applied once the code is accepted', () async {
+      // The other half of the regression above: linkEmailAccount refuses to set
+      // the password while confirmation is pending, so verify MUST apply it —
+      // otherwise the user finishes the upgrade unable to sign back in.
+      final auth = _MockGoTrue();
+      final upgraded = _user(email: 'a@b.com', isAnonymous: false);
+      final session = _MockSession();
+      final response = _MockAuthResponse();
+      when(() => response.session).thenReturn(session);
+      when(() => response.user).thenReturn(upgraded);
+
+      final anon = _user();
+      final pwResponse = _userResponse(upgraded);
+      when(() => auth.currentUser).thenReturn(anon);
+      when(
+        () => auth.onAuthStateChange,
+      ).thenAnswer((_) => const Stream.empty());
+      when(
+        () => auth.verifyOTP(
+          email: any(named: 'email'),
+          token: any(named: 'token'),
+          type: any(named: 'type'),
+        ),
+      ).thenAnswer((_) async => response);
+      when(() => auth.updateUser(any())).thenAnswer((_) async => pwResponse);
+
+      final wired = _containerFor(_clientWith(auth));
+
+      await wired.container
+          .read(emailAuthServiceProvider.notifier)
+          .verifyEmailOtp(
+            email: 'a@b.com',
+            token: '123456',
+            type: OtpType.emailChange,
+            pendingPassword: 'password123',
+          );
+
+      verify(() => auth.updateUser(any())).called(1);
+      expect(wired.spy.calls, 1);
+      expect(wired.spy.newUserId, _anonUid);
+    });
+
+    test('no deferred password means no updateUser call', () async {
+      // Auto-confirm path: linkEmailAccount already set it, so verify must not
+      // set it a second time.
+      final auth = _MockGoTrue();
+      final upgraded = _user(email: 'a@b.com', isAnonymous: false);
+      final session = _MockSession();
+      final response = _MockAuthResponse();
+      when(() => response.session).thenReturn(session);
+      when(() => response.user).thenReturn(upgraded);
+
+      final anon = _user();
+      when(() => auth.currentUser).thenReturn(anon);
+      when(
+        () => auth.onAuthStateChange,
+      ).thenAnswer((_) => const Stream.empty());
+      when(
+        () => auth.verifyOTP(
+          email: any(named: 'email'),
+          token: any(named: 'token'),
+          type: any(named: 'type'),
+        ),
+      ).thenAnswer((_) async => response);
+
+      final wired = _containerFor(_clientWith(auth));
+
+      await wired.container
+          .read(emailAuthServiceProvider.notifier)
+          .verifyEmailOtp(
+            email: 'a@b.com',
+            token: '123456',
+            type: OtpType.emailChange,
+          );
+
+      verifyNever(() => auth.updateUser(any()));
+    });
+
     test('emailChange code completes the link on the SAME uid', () async {
       final auth = _MockGoTrue();
       final upgraded = _user(email: 'a@b.com', isAnonymous: false);

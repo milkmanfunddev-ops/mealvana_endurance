@@ -162,7 +162,46 @@ class EmailAuthService extends _$EmailAuthService {
         },
       );
 
-      // Step 2: Update user with password
+      // Verify the user ID didn't change (critical for data preservation)
+      if (updatedUser.id != anonymousUserId) {
+        _logger.error(
+          'User ID changed during linking',
+          context: 'EMAIL_AUTH',
+          data: {'old_id': anonymousUserId, 'new_id': updatedUser.id},
+        );
+        throw Exception('Account linking failed - user ID mismatch');
+      }
+
+      if (confirmationPending) {
+        // The account is NOT upgraded yet, and the password CANNOT be set here.
+        // GoTrue rejects it outright while the address is still parked in
+        // `new_email`:
+        //   422 validation_failed — "Updating password of an anonymous user
+        //   without an email or phone is not allowed"
+        // (verified against the dev project on 2026-07-31; see also
+        // supabase.com/docs/guides/auth/auth-anonymous — "To add a password for
+        // the anonymous user, the user's email or phone number needs to be
+        // verified first"). The password is therefore carried to
+        // [verifyEmailOtp] and applied once the code is accepted.
+        //
+        // Stopping here also leaves the local profile untouched on purpose:
+        // until the code is verified the session is still anonymous, so an
+        // abandoned confirmation must leave a fully usable anonymous account
+        // rather than a half-upgraded one.
+        _logger.info(
+          'Email link pending verification — password deferred until verify',
+          context: 'EMAIL_AUTH',
+          data: {'user_id': anonymousUserId},
+        );
+        await _analytics.track(
+          'email_verification_required',
+          properties: {'user_id': anonymousUserId, 'flow': 'link'},
+        );
+        throw const EmailVerificationRequiredException();
+      }
+
+      // Auto-confirm path only (no confirmation pending): the address is
+      // already on the account, so the password is accepted now.
       _logger.info('Step 2: Setting password', context: 'EMAIL_AUTH');
 
       final response = await _supabase.auth.updateUser(
@@ -177,33 +216,6 @@ class EmailAuthService extends _$EmailAuthService {
         'Step 2 complete: Password set successfully',
         context: 'EMAIL_AUTH',
       );
-
-      // Verify the user ID didn't change (critical for data preservation)
-      if (response.user!.id != anonymousUserId) {
-        _logger.error(
-          'User ID changed during linking',
-          context: 'EMAIL_AUTH',
-          data: {'old_id': anonymousUserId, 'new_id': response.user!.id},
-        );
-        throw Exception('Account linking failed - user ID mismatch');
-      }
-
-      if (confirmationPending) {
-        // The account is NOT upgraded yet. Deliberately stop here without
-        // touching the local profile: until the code is verified the session is
-        // still anonymous, so an abandoned confirmation must leave a fully
-        // usable anonymous account rather than a half-upgraded one.
-        _logger.info(
-          'Email link pending verification',
-          context: 'EMAIL_AUTH',
-          data: {'user_id': anonymousUserId},
-        );
-        await _analytics.track(
-          'email_verification_required',
-          properties: {'user_id': anonymousUserId, 'flow': 'link'},
-        );
-        throw const EmailVerificationRequiredException();
-      }
 
       _logger.info(
         'Email account linked successfully',
@@ -449,10 +461,15 @@ class EmailAuthService extends _$EmailAuthService {
   ///   so this is the type the uid-preserving path must use. On success the
   ///   session comes back with the SAME uid, now non-anonymous, and the link
   ///   completion runs here.
+  /// [pendingPassword] applies only to [OtpType.emailChange]. GoTrue refuses to
+  /// set a password on an anonymous user whose email is still unconfirmed, so
+  /// [linkEmailAccount] defers it to here and it is applied immediately after
+  /// the code is accepted.
   Future<void> verifyEmailOtp({
     required String email,
     required String token,
     OtpType type = OtpType.signup,
+    String? pendingPassword,
   }) async {
     state = const AsyncLoading();
 
@@ -521,6 +538,26 @@ class EmailAuthService extends _$EmailAuthService {
             data: {'old_id': priorUserId, 'new_id': newUserId},
           );
           throw Exception('Account linking failed - user ID mismatch');
+        }
+
+        // The email is confirmed and on the account now, so the password
+        // deferred by [linkEmailAccount] is finally accepted. This runs before
+        // the profile flip so a password failure is still surfaced to the user
+        // — without it they would finish the flow unable to sign back in.
+        if (pendingPassword != null && pendingPassword.isNotEmpty) {
+          _logger.info(
+            'Applying deferred password after verification',
+            context: 'EMAIL_AUTH',
+          );
+          final pwResponse = await _supabase.auth.updateUser(
+            UserAttributes(password: pendingPassword),
+          );
+          if (pwResponse.user == null) {
+            throw Exception('Password could not be set after verification');
+          }
+          if (pwResponse.user!.id != newUserId) {
+            throw Exception('Account linking failed - user ID mismatch');
+          }
         }
 
         // The auth-level upgrade is already durable at this point (GoTrue has
