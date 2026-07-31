@@ -6,11 +6,22 @@
 /// instantly and free, so if that key were ever selected in a production build
 /// the app would hand out AI credits for nothing.
 ///
-/// The guard is `isDevelopment`, which is
-/// `appEnvironment == 'dev' || devModeEnabled` — note the **or**. These tests
-/// pin the real shape of that gate, including the mixed case (a prod
-/// environment that still ships `devModeEnabled: true`), which is the one
-/// combination where a stray key is still honoured.
+/// The guard is `isDevelopment && kDebugMode`. The `kDebugMode` half was added
+/// in 6804d5b6 after a real launch crash: RevenueCat forbids Test Store keys in
+/// release binaries and enforces it at runtime, so a Codemagic dev build (a
+/// *release* build shipped to TestFlight) handed a `test_` key raised a native
+/// "wrong API key" alert and terminated. The dev *flavor* is not the same thing
+/// as a debug *build*.
+///
+/// That second condition also all but closes the hole this suite originally
+/// documented. `isDevelopment` is `appEnvironment == 'dev' || devModeEnabled`
+/// — note the **or** — so a build shipped with `APP_ENVIRONMENT=prod` AND
+/// `DEV_MODE_ENABLED=true` still satisfies the first half. It can now only
+/// reach the Test Store in a debug build, which never ships.
+///
+/// These tests run under `flutter test`, where `kDebugMode` is true, so they
+/// exercise the `isDevelopment` half directly. The release-build half is
+/// asserted separately below against the compile-time constant.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -95,17 +106,37 @@ void main() {
       expect(prodWithDevMode().isProduction, isFalse);
     });
 
-    test('still honours the Test Store key — the one hole in the gate', () {
-      // This is the documented-but-real gap: the comment on
-      // revenueCatApiKey says a prod build ignores the test key "even if the
-      // var is set", but the guard is isDevelopment, not !isProduction. A
-      // build shipped with APP_ENVIRONMENT=prod and DEV_MODE_ENABLED=true
-      // routes purchases at the fake store.
+    test('satisfies the isDevelopment half of the gate', () {
+      // A build shipped with APP_ENVIRONMENT=prod and DEV_MODE_ENABLED=true
+      // still clears `isDevelopment`, because that getter is an OR. Under
+      // `flutter test` kDebugMode is true, so the test key wins here.
       //
-      // Pinned deliberately: if the gate is ever tightened to
-      // `appEnvironment == 'dev'`, this expectation flips and the test tells
-      // you the behaviour changed on purpose.
+      // What stops this reaching a customer is the kDebugMode half (6804d5b6):
+      // the binaries that actually ship are release builds. Pinned so that
+      // tightening the first half to `appEnvironment == 'dev'` flips this
+      // expectation and says so out loud.
       expect(prodWithDevMode().revenueCatApiKey, testKey);
+    });
+  });
+
+  group('the kDebugMode half of the gate', () {
+    test('a release build can never select a Test Store key', () {
+      // Not reachable from a unit test — kDebugMode is a compile-time constant
+      // and is true under `flutter test`. Assert the constant instead, so this
+      // test states the precondition the suite above relies on rather than
+      // pretending to cover the release path.
+      expect(
+        kDebugMode,
+        isTrue,
+        reason:
+            'These tests assume a debug test binary. If this ever runs in '
+            'release mode, every dev-flavor expectation below changes: the '
+            'gate falls through to the platform key.',
+      );
+
+      // The invariant that matters in a shipped binary, stated explicitly:
+      // release + any environment => the platform key, never `test_`.
+      // Enforced by revenueCatApiKey's `kDebugMode` conjunct.
     });
   });
 
