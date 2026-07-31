@@ -130,10 +130,12 @@ class AppConfig {
   /// customers to a fake store.
   final String revenueCatApiKeyTest;
 
-  /// Feature flag controlling AI credit purchasing UI.
+  /// Feature flag controlling AI credit purchasing UI (token pill, top-up
+  /// sheet, buy-credits screen).
   ///
-  /// Default false — the paywall and balance chip are hidden until explicitly
-  /// enabled via the `AI_CREDITS_ENABLED=true` env var.
+  /// **ON by default in dev builds, off in prod** — same rule as
+  /// [describeMealEnabled] and [coachInsightsEnabled]. `AI_CREDITS_ENABLED=false`
+  /// still turns it off explicitly.
   final bool aiCreditsEnabled;
 
   /// Release gate for text/photo meal analysis entry points.
@@ -288,12 +290,25 @@ class AppConfig {
         fallback: '',
       ),
       revenueCatApiKeyTest: dotenv.get('REVENUECAT_API_KEY_TEST', fallback: ''),
-      aiCreditsEnabled:
-          dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
       // AI surfaces default ON for dev builds (2026-07-22, Lee): dev is the
-      // proving ground for Describe/Photo meal logging and formula coach
-      // insights. An explicit env value still wins in either direction, and
-      // prod keeps the OFF fallback until the release-gating decision flips.
+      // proving ground for Describe/Photo meal logging, formula coach insights,
+      // and the token/paywall surfaces. An explicit env value still wins in
+      // either direction, and prod keeps the OFF fallback until the
+      // release-gating decision flips.
+      //
+      // `aiCreditsEnabled` was missed by that change and kept a hard `false`
+      // fallback, which made the token pill and the whole RevenueCat paywall
+      // invisible in **Codemagic-built dev apps** — CI writes `.env.dev.local`
+      // from the `DOTENV_DEV_LOCAL` secret, and that secret does not carry
+      // `AI_CREDITS_ENABLED`. Local dev builds worked, because a developer's own
+      // `.env.dev.local` sets it. Same class of bug as the
+      // `ANALYTICS_DEV_ENABLED` gap patched in codemagic.yaml.
+      aiCreditsEnabled:
+          dotenv.get(
+            'AI_CREDITS_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
       describeMealEnabled:
           dotenv.get(
             'DESCRIBE_MEAL_ENABLED',
@@ -564,14 +579,11 @@ class AppConfig {
         'REVENUECAT_API_KEY_TEST',
         defaultValue: '',
       ),
-      aiCreditsEnabled:
-          const String.fromEnvironment(
-            'AI_CREDITS_ENABLED',
-            defaultValue: 'false',
-          ) ==
-          'true',
       // Same dev-default-ON rule as fromEnv: an explicit define wins, an
       // absent one falls back to the flavor (dev shows the AI surfaces).
+      aiCreditsEnabled: const String.fromEnvironment('AI_CREDITS_ENABLED') != ''
+          ? const String.fromEnvironment('AI_CREDITS_ENABLED') == 'true'
+          : isDevMode,
       describeMealEnabled:
           const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') != ''
           ? const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') == 'true'

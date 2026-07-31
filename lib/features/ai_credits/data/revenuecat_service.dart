@@ -157,6 +157,21 @@ class RevenueCatService {
       return;
     }
 
+    // A dev build on a real store key cannot complete a purchase: the credit
+    // SKUs are not provisioned in App Store Connect / Play, so the store serves
+    // an empty offering and the sheet says "packs aren't available" with no
+    // stated cause. That happens whenever `REVENUECAT_API_KEY_TEST` is missing
+    // from the build's environment — notably CI dev builds, whose
+    // `.env.dev.local` comes from the `DOTENV_DEV_LOCAL` secret rather than a
+    // developer's local file. Name it rather than letting it look like an
+    // outage.
+    if (_config.isDevelopment && !isTestStore) {
+      _crumb(
+        'dev build using a REAL store key — REVENUECAT_API_KEY_TEST is not set, '
+        'so purchases cannot complete until the SKUs exist in the live store',
+      );
+    }
+
     try {
       await Purchases.configure(
         PurchasesConfiguration(_config.revenueCatApiKey),
