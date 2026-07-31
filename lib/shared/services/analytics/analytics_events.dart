@@ -72,6 +72,20 @@ extension AnalyticsEvents on AnalyticsTracker {
     );
   }
 
+  /// Fires when macro *targets* have been generated — despite the name, this is
+  /// not the point at which a food plan exists. The plan (and therefore any
+  /// per-phase food item count) only exists later, at
+  /// `nutrition_plan_created_from_adjusted_macros`, which is where
+  /// `before/during/after_run_items` are reported.
+  ///
+  /// This event previously also carried `before_run_items`, `during_run_items`,
+  /// `after_run_items` and `is_first_plan`. All four were structurally
+  /// unknowable here and were hardcoded to `1`/`true` at every call site, so
+  /// the entire history of those properties is constant and carries no signal.
+  /// They were removed rather than faked. `is_first_plan` is not reintroduced
+  /// anywhere: Mixpanel derives first-occurrence per user natively, so a
+  /// client-side flag would be redundant, would cost a DB round-trip on a hot
+  /// path, and would be wrong for anyone who used the app before it shipped.
   Future<void> trackPlanGenerated({
     required String deviceId,
     String? activityId,
@@ -80,10 +94,6 @@ extension AnalyticsEvents on AnalyticsTracker {
     required double paceMinutesPerMile,
     required int totalCalories,
     required int totalCarbs,
-    required int beforeRunItems,
-    required int duringRunItems,
-    required int afterRunItems,
-    required bool isFirstPlan,
   }) {
     return track(
       'plan_generated',
@@ -96,10 +106,6 @@ extension AnalyticsEvents on AnalyticsTracker {
         'pace_minutes_per_mile': paceMinutesPerMile,
         'total_calories': totalCalories,
         'total_carbs': totalCarbs,
-        'before_run_items': beforeRunItems,
-        'during_run_items': duringRunItems,
-        'after_run_items': afterRunItems,
-        'is_first_plan': isFirstPlan,
       },
     );
   }

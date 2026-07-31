@@ -162,10 +162,6 @@ class BrickMacroService {
         paceMinutesPerMile: blendedPaceMinPerMile,
         totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
         totalCarbs: _calculateTotalCarbs(macroTargets),
-        beforeRunItems: 1,
-        duringRunItems: segments.length, // One item per segment
-        afterRunItems: 1,
-        isFirstPlan: true,
       );
 
       DebugLogger.info(

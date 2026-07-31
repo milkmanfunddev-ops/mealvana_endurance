@@ -1953,6 +1953,13 @@ class MacroTargetsController extends _$MacroTargetsController {
             'post_run_carbs_g': resolvedMacroTargets.postRun.carbsG,
             'modified_fields_count': modifiedFieldsCount,
             'plan_type': 'v2_template', // Template-based with LP fallback
+            // Per-phase food counts live here, not on `plan_generated`. This
+            // is the first moment a food plan exists; `plan_generated` fires
+            // at macro-generation time, where it could only ever report a
+            // placeholder.
+            'before_run_items': nutritionPlan.beforeItemCount,
+            'during_run_items': nutritionPlan.duringItemCount,
+            'after_run_items': nutritionPlan.afterItemCount,
           },
         );
 

@@ -86,10 +86,6 @@ class MacroGenerationService {
       paceMinutesPerMile: paceMinutesPerMile,
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
       totalCarbs: _calculateTotalCarbs(macroTargets),
-      beforeRunItems: 1,
-      duringRunItems: 1,
-      afterRunItems: 1,
-      isFirstPlan: true,
     );
 
     return macroTargets;
@@ -159,10 +155,6 @@ class MacroGenerationService {
       paceMinutesPerMile: speedMph,
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
       totalCarbs: _calculateTotalCarbs(macroTargets),
-      beforeRunItems: 1,
-      duringRunItems: 1,
-      afterRunItems: 1,
-      isFirstPlan: true,
     );
     DebugLogger.info(
       '🚴 MACRO SERVICE: Analytics tracked, returning macro targets',
@@ -227,10 +219,6 @@ class MacroGenerationService {
       paceMinutesPerMile: paceSecondsper100m / 60,
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
       totalCarbs: _calculateTotalCarbs(macroTargets),
-      beforeRunItems: 1,
-      duringRunItems: 1,
-      afterRunItems: 1,
-      isFirstPlan: true,
     );
     DebugLogger.info(
       '🏊 MACRO SERVICE: Analytics tracked, returning macro targets',
