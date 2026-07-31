@@ -108,6 +108,7 @@ void main() {
       await $(
         const ValueKey('log_meal.back_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
+      await ensureTimelineOnToday($);
       await $(cardText).waitUntilVisible(timeout: const Duration(seconds: 20));
 
       // ---- 4. TAP the card → edit surface (tap-anywhere-to-edit) ---------

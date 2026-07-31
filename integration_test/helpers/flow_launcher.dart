@@ -91,6 +91,49 @@ Future<bool> ensureAuthenticated(
   return $(sentinel).exists;
 }
 
+/// Put the Fuel Timeline back on **today**, and select the All filter.
+///
+/// Both are app-level state (`calendarSelectedDateProvider` and the timeline
+/// view state) that live in the Riverpod container for the whole app session —
+/// which, under Patrol, spans *every flow in the bundle*. A flow that navigates
+/// to another day or narrows the filter leaves it that way for everything that
+/// runs after it.
+///
+/// That is what made "my newly created item appears on the timeline" fail in
+/// four unrelated flows on the M1 run of 2026-07-31 (an activity, a brick and
+/// two meals). The writes were fine — each flow had already seen its own
+/// success confirmation, and `plan_detail` / "Meal logged!" rendered — but the
+/// timeline they came back to was not showing today. `meal_log_build` passed in
+/// the run before that only because nothing had moved the date yet; once
+/// `activities_crud` started completing its create flow (it runs first,
+/// alphabetically), the drift reached everything downstream.
+///
+/// So any flow asserting "my item is on the timeline" has to state that it
+/// means *today's* timeline rather than inherit whatever the previous test
+/// left behind.
+///
+/// Best-effort by design: `fuel_timeline.today_button` only renders when the
+/// timeline is off today, so its absence is the success case, not an error.
+/// If the timeline cannot be reached at all the caller's own assertion reports
+/// that, which is a better error than one thrown from inside a helper.
+Future<void> ensureTimelineOnToday(PatrolIntegrationTester $) async {
+  const todayButton = ValueKey('fuel_timeline.today_button');
+  const filterAll = ValueKey('fuel_timeline.filter_all');
+
+  try {
+    if ($(todayButton).exists) {
+      await $(todayButton).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 600));
+    }
+    if ($(filterAll).exists) {
+      await $(filterAll).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 400));
+    }
+  } on Exception catch (e) {
+    debugPrint('[flow_launcher] could not reset the timeline day/filter: $e');
+  }
+}
+
 /// Standard skip message for flows that could not authenticate.
 String noAuthSkipMessage() =>
     'Could not reach the tabs shell: no existing session and no '

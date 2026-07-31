@@ -148,6 +148,10 @@ void main() {
       // plan_detail. plan_detail's back only pops one level, so unwind by
       // tapping whichever back button is present until the calendar reappears.
       await _returnToCalendar($);
+      // The selected day and the filter are app-level state shared with every
+      // other flow in the bundle, and this flow's create stack can move the
+      // day. Restate what "on the timeline" means before asserting it.
+      await ensureTimelineOnToday($);
 
       // Poll rather than assert on the first frame back. Creating the plan ends
       // with `ref.invalidate(activitiesControllerProvider)`, and the Fuel

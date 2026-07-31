@@ -172,6 +172,9 @@ void main() {
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
       // REAL outcome #2: the logged meal card appears on the Fuel Timeline.
+      // "the timeline" means *today's* timeline — the selected day is app-level
+      // state shared with every other flow in the bundle.
+      await ensureTimelineOnToday($);
       await $(cardText).waitUntilVisible(timeout: const Duration(seconds: 20));
       expect(
         $(cardText),
