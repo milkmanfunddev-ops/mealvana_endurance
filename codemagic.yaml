@@ -226,6 +226,25 @@ definitions:
           echo "appended ANALYTICS_DEV_ENABLED=true to .env.dev.local"
         fi
 
+        # RevenueCat Test Store key — same story as ANALYTICS_DEV_ENABLED above.
+        # It lives in a developer's own .env.dev.local, so local dev builds could
+        # buy tokens against the Test Store while CI-built dev apps fell back to
+        # the real appl_ key. The credit SKUs are not in App Store Connect yet, so
+        # that key yields an empty offering and the sheet reads "Token packs
+        # aren't available right now" — a broken purchase flow for every tester.
+        #
+        # Held as its own secure var (mealvana_dev group) rather than being folded
+        # into DOTENV_DEV_LOCAL: that secret is the whole file and is unreadable,
+        # so appending here is additive and cannot clobber its other contents.
+        # Dev only — on prod workflows REVENUECAT_API_KEY_TEST is unset and
+        # .env.dev.local is an empty stub, so this is a no-op. AppConfig also
+        # ignores the test key entirely unless the build is a dev flavor.
+        if [ -s .env.dev.local ] && [ -n "${REVENUECAT_API_KEY_TEST:-}" ] \
+           && ! grep -q '^REVENUECAT_API_KEY_TEST=' .env.dev.local; then
+          printf '\nREVENUECAT_API_KEY_TEST=%s\n' "$REVENUECAT_API_KEY_TEST" >> .env.dev.local
+          echo "appended REVENUECAT_API_KEY_TEST to .env.dev.local"
+        fi
+
     - &install_patrol_cli
       name: Install Patrol CLI
       # patrol_cli MUST match the `patrol` package (pubspec.lock: 4.6.1). Per the
