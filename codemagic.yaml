@@ -1252,8 +1252,14 @@ workflows:
   # TESTING WORKFLOWS
   # ============================================================
 
+  # The Patrol suite driven against the DEV backend (dev flavor +
+  # .env.dev.local + the mealvana_dev variable group). Runs on push to
+  # `develop` — the same event that ships a dev TestFlight build via dev-ios —
+  # and on release/* PRs. Its prod-backend twin is integration-tests-prod
+  # below; the two differ only in flavor, env file and variable group, so a
+  # flow never has to know which backend it is talking to.
   integration-tests:
-    name: Integration Tests
+    name: Integration Tests (DEV backend)
     instance_type: mac_mini_m2
     max_build_duration: 60
 
@@ -1270,7 +1276,11 @@ workflows:
       events:
         - pull_request
       branch_patterns:
-        # Test gates run on release/* PRs only (moved off develop + feature/*).
+        # PR gate only. The push-to-develop run is a separate workflow
+        # (integration-tests-develop) because Codemagic applies branch_patterns
+        # to every event in the block — keeping both here would also fire the
+        # dev-backend suite on a release/* push, where integration-tests-prod
+        # is the one that should run.
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
@@ -1297,6 +1307,70 @@ workflows:
           # iOS-only note: credentialed OAuth flows (e.g. Google) can't be driven
           # through ASWebAuthSession, so those flows self-skip on iOS rather than
           # fail. INTEGRATION_TEST_EMAIL/_PASSWORD email login is automatable.
+          patrol test \
+            --target integration_test \
+            --flavor dev \
+            --dart-define-from-file=.env.dev.local \
+            --dart-define-from-file=secrets/integration_test.env \
+            --device "$TEST_DEVICE" \
+            2>&1 | tee test-results/integration-tests.log
+        test_report: test-results/integration-tests.log
+
+      - *shutdown_ios_simulator
+
+    artifacts:
+      - test-results/**
+
+  # ============================================================
+  # DEV INTEGRATION TESTS ON PUSH TO DEVELOP — identical to
+  # `integration-tests` above (same anchors, same dev flavor, same
+  # .env.dev.local, same mealvana_dev group), split out only because Codemagic
+  # applies `branch_patterns` to every event in a `triggering` block. Merging
+  # the two would fire the dev-backend suite on release/* pushes as well, where
+  # integration-tests-prod is the suite that should run.
+  #
+  # This is the gate for "deploy to develop": dev-ios ships a dev TestFlight
+  # build off the same push, so the flows run against the dev backend at the
+  # moment the dev app changes, instead of waiting for a release branch to be
+  # cut.
+  # ============================================================
+  integration-tests-develop:
+    name: Integration Tests (DEV backend, push to develop)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - mealvana_dev
+      vars:
+        FLUTTER_ENV: dev
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *write_dotenv_files
+      - *write_integration_creds
+      - *flutter_pub_get
+      - *run_build_runner
+      - *install_patrol_cli
+      - *boot_ios_simulator
+
+      - name: Run Patrol integration tests (dev backend)
+        script: |
+          mkdir -p test-results
+
+          # One build, every patrolTest() under integration_test/. Unit tests,
+          # analyze and format are gated separately by pr-validation, which also
+          # runs on this push, so they are not repeated here.
           patrol test \
             --target integration_test \
             --flavor dev \
