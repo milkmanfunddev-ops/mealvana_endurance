@@ -148,10 +148,34 @@ void main() {
       // plan_detail. plan_detail's back only pops one level, so unwind by
       // tapping whichever back button is present until the calendar reappears.
       await _returnToCalendar($);
+
+      // Poll rather than assert on the first frame back. Creating the plan ends
+      // with `ref.invalidate(activitiesControllerProvider)`, and the Fuel
+      // Timeline rebuilds from that provider's *async* refetch — so returning
+      // to the timeline and asserting immediately races the refresh. That race
+      // is what failed this flow on 2026-07-31 (and again locally on the first
+      // run that got this far), long after every UI interaction had succeeded.
+      //
+      // Fixed pumps, never settles: the timeline holds a spinner while the
+      // refetch is in flight, so anything that settles would burn its timeout
+      // against it.
+      var appeared = false;
+      for (var i = 0; i < 60; i++) {
+        if ($(workoutName).exists) {
+          appeared = true;
+          break;
+        }
+        await $.pump(const Duration(milliseconds: 300));
+      }
       expect(
-        $(workoutName),
-        findsWidgets,
-        reason: 'Created activity should appear as a card on the calendar.',
+        appeared,
+        isTrue,
+        reason:
+            'Created activity "$workoutName" never appeared on the Fuel '
+            'Timeline within 18s of returning from the create flow. The plan '
+            'itself was created (plan_detail rendered), so if this persists '
+            'the gap is between the activity write and the timeline refresh, '
+            'not in this test.',
       );
 
       // ---- 7. DELETE — swipe the card (either direction deletes) --------
