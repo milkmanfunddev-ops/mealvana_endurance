@@ -194,6 +194,22 @@ expects vs `docs/prod_schema.txt`, via the schema-version guard test.
 
 ---
 
+## 6b. Version number — was going to collide with the shipped release
+
+Production is on **1.22.0**, and `develop` was still carrying `version: 1.22.0+1`, identical to
+`main` — it was never bumped after the 1.22.0 release. Bumped to **1.23.0+1** on 2026-07-31.
+
+This is not cosmetic. The `+N` build number is resolved at build time from TestFlight / Play
+(see the header comment in `codemagic.yaml`), but the `x.y.z` part is committed state. Cutting a
+release off develop at 1.22.0 would have hit exactly the failure that comment warns about:
+Shorebird refuses with *"existing release for version x.y.z+N"*, Play rejects the rollout, and
+TestFlight dedupes.
+
+**1.23.0 rather than 1.22.1** because this release carries a new monetization feature (token
+packs + RevenueCat), not a patch — and the App Store assets were already prepared under the
+`aso-screenshots-v1.23.0` tag. If it ships as a pure bug-fix release instead, change the one
+line in `pubspec.yaml`.
+
 ## 7. Client / release mechanics
 
 - **Codemagic `DOTENV_PROD_LOCAL`** must carry the RevenueCat Apple/Google keys
