@@ -114,10 +114,10 @@ void main() {
   });
 
   group('separator handling', () {
-    // The key is built as `name::comp|portion,comp|portion`. Food names
-    // arriving from imported catalogs are not guaranteed to avoid those
-    // characters, and a collision here means un-favoriting deletes the wrong
-    // SavedMeal row.
+    // The key used to be built as `name::comp|portion,comp|portion`. Food
+    // names arriving from imported catalogs are not guaranteed to avoid those
+    // characters, and a collision means un-favoriting deletes the wrong
+    // SavedMeal row — so the encoding must stay escape-safe whatever it is.
     test('a pipe inside a component name cannot forge a portion boundary', () {
       final pipeInName = mealFavoriteMatchKey('Bowl', [comp('Oats|1 cup', '')]);
       final realBoundary = mealFavoriteMatchKey('Bowl', [

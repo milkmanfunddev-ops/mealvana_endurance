@@ -223,6 +223,7 @@ jobs:
             --target integration_test/flows/meal_log_build_flow_test.dart \
             --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \
+            --target integration_test/flows/brick_plan_flow_test.dart \
             --target integration_test/flows/events_crud_flow_test.dart \
             --target integration_test/flows/event_checklist_carbload_flow_test.dart \
             --target integration_test/flows/formula_pin_flow_test.dart \
