@@ -120,7 +120,14 @@ class RevenueCatService {
   /// reaching `Purchases.configure`, where it raises a fatal error that bypasses
   /// Dart error handling.
   bool _isKeyValidForPlatform(String key) {
-    if (key.startsWith('test_')) return true;
+    // Test Store keys are platform-agnostic and legitimate — but ONLY in a
+    // debug build. RevenueCat's SDK refuses them in a release binary: it puts
+    // up a native "wrong API key … update your RevenueCat settings to use a
+    // production key" alert at launch and kills the app when it is dismissed,
+    // from native code that no Dart error handling can intercept. Accepting a
+    // `test_` key purely because the *flavor* was dev is what shipped that
+    // crash to TestFlight.
+    if (key.startsWith('test_')) return kDebugMode;
     final prefix = _requiredKeyPrefix;
     return prefix != null && key.startsWith(prefix);
   }
@@ -167,8 +174,10 @@ class RevenueCatService {
     // outage.
     if (_config.isDevelopment && !isTestStore) {
       _crumb(
-        'dev build using a REAL store key — REVENUECAT_API_KEY_TEST is not set, '
-        'so purchases cannot complete until the SKUs exist in the live store',
+        'dev build on a REAL store key — expected in a release build, where '
+        'RevenueCat forbids Test Store keys. Purchases cannot complete until '
+        'the SKUs exist in the live store; use a debug build for Test Store '
+        'purchases.',
       );
     }
 

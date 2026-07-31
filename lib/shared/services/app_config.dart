@@ -125,9 +125,13 @@ class AppConfig {
   /// StoreKit returns no products there without a sandbox account or a
   /// `.storekit` config file.
   ///
-  /// Honoured in dev builds only (see [revenueCatApiKey]); a prod build ignores
-  /// it entirely even if the var is set, so a stray value can never route real
-  /// customers to a fake store.
+  /// **Honoured only in a DEBUG build of the dev flavor** (see
+  /// [revenueCatApiKey]). RevenueCat forbids Test Store keys in release
+  /// binaries, and enforces it at runtime: a release build handed a `test_` key
+  /// shows a native "wrong API key" alert on launch and terminates when it is
+  /// dismissed. So a TestFlight dev build uses the real Apple key and cannot
+  /// complete Test Store purchases — exercise those on a simulator or a local
+  /// `flutter run` instead.
   final String revenueCatApiKeyTest;
 
   /// Feature flag controlling AI credit purchasing UI (token pill, top-up
@@ -156,9 +160,17 @@ class AppConfig {
   /// Empty string on web or when the keys have not been configured.
   String get revenueCatApiKey {
     // Dev opt-in: a Test Store key wins over the real store key so purchases
-    // can be exercised end to end without paying. Gated on isDevelopment so
-    // this can never take effect in a production build.
-    if (isDevelopment && revenueCatApiKeyTest.isNotEmpty) {
+    // can be exercised end to end without paying.
+    //
+    // Gated on `kDebugMode`, NOT merely on the dev flavor. RevenueCat's own
+    // rule is "never submit an app configured with a Test Store API key" —
+    // debug builds get the test key, release builds get the platform key. A
+    // Codemagic dev build is a *release* build (Shorebird → TestFlight), so
+    // handing it a `test_` key made the native SDK raise its "wrong API key"
+    // alert at launch and then take the app down when the alert was dismissed.
+    // The dev *flavor* is not the same thing as a debug *build*, and only the
+    // latter is safe here.
+    if (isDevelopment && kDebugMode && revenueCatApiKeyTest.isNotEmpty) {
       return revenueCatApiKeyTest;
     }
     if (defaultTargetPlatform == TargetPlatform.iOS ||
@@ -358,6 +370,7 @@ class AppConfig {
     String appEnvironment = 'dev',
     String revenueCatApiKeyApple = '',
     String revenueCatApiKeyGoogle = '',
+    String revenueCatApiKeyTest = '',
     bool aiCreditsEnabled = false,
     bool describeMealEnabled = true,
     bool coachInsightsEnabled = true,
@@ -395,6 +408,7 @@ class AppConfig {
       appEnvironment: appEnvironment,
       revenueCatApiKeyApple: revenueCatApiKeyApple,
       revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
+      revenueCatApiKeyTest: revenueCatApiKeyTest,
       aiCreditsEnabled: aiCreditsEnabled,
       describeMealEnabled: describeMealEnabled,
       coachInsightsEnabled: coachInsightsEnabled,
