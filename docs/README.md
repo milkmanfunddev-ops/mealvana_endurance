@@ -17,7 +17,7 @@ Reorganized 2026-07-29; `CLAUDE.md` at the repo root is the routing guide.
 | `test/` | Testing strategy + coverage status (`coverage-status-2026-07.md` = READ FIRST) |
 | `deployment/` | Supabase + Vercel deploy hub (project refs, commands) |
 | `ci-cd/` | Codemagic + GitHub Actions docs (`codemagic.yaml` points here) |
-| `release/` | Release process, App Store screenshots |
+| `release/` | Release process, App Store screenshots, and **`prod-readiness-outstanding.md`** — the verified list of everything still blocking a production release |
 | `integration/` | Training integrations: `api-exploration/` (Garmin/TP/FS/VDOT API reference), plus per-provider docs (`training_peaks/`, `final_surge/`, `tp_write/`, `vdot/`, `strava/` and Garmin brand assets) |
 | `brick/` | Brick workouts (referenced from lib code) |
 | `web_mode/` | Web platform specifics |
