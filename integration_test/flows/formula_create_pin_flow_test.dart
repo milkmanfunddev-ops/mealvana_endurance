@@ -305,7 +305,7 @@ void main() {
       const ValueKey('formula_kit.pinned_only_button'),
     ).tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 300));
-  }, timeout: const Timeout(Duration(minutes: 20)));
+  }, timeout: const Timeout(Duration(minutes: 5)));
 }
 
 // ---------------------------------------------------------------------------

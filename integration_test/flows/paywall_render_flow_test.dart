@@ -91,6 +91,6 @@ void main() {
       ).waitUntilVisible(timeout: const Duration(seconds: 15));
       expect($(authSentinel), findsOneWidget);
     },
-    timeout: const Timeout(Duration(minutes: 6)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }

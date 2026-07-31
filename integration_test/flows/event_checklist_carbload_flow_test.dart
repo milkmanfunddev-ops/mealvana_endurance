@@ -169,13 +169,32 @@ void main() {
       await $(
         const ValueKey('my_events.title'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
+
+      // Poll rather than assert instantly. The delete is offline-first: the
+      // row goes on a queue and the list rebuilds from the local DB, so there
+      // is a short window where My Events still renders the deleted event.
+      // Asserting on the first frame after navigation raced that window and
+      // then cost the run this test's entire timeout on 2026-07-31.
+      //
+      // Fixed pumps, never settles — the events list can hold a sync spinner.
+      var gone = false;
+      for (var i = 0; i < 40; i++) {
+        if (!$(eventName).exists) {
+          gone = true;
+          break;
+        }
+        await $.pump(const Duration(milliseconds: 300));
+      }
       expect(
-        $(eventName),
-        findsNothing,
-        reason: 'Deleted event should no longer appear in My Events.',
+        gone,
+        isTrue,
+        reason:
+            'Deleted event "$eventName" was still listed in My Events after '
+            '12s of polling. If this persists, the delete is not reaching the '
+            'local events list — check the repository write, not this test.',
       );
     },
-    timeout: const Timeout(Duration(minutes: 6)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 

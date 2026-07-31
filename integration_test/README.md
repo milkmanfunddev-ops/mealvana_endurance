@@ -116,6 +116,40 @@ Helpers live in `helpers/` (`flow_launcher.dart`, `test_config.dart`,
 `flow_launcher.dart` owns `launchApp()` / `ensureAuthenticated()` and the shared
 `authSentinel` (`bottom_nav.timeline_tab`) — prefer it over per-file auth walks.
 
+## Per-test timeouts: size them to the healthy run, not to fear
+
+**A failing Patrol test burns its entire declared `Timeout`.** Measured on the
+M1 run of 2026-07-31: every one of five failures reported a duration exactly
+equal to its declared timeout (600s, 600s, 360s, 600s, 600s), even though the
+assertion that killed each one had already thrown within the first ~20 seconds.
+The remaining ~9½ minutes per failure is dead wall-clock after the body has
+finished.
+
+Meanwhile every *healthy* flow in that same run finished in **1–11 seconds**:
+
+| flow | healthy |
+|------|---------|
+| `integrations_connect` (per case) | 1 s |
+| `auth` | 2 s |
+| `fuel_timeline`, `learn` | 3 s |
+| `paywall_render` | 7 s |
+| `settings_persist`, `formula_create_pin` | 8–9 s |
+| `meal_log_build`, `events_crud`, `settings_sweep` | 11 s |
+
+The declared timeouts were 6–20 minutes — 50–100× the real runtime. Five
+failures consumed ~48 of that run's 50 minutes.
+
+So the CI-run flows are pinned at **5 minutes**, which is still ~30× the
+slowest healthy flow and leaves room for a cold start (`ensureAuthenticated`
+polls up to 90 s) plus a slow edge-function call (up to 90 s). Raising a
+timeout to "fix" a flake just makes the next real failure more expensive —
+bound the individual `waitUntilVisible` instead, which fails fast and says
+which finder gave up.
+
+The three flows excluded from the M1 job keep longer timeouts, because they
+genuinely wait on humans or LLMs: `google_login` (8 min), `onboarding_signup`
+(12 min), `jade_chat` (6 min).
+
 ## Troubleshooting
 
 | Symptom | Cause |

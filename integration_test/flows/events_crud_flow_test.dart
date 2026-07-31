@@ -124,7 +124,7 @@ void main() {
         reason: 'Deleted event should no longer appear in My Events.',
       );
     },
-    timeout: const Timeout(Duration(minutes: 8)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 

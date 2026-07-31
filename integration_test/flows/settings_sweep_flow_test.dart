@@ -179,7 +179,7 @@ void main() {
       // Final sanity: settings list still alive after the whole sweep.
       expect($(const ValueKey('settings.title')), findsOneWidget);
     },
-    timeout: const Timeout(Duration(minutes: 6)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 

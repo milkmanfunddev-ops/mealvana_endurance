@@ -77,9 +77,15 @@ void main() {
       final onTimeline = find.textContaining(stamp);
 
       // ---- 1. Fuel Timeline → "+ Add Activity" --------------------------
+      // Force the All filter first. Both "+ Add Activity" and the workout
+      // cards themselves only render under All/Workout, and the filter is
+      // app-level state that survives from whichever flow ran before this one
+      // in the same app session — so neither the entry point nor the
+      // end-of-test assertion can assume it.
       await $(
         const ValueKey('bottom_nav.timeline_tab'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
+      await _selectAllFilter($);
       await $(
         const ValueKey('fuel_timeline.add_activity'),
       ).waitUntilVisible(timeout: const Duration(seconds: 25));
@@ -180,6 +186,10 @@ void main() {
 
       // ---- 8. Back to the timeline; the brick is there -------------------
       await _returnToTimeline($);
+      // Re-assert the filter after the create stack unwinds: a workout card is
+      // hidden under the Meals filter, so an unfiltered timeline is part of the
+      // precondition for this assertion, not an incidental detail.
+      await _selectAllFilter($);
       await $(
         onTimeline,
       ).waitUntilVisible(timeout: const Duration(seconds: 30));
@@ -211,8 +221,27 @@ void main() {
         debugPrint('[brick_plan_flow] cleanup skipped: $e');
       }
     },
-    timeout: const Timeout(Duration(minutes: 10)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
+}
+
+/// Put the Fuel Timeline on its All filter, tolerating the pill not being
+/// there yet.
+///
+/// The filter is app-level state that persists across flows in the same app
+/// session, so a flow that needs workout cards visible has to set it rather
+/// than inherit whatever the previous test left behind. Best-effort: if the
+/// pill never appears the caller's own `waitUntilVisible` reports the real
+/// problem, which is a better error than a failure inside a helper.
+Future<void> _selectAllFilter(PatrolIntegrationTester $) async {
+  const filterAll = ValueKey('fuel_timeline.filter_all');
+  try {
+    await $(filterAll).waitUntilVisible(timeout: const Duration(seconds: 20));
+    await $(filterAll).tap(settlePolicy: SettlePolicy.noSettle);
+    await $.pump(const Duration(milliseconds: 400));
+  } on Exception catch (e) {
+    debugPrint('[brick_plan_flow] could not select the All filter: $e');
+  }
 }
 
 /// Unwind the create-flow stack until the timeline tab is showing again.

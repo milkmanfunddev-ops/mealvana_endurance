@@ -199,6 +199,6 @@ void main() {
         print('meal_log_build cleanup failed (non-fatal): $e');
       }
     },
-    timeout: const Timeout(Duration(minutes: 6)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }

@@ -85,8 +85,20 @@ void main() {
       );
       FocusManager.instance.primaryFocus?.unfocus();
       await $.pump(const Duration(milliseconds: 300));
-      await $('Save')
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+      // Target the button by key, and pin the scroll to the form's own
+      // vertical scroll view.
+      //
+      // `$('Save').scrollTo(...)` failed on the M1 run of 2026-07-31: with no
+      // `view:` the finder defaults to the first Scrollable in the tree, which
+      // on this screen is horizontal, so every drag moved sideways and the
+      // finder ran out its iterations. Matching on the text 'Save' is also
+      // ambiguous — `manual_log.save_button` names exactly one widget.
+      await $(const ValueKey('manual_log.save_button'))
+          .scrollTo(
+            view: find.byType(SingleChildScrollView).first,
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         'Meal logged!',
@@ -146,7 +158,7 @@ void main() {
         reason: 'Deleted meal card should no longer appear on the timeline.',
       );
     },
-    timeout: const Timeout(Duration(minutes: 10)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 

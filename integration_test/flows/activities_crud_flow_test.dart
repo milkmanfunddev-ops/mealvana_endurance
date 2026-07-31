@@ -192,7 +192,7 @@ void main() {
         reason: 'Deleted activity should no longer appear on the calendar.',
       );
     },
-    timeout: const Timeout(Duration(minutes: 10)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 
@@ -242,13 +242,43 @@ Future<void> _fillField(
   try {
     await $(key).waitUntilVisible(timeout: const Duration(seconds: 3));
   } on Exception {
-    await $(key).scrollTo(
-      view: find.byType(SingleChildScrollView).first,
-      settleBetweenScrollsTimeout: const Duration(seconds: 1),
-    );
+    await _revealField($, key);
   }
   await $(key).enterText(text, settlePolicy: SettlePolicy.noSettle);
   await $.pump(const Duration(milliseconds: 200));
+}
+
+/// Bring [key] into view without guessing a scroll direction.
+///
+/// `scrollTo` drags one way only — it takes its direction from the
+/// scrollable's `axisDirection`, which for this form is always `down`. When the
+/// target sits *above* the current offset every drag moves further from it, so
+/// the finder walks its full `maxScrolls` to the bottom of the form and only
+/// then throws. That is what happened to `duration_hr_field` on the M1 run of
+/// 2026-07-31, and a naive "try down, then up" retry does not fix it either:
+/// the recovery pass has to out-scroll everything the first pass travelled just
+/// to get back to where it started.
+///
+/// `ensureVisible` asks the target's own nearest Scrollable to reveal it, so
+/// it needs neither a direction nor an iteration count and cannot overshoot.
+/// The [key] must already exist in the tree — callers check that first, and a
+/// widget that exists but still refuses to become hit-testable is a real
+/// finding rather than something to scroll harder at.
+Future<void> _revealField(
+  PatrolIntegrationTester $,
+  ValueKey<String> key,
+) async {
+  final target = find.byKey(key);
+  if (target.evaluate().isEmpty) {
+    throw StateError(
+      '${key.value} is not in the widget tree at all — the form is showing a '
+      'different mode or tab than this flow expects.',
+    );
+  }
+
+  await $.tester.ensureVisible(target.first);
+  // Fixed pump, never settle: this form can hold a weather/zone spinner.
+  await $.pump(const Duration(milliseconds: 400));
 }
 
 /// Polls with fixed pumps (never settles) until [finder] matches nothing.
