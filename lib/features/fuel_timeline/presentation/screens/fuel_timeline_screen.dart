@@ -176,8 +176,7 @@ class FuelTimelineScreen extends ConsumerWidget {
               // the old standalone "Create Brick" button that sat above the
               // adds and read like a third add action (Notion 3a7e3fdb).
               _addRow(context, ref, view, workoutNodes, selectedDate),
-              for (final n in nodes)
-                _tile(context, ref, n, view, workoutNodes),
+              for (final n in nodes) _tile(context, ref, n, view, workoutNodes),
               if (nodes.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 40),
@@ -313,9 +312,7 @@ class FuelTimelineScreen extends ConsumerWidget {
         // the timeline never reflows mid-flow. Chosen rows get the orange
         // spine — "a live preview of the brick".
         if (picking) {
-          final notifier = ref.read(
-            brickSelectionControllerProvider.notifier,
-          );
+          final notifier = ref.read(brickSelectionControllerProvider.notifier);
           final candidates = adjacentBrickCandidateIds(
             workoutNodes
                 .map<Activity?>((n) => n.activity)
@@ -463,72 +460,72 @@ class FuelTimelineScreen extends ConsumerWidget {
         border: Border.all(color: AppColors.orange.withValues(alpha: 0.35)),
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'LEG ORDER',
-                    style: FtType.eyebrow.copyWith(
-                      color: onSurface.withValues(alpha: 0.6),
-                    ),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'LEG ORDER',
+                  style: FtType.eyebrow.copyWith(
+                    color: onSurface.withValues(alpha: 0.6),
                   ),
                 ),
-                GestureDetector(
-                  key: const ValueKey('fuel_timeline.brick_swap'),
-                  // "Swap reverses leg order" — only meaningful with 2+ legs.
-                  onTap: legs.length >= 2 ? notifier.swapOrder : null,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.swap_horiz,
-                        size: 15,
+              ),
+              GestureDetector(
+                key: const ValueKey('fuel_timeline.brick_swap'),
+                // "Swap reverses leg order" — only meaningful with 2+ legs.
+                onTap: legs.length >= 2 ? notifier.swapOrder : null,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.swap_horiz,
+                      size: 15,
+                      color: legs.length >= 2
+                          ? AppColors.electrolyte
+                          : onSurface.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Swap',
+                      style: FtType.pill.copyWith(
                         color: legs.length >= 2
                             ? AppColors.electrolyte
                             : onSurface.withValues(alpha: 0.3),
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Swap',
-                        style: FtType.pill.copyWith(
-                          color: legs.length >= 2
-                              ? AppColors.electrolyte
-                              : onSurface.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                for (var i = 0; i < legs.length; i++) ...[
-                  if (i > 0)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(
-                        Icons.arrow_forward,
-                        size: 13,
-                        color: onSurface.withValues(alpha: 0.5),
-                      ),
                     ),
-                  Expanded(child: _legChip(legs[i], i + 1, onSurface)),
-                ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (var i = 0; i < legs.length; i++) ...[
+                if (i > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Icon(
+                      Icons.arrow_forward,
+                      size: 13,
+                      color: onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                Expanded(child: _legChip(legs[i], i + 1, onSurface)),
               ],
-            ),
-            const SizedBox(height: 12),
-            KyleSecondaryButtonSmall(
-              key: const ValueKey('fuel_timeline.brick_create'),
-              text: 'Create Brick (${legs.length})',
-              onPressed: notifier.canCreateBrick()
-                  ? () => _handleConfirmSelection(context, ref)
-                  : null,
-              variant: SecondaryButtonVariant.orange,
-            ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          KyleSecondaryButtonSmall(
+            key: const ValueKey('fuel_timeline.brick_create'),
+            text: 'Create Brick (${legs.length})',
+            onPressed: notifier.canCreateBrick()
+                ? () => _handleConfirmSelection(context, ref)
+                : null,
+            variant: SecondaryButtonVariant.orange,
+          ),
         ],
       ),
     );

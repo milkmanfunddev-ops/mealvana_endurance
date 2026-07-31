@@ -1002,32 +1002,32 @@ void main() {
               sums['carbs']!.toStringAsFixed(1),
             );
             assertMacroInRangeBand(
-                  sums['carbs']!,
-                  (v4Macros['pre_run_carbs_g'] as num).toDouble(),
-                  v4Macros['pre_run_carbs_low_g'] as num?,
-                  v4Macros['pre_run_carbs_high_g'] as num?,
-                  0.9,
-                  1.1,
-                  'Before carbs',
-                );
+              sums['carbs']!,
+              (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+              v4Macros['pre_run_carbs_low_g'] as num?,
+              v4Macros['pre_run_carbs_high_g'] as num?,
+              0.9,
+              1.1,
+              'Before carbs',
+            );
             assertMacroInRangeBand(
-                  sums['sodium']!,
-                  (v4Macros['pre_run_sodium_mg'] as num).toDouble(),
-                  v4Macros['pre_run_sodium_low_mg'] as num?,
-                  v4Macros['pre_run_sodium_high_mg'] as num?,
-                  0.85,
-                  1.1,
-                  'Before sodium',
-                );
+              sums['sodium']!,
+              (v4Macros['pre_run_sodium_mg'] as num).toDouble(),
+              v4Macros['pre_run_sodium_low_mg'] as num?,
+              v4Macros['pre_run_sodium_high_mg'] as num?,
+              0.85,
+              1.1,
+              'Before sodium',
+            );
             assertMacroInRangeBand(
-                  sums['water']!,
-                  (v4Macros['pre_run_water_ml'] as num).toDouble(),
-                  v4Macros['pre_run_water_low_ml'] as num?,
-                  v4Macros['pre_run_water_high_ml'] as num?,
-                  0.85,
-                  1.1,
-                  'Before water',
-                );
+              sums['water']!,
+              (v4Macros['pre_run_water_ml'] as num).toDouble(),
+              v4Macros['pre_run_water_low_ml'] as num?,
+              v4Macros['pre_run_water_high_ml'] as num?,
+              0.85,
+              1.1,
+              'Before water',
+            );
           }
         }
 
@@ -1046,23 +1046,23 @@ void main() {
             'During carbs',
           );
           assertMacroInRangeBand(
-                  sums['sodium']!,
-                  (v4Macros['during_sodium_total_mg'] as num).toDouble(),
-                  v4Macros['during_sodium_low_mg'] as num?,
-                  v4Macros['during_sodium_high_mg'] as num?,
-                  0.9,
-                  1.1,
-                  'During sodium',
-                );
+            sums['sodium']!,
+            (v4Macros['during_sodium_total_mg'] as num).toDouble(),
+            v4Macros['during_sodium_low_mg'] as num?,
+            v4Macros['during_sodium_high_mg'] as num?,
+            0.9,
+            1.1,
+            'During sodium',
+          );
           assertMacroInRangeBand(
-                  sums['water']!,
-                  (v4Macros['during_water_total_ml'] as num).toDouble(),
-                  v4Macros['during_water_low_ml'] as num?,
-                  v4Macros['during_water_high_ml'] as num?,
-                  0.9,
-                  1.1,
-                  'During water',
-                );
+            sums['water']!,
+            (v4Macros['during_water_total_ml'] as num).toDouble(),
+            v4Macros['during_water_low_ml'] as num?,
+            v4Macros['during_water_high_ml'] as num?,
+            0.9,
+            1.1,
+            'During water',
+          );
         }
 
         // 6. Validate after phase
@@ -1080,23 +1080,23 @@ void main() {
             'After carbs',
           );
           afterTriggerDesignCheck(
-                  sums['sodium']!,
-                  (v4Macros['post_run_sodium_mg'] as num).toDouble(),
-                  v4Macros['post_run_sodium_low_mg'] as num?,
-                  v4Macros['post_run_sodium_high_mg'] as num?,
-                  0.85,
-                  1.1,
-                  'After sodium',
-                );
+            sums['sodium']!,
+            (v4Macros['post_run_sodium_mg'] as num).toDouble(),
+            v4Macros['post_run_sodium_low_mg'] as num?,
+            v4Macros['post_run_sodium_high_mg'] as num?,
+            0.85,
+            1.1,
+            'After sodium',
+          );
           afterTriggerDesignCheck(
-                  sums['water']!,
-                  (v4Macros['post_run_water_ml'] as num).toDouble(),
-                  v4Macros['post_run_water_low_ml'] as num?,
-                  v4Macros['post_run_water_high_ml'] as num?,
-                  0.85,
-                  1.1,
-                  'After water',
-                );
+            sums['water']!,
+            (v4Macros['post_run_water_ml'] as num).toDouble(),
+            v4Macros['post_run_water_low_ml'] as num?,
+            v4Macros['post_run_water_high_ml'] as num?,
+            0.85,
+            1.1,
+            'After water',
+          );
         }
 
         logTestPass('50kg female 5K validation complete');
@@ -1164,14 +1164,14 @@ void main() {
         if (beforeFoods.isNotEmpty) {
           final sums = sumFoodMacros(beforeFoods);
           assertMacroInRangeBand(
-                  sums['carbs']!,
-                  (v4Macros['pre_run_carbs_g'] as num).toDouble(),
-                  v4Macros['pre_run_carbs_low_g'] as num?,
-                  v4Macros['pre_run_carbs_high_g'] as num?,
-                  0.9,
-                  1.1,
-                  'Before carbs',
-                );
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            v4Macros['pre_run_carbs_low_g'] as num?,
+            v4Macros['pre_run_carbs_high_g'] as num?,
+            0.9,
+            1.1,
+            'Before carbs',
+          );
         }
 
         final duringFoods = getDuringFoods(plan);
@@ -1184,14 +1184,14 @@ void main() {
             'During carbs',
           );
           assertMacroInRangeBand(
-                  sums['sodium']!,
-                  (v4Macros['during_sodium_total_mg'] as num).toDouble(),
-                  v4Macros['during_sodium_low_mg'] as num?,
-                  v4Macros['during_sodium_high_mg'] as num?,
-                  0.9,
-                  1.1,
-                  'During sodium',
-                );
+            sums['sodium']!,
+            (v4Macros['during_sodium_total_mg'] as num).toDouble(),
+            v4Macros['during_sodium_low_mg'] as num?,
+            v4Macros['during_sodium_high_mg'] as num?,
+            0.9,
+            1.1,
+            'During sodium',
+          );
         }
 
         final afterFoods = getAfterFoods(plan);
@@ -1266,14 +1266,14 @@ void main() {
         if (beforeFoods.isNotEmpty) {
           final sums = sumFoodMacros(beforeFoods);
           assertMacroInRangeBand(
-                  sums['carbs']!,
-                  (v4Macros['pre_run_carbs_g'] as num).toDouble(),
-                  v4Macros['pre_run_carbs_low_g'] as num?,
-                  v4Macros['pre_run_carbs_high_g'] as num?,
-                  0.9,
-                  1.1,
-                  'Before carbs',
-                );
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            v4Macros['pre_run_carbs_low_g'] as num?,
+            v4Macros['pre_run_carbs_high_g'] as num?,
+            0.9,
+            1.1,
+            'Before carbs',
+          );
         }
 
         final duringFoods = getDuringFoods(plan);
@@ -1359,14 +1359,14 @@ void main() {
         if (beforeFoods.isNotEmpty) {
           final sums = sumFoodMacros(beforeFoods);
           assertMacroInRangeBand(
-                  sums['carbs']!,
-                  (v4Macros['pre_run_carbs_g'] as num).toDouble(),
-                  v4Macros['pre_run_carbs_low_g'] as num?,
-                  v4Macros['pre_run_carbs_high_g'] as num?,
-                  0.9,
-                  1.1,
-                  'Before carbs',
-                );
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            v4Macros['pre_run_carbs_low_g'] as num?,
+            v4Macros['pre_run_carbs_high_g'] as num?,
+            0.9,
+            1.1,
+            'Before carbs',
+          );
         }
 
         final duringFoods = getDuringFoods(plan);
@@ -1453,14 +1453,14 @@ void main() {
         if (beforeFoods.isNotEmpty) {
           final sums = sumFoodMacros(beforeFoods);
           assertMacroInRangeBand(
-                  sums['carbs']!,
-                  (v4Macros['pre_run_carbs_g'] as num).toDouble(),
-                  v4Macros['pre_run_carbs_low_g'] as num?,
-                  v4Macros['pre_run_carbs_high_g'] as num?,
-                  0.9,
-                  1.1,
-                  'Before carbs',
-                );
+            sums['carbs']!,
+            (v4Macros['pre_run_carbs_g'] as num).toDouble(),
+            v4Macros['pre_run_carbs_low_g'] as num?,
+            v4Macros['pre_run_carbs_high_g'] as num?,
+            0.9,
+            1.1,
+            'Before carbs',
+          );
         }
 
         final duringFoods = getDuringFoods(plan);

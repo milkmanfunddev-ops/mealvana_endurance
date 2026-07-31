@@ -60,8 +60,7 @@ Set<String> adjacentBrickCandidateIds(List<Activity?> ordered) {
   void flush() {
     // Same viability rule as [hasAdjacentBrickCandidates]: 2+ rows AND 2+
     // distinct sports, so a run of identical sports never becomes selectable.
-    if (run.length >= 2 &&
-        run.map((a) => a.activityType).toSet().length >= 2) {
+    if (run.length >= 2 && run.map((a) => a.activityType).toSet().length >= 2) {
       ids.addAll(run.map((a) => a.id));
     }
     run = <Activity>[];

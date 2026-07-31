@@ -383,9 +383,7 @@ class TimelineBrickTile extends ConsumerWidget {
       'swimming' => 'Swim',
       'cycling' => 'Bike',
       'running' => 'Run',
-      _ => sport.isEmpty
-          ? sport
-          : sport[0].toUpperCase() + sport.substring(1),
+      _ => sport.isEmpty ? sport : sport[0].toUpperCase() + sport.substring(1),
     };
   }
 

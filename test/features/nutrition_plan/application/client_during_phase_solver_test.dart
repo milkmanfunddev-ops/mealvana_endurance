@@ -717,8 +717,7 @@ void main() {
             activityType: ActivityType.cycling,
           );
 
-          final totalSodium =
-              result.fold(0.0, (sum, s) => sum + s.sodiumMg);
+          final totalSodium = result.fold(0.0, (sum, s) => sum + s.sodiumMg);
 
           expect(
             totalSodium,
@@ -787,8 +786,7 @@ void main() {
             activityType: ActivityType.cycling,
           );
 
-          final totalSodium =
-              result.fold(0.0, (sum, s) => sum + s.sodiumMg);
+          final totalSodium = result.fold(0.0, (sum, s) => sum + s.sodiumMg);
           // The pass/fail bound is the real range ceiling, not a synthetic
           // target × 1.1 band.
           final sodiumUpper = targets.sodiumHighMg!;

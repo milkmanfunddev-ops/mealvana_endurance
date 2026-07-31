@@ -7,14 +7,24 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/plan_section.d
 // empty-foodItems condition that never occurs, so a 3-ingredient smoothie
 // rendered as three unrelated food lines.
 void main() {
-  const banana = FoodItemData(id: 'f1', name: 'banana', quantity: '0.5', displayName: 'Banana');
+  const banana = FoodItemData(
+    id: 'f1',
+    name: 'banana',
+    quantity: '0.5',
+    displayName: 'Banana',
+  );
   const blueberries = FoodItemData(
     id: 'f2',
     name: 'blueberries',
     quantity: '0.5',
     displayName: 'Blueberries',
   );
-  const milk = FoodItemData(id: 'f3', name: 'milk', quantity: '0.5', displayName: 'Milk');
+  const milk = FoodItemData(
+    id: 'f3',
+    name: 'milk',
+    quantity: '0.5',
+    displayName: 'Milk',
+  );
 
   group('BeforeSubPhase.templateSummary', () {
     test('prefers the curated template name when present', () {

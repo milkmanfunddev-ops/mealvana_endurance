@@ -75,18 +75,20 @@ void main() {
       );
     });
 
-    test('true when a later pair is adjacent even if an earlier one is not',
-        () {
-      expect(
-        hasAdjacentBrickCandidates([
-          act('a', ActivityType.running),
-          act('b', ActivityType.other),
-          act('c', ActivityType.swimming),
-          act('d', ActivityType.cycling),
-        ]),
-        isTrue,
-      );
-    });
+    test(
+      'true when a later pair is adjacent even if an earlier one is not',
+      () {
+        expect(
+          hasAdjacentBrickCandidates([
+            act('a', ActivityType.running),
+            act('b', ActivityType.other),
+            act('c', ActivityType.swimming),
+            act('d', ActivityType.cycling),
+          ]),
+          isTrue,
+        );
+      },
+    );
 
     test('false for two adjacent workouts of the SAME sport', () {
       // A brick is a change of discipline; canCreateBrick rejects duplicate

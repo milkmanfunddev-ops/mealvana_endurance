@@ -1438,16 +1438,13 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       switch (shortfall.macro) {
         case ShortfallMacro.sodium:
-          floor = section.sodiumLowTarget ??
-              (section.sodiumTarget ?? 0) * 0.9;
+          floor = section.sodiumLowTarget ?? (section.sodiumTarget ?? 0) * 0.9;
           delivered = totalSodium;
         case ShortfallMacro.carbs:
-          floor = section.carbsLowTarget ??
-              (section.carbsTarget ?? 0) * 0.9;
+          floor = section.carbsLowTarget ?? (section.carbsTarget ?? 0) * 0.9;
           delivered = totalCarbs;
         case ShortfallMacro.fluid:
-          floor = section.fluidsLowTarget ??
-              (section.fluidsTarget ?? 0) * 0.9;
+          floor = section.fluidsLowTarget ?? (section.fluidsTarget ?? 0) * 0.9;
           delivered = totalFluids;
         default:
           result.add(shortfall);
@@ -1455,13 +1452,15 @@ class ActivityDetailController extends _$ActivityDetailController {
       }
 
       if (delivered < floor) {
-        result.add(MacroShortfall(
-          macro: shortfall.macro,
-          delivered: delivered,
-          target: shortfall.target,
-          unit: shortfall.unit,
-          reason: shortfall.reason,
-        ));
+        result.add(
+          MacroShortfall(
+            macro: shortfall.macro,
+            delivered: delivered,
+            target: shortfall.target,
+            unit: shortfall.unit,
+            reason: shortfall.reason,
+          ),
+        );
       }
     }
 

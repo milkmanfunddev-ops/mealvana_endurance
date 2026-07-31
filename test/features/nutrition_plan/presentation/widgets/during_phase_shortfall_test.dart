@@ -76,78 +76,84 @@ void main() {
   });
 
   group('recomputeShortfalls', () {
-    test('clears sodium shortfall when edited foods bring total above floor', () {
-      const section = PlanSection(
-        id: 'during_run',
-        title: 'During Run',
-        sodiumTarget: 2272,
-        sodiumLowTarget: 1818,
-        foodItems: [],
-        shortfalls: [
-          MacroShortfall(
-            macro: ShortfallMacro.sodium,
-            delivered: 1630,
-            target: 2272,
-            unit: 'mg',
-            reason: ShortfallReason.templateConstraint,
+    test(
+      'clears sodium shortfall when edited foods bring total above floor',
+      () {
+        const section = PlanSection(
+          id: 'during_run',
+          title: 'During Run',
+          sodiumTarget: 2272,
+          sodiumLowTarget: 1818,
+          foodItems: [],
+          shortfalls: [
+            MacroShortfall(
+              macro: ShortfallMacro.sodium,
+              delivered: 1630,
+              target: 2272,
+              unit: 'mg',
+              reason: ShortfallReason.templateConstraint,
+            ),
+          ],
+        );
+
+        final updatedFoods = [
+          const FoodItemData(
+            id: 'capsule-1',
+            name: 'Electrolyte Capsules',
+            quantity: '6',
+            nutritionalInfo: NutritionalInfo(sodium: 2010),
           ),
-        ],
-      );
+        ];
 
-      final updatedFoods = [
-        const FoodItemData(
-          id: 'capsule-1',
-          name: 'Electrolyte Capsules',
-          quantity: '6',
-          nutritionalInfo: NutritionalInfo(sodium: 2010),
-        ),
-      ];
+        final result = ActivityDetailController.recomputeShortfalls(
+          updatedFoods,
+          section,
+        );
 
-      final result = ActivityDetailController.recomputeShortfalls(
-        updatedFoods,
-        section,
-      );
+        expect(result, isEmpty);
+      },
+    );
 
-      expect(result, isEmpty);
-    });
+    test(
+      'keeps sodium shortfall with updated delivered when still below floor',
+      () {
+        const section = PlanSection(
+          id: 'during_run',
+          title: 'During Run',
+          sodiumTarget: 2272,
+          sodiumLowTarget: 1818,
+          foodItems: [],
+          shortfalls: [
+            MacroShortfall(
+              macro: ShortfallMacro.sodium,
+              delivered: 1630,
+              target: 2272,
+              unit: 'mg',
+              reason: ShortfallReason.templateConstraint,
+            ),
+          ],
+        );
 
-    test('keeps sodium shortfall with updated delivered when still below floor', () {
-      const section = PlanSection(
-        id: 'during_run',
-        title: 'During Run',
-        sodiumTarget: 2272,
-        sodiumLowTarget: 1818,
-        foodItems: [],
-        shortfalls: [
-          MacroShortfall(
-            macro: ShortfallMacro.sodium,
-            delivered: 1630,
-            target: 2272,
-            unit: 'mg',
-            reason: ShortfallReason.templateConstraint,
+        final updatedFoods = [
+          const FoodItemData(
+            id: 'capsule-1',
+            name: 'Electrolyte Capsules',
+            quantity: '4',
+            nutritionalInfo: NutritionalInfo(sodium: 1700),
           ),
-        ],
-      );
+        ];
 
-      final updatedFoods = [
-        const FoodItemData(
-          id: 'capsule-1',
-          name: 'Electrolyte Capsules',
-          quantity: '4',
-          nutritionalInfo: NutritionalInfo(sodium: 1700),
-        ),
-      ];
+        final result = ActivityDetailController.recomputeShortfalls(
+          updatedFoods,
+          section,
+        );
 
-      final result = ActivityDetailController.recomputeShortfalls(
-        updatedFoods,
-        section,
-      );
-
-      expect(result, hasLength(1));
-      expect(result.first.delivered, 1700);
-      expect(result.first.target, 2272);
-      expect(result.first.gap, 572);
-    });
+        expect(result, hasLength(1));
+        expect(result.first.delivered, 1700);
+        expect(result.first.target, 2272);
+        expect(result.first.gap, 572);
+      },
+    );
 
     test('falls back to 90% of target when no range low is set', () {
       const section = PlanSection(

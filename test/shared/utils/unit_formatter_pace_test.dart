@@ -46,10 +46,7 @@ void main() {
   group('formatPace', () {
     test('carries in the per-mile branch', () {
       expect(
-        UnitFormatter.formatPace(
-          3.9999502907988265,
-          unit: PaceUnit.minPerMile,
-        ),
+        UnitFormatter.formatPace(3.9999502907988265, unit: PaceUnit.minPerMile),
         '4:00 /mi',
       );
     });

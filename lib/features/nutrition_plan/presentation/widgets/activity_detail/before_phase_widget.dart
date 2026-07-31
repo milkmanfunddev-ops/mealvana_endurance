@@ -303,8 +303,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         // ingredient rows below read as one item
                         // (bug 3abe3fdb754c8153).
                         if ((!isExpanded ||
-                                (subPhase.templateName?.isNotEmpty ??
-                                    false)) &&
+                                (subPhase.templateName?.isNotEmpty ?? false)) &&
                             subPhase.templateSummary.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(

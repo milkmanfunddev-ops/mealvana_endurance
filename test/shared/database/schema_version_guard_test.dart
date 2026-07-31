@@ -63,8 +63,9 @@ void main() {
     test('every schema version has a corresponding onUpgrade step', () {
       // The other half of the same bug: the version moves but nothing
       // migrates, so the new version is a no-op for existing installs.
-      final source = File('lib/shared/database/app_database.dart')
-          .readAsStringSync();
+      final source = File(
+        'lib/shared/database/app_database.dart',
+      ).readAsStringSync();
 
       final missing = <int>[
         for (var v = _ladderFloor; v <= db.schemaVersion; v++)
