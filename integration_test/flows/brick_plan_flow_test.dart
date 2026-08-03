@@ -16,8 +16,17 @@
 ///     → ASSERT the fluid row is in a plausible imperial range (the "3105oz"
 ///       guard — see below)
 ///     → Create Plan → lands on the plan detail screen
-///     → back to the timeline; the brick card is there
-///     → CLEANUP (best effort): swipe the card away
+///     → ASSERT the brick's name on plan detail (see below)
+///     → back to the timeline; a brick tile is rendered
+///     → CLEANUP (best effort, only when unambiguous): swipe the tile away
+///
+/// **Where identity is checked.** `TimelineBrickTile` never renders the
+/// brick's own name — it shows "BRICK", a leg summary and per-sport labels —
+/// so a name/stamp finder on the timeline can never match a brick however long
+/// it polls. Plan detail's app-bar title is the only surface that shows it, so
+/// that is where this flow proves it created *its* brick. The timeline check
+/// is deliberately weaker: all it can honestly confirm is that a brick
+/// rendered at all.
 ///
 /// **The fluids assertion.** The table renders whole numbers with a unit
 /// header. A brick's during-phase fluid target in ounces is realistically tens
@@ -50,6 +59,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
+import 'package:mealvana_endurance/features/fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
+
 import '../helpers/flow_launcher.dart';
 
 /// Largest believable single-phase fluid target in **ounces**. A 3.5 h brick
@@ -72,9 +83,6 @@ void main() {
 
       final stamp = '${DateTime.now().millisecondsSinceEpoch}';
       final brickName = 'Patrol Brick $stamp';
-      // The timeline renders activity titles uppercased, so match on the stamp,
-      // which is case-invariant.
-      final onTimeline = find.textContaining(stamp);
 
       // ---- 1. Fuel Timeline → "+ Add Activity" --------------------------
       // Put the timeline on today with the All filter first. Both "+ Add
@@ -179,51 +187,88 @@ void main() {
         }
       }
 
-      // ---- 7. Create the plan -------------------------------------------
+      // ---- 7. Create the plan → land on plan detail ----------------------
       await $(
         const ValueKey('adjust_macros.create_plan_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
-      // ---- 8. Back to the timeline; the brick is there -------------------
+      // Wait for plan detail BEFORE unwinding. Without this the back-button
+      // walk starts while the push is still in flight, taps
+      // `adjust_macros.back_button` instead, and reverses out of the create
+      // stack mid-creation (observed on the M1 run of 2026-08-03: the flow
+      // never tapped plan_detail.back_button at all).
+      await $(
+        const ValueKey('plan_detail.title'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 40));
+
+      // ---- 8. IDENTITY — assert the title here, not on the timeline ------
+      // This is the only surface that renders the brick's own name.
+      // TimelineBrickTile deliberately does not: it shows "BRICK", a leg
+      // summary and per-sport labels, so a stamp-matching finder on the
+      // timeline can never match a brick no matter how long it polls. That is
+      // what failed this flow on 2026-08-03 while the row sat happily in
+      // Supabase (Patrol Brick 1785761943969, not deleted).
+      expect(
+        $(const ValueKey('plan_detail.title')).text,
+        contains(stamp),
+        reason:
+            'Plan detail should be showing the brick we just created; its '
+            'title is the only place the brick name is rendered.',
+      );
+
+      // ---- 9. Back to the timeline; a brick tile is rendered -------------
       await _returnToTimeline($);
-      // Re-assert the filter after the create stack unwinds: a workout card is
-      // hidden under the Meals filter, so an unfiltered timeline is part of the
-      // precondition for this assertion, not an incidental detail.
+      // Re-assert day + filter after the create stack unwinds: a workout card
+      // is hidden under the Meals filter, and both are shared app state.
       await ensureTimelineOnToday($);
+
+      // Weaker than the identity check above, and deliberately so: the tile
+      // carries no per-brick text to match on, so all the timeline can honestly
+      // confirm is that a brick rendered.
+      final brickTile = find.byType(TimelineBrickTile);
       final appeared = await waitForOnTimeline(
         $,
-        onTimeline,
+        brickTile,
         timeout: const Duration(seconds: 30),
       );
       expect(
         appeared,
         isTrue,
         reason:
-            'The created brick never appeared on the Fuel Timeline. The plan '
-            'itself was created (adjust-macros accepted Create Plan), so if '
-            'this persists the gap is between the activity write and the '
+            'No brick tile rendered on the Fuel Timeline after creating one. '
+            'The brick itself was created (plan detail showed its title), so '
+            'if this persists the gap is between the activity write and the '
             'timeline refresh, not in this test.',
       );
 
-      // ---- 9. CLEANUP — best effort, never fails the run -----------------
+      // ---- 10. CLEANUP — best effort, never fails the run ----------------
+      // Cannot target THIS brick specifically (no per-brick text or key), so
+      // clean up only when exactly one brick is on the day — otherwise a
+      // leftover from an earlier run would be deleted instead. A skipped
+      // cleanup is not a failure: the name is stamped, so nothing collides.
       try {
-        final card = find.ancestor(
-          of: find.textContaining(stamp),
-          matching: find.byType(Dismissible),
-        );
-        if (card.evaluate().isNotEmpty) {
-          await $.tester.drag(card.first, const Offset(-500, 0));
-          for (var i = 0; i < 4; i++) {
-            await $.pump(const Duration(milliseconds: 300));
+        if (brickTile.evaluate().length == 1) {
+          final card = find.ancestor(
+            of: brickTile,
+            matching: find.byType(Dismissible),
+          );
+          if (card.evaluate().isNotEmpty) {
+            await $.tester.drag(card.first, const Offset(-500, 0));
+            for (var i = 0; i < 4; i++) {
+              await $.pump(const Duration(milliseconds: 300));
+            }
+            // Let the undo snackbar time out without tapping Undo.
+            for (var i = 0; i < 16; i++) {
+              await $.pump(const Duration(milliseconds: 300));
+            }
           }
-          // Let the undo snackbar time out without tapping Undo.
-          for (var i = 0; i < 16; i++) {
-            await $.pump(const Duration(milliseconds: 300));
-          }
+        } else {
+          debugPrint(
+            '[brick_plan_flow] ${brickTile.evaluate().length} bricks on this '
+            'day — skipping cleanup rather than deleting the wrong one.',
+          );
         }
       } on Exception catch (e) {
-        // A leftover row on the dev tester account is not a test failure — the
-        // name is stamped, so the next run will not collide with it.
         debugPrint('[brick_plan_flow] cleanup skipped: $e');
       }
     },
