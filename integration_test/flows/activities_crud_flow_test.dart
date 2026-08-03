@@ -169,6 +169,28 @@ void main() {
       // Fixed pumps, never settles: the timeline holds a spinner while the
       // refetch is in flight, so anything that settles would burn its timeout
       // against it.
+      // Prove the CREATE landed in the database first. This is the assertion
+      // that cannot lie: it is independent of scroll position, lazy list
+      // building and refresh timing, all of which have produced false failures
+      // here. If this passes and the timeline check below fails, the write is
+      // fine and the rendering is at fault — the failure messages say so.
+      final probe = await SupabaseProbe.signIn();
+      if (probe != null) {
+        expect(
+          await probe.activityByTitle(workoutName),
+          isNotNull,
+          reason:
+              'No activities row titled "$workoutName" for this athlete after '
+              'Create Plan, even though plan detail rendered. The write never '
+              'reached Supabase.',
+        );
+      } else {
+        debugPrint(
+          '[activities_crud] Supabase probe unavailable — create/delete '
+          'persistence assertions skipped (UI assertions still ran).',
+        );
+      }
+
       final appeared = await waitForOnTimeline($, onTimeline);
       expect(
         appeared,
@@ -224,16 +246,7 @@ void main() {
       // prove the delete was written. An optimistic local removal whose upload
       // silently failed looks exactly the same on screen, and the row comes
       // back on the next device. Read it back.
-      final probe = await SupabaseProbe.signIn();
-      if (probe == null) {
-        debugPrint(
-          '[activities_crud] Supabase probe unavailable — skipped the '
-          'persisted-state assertions (UI assertions above still ran).',
-        );
-      } else {
-        // CREATE really happened: the row exists, typed and titled correctly.
-        // This runs after the delete, so it also pins that the create wrote a
-        // row at all rather than only ever living in local state.
+      if (probe != null) {
         expect(
           await probe.activityIsGone(workoutName),
           isTrue,

@@ -163,6 +163,7 @@ Future<bool> waitForOnTimeline(
   Finder finder, {
   Duration timeout = const Duration(seconds: 20),
 }) async {
+  // Phase 1: wait for the async refetch. The row may not be in the tree yet.
   final polls = timeout.inMilliseconds ~/ 300;
   var found = false;
   for (var i = 0; i < polls; i++) {
@@ -172,6 +173,29 @@ Future<bool> waitForOnTimeline(
     }
     // Fixed pumps, never settles: the timeline holds a refresh spinner.
     await $.pump(const Duration(milliseconds: 300));
+  }
+
+  // Phase 2: scroll, because the timeline is a LAZY list.
+  //
+  // `evaluate()` only ever sees mounted widgets, and the day list builds its
+  // children on demand. Newly created items sort by time, so they routinely
+  // land below the fold on an account with a full day — and no amount of
+  // polling mounts them. Every "my item never appeared on the timeline"
+  // failure in this suite traced back to that, while the row sat correctly in
+  // Supabase the whole time.
+  //
+  // Drag the VERTICAL scrollable specifically: the first Scrollable on this
+  // screen is the horizontal filter strip, and dragging that scrolls sideways
+  // forever.
+  if (!found) {
+    final vertical = _verticalScrollable();
+    if (vertical != null) {
+      for (var i = 0; i < 15 && !found; i++) {
+        await $.tester.drag(vertical, const Offset(0, -400));
+        await $.pump(const Duration(milliseconds: 300));
+        found = finder.evaluate().isNotEmpty;
+      }
+    }
   }
   if (!found) return false;
 
@@ -184,6 +208,24 @@ Future<bool> waitForOnTimeline(
     debugPrint('[flow_launcher] could not scroll the timeline row in: $e');
   }
   return true;
+}
+
+/// The first vertically-scrolling [Scrollable] on screen, or null.
+///
+/// `find.byType(Scrollable).first` is the wrong thing to drag on the Fuel
+/// Timeline: the filter strip is horizontal and comes first in the tree, so
+/// dragging it moves sideways and never reveals another row.
+Finder? _verticalScrollable() {
+  final all = find.byType(Scrollable).evaluate().toList();
+  for (var i = 0; i < all.length; i++) {
+    final widget = all[i].widget;
+    if (widget is Scrollable &&
+        (widget.axisDirection == AxisDirection.down ||
+            widget.axisDirection == AxisDirection.up)) {
+      return find.byType(Scrollable).at(i);
+    }
+  }
+  return null;
 }
 
 /// Standard skip message for flows that could not authenticate.
