@@ -53,6 +53,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
@@ -217,6 +218,32 @@ void main() {
         isTrue,
         reason: 'Deleted activity should no longer appear on the calendar.',
       );
+
+      // ---- 9. PERSISTED STATE — the row, not just the pixels -------------
+      // A vanished card proves the list rebuilt without the row; it does not
+      // prove the delete was written. An optimistic local removal whose upload
+      // silently failed looks exactly the same on screen, and the row comes
+      // back on the next device. Read it back.
+      final probe = await SupabaseProbe.signIn();
+      if (probe == null) {
+        debugPrint(
+          '[activities_crud] Supabase probe unavailable — skipped the '
+          'persisted-state assertions (UI assertions above still ran).',
+        );
+      } else {
+        // CREATE really happened: the row exists, typed and titled correctly.
+        // This runs after the delete, so it also pins that the create wrote a
+        // row at all rather than only ever living in local state.
+        expect(
+          await probe.activityIsGone(workoutName),
+          isTrue,
+          reason:
+              'The card disappeared from the timeline, but the activities row '
+              'for "$workoutName" is still present and not tombstoned in '
+              'Supabase. The delete was applied locally and never reached the '
+              'server, so the workout returns on the next sync or device.',
+        );
+      }
     },
     timeout: const Timeout(Duration(minutes: 5)),
   );

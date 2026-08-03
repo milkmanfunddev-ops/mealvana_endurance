@@ -18,6 +18,7 @@
 ///     → Create Plan → lands on the plan detail screen
 ///     → ASSERT the brick's name on plan detail (see below)
 ///     → back to the timeline; a brick tile renders (smoke, see below)
+///     → ASSERT THE ROW: type, segment count and provenance in Supabase
 ///     → CLEANUP (best effort, only when unambiguous): swipe the tile away
 ///
 /// **Where identity is checked.** `TimelineBrickTile` never renders the
@@ -34,10 +35,20 @@
 /// than missing coverage does — tried on 2026-08-03, where the brick was
 /// persisted (Patrol Brick 1785766143061) while the mounted count never moved.
 ///
-/// Asserting persisted state is the right answer and is not available yet:
-/// DatabaseVerification needs an authenticated user JWT (RLS returns [] for the
-/// anon key) and its getCurrentUserId is unimplemented. Until that lands, the
-/// strong assertion in this flow is the plan-detail title, not the timeline.
+/// **The real assertion is the row, not the screen.** After the UI checks, this
+/// flow reads the `activities` row back out of Supabase via
+/// `helpers/supabase_probe.dart` and asserts what no pixel can show: that the
+/// row exists for this athlete, is typed `brick`, is not tombstoned, stores
+/// exactly two segments for the two disciplines selected, and is NOT flagged
+/// `created_from_existing` — the provenance pair bf0b591f had to check by hand
+/// in Drift, because a brick with wrong metadata renders a perfectly normal
+/// card.
+///
+/// The probe signs in with the same INTEGRATION_TEST credentials the flow logs
+/// in with and queries as that user, so RLS is satisfied without any
+/// service-role key. It is read-only and sees exactly what the athlete sees.
+/// When it cannot sign in the flow logs and continues on its UI assertions
+/// rather than failing — an unavailable probe must not turn healthy code red.
 ///
 /// **The fluids assertion.** The table renders whole numbers with a unit
 /// header. A brick's during-phase fluid target in ounces is realistically tens
@@ -73,6 +84,7 @@ import 'package:patrol/patrol.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 /// Largest believable single-phase fluid target in **ounces**. A 3.5 h brick
 /// tops out around 120 oz; the millilitre figure for the same target is ~3100.
@@ -272,7 +284,72 @@ void main() {
             'regression in the brick-grouping path, not a lost write.',
       );
 
-      // ---- 10. CLEANUP — best effort, never fails the run ----------------
+      // ---- 10. PERSISTED STATE — what the UI cannot show us --------------
+      // The screen looks identical whether or not the brick's metadata is
+      // correct, which is precisely how bf0b591f's provenance bug survived:
+      // re-saving a grouped brick erased originalActivityIds /
+      // createdFromExisting, and every pixel stayed the same. Assert against
+      // the row itself.
+      final probe = await SupabaseProbe.signIn();
+      if (probe == null) {
+        // Never fail on an unavailable probe — that would turn a healthy flow
+        // red for an infrastructure reason. The CI skip-guard is what stops
+        // this degrading silently over time.
+        debugPrint(
+          '[brick_plan_flow] Supabase probe unavailable — skipped the '
+          'persisted-state assertions (UI assertions above still ran).',
+        );
+      } else {
+        final row = await probe.activityByTitle(brickName);
+        expect(
+          row,
+          isNotNull,
+          reason:
+              'No activities row titled "$brickName" for this athlete. Plan '
+              'detail rendered the title, so the UI believed it saved — a '
+              'missing row here means the write never reached Supabase.',
+        );
+
+        expect(
+          row!['activity_type'],
+          'brick',
+          reason:
+              'Persisted as ${row['activity_type']}, not a brick. The brick '
+              'tab wrote the wrong activity type.',
+        );
+        expect(
+          row['deleted_at'],
+          isNull,
+          reason: 'The brick was written already tombstoned.',
+        );
+
+        // Two disciplines were selected, so the stored metadata must describe
+        // two legs. A brick that persists with the wrong segment count still
+        // renders a perfectly normal-looking card.
+        expect(
+          brickSegmentCount(row),
+          2,
+          reason:
+              'Selected Bike + Run, but brick_metadata stores '
+              '${brickSegmentCount(row)} segment(s): '
+              '${brickMetadataOf(row)}',
+        );
+
+        // Provenance for a brick authored from scratch: no source activities,
+        // and not flagged as grouped. This is the exact pair bf0b591f had to
+        // check by hand in Drift.
+        final meta = brickMetadataOf(row)!;
+        expect(
+          meta['created_from_existing'] ?? meta['createdFromExisting'] ?? false,
+          isFalse,
+          reason:
+              'A brick authored on the Brick tab was persisted as '
+              'created-from-existing, which would offer an Ungroup action for '
+              'activities it never came from.',
+        );
+      }
+
+      // ---- 11. CLEANUP — best effort, never fails the run ----------------
       // Cannot target THIS brick specifically (no per-brick text or key), so
       // clean up only when exactly one brick is on the day — otherwise a
       // leftover from an earlier run would be deleted instead. A skipped
