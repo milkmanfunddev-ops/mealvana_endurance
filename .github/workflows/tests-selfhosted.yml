@@ -61,6 +61,12 @@ env:
   PATROL_CLI_VERSION: 4.4.0
   # Below this the box swaps hard enough to kill the runner's heartbeat.
   MIN_FREE_DISK_GB: 25
+  # patrolTest() case count across the --target list below. 16 targets, but
+  # integrations_connect_flow_test declares three cases (garmin, trainingpeaks,
+  # finalsurge), so 18. Bump this when you add a target or a case — the
+  # "Assert the suite actually ran" step uses it to catch a silently dropped
+  # target, which otherwise still exits 0.
+  EXPECTED_PATROL_TESTS: 18
 
 jobs:
   # Device-less suites — fast, reliable, no Xcode/simulator needed.
@@ -212,10 +218,30 @@ jobs:
       # No AI/LLM surface is exercised anywhere here: the meal-log flow uses the
       # sheet's Manual tab (not Describe), and the activities flow uses the
       # deterministic macro edge function (not plan generation via LLM).
+      # Fail fast when the credentials are missing, INSTEAD of letting every
+      # flow self-skip.
+      #
+      # Each flow calls markTestSkipped(noAuthSkipMessage()) when it cannot
+      # authenticate, and `patrol test` exits 0 when tests skip. So an empty or
+      # missing secrets/integration_test.env means all 18 flows skip, patrol
+      # exits 0, and this job reports GREEN having tested nothing at all. That
+      # is the most dangerous failure mode the suite has: it looks like a pass.
+      - name: Verify integration credentials are present
+        run: |
+          set -euo pipefail
+          f=secrets/integration_test.env
+          test -s "$f" || { echo "::error::$f is missing or empty — every Patrol flow would self-skip and this job would falsely report success. Set INTEGRATION_TEST_EMAIL/PASSWORD in repo secrets."; exit 1; }
+          for k in INTEGRATION_TEST_EMAIL INTEGRATION_TEST_PASSWORD; do
+            v=$(grep -E "^$k=" "$f" | cut -d= -f2- || true)
+            test -n "$v" || { echo "::error::$k is empty in $f — Patrol flows would self-skip and this job would falsely report success."; exit 1; }
+          done
+          echo "integration credentials present"
+
       - name: Patrol flows (iOS)
         run: |
           set -euo pipefail
           export PATH="$HOME/.pub-cache/bin:$PATH"
+          mkdir -p test-results
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
@@ -235,7 +261,38 @@ jobs:
             --target integration_test/flows/paywall_render_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=secrets/integration_test.env \
-            -d "$PATROL_DEVICE"
+            -d "$PATROL_DEVICE" \
+            2>&1 | tee test-results/patrol.log
+
+      # A green `patrol test` is not the same as "the suite ran".
+      #
+      # Skips are invisible in the exit code, so a flow that quietly stops
+      # testing — an empty catalog, a missing seed row, a self-skip someone
+      # added to get CI green — leaves this job passing while covering less
+      # than it claims. Assert the shape of the run, not just its exit status:
+      # every target must have executed, and none may have skipped.
+      - name: Assert the suite actually ran
+        if: always()
+        run: |
+          set -euo pipefail
+          log=test-results/patrol.log
+          test -s "$log" || { echo "::error::no patrol output captured"; exit 1; }
+
+          total=$(grep -oE 'Total: [0-9]+'      "$log" | tail -1 | grep -oE '[0-9]+' || echo 0)
+          skipped=$(grep -oE 'Skipped: [0-9]+'  "$log" | tail -1 | grep -oE '[0-9]+' || echo 0)
+          passed=$(grep -oE 'Successful: [0-9]+' "$log" | tail -1 | grep -oE '[0-9]+' || echo 0)
+          echo "total=$total passed=$passed skipped=$skipped (expected total >= $EXPECTED_PATROL_TESTS)"
+
+          if [ "$total" -lt "$EXPECTED_PATROL_TESTS" ]; then
+            echo "::error::only $total Patrol tests ran, expected at least $EXPECTED_PATROL_TESTS. A target was dropped or the bundle failed to build."
+            exit 1
+          fi
+          if [ "$skipped" -gt 0 ]; then
+            echo "::error::$skipped Patrol test(s) SKIPPED. A skip is not a pass — it means that flow verified nothing. Fix the precondition (seed data, credentials) rather than leaving it skipped."
+            grep -E '⏩|skipped' "$log" | head -20 || true
+            exit 1
+          fi
+          echo "suite shape OK: $passed/$total passed, 0 skipped"
 
       - name: Shut down simulator
         if: always()

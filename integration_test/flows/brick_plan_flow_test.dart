@@ -17,16 +17,21 @@
 ///       guard — see below)
 ///     → Create Plan → lands on the plan detail screen
 ///     → ASSERT the brick's name on plan detail (see below)
-///     → back to the timeline; a brick tile is rendered
+///     → back to the timeline; the brick COUNT went up by exactly one
 ///     → CLEANUP (best effort, only when unambiguous): swipe the tile away
 ///
 /// **Where identity is checked.** `TimelineBrickTile` never renders the
 /// brick's own name — it shows "BRICK", a leg summary and per-sport labels —
 /// so a name/stamp finder on the timeline can never match a brick however long
 /// it polls. Plan detail's app-bar title is the only surface that shows it, so
-/// that is where this flow proves it created *its* brick. The timeline check
-/// is deliberately weaker: all it can honestly confirm is that a brick
-/// rendered at all.
+/// that is where this flow proves it created *its* brick.
+///
+/// The timeline check is a **count delta**, not a presence check. "At least one
+/// brick tile exists" would pass on a leftover from an earlier run even if this
+/// flow's brick were never written — the dev tester account accumulates exactly
+/// such leftovers. Baselining the count before creating and requiring
+/// `before + 1` after is the strongest identity-free assertion available on a
+/// tile that exposes nothing unique.
 ///
 /// **The fluids assertion.** The table renders whole numbers with a unit
 /// header. A brick's during-phase fluid target in ounces is realistically tens
@@ -94,6 +99,15 @@ void main() {
         const ValueKey('bottom_nav.timeline_tab'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await ensureTimelineOnToday($);
+
+      // Baseline the brick count BEFORE creating one. TimelineBrickTile carries
+      // no per-brick text or key (see the note above), so "a brick tile exists"
+      // is satisfied by any leftover from an earlier run — it would pass even
+      // if this flow's brick were never written. Comparing counts is the
+      // strongest identity-free assertion available here: it fails when *this*
+      // brick is missing, regardless of what else is on the day.
+      final bricksBefore = find.byType(TimelineBrickTile).evaluate().length;
+
       await $(
         const ValueKey('fuel_timeline.add_activity'),
       ).waitUntilVisible(timeout: const Duration(seconds: 25));
@@ -222,23 +236,26 @@ void main() {
       // is hidden under the Meals filter, and both are shared app state.
       await ensureTimelineOnToday($);
 
-      // Weaker than the identity check above, and deliberately so: the tile
-      // carries no per-brick text to match on, so all the timeline can honestly
-      // confirm is that a brick rendered.
+      // The day must now hold exactly one MORE brick than it did at the start.
+      // "At least one brick tile exists" would pass on a leftover from an
+      // earlier run even if this flow's brick were never written — the count
+      // delta cannot.
       final brickTile = find.byType(TimelineBrickTile);
-      final appeared = await waitForOnTimeline(
-        $,
-        brickTile,
-        timeout: const Duration(seconds: 30),
-      );
+      var bricksAfter = brickTile.evaluate().length;
+      for (var i = 0; i < 100 && bricksAfter <= bricksBefore; i++) {
+        await $.pump(const Duration(milliseconds: 300));
+        bricksAfter = brickTile.evaluate().length;
+      }
+
       expect(
-        appeared,
-        isTrue,
+        bricksAfter,
+        bricksBefore + 1,
         reason:
-            'No brick tile rendered on the Fuel Timeline after creating one. '
-            'The brick itself was created (plan detail showed its title), so '
-            'if this persists the gap is between the activity write and the '
-            'timeline refresh, not in this test.',
+            'Expected exactly one more brick on the timeline after creating '
+            'one (had $bricksBefore, now $bricksAfter). The brick itself was '
+            'created — plan detail rendered its title — so a shortfall here '
+            'means the timeline never picked up the write, and a surplus '
+            'means something created more than one.',
       );
 
       // ---- 10. CLEANUP — best effort, never fails the run ----------------
@@ -247,7 +264,7 @@ void main() {
       // leftover from an earlier run would be deleted instead. A skipped
       // cleanup is not a failure: the name is stamped, so nothing collides.
       try {
-        if (brickTile.evaluate().length == 1) {
+        if (bricksAfter == 1) {
           final card = find.ancestor(
             of: brickTile,
             matching: find.byType(Dismissible),
@@ -264,8 +281,8 @@ void main() {
           }
         } else {
           debugPrint(
-            '[brick_plan_flow] ${brickTile.evaluate().length} bricks on this '
-            'day — skipping cleanup rather than deleting the wrong one.',
+            '[brick_plan_flow] $bricksAfter bricks on this day — skipping '
+            'cleanup rather than deleting the wrong one.',
           );
         }
       } on Exception catch (e) {

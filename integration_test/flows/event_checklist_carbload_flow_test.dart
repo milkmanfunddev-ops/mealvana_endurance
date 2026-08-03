@@ -166,9 +166,15 @@ void main() {
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
       // ---- 5. Verify gone ----------------------------------------------------
+      // waitUntilExists, not waitUntilVisible: we only need to know the My
+      // Events screen mounted before checking its contents. Requiring the
+      // title to be hit-testable also waits on layout and on the route
+      // transition finishing, and it flaked exactly there on the M1 run of
+      // 2026-08-03 — passing the same step on the run before. Reaching the
+      // screen is the precondition; the real assertion is below.
       await $(
         const ValueKey('my_events.title'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 20));
+      ).waitUntilExists(timeout: const Duration(seconds: 30));
 
       // Poll rather than assert instantly. The delete is offline-first: the
       // row goes on a queue and the list rebuilds from the local DB, so there
