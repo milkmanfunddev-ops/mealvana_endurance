@@ -17,7 +17,7 @@
 ///       guard — see below)
 ///     → Create Plan → lands on the plan detail screen
 ///     → ASSERT the brick's name on plan detail (see below)
-///     → back to the timeline; the brick COUNT went up by exactly one
+///     → back to the timeline; a brick tile renders (smoke, see below)
 ///     → CLEANUP (best effort, only when unambiguous): swipe the tile away
 ///
 /// **Where identity is checked.** `TimelineBrickTile` never renders the
@@ -26,12 +26,18 @@
 /// it polls. Plan detail's app-bar title is the only surface that shows it, so
 /// that is where this flow proves it created *its* brick.
 ///
-/// The timeline check is a **count delta**, not a presence check. "At least one
-/// brick tile exists" would pass on a leftover from an earlier run even if this
-/// flow's brick were never written — the dev tester account accumulates exactly
-/// such leftovers. Baselining the count before creating and requiring
-/// `before + 1` after is the strongest identity-free assertion available on a
-/// tile that exposes nothing unique.
+/// The timeline step is a deliberate SMOKE check and is labelled as one. It
+/// cannot re-establish identity, and counting tiles does not work either: the
+/// timeline is a lazily-built list, so `find.byType` only sees the tiles
+/// currently mounted, and a count delta fails whenever the new brick sorts
+/// off-screen. That is a false failure, and false failures erode a suite faster
+/// than missing coverage does — tried on 2026-08-03, where the brick was
+/// persisted (Patrol Brick 1785766143061) while the mounted count never moved.
+///
+/// Asserting persisted state is the right answer and is not available yet:
+/// DatabaseVerification needs an authenticated user JWT (RLS returns [] for the
+/// anon key) and its getCurrentUserId is unimplemented. Until that lands, the
+/// strong assertion in this flow is the plan-detail title, not the timeline.
 ///
 /// **The fluids assertion.** The table renders whole numbers with a unit
 /// header. A brick's during-phase fluid target in ounces is realistically tens
@@ -100,12 +106,9 @@ void main() {
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await ensureTimelineOnToday($);
 
-      // Baseline the brick count BEFORE creating one. TimelineBrickTile carries
-      // no per-brick text or key (see the note above), so "a brick tile exists"
-      // is satisfied by any leftover from an earlier run — it would pass even
-      // if this flow's brick were never written. Comparing counts is the
-      // strongest identity-free assertion available here: it fails when *this*
-      // brick is missing, regardless of what else is on the day.
+      // Baseline for the failure message only. It is NOT used as an
+      // assertion: the timeline is lazily built, so a mounted-tile count says
+      // nothing reliable about what the day contains (see the note at step 9).
       final bricksBefore = find.byType(TimelineBrickTile).evaluate().length;
 
       await $(
@@ -236,26 +239,37 @@ void main() {
       // is hidden under the Meals filter, and both are shared app state.
       await ensureTimelineOnToday($);
 
-      // The day must now hold exactly one MORE brick than it did at the start.
-      // "At least one brick tile exists" would pass on a leftover from an
-      // earlier run even if this flow's brick were never written — the count
-      // delta cannot.
+      // A RENDERING check, not an identity one — and deliberately labelled as
+      // such so nobody mistakes it for proof that *this* brick is on screen.
+      //
+      // Identity was already established above, on plan detail. It cannot be
+      // re-established here: the tile exposes nothing unique, and counting
+      // tiles does not work either — the timeline is a lazily-built list, so
+      // `find.byType` only ever sees the handful of tiles currently mounted.
+      // A count delta therefore fails whenever the new brick sorts off-screen,
+      // which is a false failure, and false failures erode a suite faster than
+      // missing coverage does. (Tried on 2026-08-03: the brick was persisted —
+      // Patrol Brick 1785766143061 — while the mounted count never moved.)
+      //
+      // Asserting persisted state is the right answer and is NOT available
+      // yet: DatabaseVerification needs an authenticated user JWT (RLS returns
+      // [] for the anon key) and its getCurrentUserId is unimplemented. Until
+      // that lands, this step is honestly a smoke check.
       final brickTile = find.byType(TimelineBrickTile);
-      var bricksAfter = brickTile.evaluate().length;
-      for (var i = 0; i < 100 && bricksAfter <= bricksBefore; i++) {
-        await $.pump(const Duration(milliseconds: 300));
-        bricksAfter = brickTile.evaluate().length;
-      }
-
+      final brickTileRendered = await waitForOnTimeline(
+        $,
+        brickTile,
+        timeout: const Duration(seconds: 30),
+      );
       expect(
-        bricksAfter,
-        bricksBefore + 1,
+        brickTileRendered,
+        isTrue,
         reason:
-            'Expected exactly one more brick on the timeline after creating '
-            'one (had $bricksBefore, now $bricksAfter). The brick itself was '
-            'created — plan detail rendered its title — so a shortfall here '
-            'means the timeline never picked up the write, and a surplus '
-            'means something created more than one.',
+            'The Fuel Timeline rendered no brick tile at all after a brick was '
+            'created (the day held $bricksBefore when this flow started, and '
+            'plan detail confirmed the brick was written). Zero bricks here '
+            'means the timeline is not rendering the brick node type — a '
+            'regression in the brick-grouping path, not a lost write.',
       );
 
       // ---- 10. CLEANUP — best effort, never fails the run ----------------
@@ -264,7 +278,7 @@ void main() {
       // leftover from an earlier run would be deleted instead. A skipped
       // cleanup is not a failure: the name is stamped, so nothing collides.
       try {
-        if (bricksAfter == 1) {
+        if (brickTile.evaluate().length == 1) {
           final card = find.ancestor(
             of: brickTile,
             matching: find.byType(Dismissible),
@@ -281,8 +295,8 @@ void main() {
           }
         } else {
           debugPrint(
-            '[brick_plan_flow] $bricksAfter bricks on this day — skipping '
-            'cleanup rather than deleting the wrong one.',
+            '[brick_plan_flow] ${brickTile.evaluate().length} bricks mounted '
+            '— skipping cleanup rather than deleting the wrong one.',
           );
         }
       } on Exception catch (e) {
