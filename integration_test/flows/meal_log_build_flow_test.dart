@@ -175,7 +175,12 @@ void main() {
       // "the timeline" means *today's* timeline — the selected day is app-level
       // state shared with every other flow in the bundle.
       await ensureTimelineOnToday($);
-      await $(cardText).waitUntilVisible(timeout: const Duration(seconds: 20));
+      final onTimeline = await waitForOnTimeline($, find.text(cardText));
+      expect(
+        onTimeline,
+        isTrue,
+        reason: 'Logged meal "$cardText" never appeared on the Fuel Timeline.',
+      );
       expect(
         $(cardText),
         findsWidgets,

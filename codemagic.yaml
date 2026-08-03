@@ -1399,7 +1399,31 @@ workflows:
           # through ASWebAuthSession, so those flows self-skip on iOS rather than
           # fail. INTEGRATION_TEST_EMAIL/_PASSWORD email login is automatable.
           patrol test \
-            --target integration_test \
+            # Explicit target list, kept in step with
+            # .github/workflows/tests-selfhosted.yml. A bare
+            # `--target integration_test` globs the whole directory, which
+            # sweeps in jade_chat_flow_test — that flow only self-skips on
+            # PROD, so on this dev lane it called the jade-chat edge
+            # function and billed real AI spend on every push to develop.
+            # google_login and onboarding_signup are excluded for the same
+            # reasons as on the M1 runner (interactive OAuth consent; needs
+            # a clean install with no session).
+            --target integration_test/patrol_smoke_test.dart \
+            --target integration_test/flows/auth_flow_test.dart \
+            --target integration_test/flows/fuel_timeline_flow_test.dart \
+            --target integration_test/flows/meal_log_build_flow_test.dart \
+            --target integration_test/flows/meal_card_interaction_flow_test.dart \
+            --target integration_test/flows/activities_crud_flow_test.dart \
+            --target integration_test/flows/brick_plan_flow_test.dart \
+            --target integration_test/flows/events_crud_flow_test.dart \
+            --target integration_test/flows/event_checklist_carbload_flow_test.dart \
+            --target integration_test/flows/formula_pin_flow_test.dart \
+            --target integration_test/flows/formula_create_pin_flow_test.dart \
+            --target integration_test/flows/settings_persist_flow_test.dart \
+            --target integration_test/flows/settings_sweep_flow_test.dart \
+            --target integration_test/flows/integrations_connect_flow_test.dart \
+            --target integration_test/flows/learn_flow_test.dart \
+            --target integration_test/flows/paywall_render_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=.env.dev.local \
             --dart-define-from-file=secrets/integration_test.env \
@@ -1463,7 +1487,31 @@ workflows:
           # analyze and format are gated separately by pr-validation, which also
           # runs on this push, so they are not repeated here.
           patrol test \
-            --target integration_test \
+            # Explicit target list, kept in step with
+            # .github/workflows/tests-selfhosted.yml. A bare
+            # `--target integration_test` globs the whole directory, which
+            # sweeps in jade_chat_flow_test — that flow only self-skips on
+            # PROD, so on this dev lane it called the jade-chat edge
+            # function and billed real AI spend on every push to develop.
+            # google_login and onboarding_signup are excluded for the same
+            # reasons as on the M1 runner (interactive OAuth consent; needs
+            # a clean install with no session).
+            --target integration_test/patrol_smoke_test.dart \
+            --target integration_test/flows/auth_flow_test.dart \
+            --target integration_test/flows/fuel_timeline_flow_test.dart \
+            --target integration_test/flows/meal_log_build_flow_test.dart \
+            --target integration_test/flows/meal_card_interaction_flow_test.dart \
+            --target integration_test/flows/activities_crud_flow_test.dart \
+            --target integration_test/flows/brick_plan_flow_test.dart \
+            --target integration_test/flows/events_crud_flow_test.dart \
+            --target integration_test/flows/event_checklist_carbload_flow_test.dart \
+            --target integration_test/flows/formula_pin_flow_test.dart \
+            --target integration_test/flows/formula_create_pin_flow_test.dart \
+            --target integration_test/flows/settings_persist_flow_test.dart \
+            --target integration_test/flows/settings_sweep_flow_test.dart \
+            --target integration_test/flows/integrations_connect_flow_test.dart \
+            --target integration_test/flows/learn_flow_test.dart \
+            --target integration_test/flows/paywall_render_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=.env.dev.local \
             --dart-define-from-file=secrets/integration_test.env \

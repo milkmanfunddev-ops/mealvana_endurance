@@ -15,6 +15,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 import 'package:mealvana_endurance/main_dev.dart' as dev;
 import 'package:mealvana_endurance/main_prod.dart' as prod;
@@ -132,6 +133,57 @@ Future<void> ensureTimelineOnToday(PatrolIntegrationTester $) async {
   } on Exception catch (e) {
     debugPrint('[flow_launcher] could not reset the timeline day/filter: $e');
   }
+}
+
+/// Wait for [finder] to EXIST on the timeline, then bring it on screen.
+///
+/// Returns false if it never turned up, so callers can assert with their own
+/// message rather than eat an exception from inside a helper.
+///
+/// Why not `waitUntilVisible`: that requires the widget to be *hit-testable*,
+/// i.e. actually on screen. The Fuel Timeline is one long day-ordered list, and
+/// the dev tester account accumulates rows — every Patrol run that fails leaves
+/// its item behind, because cleanup is the last step and never runs. By
+/// 2026-07-31 a single day held 13 activities plus meals and events, so a
+/// newly created item sorted near the bottom was in the tree but far below the
+/// fold, and `waitUntilVisible` could never succeed no matter how long it
+/// polled. Confirmed against the dev database: the exact stamp from the failing
+/// assertion (`Patrol Brick 1785537825702`, 18:45) was present and not deleted
+/// while the test was timing out looking for it.
+///
+/// So: existence is the assertion, visibility is a separate step, and only the
+/// callers that then tap or swipe the row need it.
+///
+/// Note for callers matching on a title: `TimelineNodeTile` renders names
+/// UPPERCASED. Match on a case-invariant fragment (an epoch stamp) or
+/// `toUpperCase()` the expected text — a mixed-case `find.text` silently never
+/// matches.
+Future<bool> waitForOnTimeline(
+  PatrolIntegrationTester $,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  final polls = timeout.inMilliseconds ~/ 300;
+  var found = false;
+  for (var i = 0; i < polls; i++) {
+    if (finder.evaluate().isNotEmpty) {
+      found = true;
+      break;
+    }
+    // Fixed pumps, never settles: the timeline holds a refresh spinner.
+    await $.pump(const Duration(milliseconds: 300));
+  }
+  if (!found) return false;
+
+  // Best-effort reveal — the assertion above already passed, and a row that
+  // cannot be scrolled to still counts as present.
+  try {
+    await $.tester.ensureVisible(finder.first);
+    await $.pump(const Duration(milliseconds: 400));
+  } on Exception catch (e) {
+    debugPrint('[flow_launcher] could not scroll the timeline row in: $e');
+  }
+  return true;
 }
 
 /// Standard skip message for flows that could not authenticate.

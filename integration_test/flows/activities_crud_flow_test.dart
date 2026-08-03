@@ -70,6 +70,11 @@ void main() {
 
       final stamp = DateTime.now().millisecondsSinceEpoch;
       final workoutName = 'Patrol Run $stamp';
+      // TimelineNodeTile renders `activity.title.toUpperCase()`, so a
+      // `find.text` on the mixed-case name we typed matches NOTHING. Match on
+      // the epoch stamp instead: digits are case-invariant, and it is unique
+      // per run so it cannot collide with rows left behind by earlier runs.
+      final onTimeline = find.textContaining('$stamp');
 
       // ---- 1. New activity → running create form ------------------------
       // There is no calendar FAB: the app's entry point to /distancepacegut is
@@ -163,20 +168,13 @@ void main() {
       // Fixed pumps, never settles: the timeline holds a spinner while the
       // refetch is in flight, so anything that settles would burn its timeout
       // against it.
-      var appeared = false;
-      for (var i = 0; i < 60; i++) {
-        if ($(workoutName).exists) {
-          appeared = true;
-          break;
-        }
-        await $.pump(const Duration(milliseconds: 300));
-      }
+      final appeared = await waitForOnTimeline($, onTimeline);
       expect(
         appeared,
         isTrue,
         reason:
             'Created activity "$workoutName" never appeared on the Fuel '
-            'Timeline within 18s of returning from the create flow. The plan '
+            'Timeline within 20s of returning from the create flow. The plan '
             'itself was created (plan_detail rendered), so if this persists '
             'the gap is between the activity write and the timeline refresh, '
             'not in this test.',
@@ -188,7 +186,7 @@ void main() {
       // pumps only: any settle here can burn its full timeout against the
       // timeline's persistent spinner.
       final cardRow = find.ancestor(
-        of: find.text(workoutName),
+        of: onTimeline,
         matching: find.byType(Dismissible),
       );
       expect(
@@ -213,7 +211,7 @@ void main() {
       }
 
       // ---- 8. Assert the activity card is gone --------------------------
-      final cardGone = await _pumpUntilGone($, $(workoutName));
+      final cardGone = await _pumpUntilGone($, $(onTimeline));
       expect(
         cardGone,
         isTrue,

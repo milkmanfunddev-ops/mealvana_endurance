@@ -109,7 +109,12 @@ void main() {
         const ValueKey('log_meal.back_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await ensureTimelineOnToday($);
-      await $(cardText).waitUntilVisible(timeout: const Duration(seconds: 20));
+      final onTimeline = await waitForOnTimeline($, find.text(cardText));
+      expect(
+        onTimeline,
+        isTrue,
+        reason: 'Logged meal "$cardText" never appeared on the Fuel Timeline.',
+      );
 
       // ---- 4. TAP the card → edit surface (tap-anywhere-to-edit) ---------
       // noSettle: the Edit Meal screen loads async and the timeline spinner

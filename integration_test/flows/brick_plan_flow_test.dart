@@ -190,13 +190,19 @@ void main() {
       // hidden under the Meals filter, so an unfiltered timeline is part of the
       // precondition for this assertion, not an incidental detail.
       await ensureTimelineOnToday($);
-      await $(
+      final appeared = await waitForOnTimeline(
+        $,
         onTimeline,
-      ).waitUntilVisible(timeout: const Duration(seconds: 30));
+        timeout: const Duration(seconds: 30),
+      );
       expect(
-        $(onTimeline),
-        findsWidgets,
-        reason: 'The created brick should appear on the Fuel Timeline.',
+        appeared,
+        isTrue,
+        reason:
+            'The created brick never appeared on the Fuel Timeline. The plan '
+            'itself was created (adjust-macros accepted Create Plan), so if '
+            'this persists the gap is between the activity write and the '
+            'timeline refresh, not in this test.',
       );
 
       // ---- 9. CLEANUP — best effort, never fails the run -----------------
