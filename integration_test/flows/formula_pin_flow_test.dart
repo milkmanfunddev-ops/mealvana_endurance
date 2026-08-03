@@ -92,7 +92,10 @@ void main() {
         const ValueKey('settings.food_prefs_row'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(const ValueKey('settings.food_prefs_row'))
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 300));
 
@@ -143,7 +146,10 @@ void main() {
 
       // ---- 3. PIN the first During formula ------------------------------
       await $(_duringPinToggles()).first
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 600));
 
@@ -162,7 +168,10 @@ void main() {
 
       // ---- 5. UNPIN (cleanup) → pinned-only During list is now empty -----
       await $(_duringPinToggles()).first
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 800));
       await $(

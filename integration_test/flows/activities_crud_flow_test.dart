@@ -127,7 +127,10 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await $.pump(const Duration(milliseconds: 400));
       await $(const ValueKey('activity_create.generate_plan_button'))
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
 
       // ---- 4. Adjust-macros screen — macros generated & rendered --------
@@ -143,7 +146,10 @@ void main() {
 
       // ---- 5. Create Plan → lands on the plan detail --------------------
       await $(const ValueKey('adjust_macros.create_plan_button'))
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('plan_detail.title'),

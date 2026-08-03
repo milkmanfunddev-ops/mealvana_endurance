@@ -38,6 +38,7 @@ import 'package:patrol/patrol.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
@@ -88,7 +89,7 @@ void main() {
       // Target the button by key, and pin the scroll to the form's own
       // vertical scroll view.
       //
-      // `$('Save').scrollTo(...)` failed on the M1 run of 2026-07-31: with no
+      // `$('Save').scrollTo(maxScrolls: 12, ...)` failed on the M1 run of 2026-07-31: with no
       // `view:` the finder defaults to the first Scrollable in the tree, which
       // on this screen is horizontal, so every drag moved sideways and the
       // finder ran out its iterations. Matching on the text 'Save' is also
@@ -163,6 +164,37 @@ void main() {
         isTrue,
         reason: 'Deleted meal card should no longer appear on the timeline.',
       );
+
+      // ---- 7. PERSISTED STATE — the row, not the pixels -------------------
+      // A vanished card only proves the list rebuilt without the row. An
+      // optimistic local delete whose upload silently failed looks exactly the
+      // same on screen, and the meal reappears on the next device or sync.
+      // Meal deletes are soft, so assert the tombstone rather than absence.
+      final probe = await SupabaseProbe.signIn();
+      if (probe == null) {
+        debugPrint(
+          '[meal_card_interaction] Supabase probe unavailable — persistence '
+          'assertions skipped (UI assertions above still ran).',
+        );
+      } else {
+        final row = await probe.mealLogByName(mealName);
+        expect(
+          row,
+          isNotNull,
+          reason:
+              'No meal_logs row named "$mealName" for this athlete. The UI '
+              'showed "Meal logged!", so the write never reached Supabase.',
+        );
+        expect(
+          row!['is_deleted'],
+          isTrue,
+          reason:
+              'The card disappeared and the "Meal deleted" snackbar fired, but '
+              'the meal_logs row for "$mealName" is not tombstoned in '
+              'Supabase. The delete was applied locally only — the meal comes '
+              'back on the next sync.',
+        );
+      }
     },
     timeout: const Timeout(Duration(minutes: 5)),
   );

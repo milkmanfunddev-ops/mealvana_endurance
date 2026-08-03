@@ -21,7 +21,7 @@
 /// Settle policy: SettlePolicy.noSettle on taps/enterText near the food
 /// search (typing ≥2 chars kicks off a debounced catalog search whose
 /// CircularProgressIndicator would burn 10 s per default-settle action), and
-/// NO .scrollTo() on the fuel timeline. Fixed pumps bridge the gaps.
+/// NO .scrollTo(maxScrolls: 12, settleBetweenScrollsTimeout: const Duration(milliseconds: 500)) on the fuel timeline. Fixed pumps bridge the gaps.
 ///
 /// Auth: reuses an existing session, else the flavor-matched
 /// INTEGRATION_TEST creds; self-skips when neither is available. Also
@@ -35,11 +35,14 @@
 ///     --device "iPhone 17 Pro"
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 /// Any food/catalog result tile in the add-food unified search results.
 Finder _searchResultTiles() => find.byWidgetPredicate((w) {
@@ -187,7 +190,52 @@ void main() {
         reason: 'Logged meal should appear as a card on the Fuel Timeline.',
       );
 
-      // ---- 6. CLEANUP — swipe-delete the created card (best-effort) -------
+      // ---- 6. PERSISTED STATE — the components actually saved -------------
+      // The whole point of build-a-meal is that the meal carries the foods you
+      // assembled. The timeline card shows a name and a macro line, so a meal
+      // that persisted with an EMPTY component list renders indistinguishably
+      // from a correct one — exactly the kind of silent data loss a UI-only
+      // assertion cannot see.
+      final probe = await SupabaseProbe.signIn();
+      if (probe == null) {
+        debugPrint(
+          '[meal_log_build] Supabase probe unavailable — persistence '
+          'assertions skipped (UI assertions above still ran).',
+        );
+      } else {
+        final row = await probe.mealLogByName(mealName);
+        expect(
+          row,
+          isNotNull,
+          reason:
+              'No meal_logs row named "$mealName" for this athlete, though the '
+              'UI showed "Meal logged!" and the card rendered.',
+        );
+        expect(
+          row!['is_deleted'] == true,
+          isFalse,
+          reason: 'The freshly logged meal was written already tombstoned.',
+        );
+
+        // One food was added to the draft before logging, so the saved meal
+        // must carry at least one component.
+        final components = row['components'];
+        final count = components is List
+            ? components.length
+            : (components is String
+                  ? (jsonDecode(components) as List?)?.length ?? 0
+                  : 0);
+        expect(
+          count,
+          greaterThanOrEqualTo(1),
+          reason:
+              'Built the meal from a search result, but the persisted row '
+              'carries $count component(s): $components. The draft\'s foods '
+              'were dropped on save — the card still looks normal.',
+        );
+      }
+
+      // ---- 7. CLEANUP — swipe-delete the created card (best-effort) -------
       // Guarded so a cleanup hiccup never fails an otherwise-green test; the
       // meal name is timestamp-unique so a leftover can't poison future runs.
       try {

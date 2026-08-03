@@ -69,7 +69,10 @@ void main() {
 
       // ---- 2. Scroll to the pricing/plan section ---------------------------
       // Static screen (no async spinners), so scrollTo is safe here.
-      await $(const ValueKey('pro_version.pricing_card')).scrollTo();
+      await $(const ValueKey('pro_version.pricing_card')).scrollTo(
+        maxScrolls: 12,
+        settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+      );
       await $.pump(const Duration(milliseconds: 300));
 
       expect(

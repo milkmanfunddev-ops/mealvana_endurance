@@ -113,9 +113,12 @@ void main() {
     await $(
       const ValueKey('settings.food_prefs_row'),
     ).waitUntilVisible(timeout: const Duration(seconds: 20));
-    await $(
-      const ValueKey('settings.food_prefs_row'),
-    ).scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
+    await $(const ValueKey('settings.food_prefs_row'))
+        .scrollTo(
+          maxScrolls: 12,
+          settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+        )
+        .tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 300));
 
     await $(
@@ -139,9 +142,12 @@ void main() {
     // ---- 3. Tap "New" to open the editor ---------------------------------
     // The library may show the "New" button below the fold; scrollTo is safe
     // here (no spinner in the library while catalog data is not being searched).
-    await $(
-      const ValueKey('formula_kit.your_formulas_new_during'),
-    ).scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
+    await $(const ValueKey('formula_kit.your_formulas_new_during'))
+        .scrollTo(
+          maxScrolls: 12,
+          settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+        )
+        .tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 400));
 
     // The Scaffold renders immediately with its key; wait for it.
@@ -271,9 +277,12 @@ void main() {
     );
     // scrollTo is acceptable here: the library screen has no spinner at this
     // point (data already loaded).
-    await $(
-      pinToggle,
-    ).first.scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
+    await $(pinToggle).first
+        .scrollTo(
+          maxScrolls: 12,
+          settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+        )
+        .tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 600));
 
     // ---- 9. Verify via "pinned only": the card is still shown ------------
@@ -295,9 +304,12 @@ void main() {
     );
 
     // ---- 10. UNPIN (cleanup) so the account is back to its prior state ---
-    await $(
-      _personalPinToggles(),
-    ).first.scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
+    await $(_personalPinToggles()).first
+        .scrollTo(
+          maxScrolls: 12,
+          settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+        )
+        .tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 800));
 
     // Leave pinned-only mode.

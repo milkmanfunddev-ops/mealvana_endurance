@@ -134,5 +134,10 @@ void main() {
 Future<void> _submitEventForm(PatrolIntegrationTester $) async {
   FocusManager.instance.primaryFocus?.unfocus();
   await $.pump(const Duration(milliseconds: 400));
-  await $(const ValueKey('event_create.create_button')).scrollTo().tap();
+  await $(const ValueKey('event_create.create_button'))
+      .scrollTo(
+        maxScrolls: 12,
+        settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+      )
+      .tap();
 }

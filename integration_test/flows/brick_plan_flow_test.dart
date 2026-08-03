@@ -172,7 +172,10 @@ void main() {
 
       // ---- 5. Generate the plan -----------------------------------------
       await $(const ValueKey('activity_create.generate_plan_button'))
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
 
       // Macro generation hits an edge function; give it room. waitUntilVisible

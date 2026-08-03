@@ -78,7 +78,12 @@ void main() {
       // Dismiss the keyboard (it overlays the Create button) and submit.
       FocusManager.instance.primaryFocus?.unfocus();
       await $.pump(const Duration(milliseconds: 400));
-      await $(const ValueKey('event_create.create_button')).scrollTo().tap();
+      await $(const ValueKey('event_create.create_button'))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+          )
+          .tap();
 
       // Landed on Event Details with our name.
       await $(
