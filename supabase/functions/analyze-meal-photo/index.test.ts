@@ -356,12 +356,12 @@ describe('E. not_food detection logic', () => {
 });
 
 // ---------------------------------------------------------------------------
-// F. JADE_MODEL default value
+// F. AI_COACH_MODEL default value
 // ---------------------------------------------------------------------------
 
 describe('F. ANALYZE_MEAL_PHOTO_MODEL default', () => {
   it('resolves to Sonnet when env not set', () => {
-    // This function reads ANALYZE_MEAL_PHOTO_MODEL, not JADE_MODEL — and it
+    // This function reads ANALYZE_MEAL_PHOTO_MODEL, not AI_COACH_MODEL — and it
     // asserts the REAL exported constant rather than re-typing the fallback,
     // which is what let the earlier Haiku swap slip past this test unchanged.
     assertEquals(Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL'), undefined);

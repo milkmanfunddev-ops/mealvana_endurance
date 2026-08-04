@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 
-/// Jade AI coach avatar — a circular Electrolyte-cyan disc with a bold "J".
+/// Mealvana AI AI coach avatar — a circular Electrolyte-cyan disc with a bold "M".
 ///
 /// Sizes are parameterized; pass [isPulsing] to enable the thinking animation
-/// while Jade is streaming a response.
+/// while Mealvana AI is streaming a response.
 ///
-/// Design: Electrolyte (#5DE4D3) fill, Blackberry "J" in Sansita bold.
-class JadeAvatar extends StatefulWidget {
-  const JadeAvatar({super.key, this.size = 40, this.isPulsing = false});
+/// Design: Electrolyte (#5DE4D3) fill, Blackberry "M" in Sansita bold.
+class AiCoachAvatar extends StatefulWidget {
+  const AiCoachAvatar({super.key, this.size = 40, this.isPulsing = false});
 
   final double size;
   final bool isPulsing;
 
   @override
-  State<JadeAvatar> createState() => _JadeAvatarState();
+  State<AiCoachAvatar> createState() => _AiCoachAvatarState();
 }
 
-class _JadeAvatarState extends State<JadeAvatar>
+class _AiCoachAvatarState extends State<AiCoachAvatar>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scale;
@@ -50,7 +50,7 @@ class _JadeAvatarState extends State<JadeAvatar>
   }
 
   @override
-  void didUpdateWidget(JadeAvatar oldWidget) {
+  void didUpdateWidget(AiCoachAvatar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isPulsing && !_controller.isAnimating) {
       _controller.forward();
@@ -86,7 +86,7 @@ class _JadeAvatarState extends State<JadeAvatar>
       ),
       alignment: Alignment.center,
       child: Text(
-        'J',
+        'M',
         style: AppTextStyles.buttonPrimary.copyWith(
           fontFamily: AppTextStyles.sansita,
           fontSize: fontSize,

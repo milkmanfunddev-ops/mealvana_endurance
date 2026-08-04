@@ -123,7 +123,12 @@ class _NutritionSectionsBuilderState
       return BrickNutritionSections(
         brick: activity,
         planData: plan,
-        useImperial: brickSettings?.preferredDistanceUnit == DistanceUnit.miles,
+        // Default to imperial when settings have not loaded yet — that is the
+        // app-wide default (users.unit_system defaults to 'imperial'). Testing
+        // `== miles` on a null settings object silently yields metric.
+        useImperial:
+            (brickSettings?.preferredDistanceUnit ?? DistanceUnit.miles) ==
+            DistanceUnit.miles,
         bodyWeightKg: _getBodyWeightKg(brickSettings?.weightPounds),
         onAddFood: widget.onAddFood,
         onSwapFood: widget.onSwapFood,
@@ -149,7 +154,9 @@ class _NutritionSectionsBuilderState
         widget.state.activity?.activityType ?? ActivityType.running;
     // Check unit preference and get body weight
     final settings = ref.watch(settingsControllerProvider).value;
-    final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
+    final useImperial =
+        (settings?.preferredDistanceUnit ?? DistanceUnit.miles) ==
+        DistanceUnit.miles;
     final bodyWeightKg = _getBodyWeightKg(settings?.weightPounds);
     final resolvedDuringTarget = widget.state.macroTargets != null
         ? ResolvedDuringTargetResolver.resolveForSingleSport(

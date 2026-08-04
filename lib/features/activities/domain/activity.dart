@@ -1,6 +1,7 @@
 import '../../../shared/domain/activity_type.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 import 'brick_metadata.dart';
+import '../../../shared/utils/unit_formatter.dart';
 
 /// Activity domain model for calendar feature
 class Activity {
@@ -529,9 +530,9 @@ extension ActivityExtensions on Activity {
   /// Get formatted pace if available
   String? get formattedPace {
     if (paceTargetMinutesPerMile == null) return null;
-    final minutes = paceTargetMinutesPerMile!.floor();
-    final seconds = ((paceTargetMinutesPerMile! - minutes) * 60).round();
-    return "$minutes:${seconds.toString().padLeft(2, '0')}/mi";
+    // Via UnitFormatter so the minute carry is handled once — splitting
+    // floor()/round() here renders 3.99995 as "3:60".
+    return '${UnitFormatter.formatMinutesAsMinSec(paceTargetMinutesPerMile!)}/mi';
   }
 
   /// Get formatted duration if available

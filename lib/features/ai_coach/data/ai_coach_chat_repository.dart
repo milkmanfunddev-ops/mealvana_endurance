@@ -10,74 +10,74 @@ import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
-import '../domain/jade_conversation.dart';
-import '../domain/jade_message.dart';
-import '../domain/jade_ui_part.dart';
+import '../domain/ai_coach_conversation.dart';
+import '../domain/ai_coach_message.dart';
+import '../domain/ai_coach_ui_part.dart';
 
-part 'jade_chat_repository.g.dart';
+part 'ai_coach_chat_repository.g.dart';
 
 // ---------------------------------------------------------------------------
 // Typed errors
 // ---------------------------------------------------------------------------
 
-/// Base class for Jade repository errors.
-sealed class JadeChatError {
-  const JadeChatError();
+/// Base class for Mealvana AI repository errors.
+sealed class AiCoachChatError {
+  const AiCoachChatError();
 }
 
 /// The device appears to be offline or the connection was refused.
-class JadeChatOfflineError extends JadeChatError {
-  const JadeChatOfflineError(this.cause);
+class AiCoachChatOfflineError extends AiCoachChatError {
+  const AiCoachChatOfflineError(this.cause);
   final Object cause;
 
   @override
-  String toString() => 'JadeChatOfflineError: $cause';
+  String toString() => 'AiCoachChatOfflineError: $cause';
 }
 
 /// The server returned a non-200 response.
-class JadeChatServerError extends JadeChatError {
-  const JadeChatServerError(this.statusCode, this.message);
+class AiCoachChatServerError extends AiCoachChatError {
+  const AiCoachChatServerError(this.statusCode, this.message);
   final int statusCode;
   final String message;
 
   @override
-  String toString() => 'JadeChatServerError($statusCode): $message';
+  String toString() => 'AiCoachChatServerError($statusCode): $message';
 }
 
 // ---------------------------------------------------------------------------
 // Typed stream events
 // ---------------------------------------------------------------------------
 
-/// A discriminated-union event emitted from [JadeChatRepository.sendMessage].
+/// A discriminated-union event emitted from [AiCoachChatRepository.sendMessage].
 ///
 /// Handlers should exhaust all subtypes. Unknown parts (new server kinds that
 /// this client version does not recognise) are represented by [UiPart] whose
-/// [part] field may contain a [JadeUiPart] subclass added in a future version —
-/// or the part will simply be absent if [JadeUiPart.fromJson] returned null.
-sealed class JadeStreamEvent {
-  const JadeStreamEvent();
+/// [part] field may contain a [AiCoachUiPart] subclass added in a future version —
+/// or the part will simply be absent if [AiCoachUiPart.fromJson] returned null.
+sealed class AiCoachStreamEvent {
+  const AiCoachStreamEvent();
 }
 
 /// Incremental prose text from the assistant.
-class JadeTextDelta extends JadeStreamEvent {
-  const JadeTextDelta(this.delta);
+class AiCoachTextDelta extends AiCoachStreamEvent {
+  const AiCoachTextDelta(this.delta);
   final String delta;
 }
 
 /// A UI-renderable part (meal cards or choice buttons) attached to the reply.
-class JadeUiPartEvent extends JadeStreamEvent {
-  const JadeUiPartEvent(this.part);
-  final JadeUiPart part;
+class AiCoachUiPartEvent extends AiCoachStreamEvent {
+  const AiCoachUiPartEvent(this.part);
+  final AiCoachUiPart part;
 }
 
 /// The stream has completed successfully.
-class JadeDoneEvent extends JadeStreamEvent {
-  const JadeDoneEvent();
+class AiCoachDoneEvent extends AiCoachStreamEvent {
+  const AiCoachDoneEvent();
 }
 
 /// The server reported an error mid-stream.
-class JadeStreamErrorEvent extends JadeStreamEvent {
-  const JadeStreamErrorEvent(this.message);
+class AiCoachStreamErrorEvent extends AiCoachStreamEvent {
+  const AiCoachStreamErrorEvent(this.message);
   final String message;
 }
 
@@ -86,8 +86,8 @@ class JadeStreamErrorEvent extends JadeStreamEvent {
 // ---------------------------------------------------------------------------
 
 /// Holds the streaming response for a single send-message call.
-class JadeSendResult {
-  const JadeSendResult({
+class AiCoachSendResult {
+  const AiCoachSendResult({
     required this.conversationId,
     required this.eventStream,
   });
@@ -95,31 +95,31 @@ class JadeSendResult {
   /// The conversation UUID from the `x-conversation-id` response header.
   final String conversationId;
 
-  /// Stream of typed [JadeStreamEvent] items from the NDJSON response.
+  /// Stream of typed [AiCoachStreamEvent] items from the NDJSON response.
   ///
-  /// The stream completes when [JadeDoneEvent] is received or the underlying
-  /// HTTP connection closes. Errors are surfaced as [JadeStreamErrorEvent] or
-  /// as uncaught [JadeChatError] exceptions.
-  final Stream<JadeStreamEvent> eventStream;
+  /// The stream completes when [AiCoachDoneEvent] is received or the underlying
+  /// HTTP connection closes. Errors are surfaced as [AiCoachStreamErrorEvent] or
+  /// as uncaught [AiCoachChatError] exceptions.
+  final Stream<AiCoachStreamEvent> eventStream;
 }
 
 // ---------------------------------------------------------------------------
 // Repository
 // ---------------------------------------------------------------------------
 
-/// Data-layer gateway to the Jade AI coach edge function and Supabase tables.
+/// Data-layer gateway to the Mealvana AI AI coach edge function and Supabase tables.
 ///
 /// Responsibilities:
 ///   - [fetchConversations] — query `jade_conversations` (most recent first,
 ///     non-deleted) via the Supabase client (RLS applies).
 ///   - [fetchMessages] — query `jade_messages` for a conversation (ascending
 ///     order), also via the Supabase client. Selects `metadata` column so
-///     persisted [JadeUiPart]s are loaded from history.
+///     persisted [AiCoachUiPart]s are loaded from history.
 ///   - [sendMessage] — stream a POST to `/functions/v1/jade-chat` using the
 ///     raw `http` package (the Supabase SDK does not support streaming).
-///     Parses NDJSON lines and emits typed [JadeStreamEvent] instances.
-class JadeChatRepository {
-  JadeChatRepository({
+///     Parses NDJSON lines and emits typed [AiCoachStreamEvent] instances.
+class AiCoachChatRepository {
+  AiCoachChatRepository({
     required SupabaseClient supabase,
     required AppConfig config,
     required AppLogger logger,
@@ -136,7 +136,7 @@ class JadeChatRepository {
   /// Returns the user's conversations ordered by `updated_at` descending.
   ///
   /// Excludes soft-deleted rows (`is_deleted = false`).
-  Future<List<JadeConversation>> fetchConversations() async {
+  Future<List<AiCoachConversation>> fetchConversations() async {
     try {
       final response = await _supabase
           .from('jade_conversations')
@@ -146,11 +146,13 @@ class JadeChatRepository {
           .limit(50);
 
       return (response as List<dynamic>)
-          .map((row) => JadeConversation.fromJson(row as Map<String, dynamic>))
+          .map(
+            (row) => AiCoachConversation.fromJson(row as Map<String, dynamic>),
+          )
           .toList();
     } catch (e, st) {
       _logger.error(
-        'JadeChatRepository.fetchConversations failed',
+        'AiCoachChatRepository.fetchConversations failed',
         error: e,
         stackTrace: st,
       );
@@ -163,8 +165,8 @@ class JadeChatRepository {
   /// Returns the messages for [conversationId] ordered chronologically.
   ///
   /// Selects the `metadata` column so persisted UI parts are hydrated into
-  /// [JadeMessage.uiParts] from `metadata.ui_parts`.
-  Future<List<JadeMessage>> fetchMessages(String conversationId) async {
+  /// [AiCoachMessage.uiParts] from `metadata.ui_parts`.
+  Future<List<AiCoachMessage>> fetchMessages(String conversationId) async {
     try {
       final response = await _supabase
           .from('jade_messages')
@@ -173,11 +175,11 @@ class JadeChatRepository {
           .order('created_at', ascending: true);
 
       return (response as List<dynamic>)
-          .map((row) => JadeMessage.fromJson(row as Map<String, dynamic>))
+          .map((row) => AiCoachMessage.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e, st) {
       _logger.error(
-        'JadeChatRepository.fetchMessages($conversationId) failed',
+        'AiCoachChatRepository.fetchMessages($conversationId) failed',
         error: e,
         stackTrace: st,
       );
@@ -188,7 +190,7 @@ class JadeChatRepository {
   // ── Send (streaming POST) ──────────────────────────────────────────────────
 
   /// Sends [message] to the jade-chat edge function and returns a
-  /// [JadeSendResult] with the conversation id and a [JadeStreamEvent] stream.
+  /// [AiCoachSendResult] with the conversation id and a [AiCoachStreamEvent] stream.
   ///
   /// The server responds with `Content-Type: application/x-ndjson` — one JSON
   /// object per line. This method buffers partial lines across HTTP chunks,
@@ -202,9 +204,9 @@ class JadeChatRepository {
   /// [latitude] and [longitude] are optional — the server degrades gracefully
   /// if absent.
   ///
-  /// Throws [JadeChatOfflineError] on network failure or [JadeChatServerError]
+  /// Throws [AiCoachChatOfflineError] on network failure or [AiCoachChatServerError]
   /// on non-200 responses.
-  Future<JadeSendResult> sendMessage({
+  Future<AiCoachSendResult> sendMessage({
     required String message,
     String? conversationId,
     String? timezone,
@@ -227,15 +229,15 @@ class JadeChatRepository {
 
   // ── Opener (proactive greeting) ────────────────────────────────────────────
 
-  /// Requests Jade's proactive opening greeting — the server generates a
+  /// Requests Mealvana AI's proactive opening greeting — the server generates a
   /// contextual hello (referencing upcoming workouts/races and recent logs)
   /// without a user turn. Nothing is persisted server-side: the opener is
   /// ephemeral and regenerated each time the chat is opened fresh, so the
-  /// returned [JadeSendResult.conversationId] is empty.
+  /// returned [AiCoachSendResult.conversationId] is empty.
   ///
-  /// Throws the same [JadeChatError] subtypes as [sendMessage]; callers should
+  /// Throws the same [AiCoachChatError] subtypes as [sendMessage]; callers should
   /// treat failure as "no opener" and fall back to the static empty state.
-  Future<JadeSendResult> requestOpener({
+  Future<AiCoachSendResult> requestOpener({
     String? timezone,
     double? latitude,
     double? longitude,
@@ -254,14 +256,14 @@ class JadeChatRepository {
   // ── Shared streaming POST ──────────────────────────────────────────────────
 
   /// POSTs [bodyMap] to the jade-chat edge function and returns a
-  /// [JadeSendResult]. Shared by [sendMessage] and [requestOpener].
-  Future<JadeSendResult> _streamRequest(
+  /// [AiCoachSendResult]. Shared by [sendMessage] and [requestOpener].
+  Future<AiCoachSendResult> _streamRequest(
     Map<String, dynamic> bodyMap, {
     required String? fallbackConversationId,
   }) async {
     final session = _supabase.auth.currentSession;
     if (session == null) {
-      throw const JadeChatServerError(401, 'No active session');
+      throw const AiCoachChatServerError(401, 'No active session');
     }
 
     final uri = Uri.parse('${_config.supabaseUrl}/functions/v1/jade-chat');
@@ -272,31 +274,31 @@ class JadeChatRepository {
       ..headers['Content-Type'] = 'application/json'
       ..body = jsonEncode(bodyMap);
 
-    _logger.info('JadeChatRepository._streamRequest → $uri');
+    _logger.info('AiCoachChatRepository._streamRequest → $uri');
 
     http.StreamedResponse streamed;
     try {
       streamed = await http.Client().send(request);
     } catch (e, st) {
       _logger.error(
-        'JadeChatRepository._streamRequest network error',
+        'AiCoachChatRepository._streamRequest network error',
         error: e,
         stackTrace: st,
       );
-      throw JadeChatOfflineError(e);
+      throw AiCoachChatOfflineError(e);
     }
 
     if (streamed.statusCode != 200) {
       final responseBody = await streamed.stream.bytesToString();
       _logger.error(
-        'JadeChatRepository._streamRequest HTTP ${streamed.statusCode}: $responseBody',
+        'AiCoachChatRepository._streamRequest HTTP ${streamed.statusCode}: $responseBody',
       );
       // 402 → out of AI credits. Throw the typed exception so the presentation
       // layer can route the user to the buy-credits paywall.
       if (streamed.statusCode == 402) {
         throw _insufficientCreditsFromBody(responseBody);
       }
-      throw JadeChatServerError(streamed.statusCode, responseBody);
+      throw AiCoachChatServerError(streamed.statusCode, responseBody);
     }
 
     // The conversation id is sent in a response header (even for new
@@ -305,10 +307,10 @@ class JadeChatRepository {
         streamed.headers['x-conversation-id'] ?? fallbackConversationId ?? '';
 
     _logger.info(
-      'JadeChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
+      'AiCoachChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
     );
 
-    return JadeSendResult(
+    return AiCoachSendResult(
       conversationId: resolvedConversationId,
       eventStream: _parseNdjsonStream(streamed.stream),
     );
@@ -335,14 +337,14 @@ class JadeChatRepository {
 
   // ── NDJSON parsing ─────────────────────────────────────────────────────────
 
-  /// Transforms the raw HTTP byte stream into a [Stream<JadeStreamEvent>].
+  /// Transforms the raw HTTP byte stream into a [Stream<AiCoachStreamEvent>].
   ///
   /// Strategy:
   ///   1. Decode bytes → UTF-8 string chunks (chunks may split mid-line).
   ///   2. Buffer a partial-line tail; flush complete lines (terminated by \n).
-  ///   3. Parse each complete line as JSON; map to a [JadeStreamEvent].
+  ///   3. Parse each complete line as JSON; map to a [AiCoachStreamEvent].
   ///   4. Unknown JSON shapes / parse failures are logged and skipped.
-  Stream<JadeStreamEvent> _parseNdjsonStream(
+  Stream<AiCoachStreamEvent> _parseNdjsonStream(
     Stream<List<int>> byteStream,
   ) async* {
     final buffer = StringBuffer();
@@ -377,10 +379,10 @@ class JadeChatRepository {
     }
   }
 
-  /// Parses a single NDJSON line into a [JadeStreamEvent].
+  /// Parses a single NDJSON line into a [AiCoachStreamEvent].
   ///
   /// Returns null for unrecognised or malformed lines (graceful degradation).
-  JadeStreamEvent? _parseLine(String line) {
+  AiCoachStreamEvent? _parseLine(String line) {
     try {
       final json = jsonDecode(line) as Map<String, dynamic>;
       final type = json['type'] as String?;
@@ -389,29 +391,31 @@ class JadeChatRepository {
         case 'text':
           final delta = json['delta'] as String?;
           if (delta == null) return null;
-          return JadeTextDelta(delta);
+          return AiCoachTextDelta(delta);
 
         case 'ui':
           final partJson = json['part'];
           if (partJson is! Map<String, dynamic>) return null;
-          final part = JadeUiPart.fromJson(partJson);
+          final part = AiCoachUiPart.fromJson(partJson);
           if (part == null) return null; // unknown kind — skip
-          return JadeUiPartEvent(part);
+          return AiCoachUiPartEvent(part);
 
         case 'done':
-          return const JadeDoneEvent();
+          return const AiCoachDoneEvent();
 
         case 'error':
           final message = (json['message'] as String?) ?? 'Unknown error';
-          _logger.error('JadeChatRepository: server error event: $message');
-          return JadeStreamErrorEvent(message);
+          _logger.error('AiCoachChatRepository: server error event: $message');
+          return AiCoachStreamErrorEvent(message);
 
         default:
           // Future protocol additions — ignore.
           return null;
       }
     } catch (e) {
-      debugPrint('[JadeChatRepository] NDJSON parse error on line: $line — $e');
+      debugPrint(
+        '[AiCoachChatRepository] NDJSON parse error on line: $line — $e',
+      );
       return null;
     }
   }
@@ -422,8 +426,8 @@ class JadeChatRepository {
 // ---------------------------------------------------------------------------
 
 @riverpod
-JadeChatRepository jadeChatRepository(Ref ref) {
-  return JadeChatRepository(
+AiCoachChatRepository aiCoachChatRepository(Ref ref) {
+  return AiCoachChatRepository(
     supabase: ref.watch(supabaseClientProvider),
     config: ref.watch(appConfigProvider),
     logger: ref.watch(appLoggerProvider),

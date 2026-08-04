@@ -6,13 +6,13 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../meal_logging/domain/meal_log_source.dart';
 import '../../../meal_logging/domain/meal_slot.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
-import '../../domain/jade_ui_part.dart';
+import '../../domain/ai_coach_ui_part.dart';
 
 // ---------------------------------------------------------------------------
-// JadeMealCard
+// AiCoachMealCard
 // ---------------------------------------------------------------------------
 
-/// Renders a single [JadeMealSuggestion] as a Kyle-styled card.
+/// Renders a single [AiCoachMealSuggestion] as a Kyle-styled card.
 ///
 /// Displays: meal name, description, kcal + C/P/F macro line,
 /// the recommended slot as a chip, and a "Log it" button.
@@ -20,10 +20,10 @@ import '../../domain/jade_ui_part.dart';
 /// Tapping "Log it" opens a bottom sheet ([_LogConfirmSheet]) that lets the
 /// user confirm the slot (pre-selected to the suggestion) then logs the meal
 /// via [MealLogController.logFromComponents] with [MealLogSource.describe].
-class JadeMealCard extends ConsumerWidget {
-  const JadeMealCard({super.key, required this.suggestion});
+class AiCoachMealCard extends ConsumerWidget {
+  const AiCoachMealCard({super.key, required this.suggestion});
 
-  final JadeMealSuggestion suggestion;
+  final AiCoachMealSuggestion suggestion;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -134,7 +134,7 @@ class _SlotChip extends StatelessWidget {
 
 class _MacroRow extends StatelessWidget {
   const _MacroRow({required this.suggestion, required this.textColor});
-  final JadeMealSuggestion suggestion;
+  final AiCoachMealSuggestion suggestion;
   final Color textColor;
 
   @override
@@ -200,7 +200,7 @@ class _MacroLabel extends StatelessWidget {
 
 class _LogItButton extends ConsumerWidget {
   const _LogItButton({required this.suggestion});
-  final JadeMealSuggestion suggestion;
+  final AiCoachMealSuggestion suggestion;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -254,7 +254,7 @@ class _LogItButton extends ConsumerWidget {
 /// Bottom sheet that confirms slot selection then logs the meal.
 class _LogConfirmSheet extends ConsumerStatefulWidget {
   const _LogConfirmSheet({required this.suggestion});
-  final JadeMealSuggestion suggestion;
+  final AiCoachMealSuggestion suggestion;
 
   @override
   ConsumerState<_LogConfirmSheet> createState() => _LogConfirmSheetState();

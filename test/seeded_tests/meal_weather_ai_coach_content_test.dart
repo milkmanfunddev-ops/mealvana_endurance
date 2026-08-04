@@ -1,4 +1,4 @@
-// Seeded CONTENT tests — meal pickers, weather, and jade.
+// Seeded CONTENT tests — meal pickers, weather, and ai_coach.
 //
 // Each test pumps a screen with fake seeded state and asserts rendered VALUES.
 // Screens that read GoRouterState.extra use a two-route GoRouter helper.
@@ -8,7 +8,7 @@
 //  2. RecipePickerScreen       — Recipe list renders with calorie/macro subtitle.
 //  3. EditMealLogScreen        — Fields pre-fill from a seeded MealLog extra.
 //  4. WeatherDetailScreen      — Temp/humidity/conditions values render.
-//  5. JadeChatScreen           — Message history renders user + assistant bubbles.
+//  5. AiCoachChatScreen           — Message history renders user + assistant bubbles.
 
 // ignore_for_file: implementation_imports
 
@@ -22,11 +22,11 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
-import 'package:mealvana_endurance/features/jade/data/jade_chat_repository.dart';
-import 'package:mealvana_endurance/features/jade/domain/jade_conversation.dart';
-import 'package:mealvana_endurance/features/jade/domain/jade_message.dart';
-import 'package:mealvana_endurance/features/jade/presentation/providers/jade_chat_controller.dart';
-import 'package:mealvana_endurance/features/jade/presentation/screens/jade_chat_screen.dart';
+import 'package:mealvana_endurance/features/ai_coach/data/ai_coach_chat_repository.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_conversation.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
@@ -159,37 +159,37 @@ class _FakeLogger extends Fake implements AppLogger {
 }
 
 // =============================================================================
-// Fakes — JadeChatRepository (no network; returns immediate done event)
+// Fakes — AiCoachChatRepository (no network; returns immediate done event)
 // =============================================================================
 
-class _FakeJadeChatRepository extends Fake implements JadeChatRepository {
-  _FakeJadeChatRepository({
+class _FakeAiCoachChatRepository extends Fake implements AiCoachChatRepository {
+  _FakeAiCoachChatRepository({
     this.conversations = const [],
     this.messagesByConversation = const {},
   });
 
-  final List<JadeConversation> conversations;
-  final Map<String, List<JadeMessage>> messagesByConversation;
+  final List<AiCoachConversation> conversations;
+  final Map<String, List<AiCoachMessage>> messagesByConversation;
 
   @override
-  Future<List<JadeConversation>> fetchConversations() async => conversations;
+  Future<List<AiCoachConversation>> fetchConversations() async => conversations;
 
   @override
-  Future<List<JadeMessage>> fetchMessages(String conversationId) async =>
+  Future<List<AiCoachMessage>> fetchMessages(String conversationId) async =>
       messagesByConversation[conversationId] ?? [];
 
   @override
-  Future<JadeSendResult> requestOpener({
+  Future<AiCoachSendResult> requestOpener({
     String? timezone,
     double? latitude,
     double? longitude,
-  }) async => JadeSendResult(
+  }) async => AiCoachSendResult(
     conversationId: '',
-    // Use async generator so the JadeDoneEvent is delivered across an
+    // Use async generator so the AiCoachDoneEvent is delivered across an
     // event-loop boundary that tester.pump() can advance. Stream.fromIterable
     // emits synchronously and the event never arrives in the pump cycle.
     eventStream: (() async* {
-      yield const JadeDoneEvent();
+      yield const AiCoachDoneEvent();
     })(),
   );
 }
@@ -1137,21 +1137,21 @@ void main() {
   });
 
   // ===========================================================================
-  // 5. JadeChatScreen — message history renders
+  // 5. AiCoachChatScreen — message history renders
   // ===========================================================================
 
-  group('JadeChatScreen — seeded message history', () {
-    /// Wire up the jade dependencies the screen needs:
-    ///   - jadeChatRepositoryProvider → _FakeJadeChatRepository
+  group('AiCoachChatScreen — seeded message history', () {
+    /// Wire up the AI-coach dependencies the screen needs:
+    ///   - aiCoachChatRepositoryProvider → _FakeAiCoachChatRepository
     ///   - contentServiceProvider     → _FakeContentService
     ///   - appLoggerProvider          → _FakeLogger
-    List<Override> _jadeOverrides({
-      List<JadeConversation> conversations = const [],
-      Map<String, List<JadeMessage>> messagesByConversation = const {},
+    List<Override> _AiCoachOverrides({
+      List<AiCoachConversation> conversations = const [],
+      Map<String, List<AiCoachMessage>> messagesByConversation = const {},
     }) {
       return [
-        jadeChatRepositoryProvider.overrideWithValue(
-          _FakeJadeChatRepository(
+        aiCoachChatRepositoryProvider.overrideWithValue(
+          _FakeAiCoachChatRepository(
             conversations: conversations,
             messagesByConversation: messagesByConversation,
           ),
@@ -1171,8 +1171,8 @@ void main() {
       // relying on settle.
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(),
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(),
         settle: false,
       );
       // Flush the async build() + opener stream + post-frame callbacks.
@@ -1181,9 +1181,9 @@ void main() {
       }
 
       // The FakeContentService returns the defaultValue for every key.
-      // jade.empty_greeting default = "Hey, I'm Jade"
+      // ai_coach.empty_greeting default = "Hey, I'm Mealvana"
       expect(
-        find.textContaining("Hey, I'm Jade"),
+        find.textContaining("Hey, I'm Mealvana"),
         findsOneWidget,
         reason: 'Empty greeting must appear when no conversation history',
       );
@@ -1194,17 +1194,17 @@ void main() {
       // pumpAndSettle from completing. See note above.
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(),
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(),
         settle: false,
       );
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      // jade.input_hint default = "Ask Jade anything…"
+      // ai_coach.input_hint default = "Ask Mealvana AI anything…"
       expect(
-        find.textContaining('Ask Jade anything'),
+        find.textContaining('Ask Mealvana anything'),
         findsOneWidget,
         reason: 'Input hint must appear in the text field',
       );
@@ -1214,7 +1214,7 @@ void main() {
       tester,
     ) async {
       final now = DateTime.now();
-      final conversation = JadeConversation(
+      final conversation = AiCoachConversation(
         id: 'conv-test',
         title: 'Test chat',
         createdAt: now.subtract(const Duration(hours: 1)),
@@ -1222,17 +1222,17 @@ void main() {
         isDeleted: false,
       );
       final messages = [
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-u1',
           conversationId: 'conv-test',
-          role: JadeMessageRole.user,
+          role: AiCoachMessageRole.user,
           content: 'How many carbs before a long run?',
           createdAt: now.subtract(const Duration(minutes: 5)),
         ),
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-a1',
           conversationId: 'conv-test',
-          role: JadeMessageRole.assistant,
+          role: AiCoachMessageRole.assistant,
           content: 'For a run over 90 minutes, aim for 1-4g/kg.',
           createdAt: now.subtract(const Duration(minutes: 4)),
         ),
@@ -1240,8 +1240,8 @@ void main() {
 
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(
           conversations: [conversation],
           messagesByConversation: {'conv-test': messages},
         ),
@@ -1259,7 +1259,7 @@ void main() {
       tester,
     ) async {
       final now = DateTime.now();
-      final conversation = JadeConversation(
+      final conversation = AiCoachConversation(
         id: 'conv-test',
         title: 'Test chat',
         createdAt: now,
@@ -1267,10 +1267,10 @@ void main() {
         isDeleted: false,
       );
       final messages = [
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-a1',
           conversationId: 'conv-test',
-          role: JadeMessageRole.assistant,
+          role: AiCoachMessageRole.assistant,
           content: 'For a run over 90 minutes, aim for 1-4g/kg.',
           createdAt: now,
         ),
@@ -1278,8 +1278,8 @@ void main() {
 
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(
           conversations: [conversation],
           messagesByConversation: {'conv-test': messages},
         ),
@@ -1297,7 +1297,7 @@ void main() {
       tester,
     ) async {
       final now = DateTime.now();
-      final conversation = JadeConversation(
+      final conversation = AiCoachConversation(
         id: 'conv-order',
         title: '',
         createdAt: now,
@@ -1305,17 +1305,17 @@ void main() {
         isDeleted: false,
       );
       final messages = [
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-u1',
           conversationId: 'conv-order',
-          role: JadeMessageRole.user,
+          role: AiCoachMessageRole.user,
           content: 'How many carbs before a long run?',
           createdAt: now.subtract(const Duration(minutes: 5)),
         ),
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-a1',
           conversationId: 'conv-order',
-          role: JadeMessageRole.assistant,
+          role: AiCoachMessageRole.assistant,
           content: 'For a run over 90 minutes, aim for 1-4g/kg.',
           createdAt: now.subtract(const Duration(minutes: 4)),
         ),
@@ -1323,8 +1323,8 @@ void main() {
 
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(
           conversations: [conversation],
           messagesByConversation: {'conv-order': messages},
         ),
@@ -1338,16 +1338,16 @@ void main() {
       );
     });
 
-    testWidgets('Jade name appears in app bar from content service', (
+    testWidgets('Mealvana AI name appears in app bar from content service', (
       tester,
     ) async {
       // settle: false — repeating AnimationController in empty state prevents
       // pumpAndSettle from completing. See note above.
-      // jade.coach_name defaultValue = 'Jade'
+      // ai_coach.coach_name defaultValue = 'Mealvana AI'
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(),
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(),
         settle: false,
       );
       for (var i = 0; i < 10; i++) {
@@ -1355,7 +1355,7 @@ void main() {
       }
 
       expect(
-        find.text('Jade'),
+        find.text('Mealvana AI'),
         findsWidgets,
         reason:
             'Coach name from ContentService must appear in the AppBar title',
@@ -1366,19 +1366,19 @@ void main() {
       // settle: false — repeating AnimationController in empty state prevents
       // pumpAndSettle from completing. See note above.
       // NOTE: The empty state only renders if _maybeRequestOpener produced no
-      // content (opener returns JadeDoneEvent immediately with empty content,
+      // content (opener returns AiCoachDoneEvent immediately with empty content,
       // so the placeholder is dropped and the static empty state is shown).
       await pumpSeeded(
         tester,
-        const JadeChatScreen(),
-        overrides: _jadeOverrides(),
+        const AiCoachChatScreen(),
+        overrides: _AiCoachOverrides(),
         settle: false,
       );
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      // jade.suggested_prompt_plan_day default = 'Plan my day'
+      // ai_coach.suggested_prompt_plan_day default = 'Plan my day'
       expect(
         find.text('Plan my day'),
         findsOneWidget,

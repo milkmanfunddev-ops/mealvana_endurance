@@ -225,7 +225,7 @@ const List<QuickAssembly> kQuickAssemblies = [
       ),
       MealComponent(
         name: 'Cheddar cheese',
-        portion: '1 oz',
+        portion: '1 oz (28 g)',
         calories: 113,
         carbG: 0.4,
         proteinG: 7.0,

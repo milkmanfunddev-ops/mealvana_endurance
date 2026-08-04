@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'jade_chat_controller.dart';
+part of 'ai_coach_chat_controller.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,45 +9,47 @@ part of 'jade_chat_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(JadeChatController)
-const jadeChatControllerProvider = JadeChatControllerProvider._();
+@ProviderFor(AiCoachChatController)
+const aiCoachChatControllerProvider = AiCoachChatControllerProvider._();
 
-final class JadeChatControllerProvider
-    extends $AsyncNotifierProvider<JadeChatController, JadeChatState> {
-  const JadeChatControllerProvider._()
+final class AiCoachChatControllerProvider
+    extends $AsyncNotifierProvider<AiCoachChatController, AiCoachChatState> {
+  const AiCoachChatControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'jadeChatControllerProvider',
+        name: r'aiCoachChatControllerProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$jadeChatControllerHash();
+  String debugGetCreateSourceHash() => _$aiCoachChatControllerHash();
 
   @$internal
   @override
-  JadeChatController create() => JadeChatController();
+  AiCoachChatController create() => AiCoachChatController();
 }
 
-String _$jadeChatControllerHash() =>
-    r'a916e50cdcb7f987cfea1469563d3e3db935d1b8';
+String _$aiCoachChatControllerHash() =>
+    r'6fc851b2a03eb33932cc104cf53b563913e7be9f';
 
-abstract class _$JadeChatController extends $AsyncNotifier<JadeChatState> {
-  FutureOr<JadeChatState> build();
+abstract class _$AiCoachChatController
+    extends $AsyncNotifier<AiCoachChatState> {
+  FutureOr<AiCoachChatState> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
-    final ref = this.ref as $Ref<AsyncValue<JadeChatState>, JadeChatState>;
+    final ref =
+        this.ref as $Ref<AsyncValue<AiCoachChatState>, AiCoachChatState>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<JadeChatState>, JadeChatState>,
-              AsyncValue<JadeChatState>,
+              AnyNotifier<AsyncValue<AiCoachChatState>, AiCoachChatState>,
+              AsyncValue<AiCoachChatState>,
               Object?,
               Object?
             >;

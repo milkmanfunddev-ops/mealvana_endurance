@@ -1,3 +1,5 @@
+import '../../../shared/utils/unit_formatter.dart';
+
 /// Activity completion domain model for calendar feature
 class ActivityCompletion {
   const ActivityCompletion({
@@ -223,9 +225,9 @@ extension ActivityCompletionExtensions on ActivityCompletion {
   /// Get formatted pace if available
   String? get formattedPace {
     if (averagePaceMinutesPerMile == null) return null;
-    final minutes = averagePaceMinutesPerMile!.floor();
-    final seconds = ((averagePaceMinutesPerMile! - minutes) * 60).round();
-    return "$minutes:${seconds.toString().padLeft(2, '0')}/mi";
+    // Via UnitFormatter so the minute carry is handled once — splitting
+    // floor()/round() here renders 3.99995 as "3:60".
+    return '${UnitFormatter.formatMinutesAsMinSec(averagePaceMinutesPerMile!)}/mi';
   }
 
   /// Get formatted duration if available

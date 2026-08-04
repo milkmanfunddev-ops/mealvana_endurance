@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'jade_banner_providers.dart';
+part of 'ai_coach_banner_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -11,48 +11,48 @@ part of 'jade_banner_providers.dart';
 /// True when the current user has at least one non-deleted meal log created
 /// in the last 14 days (local Drift query — no network required).
 ///
-/// Used by [JadeCoachBanner] to choose between baseline-tutorial copy and
+/// Used by [AiCoachBanner] to choose between baseline-tutorial copy and
 /// default copy.  Degrades gracefully:
 ///   - loading  → false (show tutorial copy until data is available)
 ///   - no user  → false
 ///   - error    → false (never throws)
 
-@ProviderFor(jadeHasBaseline)
-const jadeHasBaselineProvider = JadeHasBaselineProvider._();
+@ProviderFor(aiCoachHasBaseline)
+const aiCoachHasBaselineProvider = AiCoachHasBaselineProvider._();
 
 /// True when the current user has at least one non-deleted meal log created
 /// in the last 14 days (local Drift query — no network required).
 ///
-/// Used by [JadeCoachBanner] to choose between baseline-tutorial copy and
+/// Used by [AiCoachBanner] to choose between baseline-tutorial copy and
 /// default copy.  Degrades gracefully:
 ///   - loading  → false (show tutorial copy until data is available)
 ///   - no user  → false
 ///   - error    → false (never throws)
 
-final class JadeHasBaselineProvider
+final class AiCoachHasBaselineProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
     with $FutureModifier<bool>, $FutureProvider<bool> {
   /// True when the current user has at least one non-deleted meal log created
   /// in the last 14 days (local Drift query — no network required).
   ///
-  /// Used by [JadeCoachBanner] to choose between baseline-tutorial copy and
+  /// Used by [AiCoachBanner] to choose between baseline-tutorial copy and
   /// default copy.  Degrades gracefully:
   ///   - loading  → false (show tutorial copy until data is available)
   ///   - no user  → false
   ///   - error    → false (never throws)
-  const JadeHasBaselineProvider._()
+  const AiCoachHasBaselineProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'jadeHasBaselineProvider',
+        name: r'aiCoachHasBaselineProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$jadeHasBaselineHash();
+  String debugGetCreateSourceHash() => _$aiCoachHasBaselineHash();
 
   @$internal
   @override
@@ -61,8 +61,9 @@ final class JadeHasBaselineProvider
 
   @override
   FutureOr<bool> create(Ref ref) {
-    return jadeHasBaseline(ref);
+    return aiCoachHasBaseline(ref);
   }
 }
 
-String _$jadeHasBaselineHash() => r'8dc908e0453195647726343d2a9b164e0e149484';
+String _$aiCoachHasBaselineHash() =>
+    r'699f0f7a2218a2411e2d6556d4e41aa78e59a9bc';

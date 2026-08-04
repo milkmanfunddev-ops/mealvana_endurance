@@ -76,8 +76,8 @@ import '../../features/coach_mode/presentation/screens/coach_directory_screen.da
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
-// Jade AI coach
-import '../../features/jade/presentation/screens/jade_chat_screen.dart';
+// Mealvana AI AI coach
+import '../../features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
 // Meal logging screens
 import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
@@ -1035,12 +1035,12 @@ class AppRouter {
         ),
 
         // ====================================================================
-        // JADE AI COACH
+        // MEALVANA AI COACH
         // ====================================================================
         GoRoute(
           path: '/jade',
           name: 'jade-chat',
-          builder: (context, state) => const JadeChatScreen(),
+          builder: (context, state) => const AiCoachChatScreen(),
         ),
       ],
 

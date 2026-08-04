@@ -4,28 +4,28 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../domain/jade_message.dart';
-import '../../domain/jade_ui_part.dart';
-import '../providers/jade_chat_controller.dart';
-import '../widgets/jade_avatar.dart';
-import '../widgets/jade_choice_buttons.dart';
-import '../widgets/jade_meal_card.dart';
+import '../../domain/ai_coach_message.dart';
+import '../../domain/ai_coach_ui_part.dart';
+import '../providers/ai_coach_chat_controller.dart';
+import '../widgets/ai_coach_avatar.dart';
+import '../widgets/ai_coach_choice_buttons.dart';
+import '../widgets/ai_coach_meal_card.dart';
 
-/// Full-screen chat interface for the Jade AI coach.
+/// Full-screen chat interface for the Mealvana AI AI coach.
 ///
 /// Layout:
-///   - AppBar: Jade avatar + name + "new chat" action icon.
+///   - AppBar: Mealvana AI avatar + name + "new chat" action icon.
 ///   - Body: scrollable message list with user/assistant bubbles.
 ///   - Bottom: input row with send button (disabled while streaming).
 ///   - Empty state: warm intro card + suggested prompt chips.
-class JadeChatScreen extends ConsumerStatefulWidget {
-  const JadeChatScreen({super.key});
+class AiCoachChatScreen extends ConsumerStatefulWidget {
+  const AiCoachChatScreen({super.key});
 
   @override
-  ConsumerState<JadeChatScreen> createState() => _JadeChatScreenState();
+  ConsumerState<AiCoachChatScreen> createState() => _AiCoachChatScreenState();
 }
 
-class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
+class _AiCoachChatScreenState extends ConsumerState<AiCoachChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _hasShownError = false;
@@ -46,23 +46,23 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
   List<String> _suggestedPrompts(ContentService contentService) {
     return [
       contentService.getValue(
-        'jade.suggested_prompt_plan_day',
+        'ai_coach.suggested_prompt_plan_day',
         defaultValue: 'Plan my day',
       ),
       contentService.getValue(
-        'jade.suggested_prompt_plan_week',
+        'ai_coach.suggested_prompt_plan_week',
         defaultValue: 'Plan my week',
       ),
       contentService.getValue(
-        'jade.suggested_prompt_1',
+        'ai_coach.suggested_prompt_1',
         defaultValue: 'Help me set up my meal baseline',
       ),
       contentService.getValue(
-        'jade.suggested_prompt_2',
+        'ai_coach.suggested_prompt_2',
         defaultValue: "What should I eat before tomorrow's workout?",
       ),
       contentService.getValue(
-        'jade.suggested_prompt_3',
+        'ai_coach.suggested_prompt_3',
         defaultValue: 'How much carbs do I need for a long run?',
       ),
     ];
@@ -88,10 +88,10 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final contentService = ref.read(contentServiceProvider);
-    final chatAsync = ref.watch(jadeChatControllerProvider);
+    final chatAsync = ref.watch(aiCoachChatControllerProvider);
 
     // Consume any error message exactly once per error.
-    ref.listen<AsyncValue<JadeChatState>>(jadeChatControllerProvider, (
+    ref.listen<AsyncValue<AiCoachChatState>>(aiCoachChatControllerProvider, (
       _,
       next,
     ) {
@@ -101,7 +101,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           MealvanaSnackbar.showError(context, s!.errorMessage!);
-          ref.read(jadeChatControllerProvider.notifier).clearError();
+          ref.read(aiCoachChatControllerProvider.notifier).clearError();
           _hasShownError = false;
         });
       }
@@ -111,15 +111,15 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
       }
     });
 
-    final jadeName = contentService.getValue(
-      'jade.coach_name',
-      defaultValue: 'Jade',
+    final aiCoachName = contentService.getValue(
+      'ai_coach.coach_name',
+      defaultValue: 'Mealvana AI',
     );
 
     return Scaffold(
-      key: const ValueKey('jade.chat_screen'),
+      key: const ValueKey('ai_coach.chat_screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: _buildAppBar(context, jadeName, isDark),
+      appBar: _buildAppBar(context, aiCoachName, isDark),
       body: SafeArea(
         child: Column(
           children: [
@@ -145,7 +145,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
 
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
-    String jadeName,
+    String aiCoachName,
     bool isDark,
   ) {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
@@ -161,11 +161,18 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const JadeAvatar(size: 32),
+          const AiCoachAvatar(size: 32),
           const SizedBox(width: AppSpacing.sm),
-          Text(
-            jadeName,
-            style: AppTextStyles.sectionTitle.copyWith(color: textColor),
+          // The name comes from ContentService, so its length is unbounded —
+          // between the leading back button and the trailing "new chat" action
+          // there is not much room. Flex + ellipsis instead of overflowing.
+          Flexible(
+            child: Text(
+              aiCoachName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.sectionTitle.copyWith(color: textColor),
+            ),
           ),
         ],
       ),
@@ -179,7 +186,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           ),
           tooltip: 'New chat',
           onPressed: () {
-            ref.read(jadeChatControllerProvider.notifier).newChat();
+            ref.read(aiCoachChatControllerProvider.notifier).newChat();
             // Allow the proactive opener to fire again for the fresh chat.
             setState(() => _openerRequested = false);
           },
@@ -193,7 +200,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
 
   Widget _buildBody(
     BuildContext context,
-    JadeChatState state,
+    AiCoachChatState state,
     ContentService contentService,
   ) {
     if (state.messages.isEmpty && !state.isStreaming) {
@@ -210,11 +217,11 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     _openerRequested = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(jadeChatControllerProvider.notifier).loadOpener();
+      ref.read(aiCoachChatControllerProvider.notifier).loadOpener();
     });
   }
 
-  Widget _buildMessageList(BuildContext context, JadeChatState state) {
+  Widget _buildMessageList(BuildContext context, AiCoachChatState state) {
     return ListView.separated(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(
@@ -228,7 +235,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
         final isLastAndStreaming =
             state.isStreaming && index == state.messages.length - 1;
         return _MessageBubble(
-          key: ValueKey('jade.message_${msg.role.name}_$index'),
+          key: ValueKey('ai_coach.message_${msg.role.name}_$index'),
           message: msg,
           isStreaming: isLastAndStreaming,
         );
@@ -243,9 +250,9 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     final intro = contentService.getValue(
-      'jade.empty_intro',
+      'ai_coach.empty_intro',
       defaultValue:
-          "Hi! I'm Jade, your AI endurance nutrition coach. I can help you build a fueling strategy, answer questions about your nutrition plan, and help you establish a solid meal baseline.",
+          "Hi! I'm Mealvana, your AI endurance nutrition coach. I can help you build a fueling strategy, answer questions about your nutrition plan, and help you establish a solid meal baseline.",
     );
 
     final prompts = _suggestedPrompts(contentService);
@@ -259,12 +266,12 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           // Avatar + name header
           Column(
             children: [
-              const JadeAvatar(size: 72),
+              const AiCoachAvatar(size: 72),
               const SizedBox(height: AppSpacing.md),
               Text(
                 contentService.getValue(
-                  'jade.empty_greeting',
-                  defaultValue: 'Hey, I\'m Jade',
+                  'ai_coach.empty_greeting',
+                  defaultValue: 'Hey, I\'m Mealvana',
                 ),
                 style: AppTextStyles.sectionTitle.copyWith(color: textColor),
               ),
@@ -329,7 +336,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
           _RetryButton(
-            onPressed: () => ref.invalidate(jadeChatControllerProvider),
+            onPressed: () => ref.invalidate(aiCoachChatControllerProvider),
           ),
         ],
       ),
@@ -340,14 +347,14 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
 
   Widget _buildInputRow(
     BuildContext context,
-    JadeChatState? state,
+    AiCoachChatState? state,
     bool isDark,
     ContentService contentService,
   ) {
     final isStreaming = state?.isStreaming ?? false;
     final hint = contentService.getValue(
-      'jade.input_hint',
-      defaultValue: 'Ask Jade anything…',
+      'ai_coach.input_hint',
+      defaultValue: 'Ask Mealvana anything…',
     );
 
     final borderColor = isDark
@@ -375,7 +382,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 140),
               child: TextField(
-                key: const ValueKey('jade.input_field'),
+                key: const ValueKey('ai_coach.input_field'),
                 controller: _textController,
                 enabled: !isStreaming,
                 maxLines: null,
@@ -444,7 +451,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
   }
 
   void _sendMessage(String text) {
-    ref.read(jadeChatControllerProvider.notifier).send(text);
+    ref.read(aiCoachChatControllerProvider.notifier).send(text);
   }
 }
 
@@ -459,13 +466,13 @@ class _MessageBubble extends StatelessWidget {
     required this.isStreaming,
   });
 
-  final JadeMessage message;
+  final AiCoachMessage message;
   final bool isStreaming;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isUser = message.role == JadeMessageRole.user;
+    final isUser = message.role == AiCoachMessageRole.user;
 
     if (isUser) {
       return _UserBubble(message: message, isDark: isDark);
@@ -481,7 +488,7 @@ class _MessageBubble extends StatelessWidget {
 class _UserBubble extends StatelessWidget {
   const _UserBubble({required this.message, required this.isDark});
 
-  final JadeMessage message;
+  final AiCoachMessage message;
   final bool isDark;
 
   @override
@@ -526,7 +533,7 @@ class _AssistantBubble extends StatelessWidget {
     required this.isStreaming,
   });
 
-  final JadeMessage message;
+  final AiCoachMessage message;
   final bool isDark;
   final bool isStreaming;
 
@@ -545,7 +552,7 @@ class _AssistantBubble extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xxs),
-          child: JadeAvatar(size: 28, isPulsing: isStreaming),
+          child: AiCoachAvatar(size: 28, isPulsing: isStreaming),
         ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
@@ -609,27 +616,27 @@ class _AssistantBubble extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildUiParts(List<JadeUiPart> parts) {
+  List<Widget> _buildUiParts(List<AiCoachUiPart> parts) {
     final widgets = <Widget>[];
     for (int i = 0; i < parts.length; i++) {
       final part = parts[i];
       if (i > 0) widgets.add(const SizedBox(height: AppSpacing.xs));
 
       switch (part) {
-        case JadeMealCardsPart(:final meals):
+        case AiCoachMealCardsPart(:final meals):
           for (int j = 0; j < meals.length; j++) {
             if (j > 0) widgets.add(const SizedBox(height: AppSpacing.xs));
-            widgets.add(JadeMealCard(suggestion: meals[j]));
+            widgets.add(AiCoachMealCard(suggestion: meals[j]));
           }
-        case JadeChoicesPart():
-          widgets.add(JadeChoiceButtons(part: part));
+        case AiCoachChoicesPart():
+          widgets.add(AiCoachChoiceButtons(part: part));
       }
     }
     return widgets;
   }
 }
 
-/// Three animated dots shown while waiting for the first chunk from Jade.
+/// Three animated dots shown while waiting for the first chunk from Mealvana AI.
 class _TypingIndicator extends StatefulWidget {
   const _TypingIndicator({required this.isDark});
   final bool isDark;

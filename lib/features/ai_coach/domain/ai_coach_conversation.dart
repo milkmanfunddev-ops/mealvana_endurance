@@ -1,9 +1,9 @@
-/// Domain model for a Jade AI coach conversation.
+/// Domain model for a Mealvana AI AI coach conversation.
 ///
 /// Maps to the `jade_conversations` Supabase table (read via RLS — the
 /// client never inserts; the edge function creates rows server-side).
-class JadeConversation {
-  const JadeConversation({
+class AiCoachConversation {
+  const AiCoachConversation({
     required this.id,
     required this.title,
     required this.createdAt,
@@ -17,8 +17,8 @@ class JadeConversation {
   final DateTime updatedAt;
   final bool isDeleted;
 
-  factory JadeConversation.fromJson(Map<String, dynamic> json) {
-    return JadeConversation(
+  factory AiCoachConversation.fromJson(Map<String, dynamic> json) {
+    return AiCoachConversation(
       id: json['id'] as String,
       title: (json['title'] as String?) ?? '',
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -29,5 +29,5 @@ class JadeConversation {
 
   @override
   String toString() =>
-      'JadeConversation(id: $id, title: $title, updatedAt: $updatedAt)';
+      'AiCoachConversation(id: $id, title: $title, updatedAt: $updatedAt)';
 }

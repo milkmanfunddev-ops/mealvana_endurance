@@ -2,7 +2,7 @@
 //
 // Coverage: 13 screens (EmailLoginScreen, EmailSignupScreen,
 // ForgotPasswordScreen, VerifyResetCodeScreen, SetNewPasswordScreen,
-// ActivitiesListScreen, JadeChatScreen,
+// ActivitiesListScreen, AiCoachChatScreen,
 // RecipesScreen, ShareNutritionPlanScreen,
 // SurveyScreen, VideoPlayerScreen, FoodDetailScreen, BarcodeScannerScreen).
 //
@@ -14,7 +14,7 @@
 // pumpAndSettle is safe for them.
 //
 // Screens that kick off async work in initState / build (ActivitiesListScreen,
-// JadeChatScreen, RecipesScreen) use settle:false so the test doesn't time out
+// AiCoachChatScreen, RecipesScreen) use settle:false so the test doesn't time out
 // on a never-resolving Future.
 //
 // FINDING: SurveyScreen has a broken relative import
@@ -45,9 +45,9 @@ import 'package:mealvana_endurance/features/auth/presentation/providers/password
 // Activities list screen
 import 'package:mealvana_endurance/features/activities/presentation/screens/activities_list_screen.dart';
 
-// Jade chat screen + controller override
-import 'package:mealvana_endurance/features/jade/presentation/screens/jade_chat_screen.dart';
-import 'package:mealvana_endurance/features/jade/presentation/providers/jade_chat_controller.dart';
+// Mealvana AI chat screen + controller override
+import 'package:mealvana_endurance/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
 
 // Recipes screen
 import 'package:mealvana_endurance/features/recipes/presentation/screens/recipes_screen.dart';
@@ -92,14 +92,19 @@ class _FakePasswordRecoveryController extends PasswordRecoveryController {
   }
 }
 
-/// Fake JadeChatController that returns an empty state synchronously so the
+/// Fake AiCoachChatController that returns an empty state synchronously so the
 /// screen can lay out without hitting the Drift DB.
-class _FakeJadeChatController extends JadeChatController {
+class _FakeAiCoachChatController extends AiCoachChatController {
   @override
-  FutureOr<JadeChatState> build() {
+  FutureOr<AiCoachChatState> build() {
     // Return synchronously — avoids DB access.
-    return const JadeChatState();
+    return const AiCoachChatState();
   }
+
+  /// The screen fires this from a post-frame callback. The real one reaches
+  /// the repository, which reaches Supabase — uninitialised in a widget test.
+  @override
+  Future<void> loadOpener() async {}
 }
 
 /// Fake ShareFormController seeded with an empty state. The controller is a
@@ -214,13 +219,17 @@ void main() {
     });
   });
 
-  group('Jade chat screen smoke test', () {
-    testWidgets('JadeChatScreen builds (seeded empty state)', (tester) async {
+  group('Mealvana AI chat screen smoke test', () {
+    testWidgets('AiCoachChatScreen builds (seeded empty state)', (
+      tester,
+    ) async {
       await smokeScreen(
         tester,
-        const JadeChatScreen(),
+        const AiCoachChatScreen(),
         overrides: [
-          jadeChatControllerProvider.overrideWith(_FakeJadeChatController.new),
+          aiCoachChatControllerProvider.overrideWith(
+            _FakeAiCoachChatController.new,
+          ),
         ],
         // Settle is fine because the fake build() returns synchronously.
         settle: true,

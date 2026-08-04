@@ -2,33 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../domain/jade_ui_part.dart';
-import '../providers/jade_chat_controller.dart';
+import '../../domain/ai_coach_ui_part.dart';
+import '../providers/ai_coach_chat_controller.dart';
 
 // ---------------------------------------------------------------------------
-// JadeChoiceButtons
+// AiCoachChoiceButtons
 // ---------------------------------------------------------------------------
 
-/// Renders a [JadeChoicesPart] as a question label + tappable option buttons.
+/// Renders a [AiCoachChoicesPart] as a question label + tappable option buttons.
 ///
 /// Tapping an option sends the option text as the user's next message via
-/// [JadeChatController.send] and marks this group as answered (disabling all
+/// [AiCoachChatController.send] and marks this group as answered (disabling all
 /// buttons for the remainder of the session).
 ///
 /// When loaded from history (after app restart or conversation reload) the
 /// buttons render in their default enabled appearance — tapping one simply
 /// sends the text again as a new message, which is harmless and lets the
 /// user revisit a choice if they want to change course.
-class JadeChoiceButtons extends ConsumerStatefulWidget {
-  const JadeChoiceButtons({super.key, required this.part});
+class AiCoachChoiceButtons extends ConsumerStatefulWidget {
+  const AiCoachChoiceButtons({super.key, required this.part});
 
-  final JadeChoicesPart part;
+  final AiCoachChoicesPart part;
 
   @override
-  ConsumerState<JadeChoiceButtons> createState() => _JadeChoiceButtonsState();
+  ConsumerState<AiCoachChoiceButtons> createState() =>
+      _AiCoachChoiceButtonsState();
 }
 
-class _JadeChoiceButtonsState extends ConsumerState<JadeChoiceButtons> {
+class _AiCoachChoiceButtonsState extends ConsumerState<AiCoachChoiceButtons> {
   /// Which option index was tapped (null = not yet answered this session).
   int? _answeredIndex;
 
@@ -37,7 +38,9 @@ class _JadeChoiceButtonsState extends ConsumerState<JadeChoiceButtons> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final isStreaming = ref.watch(
-      jadeChatControllerProvider.select((s) => s.value?.isStreaming ?? false),
+      aiCoachChatControllerProvider.select(
+        (s) => s.value?.isStreaming ?? false,
+      ),
     );
 
     return Column(
@@ -62,7 +65,7 @@ class _JadeChoiceButtonsState extends ConsumerState<JadeChoiceButtons> {
             final isAnswered = _answeredIndex != null;
             final isThisAnswer = _answeredIndex == index;
 
-            // Disable all buttons while Jade is streaming a reply or after
+            // Disable all buttons while Mealvana AI is streaming a reply or after
             // the user has already answered this session.
             final isEnabled = !isStreaming && !isAnswered;
 
@@ -86,7 +89,7 @@ class _JadeChoiceButtonsState extends ConsumerState<JadeChoiceButtons> {
       _answeredIndex = index;
     });
 
-    ref.read(jadeChatControllerProvider.notifier).send(option);
+    ref.read(aiCoachChatControllerProvider.notifier).send(option);
   }
 }
 

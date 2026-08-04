@@ -1,11 +1,11 @@
 import '../../meal_logging/domain/meal_component.dart';
 import '../../meal_logging/domain/meal_slot.dart';
 
-/// A suggestion for a single meal, as sent by Jade.
+/// A suggestion for a single meal, as sent by Mealvana AI.
 ///
 /// Maps to the server-side `MealSuggestion` shape in `tools.ts`.
-class JadeMealSuggestion {
-  const JadeMealSuggestion({
+class AiCoachMealSuggestion {
+  const AiCoachMealSuggestion({
     required this.name,
     required this.description,
     required this.kcal,
@@ -30,7 +30,7 @@ class JadeMealSuggestion {
   /// Individual food items that make up this meal.
   final List<MealComponent> components;
 
-  factory JadeMealSuggestion.fromJson(Map<String, dynamic> json) {
+  factory AiCoachMealSuggestion.fromJson(Map<String, dynamic> json) {
     final rawComponents = json['components'];
     final components = <MealComponent>[];
     if (rawComponents is List) {
@@ -41,7 +41,7 @@ class JadeMealSuggestion {
       }
     }
 
-    return JadeMealSuggestion(
+    return AiCoachMealSuggestion(
       name: (json['name'] as String?) ?? '',
       description: (json['description'] as String?) ?? '',
       kcal: (json['kcal'] as num?)?.toInt() ?? 0,
@@ -64,21 +64,21 @@ class JadeMealSuggestion {
 /// falling through to an unknown case. Unknown kinds from the server are
 /// silently discarded at the parse layer — new kinds added on the server
 /// will just not render on older clients (graceful degradation).
-sealed class JadeUiPart {
-  const JadeUiPart();
+sealed class AiCoachUiPart {
+  const AiCoachUiPart();
 
   /// Deserialize a single part from its JSON map.
   ///
   /// Returns null when the `kind` is unrecognised or the JSON is malformed,
-  /// so callers can safely filter with `whereType<JadeUiPart>()`.
-  static JadeUiPart? fromJson(Map<String, dynamic> json) {
+  /// so callers can safely filter with `whereType<AiCoachUiPart>()`.
+  static AiCoachUiPart? fromJson(Map<String, dynamic> json) {
     try {
       final kind = json['kind'] as String?;
       switch (kind) {
         case 'meal_cards':
-          return JadeMealCardsPart.fromJson(json);
+          return AiCoachMealCardsPart.fromJson(json);
         case 'choices':
-          return JadeChoicesPart.fromJson(json);
+          return AiCoachChoicesPart.fromJson(json);
         default:
           // Unknown kind — ignore for forward-compatibility.
           return null;
@@ -89,34 +89,34 @@ sealed class JadeUiPart {
   }
 }
 
-/// Meal suggestion cards — rendered as [JadeMealCard] widgets.
-class JadeMealCardsPart extends JadeUiPart {
-  const JadeMealCardsPart({required this.meals});
+/// Meal suggestion cards — rendered as [AiCoachMealCard] widgets.
+class AiCoachMealCardsPart extends AiCoachUiPart {
+  const AiCoachMealCardsPart({required this.meals});
 
-  final List<JadeMealSuggestion> meals;
+  final List<AiCoachMealSuggestion> meals;
 
-  factory JadeMealCardsPart.fromJson(Map<String, dynamic> json) {
+  factory AiCoachMealCardsPart.fromJson(Map<String, dynamic> json) {
     final rawMeals = json['meals'];
-    final meals = <JadeMealSuggestion>[];
+    final meals = <AiCoachMealSuggestion>[];
     if (rawMeals is List) {
       for (final m in rawMeals) {
         if (m is Map<String, dynamic>) {
-          meals.add(JadeMealSuggestion.fromJson(m));
+          meals.add(AiCoachMealSuggestion.fromJson(m));
         }
       }
     }
-    return JadeMealCardsPart(meals: meals);
+    return AiCoachMealCardsPart(meals: meals);
   }
 }
 
-/// Multiple-choice prompt — rendered as [JadeChoiceButtons].
-class JadeChoicesPart extends JadeUiPart {
-  const JadeChoicesPart({required this.question, required this.options});
+/// Multiple-choice prompt — rendered as [AiCoachChoiceButtons].
+class AiCoachChoicesPart extends AiCoachUiPart {
+  const AiCoachChoicesPart({required this.question, required this.options});
 
   final String question;
   final List<String> options;
 
-  factory JadeChoicesPart.fromJson(Map<String, dynamic> json) {
+  factory AiCoachChoicesPart.fromJson(Map<String, dynamic> json) {
     final rawOptions = json['options'];
     final options = <String>[];
     if (rawOptions is List) {
@@ -124,7 +124,7 @@ class JadeChoicesPart extends JadeUiPart {
         if (o is String) options.add(o);
       }
     }
-    return JadeChoicesPart(
+    return AiCoachChoicesPart(
       question: (json['question'] as String?) ?? '',
       options: options,
     );

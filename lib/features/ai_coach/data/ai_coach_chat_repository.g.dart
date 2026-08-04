@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'jade_chat_repository.dart';
+part of 'ai_coach_chat_repository.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,50 +9,50 @@ part of 'jade_chat_repository.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(jadeChatRepository)
-const jadeChatRepositoryProvider = JadeChatRepositoryProvider._();
+@ProviderFor(aiCoachChatRepository)
+const aiCoachChatRepositoryProvider = AiCoachChatRepositoryProvider._();
 
-final class JadeChatRepositoryProvider
+final class AiCoachChatRepositoryProvider
     extends
         $FunctionalProvider<
-          JadeChatRepository,
-          JadeChatRepository,
-          JadeChatRepository
+          AiCoachChatRepository,
+          AiCoachChatRepository,
+          AiCoachChatRepository
         >
-    with $Provider<JadeChatRepository> {
-  const JadeChatRepositoryProvider._()
+    with $Provider<AiCoachChatRepository> {
+  const AiCoachChatRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'jadeChatRepositoryProvider',
+        name: r'aiCoachChatRepositoryProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$jadeChatRepositoryHash();
+  String debugGetCreateSourceHash() => _$aiCoachChatRepositoryHash();
 
   @$internal
   @override
-  $ProviderElement<JadeChatRepository> $createElement(
+  $ProviderElement<AiCoachChatRepository> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  JadeChatRepository create(Ref ref) {
-    return jadeChatRepository(ref);
+  AiCoachChatRepository create(Ref ref) {
+    return aiCoachChatRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(JadeChatRepository value) {
+  Override overrideWithValue(AiCoachChatRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<JadeChatRepository>(value),
+      providerOverride: $SyncValueProvider<AiCoachChatRepository>(value),
     );
   }
 }
 
-String _$jadeChatRepositoryHash() =>
-    r'7b2bafea99809077de48aaf182f6812506056274';
+String _$aiCoachChatRepositoryHash() =>
+    r'cce187cc0aaa09760fb305e65520c156fb0bd119';

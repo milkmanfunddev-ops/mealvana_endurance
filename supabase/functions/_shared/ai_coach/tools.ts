@@ -1,5 +1,5 @@
 /**
- * Jade chat tool set — service-role data fetchers + logBaselineMeal writer.
+ * Mealvana AI chat tool set — service-role data fetchers + logBaselineMeal writer.
  *
  * All tools are scoped to the authenticated user's id. Descriptions are kept
  * concise so the model picks the right tool without ambiguity.
@@ -7,7 +7,7 @@
  * AI SDK v6 API (npm:ai@6): tool({ description, inputSchema, execute })
  * Parameters use Zod schemas.
  *
- * Factory: makeJadeTools(ctx) closes over the service-role client, userId,
+ * Factory: makeAiCoachTools(ctx) closes over the service-role client, userId,
  * timezone, and optional location so every execute() has what it needs without
  * passing arguments through the AI SDK call.
  */
@@ -21,7 +21,7 @@ import { getInSeasonProduce } from './in_season.ts';
 // Context
 // ---------------------------------------------------------------------------
 
-export interface JadeToolContext {
+export interface AiCoachToolContext {
   serviceClient: SupabaseClient;
   userId: string;
   /** IANA timezone string, e.g. "America/Chicago". Used for day-boundary logic. */
@@ -54,7 +54,7 @@ function addDays(isoDate: string, days: number): string {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function makeJadeTools(ctx: JadeToolContext) {
+export function makeAiCoachTools(ctx: AiCoachToolContext) {
   const { serviceClient, userId, timezone, location } = ctx;
 
   return {
@@ -75,7 +75,10 @@ export function makeJadeTools(ctx: JadeToolContext) {
             .select(
               'id, gender, birthday, height_feet, height_inches, weight_pounds, ' +
               'body_fat_pct, dietary_preference, allergies, gut_training_level, ' +
-              'cycling_ftp_watts, swimming_css_seconds_per_100m, runs_with_water_bottle',
+              'cycling_ftp_watts, swimming_css_seconds_per_100m, runs_with_water_bottle, ' +
+              // Returned so the model can confirm which units to answer in —
+              // the numbers above are always pounds and feet/inches.
+              'unit_system',
             )
             .eq('id', userId)
             .maybeSingle(),
@@ -342,7 +345,9 @@ export function makeJadeTools(ctx: JadeToolContext) {
             const high = maxTemps[i] ?? null;
             const advisory =
               high !== null && high > 85
-                ? 'Heat advisory: increase fluid intake ~8–12 oz/hr vs baseline'
+                // Canonical mL/hr (~8-12 fl oz). The system prompt tells the
+                // model which units to write back in, so state it once here.
+                ? 'Heat advisory: increase fluid intake ~240–350 mL/hr vs baseline'
                 : high !== null && high < 35
                   ? 'Cold advisory: fuel early — perceived effort rises, appetite may drop'
                   : null;
@@ -550,7 +555,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
             protein_g: derivedProtein ?? null,
             fat_g: derivedFat ?? null,
             sodium_mg: derivedSodium ?? null,
-            notes: 'Recorded by Jade from chat',
+            notes: 'Recorded by Mealvana AI from chat',
             is_deleted: false,
           })
           .select('id')
@@ -572,5 +577,5 @@ export function makeJadeTools(ctx: JadeToolContext) {
   } as const;
 }
 
-/** Convenience type — the return value of makeJadeTools */
-export type JadeTools = ReturnType<typeof makeJadeTools>;
+/** Convenience type — the return value of makeAiCoachTools */
+export type AiCoachTools = ReturnType<typeof makeAiCoachTools>;

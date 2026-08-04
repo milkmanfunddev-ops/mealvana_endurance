@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
-import 'package:mealvana_endurance/features/jade/data/jade_chat_repository.dart';
-import 'package:mealvana_endurance/features/jade/domain/jade_conversation.dart';
-import 'package:mealvana_endurance/features/jade/domain/jade_message.dart';
-import 'package:mealvana_endurance/features/jade/presentation/providers/jade_chat_controller.dart';
+import 'package:mealvana_endurance/features/ai_coach/data/ai_coach_chat_repository.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_conversation.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -38,41 +38,41 @@ class _FakeContentService extends Fake implements ContentService {
       defaultValue ?? '';
 }
 
-class _MockRepository extends Fake implements JadeChatRepository {
+class _MockRepository extends Fake implements AiCoachChatRepository {
   _MockRepository({
     this.conversations = const [],
     this.messagesByConversation = const {},
   });
 
-  final List<JadeConversation> conversations;
-  final Map<String, List<JadeMessage>> messagesByConversation;
+  final List<AiCoachConversation> conversations;
+  final Map<String, List<AiCoachMessage>> messagesByConversation;
 
   int fetchConversationsCalls = 0;
   int fetchMessagesCalls = 0;
   String? lastFetchedConversationId;
 
   @override
-  Future<List<JadeConversation>> fetchConversations() async {
+  Future<List<AiCoachConversation>> fetchConversations() async {
     fetchConversationsCalls++;
     return conversations;
   }
 
   @override
-  Future<List<JadeMessage>> fetchMessages(String conversationId) async {
+  Future<List<AiCoachMessage>> fetchMessages(String conversationId) async {
     fetchMessagesCalls++;
     lastFetchedConversationId = conversationId;
     return messagesByConversation[conversationId] ?? [];
   }
 
   @override
-  Future<JadeSendResult> requestOpener({
+  Future<AiCoachSendResult> requestOpener({
     String? timezone,
     double? latitude,
     double? longitude,
   }) async {
-    return JadeSendResult(
+    return AiCoachSendResult(
       conversationId: '',
-      eventStream: Stream.fromIterable([const JadeDoneEvent()]),
+      eventStream: Stream.fromIterable([const AiCoachDoneEvent()]),
     );
   }
 }
@@ -82,7 +82,7 @@ class _MockRepository extends Fake implements JadeChatRepository {
 // ---------------------------------------------------------------------------
 
 void main() {
-  group('JadeChatController.build – conversation resume', () {
+  group('AiCoachChatController.build – conversation resume', () {
     late _FakeLogger logger;
     late _FakeContentService contentService;
 
@@ -94,7 +94,7 @@ void main() {
     ProviderContainer createContainer(_MockRepository repository) {
       final container = ProviderContainer(
         overrides: [
-          jadeChatRepositoryProvider.overrideWithValue(repository),
+          aiCoachChatRepositoryProvider.overrideWithValue(repository),
           appLoggerProvider.overrideWithValue(logger),
           contentServiceProvider.overrideWithValue(contentService),
         ],
@@ -105,7 +105,7 @@ void main() {
 
     test('resumes most recent conversation when history exists', () async {
       final now = DateTime.now();
-      final conversation = JadeConversation(
+      final conversation = AiCoachConversation(
         id: 'conv-abc-123',
         title: 'Nutrition chat',
         createdAt: now.subtract(const Duration(hours: 2)),
@@ -113,17 +113,17 @@ void main() {
         isDeleted: false,
       );
       final messages = [
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-1',
           conversationId: 'conv-abc-123',
-          role: JadeMessageRole.user,
+          role: AiCoachMessageRole.user,
           content: 'What should I eat before my run?',
           createdAt: now.subtract(const Duration(minutes: 10)),
         ),
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-2',
           conversationId: 'conv-abc-123',
-          role: JadeMessageRole.assistant,
+          role: AiCoachMessageRole.assistant,
           content: 'For a long run, aim for 1-4g/kg of carbs...',
           createdAt: now.subtract(const Duration(minutes: 9)),
         ),
@@ -136,9 +136,9 @@ void main() {
       final container = createContainer(repo);
 
       // Wait for the async build to complete.
-      final sub = container.listen(jadeChatControllerProvider, (_, __) {});
-      await container.read(jadeChatControllerProvider.future);
-      final state = container.read(jadeChatControllerProvider).value!;
+      final sub = container.listen(aiCoachChatControllerProvider, (_, __) {});
+      await container.read(aiCoachChatControllerProvider.future);
+      final state = container.read(aiCoachChatControllerProvider).value!;
 
       expect(repo.fetchConversationsCalls, 1);
       expect(repo.fetchMessagesCalls, 1);
@@ -156,9 +156,9 @@ void main() {
       final repo = _MockRepository(conversations: []);
       final container = createContainer(repo);
 
-      final sub = container.listen(jadeChatControllerProvider, (_, __) {});
-      await container.read(jadeChatControllerProvider.future);
-      final state = container.read(jadeChatControllerProvider).value!;
+      final sub = container.listen(aiCoachChatControllerProvider, (_, __) {});
+      await container.read(aiCoachChatControllerProvider.future);
+      final state = container.read(aiCoachChatControllerProvider).value!;
 
       expect(repo.fetchConversationsCalls, 1);
       expect(repo.fetchMessagesCalls, 0);
@@ -171,7 +171,7 @@ void main() {
 
     test('subsequent send appends to resumed conversation', () async {
       final now = DateTime.now();
-      final conversation = JadeConversation(
+      final conversation = AiCoachConversation(
         id: 'conv-existing',
         title: '',
         createdAt: now,
@@ -179,10 +179,10 @@ void main() {
         isDeleted: false,
       );
       final messages = [
-        JadeMessage(
+        AiCoachMessage(
           id: 'msg-old',
           conversationId: 'conv-existing',
-          role: JadeMessageRole.assistant,
+          role: AiCoachMessageRole.assistant,
           content: 'Hello!',
           createdAt: now,
         ),
@@ -194,9 +194,9 @@ void main() {
       );
       final container = createContainer(repo);
 
-      final sub = container.listen(jadeChatControllerProvider, (_, __) {});
-      await container.read(jadeChatControllerProvider.future);
-      final state = container.read(jadeChatControllerProvider).value!;
+      final sub = container.listen(aiCoachChatControllerProvider, (_, __) {});
+      await container.read(aiCoachChatControllerProvider.future);
+      final state = container.read(aiCoachChatControllerProvider).value!;
 
       expect(
         state.conversationId,

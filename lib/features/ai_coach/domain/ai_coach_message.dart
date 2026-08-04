@@ -1,20 +1,20 @@
-import 'jade_ui_part.dart';
+import 'ai_coach_ui_part.dart';
 
-/// Role of a message participant in a Jade conversation.
-enum JadeMessageRole {
+/// Role of a message participant in a Mealvana AI conversation.
+enum AiCoachMessageRole {
   user,
   assistant;
 
-  static JadeMessageRole fromString(String value) {
+  static AiCoachMessageRole fromString(String value) {
     return switch (value) {
-      'user' => JadeMessageRole.user,
-      'assistant' => JadeMessageRole.assistant,
-      _ => JadeMessageRole.user,
+      'user' => AiCoachMessageRole.user,
+      'assistant' => AiCoachMessageRole.assistant,
+      _ => AiCoachMessageRole.user,
     };
   }
 }
 
-/// Domain model for a single message in a Jade AI coach conversation.
+/// Domain model for a single message in a Mealvana AI AI coach conversation.
 ///
 /// Maps to the `jade_messages` Supabase table (read via RLS — the client
 /// never inserts; the edge function persists both sides).
@@ -22,8 +22,8 @@ enum JadeMessageRole {
 /// [uiParts] is populated from `metadata.ui_parts` (jsonb) when loading
 /// history, and accumulated live from the NDJSON stream during the current
 /// session.
-class JadeMessage {
-  const JadeMessage({
+class AiCoachMessage {
+  const AiCoachMessage({
     required this.id,
     required this.conversationId,
     required this.role,
@@ -34,12 +34,12 @@ class JadeMessage {
 
   final String id;
   final String conversationId;
-  final JadeMessageRole role;
+  final AiCoachMessageRole role;
 
   /// The text content of the message.
   ///
   /// For in-flight assistant messages this is accumulated incrementally as
-  /// streaming chunks arrive; [isStreaming] on [JadeChatState] marks when
+  /// streaming chunks arrive; [isStreaming] on [AiCoachChatState] marks when
   /// accumulation is in progress.
   final String content;
 
@@ -49,11 +49,11 @@ class JadeMessage {
   ///
   /// For persisted messages these come from `metadata.ui_parts`.
   /// For the in-flight streaming message they are accumulated live.
-  final List<JadeUiPart> uiParts;
+  final List<AiCoachUiPart> uiParts;
 
-  factory JadeMessage.fromJson(Map<String, dynamic> json) {
+  factory AiCoachMessage.fromJson(Map<String, dynamic> json) {
     // Parse ui_parts from metadata.ui_parts (jsonb).
-    final uiParts = <JadeUiPart>[];
+    final uiParts = <AiCoachUiPart>[];
     try {
       final metadata = json['metadata'];
       if (metadata is Map<String, dynamic>) {
@@ -61,7 +61,7 @@ class JadeMessage {
         if (rawParts is List) {
           for (final p in rawParts) {
             if (p is Map<String, dynamic>) {
-              final part = JadeUiPart.fromJson(p);
+              final part = AiCoachUiPart.fromJson(p);
               if (part != null) uiParts.add(part);
             }
           }
@@ -71,10 +71,10 @@ class JadeMessage {
       // Malformed metadata — silently ignore; uiParts stays empty.
     }
 
-    return JadeMessage(
+    return AiCoachMessage(
       id: json['id'] as String,
       conversationId: json['conversation_id'] as String,
-      role: JadeMessageRole.fromString(json['role'] as String),
+      role: AiCoachMessageRole.fromString(json['role'] as String),
       content: (json['content'] as String?) ?? '',
       createdAt: DateTime.parse(json['created_at'] as String),
       uiParts: uiParts,
@@ -82,8 +82,8 @@ class JadeMessage {
   }
 
   /// Returns a copy with the given [content] applied (used during streaming).
-  JadeMessage copyWithContent(String content) {
-    return JadeMessage(
+  AiCoachMessage copyWithContent(String content) {
+    return AiCoachMessage(
       id: id,
       conversationId: conversationId,
       role: role,
@@ -93,9 +93,9 @@ class JadeMessage {
     );
   }
 
-  /// Returns a copy with a new [JadeUiPart] appended.
-  JadeMessage copyWithUiPart(JadeUiPart part) {
-    return JadeMessage(
+  /// Returns a copy with a new [AiCoachUiPart] appended.
+  AiCoachMessage copyWithUiPart(AiCoachUiPart part) {
+    return AiCoachMessage(
       id: id,
       conversationId: conversationId,
       role: role,
@@ -107,6 +107,6 @@ class JadeMessage {
 
   @override
   String toString() =>
-      'JadeMessage(id: $id, role: ${role.name}, content: ${content.length}ch, '
+      'AiCoachMessage(id: $id, role: ${role.name}, content: ${content.length}ch, '
       'uiParts: ${uiParts.length})';
 }

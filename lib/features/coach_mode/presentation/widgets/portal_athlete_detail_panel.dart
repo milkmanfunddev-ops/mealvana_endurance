@@ -24,6 +24,9 @@ import 'portal_athlete_profile_form.dart';
 import 'create_carb_loading_dialog.dart';
 import '../../../events/presentation/screens/event_detail_screen.dart';
 import 'portal_nutrition_targets_form.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 
 /// Right panel showing athlete details within the coach portal
 class PortalAthleteDetailPanel extends ConsumerStatefulWidget {
@@ -60,6 +63,14 @@ class _PortalAthleteDetailPanelState
   }
 
   @override
+  /// The coach's own unit preference — `unitSystemProvider` resolves to the
+  /// logged-in user, not the athlete being viewed.
+  DistanceUnit _distanceUnit() =>
+      (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+          UnitSystem.metric
+      ? DistanceUnit.kilometers
+      : DistanceUnit.miles;
+
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(
       athleteDetailControllerProvider(widget.relationshipId),
@@ -741,7 +752,7 @@ class _PortalAthleteDetailPanelState
                     ),
                   ),
                   Text(
-                    '${activity.distanceMiles?.toStringAsFixed(1) ?? "-"} mi - ${_formatDate(activity.scheduledDateTime)}',
+                    '${activity.distanceMiles == null ? "-" : UnitFormatter.formatDistance(activity.distanceMiles!, unit: _distanceUnit())} - ${_formatDate(activity.scheduledDateTime)}',
                     style: const TextStyle(
                       color: AppColors.textDarkSecondary,
                       fontSize: 12,

@@ -193,12 +193,12 @@ class AppDatabase extends _$AppDatabase {
   /// matching Supabase column (`activities.is_fasted boolean not null
   /// default false`) already exists on dev + prod.
   ///
-  /// Schema version 11: meal logging + Jade groundwork. Adds three tables:
+  /// Schema version 11: meal logging + Mealvana AI groundwork. Adds three tables:
   ///   • meal_logs   — logged meals on the Daily Macros tab (offline-first,
   ///     soft-deleted via is_deleted, needs_upload dirty tracking)
   ///   • saved_meals — explicit user favorites for one-tap re-logging
   ///   • recipes     — read-only mirror of the curated recipe catalog
-  /// Jade chat tables (jade_conversations/jade_messages/jade_calls) are
+  /// Mealvana AI chat tables (jade_conversations/jade_messages/jade_calls) are
   /// online-only and have NO Drift mirror. Supabase schema:
   /// docs/database/meal_logging_jade_schema.sql (applied dev + prod).
   /// NOTE: the matching Supabase `app_config` schema version (read by
@@ -362,7 +362,7 @@ class AppDatabase extends _$AppDatabase {
           await ensureTable(personalFormulasTable);
         }
 
-        // v11: Meal logging + Jade groundwork — meal_logs, saved_meals,
+        // v11: Meal logging + Mealvana AI groundwork — meal_logs, saved_meals,
         // recipes. No local FK references between them.
         if (from < 11) {
           await ensureTable(mealLogsTable);

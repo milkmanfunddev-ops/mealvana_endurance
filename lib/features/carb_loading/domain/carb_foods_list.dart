@@ -107,7 +107,7 @@ class CarbFoodsList {
       name: 'juice_lemonade',
       displayName: 'Juice/lemonade',
       category: 'liquids',
-      description: '16 oz',
+      description: '16 fl oz (475 mL)',
     ),
     CarbFood(
       name: 'honey',

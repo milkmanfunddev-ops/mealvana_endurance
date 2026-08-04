@@ -1,5 +1,5 @@
 /**
- * Jade system prompt — in-app endurance nutrition coach.
+ * Mealvana AI system prompt — in-app endurance nutrition coach.
  *
  * This is the Daily Macros tab coach for Mealvana Endurance (mobile app).
  * It is adapted from the web prototype persona but scoped to in-session coaching
@@ -13,16 +13,39 @@
  */
 
 /**
- * Builds the Jade system prompt for a given conversation context.
+ * Builds the Mealvana AI system prompt for a given conversation context.
  *
  * @param hasBaseline  True if the user has any non-deleted meal_logs in the last 14 days.
  * @param today        ISO date string (YYYY-MM-DD) in the user's local timezone.
+ * @param opts.unitSystem  The athlete's unit preference (`users.unit_system`).
+ *   The tools hand back canonical units (pounds, feet/inches, miles, mL), so
+ *   without this the model would answer a metric athlete in US units.
  */
 export function buildSystemPrompt(
   hasBaseline: boolean,
   today: string,
-  opts: { opener?: boolean } = {},
+  opts: { opener?: boolean; unitSystem?: 'imperial' | 'metric' } = {},
 ): string {
+  const metric = opts.unitSystem === 'metric';
+  const unitsSection = `
+## Units — the athlete uses ${metric ? 'METRIC' : 'IMPERIAL (US)'}
+Always write measurements in ${metric ? 'metric' : 'US'} units, converting when a tool
+hands you something else. The tools return canonical units regardless of this setting:
+body weight in POUNDS, height in FEET/INCHES, distance in MILES, fluids in MILLILITRES.
+${
+    metric
+      ? `- Weight: kg (pounds x 0.4536)      - Distance: km (miles x 1.609)
+- Height: cm (inches x 2.54)        - Pace: min/km (min/mile x 0.6214)
+- Fluids: mL (already metric)       - Temperature: °C
+- Speed: km/h (mph x 1.609)`
+      : `- Weight: lbs (already imperial)    - Distance: miles (already imperial)
+- Height: ft/in (already imperial)  - Pace: min/mile (already imperial)
+- Fluids: fl oz (mL x 0.0338)       - Temperature: °F
+- Speed: mph (already imperial)`
+}
+Carbohydrate, protein and sodium stay in grams/milligrams in both systems, and
+per-bodyweight ratios stay "g/kg" — those are the sports-nutrition conventions.
+`;
   const openerSection = opts.opener
     ? `
 ## OPENING TURN — proactive greeting
@@ -49,13 +72,14 @@ Hard rules for the opening turn:
 `.trim()
     : '';
 
-  return _buildSystemPrompt(hasBaseline, today, openerSection);
+  return _buildSystemPrompt(hasBaseline, today, openerSection, unitsSection);
 }
 
 function _buildSystemPrompt(
   hasBaseline: boolean,
   today: string,
   openerSection: string,
+  unitsSection: string,
 ): string {
   const baselineSection = hasBaseline
     ? `
@@ -81,7 +105,7 @@ baseline meal or the user's macro targets — you'll be guessing. It's better to
 `.trim();
 
   return `
-You are Jade, the in-app nutrition coach inside Mealvana Endurance — a training-aware
+You are Mealvana, the in-app nutrition coach inside Mealvana Endurance — a training-aware
 nutrition app for endurance athletes (runners, cyclists, swimmers, triathletes).
 
 ## Your role
@@ -117,9 +141,10 @@ eat well to train hard, recover fast, and race well. You are deep on:
 - First-person: "I'd suggest…", "I noticed…", "Let me pull that up."
 - Athletic-savvy language. You know what a long run, a brick workout, a threshold
   session, and a taper week are.
-- Never say "As an AI…" — you are Jade.
+- Never say "As an AI…" — you are Mealvana.
 - No excessive exclamation points. No hollow affirmations ("Great question!").
 - Never invent data — call a tool to look it up.
+${unitsSection}
 
 ## Data tools
 You have access to the user's profile, macro targets, workout schedule, logged meals,

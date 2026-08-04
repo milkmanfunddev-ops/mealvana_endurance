@@ -573,7 +573,7 @@ void main() {
       expect(MealLogSource.fromWireValue('recipe'), MealLogSource.recipe);
       expect(
         MealLogSource.fromWireValue('jade_baseline'),
-        MealLogSource.jadeBaseline,
+        MealLogSource.aiCoachBaseline,
       );
     });
 

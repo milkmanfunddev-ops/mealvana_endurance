@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../../activities/domain/brick_metadata.dart';
+import '../../../../../shared/providers/unit_system_provider.dart';
+import '../../../../../shared/utils/unit_formatter.dart';
+import '../../../domain/run_parameters.dart';
 import '../../utils/activity_detail_helpers.dart';
 import '../new_activity/brick/brick_composite_hero_image.dart';
 import 'geometric_pattern_painter.dart';
@@ -10,19 +14,23 @@ import 'geometric_pattern_painter.dart';
 ///
 /// Shows side-by-side sport icons, brick type name, combined distance/duration,
 /// and scheduled date/time information.
-class BrickHeader extends StatelessWidget {
+class BrickHeader extends ConsumerWidget {
   const BrickHeader({super.key, required this.brick, required this.metadata});
 
   final Activity brick;
   final BrickMetadata metadata;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
+
     return Column(
       children: [
         _buildHeroImageWithIcons(context),
         const SizedBox(height: AppSpacing.lg),
-        _buildBrickInfo(context),
+        _buildBrickInfo(context, useMetric),
         const SizedBox(height: AppSpacing.lg),
         _buildScheduleInfo(context),
       ],
@@ -82,7 +90,7 @@ class BrickHeader extends StatelessWidget {
   }
 
   /// Build brick type name and summary info
-  Widget _buildBrickInfo(BuildContext context) {
+  Widget _buildBrickInfo(BuildContext context, bool useMetric) {
     return Column(
       children: [
         Text(
@@ -96,7 +104,7 @@ class BrickHeader extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          _getDistanceSummary(),
+          _getDistanceSummary(useMetric),
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 16,
@@ -167,8 +175,11 @@ class BrickHeader extends StatelessWidget {
     return '${sports.join('/')} BRICK';
   }
 
-  /// Get combined distance summary (e.g., "2000m swim + 6.2mi run")
-  String _getDistanceSummary() {
+  /// Get combined distance summary (e.g., "2000m swim + 6.2 mi run").
+  ///
+  /// Swim legs stay in metres in both unit systems — pool distances are metric
+  /// everywhere, matching `BrickSegmentCard` and the swimming input screen.
+  String _getDistanceSummary(bool useMetric) {
     final parts = <String>[];
 
     for (final segment in metadata.segments) {
@@ -177,7 +188,11 @@ class BrickHeader extends StatelessWidget {
       if (segment.sport == 'swimming' && segment.distanceMeters != null) {
         parts.add('${segment.distanceMeters!.toInt()}m $sportName');
       } else if (segment.distanceMiles != null) {
-        parts.add('${segment.distanceMiles!.toStringAsFixed(1)}mi $sportName');
+        final distance = UnitFormatter.formatDistance(
+          segment.distanceMiles!,
+          unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+        );
+        parts.add('$distance $sportName');
       } else {
         parts.add('${segment.durationMinutes}min $sportName');
       }

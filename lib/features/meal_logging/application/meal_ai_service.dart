@@ -78,7 +78,7 @@ MealAiService mealAiService(Ref ref) {
 // Service
 // ---------------------------------------------------------------------------
 
-/// Application-layer service for Jade AI meal analysis.
+/// Application-layer service for Mealvana AI AI meal analysis.
 ///
 /// All network failures are mapped to [MealAiException] with a user-presentable
 /// [MealAiException.userMessage] and a discriminated [MealAiFailureKind] so

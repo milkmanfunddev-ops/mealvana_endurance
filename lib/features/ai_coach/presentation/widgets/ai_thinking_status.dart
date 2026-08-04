@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/kyle_design/app_text_styles.dart';
 
-/// The one-line running commentary shown while a Jade AI call is in flight.
+/// The one-line running commentary shown while a Mealvana AI AI call is in flight.
 ///
 /// The line advances through [phases] every [phaseDuration] and then holds on
 /// the last one until the call returns — cycling back to the first would read
@@ -18,8 +18,8 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 ///
 /// Honours the platform "reduce motion" setting by switching without a
 /// cross-fade.
-class JadeThinkingStatus extends StatefulWidget {
-  const JadeThinkingStatus({
+class AiThinkingStatus extends StatefulWidget {
+  const AiThinkingStatus({
     super.key,
     required this.phases,
     this.style,
@@ -49,10 +49,10 @@ class JadeThinkingStatus extends StatefulWidget {
   ];
 
   @override
-  State<JadeThinkingStatus> createState() => _JadeThinkingStatusState();
+  State<AiThinkingStatus> createState() => _AiThinkingStatusState();
 }
 
-class _JadeThinkingStatusState extends State<JadeThinkingStatus> {
+class _AiThinkingStatusState extends State<AiThinkingStatus> {
   Timer? _timer;
   int _phase = 0;
 
