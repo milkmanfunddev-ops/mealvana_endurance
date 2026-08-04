@@ -2,10 +2,6 @@
 
 comment on database postgres is 'default administrative connection database';
 
-grant create on database postgres to supabase_etl_admin;
-
-grant connect, create, temporary on database postgres to dashboard_user;
-
 -- Unknown how to generate base type type
 
 alter type gtrgm owner to supabase_admin;

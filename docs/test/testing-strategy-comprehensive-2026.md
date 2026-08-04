@@ -54,7 +54,7 @@ removed — integration = `integration_test` + Patrol.
    surfaces: Planned/Eaten/Left macro table, macro_palette, nutrition cards, formula editor.
 4. **Accessibility assertions** — zero new deps, built into `flutter_test`:
    `meetsGuideline(textContrastGuideline / androidTapTargetGuideline / labeledTapTargetGuideline)`
-   on nutrition inputs, macro cards, Jade chat.
+   on nutrition inputs, macro cards, Mealvana AI chat.
 5. **Performance/jank timeline tests** — `binding.traceAction` + `missed_frame_build_budget_count`
    on the Daily Macros scroll, formula editor, activities list. No new deps. (Not on web.)
 6. **Mutation testing (`dart_mutant`)** — quarterly, on the formula logic only, to find

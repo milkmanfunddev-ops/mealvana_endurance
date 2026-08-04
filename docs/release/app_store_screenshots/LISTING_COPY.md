@@ -49,5 +49,5 @@ Upload the 6 panels in this folder in numbered order (1→6). The first 3 show i
 (same aspect ratio, clean scale). Replaces the raw grabs in `../release_screenshots/`.
 
 ## Deliberately NOT claimed — not in prod / not live (do not add until they ship)
-AI photo logging (dev-only), Jade AI coach (not yet available), meal planner, grocery lists,
+AI photo logging (dev-only), Mealvana AI coach (not yet available), meal planner, grocery lists,
 Strava, Apple Health / HealthKit.

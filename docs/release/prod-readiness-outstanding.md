@@ -13,6 +13,58 @@ Related: `docs/deployment/README.md` (deploy commands + refs),
 
 ---
 
+## 0a. Status update — 2026-08-03 parity sweep (verified live)
+
+Everything below was executed and verified against the live projects on
+2026-08-03. Items in §§1–6 are superseded where noted.
+
+**Done:**
+- **Edge functions (§1): CLOSED.** All 28 repo functions deployed to prod,
+  including `ensure-credits` (new) and the Garmin pair. The `get-foods`
+  "anomaly" was a false alarm — prod/dev/repo were byte-identical; the version
+  number is a per-project deploy counter, not a code version.
+- **Schema: prod now matches dev exactly** (live-catalog comparison, not the
+  stale `docs/*_schema.txt` June dumps — regenerate those). The only real delta
+  was the RLS baseline migration, applied to prod as `rls_baseline_prod`:
+  0 tables RLS-off, 106 policies on both envs, `feedback` inserts un-broken
+  (it had RLS on with zero policies — every submission since has failed
+  silently). Preflight confirmed the 9 orphan device-only users are dead
+  (last activity Jan 2026). Post-apply: anon-key `get-foods` returns 200.
+- **RevenueCat (§2): prod App Store app fully credentialed** (ASC API key
+  `565CMLNU3G` + In-App Purchase key `3Q27QQ626C`). Apple product ids are
+  team-unique and the dev app owns the plain ids, so prod sells
+  `mealvana_credits_50_prod` / `mealvana_credits_250_prod` — created in App
+  Store Connect (consumables, $4.99/$19.99, en-US localized, 175 territories),
+  mirrored in RC and attached to the `credits` packages; the unsuffixed prod
+  RC products are archived, as are all nine retired 100/500/1200 products.
+  Client map (`credit_packs.dart`) and `revenuecat-webhook` map extended with
+  the `_prod` ids; webhook redeployed to both envs.
+- **Auth emails (§3): prod SMTP + templates configured** (smtp.resend.com:465,
+  Resend key from `secrets/resend.env`, branded OTP `{{ .Token }}` templates
+  mirrored from dev). No redirect allow-listing needed — the flow is 6-digit
+  OTP end to end. Management-API gotcha: PATCHing `smtp_pass` alone wipes the
+  whole smtp block; always send the full block.
+- **Codemagic: prod builds now hard-fail on a drifted `DOTENV_PROD_LOCAL`**
+  (presence gate for SUPABASE_URL/ANON_KEY, SENTRY_DSN, MIXPANEL token, both
+  RC keys; forbids REVENUECAT_API_KEY_TEST). `SENTRY_AUTH_TOKEN` verified
+  present in the `mealvana_prod` group.
+
+**Still open (needs Lee / release day):**
+1. Submit the two IAPs for review **with the 1.23.0 app version** in App Store
+   Connect (Apple requires the first IAP to ride an app version; needs a
+   review screenshot).
+2. Google Play IAPs — still blocked until an AAB with the BILLING permission
+   ships.
+3. Release-day switches, in order: store products approved → sandbox purchase
+   verified → `AI_CREDITS_ENFORCED=true` → AI surface flags → prod auth
+   `mailer_autoconfirm=false` (only after 1.23.0's OTP screen is live —
+   flipping it earlier breaks 1.22.0 signups).
+4. `AI_FREE_MONTHLY_CREDITS` is **50 on both envs**; §2.2's analysis says prod
+   should launch at 20. Decide before launch.
+5. Regenerate `docs/dev_schema.txt` / `docs/prod_schema.txt` (stale June dumps).
+
+---
+
 ## 0. The short version
 
 | Area | Blocking prod? | Summary |
@@ -20,9 +72,9 @@ Related: `docs/deployment/README.md` (deploy commands + refs),
 | Edge functions | **Yes** | 26 of 28 are behind dev; `ensure-credits` does not exist in prod at all |
 | AI credits / RevenueCat | **Yes** | No store products provisioned; prod secrets unverified |
 | Supabase auth emails | **Yes** | Signup verification never configured |
-| AI feature flags | Decision | Describe/Photo/Jade/Coach are OFF in prod by design — flipping them is a cost decision |
+| AI feature flags | Decision | Describe/Photo/Mealvana AI/Coach are OFF in prod by design — flipping them is a cost decision |
 | Garmin | **Yes** | Prod is 7 versions behind on `garmin-push`; two filed bugs are fixed in dev only |
-| Schema | No | Prod already has the meal/jade/token tables and credit RPCs (an earlier note claiming otherwise is stale) |
+| Schema | No | Prod already has the meal/ai_coach/token tables and credit RPCs (an earlier note claiming otherwise is stale) |
 
 ---
 
@@ -101,7 +153,7 @@ Confirmed **absent** in prod (so code defaults apply):
   and unmetered. Flipping this to `true` is the moment the paywall goes live.
 - `RC_PRODUCT_CREDITS` — absent is correct; the code default now maps 50/250.
 - `DESCRIBE_MEAL_MODEL` / `ANALYZE_MEAL_PHOTO_MODEL` / `COACH_INSIGHT_MODEL` /
-  `JADE_MODEL` — absent means the code default, currently **Sonnet 4.6**.
+  `AI_COACH_MODEL` (was `JADE_MODEL`) — absent means the code default, currently **Sonnet 4.6**.
 
 **`AI_FREE_MONTHLY_CREDITS` is set in prod to an unverified value.** Its digest
 differs from dev's. Dev was found set to 500, which at Sonnet rates is
@@ -186,7 +238,7 @@ Verified present in prod: `token_wallets`, `token_ledger`, `ai_usage`,
 `jade_messages`, `jade_calls`, `carb_loading_day_meals`; plus the
 `ensure_free_credits` / `grant_credits` / `debit_credits` RPCs.
 
-An earlier note that "prod still lacks 6 meal/jade tables" is **stale** — it was
+An earlier note that "prod still lacks 6 meal/ai_coach tables" is **stale** — it was
 true when meal logging was built and has since been resolved.
 
 Still to confirm at release time: the Drift schema version the shipping binary

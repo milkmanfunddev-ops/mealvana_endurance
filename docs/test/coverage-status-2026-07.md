@@ -33,7 +33,7 @@ Update it when a layer materially changes; stale claims here are worse than no c
   email login → sentinel `bottom_nav.timeline_tab`). Flows self-skip with
   `noAuthSkipMessage()` when unauthenticated.
 - Prod runs use the prod tester account and create/delete uniquely-named rows under it.
-  Flows that would spend AI money (`jade_chat`) self-skip on prod via `TestConfig.isProd`.
+  Flows that would spend AI money (`ai_coach_chat`) self-skip on prod via `TestConfig.isProd`.
 
 ### Patrol flow inventory
 
@@ -54,7 +54,7 @@ Update it when a layer materially changes; stale claims here are worse than no c
 | meal_log_build (NEW) | build-a-meal via search → log → delete | no AI needed |
 | learn (NEW) | Learn tab → lesson → player | skips if catalog empty |
 | event_checklist_carbload (NEW) | race-day checklist + carb-load protocol screens | cleans up its event |
-| jade_chat (NEW) | send message → assistant reply arrives | dev only; skips if entry gated off |
+| ai_coach_chat (NEW) | send message → assistant reply arrives | dev only; skips if entry gated off |
 | paywall_render (NEW) | /pro renders pricing | never taps buy |
 
 ### Still uncovered by Patrol (accepted gaps, revisit post-1.22)
@@ -90,7 +90,7 @@ weather detail; recipes; share-plan; privacy-consent screen (region-gated); forc
    `test/new_sync/data_sync_service_test.dart` (invert it when fixed).
 5. **`/pro` is unreachable** — route exists, zero UI callers. Paywall can't be seen by
    users. (`paywall_render_flow_test.dart` documents this.)
-6. Jade's coach banner isn't mounted anywhere in `lib/`; Jade is only reachable through
+6. Mealvana AI's coach banner isn't mounted anywhere in `lib/`; Mealvana AI is only reachable through
    the feature-gated route.
 7. `FoodPreferencesV2Screen`: zero callers in `lib/` (likely dead code) + repeats the
    business-logic-in-initState FOA violation.

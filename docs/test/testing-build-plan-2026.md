@@ -60,7 +60,7 @@ This supersedes scope assumptions below. Direction from Lee:
   Wired into `run-algorithm-tests.sh` §1p–§1ac.
 - **Flutter units:** coach_mode (116), calendar+carb_loading (121), meal_logging (92),
   integrations+auth (39) — features that had ~zero service coverage.
-- **Widget content:** coach/calendar/carb + meal/weather/jade (84).
+- **Widget content:** coach/calendar/carb + meal/weather/ai_coach (84).
 - **Verified:** full Flutter suite `+1393 ~4` green, `analyze lib/` clean, Deno green.
 - **Bugs found: ~21** (see `BUGS_FOUND.md`) — 2 HIGH dispose crashes (coach_chat FIXED;
   macro_targets fixed earlier), 2 security (`save-user-food` auth hole, committed
@@ -153,7 +153,7 @@ This supersedes scope assumptions below. Direction from Lee:
 - [ ] **Weather**: assert create-form forecast fetch (`activity_create.view_forecast_link`,
   `temp_value` populates), humidity control adjusts.
 - [ ] **Carb loading** (`event_details.create_carb_loading_button` → protocol), **race checklist**.
-- [ ] **Daily Macros / meal logging / Jade** (logging methods, planned vs eaten, chat).
+- [ ] **Daily Macros / meal logging / Mealvana AI** (logging methods, planned vs eaten, chat).
 - [ ] **Integrations**: finish credentialed connect on **Android** (Garmin/FS/TP — iOS sandboxes OAuth).
 
 ## Phase 3 — Direct edge-function integration suite  *(verify the numbers)* — 🟡 MOSTLY DONE
@@ -225,7 +225,7 @@ Foundation: the Deno harness `supabase/functions/run-algorithm-tests.sh` (§1 de
 - **#24 FIX stacked-allergy compliance** (safety).
 - **#25 Make parity harness deterministic** (real catalog introduced solver RNG non-determinism, masked as 5 knownFailures).
 - **Phase 0** foundations: shared Patrol helpers, Android birth-year picker deadlock, event-delete stale-detail bug, wire Patrol into CI.
-- **Phase 1/2** Patrol breadth: activity types (cycle/swim/brick), edit/update, settings, templates, formula-kit pinning, weather, carb loading, Daily Macros/Jade. *(Food-preferences editing flow — SKIP, phasing out.)*
+- **Phase 1/2** Patrol breadth: activity types (cycle/swim/brick), edit/update, settings, templates, formula-kit pinning, weather, carb loading, Daily Macros/Mealvana AI. *(Food-preferences editing flow — SKIP, phasing out.)*
 - **Phase 3 remainder**: bump Python suite to v3/v4 (+ rotate the committed service_role key), weather→hydration chain, template-coverage-by-diet, override propagation.
 - **Phase 4**: Patrol↔edge parity, CI gating (per-PR deterministic + smoke; nightly full matrix on Firebase Test Lab) — *the biggest long-term leverage; nothing is gated yet.*
 - **Widget tests** (Tier 1: plan-state matrix, form validation, Planned/Eaten/Left table).

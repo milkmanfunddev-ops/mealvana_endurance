@@ -41,7 +41,7 @@ The feature has two halves:
 - Wired into all 4 AI functions: `ai-coach`, `describe-meal`,
   `analyze-meal-photo`, `jade-chat`. Each: check **after** input validation,
   **before** the model call → returns **HTTP 402** `{error:'insufficient_credits',
-  balance, cost}` when broke; debits only on success. Opener-mode jade greetings
+  balance, cost}` when broke; debits only on success. Opener-mode ai_coach greetings
   are not charged.
 - `revenuecat-webhook` (deployed with `--no-verify-jwt`) — on a purchase event,
   maps product id → credits → `grant_credits` (idempotent per RC event id).
