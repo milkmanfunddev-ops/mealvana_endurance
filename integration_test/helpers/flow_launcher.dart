@@ -71,7 +71,10 @@ Future<bool> ensureAuthenticated(
     }
   }
 
-  if (sentinelFound) return true;
+  if (sentinelFound) {
+    await _resetSharedAppState($);
+    return true;
+  }
   if (!welcomeFound || !TestConfig.hasLoginCredentials) return false;
 
   await $(welcome).tap();
@@ -89,7 +92,35 @@ Future<bool> ensureAuthenticated(
   await $(const ValueKey('login.log_in_button')).tap();
 
   await $(sentinel).waitUntilVisible(timeout: loginTimeout);
-  return $(sentinel).exists;
+  if (!$(sentinel).exists) return false;
+  await _resetSharedAppState($);
+  return true;
+}
+
+/// Return the app to a known baseline before a flow starts.
+///
+/// **Why this is here and not left to each flow.** Patrol runs the whole bundle
+/// in ONE app session: 18 tests, one Riverpod container, one signed-in account.
+/// Anything a flow leaves behind — the selected day, the timeline filter — is
+/// still there for every flow that runs after it, and flows run in ALPHABETICAL
+/// order, so the blast radius is "everything later in the alphabet".
+///
+/// That is not hypothetical. It produced three separate investigations on this
+/// branch: a timeline stuck off today, a filter hiding workout cards, and a
+/// meal flow that passed one run and failed the next purely because an earlier
+/// flow had started completing its create stack.
+///
+/// Resetting per-flow was the first fix, but it is opt-in: a flow that forgets
+/// the call silently inherits whatever the last one did. Doing it here makes
+/// the baseline a property of *being authenticated* — every flow calls
+/// ensureAuthenticated, so no flow can opt out by omission.
+///
+/// Best-effort by design. It runs before a flow has navigated anywhere, so the
+/// controls may not be on screen; their absence is the success case, not an
+/// error. Flows that navigate away and come back still call
+/// [ensureTimelineOnToday] explicitly at the point they assert.
+Future<void> _resetSharedAppState(PatrolIntegrationTester $) async {
+  await ensureTimelineOnToday($);
 }
 
 /// Put the Fuel Timeline back on **today**, and select the All filter.
