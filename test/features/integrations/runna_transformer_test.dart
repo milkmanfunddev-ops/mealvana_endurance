@@ -211,6 +211,16 @@ void main() {
       'Threshold Run • 35m': ('Threshold', IntensityLevel.hard),
       'Fartlek Run • 40m': ('Fartlek', IntensityLevel.hard),
       'Progression Run • 50m': ('Progression', IntensityLevel.moderate),
+      // Verbatim summaries from a real Runna beginner plan feed (2026-08-03).
+      // These are ~half of a return-to-running plan; before 'Walk Run' was
+      // recognised they fell through to null/moderate and over-fuelled.
+      '🏃 Walk Run • 1.2mi': ('Walk Run', IntensityLevel.easy),
+      '🏃 Your First Walk Run Back • 1mi': ('Walk Run', IntensityLevel.easy),
+      // Deliberately NOT mapped to Walk Run: an explicit interval session
+      // stays hard. 'interval' is checked before 'walk run' so a summary like
+      // "Walk/Run Intervals" classifies as Intervals — under-fuelling a hard
+      // session is worse than over-fuelling an easy one.
+      'Walk/Run Intervals • 2mi': ('Intervals', IntensityLevel.hard),
     };
 
     cases.forEach((summary, expected) {

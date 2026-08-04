@@ -846,7 +846,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             rowKey: const ValueKey('settings.connected_apps_row'),
             icon: FontAwesomeIcons.link.data,
             title: 'Connected Apps',
-            subtitle: 'Final Surge, TrainingPeaks, Garmin, V.O2',
+            subtitle: 'Final Surge, TrainingPeaks, Garmin, V.O2, Runna',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_connected_apps_tapped');
