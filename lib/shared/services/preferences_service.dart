@@ -64,20 +64,20 @@ class PreferencesService {
     await _prefs.setBool(_keyGarminBannerDismissed, true);
   }
 
-  // ─── Jade Baseline Tip Banner ───
+  // ─── Mealvana AI Baseline Tip Banner ───
 
-  static const String _keyJadeBaselineTipDismissed =
+  static const String _keyAiCoachBaselineTipDismissed =
       'jade_baseline_tip_dismissed';
 
   /// Whether the user has dismissed the one-time baseline-logging tutorial
-  /// copy on the Jade coach banner.  Once true, the banner shows the default
+  /// copy on the Mealvana AI coach banner.  Once true, the banner shows the default
   /// "has baseline" copy instead of the tutorial variant.
-  bool get jadeBaselineTipDismissed =>
-      _prefs.getBool(_keyJadeBaselineTipDismissed) ?? false;
+  bool get aiCoachBaselineTipDismissed =>
+      _prefs.getBool(_keyAiCoachBaselineTipDismissed) ?? false;
 
-  /// Persist dismissal of the Jade baseline tutorial copy.
-  Future<void> dismissJadeBaselineTip() async {
-    await _prefs.setBool(_keyJadeBaselineTipDismissed, true);
+  /// Persist dismissal of the Mealvana AI baseline tutorial copy.
+  Future<void> dismissAiCoachBaselineTip() async {
+    await _prefs.setBool(_keyAiCoachBaselineTipDismissed, true);
   }
 
   // ─── Fuel Timeline Tracking ───

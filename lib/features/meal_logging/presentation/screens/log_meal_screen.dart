@@ -21,7 +21,7 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
-import '../../../jade/presentation/widgets/jade_thinking_status.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
@@ -1553,8 +1553,8 @@ class _AiTabState extends ConsumerState<_AiTab> {
   bool _isAnalyzing = false;
 
   /// Which set of waiting copy the overlay shows — this tab can start either a
-  /// text or a photo analysis, and the first line names what Jade is reading.
-  List<String> _thinkingPhases = JadeThinkingStatus.describePhases;
+  /// text or a photo analysis, and the first line names what Mealvana AI is reading.
+  List<String> _thinkingPhases = AiThinkingStatus.describePhases;
 
   @override
   void dispose() {
@@ -1578,7 +1578,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
     analytics.track('meal_ai_started', properties: {'method': 'text'});
     final stopwatch = Stopwatch()..start();
     setState(() {
-      _thinkingPhases = JadeThinkingStatus.describePhases;
+      _thinkingPhases = AiThinkingStatus.describePhases;
       _isAnalyzing = true;
     });
     try {
@@ -1687,7 +1687,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
     analytics.track('meal_ai_started', properties: {'method': method});
     final stopwatch = Stopwatch()..start();
     setState(() {
-      _thinkingPhases = JadeThinkingStatus.photoPhases;
+      _thinkingPhases = AiThinkingStatus.photoPhases;
       _isAnalyzing = true;
     });
     try {
@@ -1795,7 +1795,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
           children: [
             Expanded(
               child: Text(
-                'Describe what you ate and Jade will estimate the macros.',
+                'Describe what you ate and Mealvana AI will estimate the macros.',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: textColor.withValues(alpha: 0.65),
                 ),
@@ -1806,7 +1806,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        // While Jade works, the inputs give way to the shape of the answer
+        // While Mealvana AI works, the inputs give way to the shape of the answer
         // rather than being covered by a scrim — the wait happens in the
         // place the result will appear.
         if (_isAnalyzing)
@@ -1916,12 +1916,21 @@ class _OutlineButton extends StatelessWidget {
                 color: isDark ? AppColors.cream : AppColors.blackberry,
               ),
               const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppTextStyles.bodySmall.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                ),
+              // The photo funnels are metered like Analyze, so they carry the
+              // same price tag — quiet form, since these are outline buttons.
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const TokenCostTag(),
+                ],
               ),
             ],
           ),

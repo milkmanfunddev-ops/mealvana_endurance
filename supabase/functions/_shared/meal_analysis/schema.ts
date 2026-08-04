@@ -1,5 +1,5 @@
 /**
- * Shared Zod schema and TypeScript types for Jade meal analysis results.
+ * Shared Zod schema and TypeScript types for Mealvana AI meal analysis results.
  *
  * Used by both `analyze-meal-photo` and `describe-meal` edge functions so the
  * output shape is identical regardless of input modality.

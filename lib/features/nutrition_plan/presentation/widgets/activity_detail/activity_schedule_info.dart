@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
+import '../../../../../shared/providers/unit_system_provider.dart';
 import '../../../../../shared/utils/unit_formatter.dart';
+import '../../../domain/run_parameters.dart';
 import '../../utils/activity_detail_helpers.dart';
 
 /// Displays scheduled date and time for an activity,
@@ -10,7 +13,7 @@ import '../../utils/activity_detail_helpers.dart';
 /// and tappable date/time editing. A small pencil glyph beside each
 /// tappable value is the "this is editable" affordance — matches the
 /// New Activity screen's date/time section.
-class ActivityScheduleInfo extends StatelessWidget {
+class ActivityScheduleInfo extends ConsumerWidget {
   const ActivityScheduleInfo({
     super.key,
     required this.scheduledDateTime,
@@ -30,11 +33,12 @@ class ActivityScheduleInfo extends StatelessWidget {
   final VoidCallback? onDateTap;
   final VoidCallback? onTimeTap;
 
-  String _formatPace(double minutesPerMile) =>
-      '${UnitFormatter.formatMinutesAsMinSec(minutesPerMile)}/mi';
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useMetric =
+        (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+        UnitSystem.metric;
+
     String activityLabel;
     switch (activityType) {
       case ActivityType.running:
@@ -64,7 +68,7 @@ class ActivityScheduleInfo extends StatelessWidget {
         // Activity summary row (distance · duration · pace)
         if (_hasSummary) ...[
           const SizedBox(height: AppSpacing.xs),
-          _buildActivitySummary(context),
+          _buildActivitySummary(context, useMetric),
         ],
         const SizedBox(height: AppSpacing.sm),
         // FittedBox scales the date/time pair down so it never overflows a
@@ -89,15 +93,16 @@ class ActivityScheduleInfo extends StatelessWidget {
       durationMinutes != null ||
       paceTargetMinutesPerMile != null;
 
-  Widget _buildActivitySummary(BuildContext context) {
+  Widget _buildActivitySummary(BuildContext context, bool useMetric) {
     final parts = <String>[];
 
     if (distanceMiles != null) {
-      final d = distanceMiles!;
-      final display = d == d.roundToDouble()
-          ? d.toInt().toString()
-          : d.toStringAsFixed(1);
-      parts.add('$display mi');
+      parts.add(
+        UnitFormatter.formatDistance(
+          distanceMiles!,
+          unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+        ),
+      );
     }
 
     if (durationMinutes != null) {
@@ -105,7 +110,12 @@ class ActivityScheduleInfo extends StatelessWidget {
     }
 
     if (paceTargetMinutesPerMile != null) {
-      parts.add(_formatPace(paceTargetMinutesPerMile!));
+      parts.add(
+        UnitFormatter.formatPace(
+          paceTargetMinutesPerMile!,
+          unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+        ),
+      );
     }
 
     return Text(

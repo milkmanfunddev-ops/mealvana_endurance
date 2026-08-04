@@ -42,7 +42,7 @@ import {
 } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 
-import { buildSystemPrompt } from '../_shared/jade/persona.ts';
+import { buildSystemPrompt } from '../_shared/ai_coach/persona.ts';
 import { creditCost } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
@@ -368,9 +368,9 @@ describe('F. buildSystemPrompt', () => {
     assert(!prompt.includes('OPENING TURN'));
   });
 
-  it('prompt contains Jade persona name', () => {
+  it('prompt contains Mealvana persona name', () => {
     const prompt = buildSystemPrompt(true, today);
-    assertStringIncludes(prompt, 'Jade');
+    assertStringIncludes(prompt, 'Mealvana');
   });
 
   it('prompt prohibits training plans (out of scope)', () => {

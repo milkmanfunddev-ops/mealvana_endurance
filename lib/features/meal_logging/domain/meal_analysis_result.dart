@@ -96,7 +96,7 @@ enum MealAnalysisConfidence {
   }
 }
 
-/// The structured result returned by either Jade edge function
+/// The structured result returned by either Mealvana AI edge function
 /// (`analyze-meal-photo` or `describe-meal`).
 ///
 /// Shape mirrors `MealAnalysis` in

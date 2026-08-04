@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../../shared/services/app_config.dart';
@@ -79,10 +80,52 @@ class _ComingSoonBody extends StatelessWidget {
 class _EnabledBody extends ConsumerWidget {
   const _EnabledBody();
 
+  /// Buy [pkg] and act on the honest outcome. This screen used to discard the
+  /// [PurchaseOutcome] entirely, so an anonymous user (or a charged-but-not-
+  /// yet-credited purchase) got no feedback at all.
+  Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
+    final outcome = await ref
+        .read(purchaseControllerProvider.notifier)
+        .buy(pkg);
+    if (!context.mounted) return;
+
+    switch (outcome) {
+      case PurchaseOutcome.credited:
+        MealvanaSnackbar.showSuccess(context, 'Credits added to your balance.');
+
+      case PurchaseOutcome.purchasedButNotCredited:
+        MealvanaSnackbar.showWarning(
+          context,
+          'Your purchase went through — the credits are on their way. '
+          'No need to buy again.',
+        );
+
+      case PurchaseOutcome.requiresAccount:
+        // Anonymous session: send the user to create an account first. The
+        // link-in-place upgrade keeps their user id, so their data and any
+        // future credits follow them.
+        context.pushNamed(
+          'auth-post-onboarding',
+          queryParameters: {'mode': 'signup'},
+        );
+
+      case PurchaseOutcome.cancelled:
+        break; // User dismissed the store sheet — not an error.
+
+      case PurchaseOutcome.notSignedIn:
+        MealvanaSnackbar.showError(context, 'Sign in to buy credits.');
+
+      case PurchaseOutcome.failed:
+        // The ref.listen on purchaseControllerProvider already surfaces the
+        // AsyncError as a snackbar; a second one here would double up.
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final walletAsync = ref.watch(creditsControllerProvider);
-    final offeringAsync = ref.watch(aiCreditOfferingProvider);
+    final packagesAsync = ref.watch(visibleCreditPackagesProvider);
     final purchaseState = ref.watch(purchaseControllerProvider);
 
     // Surface purchase errors via snackbar.
@@ -126,18 +169,17 @@ class _EnabledBody extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              offeringAsync.when(
+              packagesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => const _PackagesUnavailable(),
-                data: (offering) {
-                  if (offering == null || offering.availablePackages.isEmpty) {
+                data: (packages) {
+                  if (packages.isEmpty) {
                     return const _PackagesUnavailable();
                   }
                   return _PackageList(
-                    packages: offering.availablePackages,
+                    packages: packages,
                     isBusy: isBusy,
-                    onBuy: (pkg) =>
-                        ref.read(purchaseControllerProvider.notifier).buy(pkg),
+                    onBuy: (pkg) => _buy(context, ref, pkg),
                   );
                 },
               ),
@@ -283,7 +325,7 @@ class _CreditsExplanation extends StatelessWidget {
         const SizedBox(height: 8),
         const Text(
           'AI credits power coach insights, meal photo analysis, '
-          'meal descriptions, and Jade AI conversations. '
+          'meal descriptions, and Mealvana AI conversations. '
           'Credits are consumed per request and never expire.',
         ),
       ],

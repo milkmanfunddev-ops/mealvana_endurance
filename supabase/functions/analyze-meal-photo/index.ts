@@ -284,7 +284,7 @@ Return your answer as structured JSON matching the requested schema.`,
         .then(({ error: logError }) => {
           if (logError) {
             console.error(
-              "[analyze-meal-photo] Failed to log jade_call:",
+              "[analyze-meal-photo] Failed to log ai usage:",
               logError,
             );
           }

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import '../domain/integration_exceptions.dart';
+import '../domain/runna_defaults.dart';
 
 /// Fetches Runna's calendar-subscription (.ics) feed over HTTP.
 ///
@@ -78,11 +80,16 @@ class RunnaIcsClient {
       );
     }
 
-    final body = response.body;
+    // RFC 5545 mandates UTF-8, but `response.body` decodes with the charset
+    // from Content-Type and falls back to latin-1 when none is given. Runna
+    // summaries lead with an emoji and separate segments with '•'; decoded as
+    // latin-1 those become mojibake, the parser can no longer split segments,
+    // and distance/duration/pace are silently dropped. Decode bytes as UTF-8.
+    final body = utf8.decode(response.bodyBytes, allowMalformed: true);
     if (!body.toUpperCase().contains('BEGIN:VCALENDAR')) {
       throw const IntegrationApiException(
-        'That link didn\'t return a calendar feed. In the Runna app, go to '
-        'Settings → Calendar sync and copy the subscription link.',
+        'That link didn\'t return a calendar feed. '
+        '${RunnaDefaults.feedUrlInstructions}',
         provider: _provider,
       );
     }

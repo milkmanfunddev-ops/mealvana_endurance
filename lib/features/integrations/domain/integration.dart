@@ -88,6 +88,8 @@ class IntegrationModel {
         return 'Garmin Connect';
       case 'vdot':
         return 'V.O2';
+      case 'runna':
+        return 'Runna';
       default:
         return provider;
     }
@@ -179,7 +181,8 @@ enum IntegrationProvider {
   trainingPeaks('training_peaks', 'TrainingPeaks'),
   strava('strava', 'Strava'),
   garmin('garmin', 'Garmin Connect'),
-  vdot('vdot', 'V.O2');
+  vdot('vdot', 'V.O2'),
+  runna('runna', 'Runna');
 
   const IntegrationProvider(this.value, this.displayName);
 

@@ -274,6 +274,15 @@ class RunnaTransformer {
     if (lowerSummary.contains('hill')) return 'Hills';
     if (lowerSummary.contains('progression')) return 'Progression';
     if (lowerSummary.contains('recovery')) return 'Recovery';
+    // Runna's beginner and return-to-running plans are built almost entirely
+    // on walk/run intervals ("Walk Run", "Your First Walk Run Back"). Without
+    // this they fall through to a null subtype and default to MODERATE
+    // intensity, which over-fuels what is by design an easy-effort session.
+    if (lowerSummary.contains('walk run') ||
+        lowerSummary.contains('walk/run') ||
+        lowerSummary.contains('walk-run')) {
+      return 'Walk Run';
+    }
     if (lowerSummary.contains('easy')) return 'Easy';
     return null;
   }
@@ -282,6 +291,7 @@ class RunnaTransformer {
     switch (subtype) {
       case 'Easy':
       case 'Recovery':
+      case 'Walk Run':
         return IntensityLevel.easy;
       case 'Race':
         return IntensityLevel.race;

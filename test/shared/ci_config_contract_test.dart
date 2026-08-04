@@ -24,9 +24,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yaml/yaml.dart';
 
 /// Flows deliberately excluded from every automated lane, with the reason.
+///
+/// Keyed by FILE STEM, and every stem is checked to exist on disk (see "the
+/// exclusion list is not vacuous"). That check exists because this list rotted
+/// once already: develop renamed `jade_chat_flow_test` to
+/// `ai_coach_chat_flow_test` (commit 3b31217a, a pure R100 rename), after which
+/// every "is jade_chat excluded?" assertion passed for the worst possible
+/// reason — nothing by that name existed anywhere, while the actual
+/// AI-billing flow sailed on unguarded under its new name.
 const _mustNeverAutoRun = <String, String>{
-  'jade_chat_flow_test':
-      'calls the jade-chat edge function — bills real AI spend per run',
+  'ai_coach_chat_flow_test':
+      'calls the AI coach chat edge function — bills real AI spend per run',
   'google_login_flow_test':
       'drives the native Google OAuth sheet, needs interactive consent',
   'onboarding_signup_flow_test': 'requires a clean install with no session',
@@ -220,6 +228,27 @@ void main() {
   });
 
   group('flows that must never run automatically', () {
+    test('the exclusion list is not vacuous — every named flow exists', () {
+      // Without this, a RENAME turns each exclusion assertion below into a
+      // tautology: "the lane does not run X" is trivially true once no X
+      // exists, and the real flow runs on under its new name with no guard at
+      // all. That is exactly what the jade_chat -> ai_coach_chat rename did.
+      for (final stem in _mustNeverAutoRun.keys) {
+        final matches = Directory(
+          '${repoRoot.path}/integration_test/flows',
+        ).listSync().where((f) => f.path.endsWith('$stem.dart'));
+        expect(
+          matches,
+          isNotEmpty,
+          reason:
+              'No integration_test/flows/$stem.dart. If it was renamed, update '
+              '_mustNeverAutoRun to the new name — until you do, every '
+              'exclusion assertion for it passes while the flow itself is '
+              'unguarded. If it was deleted on purpose, drop the entry.',
+        );
+      }
+    });
+
     test('are absent from every Codemagic dev lane', () {
       for (final lane in ['integration-tests', 'integration-tests-develop']) {
         final s = scriptsOf(lane);

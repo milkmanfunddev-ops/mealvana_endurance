@@ -22,15 +22,24 @@ class CreditsRepository {
 
   final SupabaseClient _supabase;
 
-  /// Whether a real (non-anonymous) user is signed in.
+  /// Whether any Supabase user (including an anonymous one) is signed in.
   ///
-  /// Purchases and the wallet are meaningless without one: the RevenueCat
-  /// webhook maps `app_user_id` straight onto `auth.users.id`, so a purchase
-  /// made without a signed-in user credits nobody and the money is simply gone.
+  /// Anonymous users deliberately count: they get a wallet and the monthly
+  /// free-credit grant so they can try the AI features before creating an
+  /// account. What they must NOT do is *purchase* — see [isAnonymousUser].
   bool get hasAuthenticatedUser {
     final user = _supabase.auth.currentUser;
     return user != null && user.id.isNotEmpty;
   }
+
+  /// Whether the current session belongs to a Supabase *anonymous* user.
+  ///
+  /// Purchases are refused for anonymous users: the wallet would be credited
+  /// against the anonymous `auth.users.id`, and only the link-in-place upgrade
+  /// path ("Create Account") preserves that id. A user who instead signs in to
+  /// an existing account gets a new id and the credits are stranded forever.
+  /// So we require the account to exist *before* money changes hands.
+  bool get isAnonymousUser => _supabase.auth.currentUser?.isAnonymous ?? false;
 
   /// The signed-in user's id, or null.
   String? get currentUserId => _supabase.auth.currentUser?.id;

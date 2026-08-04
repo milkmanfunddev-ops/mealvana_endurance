@@ -1,7 +1,7 @@
 /**
  * jade-chat Edge Function
  *
- * Streaming AI endurance-nutrition coach (Jade) with persistent conversation
+ * Streaming AI endurance-nutrition coach (Mealvana AI) with persistent conversation
  * history and tool-based data access.
  *
  * POST /functions/v1/jade-chat
@@ -57,10 +57,10 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3
 import { stepCountIs, streamText } from 'npm:ai@6';
 import { corsHeaders } from '../_shared/cors.ts';
 import { errorResponse, jsonResponse, validationError, serverError } from '../_shared/responses.ts';
-import { JADE_MODEL } from '../_shared/ai/model.ts';
+import { AI_COACH_MODEL } from '../_shared/ai/model.ts';
 import { logAiUsage } from '../_shared/ai/usage.ts';
-import { buildSystemPrompt } from '../_shared/jade/persona.ts';
-import { makeJadeTools } from '../_shared/jade/tools.ts';
+import { buildSystemPrompt } from '../_shared/ai_coach/persona.ts';
+import { makeAiCoachTools } from '../_shared/ai_coach/tools.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
@@ -134,7 +134,7 @@ interface ChoicesPart {
   options: string[];
 }
 
-type JadeUiPart = MealCardsPart | ChoicesPart;
+type AiCoachUiPart = MealCardsPart | ChoicesPart;
 
 // ---------------------------------------------------------------------------
 // Auth helper
@@ -183,6 +183,25 @@ async function hasBaseline(serviceClient: SupabaseClient<any, any, any>, userId:
     return false;
   }
   return (count ?? 0) > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Unit preference — drives which units the model writes back in
+// ---------------------------------------------------------------------------
+
+// deno-lint-ignore no-explicit-any
+async function unitSystemFor(serviceClient: SupabaseClient<any, any, any>, userId: string): Promise<'imperial' | 'metric'> {
+  const { data, error } = await serviceClient
+    .from('users')
+    .select('unit_system')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[jade-chat] unit_system lookup error:', error);
+  }
+  // Matches the client default (users.unit_system defaults to 'imperial').
+  return data?.unit_system === 'metric' ? 'metric' : 'imperial';
 }
 
 // ---------------------------------------------------------------------------
@@ -241,7 +260,7 @@ serve(withSentry(async (req: Request) => {
       return validationError('Invalid JSON body');
     }
 
-    // Opener mode: Jade proactively greets the athlete before they type. No
+    // Opener mode: Mealvana AI proactively greets the athlete before they type. No
     // user message is sent, nothing is persisted — it's an ephemeral hello
     // regenerated each time the chat is opened fresh.
     const isOpener = body.opener === true;
@@ -286,7 +305,7 @@ serve(withSentry(async (req: Request) => {
 
     // ── Resolve or create conversation ──────────────────────────────────────
     // Opener mode skips all of this: no conversation row, no persistence, no
-    // history — Jade just greets using live tool lookups.
+    // history — Mealvana AI just greets using live tool lookups.
     let resolvedConversationId = '';
     let isNewConversation = false;
     let priorMessages: { role: 'user' | 'assistant'; content: string }[] = [];
@@ -375,19 +394,25 @@ serve(withSentry(async (req: Request) => {
     } // end if (!isOpener)
 
     // ── Build system prompt ─────────────────────────────────────────────────
-    const baseline = await hasBaseline(serviceClient, user.id, today);
-    const systemPrompt = buildSystemPrompt(baseline, today, { opener: isOpener });
+    const [baseline, unitSystem] = await Promise.all([
+      hasBaseline(serviceClient, user.id, today),
+      unitSystemFor(serviceClient, user.id),
+    ]);
+    const systemPrompt = buildSystemPrompt(baseline, today, {
+      opener: isOpener,
+      unitSystem,
+    });
 
     // ── Build tools ─────────────────────────────────────────────────────────
-    const tools = makeJadeTools({ serviceClient, userId: user.id, timezone, location });
+    const tools = makeAiCoachTools({ serviceClient, userId: user.id, timezone, location });
 
     console.log(
       `[jade-chat] user=${user.id} conv=${resolvedConversationId} ` +
-        `new=${isNewConversation} baseline=${baseline} model=${JADE_MODEL}`,
+        `new=${isNewConversation} baseline=${baseline} model=${AI_COACH_MODEL}`,
     );
 
     // ── Collect ui parts for persistence ────────────────────────────────────
-    const collectedUiParts: JadeUiPart[] = [];
+    const collectedUiParts: AiCoachUiPart[] = [];
 
     // ── Credit check ─────────────────────────────────────────────────────────
     const credit = await ensureAndCheckCredits(serviceClient, user.id, 'jade-chat');
@@ -414,7 +439,7 @@ serve(withSentry(async (req: Request) => {
         ];
 
     const result = streamText({
-      model: JADE_MODEL,
+      model: AI_COACH_MODEL,
       system: systemPrompt,
       messages: turnMessages,
       tools,
@@ -454,7 +479,7 @@ serve(withSentry(async (req: Request) => {
               user_id: user.id,
               conversation_id: resolvedConversationId,
               function_name: 'jade-chat',
-              model: JADE_MODEL,
+              model: AI_COACH_MODEL,
               input_tokens: usage?.inputTokens ?? 0,
               output_tokens: usage?.outputTokens ?? 0,
             });
@@ -466,7 +491,7 @@ serve(withSentry(async (req: Request) => {
           await logAiUsage(serviceClient, {
             userId: user.id,
             functionName: 'jade-chat',
-            model: JADE_MODEL,
+            model: AI_COACH_MODEL,
             inputTokens: usage?.inputTokens ?? 0,
             outputTokens: usage?.outputTokens ?? 0,
           });

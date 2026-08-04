@@ -14,7 +14,7 @@ const List<MealComponent> kCommonIngredients = [
   // ── Protein ────────────────────────────────────────────────────────────
   MealComponent(
     name: 'Chicken breast',
-    portion: '4 oz cooked',
+    portion: '4 oz cooked (115 g)',
     calories: 187,
     carbG: 0,
     proteinG: 35,
@@ -23,7 +23,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Ground turkey (93/7)',
-    portion: '4 oz cooked',
+    portion: '4 oz cooked (115 g)',
     calories: 193,
     carbG: 0,
     proteinG: 22,
@@ -32,7 +32,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Salmon',
-    portion: '4 oz cooked',
+    portion: '4 oz cooked (115 g)',
     calories: 233,
     carbG: 0,
     proteinG: 25,
@@ -77,7 +77,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Tuna (canned in water)',
-    portion: '3 oz drained',
+    portion: '3 oz drained (85 g)',
     calories: 73,
     carbG: 0,
     proteinG: 16,
@@ -86,7 +86,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Turkey deli slices',
-    portion: '3 oz',
+    portion: '3 oz (85 g)',
     calories: 90,
     carbG: 2,
     proteinG: 16,
@@ -95,7 +95,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Tofu (firm)',
-    portion: '4 oz',
+    portion: '4 oz (115 g)',
     calories: 90,
     carbG: 2,
     proteinG: 10,
@@ -187,7 +187,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Flour tortilla',
-    portion: '1 medium (8")',
+    portion: '1 medium (8" / 20 cm)',
     calories: 146,
     carbG: 24,
     proteinG: 4,
@@ -339,7 +339,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Cheddar cheese',
-    portion: '1 oz',
+    portion: '1 oz (28 g)',
     calories: 113,
     carbG: 0.4,
     proteinG: 7,
@@ -348,7 +348,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Mozzarella cheese',
-    portion: '1 oz',
+    portion: '1 oz (28 g)',
     calories: 85,
     carbG: 0.6,
     proteinG: 6,
@@ -357,7 +357,7 @@ const List<MealComponent> kCommonIngredients = [
   ),
   MealComponent(
     name: 'Almonds',
-    portion: '1 oz (~23)',
+    portion: '1 oz / 28 g (~23)',
     calories: 164,
     carbG: 6,
     proteinG: 6,

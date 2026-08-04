@@ -298,6 +298,17 @@ definitions:
           echo "pointed REVENUECAT_API_KEY_APPLE at the dev-bundle RevenueCat app"
         fi
 
+        # Same wrong-bundle problem on Android: the shared dotenv carries the
+        # `goog_` key of the RevenueCat app registered to the PROD package.
+        # Point dev-android builds at the RevenueCat app for
+        # com.milkman.mealvanaendurance.dev instead.
+        if [ -s .env.dev.local ] && [ -n "${REVENUECAT_API_KEY_GOOGLE_DEV:-}" ]; then
+          sed -i '' "/^[[:space:]]*#*[[:space:]]*REVENUECAT_API_KEY_GOOGLE=/d" .env.dev.local 2>/dev/null \
+            || sed -i "/^[[:space:]]*#*[[:space:]]*REVENUECAT_API_KEY_GOOGLE=/d" .env.dev.local
+          printf 'REVENUECAT_API_KEY_GOOGLE=%s\n' "$REVENUECAT_API_KEY_GOOGLE_DEV" >> .env.dev.local
+          echo "pointed REVENUECAT_API_KEY_GOOGLE at the dev-package RevenueCat app"
+        fi
+
         # Diagnostic: prove what the app will actually read. Booleans only, plus
         # presence (never the value) of the RevenueCat key. Without this, "the
         # tokens are missing" is indistinguishable from "the flag is off", and
@@ -314,6 +325,37 @@ definitions:
             echo "  REVENUECAT_API_KEY_APPLE: present (appl_ prefix) — this is what a TestFlight build uses"
           else
             echo "  REVENUECAT_API_KEY_APPLE: MISSING or wrong prefix — the paywall will have no store"
+          fi
+        fi
+
+        # Prod counterpart of the diagnostic above — and a hard gate, not just an
+        # echo. DOTENV_PROD_LOCAL is an unreadable point-in-time snapshot exactly
+        # like the dev one, and every failure the dev-side repairs above patch
+        # (silent no-op analytics, wrong RC key, absent flags) started as that
+        # snapshot drifting. A prod build missing any of these keys would ship
+        # silently broken, so fail the build instead. Presence only — values are
+        # never printed.
+        if [ -s .env.prod.local ]; then
+          echo "--- prod env keys as built (presence only) ---"
+          missing=""
+          for key in SUPABASE_URL SUPABASE_ANON_KEY SENTRY_DSN MIXPANEL_PROJECT_TOKEN \
+                     REVENUECAT_API_KEY_APPLE REVENUECAT_API_KEY_GOOGLE; do
+            if grep -q "^${key}=." .env.prod.local; then
+              echo "  ${key}: present"
+            else
+              echo "  ${key}: MISSING"
+              missing="$missing $key"
+            fi
+          done
+          grep -E '^(APP_ENVIRONMENT|DEV_MODE_ENABLED|AI_CREDITS_ENABLED|DESCRIBE_MEAL_ENABLED|COACH_INSIGHTS_ENABLED)=' .env.prod.local || true
+          if grep -q '^REVENUECAT_API_KEY_TEST=' .env.prod.local; then
+            echo "  ERROR: REVENUECAT_API_KEY_TEST found in .env.prod.local — it must never be in the prod secret"
+            missing="$missing REVENUECAT_API_KEY_TEST(forbidden)"
+          fi
+          if [ -n "$missing" ]; then
+            echo "FATAL: DOTENV_PROD_LOCAL is missing or mis-carrying:$missing"
+            echo "Update the DOTENV_PROD_LOCAL secure var in the mealvana_prod group."
+            exit 1
           fi
         fi
 
@@ -498,14 +540,17 @@ workflows:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
-    # Manual-only trigger. Auto-trigger on `develop` push is disabled
-    # until the Play Console dev app (com.milkman.mealvanaendurance.dev)
-    # exists — without it the build always fails at publish with
-    # "Package not found", spamming Slack on every push to develop.
-    # Re-enable by adding back `events: [push]` once the Play Console
-    # dev app is created.
+    # Auto-triggers on `develop` push, same as dev-ios. The Play Console
+    # dev app (com.milkman.mealvanaendurance.dev) exists as of 2026-05-06;
+    # note its very first AAB may need a manual upload in the Play Console
+    # UI before API publishing to the internal track succeeds.
     triggering:
-      events: []
+      events:
+        - push
+      branch_patterns:
+        - pattern: develop
+          include: true
+      cancel_previous_builds: true
 
     scripts:
       - *write_dotenv_files
@@ -1402,8 +1447,8 @@ workflows:
             # Explicit target list, kept in step with
             # .github/workflows/tests-selfhosted.yml. A bare
             # `--target integration_test` globs the whole directory, which
-            # sweeps in jade_chat_flow_test — that flow only self-skips on
-            # PROD, so on this dev lane it called the jade-chat edge
+            # sweeps in ai_coach_chat_flow_test — that flow only self-skips on
+            # PROD, so on this dev lane it called the AI coach chat edge
             # function and billed real AI spend on every push to develop.
             # google_login and onboarding_signup are excluded for the same
             # reasons as on the M1 runner (interactive OAuth consent; needs
@@ -1490,8 +1535,8 @@ workflows:
             # Explicit target list, kept in step with
             # .github/workflows/tests-selfhosted.yml. A bare
             # `--target integration_test` globs the whole directory, which
-            # sweeps in jade_chat_flow_test — that flow only self-skips on
-            # PROD, so on this dev lane it called the jade-chat edge
+            # sweeps in ai_coach_chat_flow_test — that flow only self-skips on
+            # PROD, so on this dev lane it called the AI coach chat edge
             # function and billed real AI spend on every push to develop.
             # google_login and onboarding_signup are excluded for the same
             # reasons as on the M1 runner (interactive OAuth consent; needs

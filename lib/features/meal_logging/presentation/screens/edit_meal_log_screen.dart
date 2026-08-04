@@ -14,7 +14,8 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
-import '../../../jade/presentation/widgets/jade_thinking_status.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
@@ -71,7 +72,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   /// newly-captured photo and have it persist on save.
   String? _photoPath;
 
-  /// True while a re-scan photo is uploading + being analysed by Jade AI.
+  /// True while a re-scan photo is uploading + being analysed by Mealvana AI AI.
   bool _isRescanning = false;
 
   /// Bumped each time a re-scan replaces the item list. Used to key
@@ -171,7 +172,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     );
   }
 
-  /// Re-capture the meal photo and replace the current items with a fresh Jade
+  /// Re-capture the meal photo and replace the current items with a fresh Mealvana AI
   /// AI analysis. Mirrors the photo capture flow in the Log a Meal screen but
   /// updates this log in place instead of creating a new one. The replacement only
   /// happens after the user confirms, and the edit is held in memory until
@@ -271,14 +272,18 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // A re-scan is a metered AI call, so both source options carry
+            // the token price like the other photo entry points.
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
               title: const Text('Take a photo'),
+              trailing: const TokenCostTag(),
               onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Choose from library'),
+              trailing: const TokenCostTag(),
               onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
             ),
           ],
@@ -299,7 +304,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         title: const Text('Replace items?'),
         content: SingleChildScrollView(
           child: Text(
-            'Jade detected:\n\n$preview\n\n'
+            'Mealvana AI detected:\n\n$preview\n\n'
             'This replaces the current items on this meal.',
           ),
         ),
@@ -559,7 +564,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                       ),
 
                     // Re-scan action — lets the user recapture the meal photo and
-                    // have Jade AI re-estimate the items. Available even when no
+                    // have Mealvana AI AI re-estimate the items. Available even when no
                     // photo exists yet (e.g. a manual log gaining a photo).
                     // Hidden while the meal-AI release flag is off so this
                     // metered entry point fails closed like the others.
@@ -647,7 +652,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                     // items dissolve and re-form in place.
                     if (_isRescanning) ...[
                       const MealAnalysisSkeleton(
-                        phases: JadeThinkingStatus.photoPhases,
+                        phases: AiThinkingStatus.photoPhases,
                       ),
                       const SizedBox(height: AppSpacing.md),
                     ] else if (hasComponents) ...[

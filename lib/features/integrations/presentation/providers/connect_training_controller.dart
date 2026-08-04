@@ -29,6 +29,7 @@ import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
 import '../../data/runna_ics_client.dart';
 import '../../domain/integration.dart';
+import '../../domain/runna_defaults.dart';
 import 'integrations_providers.dart';
 
 part 'connect_training_controller.g.dart';
@@ -1066,8 +1067,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           (uri.isScheme('https') || uri.isScheme('http'));
       if (!looksLikeFeed) {
         throw const FormatException(
-          'That doesn\'t look like a calendar link. In the Runna app, go to '
-          'Settings → Calendar sync and copy the subscription link.',
+          'That doesn\'t look like a calendar link. '
+          '${RunnaDefaults.feedUrlInstructions}',
         );
       }
 

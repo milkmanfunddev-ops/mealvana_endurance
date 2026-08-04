@@ -12,22 +12,15 @@ class UnitFormatter {
   static const double kMeterPerFoot = 0.3048;
   static const double kFootPerMeter = 3.28084;
 
-  /// Render [ml] in the caller's unit system.
+  /// Format a millilitre volume as `mL` or `oz`.
   ///
-  /// Accepts either flag name. They are nullable so "not supplied" is
-  /// distinguishable from "supplied as false": with non-nullable defaults the
-  /// old `useMetric || !useImperial` resolved to metric whenever `useImperial`
-  /// was omitted, so a caller passing only `useMetric: false` still got
-  /// millilitres and could never reach imperial output at all.
-  ///
-  /// Precedence: an explicit [useMetric] wins, then an explicit [useImperial],
-  /// then the historical default of metric.
-  static String formatFluids(double ml, {bool? useImperial, bool? useMetric}) {
-    final shouldUseMetric =
-        useMetric ?? (useImperial == null ? true : !useImperial);
-
-    if (!shouldUseMetric) {
-      // Imperial: convert to oz
+  /// `useMetric` is required, and named to match every other method here. The
+  /// previous signature took *both* `useImperial` and `useMetric` with `false`
+  /// defaults and resolved `useMetric || !useImperial`, so the natural-looking
+  /// `formatFluids(ml, useMetric: false)` returned metric — the exact opposite
+  /// of what the caller asked for.
+  static String formatFluids(double ml, {required bool useMetric}) {
+    if (!useMetric) {
       final oz = ml * kFlOzPerMl;
       return '${oz.round()} oz';
     }

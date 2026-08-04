@@ -71,13 +71,16 @@ class EventDetailsCard extends ConsumerWidget {
             ),
           ],
 
-          if (event.formattedGoalPace != null) ...[
+          if (event.goalPaceMinutesPerMile != null) ...[
             const Divider(height: AppSpacing.xl),
             _buildDetailRow(
               context,
               icon: FontAwesomeIcons.gaugeHigh.data,
               label: 'Goal Pace',
-              value: event.formattedGoalPace!,
+              value: UnitFormatter.formatPace(
+                event.goalPaceMinutesPerMile!,
+                unit: useMetric ? PaceUnit.minPerKm : PaceUnit.minPerMile,
+              ),
             ),
           ],
 

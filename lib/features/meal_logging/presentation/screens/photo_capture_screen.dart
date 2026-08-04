@@ -10,7 +10,8 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
-import '../../../jade/presentation/widgets/jade_thinking_status.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
 import '../widgets/meal_analysis_skeleton.dart';
 
@@ -196,7 +197,7 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
               textAlign: TextAlign.center,
             ),
             Text(
-              'Jade AI will identify the food and estimate macros.',
+              'Mealvana AI will identify the food and estimate macros.',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: isDark
                     ? AppColors.cream.withValues(alpha: 0.55)
@@ -206,10 +207,10 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
             ),
             const SizedBox(height: AppSpacing.xl),
 
-            // While Jade works, the pickers give way to the shape of the
+            // While Mealvana AI works, the pickers give way to the shape of the
             // answer rather than being covered by a scrim.
             if (_isAnalyzing)
-              const MealAnalysisSkeleton(phases: JadeThinkingStatus.photoPhases)
+              const MealAnalysisSkeleton(phases: AiThinkingStatus.photoPhases)
             else ...[
               // Camera option (mobile only)
               if (!kIsWeb) ...[
@@ -288,6 +289,10 @@ class _OptionCard extends StatelessWidget {
                 ],
               ),
             ),
+            // Both pickers are metered entry points, so each card carries the
+            // token price like the Analyze button does.
+            const TokenCostTag(),
+            const SizedBox(width: AppSpacing.sm),
             Icon(
               Icons.chevron_right,
               color: isDark ? Colors.white38 : Colors.black26,

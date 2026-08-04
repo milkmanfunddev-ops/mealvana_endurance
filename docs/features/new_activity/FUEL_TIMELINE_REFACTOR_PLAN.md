@@ -34,7 +34,7 @@ Almost every data source the prototype needs already exists. The new screen is a
 | Workout/ride node | `Activity` (type, distance, speed, `scheduledDateTime`) + activities-for-date query |
 | Ride Fuel Sheet (Before/During/After) | `NutritionPlan.sections` (PlanSection before/during/after) + `FuelLogData` + `activity_detail_controller` (`saveFuelLogAndComplete` = "Complete Workout") |
 | Macro colors | `macro_palette.dart` — already matches the prototype tokens |
-| Coach insight entry | Keep existing `JadeCoachBanner` for v1 (prototype's AI insight box is deferred) |
+| Coach insight entry | Keep existing `AiCoachBanner` for v1 (prototype's AI insight box is deferred) |
 
 **What's genuinely new:**
 1. A **day-level aggregator** that interleaves meals + activities on one time axis and computes the energy-balance summary.
@@ -57,7 +57,7 @@ These need a deliberate call during the build (defaults proposed):
 
 4. **Per-item macro line on meal cards** (`574 kcal · 58C · 30P · 25F`). `MealLog` carries denormalized totals → use directly.
 
-5. **Add Food sheet.** Prototype shows a stripped search+quick-add. We already have the richer `TabbedLogSheet` (5 logging methods incl. photo/describe/Jade). → **Reuse `TabbedLogSheet`, restyled** to the timeline look. Make `SlotChipSelector` **optional/collapsed** (slot auto-derived from time-of-day); don't force a category choice.
+5. **Add Food sheet.** Prototype shows a stripped search+quick-add. We already have the richer `TabbedLogSheet` (5 logging methods incl. photo/describe/Mealvana AI). → **Reuse `TabbedLogSheet`, restyled** to the timeline look. Make `SlotChipSelector` **optional/collapsed** (slot auto-derived from time-of-day); don't force a category choice.
 
 6. **Tracking on/off.** New concept: when off, hide the energy dashboard and strip macro numbers from cards ("log without numbers"). → Persist as a **global user preference** in `PreferencesService` (default ON). Single source of truth, read by the screen + meal cards.
 
@@ -132,11 +132,11 @@ fuel_timeline/
 
 **Phase 6 — Cut over (full replacement)**
 - Swap `DailyMacrosScreen` → `FuelTimelineScreen` in `tabs_screen.dart` (tab 1) + `app_router.dart` (`?tab=nutrition`).
-- Migrate/retire `daily_summary_card`, `today_log_section`'s host screen, etc. Keep reused widgets (`EnergySourceBreakdown`, `TabbedLogSheet`, `JadeCoachBanner`).
+- Migrate/retire `daily_summary_card`, `today_log_section`'s host screen, etc. Keep reused widgets (`EnergySourceBreakdown`, `TabbedLogSheet`, `AiCoachBanner`).
 - Run codegen (riverpod), `/task-checker`, widget + golden tests, then commit on the feature branch.
 
 **Deferred (later iteration) — AI Suggest**
-- Suggest toggle, suggested-meal cards (dashed-orange, Add to plan/Dismiss), and filter-specific "Today's Fuel" insight box. Leave seams: the assembler can later emit `suggested` nodes; the filter row has space for the sparkle toggle; the insight box slots above the timeline. Until then keep the existing `JadeCoachBanner` as the coach entry point.
+- Suggest toggle, suggested-meal cards (dashed-orange, Add to plan/Dismiss), and filter-specific "Today's Fuel" insight box. Leave seams: the assembler can later emit `suggested` nodes; the filter row has space for the sparkle toggle; the insight box slots above the timeline. Until then keep the existing `AiCoachBanner` as the coach entry point.
 
 ---
 
@@ -149,11 +149,11 @@ Phases 1–6 implemented on the feature branch under `lib/features/fuel_timeline
 - **Phase 3** ✅ Meals + Workout dashboard variants; meal tap → Swap (`/meal-log/edit`) / Remove (soft-delete + undo).
 - **Phase 4** ✅ Energy Breakdown sheet (Daily reuses `EnergySourceBreakdown` + Weekly chart `weekly_fuel_chart.dart`); workout tap → existing fuel screen via shared `openActivityFuel()` helper (Lee's choice). Per-activity burn = `sessionKcal` (single-workout common case).
 - **Phase 5** ✅ tracking → global `PreferencesService.fuelTrackingEnabled`; widget smoke tests (caught + fixed 2 overflow bugs); ContentService for content strings (`fuel_timeline.*`, `energy_breakdown.*`, `common.retry`) with fallbacks. Look kept **theme-aware** (Lee's call). Leaf micro-labels stay hardcoded (consistent with sibling screens).
-- **Phase 6** ✅ functional cut-over verified (no prod imports of `DailyMacrosScreen`; `?tab=nutrition` → Fuel Timeline). Re-added `GarminConnectBanner` + `JadeCoachBanner` (Lee wanted both kept). **File deletion DEFERRED until after on-device validation.**
+- **Phase 6** ✅ functional cut-over verified (no prod imports of `DailyMacrosScreen`; `?tab=nutrition` → Fuel Timeline). Re-added `GarminConnectBanner` + `AiCoachBanner` (Lee wanted both kept). **File deletion DEFERRED until after on-device validation.**
 
 **Deferred-deletion manifest** (orphaned in prod once validated — KEEP the reused ones):
 - DELETE candidates: `daily_macros/presentation/screens/daily_macros_screen.dart`, `widgets/daily_summary_card.dart`, `widgets/today_hero_card.dart`, `widgets/macro_summary_strip.dart` — plus update/remove the 4 referencing tests (`test/smoke_tests/auth_misc_smoke_test.dart`, `test/features/daily_macros/daily_macros_screen_layout_test.dart`, `test/seeded_tests/daily_macros_content_test.dart`, `test/features/daily_macros/macro_card_screenshot_test.dart` + its goldens).
-- **KEEP (reused by Fuel Timeline):** `daily_macros_controller`/state/service, `energy_source_breakdown.dart`, `macro_palette.dart`, `garmin_connect_banner.dart`, `jade_coach_banner.dart`, `meal_logging/today_log_section.dart`, all `calendar/*` widgets.
+- **KEEP (reused by Fuel Timeline):** `daily_macros_controller`/state/service, `energy_source_breakdown.dart`, `macro_palette.dart`, `garmin_connect_banner.dart`, `ai_coach_banner.dart`, `meal_logging/today_log_section.dart`, all `calendar/*` widgets.
 
 **Still TODO:** on-device/simulator shakedown (can't be assistant-run); then the deletion pass; then the deferred **AI Suggest** feature.
 

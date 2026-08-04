@@ -76,14 +76,14 @@ or document why they stay. Don't write tests for code that's being retired.
 | **auth** | 1 file | signup/login/reset-code/new-password flows; session restore; email-verification gap (Lee's TODO) |
 | **app_startup** | partial | startup ordering; recoverable vs non-recoverable init; force-upgrade gate; Drift init path |
 | **weather** | none | forecast fetch/caching; humidity→plan input |
-| **jade** | 1 file | chat controller streaming, history persistence, error states |
+| **ai_coach** | 1 file | chat controller streaming, history persistence, error states |
 | **user_foods / recipes / notes / sharing / education / feedback** | little/none | CRUD + render; share-intent; content loading |
 
 ## Layer 3 — Widget tests: deepen beyond render
 
 - **Content tests** for the under-covered features above (coach portal/athlete/chat,
   calendar month, carb-loading schedule, meal-logging review/pickers, weather detail,
-  jade chat) — seed state, assert values (pattern: `daily_macros_content_test.dart`).
+  ai_coach chat) — seed state, assert values (pattern: `daily_macros_content_test.dart`).
 - **Form-validation matrix** — finish the rest (user-profile bounds, sweat-profile,
   nutrition-targets, formula editor empty/no-foods).
 - **Plan-state matrix** — loading/empty/populated/error for plan-detail + adjust-macros.

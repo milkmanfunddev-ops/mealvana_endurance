@@ -218,7 +218,7 @@ Return your answer as structured JSON matching the requested schema.`,
         })
         .then(({ error: logError }) => {
           if (logError) {
-            console.error("[describe-meal] Failed to log jade_call:", logError);
+            console.error("[describe-meal] Failed to log ai usage:", logError);
           }
         }),
     );

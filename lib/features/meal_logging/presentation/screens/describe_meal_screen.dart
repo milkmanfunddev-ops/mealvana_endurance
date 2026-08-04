@@ -6,7 +6,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
-import '../../../jade/presentation/widgets/jade_thinking_status.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../application/meal_ai_service.dart';
 import '../widgets/meal_analysis_skeleton.dart';
@@ -148,10 +148,10 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Describe to Jade'),
+        title: const Text('Describe to Mealvana'),
         elevation: 0,
       ),
-      // While Jade works the page does not get covered — the editor collapses
+      // While Mealvana AI works the page does not get covered — the editor collapses
       // to a quiet echo of what was typed and the answer's skeleton takes the
       // space the button had, so the wait happens where the result will land.
       body: SingleChildScrollView(
@@ -169,7 +169,7 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Describe what you ate and Jade will estimate the '
+                      'Describe what you ate and Mealvana AI will estimate the '
                       'macros.',
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: isDark
@@ -205,7 +205,7 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
               const SizedBox(height: AppSpacing.xl),
               if (_isAnalyzing)
                 const MealAnalysisSkeleton(
-                  phases: JadeThinkingStatus.describePhases,
+                  phases: AiThinkingStatus.describePhases,
                 )
               else
                 // The Analyze button carries its own price: "Analyze 🍪 1".
@@ -225,7 +225,7 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
   }
 }
 
-/// The typed description, shown read-only while Jade reads it.
+/// The typed description, shown read-only while Mealvana AI reads it.
 ///
 /// It replaces the (much taller) editor during the wait so the skeleton below
 /// stays above the fold, while keeping what was sent visible — "Reading your

@@ -4,9 +4,9 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../../jade/presentation/widgets/jade_thinking_status.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 
-/// The waiting state for a Jade meal analysis: the shape of the answer,
+/// The waiting state for a Mealvana AI meal analysis: the shape of the answer,
 /// shimmering, where the answer is about to be.
 ///
 /// This deliberately mirrors [MealReviewScreen]'s layout — the "Items" heading,
@@ -25,7 +25,7 @@ class MealAnalysisSkeleton extends StatelessWidget {
     this.itemCount = 3,
   });
 
-  /// Copy for [JadeThinkingStatus] — describe vs photo.
+  /// Copy for [AiThinkingStatus] — describe vs photo.
   final List<String> phases;
 
   /// How many item rows to fake. Three reads as "a meal" without implying a
@@ -46,7 +46,7 @@ class MealAnalysisSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        JadeThinkingStatus(
+        AiThinkingStatus(
           phases: phases,
           style: AppTextStyles.bodyMedium.copyWith(
             color: onSurface.withValues(alpha: 0.75),

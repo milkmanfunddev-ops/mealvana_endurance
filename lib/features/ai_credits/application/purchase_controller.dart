@@ -4,9 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../shared/services/analytics/internal_user_service.dart';
+import '../../../shared/services/app_config.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../data/credits_repository.dart';
 import '../data/revenuecat_service.dart';
+import '../domain/credit_packs.dart';
 import 'credits_controller.dart';
 
 part 'purchase_controller.g.dart';
@@ -36,6 +39,13 @@ enum PurchaseOutcome {
   /// nobody, because the webhook maps `app_user_id` onto `auth.users.id`.
   notSignedIn,
 
+  /// The session is a Supabase *anonymous* user. Refused before the store was
+  /// contacted: only the link-in-place "Create Account" upgrade preserves the
+  /// anonymous `auth.users.id` that the webhook would credit — signing in to
+  /// an existing account swaps the id and strands the purchase forever. The
+  /// UI should route the user to account creation, after which buying works.
+  requiresAccount,
+
   /// The store rejected the purchase, or the SDK was never configured.
   failed,
 }
@@ -50,6 +60,32 @@ Future<Offering?> aiCreditOffering(Ref ref) async {
   final service = ref.read(revenueCatServiceProvider);
   final offerings = await service.getOfferings();
   return offerings?.getOffering('credits');
+}
+
+/// The packages the current build is allowed to *display*, in offering order.
+///
+/// This is [aiCreditOffering] minus the tester-only SKUs
+/// ([kTesterOnlyProductIds]): the $0.99 pipeline-test pack exists in the store
+/// so the whole purchase path (StoreKit → RevenueCat → webhook → wallet) can
+/// be exercised end to end, but only dev builds and 7-tap tester devices may
+/// see it. Filtering lives here — not in the sheet or the screen — so no
+/// future purchase surface can forget it.
+@riverpod
+Future<List<Package>> visibleCreditPackages(Ref ref) async {
+  final offering = await ref.watch(aiCreditOfferingProvider.future);
+  if (offering == null) return const [];
+
+  final showTesterSkus =
+      ref.watch(appConfigProvider).isDevelopment ||
+      ref.watch(internalDeviceFlagProvider);
+
+  return offering.availablePackages
+      .where(
+        (p) =>
+            showTesterSkus ||
+            !kTesterOnlyProductIds.contains(p.storeProduct.identifier),
+      )
+      .toList();
 }
 
 /// Manages the purchase and restore flows for AI credit packs.
@@ -105,6 +141,19 @@ class PurchaseController extends _$PurchaseController {
         tags: {'rc_operation': 'buy_unauthenticated', 'sku': sku},
       );
       return PurchaseOutcome.notSignedIn;
+    }
+
+    // Anonymous sessions must create an account before buying. Not a Sentry
+    // error — it is an expected funnel step — but leave a breadcrumb so a
+    // purchase-drop-off investigation can see it happened.
+    if (repo.isAnonymousUser) {
+      state = const AsyncData(null);
+      sentry.addBreadcrumb(
+        message: 'purchase blocked: anonymous session',
+        category: 'ai_credits',
+        data: {'sku': sku},
+      );
+      return PurchaseOutcome.requiresAccount;
     }
 
     // Re-assert identity immediately before buying. `logIn` runs once at

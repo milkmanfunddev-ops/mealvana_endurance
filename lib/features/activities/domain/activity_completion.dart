@@ -225,6 +225,8 @@ extension ActivityCompletionExtensions on ActivityCompletion {
   /// Get formatted pace if available
   String? get formattedPace {
     if (averagePaceMinutesPerMile == null) return null;
+    // Via UnitFormatter so the minute carry is handled once — splitting
+    // floor()/round() here renders 3.99995 as "3:60".
     return '${UnitFormatter.formatMinutesAsMinSec(averagePaceMinutesPerMile!)}/mi';
   }
 

@@ -3,11 +3,15 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../../activities/domain/brick_metadata.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../shared/providers/unit_system_provider.dart';
+import '../../../../../shared/utils/unit_formatter.dart';
+import '../../../domain/run_parameters.dart';
 
 /// Brick Workout Completion Dialog
 /// Allows user to rate brick workout and add optional notes
 /// Shows segment summary for better context
-class BrickCompletionDialog extends StatefulWidget {
+class BrickCompletionDialog extends ConsumerStatefulWidget {
   const BrickCompletionDialog({
     super.key,
     required this.brick,
@@ -18,10 +22,11 @@ class BrickCompletionDialog extends StatefulWidget {
   final Function(int rating, String? notes) onComplete;
 
   @override
-  State<BrickCompletionDialog> createState() => _BrickCompletionDialogState();
+  ConsumerState<BrickCompletionDialog> createState() =>
+      _BrickCompletionDialogState();
 }
 
-class _BrickCompletionDialogState extends State<BrickCompletionDialog> {
+class _BrickCompletionDialogState extends ConsumerState<BrickCompletionDialog> {
   int _rating = 3;
   final _notesController = TextEditingController();
 
@@ -182,13 +187,21 @@ class _BrickCompletionDialogState extends State<BrickCompletionDialog> {
     }
   }
 
+  /// Swim legs stay in metres in both unit systems, matching BrickHeader and
+  /// BrickSegmentCard; run/bike legs follow the athlete's unit system.
   String _formatDistance(BrickSegment segment) {
     final sport = segment.sport.toLowerCase();
     if (sport == 'swimming' && segment.distanceMeters != null) {
       return '${segment.distanceMeters}m';
     } else if ((sport == 'cycling' || sport == 'running') &&
         segment.distanceMiles != null) {
-      return '${segment.distanceMiles!.toStringAsFixed(1)}mi';
+      final useMetric =
+          (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+          UnitSystem.metric;
+      return UnitFormatter.formatDistance(
+        segment.distanceMiles!,
+        unit: useMetric ? DistanceUnit.kilometers : DistanceUnit.miles,
+      );
     }
     return '';
   }

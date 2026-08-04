@@ -509,6 +509,8 @@ class ActivityCard extends ConsumerWidget {
         return 'VDOT';
       case 'strava':
         return 'Strava';
+      case 'runna':
+        return 'Runna';
       default:
         return provider;
     }

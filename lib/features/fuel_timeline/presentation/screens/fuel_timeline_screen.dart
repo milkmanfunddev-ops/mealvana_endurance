@@ -133,7 +133,7 @@ class FuelTimelineScreen extends ConsumerWidget {
           child: Column(
             children: [
               const SizedBox(height: AppSpacing.md),
-              // Garmin connect prompt (self-hides once connected). Jade banner
+              // Garmin connect prompt (self-hides once connected). Mealvana AI banner
               // intentionally not shown here (Lee, 2026-06-28).
               // Do NOT add a SizedBox after this: the banner carries its own
               // bottom margin so the gap vanishes when the banner self-hides.

@@ -4,7 +4,9 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_footer.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../integrations/domain/runna_defaults.dart';
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
@@ -1117,67 +1119,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
   /// Dialog explaining where to find the Runna calendar link, with a paste
   /// field. Returns the entered URL or null if cancelled.
-  Future<String?> _showRunnaConnectDialog(BuildContext context) async {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
-    final urlController = TextEditingController();
-
-    try {
-      return await showDialog<String>(
-        context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            backgroundColor: theme.scaffoldBackgroundColor,
-            title: Text(
-              'Connect Runna',
-              style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'In the Runna app, go to Settings → Calendar sync and copy '
-                  'your calendar link, then paste it below.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  key: const ValueKey('connected_apps.runna_url_field'),
-                  controller: urlController,
-                  autofocus: true,
-                  keyboardType: TextInputType.url,
-                  autocorrect: false,
-                  style: AppTextStyles.bodySmall.copyWith(color: onSurface),
-                  decoration: const InputDecoration(
-                    hintText: 'webcal://... or https://...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                key: const ValueKey('connected_apps.runna_connect_cancel'),
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                key: const ValueKey('connected_apps.runna_connect_confirm'),
-                onPressed: () =>
-                    Navigator.of(dialogContext).pop(urlController.text.trim()),
-                child: const Text('Connect'),
-              ),
-            ],
-          );
-        },
-      );
-    } finally {
-      urlController.dispose();
-    }
+  Future<String?> _showRunnaConnectDialog(BuildContext context) {
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => const _RunnaConnectDialog(),
+    );
   }
 
   /// Shared connect flow (settings + onboarding): prompt for the feed URL,
@@ -1485,4 +1431,107 @@ class _ComingSoonProviderConfig {
   final String key;
   final String? iconPath;
   final double logoHeight;
+}
+
+/// Paste-the-calendar-link dialog for Runna.
+///
+/// Stateful so the [TextEditingController] is owned by the dialog and disposed
+/// in [State.dispose] — disposing it in a `finally` after `showDialog` returns
+/// tears it down while the route is still animating out, and the still-mounted
+/// [TextField] then throws "used after being disposed".
+class _RunnaConnectDialog extends StatefulWidget {
+  const _RunnaConnectDialog();
+
+  @override
+  State<_RunnaConnectDialog> createState() => _RunnaConnectDialogState();
+}
+
+class _RunnaConnectDialogState extends State<_RunnaConnectDialog> {
+  final _urlController = TextEditingController();
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openRunnaSupportArticle() async {
+    final uri = Uri.parse(RunnaDefaults.supportArticleUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    if (!mounted) return;
+    MealvanaSnackbar.showError(context, 'Could not open Runna\'s guide');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+
+    return AlertDialog(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      title: Text(
+        'Connect Runna',
+        style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
+      ),
+      // Scrollable: with the keyboard up the dialog's content box is short, and
+      // a plain Column overflows instead of scrolling.
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              RunnaDefaults.feedUrlInstructions,
+              style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            // Runna owns this flow and renames screens from time to time; link
+            // the canonical instructions rather than relying on our copy.
+            GestureDetector(
+              key: const ValueKey('connected_apps.runna_help_link'),
+              onTap: _openRunnaSupportArticle,
+              child: Text(
+                'Can\'t find it? See Runna\'s guide',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: theme.colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                  decorationColor: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              key: const ValueKey('connected_apps.runna_url_field'),
+              controller: _urlController,
+              autofocus: true,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              style: AppTextStyles.bodySmall.copyWith(color: onSurface),
+              decoration: const InputDecoration(
+                hintText: 'webcal://... or https://...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          key: const ValueKey('connected_apps.runna_connect_cancel'),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          key: const ValueKey('connected_apps.runna_connect_confirm'),
+          onPressed: () =>
+              Navigator.of(context).pop(_urlController.text.trim()),
+          child: const Text('Connect'),
+        ),
+      ],
+    );
+  }
 }

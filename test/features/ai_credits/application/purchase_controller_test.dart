@@ -145,6 +145,7 @@ void main() {
     when(() => creditsRepo.ensureWallet()).thenAnswer((_) async => null);
     when(() => creditsRepo.subscribeToWallet(any())).thenReturn(null);
     when(() => creditsRepo.currentUserId).thenReturn(_testUserId);
+    when(() => creditsRepo.isAnonymousUser).thenReturn(false);
     when(() => rcService.logIn(any())).thenAnswer((_) async {});
   });
 
@@ -679,6 +680,43 @@ void main() {
 
       expect(outcome, PurchaseOutcome.notSignedIn);
       verifyNever(() => rcService.purchase(any()));
+    });
+
+    test('anonymous user → PurchaseOutcome.requiresAccount and the store is '
+        'never contacted', () async {
+      // A Supabase anonymous session has a perfectly valid user id, which is
+      // exactly why the old null-check guard let it through. Only the
+      // link-in-place "Create Account" upgrade preserves that id — signing in
+      // to an existing account swaps it and strands the purchased credits —
+      // so the purchase must be refused before money changes hands.
+      when(() => creditsRepo.isAnonymousUser).thenReturn(true);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.requiresAccount);
+      verifyNever(() => rcService.purchase(any()));
+      // Not even the identity re-assertion should run — the flow stops cold.
+      verifyNever(() => rcService.logIn(any()));
+
+      final state = container.read(purchaseControllerProvider);
+      expect(
+        state,
+        isA<AsyncData<void>>(),
+        reason: 'Refusal is a funnel step, not an error state.',
+      );
     });
 
     test(

@@ -211,7 +211,7 @@ jobs:
       #     needs a real Google account and interactive consent.
       #   • onboarding_signup_flow_test — requires a clean install with no
       #     session, which it cannot have once an earlier flow has logged in.
-      #   • jade_chat_flow_test — drives the Jade LLM chat surface, which bills
+      #   • ai_coach_chat_flow_test — drives the AI coach chat surface, which bills
       #     real tokens per run and is non-deterministic. See the AI note below.
       # Run those three by hand against a freshly-erased simulator.
       #
