@@ -17,6 +17,34 @@
 const Map<String, int> kCreditsByProductId = {
   'mealvana_credits_50': 50,
   'mealvana_credits_250': 250,
+  // Prod App Store SKUs. The dev app owns the plain ids above (Apple rejects a
+  // product id any app in the team has ever claimed), so the production app
+  // sells `_prod` variants — same packs, same packages, per-app products.
+  'mealvana_credits_50_prod': 50,
+  'mealvana_credits_250_prod': 250,
+  // Pipeline-test pack: $0.99 for 1 credit, tester-only (see
+  // kTesterOnlyProductIds). It exists so the full money path — StoreKit sheet
+  // → RevenueCat receipt → revenuecat-webhook → wallet grant — can be
+  // exercised for under a dollar, in sandbox on dev builds and for real on a
+  // 7-tap tester device once a production release carries the SKU.
+  'mealvana_credits_test_1': 1,
+  // Same pack, prod App Store SKU. Apple rejects a product id that any app in
+  // the team has ever claimed, and the dev app owns the plain id — so the
+  // production app carries a `_prod` variant. One RevenueCat package
+  // ($rc_custom_credits_test_1) holds both; each app is served its own.
+  'mealvana_credits_test_1_prod': 1,
+};
+
+/// SKUs that must never be shown to regular users.
+///
+/// `visibleCreditPackages` hides these unless the build is a dev flavor or the
+/// device is flagged internal via the 7-tap tester reveal in Settings. The
+/// products stay live in the stores either way — hiding is a client-side
+/// display rule, which is what lets a tester buy the $0.99 pack on the
+/// production app after release while nobody else ever sees it.
+const Set<String> kTesterOnlyProductIds = {
+  'mealvana_credits_test_1',
+  'mealvana_credits_test_1_prod',
 };
 
 /// Credits granted by [productId], or null when the SKU is unknown to this

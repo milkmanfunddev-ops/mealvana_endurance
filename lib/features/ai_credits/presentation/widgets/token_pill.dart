@@ -95,6 +95,42 @@ class TokenGlyph extends StatelessWidget {
   }
 }
 
+/// A quiet "costs N tokens" tag for secondary AI entry points — the photo
+/// pickers and re-scan tiles, where the dark inset [TokenCostChip] built for
+/// the accent Analyze button would overpower an outlined surface. Just the
+/// glyph and the count, no capsule, at reduced opacity so it reads as a price
+/// note rather than a second label.
+///
+/// Renders nothing unless [AppConfig.aiCreditsEnabled], same as the pill.
+class TokenCostTag extends ConsumerWidget {
+  const TokenCostTag({super.key, this.cost = 1});
+
+  final int cost;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(appConfigProvider).aiCreditsEnabled) {
+      return const SizedBox.shrink();
+    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const TokenGlyph(size: 14),
+        const SizedBox(width: 3),
+        Text(
+          '$cost',
+          style: AppTextStyles.bodySmall.copyWith(
+            fontWeight: FontWeight.w700,
+            color: onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// The "costs 1 token" chip that rides inside an AI action button.
 ///
 /// Design: a dark inset capsule on the accent button carrying the glyph and

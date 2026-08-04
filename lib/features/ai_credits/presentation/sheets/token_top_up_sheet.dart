@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -46,12 +47,15 @@ class _Pack {
   /// Localized price straight from the store (never a hardcoded dollar value).
   String get price => product.priceString;
 
-  String get title => tokens != null ? '$tokens tokens' : product.title;
+  String get title => tokens != null
+      ? '$tokens ${tokens == 1 ? 'token' : 'tokens'}'
+      : product.title;
 }
 
-/// Build the display list from an offering, largest pack last and tagged.
-List<_Pack> _packsFrom(Offering offering) {
-  final packs = offering.availablePackages
+/// Build the display list from the visible packages, largest pack last and
+/// tagged.
+List<_Pack> _packsFrom(List<Package> packages) {
+  final packs = packages
       .map(
         (p) => _Pack(
           package: p,
@@ -160,7 +164,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final balance = ref.watch(creditsControllerProvider).value?.balance ?? 0;
     final out = balance <= 0;
-    final offeringAsync = ref.watch(aiCreditOfferingProvider);
+    final packagesAsync = ref.watch(visibleCreditPackagesProvider);
 
     return Column(
       key: const ValueKey('packs'),
@@ -187,15 +191,14 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
           ),
         ),
         const SizedBox(height: 22),
-        offeringAsync.when(
+        packagesAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.symmetric(vertical: 28),
             child: Center(child: CircularProgressIndicator()),
           ),
           error: (_, __) => _unavailable(onSurface),
-          data: (offering) {
-            if (offering == null) return _unavailable(onSurface);
-            final packs = _packsFrom(offering);
+          data: (packages) {
+            final packs = _packsFrom(packages);
             if (packs.isEmpty) return _unavailable(onSurface);
 
             // Guard the selection: the offering can change under us between
@@ -225,7 +228,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
                 KylePrimaryButton(
                   key: const ValueKey('tokens.buy'),
                   text: packs[selected].tokens != null
-                      ? 'Get ${packs[selected].tokens} tokens · '
+                      ? 'Get ${packs[selected].title} · '
                             '${packs[selected].price}'
                       : 'Buy · ${packs[selected].price}',
                   isLoading: _buying,
@@ -457,6 +460,22 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
       case PurchaseOutcome.cancelled:
         // Not an error. Drop back to the pack list silently.
         setState(() => _buying = false);
+
+      case PurchaseOutcome.requiresAccount:
+        // Anonymous session: the purchase was refused before the store was
+        // contacted. Close the sheet and take the user straight to account
+        // creation — the link-in-place upgrade keeps their user id, so all
+        // their data (and any future tokens) follow them. They can re-open
+        // the sheet once the account exists.
+        setState(() => _buying = false);
+        // Grab the router before popping — the sheet's context is defunct
+        // once the modal route is gone.
+        final router = GoRouter.of(context);
+        Navigator.of(context).pop();
+        router.pushNamed(
+          'auth-post-onboarding',
+          queryParameters: {'mode': 'signup'},
+        );
 
       case PurchaseOutcome.notSignedIn:
         setState(() {

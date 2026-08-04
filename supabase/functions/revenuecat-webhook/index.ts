@@ -38,6 +38,15 @@ const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? '';
 const DEFAULT_PRODUCT_CREDITS: Record<string, number> = {
   mealvana_credits_50: 50,
   mealvana_credits_250: 250,
+  // Prod App Store `_prod` variants of the packs above — same Apple
+  // product-id-uniqueness constraint as the test pack below.
+  mealvana_credits_50_prod: 50,
+  mealvana_credits_250_prod: 250,
+  // $0.99 pipeline-test pack, shown only to dev builds / tester devices.
+  // The prod App Store carries a `_prod` variant because Apple rejects a
+  // product id already claimed by any app in the team (the dev app owns it).
+  mealvana_credits_test_1: 1,
+  mealvana_credits_test_1_prod: 1,
 };
 
 function productCredits(): Record<string, number> {

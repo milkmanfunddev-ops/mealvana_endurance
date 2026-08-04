@@ -63,6 +63,72 @@ final class AiCreditOfferingProvider
 
 String _$aiCreditOfferingHash() => r'f80dc0b5e1feadd84936737e9626ec31c3c5e1e6';
 
+/// The packages the current build is allowed to *display*, in offering order.
+///
+/// This is [aiCreditOffering] minus the tester-only SKUs
+/// ([kTesterOnlyProductIds]): the $0.99 pipeline-test pack exists in the store
+/// so the whole purchase path (StoreKit → RevenueCat → webhook → wallet) can
+/// be exercised end to end, but only dev builds and 7-tap tester devices may
+/// see it. Filtering lives here — not in the sheet or the screen — so no
+/// future purchase surface can forget it.
+
+@ProviderFor(visibleCreditPackages)
+const visibleCreditPackagesProvider = VisibleCreditPackagesProvider._();
+
+/// The packages the current build is allowed to *display*, in offering order.
+///
+/// This is [aiCreditOffering] minus the tester-only SKUs
+/// ([kTesterOnlyProductIds]): the $0.99 pipeline-test pack exists in the store
+/// so the whole purchase path (StoreKit → RevenueCat → webhook → wallet) can
+/// be exercised end to end, but only dev builds and 7-tap tester devices may
+/// see it. Filtering lives here — not in the sheet or the screen — so no
+/// future purchase surface can forget it.
+
+final class VisibleCreditPackagesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Package>>,
+          List<Package>,
+          FutureOr<List<Package>>
+        >
+    with $FutureModifier<List<Package>>, $FutureProvider<List<Package>> {
+  /// The packages the current build is allowed to *display*, in offering order.
+  ///
+  /// This is [aiCreditOffering] minus the tester-only SKUs
+  /// ([kTesterOnlyProductIds]): the $0.99 pipeline-test pack exists in the store
+  /// so the whole purchase path (StoreKit → RevenueCat → webhook → wallet) can
+  /// be exercised end to end, but only dev builds and 7-tap tester devices may
+  /// see it. Filtering lives here — not in the sheet or the screen — so no
+  /// future purchase surface can forget it.
+  const VisibleCreditPackagesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'visibleCreditPackagesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$visibleCreditPackagesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Package>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Package>> create(Ref ref) {
+    return visibleCreditPackages(ref);
+  }
+}
+
+String _$visibleCreditPackagesHash() =>
+    r'769f727cf9fee5ba3cff0dc5621d86a483c3830c';
+
 /// Manages the purchase and restore flows for AI credit packs.
 ///
 /// State is `AsyncValue<void>`:
@@ -140,7 +206,7 @@ final class PurchaseControllerProvider
 }
 
 String _$purchaseControllerHash() =>
-    r'93074bcd2648f6bd0ebdc3baf50830509a8cf618';
+    r'9830e199c03727d60cfc2c6ad4ca04b538976ee1';
 
 /// Manages the purchase and restore flows for AI credit packs.
 ///
