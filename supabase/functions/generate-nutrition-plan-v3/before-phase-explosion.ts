@@ -12,7 +12,7 @@ import type {
 } from "../generate-macros-v4/types.ts";
 import type { FoodResult } from "../_shared/nutrition/types.ts";
 import type { SubPhaseResult, SubPhaseTargets } from "../_shared/nutrition/templates/types.ts";
-import { getSubPhaseTimingLabel } from "../_shared/nutrition/templates/pre-workout-targets.ts";
+import { getSubPhaseTimingLabel } from "./sub-phase-timing.ts";
 import type { TemplateFoodRow } from "./before-phase-db.ts";
 import { isLiquidProductType, type UserFoodForSubstitution } from "./before-phase-substitution.ts";
 
@@ -46,6 +46,7 @@ export function selectionToFoodResults(
   // If we have component data AND template_foods lookup, explode
   if (componentNames.length > 0 && templateFoodsMap.size > 0) {
     const results: FoodResult[] = [];
+    let missingComponent = false;
 
     for (const compName of componentNames) {
       const tf = templateFoodsMap.get(compName);
@@ -53,6 +54,7 @@ export function selectionToFoodResults(
         console.warn(
           `[PLAN-V3] Component '${compName}' not found in template_foods, skipping`,
         );
+        missingComponent = true;
         continue;
       }
 
@@ -123,11 +125,25 @@ export function selectionToFoodResults(
       });
     }
 
-    if (results.length > 0) {
+    // Only ship the exploded rows when EVERY component resolved. A partial
+    // explosion is worse than no explosion: normalizeExplosionMacros scales
+    // the survivors up to the whole selection's macros, so a dangling
+    // component name (e.g. "white_rice_cooked" vs template_foods
+    // "white_rice") produced a "1.5 Bananas" row secretly carrying the whole
+    // Rice + Banana meal (108 g carbs) — the food list understated the meal
+    // and the quantity stepper jumped carbs by a whole hidden component.
+    // Falling through emits the whole template as one honest row instead.
+    if (results.length > 0 && !missingComponent) {
       normalizeExplosionMacros(results, selection);
       return results;
     }
-    // Fall through to legacy path if all components failed lookup
+    if (missingComponent) {
+      console.warn(
+        `[PLAN-V3] Template '${selection.name}' has unresolved components — ` +
+          `emitting whole template as a single item instead of a partial explosion`,
+      );
+    }
+    // Fall through to legacy path if any component failed lookup
   }
 
   // Legacy / fallback: return single FoodResult for the whole template
@@ -297,11 +313,10 @@ export function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
 export function phaseResultToSubPhaseResult(
   phaseResult: PreWorkoutPhaseResult,
   phaseTargets: SubPhaseTargets,
-  hoursBefore: number,
   templateFoodsMap: Map<string, TemplateFoodRow>,
   substitutions?: Map<string, UserFoodForSubstitution>,
 ): SubPhaseResult {
-  const timing = getSubPhaseTimingLabel(phaseResult.phase, hoursBefore);
+  const timing = getSubPhaseTimingLabel(phaseResult.phase);
   const foods: FoodResult[] = [];
 
   // Primary food (exploded into components, with user food substitutions)

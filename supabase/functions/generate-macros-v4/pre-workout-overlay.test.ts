@@ -44,28 +44,69 @@ function baseRunningInput(overrides: Record<string, unknown> = {}) {
   } as Parameters<typeof calculateMacrosV4>[0];
 }
 
-describe('Pre-workout hydration overlay — single-sport Tier 1', () => {
-  it('70 kg, 3h before, 22°C → fluid=420 (not legacy 455)', async () => {
+// ============================================================================
+// Hydration v6 / carbs v2 / sodium v3 on the response payload.
+//
+// The v1 assertions that lived here (fluid = BW x 6, a [BW x 5, BW x 7] band,
+// a flat 250 ml "tier 2", 450/150 mg of sodium and `pre_run_hydration_tier`)
+// were DELETED, not adapted: every number changed and the integer tier field
+// no longer exists. `pre_run_hydration_regime` + `pre_run_fluid_target_basis`
+// are what a consumer reads now.
+//
+// 70 kg reference athlete, 10 mi @ 9 min/mi = 90 min (above the gate).
+// ============================================================================
+
+describe('Pre-workout overlay — cited regime (t >= 120)', () => {
+  it('70 kg, 3 h before, 22 C -> 525 ml [350, 840], regime=cited', async () => {
     const result = await calculateMacrosV4(
       baseRunningInput({ hours_before: 3, temp_c: 22 }),
       EMPTY_TEMPLATES,
     );
-    // Spec: weight × 6 = 70 × 6 = 420 ml
-    assertEquals(result.pre_run_water_ml, 420);
-    assertEquals(result.pre_run_water_low_ml, 350);  // weight × 5
-    assertEquals(result.pre_run_water_high_ml, 490); // weight × 7
-    assertEquals(result.pre_run_sodium_mg, 450);
-    assertEquals(result.pre_run_sodium_low_mg, 300);
-    assertEquals(result.pre_run_sodium_high_mg, 600);
-    assertEquals(result.pre_run_hydration_tier, 1);
+    // 7.5 ml/kg (Thomas 2016 midpoint), NOT v1's 6 ml/kg.
+    assertEquals(result.pre_run_water_ml, 525);
+    assertEquals(result.pre_run_water_low_ml, 350);   // 5 * BW, cited floor
+    assertEquals(result.pre_run_water_high_ml, 840);  // min(12.5, 12) * BW
+    assertEquals(result.pre_run_hydration_regime, 'cited');
+    assertEquals(result.pre_run_fluid_target_basis, 'evidenced_band');
     assertEquals(result.pre_run_hydration_gate_triggered, false);
+    // `unknown` normalises to `pale` above T_REF -- and only there.
+    assertEquals(result.pre_run_hydration_check_used, 'pale');
+    assertEquals(
+      result.pre_run_fluid_tiers.map((t: { tier: string }) => t.tier),
+      ['meal', 'snack', 'top_off'],
+    );
+
+    // Sodium v3: no pre-workout target. STRICT null -- a 0 here would mean
+    // "consume no sodium", which is a different claim and a real regression.
+    assertEquals(result.pre_run_sodium_mg, null);
+    assertEquals(result.pre_run_sodium_low_mg, null);
+    assertEquals(result.pre_run_sodium_high_mg, null);
+
+    // Carbs v2: t = 180 -> 3 g/kg = 210 g, plan band Thomas [1*BW, 4*BW].
+    assertEquals(result.pre_run_carbs_g, 210);
+    assertEquals(result.pre_run_carbs_low_g, 70);
+    assertEquals(result.pre_run_carbs_high_g, 280);
+    assertEquals(result.pre_run_carb_target_basis, 'evidenced_band');
+    assertEquals(
+      result.pre_run_carb_tiers.map((t: { tier: string }) => t.tier),
+      ['meal', 'snack', 'top_off'],
+    );
+  });
+
+  it('the retired `pre_run_hydration_tier` is absent from the payload', async () => {
+    const result = await calculateMacrosV4(
+      baseRunningInput({ hours_before: 3, temp_c: 22 }),
+      EMPTY_TEMPLATES,
+    );
+    assert(
+      !('pre_run_hydration_tier' in (result as Record<string, unknown>)),
+      'PW-013 retired the integer tier; it must not reappear on the wire',
+    );
   });
 });
 
-describe('Pre-workout hydration overlay — single-sport Tier 2', () => {
-  it('70 kg, 45 min before, 22°C, 90 min workout → fixed 250ml / 150mg', async () => {
-    // 45 min run @ 9 min/mile = 5 miles, durationMin=45 → gate would fire at 22°C
-    // So use 90 min run so gate doesn't fire
+describe('Pre-workout overlay — extrapolated regime (30 <= t < 120)', () => {
+  it('70 kg, 45 min before -> taper 353 ml, low 0, regime=extrapolated', async () => {
     const result = await calculateMacrosV4(
       baseRunningInput({
         hours_before: 45 / 60,
@@ -74,33 +115,82 @@ describe('Pre-workout hydration overlay — single-sport Tier 2', () => {
       }),
       EMPTY_TEMPLATES,
     );
-    assertEquals(result.pre_run_water_ml, 250);
-    assertEquals(result.pre_run_water_low_ml, 200);
-    assertEquals(result.pre_run_water_high_ml, 300);
-    assertEquals(result.pre_run_sodium_mg, 150);
-    assertEquals(result.pre_run_hydration_tier, 2);
+    // f(45) = 250 + (525 - 250) * 45/120 = 353.125 -> 353 at the response
+    // boundary. There is no flat 250 ml tier any more.
+    assertEquals(result.pre_run_water_ml, 353);
+    // Below two hours there is NO minimum: 0, and 0 is not null here.
+    assertEquals(result.pre_run_water_low_ml, 0);
+    assertEquals(result.pre_run_water_high_ml, 700); // min(10*BW, clearance)
+    assertEquals(result.pre_run_hydration_regime, 'extrapolated');
+    assertEquals(result.pre_run_fluid_target_basis, 'design_choice');
+    // Below T_REF the echo is RAW -- never normalised to pale.
+    assertEquals(result.pre_run_hydration_check_used, 'unknown');
+    assertEquals(
+      result.pre_run_fluid_tiers.map((t: { tier: string }) => t.tier),
+      ['snack', 'top_off'],
+    );
+    assertEquals(result.pre_run_sodium_mg, null);
   });
 });
 
-describe('Pre-workout hydration overlay — gate triggers', () => {
-  it('45 min workout at 22°C → gate fires → fluid=0, sodium=0', async () => {
+describe('Pre-workout overlay — clearance_bound regime (t < 30)', () => {
+  it('5 min before -> top-off only, high clamped by gastric clearance', async () => {
     const result = await calculateMacrosV4(
       baseRunningInput({
-        hours_before: 3, temp_c: 22,
-        run_distance: 5, run_pace: 9,  // 5 × 9 = 45 min
+        hours_before: 5 / 60,
+        temp_c: 22,
+        run_distance: 10, // 90 min, so the gate does not fire
       }),
       EMPTY_TEMPLATES,
     );
-    assertEquals(result.pre_run_water_ml, 0);
-    assertEquals(result.pre_run_sodium_mg, 0);
+    // f(5) = 261.46 -> 261. Carbs are what go to zero this close in, not fluid:
+    // "you can drink at the gun, not eat".
+    assertEquals(result.pre_run_water_ml, 261);
+    assertEquals(result.pre_run_water_low_ml, 0);
+    // 400 * e^(3.2/60 * 5) = 522.24 < 10*BW=700 -> the clearance ceiling binds.
+    assertEquals(result.pre_run_water_high_ml, 522);
+    assertEquals(result.pre_run_hydration_regime, 'clearance_bound');
+    assertEquals(result.pre_run_fluid_target_basis, 'design_choice');
+    assertEquals(
+      result.pre_run_fluid_tiers.map((t: { tier: string }) => t.tier),
+      ['top_off'],
+    );
+    assertEquals(result.pre_run_sodium_mg, null);
+    assertEquals(result.pre_run_hydration_gate_triggered, false);
+  });
+});
+
+describe('Pre-workout overlay — the gate', () => {
+  it('45 min workout at 22 C -> gated: fluid null (not 0), no tiers', async () => {
+    const result = await calculateMacrosV4(
+      baseRunningInput({
+        hours_before: 3, temp_c: 22,
+        run_distance: 5, run_pace: 9,  // 5 x 9 = 45 min
+      }),
+      EMPTY_TEMPLATES,
+    );
+    assertEquals(result.pre_run_water_ml, null, 'gated fluid is null, not 0');
+    assertEquals(result.pre_run_water_low_ml, null);
+    assertEquals(result.pre_run_water_high_ml, null);
+    assertEquals(result.pre_run_sodium_mg, null);
     assertEquals(result.pre_run_hydration_gate_triggered, true);
+    assertEquals(result.pre_run_hydration_regime, 'gated');
+    assertEquals(result.pre_run_fluid_target_basis, 'none');
+    assertEquals(result.pre_run_hydration_check_used, null);
+    assertEquals(result.pre_run_fluid_tiers.length, 0);
     assert(
       (result.pre_run_hydration_message ?? '').includes('No structured pre-hydration'),
       'gate message present',
     );
+    // Carbs have NO gate -- deliberately asymmetric with hydration.
+    assertEquals(result.pre_run_carbs_g, 210);
+    assert(
+      result.pre_run_carb_tiers.length > 0,
+      'a gated hydration plan must not empty the carb tiers',
+    );
   });
 
-  it('45 min workout at 31°C → gate bypassed, Tier 1 applies', async () => {
+  it('45 min workout at 31 C -> gate bypassed, cited regime applies', async () => {
     const result = await calculateMacrosV4(
       baseRunningInput({
         hours_before: 3, temp_c: 31,
@@ -108,51 +198,34 @@ describe('Pre-workout hydration overlay — gate triggers', () => {
       }),
       EMPTY_TEMPLATES,
     );
-    assertEquals(result.pre_run_water_ml, 420);
+    assertEquals(result.pre_run_water_ml, 525);
     assertEquals(result.pre_run_hydration_gate_triggered, false);
-    assertEquals(result.pre_run_hydration_tier, 1);
+    assertEquals(result.pre_run_hydration_regime, 'cited');
   });
 });
 
-describe('Pre-workout hydration overlay — Tier 3 too-late', () => {
-  it('5 min before, 90 min workout → fluid=0, sodium=0, Tier 3', async () => {
-    const result = await calculateMacrosV4(
-      baseRunningInput({
-        hours_before: 5 / 60,
-        temp_c: 22,
-        run_distance: 10,  // 10 × 9 = 90 min
-      }),
-      EMPTY_TEMPLATES,
-    );
-    assertEquals(result.pre_run_water_ml, 0);
-    assertEquals(result.pre_run_sodium_mg, 0);
-    assertEquals(result.pre_run_hydration_tier, 3);
-    assertEquals(result.pre_run_hydration_gate_triggered, false);
-  });
-});
-
-describe('Pre-workout hydration overlay — fasted still applies overlay (2026-04-24 spec)', () => {
-  it('fasted → carbs/protein/fat remain 0, fluid/sodium come from time-tier algorithm', async () => {
-    // Previously fasted short-circuited the hydration overlay. Per the new
-    // spec (pre-workout gate is duration/temp only, not fasted status), a
-    // fasted athlete still needs pre-hydration and pre-sodium. Only carbs/
-    // protein/fat should be zeroed.
+describe('Pre-workout overlay — fasted', () => {
+  it('fasted zeroes carbs but still hydrates (the gate is duration/temp only)', async () => {
     const result = await calculateMacrosV4(
       baseRunningInput({ hours_before: 3, is_fasted: true, run_distance: 10 }),
       EMPTY_TEMPLATES,
     );
-    // Tier 1 (3h available) → 70 kg × 6 = 420 ml, 450 mg sodium fixed.
-    assertEquals(result.pre_run_water_ml, 420);
-    assertEquals(result.pre_run_sodium_mg, 450);
+    assertEquals(result.pre_run_water_ml, 525);
+    assertEquals(result.pre_run_hydration_regime, 'cited');
+    assertEquals(result.pre_run_sodium_mg, null);
     assertEquals(result.pre_run_meal_type, 'fasted');
-    // Carbs/protein/fat still zero per fasted legacy.
     assertEquals(result.pre_run_carbs_g, 0);
     assertEquals(result.pre_run_protein_g, 0);
+    // The two zeros are DIFFERENT: fasted means "no recommendation is being
+    // made", so the tiers are EMPTY and the basis is `none` -- distinct from a
+    // t = 0 plan, which carries a top_off tier holding 0 g.
+    assertEquals(result.pre_run_carb_tiers.length, 0);
+    assertEquals(result.pre_run_carb_target_basis, 'none');
   });
 });
 
-describe('Pre-workout hydration overlay — brick path (Olympic tri)', () => {
-  it('brick 140 min, 4h before, 68 kg → Tier 1 overlay', () => {
+describe('Pre-workout overlay — brick path (Olympic tri)', () => {
+  it('brick 140 min, 4 h before, 68 kg → cited-regime overlay', () => {
     const input = {
       weight: 68, weight_unit: 'kg',
       activity_type: 'brick',
@@ -185,11 +258,18 @@ describe('Pre-workout hydration overlay — brick path (Olympic tri)', () => {
 
     const result = calculateBrickMacrosV4(input, preTargets);
 
-    // Tier 1 values for 68 kg: fluid=408, sodium=450
-    assertEquals(result.phases.before.water_ml, 408);
+    // Cited regime for 68 kg: 7.5 * 68 = 510, band [5 * 68, 12 * 68].
+    assertEquals(result.phases.before.water_ml, 510);
     assertEquals(result.phases.before.water_low_ml, 340);
-    assertEquals(result.phases.before.water_high_ml, 476);
-    assertEquals(result.phases.before.sodium_mg, 450);
+    assertEquals(result.phases.before.water_high_ml, 816);
+    // Sodium v3 -- strict null, on the brick path too.
+    assertEquals(result.phases.before.sodium_mg, null);
+    assertEquals(result.phases.before.sodium_low_mg, null);
+    assertEquals(result.phases.before.sodium_high_mg, null);
+    assertEquals(
+      result.phases.before.water_tiers.map((t: { tier: string }) => t.tier),
+      ['meal', 'snack', 'top_off'],
+    );
   });
 });
 

@@ -23,7 +23,7 @@ import type {
   BeforePhaseResult,
   SubPhaseResult,
 } from "../_shared/nutrition/templates/types.ts";
-import { getSubPhaseTimingLabel } from "../_shared/nutrition/templates/pre-workout-targets.ts";
+import { getSubPhaseTimingLabel } from "./sub-phase-timing.ts";
 import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
 import {
   matchBeforePersonalFormulaForSlot,
@@ -92,10 +92,18 @@ interface BeforePhaseInput {
   emit_ephemeral_default_formula?: boolean;
 }
 
+/**
+ * Meal-type from the SSOT tier boundaries (pre-workout-carbs.md v2 via
+ * generate-macros-v4): `meal` iff t >= TIER_MEAL_MIN (120 min), `snack` iff
+ * t >= TIER_TOPOFF_MAX (30 min), top-off always. Derived from
+ * `getActiveSubPhases` so the 120/30 constants live in exactly one place.
+ * (Previously hardcoded 2.5 h / 1.0 h — two generations stale.)
+ */
 function inferMealType(hoursBefore: number, isFasted: boolean): string {
   if (isFasted) return "fasted";
-  if (hoursBefore >= 2.5) return "full_meal";
-  if (hoursBefore >= 1.0) return "snack";
+  const active = getActiveSubPhases(hoursBefore);
+  if (active.includes("meal")) return "full_meal";
+  if (active.includes("snack")) return "snack";
   return "top_up";
 }
 
@@ -290,7 +298,6 @@ export async function generateBeforePhaseV3(
     const subPhaseResult = phaseResultToSubPhaseResult(
       phaseResult,
       phaseTargets,
-      input.hours_before,
       templateFoodsMap,
       substitutions,
     );
@@ -340,7 +347,7 @@ export async function generateBeforePhaseV3(
       // formula's composition ratio, not exact amounts).
       let foods = personalFormulaToFoodResults(
         formula,
-        getSubPhaseTimingLabel(slot, input.hours_before),
+        getSubPhaseTimingLabel(slot),
         slotTargets.carbs_g,
       );
       if (foods.length === 0) {
@@ -391,7 +398,7 @@ export async function generateBeforePhaseV3(
           foods,
           slotTargets,
           essentialsPool,
-          getSubPhaseTimingLabel(slot, input.hours_before),
+          getSubPhaseTimingLabel(slot),
           `[PLAN-V3] Before ${slot}`,
         );
       }
@@ -506,7 +513,7 @@ async function ensureBeforePhaseWaterPairing(
       subPhase.foods,
       {
         fluidCeilingMl: ceiling,
-        timing: getSubPhaseTimingLabel(slot, input.hours_before),
+        timing: getSubPhaseTimingLabel(slot),
         logPrefix: `[PLAN-V3] Before ${slot}`,
       },
       loadPool,

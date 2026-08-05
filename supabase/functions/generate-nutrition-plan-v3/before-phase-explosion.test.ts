@@ -126,3 +126,97 @@ describe('selectionToFoodResults — fluid preservation', () => {
     assertEquals(results[0].fluids_ml, 240);
   });
 });
+
+describe('selectionToFoodResults — unresolved components', () => {
+  // Regression for the "1 banana meal = 108 g carbs" bug (2026-08-05):
+  // "Rice + Banana" referenced component 'white_rice_cooked' while the
+  // template_foods row is named 'white_rice'. The lookup miss skipped the
+  // rice, then normalizeExplosionMacros scaled the surviving banana up to
+  // the whole selection's macros — a "1.5 Bananas" row secretly carrying
+  // 108 g carbs, so one +/- stepper tap jumped carbs by a hidden meal.
+  it(
+    'falls back to a single whole-template row when any component fails ' +
+      'lookup, instead of inflating the survivors',
+    () => {
+      const selection: TemplateSelection = {
+        id: 'tmpl-rice-banana',
+        name: 'Rice + Banana',
+        base_category: 'White Rice',
+        serving_unit: '1 plate',
+        servings: 1.5,
+        carbs_g: 108, // 1.5 × (45 + 27) × per-serving parent macros
+        protein_g: 8.3,
+        fat_g: 0.8,
+        sodium_mg: 8,
+        fluid_ml: 132,
+        component_food_names: ['white_rice_cooked', 'banana'], // rice dangles
+        component_quantities: { white_rice_cooked: 1, banana: 1 },
+      } as TemplateSelection;
+
+      const templateFoods = new Map<string, TemplateFoodRow>([
+        // Note: named 'white_rice', so 'white_rice_cooked' misses.
+        ['white_rice', makeTemplateFood({ name: 'white_rice', carbs_g: 45 })],
+        ['banana', makeTemplateFood({ name: 'banana', carbs_g: 27, fluid_ml: 88 })],
+      ]);
+
+      const results = selectionToFoodResults(
+        selection,
+        'pre_workout_meal',
+        false,
+        false,
+        templateFoods,
+      );
+
+      // One honest whole-template row, not an inflated lone banana.
+      assertEquals(results.length, 1);
+      assertEquals(results[0].display_name, 'Rice + Banana');
+      assertEquals(results[0].quantity, 1.5);
+      assertEquals(results[0].carbs_grams, 108);
+    },
+  );
+
+  it('still explodes normally when every component resolves', () => {
+    const selection: TemplateSelection = {
+      id: 'tmpl-rice-banana',
+      name: 'Rice + Banana',
+      base_category: 'White Rice',
+      serving_unit: '1 plate',
+      servings: 1.5,
+      carbs_g: 108,
+      protein_g: 8.3,
+      fat_g: 0.8,
+      sodium_mg: 8,
+      fluid_ml: 132,
+      component_food_names: ['white_rice', 'banana'],
+      component_quantities: { white_rice: 1, banana: 1 },
+    } as TemplateSelection;
+
+    const templateFoods = new Map<string, TemplateFoodRow>([
+      ['white_rice', makeTemplateFood({ name: 'white_rice', carbs_g: 45 })],
+      ['banana', makeTemplateFood({ name: 'banana', carbs_g: 27, fluid_ml: 88 })],
+    ]);
+
+    const results = selectionToFoodResults(
+      selection,
+      'pre_workout_meal',
+      false,
+      false,
+      templateFoods,
+    );
+
+    assertEquals(results.length, 2);
+    const totalCarbs = results.reduce((s, r) => s + r.carbs_grams, 0);
+    // Components sum to the selection contract; each keeps its own share
+    // (1.5 servings: rice 67.5 g, banana 40.5 g).
+    assert(
+      Math.abs(totalCarbs - 108) < 0.2,
+      `exploded carbs should sum to 108, got ${totalCarbs}`,
+    );
+    const banana = results.find((r) => r.display_name === 'banana');
+    assert(banana !== undefined);
+    assert(
+      Math.abs(banana!.carbs_grams - 40.5) < 0.2,
+      `banana should carry only its own carbs (~40.5 g), got ${banana!.carbs_grams}`,
+    );
+  });
+});

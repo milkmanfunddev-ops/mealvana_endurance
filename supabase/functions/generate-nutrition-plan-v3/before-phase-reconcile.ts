@@ -49,6 +49,7 @@ import {
   RAISINS_SODIUM,
 } from "../generate-macros-v4/types.ts";
 import { addOnToFoodResult } from "./before-phase-explosion.ts";
+import { getSubPhaseTimingLabel } from "./sub-phase-timing.ts";
 
 type SlotName = "meal" | "snack" | "top_up";
 
@@ -326,7 +327,7 @@ export function reconcileBeforePhaseAfterPins(
 
         const foodResult = addOnToFoodResult(
           bestPick.addOn,
-          hostSub.foods[0]?.timing ?? "top_up",
+          hostSub.foods[0]?.timing ?? getSubPhaseTimingLabel(host),
         );
         // Merge with an identical add-on already added this pass.
         const existing = hostSub.foods.find(

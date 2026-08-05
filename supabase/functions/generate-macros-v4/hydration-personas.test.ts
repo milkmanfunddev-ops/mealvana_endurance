@@ -18,7 +18,11 @@
  *     supabase/functions/generate-macros-v4/hydration-personas.test.ts
  */
 
-import { assertEquals, assert } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
+import {
+  assert,
+  assertAlmostEquals,
+  assertEquals,
+} from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { describe, it } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
 
 import {
@@ -27,6 +31,9 @@ import {
 } from './single-sport.ts';
 import { calculateBrickHydration } from './brick-workout.ts';
 import { calculatePreWorkoutHydration } from './pre-workout.ts';
+
+/** Abs tolerance for exact-ml comparisons. The engine never rounds. */
+const TOL_ML = 1e-3;
 
 // ============================================================================
 // PERSONAS
@@ -502,58 +509,118 @@ describe('Brick / triathlon × persona matrix', () => {
 });
 
 // ============================================================================
-// PRE-WORKOUT TIER OVERLAY × PERSONA MATRIX
+// PRE-WORKOUT HYDRATION v6 x PERSONA MATRIX
 // ============================================================================
+//
+// The v1 block that lived here asserted an integer `tier`, a flat 6 ml/kg
+// target with a 5-7 ml/kg band, a fixed 250 ml "tier 2" and 450/150/0 mg of
+// sodium. Every one of those is now wrong and `tier` no longer exists, so the
+// block was deleted rather than adapted. What replaces it asserts the SSOT v6
+// shape -- regime, target_basis and the exact per-persona fluid numbers -- and
+// sodium v3's strict nulls.
+//
+// Ratified NUMBERS are pinned once, in pre-workout-vectors.test.ts. What this
+// matrix adds is body-weight coverage: the personas span 45-100 kg, which
+// straddles the A0 = min(250, 7.5*BW) guard and the clearance ceiling.
 
-describe('Pre-workout tier × persona matrix', () => {
-  const tierCases = [
-    { minsBefore: 240, workoutMin: 180, temp: 22, expTier: 1, expGate: false },
-    { minsBefore: 120, workoutMin: 120, temp: 22, expTier: 1, expGate: false },
-    { minsBefore: 90,  workoutMin: 120, temp: 22, expTier: 2, expGate: false },
-    { minsBefore: 30,  workoutMin: 120, temp: 22, expTier: 2, expGate: false },
-    { minsBefore: 10,  workoutMin: 120, temp: 22, expTier: 2, expGate: false },
-    { minsBefore: 5,   workoutMin: 120, temp: 22, expTier: 3, expGate: false },
-    // Gate cases — 45-min in mild weather should gate out.
-    // When gated, tier is meaningless and the implementation returns 1; the
-    // only assertion that matters is gate_triggered=true, fluid=0, sodium=0.
-    { minsBefore: 240, workoutMin: 45,  temp: 22, expTier: 1, expGate: true },
-    { minsBefore: 90,  workoutMin: 45,  temp: 22, expTier: 1, expGate: true },
-    // Gate bypass at 30°C+
-    { minsBefore: 240, workoutMin: 45,  temp: 31, expTier: 1, expGate: false },
+describe('Pre-workout hydration v6 x persona matrix', () => {
+  /** f(x) = A0 + (7.5*BW - A0) * min(x, 120)/120 -- the spec's taper. */
+  function taper(bw: number, x: number): number {
+    const a0 = Math.min(250, 7.5 * bw);
+    return a0 + (7.5 * bw - a0) * Math.min(x, 120) / 120;
+  }
+
+  const cases = [
+    // t >= 120 -> cited/evidenced_band, plan = 7.5*BW (pale/unknown).
+    { minsBefore: 240, workoutMin: 180, temp: 22, gate: false, regime: 'cited' },
+    { minsBefore: 120, workoutMin: 120, temp: 22, gate: false, regime: 'cited' },
+    // 30 <= t < 120 -> extrapolated/design_choice, plan = f(t) in the snack tier.
+    { minsBefore: 90, workoutMin: 120, temp: 22, gate: false, regime: 'extrapolated' },
+    { minsBefore: 30, workoutMin: 120, temp: 22, gate: false, regime: 'extrapolated' },
+    // t < 30 -> top-off only. At t = 10 the clearance ceiling still exceeds
+    // 10*BW for every persona at or under 90 kg, so the regime is per-persona
+    // and derived below rather than asserted as a constant.
+    { minsBefore: 10, workoutMin: 120, temp: 22, gate: false, regime: null },
+    { minsBefore: 5, workoutMin: 120, temp: 22, gate: false, regime: null },
+    // Gate: 45 min in mild weather. Lead time is irrelevant to the gate.
+    { minsBefore: 240, workoutMin: 45, temp: 22, gate: true, regime: 'gated' },
+    { minsBefore: 90, workoutMin: 45, temp: 22, gate: true, regime: 'gated' },
+    // Gate bypassed at 30 C+.
+    { minsBefore: 240, workoutMin: 45, temp: 31, gate: false, regime: 'cited' },
   ];
 
-  for (const persona of [PERSONAS.RACHEL, PERSONAS.LILA, PERSONAS.MARCUS, PERSONAS.BJORN, PERSONAS.SOFIA]) {
-    for (const tc of tierCases) {
-      it(`${persona.id}: tier=${tc.expTier} gate=${tc.expGate} (minsBefore=${tc.minsBefore}, dur=${tc.workoutMin} min, ${tc.temp}°C)`, () => {
+  for (
+    const persona of [
+      PERSONAS.RACHEL,
+      PERSONAS.LILA,
+      PERSONAS.MARCUS,
+      PERSONAS.BJORN,
+      PERSONAS.SOFIA,
+    ]
+  ) {
+    for (const tc of cases) {
+      it(`${persona.id}: t-${tc.minsBefore}, dur=${tc.workoutMin} min, ${tc.temp} C`, () => {
+        const bw = persona.weightKg;
         const result = calculatePreWorkoutHydration({
-          bodyWeightKg: persona.weightKg,
+          bodyWeightKg: bw,
           workoutDurationMin: tc.workoutMin,
           timeBeforeWorkoutMin: tc.minsBefore,
           tempC: tc.temp,
         });
 
-        assertEquals(result.tier, tc.expTier, `tier mismatch for ${persona.id}`);
-        assertEquals(result.gate_triggered, tc.expGate,
-          `gate_triggered mismatch for ${persona.id}`);
-
-        if (tc.expGate) {
-          assertEquals(result.fluid_ml, 0, 'gated → 0 fluid');
-          assertEquals(result.sodium_mg, 0, 'gated → 0 sodium');
-        } else if (tc.expTier === 1) {
-          assertEquals(result.fluid_ml, persona.weightKg * 6,
-            `Tier 1 fluid for ${persona.id}`);
-          assertEquals(result.fluid_low_ml, persona.weightKg * 5);
-          assertEquals(result.fluid_high_ml, persona.weightKg * 7);
-          assertEquals(result.sodium_mg, 450);
-          assertEquals(result.sodium_low_mg, 300);
-          assertEquals(result.sodium_high_mg, 600);
-        } else if (tc.expTier === 2) {
-          assertEquals(result.fluid_ml, 250);
-          assertEquals(result.sodium_mg, 150);
-        } else if (tc.expTier === 3) {
-          assertEquals(result.fluid_ml, 0);
-          assertEquals(result.sodium_mg, 0);
+        assertEquals(result.gate_triggered, tc.gate, `gate for ${persona.id}`);
+        if (tc.regime !== null) {
+          assertEquals(result.regime, tc.regime, `regime for ${persona.id}`);
         }
+
+        // Sodium v3 -- null on EVERY path, gated or not. Strict: a 0 fails.
+        assertEquals(result.sodium_mg, null, `${persona.id}: sodium_mg`);
+        assertEquals(result.sodium_low_mg, null, `${persona.id}: sodium_low_mg`);
+        assertEquals(result.sodium_high_mg, null, `${persona.id}: sodium_high_mg`);
+
+        if (tc.gate) {
+          // null, not 0 -- the gate makes no statement.
+          assertEquals(result.fluid_ml, null, `${persona.id}: gated fluid_ml`);
+          assertEquals(result.fluid_low_ml, null);
+          assertEquals(result.fluid_high_ml, null);
+          assertEquals(result.tiers.length, 0, 'gate emits no tiers');
+          assertEquals(result.target_basis, 'none');
+          assertEquals(result.hydration_check_used, null);
+          return;
+        }
+
+        assertEquals(result.target_basis,
+          tc.minsBefore >= 120 ? 'evidenced_band' : 'design_choice');
+
+        if (tc.minsBefore >= 120) {
+          // unknown normalises to pale above T_REF -> no dark top-up.
+          assertAlmostEquals(result.fluid_ml!, 7.5 * bw, TOL_ML, `${persona.id}: plan`);
+          assertAlmostEquals(result.fluid_low_ml!, 5 * bw, TOL_ML, `${persona.id}: low`);
+          // min(7.5 + 5, 12) * BW -> the 12 ml/kg plan cap binds.
+          assertAlmostEquals(result.fluid_high_ml!, 12 * bw, TOL_ML, `${persona.id}: high`);
+          assertEquals(result.hydration_check_used, 'pale');
+          assertEquals(result.tiers.map((t) => t.tier), ['meal', 'snack', 'top_off']);
+        } else {
+          assertAlmostEquals(result.fluid_ml!, taper(bw, tc.minsBefore), TOL_ML,
+            `${persona.id}: taper`);
+          // Below two hours there is no minimum -- 0, not null.
+          assertEquals(result.fluid_low_ml, 0, `${persona.id}: low is 0, not null`);
+          const ceiling = 400 * Math.exp((3.2 / 60) * tc.minsBefore);
+          assertAlmostEquals(result.fluid_high_ml!, Math.min(10 * bw, ceiling), TOL_ML,
+            `${persona.id}: high`);
+          assertEquals(result.regime,
+            ceiling < 10 * bw ? 'clearance_bound' : 'extrapolated');
+          // Below T_REF the echo is RAW -- never normalised.
+          assertEquals(result.hydration_check_used, 'unknown');
+          assertEquals(result.tiers.map((t) => t.tier),
+            tc.minsBefore >= 30 ? ['snack', 'top_off'] : ['top_off']);
+        }
+
+        // Fluid never splits: all of it lands in the earliest tier that exists.
+        const sum = result.tiers.reduce((a, t) => a + t.fluid_ml, 0);
+        assertAlmostEquals(sum, result.fluid_ml!, TOL_ML, `${persona.id}: tiers sum`);
+        assertAlmostEquals(result.tiers[0].fluid_ml, result.fluid_ml!, TOL_ML,
+          `${persona.id}: all fluid in the earliest tier`);
       });
     }
   }

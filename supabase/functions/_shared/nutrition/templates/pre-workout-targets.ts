@@ -123,18 +123,6 @@ export function splitPreWorkoutTargets(
   return result;
 }
 
-/**
- * Get timing label for a sub-phase based on hours_before.
- */
-export function getSubPhaseTimingLabel(
-  subPhase: SubPhaseType,
-  hoursBefore: number,
-): string {
-  if (subPhase === 'meal') {
-    return `${hoursBefore >= 3 ? '3-4' : '2-3'} hours before`;
-  }
-  if (subPhase === 'snack') {
-    return hoursBefore >= 1.5 ? '1-2 hours before' : '45-60 min before';
-  }
-  return '15-30 min before';
-}
+// getSubPhaseTimingLabel was removed 2026-08-05: its windows predated the ratified
+// 120/30-minute tier boundaries (docs/ssot/spec/fueling/pre-workout-carbs.md v2). The
+// ratified copy lives in generate-nutrition-plan-v3/sub-phase-timing.ts.

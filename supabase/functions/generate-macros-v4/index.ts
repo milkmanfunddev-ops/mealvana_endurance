@@ -33,6 +33,7 @@ import {
 import { calculateBrickMacrosV4 } from "./brick-workout.ts";
 import {
   applyPreWorkoutHydrationOverlay,
+  calculatePreWorkoutCarbs,
   calculatePreWorkoutHydration,
   calculatePreWorkoutTargets,
   selectPreWorkoutFoods,
@@ -159,26 +160,39 @@ serve(withSentry(async (req: Request) => {
         input.humidity_pct ?? null,
       );
 
+      // Total workout duration is the sum of brick segment durations. It
+      // drives both the hydration <60 min gate and the carbohydrate plan band.
+      const totalDurationMin = (input.brick_segments ?? []).reduce(
+        (sum, s) => sum + (s.duration_minutes ?? 0),
+        0,
+      );
+
       const preTargetsLegacy = calculatePreWorkoutTargets(
         weightKg,
         input.hours_before,
         input.is_fasted,
         input.sweat_sodium ?? "average",
         envLabel,
+        totalDurationMin,
       );
 
-      // Spec-compliant pre-workout hydration overlay. Total workout duration
-      // is the sum of brick segment durations (drives the <60 min gate).
-      const totalDurationMin = (input.brick_segments ?? []).reduce(
-        (sum, s) => sum + (s.duration_minutes ?? 0),
-        0,
-      );
+      // Spec-compliant pre-workout hydration overlay (hydration SSOT v6).
       const preHydration = calculatePreWorkoutHydration({
         bodyWeightKg: weightKg,
         workoutDurationMin: totalDurationMin,
         timeBeforeWorkoutMin: input.hours_before * 60,
         tempC: input.temp_c ?? null,
+        hydrationCheck: input.hydration_check ?? "unknown",
       });
+      // Per-feeding carbohydrate split (carbs SSOT v2) — `tiers` is
+      // load-bearing; see single-sport.ts.
+      const preCarbPlan = calculatePreWorkoutCarbs({
+        bodyWeightKg: weightKg,
+        timeBeforeWorkoutMin: input.hours_before * 60,
+        workoutDurationMin: totalDurationMin,
+        isFasted: input.is_fasted,
+      });
+
       // Apply hydration overlay regardless of is_fasted — fasted only affects
       // carbs/protein/fat, not fluid/sodium. Spec's pre-workout gate is
       // duration-/temp-based, not fasted status.
@@ -206,9 +220,15 @@ serve(withSentry(async (req: Request) => {
       const brickMacrosWithSelections = {
         ...brickMacros,
         pre_run_selections: preSelections,
-        pre_run_hydration_tier: preHydration.tier,
+        // `pre_run_hydration_tier` (int) is RETIRED — `regime` replaces it.
+        pre_run_hydration_regime: preHydration.regime,
+        pre_run_fluid_target_basis: preHydration.target_basis,
+        pre_run_hydration_check_used: preHydration.hydration_check_used,
+        pre_run_fluid_tiers: preHydration.tiers,
         pre_run_hydration_gate_triggered: preHydration.gate_triggered,
         pre_run_hydration_message: preHydration.message,
+        pre_run_carb_target_basis: preCarbPlan.target_basis,
+        pre_run_carb_tiers: preCarbPlan.tiers,
       };
 
       console.log("✅ V4 brick macros calculated successfully:", {
