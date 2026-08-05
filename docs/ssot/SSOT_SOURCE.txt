@@ -1,0 +1,4 @@
+tag: pre-workout-macros@v1
+commit: 9ee128361f1483b2e740e3ca7bc9b9a90146aab3
+source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
+synced: 2026-08-05

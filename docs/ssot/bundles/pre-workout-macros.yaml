@@ -1,0 +1,55 @@
+# Release bundle manifest — a pinned set of ratified SSOTs for one app release.
+# A code agent checks out the tag `pre-workout-macros@v1` and implements exactly these
+# slices to green conformance. This file is the durable "what"; run-instructions are ephemeral.
+# First entry of the spec registry (one manifest per release bundle).
+
+bundle: pre-workout-macros
+version: v1
+status: ratified
+ratified: 2026-08-04            # Xuan
+ships: pre-workout macro calculations only (fluid ml, carbohydrate g, sodium)
+
+specs:
+  - slice:   pre-workout-hydration
+    version: v6
+    spec:    spec/fueling/pre-workout-hydration.md
+    vectors: vectors/fueling/pre-workout-hydration.json
+    engine:  OfflineMacroCalculator.calculatePreWorkoutHydration
+
+  - slice:   pre-workout-carbs
+    version: v2
+    spec:    spec/fueling/pre-workout-carbs.md
+    vectors: vectors/fueling/pre-workout-carbs.json
+    engine:  OfflineMacroCalculator.calculatePreWorkoutTargets
+
+  - slice:   pre-workout-sodium
+    version: v3
+    spec:    spec/fueling/pre-workout-sodium.md
+    vectors: vectors/fueling/pre-workout-sodium.json
+    engine:  OfflineMacroCalculator.calculatePreWorkoutHydration   # sodium fields
+
+excludes:
+  - slice:  pre-workout-food-composition
+    reason: separate bundle — food selection / composition, not macro math
+
+conformance:
+  runner: qa/conformance/run_dart.sh
+  invoke:
+    - run_dart.sh pre-workout-hydration
+    - run_dart.sh pre-workout-carbs
+    - run_dart.sh pre-workout-sodium
+  done_when: all three slices green
+  note: >
+    Vectors are EXPECTED-RED until the engine implements v6/v2/v3 (repo code implements v1).
+    The .dart harnesses still assert the v1 shapes and must be updated alongside the calculator:
+    exact-double comparison with the per-file tolerance, null on the gate path, tiers arrays,
+    the retired integer `tier`, sodium null (not int), and threading hydrationCheck through.
+    Harness and calculator co-evolve — that is the implementation task, not a pre-req.
+
+deviations:
+  - id:     D-001
+    slice:  pre-workout-carbs
+    status: unratified
+    note: >
+      isFasted -> zero pre-workout fuel. Shipped, never team-discussed. NOT ratified by this
+      bundle; carried in the spec as-is pending a separate ruling.

@@ -1,0 +1,138 @@
+{
+  "note": "20 boundary-covering test athletes for QA sim/integration tests. Profile DATA only — no credentials stored here.",
+  "schemaRef": "app/lib/shared/database/tables/user_profiles.dart (Supabase table 'users')",
+  "units": "weightPounds (lb) + heightFeet/heightInches as stored; engine converts lb->kg (x0.453592). age is derived from birthday.",
+  "credentials": "Emails by convention <name>@test.com. Shared test password = the existing integration-test password, supplied to the seed script at runtime via env — deliberately NOT stored in this repo.",
+  "enums": {
+    "gender": ["male", "female", "other"],
+    "lifestyle": ["desk", "mixed", "active", "very_active"],
+    "trainingPhase": ["base", "build", "peak", "taper", "race_week", "off_season"],
+    "gutTrainingLevel": ["low", "moderate", "high"],
+    "sweatRate": ["light", "medium", "heavy"],
+    "sweatSodium": ["low", "average", "high"],
+    "dietaryPreference": ["omnivore", "vegetarian", "pescatarian", "vegan", "mediterranean", "paleo", "keto", "low_carb"]
+  },
+  "athletes": [
+    { "id": "ath01", "name": "Maya",   "email": "maya@test.com",   "covers": "light female -> post-workout protein MIN clamp (20g floor); light-athlete carbs",
+      "gender": "female", "birthday": "1998-04-12", "heightFeet": 5, "heightInches": 3, "weightPounds": 112, "bodyFatPct": 22,
+      "lifestyle": "active", "typicalWeeklyHours": 5, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "light", "sweatSodium": "low", "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath02", "name": "Dwayne", "email": "dwayne@test.com", "covers": "heavy male -> post-workout protein MAX clamp (40g cap); carb cap region",
+      "gender": "male", "birthday": "1990-09-03", "heightFeet": 6, "heightInches": 4, "weightPounds": 220, "bodyFatPct": 14,
+      "lifestyle": "very_active", "typicalWeeklyHours": 9, "trainingPhase": "build", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "heavy", "sweatSodium": "high", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath03", "name": "Lena",   "email": "lena@test.com",   "covers": "extreme LOW weight + LOW gut (0.7 multiplier); floor edges",
+      "gender": "female", "birthday": "2001-01-22", "heightFeet": 5, "heightInches": 1, "weightPounds": 99, "bodyFatPct": 24,
+      "lifestyle": "mixed", "typicalWeeklyHours": 4, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "low", "sweatRate": "light", "sweatSodium": "low", "runsWithWaterBottle": true,
+      "dietaryPreference": "pescatarian", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath04", "name": "Boris",  "email": "boris@test.com",  "covers": "extreme HIGH weight + HIGH gut (1.2 multiplier); cycling carb ceiling (120)",
+      "gender": "male", "birthday": "1988-11-30", "heightFeet": 6, "heightInches": 6, "weightPounds": 240, "bodyFatPct": 16,
+      "lifestyle": "very_active", "typicalWeeklyHours": 11, "trainingPhase": "build", "carbCycleOptIn": true,
+      "gutTrainingLevel": "high", "sweatRate": "heavy", "sweatSodium": "high", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "bike" },
+
+    { "id": "ath05", "name": "Priya",  "email": "priya@test.com",  "covers": "KNOWN sweat-rate + sodium override path; hydration clamps in heat",
+      "gender": "female", "birthday": "1994-06-18", "heightFeet": 5, "heightInches": 5, "weightPounds": 132, "bodyFatPct": 20,
+      "lifestyle": "active", "typicalWeeklyHours": 7, "trainingPhase": "peak", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "heavy", "sweatSodium": "high",
+      "knownSweatRateMlPerHour": 1400, "knownSodiumConcentrationMgPerLiter": 1200, "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath06", "name": "Tom",    "email": "tom@test.com",    "covers": "LOW-sweat, low-sodium -> minimal hydration/sodium output",
+      "gender": "male", "birthday": "1992-03-08", "heightFeet": 5, "heightInches": 10, "weightPounds": 165, "bodyFatPct": 15,
+      "lifestyle": "mixed", "typicalWeeklyHours": 5, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "light", "sweatSodium": "low", "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath07", "name": "Nadia",  "email": "nadia@test.com",  "covers": "FASTED training (D-001 branch) on easy runs",
+      "gender": "female", "birthday": "1996-07-25", "heightFeet": 5, "heightInches": 4, "weightPounds": 128, "bodyFatPct": 21,
+      "lifestyle": "active", "typicalWeeklyHours": 6, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath08", "name": "Kai",    "email": "kai@test.com",    "covers": "SWIMMER -> fasted forced off, during-carb ceiling 0",
+      "gender": "male", "birthday": "1995-12-14", "heightFeet": 5, "heightInches": 9, "weightPounds": 154, "bodyFatPct": 13,
+      "lifestyle": "active", "typicalWeeklyHours": 8, "trainingPhase": "build", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "swim" },
+
+    { "id": "ath09", "name": "Elena",  "email": "elena@test.com",  "covers": "CYCLING terrain variations (flat/rolling/hilly)",
+      "gender": "female", "birthday": "1993-05-19", "heightFeet": 5, "heightInches": 6, "weightPounds": 139, "bodyFatPct": 19,
+      "lifestyle": "active", "typicalWeeklyHours": 8, "trainingPhase": "build", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "bike" },
+
+    { "id": "ath10", "name": "Marcus", "email": "marcus@test.com", "covers": "TRIATHLETE / BRICK transitions (T1 swim->bike, T2 bike->run)",
+      "gender": "male", "birthday": "1989-08-27", "heightFeet": 6, "heightInches": 0, "weightPounds": 176, "bodyFatPct": 12,
+      "lifestyle": "very_active", "typicalWeeklyHours": 12, "trainingPhase": "peak", "carbCycleOptIn": true,
+      "gutTrainingLevel": "high", "sweatRate": "heavy", "sweatSodium": "high", "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "brick" },
+
+    { "id": "ath11", "name": "Sofia",  "email": "sofia@test.com",  "covers": "VEGAN -> recommendation kit diet constraint",
+      "gender": "female", "birthday": "1997-02-11", "heightFeet": 5, "heightInches": 4, "weightPounds": 126, "bodyFatPct": 20,
+      "lifestyle": "active", "typicalWeeklyHours": 6, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "vegan", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath12", "name": "Ravi",   "email": "ravi@test.com",   "covers": "ALLERGIES (dairy, gluten) -> recommendation filtering",
+      "gender": "male", "birthday": "1991-10-05", "heightFeet": 5, "heightInches": 11, "weightPounds": 161, "bodyFatPct": 16,
+      "lifestyle": "mixed", "typicalWeeklyHours": 5, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": ["dairy", "gluten"], "primarySport": "run" },
+
+    { "id": "ath13", "name": "Chloe",  "email": "chloe@test.com",  "covers": "KETO / low-carb -> low-carb target scaling of the kit",
+      "gender": "female", "birthday": "1990-12-01", "heightFeet": 5, "heightInches": 5, "weightPounds": 134, "bodyFatPct": 23,
+      "lifestyle": "active", "typicalWeeklyHours": 5, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "keto", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath14", "name": "Diego",  "email": "diego@test.com",  "covers": "HIGH gut-training -> during-carb multiplier 1.2 (ceiling interplay)",
+      "gender": "male", "birthday": "1987-04-16", "heightFeet": 6, "heightInches": 1, "weightPounds": 172, "bodyFatPct": 14,
+      "lifestyle": "very_active", "typicalWeeklyHours": 10, "trainingPhase": "build", "carbCycleOptIn": true,
+      "gutTrainingLevel": "high", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "bike" },
+
+    { "id": "ath15", "name": "Amara",  "email": "amara@test.com",  "covers": "LOW gut-training -> during-carb multiplier 0.7",
+      "gender": "female", "birthday": "1999-06-09", "heightFeet": 5, "heightInches": 5, "weightPounds": 130, "bodyFatPct": 21,
+      "lifestyle": "mixed", "typicalWeeklyHours": 4, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "low", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "vegetarian", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath16", "name": "Sven",   "email": "sven@test.com",   "covers": "KNOWN sweat-rate LOWER band override (contrast to Priya)",
+      "gender": "male", "birthday": "1993-09-21", "heightFeet": 6, "heightInches": 0, "weightPounds": 168, "bodyFatPct": 15,
+      "lifestyle": "active", "typicalWeeklyHours": 7, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average",
+      "knownSweatRateMlPerHour": 900, "knownSodiumConcentrationMgPerLiter": 600, "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "bike" },
+
+    { "id": "ath17", "name": "Rosa",   "email": "rosa@test.com",   "covers": "MASTERS age (52) -> daily-macro age/RMR effect",
+      "gender": "female", "birthday": "1974-03-30", "heightFeet": 5, "heightInches": 6, "weightPounds": 140, "bodyFatPct": 26,
+      "lifestyle": "active", "typicalWeeklyHours": 6, "trainingPhase": "base", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "mediterranean", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath18", "name": "Leo",    "email": "leo@test.com",    "covers": "YOUNG age (19) -> daily-macro age extreme",
+      "gender": "male", "birthday": "2007-05-02", "heightFeet": 5, "heightInches": 10, "weightPounds": 150, "bodyFatPct": 12,
+      "lifestyle": "very_active", "typicalWeeklyHours": 9, "trainingPhase": "build", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath19", "name": "Hana",   "email": "hana@test.com",   "covers": "BUILD + high volume + carb-cycling ON -> daily-macro high end",
+      "gender": "female", "birthday": "1992-11-17", "heightFeet": 5, "heightInches": 5, "weightPounds": 133, "bodyFatPct": 18,
+      "lifestyle": "very_active", "typicalWeeklyHours": 13, "trainingPhase": "build", "carbCycleOptIn": true,
+      "gutTrainingLevel": "high", "sweatRate": "medium", "sweatSodium": "average", "runsWithWaterBottle": true,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" },
+
+    { "id": "ath20", "name": "Walt",   "email": "walt@test.com",   "covers": "OFF-SEASON + desk lifestyle + low volume -> daily-macro low end",
+      "gender": "male", "birthday": "1985-07-07", "heightFeet": 5, "heightInches": 11, "weightPounds": 185, "bodyFatPct": 20,
+      "lifestyle": "desk", "typicalWeeklyHours": 2, "trainingPhase": "off_season", "carbCycleOptIn": false,
+      "gutTrainingLevel": "moderate", "sweatRate": "light", "sweatSodium": "low", "runsWithWaterBottle": false,
+      "dietaryPreference": "omnivore", "allergies": [], "primarySport": "run" }
+  ]
+}

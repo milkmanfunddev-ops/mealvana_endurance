@@ -1,0 +1,684 @@
+{
+  "section": "pre-workout-carbs",
+  "engine": "OfflineMacroCalculator.calculatePreWorkoutTargets",
+  "specVersion": "v2 (2026-08-04)",
+  "note": "Pins v2. EXPECTED-RED until the engine implements v2 (code implements v1). carbs EXACT -> compare with abs tol 1e-3 g. camelCase fields (carbsG not carbs_g). Inputs use timeBeforeWorkoutMin (minutes) not hoursBefore. tiers carry {tier,carbsG,rangeLowG,rangeHighG,composition}; composition VALUES tested by food-composition slice, presence only here. isFasted -> empty tiers + basis none.",
+  "toleranceG": 0.001,
+  "vectors": [
+    {
+      "id": "cited-cap-240-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 240,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 260.0,
+        "carbsLowG": 65.0,
+        "carbsHighG": 260.0,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 156.0,
+            "rangeLowG": 136.5,
+            "rangeHighG": 175.5,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 78.0,
+            "rangeLowG": 68.25,
+            "rangeHighG": 87.75,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 26.0,
+            "rangeLowG": 22.75,
+            "rangeHighG": 29.25,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t=240: the 4 g/kg cap binds at the only grid point it can; total 260 == carbsHighG exactly, so the target sits ON the band ceiling. targetBasis stays evidenced_band (t <= WINDOW_MAX)."
+    },
+    {
+      "id": "cited-225-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 225,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 243.75,
+        "carbsLowG": 65.0,
+        "carbsHighG": 260.0,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 146.25,
+            "rangeLowG": 127.96875,
+            "rangeHighG": 164.53125,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 73.125,
+            "rangeLowG": 63.984375,
+            "rangeHighG": 82.265625,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 24.375,
+            "rangeLowG": 21.328125,
+            "rangeHighG": 27.421875,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "total 3.75 g/kg=243.75; 60/30/10; band 1-4 g/kg=[65,260]"
+    },
+    {
+      "id": "cited-210-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 210,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 227.5,
+        "carbsLowG": 65.0,
+        "carbsHighG": 260.0,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 136.5,
+            "rangeLowG": 119.4375,
+            "rangeHighG": 153.5625,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 68.25,
+            "rangeLowG": 59.71875,
+            "rangeHighG": 76.78125,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 22.75,
+            "rangeLowG": 19.90625,
+            "rangeHighG": 25.59375,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "total 3.5 g/kg=227.5; 60/30/10; band 1-4 g/kg=[65,260]"
+    },
+    {
+      "id": "cited-195-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 195,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 211.25,
+        "carbsLowG": 65.0,
+        "carbsHighG": 260.0,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 126.75,
+            "rangeLowG": 110.90625,
+            "rangeHighG": 142.59375,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 63.375,
+            "rangeLowG": 55.453125,
+            "rangeHighG": 71.296875,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 21.125,
+            "rangeLowG": 18.484375,
+            "rangeHighG": 23.765625,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "total 3.25 g/kg=211.25; 60/30/10; band 1-4 g/kg=[65,260]"
+    },
+    {
+      "id": "cited-cap-240-100kg",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 100,
+        "timeBeforeWorkoutMin": 240,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 400.0,
+        "carbsLowG": 100.0,
+        "carbsHighG": 400.0,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 240.0,
+            "rangeLowG": 210.0,
+            "rangeHighG": 270.0,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 120.0,
+            "rangeLowG": 105.0,
+            "rangeHighG": 135.0,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 40.0,
+            "rangeLowG": 35.0,
+            "rangeHighG": 45.0,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "cap at a second body weight: 4 g/kg=400 == carbsHighG; guards against the cap being implemented as an absolute gram ceiling rather than a per-kg one."
+    },
+    {
+      "id": "cited-180-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 180,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 195,
+        "carbsLowG": 65,
+        "carbsHighG": 260,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 117,
+            "rangeLowG": 102.375,
+            "rangeHighG": 131.625,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 58.5,
+            "rangeLowG": 51.1875,
+            "rangeHighG": 65.8125,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 19.5,
+            "rangeLowG": 17.0625,
+            "rangeHighG": 21.9375,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "total 3g/kg=195; 60/30/10 -> 117/58.5/19.5; band 1-4 g/kg=[65,260]"
+    },
+    {
+      "id": "cited-boundary-120-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 120,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 130,
+        "carbsLowG": 65,
+        "carbsHighG": 260,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 78,
+            "rangeLowG": 68.25,
+            "rangeHighG": 87.75,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 39,
+            "rangeLowG": 34.125,
+            "rangeHighG": 43.875,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 13,
+            "rangeLowG": 11.375,
+            "rangeHighG": 14.625,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "meal tier opens at t=120: 78/39/13; total 130; evidenced [65,260]"
+    },
+    {
+      "id": "cited-105-nomeal-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 105,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 113.75,
+        "carbsLowG": 65,
+        "carbsHighG": 260,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "snack",
+            "carbsG": 85.3125,
+            "rangeLowG": 74.648438,
+            "rangeHighG": 95.976562,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 28.4375,
+            "rangeLowG": 24.882812,
+            "rangeHighG": 31.992188,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t<120 -> no meal; 75/25 -> snack 85.3125/topoff 28.4375; evidenced"
+    },
+    {
+      "id": "cited-lower-edge-60-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 60,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 65,
+        "carbsLowG": 65,
+        "carbsHighG": 260,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "snack",
+            "carbsG": 48.75,
+            "rangeLowG": 42.65625,
+            "rangeHighG": 54.84375,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 16.25,
+            "rangeLowG": 14.21875,
+            "rangeHighG": 18.28125,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t=60 lower cited edge: total 65; snack 48.75/topoff 16.25; evidenced [65,260]"
+    },
+    {
+      "id": "design-45-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 45,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 48.75,
+        "carbsLowG": 42.65625,
+        "carbsHighG": 54.84375,
+        "targetBasis": "design_choice",
+        "tiers": [
+          {
+            "tier": "snack",
+            "carbsG": 36.5625,
+            "rangeLowG": 31.992188,
+            "rangeHighG": 41.132812,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 12.1875,
+            "rangeLowG": 10.664062,
+            "rangeHighG": 13.710938,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t<60 -> design_choice; total 48.75; +/-12.5% = [42.65625,54.84375]"
+    },
+    {
+      "id": "design-snack-edge-30-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 30,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 32.5,
+        "carbsLowG": 28.4375,
+        "carbsHighG": 36.5625,
+        "targetBasis": "design_choice",
+        "tiers": [
+          {
+            "tier": "snack",
+            "carbsG": 24.375,
+            "rangeLowG": 21.328125,
+            "rangeHighG": 27.421875,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 8.125,
+            "rangeLowG": 7.109375,
+            "rangeHighG": 9.140625,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t=30 snack lower edge; total 32.5; snack 24.375/topoff 8.125; design [28.4375,36.5625]"
+    },
+    {
+      "id": "design-topoff-only-15-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 15,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 16.25,
+        "carbsLowG": 14.21875,
+        "carbsHighG": 18.28125,
+        "targetBasis": "design_choice",
+        "tiers": [
+          {
+            "tier": "top_off",
+            "carbsG": 16.25,
+            "rangeLowG": 14.21875,
+            "rangeHighG": 18.28125,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t<30 -> top-off only; total 16.25; design [14.21875,18.28125]"
+    },
+    {
+      "id": "design-anchor-0-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 0,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 0,
+        "carbsLowG": 0,
+        "carbsHighG": 0,
+        "targetBasis": "design_choice",
+        "tiers": [
+          {
+            "tier": "top_off",
+            "carbsG": 0,
+            "rangeLowG": 0,
+            "rangeHighG": 0,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "t=0 -> total 0; top_off tier present carrying 0; band [0,0]; design_choice"
+    },
+    {
+      "id": "fasted-180-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 180,
+        "workoutDurationMin": 90,
+        "isFasted": true
+      },
+      "expected": {
+        "carbsG": 0.0,
+        "carbsLowG": 0.0,
+        "carbsHighG": 0.0,
+        "targetBasis": "none",
+        "tiers": []
+      },
+      "why": "isFasted -> carbsG 0, empty tiers, targetBasis none (distinct from t=0 zero-tier)"
+    },
+    {
+      "id": "dur-flip-short-180-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 180,
+        "workoutDurationMin": 59,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 195,
+        "carbsLowG": 170.625,
+        "carbsHighG": 219.375,
+        "targetBasis": "design_choice",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 117,
+            "rangeLowG": 102.375,
+            "rangeHighG": 131.625,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 58.5,
+            "rangeLowG": 51.1875,
+            "rangeHighG": 65.8125,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 19.5,
+            "rangeLowG": 17.0625,
+            "rangeHighG": 21.9375,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "in-time but workout<60 -> design_choice: total 195; band [170.625,219.375]"
+    },
+    {
+      "id": "dur-boundary-60-180-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "timeBeforeWorkoutMin": 180,
+        "workoutDurationMin": 60,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 195,
+        "carbsLowG": 65,
+        "carbsHighG": 260,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 117,
+            "rangeLowG": 102.375,
+            "rangeHighG": 131.625,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 58.5,
+            "rangeLowG": 51.1875,
+            "rangeHighG": 65.8125,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 19.5,
+            "rangeLowG": 17.0625,
+            "rangeHighG": 21.9375,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "workout=60 inclusive -> evidenced_band [65,260] (pins dur>=60)"
+    },
+    {
+      "id": "cited-180-90kg",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 90,
+        "timeBeforeWorkoutMin": 180,
+        "workoutDurationMin": 120,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 270,
+        "carbsLowG": 90,
+        "carbsHighG": 360,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 162,
+            "rangeLowG": 141.75,
+            "rangeHighG": 182.25,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 81,
+            "rangeLowG": 70.875,
+            "rangeHighG": 91.125,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 27,
+            "rangeLowG": 23.625,
+            "rangeHighG": 30.375,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "90kg 3g/kg=270; 162/81/27; band [90,360]"
+    },
+    {
+      "id": "cited-120-100kg",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 100,
+        "timeBeforeWorkoutMin": 120,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 200,
+        "carbsLowG": 100,
+        "carbsHighG": 400,
+        "targetBasis": "evidenced_band",
+        "tiers": [
+          {
+            "tier": "meal",
+            "carbsG": 120,
+            "rangeLowG": 105,
+            "rangeHighG": 135,
+            "composition": "meal"
+          },
+          {
+            "tier": "snack",
+            "carbsG": 60,
+            "rangeLowG": 52.5,
+            "rangeHighG": 67.5,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 20,
+            "rangeLowG": 17.5,
+            "rangeHighG": 22.5,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "100kg 2g/kg=200; 120/60/20; band [100,400]"
+    },
+    {
+      "id": "design-30-48kg",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 48,
+        "timeBeforeWorkoutMin": 30,
+        "workoutDurationMin": 90,
+        "isFasted": false
+      },
+      "expected": {
+        "carbsG": 24,
+        "carbsLowG": 21,
+        "carbsHighG": 27,
+        "targetBasis": "design_choice",
+        "tiers": [
+          {
+            "tier": "snack",
+            "carbsG": 18,
+            "rangeLowG": 15.75,
+            "rangeHighG": 20.25,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 6,
+            "rangeLowG": 5.25,
+            "rangeHighG": 6.75,
+            "composition": "top_off"
+          }
+        ]
+      },
+      "why": "48kg t=30: total 24; snack 18/topoff 6; design [21,27]"
+    }
+  ]
+}

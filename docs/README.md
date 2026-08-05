@@ -10,6 +10,7 @@ Reorganized 2026-07-29; `CLAUDE.md` at the repo root is the routing guide.
 
 | Directory | What it is |
 |---|---|
+| `ssot/` | **Ratified nutrition SSOT, synced from the QA repo — the authority for fuelling algorithms.** `spec/` = normative markdown, `vectors/` = conformance golden vectors, `conformance/` = the Dart harnesses, `bundles/` = release manifests, `DEVIATIONS.md` = the open-deviation register. Start at `PRE-WORKOUT-BUNDLE-DIGEST.md`; provenance in `SSOT_SOURCE.txt`. Where an `.md` and an `.html` disagree, **the `.md` wins**. |
 | `architecture/` | Architecture overview + point-in-time audits |
 | `technical/` | Technical patterns and standards (FOA, sync, write consistency, content management, Sentry, Shorebird, responsiveness, Andrea init flow) |
 | `business_logic/` | Nutrition systems and algorithm documentation |
