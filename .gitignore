@@ -126,3 +126,7 @@ integration_test/test_bundle.dart
 # The JSON results ARE kept: they are the evidence behind the Notion report.
 benchmarks/*/_derived/compressed/
 benchmarks/*/_derived/uncompressed/
+
+# git merge artifacts — never commit these
+*.orig
+*.rej

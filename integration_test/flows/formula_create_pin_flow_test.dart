@@ -52,6 +52,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 // ---------------------------------------------------------------------------
 // Finders
@@ -317,6 +318,45 @@ void main() {
       const ValueKey('formula_kit.pinned_only_button'),
     ).tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 300));
+
+    // ---- 11. PERSISTED STATE — the formula row itself --------------------
+    // The library rendering a card proves the local list has one. It does not
+    // prove the formula was written, nor that it was written ONCE: a create
+    // path that inserts on every save looks identical in a list the user
+    // scrolls past, and duplicates only surface later as confusing pin
+    // behaviour.
+    final probe = await SupabaseProbe.signIn();
+    if (probe == null) {
+      debugPrint(
+        '[formula_create_pin] Supabase probe unavailable — persistence '
+        'assertions skipped (UI assertions above still ran).',
+      );
+    } else {
+      final rows = await probe.formulasByName(formulaName);
+      expect(
+        rows,
+        isNotEmpty,
+        reason:
+            'The library shows "$formulaName" but no personal_formulas row '
+            'exists for this athlete — the formula was created in local state '
+            'only and would vanish on another device.',
+      );
+      expect(
+        rows.length,
+        1,
+        reason:
+            'Creating one formula produced ${rows.length} rows named '
+            '"$formulaName". The save path is inserting rather than updating.',
+      );
+      expect(
+        rows.first['phase'],
+        'during',
+        reason:
+            'Created on the During tab but persisted with phase '
+            '"${rows.first['phase']}" — it will not be offered for during-run '
+            'fuelling.',
+      );
+    }
   }, timeout: const Timeout(Duration(minutes: 5)));
 }
 

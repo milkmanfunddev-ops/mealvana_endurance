@@ -40,6 +40,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
@@ -102,6 +103,33 @@ void main() {
         reason: 'Edited event name should render on the detail screen.',
       );
 
+      // Prove the UPDATE reached the server WHILE the row still exists —
+      // checking after the delete would find nothing either way and assert
+      // nothing at all.
+      final probe = await SupabaseProbe.signIn();
+      if (probe == null) {
+        debugPrint(
+          '[events_crud] Supabase probe unavailable — persistence assertions '
+          'skipped (UI assertions still run).',
+        );
+      } else {
+        expect(
+          await probe.eventByName(editedName),
+          isNotNull,
+          reason:
+              'The detail screen shows "$editedName" but no events row by that '
+              'name exists for this athlete. The rename was applied locally '
+              'and never uploaded.',
+        );
+        expect(
+          await probe.eventByName(createName),
+          isNull,
+          reason:
+              'Both "$createName" and "$editedName" exist in Supabase — the '
+              'edit created a second row instead of updating the first.',
+        );
+      }
+
       // ---- 5. DELETE — more ▸ Delete → confirm --------------------------
       await $(const ValueKey('event_details.more_button')).tap();
       await $(const ValueKey('event_details.menu_delete')).tap();
@@ -123,6 +151,20 @@ void main() {
         findsNothing,
         reason: 'Deleted event should no longer appear in My Events.',
       );
+
+      // ---- 7. The DELETE reached the server too --------------------------
+      // The list rebuilding without the event proves only that local state
+      // changed. An optimistic delete whose upload failed looks identical on
+      // screen and the event returns on the next device.
+      if (probe != null) {
+        expect(
+          await probe.eventByName(editedName),
+          isNull,
+          reason:
+              'The event disappeared from My Events but its row is still in '
+              'Supabase. The delete was applied locally and never uploaded.',
+        );
+      }
     },
     timeout: const Timeout(Duration(minutes: 5)),
   );

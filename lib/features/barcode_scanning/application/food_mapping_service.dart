@@ -65,7 +65,7 @@ class FoodMappingService {
       // Nutritional information (per serving)
       carbsPerServing: nutritionalValues.carbohydrates,
       sodiumMg: nutritionalValues.sodiumMg,
-      fluidMlPerServing: _extractFluidMlForBeverage(apiProduct),
+      fluidMlPerServing: apiProduct.fluidMlPerServing,
       caloriesPerServing: nutritionalValues.calories,
       proteinPerServing: nutritionalValues.protein,
       fatPerServing: nutritionalValues.fat,
@@ -146,7 +146,7 @@ class FoodMappingService {
       // Use fresh nutritional data from API
       carbsPerServing: nutritionalValues.carbohydrates,
       sodiumMg: nutritionalValues.sodiumMg,
-      fluidMlPerServing: _extractFluidMlForBeverage(apiProduct),
+      fluidMlPerServing: apiProduct.fluidMlPerServing,
       caloriesPerServing: nutritionalValues.calories,
       proteinPerServing: nutritionalValues.protein,
       fatPerServing: nutritionalValues.fat,
@@ -165,31 +165,6 @@ class FoodMappingService {
       maxServingsBefore: existingFood.maxServingsBefore ?? 2,
       maxServingsDuring: existingFood.maxServingsDuring ?? 1,
     );
-  }
-
-  /// Extract fluid content (ml) for beverages using roadmap strategy
-  /// Primary: serving_quantity + serving_quantity_unit
-  /// Fallback: product_quantity + product_quantity_unit
-  /// Detection: Check categories field for "beverage" (case-insensitive)
-  double? _extractFluidMlForBeverage(ApiFoodProduct apiProduct) {
-    // Check if this is a beverage based on categories
-    if (apiProduct.categories?.toLowerCase().contains('beverage') != true) {
-      return null; // Not a beverage
-    }
-
-    // Primary strategy: Use serving_quantity + serving_quantity_unit
-    if (apiProduct.servingQuantity != null &&
-        apiProduct.servingQuantityUnit?.toLowerCase() == 'ml') {
-      return apiProduct.servingQuantity!;
-    }
-
-    // Fallback strategy: Use product_quantity + product_quantity_unit
-    if (apiProduct.productQuantity != null &&
-        apiProduct.productQuantityUnit?.toLowerCase() == 'ml') {
-      return apiProduct.productQuantity!;
-    }
-
-    return null;
   }
 }
 

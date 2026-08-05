@@ -147,6 +147,32 @@ class SupabaseProbe {
     final row = await activityByTitle(title);
     return row == null || row['deleted_at'] != null;
   }
+
+  /// The event named [name] for this athlete, or null.
+  Future<Map<String, dynamic>?> eventByName(String name) async {
+    final rows = await select(
+      'events',
+      query:
+          'user_id=eq.$userId'
+          '&event_name=eq.${Uri.encodeQueryComponent(name)}'
+          '&select=*',
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// Personal formulas for this athlete whose name is [name].
+  ///
+  /// Returns every match rather than the first: creating a formula must not
+  /// duplicate the row, and only a count can show that it did.
+  Future<List<Map<String, dynamic>>> formulasByName(String name) async {
+    return select(
+      'personal_formulas',
+      query:
+          'user_id=eq.$userId'
+          '&name=eq.${Uri.encodeQueryComponent(name)}'
+          '&select=*',
+    );
+  }
 }
 
 /// Parsed `brick_metadata`, or null when the column is absent/!JSON.

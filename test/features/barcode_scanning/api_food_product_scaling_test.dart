@@ -149,75 +149,99 @@ void main() {
     });
   });
 
-  group('the +/-5 g tolerance', () {
-    test('a 5 g difference on a 100 g portion is a rounding error', () {
-      // Well inside the noise of a kitchen scale — returning the unscaled
-      // per-serving numbers here is entirely reasonable.
+  group('the serving tolerance is RELATIVE, not a fixed number of grams', () {
+    // Changed 2026-08-05 from an absolute 5 g threshold. The old rule treated
+    // 5 g as "close enough" regardless of portion size, so it was rounding
+    // noise on a 100 g cereal serving and the entire product on a 5 g chew.
+    // The tolerance is now 10% of the declared serving.
+
+    test('a 4% difference on a 100 g portion is still treated as noise', () {
       final cereal = product(
         caloriesPerServing: 380,
         carbsPerServing: 60,
         servingGrams: 100,
       );
-      final v = cereal.calculateForServing(104);
-      expect(v.calories, 380);
+      // 104 g is within 10% of 100 g — the original intent is preserved.
+      expect(cereal.calculateForServing(104).calories, 380);
     });
 
-    test('the SAME 5 g on a small serving is most of the product', () {
-      // A 5 g energy chew asked for as 9 g is nearly double the portion, but
-      // the difference is 4 g, so it lands inside the same absolute
-      // tolerance and the values come back unscaled.
-      //
-      // Pinned as the CURRENT behaviour, not as an endorsement: an absolute
-      // gram tolerance cannot be right across both a 5 g chew and a 500 g
-      // bag. If this is ever changed to a relative tolerance, this
-      // expectation flips and says so out loud.
+    test('a 5 g difference on a 5 g chew now SCALES (the fix)', () {
+      // The regression this change exists to kill: |9 - 5| = 4 was under the
+      // old absolute 5 g tolerance, so a 9 g portion reported the 5 g values —
+      // an 80% understatement on a during-race fuel item. 4 g is 80% of a 5 g
+      // serving, far outside a 10% tolerance, so it scales now.
       final chew = product(
         caloriesPerServing: 20,
         carbsPerServing: 5,
         servingGrams: 5,
       );
       final v = chew.calculateForServing(9);
-
       expect(
         v.calories,
-        20,
-        reason:
-            'Currently returns the 5 g values for a 9 g serving — an 80% '
-            'understatement, because |9 - 5| < 5.',
+        36,
+        reason: '9 g of a 5 g chew is 1.8 servings: 20 kcal * 1.8 = 36.',
       );
-      expect(
-        v.calories,
-        isNot(36),
-        reason:
-            'If this now reports the scaled value, the tolerance became '
-            'relative. That is an improvement — update this test.',
-      );
+      expect(v.carbohydrates, closeTo(9, 0.001));
     });
 
-    test('just outside the tolerance, the values DO scale', () {
+    test('small servings are no longer under-reported at any offset', () {
+      // Sweep the range that used to fall inside the absolute tolerance.
       final chew = product(
         caloriesPerServing: 20,
         carbsPerServing: 5,
         servingGrams: 5,
       );
-      // |11 - 5| = 6, outside the tolerance.
-      final v = chew.calculateForServing(11);
-      expect(v.calories, 44);
-      expect(v.carbohydrates, closeTo(11, 0.001));
+      for (final requested in [6.0, 7.0, 8.0, 9.0]) {
+        final v = chew.calculateForServing(requested);
+        final expected = (20 * (requested / 5)).round();
+        expect(
+          v.calories,
+          expected,
+          reason:
+              '$requested g of a 5 g serving should be $expected kcal; the '
+              'absolute-tolerance bug returned 20.',
+        );
+      }
     });
 
-    test('the boundary itself scales (the check is strict <)', () {
+    test('a tiny relative difference on a small serving is still noise', () {
+      // 5.2 g of a 5 g chew is within 10% — no false precision manufactured.
+      final chew = product(
+        caloriesPerServing: 20,
+        carbsPerServing: 5,
+        servingGrams: 5,
+      );
+      expect(chew.calculateForServing(5.2).calories, 20);
+    });
+
+    test('the tolerance scales with the serving, in both directions', () {
+      // 10% of 50 g is 5 g: 54 g is inside, 60 g is outside.
       final bar = product(
         caloriesPerServing: 100,
         carbsPerServing: 20,
         servingGrams: 50,
       );
-      final v = bar.calculateForServing(55);
-      expect(
-        v.calories,
-        110,
-        reason: 'A difference of exactly 5 is not < 5, so it should scale.',
+      expect(bar.calculateForServing(54).calories, 100);
+      expect(bar.calculateForServing(60).calories, 120);
+    });
+
+    test('the boundary itself is inclusive', () {
+      // Exactly 10% away counts as close enough (<=), so no scaling.
+      final bar = product(
+        caloriesPerServing: 100,
+        carbsPerServing: 20,
+        servingGrams: 50,
       );
+      expect(bar.calculateForServing(55).calories, 100);
+    });
+
+    test('a large serving scales as before', () {
+      final bar = product(
+        caloriesPerServing: 200,
+        carbsPerServing: 40,
+        servingGrams: 50,
+      );
+      expect(bar.calculateForServing(100).calories, 400);
     });
   });
 
