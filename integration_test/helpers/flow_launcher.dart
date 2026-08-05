@@ -15,6 +15,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 import 'package:mealvana_endurance/main_dev.dart' as dev;
 import 'package:mealvana_endurance/main_prod.dart' as prod;
@@ -70,7 +71,10 @@ Future<bool> ensureAuthenticated(
     }
   }
 
-  if (sentinelFound) return true;
+  if (sentinelFound) {
+    await _resetSharedAppState($);
+    return true;
+  }
   if (!welcomeFound || !TestConfig.hasLoginCredentials) return false;
 
   await $(welcome).tap();
@@ -88,7 +92,171 @@ Future<bool> ensureAuthenticated(
   await $(const ValueKey('login.log_in_button')).tap();
 
   await $(sentinel).waitUntilVisible(timeout: loginTimeout);
-  return $(sentinel).exists;
+  if (!$(sentinel).exists) return false;
+  await _resetSharedAppState($);
+  return true;
+}
+
+/// Return the app to a known baseline before a flow starts.
+///
+/// **Why this is here and not left to each flow.** Patrol runs the whole bundle
+/// in ONE app session: 18 tests, one Riverpod container, one signed-in account.
+/// Anything a flow leaves behind — the selected day, the timeline filter — is
+/// still there for every flow that runs after it, and flows run in ALPHABETICAL
+/// order, so the blast radius is "everything later in the alphabet".
+///
+/// That is not hypothetical. It produced three separate investigations on this
+/// branch: a timeline stuck off today, a filter hiding workout cards, and a
+/// meal flow that passed one run and failed the next purely because an earlier
+/// flow had started completing its create stack.
+///
+/// Resetting per-flow was the first fix, but it is opt-in: a flow that forgets
+/// the call silently inherits whatever the last one did. Doing it here makes
+/// the baseline a property of *being authenticated* — every flow calls
+/// ensureAuthenticated, so no flow can opt out by omission.
+///
+/// Best-effort by design. It runs before a flow has navigated anywhere, so the
+/// controls may not be on screen; their absence is the success case, not an
+/// error. Flows that navigate away and come back still call
+/// [ensureTimelineOnToday] explicitly at the point they assert.
+Future<void> _resetSharedAppState(PatrolIntegrationTester $) async {
+  await ensureTimelineOnToday($);
+}
+
+/// Put the Fuel Timeline back on **today**, and select the All filter.
+///
+/// Both are app-level state (`calendarSelectedDateProvider` and the timeline
+/// view state) that live in the Riverpod container for the whole app session —
+/// which, under Patrol, spans *every flow in the bundle*. A flow that navigates
+/// to another day or narrows the filter leaves it that way for everything that
+/// runs after it.
+///
+/// That is what made "my newly created item appears on the timeline" fail in
+/// four unrelated flows on the M1 run of 2026-07-31 (an activity, a brick and
+/// two meals). The writes were fine — each flow had already seen its own
+/// success confirmation, and `plan_detail` / "Meal logged!" rendered — but the
+/// timeline they came back to was not showing today. `meal_log_build` passed in
+/// the run before that only because nothing had moved the date yet; once
+/// `activities_crud` started completing its create flow (it runs first,
+/// alphabetically), the drift reached everything downstream.
+///
+/// So any flow asserting "my item is on the timeline" has to state that it
+/// means *today's* timeline rather than inherit whatever the previous test
+/// left behind.
+///
+/// Best-effort by design: `fuel_timeline.today_button` only renders when the
+/// timeline is off today, so its absence is the success case, not an error.
+/// If the timeline cannot be reached at all the caller's own assertion reports
+/// that, which is a better error than one thrown from inside a helper.
+Future<void> ensureTimelineOnToday(PatrolIntegrationTester $) async {
+  const todayButton = ValueKey('fuel_timeline.today_button');
+  const filterAll = ValueKey('fuel_timeline.filter_all');
+
+  try {
+    if ($(todayButton).exists) {
+      await $(todayButton).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 600));
+    }
+    if ($(filterAll).exists) {
+      await $(filterAll).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 400));
+    }
+  } on Exception catch (e) {
+    debugPrint('[flow_launcher] could not reset the timeline day/filter: $e');
+  }
+}
+
+/// Wait for [finder] to EXIST on the timeline, then bring it on screen.
+///
+/// Returns false if it never turned up, so callers can assert with their own
+/// message rather than eat an exception from inside a helper.
+///
+/// Why not `waitUntilVisible`: that requires the widget to be *hit-testable*,
+/// i.e. actually on screen. The Fuel Timeline is one long day-ordered list, and
+/// the dev tester account accumulates rows — every Patrol run that fails leaves
+/// its item behind, because cleanup is the last step and never runs. By
+/// 2026-07-31 a single day held 13 activities plus meals and events, so a
+/// newly created item sorted near the bottom was in the tree but far below the
+/// fold, and `waitUntilVisible` could never succeed no matter how long it
+/// polled. Confirmed against the dev database: the exact stamp from the failing
+/// assertion (`Patrol Brick 1785537825702`, 18:45) was present and not deleted
+/// while the test was timing out looking for it.
+///
+/// So: existence is the assertion, visibility is a separate step, and only the
+/// callers that then tap or swipe the row need it.
+///
+/// Note for callers matching on a title: `TimelineNodeTile` renders names
+/// UPPERCASED. Match on a case-invariant fragment (an epoch stamp) or
+/// `toUpperCase()` the expected text — a mixed-case `find.text` silently never
+/// matches.
+Future<bool> waitForOnTimeline(
+  PatrolIntegrationTester $,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  // Phase 1: wait for the async refetch. The row may not be in the tree yet.
+  final polls = timeout.inMilliseconds ~/ 300;
+  var found = false;
+  for (var i = 0; i < polls; i++) {
+    if (finder.evaluate().isNotEmpty) {
+      found = true;
+      break;
+    }
+    // Fixed pumps, never settles: the timeline holds a refresh spinner.
+    await $.pump(const Duration(milliseconds: 300));
+  }
+
+  // Phase 2: scroll, because the timeline is a LAZY list.
+  //
+  // `evaluate()` only ever sees mounted widgets, and the day list builds its
+  // children on demand. Newly created items sort by time, so they routinely
+  // land below the fold on an account with a full day — and no amount of
+  // polling mounts them. Every "my item never appeared on the timeline"
+  // failure in this suite traced back to that, while the row sat correctly in
+  // Supabase the whole time.
+  //
+  // Drag the VERTICAL scrollable specifically: the first Scrollable on this
+  // screen is the horizontal filter strip, and dragging that scrolls sideways
+  // forever.
+  if (!found) {
+    final vertical = _verticalScrollable();
+    if (vertical != null) {
+      for (var i = 0; i < 15 && !found; i++) {
+        await $.tester.drag(vertical, const Offset(0, -400));
+        await $.pump(const Duration(milliseconds: 300));
+        found = finder.evaluate().isNotEmpty;
+      }
+    }
+  }
+  if (!found) return false;
+
+  // Best-effort reveal — the assertion above already passed, and a row that
+  // cannot be scrolled to still counts as present.
+  try {
+    await $.tester.ensureVisible(finder.first);
+    await $.pump(const Duration(milliseconds: 400));
+  } on Exception catch (e) {
+    debugPrint('[flow_launcher] could not scroll the timeline row in: $e');
+  }
+  return true;
+}
+
+/// The first vertically-scrolling [Scrollable] on screen, or null.
+///
+/// `find.byType(Scrollable).first` is the wrong thing to drag on the Fuel
+/// Timeline: the filter strip is horizontal and comes first in the tree, so
+/// dragging it moves sideways and never reveals another row.
+Finder? _verticalScrollable() {
+  final all = find.byType(Scrollable).evaluate().toList();
+  for (var i = 0; i < all.length; i++) {
+    final widget = all[i].widget;
+    if (widget is Scrollable &&
+        (widget.axisDirection == AxisDirection.down ||
+            widget.axisDirection == AxisDirection.up)) {
+      return find.byType(Scrollable).at(i);
+    }
+  }
+  return null;
 }
 
 /// Standard skip message for flows that could not authenticate.

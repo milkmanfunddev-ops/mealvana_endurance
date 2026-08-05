@@ -112,12 +112,18 @@ class DayEnergySummary {
       DayKind.future => 0.0,
     };
 
+    final hasBurn = kind != DayKind.future;
+
     final resting = (targets?.rmr ?? 0) * fraction;
     final daily = (targets?.neatKcal ?? 0) * fraction;
-    final workout = workoutBurnedKcal;
+    // Zeroed on a future day alongside resting/NEAT, so the rendered breakdown
+    // always sums to [burnedCalories]. The assembler already passes 0 here for
+    // future days, but this is a public factory: leaving the caller's value in
+    // the breakdown while the headline reads 0 would put two contradictory
+    // numbers on the same dashboard.
+    final workout = hasBurn ? workoutBurnedKcal : 0.0;
     final burned = resting + daily + workout;
     final eaten = consumed.calories;
-    final hasBurn = kind != DayKind.future;
 
     return DayEnergySummary(
       dayKind: kind,

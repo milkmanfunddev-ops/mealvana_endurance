@@ -117,10 +117,16 @@ tool/.training_peaks_token.json
 .claude/
 CLAUDE.md
 
-# Patrol regenerates this on every `patrol test` run (see its header: do not commit)
+# Patrol regenerates this on every `patrol test` run and the file itself
+# says "DO NOT COMMIT TO VERSION CONTROL". Tracking it means every local or CI
+# Patrol run leaves the tree dirty.
 integration_test/test_bundle.dart
 
 # Benchmark derived image variants — regenerable from images/ via run_benchmark.py.
 # The JSON results ARE kept: they are the evidence behind the Notion report.
 benchmarks/*/_derived/compressed/
 benchmarks/*/_derived/uncompressed/
+
+# git merge artifacts — never commit these
+*.orig
+*.rej

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/utils/unit_formatter.dart';
 import '../../activities/domain/brick_metadata.dart';
 
 /// Complete macro targets for a running session
@@ -1535,19 +1536,12 @@ class RunMetrics {
   final double met;
 
   /// Format duration as HH:MM
-  String get formattedDuration {
-    final hours = durationH.floor();
-    final minutes = ((durationH - hours) * 60).round();
-    return '$hours:${minutes.toString().padLeft(2, '0')}';
-  }
+  String get formattedDuration => UnitFormatter.formatHoursAsHourMin(durationH);
 
   /// Format pace as MM:SS per mile
-  String get formattedPace {
-    if (paceMinPerMile == null) return 'N/A';
-    final minutes = paceMinPerMile!.floor();
-    final seconds = ((paceMinPerMile! - minutes) * 60).round();
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
+  String get formattedPace => paceMinPerMile == null
+      ? 'N/A'
+      : UnitFormatter.formatMinutesAsMinSec(paceMinPerMile!);
 
   RunMetrics copyWith({
     double? distanceMi,

@@ -142,7 +142,7 @@ void main() {
               'launch + cancel (no crash).',
         );
       },
-      timeout: const Timeout(Duration(minutes: 8)),
+      timeout: const Timeout(Duration(minutes: 5)),
     );
   }
 }

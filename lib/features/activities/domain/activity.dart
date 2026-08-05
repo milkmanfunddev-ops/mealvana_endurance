@@ -1,7 +1,7 @@
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/utils/unit_formatter.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 import 'brick_metadata.dart';
-import '../../../shared/utils/unit_formatter.dart';
 
 /// Activity domain model for calendar feature
 class Activity {

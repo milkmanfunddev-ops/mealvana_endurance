@@ -1420,10 +1420,12 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         ),
         actions: [
           TextButton(
+            key: const ValueKey('activity_delete.cancel_button'),
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           TextButton(
+            key: const ValueKey('activity_delete.confirm_button'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
             child: const Text('Delete'),

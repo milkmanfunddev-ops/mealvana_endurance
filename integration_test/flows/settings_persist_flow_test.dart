@@ -86,9 +86,12 @@ void main() {
       // be below the fold on some screen sizes.  scrollTo() handles the scroll.
       // scrollTo() uses pumpAndTrySettle; the settings screen is in its data
       // state at this point (gated above on profile_row), so no spinner.
-      await $(
-        const ValueKey('settings.body_composition_row'),
-      ).scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
+      await $(const ValueKey('settings.body_composition_row'))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+          )
+          .tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
 
       // Wait for the weight field to appear (screen calls userRepository async).
@@ -159,9 +162,12 @@ void main() {
       await $(
         const ValueKey('settings.profile_row'),
       ).waitUntilVisible(timeout: const Duration(seconds: 15));
-      await $(
-        const ValueKey('settings.body_composition_row'),
-      ).scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
+      await $(const ValueKey('settings.body_composition_row'))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+          )
+          .tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
 
       // Wait for the weight field to populate (async load from repository).
@@ -212,6 +218,6 @@ void main() {
         }
       }
     },
-    timeout: const Timeout(Duration(minutes: 10)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
