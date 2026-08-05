@@ -368,4 +368,82 @@ void main() {
       );
     });
   });
+
+  group('the scripts are valid shell, not just the right text', () {
+    // Every other test in this file matches TEXT inside `scripts`. That is
+    // what let the following ship: the explicit `--target` list was added to
+    // both dev lanes as comment-annotated continuation lines —
+    //
+    //     patrol test \
+    //       # Explicit target list, kept in step with ...
+    //       --target integration_test/patrol_smoke_test.dart \
+    //
+    // — and every text assertion passed, because the targets really were in
+    // the file. But the shell joins a backslash continuation BEFORE it
+    // strips comments, so the `#` swallowed the rest of that joined line:
+    // `patrol test` ran with NO targets (globbing the whole directory,
+    // sweeping in the AI-billing flow this list exists to exclude) and every
+    // following line parsed as a fresh command, `--target: command not
+    // found`. Assert the shape the shell actually sees.
+    test('no comment line sits inside a backslash continuation', () {
+      final offenders = <String>[];
+
+      for (final entry in (codemagic['workflows'] as YamlMap).entries) {
+        final steps = (workflow(entry.key as String)['scripts'] as YamlList?);
+        for (final step in steps ?? const []) {
+          if (step is! YamlMap) continue;
+          final script = step['script']?.toString();
+          if (script == null) continue;
+
+          final lines = script.split('\n');
+          for (var i = 1; i < lines.length; i++) {
+            if (lines[i - 1].trimRight().endsWith(r'\') &&
+                lines[i].trimLeft().startsWith('#')) {
+              offenders.add(
+                '${entry.key} / "${step['name']}" line ${i + 1}: '
+                '${lines[i].trim()}',
+              );
+            }
+          }
+        }
+      }
+
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            'A `#` comment on a continued line silently truncates the command '
+            'at that point. Move the comment ABOVE the command:\n'
+            '${offenders.join('\n')}',
+      );
+    });
+
+    test('every script parses as shell', () async {
+      final failures = <String>[];
+
+      for (final entry in (codemagic['workflows'] as YamlMap).entries) {
+        final steps = (workflow(entry.key as String)['scripts'] as YamlList?);
+        for (final step in steps ?? const []) {
+          if (step is! YamlMap) continue;
+          final script = step['script']?.toString();
+          if (script == null) continue;
+
+          // `bash -n` parses without executing — it catches truncation,
+          // unbalanced quotes and unterminated heredocs, none of which any
+          // text assertion can see.
+          final proc = await Process.start('bash', ['-n']);
+          proc.stdin.write(script);
+          await proc.stdin.close();
+          final stderrText = await proc.stderr
+              .transform(const SystemEncoding().decoder)
+              .join();
+          if (await proc.exitCode != 0) {
+            failures.add('${entry.key} / "${step['name']}": $stderrText');
+          }
+        }
+      }
+
+      expect(failures, isEmpty, reason: failures.join('\n'));
+    }, skip: !Platform.isMacOS && !Platform.isLinux ? 'needs bash' : null);
+  });
 }

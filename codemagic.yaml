@@ -1443,16 +1443,24 @@ workflows:
           # iOS-only note: credentialed OAuth flows (e.g. Google) can't be driven
           # through ASWebAuthSession, so those flows self-skip on iOS rather than
           # fail. INTEGRATION_TEST_EMAIL/_PASSWORD email login is automatable.
+          # Explicit target list, kept in step with
+          # .github/workflows/tests-selfhosted.yml. A bare
+          # `--target integration_test` globs the whole directory, which
+          # sweeps in ai_coach_chat_flow_test — that flow only self-skips on
+          # PROD, so on this dev lane it called the AI coach chat edge
+          # function and billed real AI spend on every push to develop.
+          # google_login and onboarding_signup are excluded for the same
+          # reasons as on the M1 runner (interactive OAuth consent; needs
+          # a clean install with no session).
+          #
+          # These comments MUST stay ABOVE the command. A `#` line placed
+          # between backslash-continued lines does not comment "inside" the
+          # command: the shell joins the continuation first, the `#` then
+          # swallows the rest of that line, and `patrol test` runs with NO
+          # targets — globbing the whole directory, which is precisely what
+          # this list exists to prevent. Everything after it parses as a new
+          # command ("--target: command not found").
           patrol test \
-            # Explicit target list, kept in step with
-            # .github/workflows/tests-selfhosted.yml. A bare
-            # `--target integration_test` globs the whole directory, which
-            # sweeps in ai_coach_chat_flow_test — that flow only self-skips on
-            # PROD, so on this dev lane it called the AI coach chat edge
-            # function and billed real AI spend on every push to develop.
-            # google_login and onboarding_signup are excluded for the same
-            # reasons as on the M1 runner (interactive OAuth consent; needs
-            # a clean install with no session).
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
             --target integration_test/flows/fuel_timeline_flow_test.dart \
@@ -1531,16 +1539,24 @@ workflows:
           # One build, every patrolTest() under integration_test/. Unit tests,
           # analyze and format are gated separately by pr-validation, which also
           # runs on this push, so they are not repeated here.
+          # Explicit target list, kept in step with
+          # .github/workflows/tests-selfhosted.yml. A bare
+          # `--target integration_test` globs the whole directory, which
+          # sweeps in ai_coach_chat_flow_test — that flow only self-skips on
+          # PROD, so on this dev lane it called the AI coach chat edge
+          # function and billed real AI spend on every push to develop.
+          # google_login and onboarding_signup are excluded for the same
+          # reasons as on the M1 runner (interactive OAuth consent; needs
+          # a clean install with no session).
+          #
+          # These comments MUST stay ABOVE the command. A `#` line placed
+          # between backslash-continued lines does not comment "inside" the
+          # command: the shell joins the continuation first, the `#` then
+          # swallows the rest of that line, and `patrol test` runs with NO
+          # targets — globbing the whole directory, which is precisely what
+          # this list exists to prevent. Everything after it parses as a new
+          # command ("--target: command not found").
           patrol test \
-            # Explicit target list, kept in step with
-            # .github/workflows/tests-selfhosted.yml. A bare
-            # `--target integration_test` globs the whole directory, which
-            # sweeps in ai_coach_chat_flow_test — that flow only self-skips on
-            # PROD, so on this dev lane it called the AI coach chat edge
-            # function and billed real AI spend on every push to develop.
-            # google_login and onboarding_signup are excluded for the same
-            # reasons as on the M1 runner (interactive OAuth consent; needs
-            # a clean install with no session).
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
             --target integration_test/flows/fuel_timeline_flow_test.dart \
