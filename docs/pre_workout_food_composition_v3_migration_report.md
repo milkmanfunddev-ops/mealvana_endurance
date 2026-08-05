@@ -316,3 +316,55 @@ not exists`, `drop constraint if exists`, `delete … where name =`, and `insert
 with deterministic uuid5 ids — so the pair replays cleanly on prod.
 
 **Not yet applied to dev.** Awaiting approval.
+
+---
+
+## Appendix — deviation to log in `qa/DEVIATIONS.md`
+
+Ruling by Xuan, 2026-08-05: leave the meal tier without a G4b item and log the divergence rather
+than invent a feeding to satisfy the conformance check.
+
+This file cannot be written from the app repo (qa is read-only here). **D-017 is the next free id**
+as of 2026-08-05. Paste the block below into `qa/DEVIATIONS.md`.
+
+> **Note the inversion.** Every existing entry logs *code doing something the SSOT never ratified*.
+> This one is the reverse: the SSOT ratified a rule and the product **deliberately declined to
+> implement it**. Same register, opposite direction — worth a moment's care when reading it back.
+
+```markdown
+## D-017 — Meal tier ships no G4b item; v3's one rule change is not implemented in data
+- **Status:** `documented` (2026-08-05). SSOT deliberately NOT evolved; data deliberately NOT
+  conformed. This is a product ruling, not a defect.
+- **Observed:** after the food-composition v3 data migration, `pre_workout_templates` contains
+  **no meal-tier row containing a G4b item** (sports drink, drink mix, gel, chews). Five standalone
+  G4b rows were created and then dropped the same day — `Sports Drink (Meal)`, `Sports Drink
+  (Snack)`, `Energy Gel (Meal)`, `Energy Gel (Snack)`, `Energy Chews (Snack)`.
+- **Data:** `app/supabase/migrations/20260805143000_pre_workout_drop_standalone_g4b_meal_snack.sql`
+  (branch `data/pre-workout-food-composition-v3`). Applied to DEV 2026-08-05.
+- **SSOT status:** directly contradicts **§3.4's v3 ruling** ("a sports drink at label strength is
+  permitted in every tier") as operationalised by **§11 check 10** ("G4b is permitted in all three
+  tiers. A test asserting a sports drink is unavailable at the meal or snack tier is pinning the
+  superseded rule"). v3 changed exactly one rule, and this is that rule.
+- **Why the product declined:** a row in `pre_workout_templates` must be a **standalone-sufficient**
+  feeding for its window — the engine does not stack two formulas inside one window, so a row must
+  answer the window alone. A sports drink is 15 g of carbohydrate and a gel is 25 g; neither is a
+  meal, and `Sports Drink (Meal)` came to 210 kcal against §2's ~240–960 kcal meal band. §3.4's
+  ruling is a statement about what a composed feeding **may contain**, not a licence to publish each
+  G4b item as a feeding in its own right. **Permission is not sufficiency.**
+- **Note also** that v3 permitted G4b at the meal tier on the grounds that *nothing forbids it*
+  (§3.4: "no pre-exercise concentration evidence base to invoke at 30 min–4 h") — an absence of
+  objection, not a positive recommendation. Fabricating a feeding no athlete would eat, purely to
+  satisfy check 10, is the "false precision" failure §0 warns against.
+- **Scope — snack tier does NOT diverge:** G4b remains represented at the snack tier through
+  `Pretzels + Sports Drink` (38 g carbohydrate), which is §3.11 canonical snack #5. Only the **meal**
+  tier is affected.
+- **Conformance:** check 10 will FAIL against this data at the meal tier. There is no vector to mark
+  `characterization` yet — this slice has no harness (see the bundle's conformance note: no engine,
+  no runner). When one is built, the meal-tier half of check 10 must be pinned as a characterization
+  vector rather than allowed to pass.
+- **Open:** decide at the next food-composition revision whether to (a) keep the product rule and
+  narrow check 10 to "G4b may appear in a composed feeding at any tier", or (b) add a composed
+  meal-tier formula carrying a G4b item. The candidate considered and not taken was
+  `Toast ×2 + jam + sports drink` (248 kcal, 54 g carb, 1.6 g fat, 1.4 g fibre) — the smallest
+  invention, since §3.11 already blesses "white toast + jam, with a small glass of juice".
+```
