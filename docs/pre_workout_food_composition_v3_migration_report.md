@@ -15,6 +15,29 @@
 
 ---
 
+## Lee — start here
+
+This branch (`data/pre-workout-food-composition-v3`) is a **handoff, not a merge request**.
+It is deliberately not merged to `develop` and has no PR. Collect it when you pick this up.
+
+1. **Dev is already carrying this data.** Applied 2026-08-05 via the Supabase Management API,
+   not by anything in CI. The state below is live on dev right now — including the breakage.
+2. **Six code changes are needed before the app builds and behaves** — see flag #1 immediately
+   below. Two of them are Drift columns and block the build outright.
+3. **Prod is gated.** `docs/database/apply_all.sql` section 6 carries the gating and the run
+   order. It is a pointer, not runnable SQL, so a top-to-bottom paste cannot apply it early.
+4. **`apply_all.sql` sections 2 and 3 are still unapplied** and are not mine — a live 22P02 on
+   cycling/swim plan generation and a 42703 breaking every profile save. Worth a look while
+   you are in that file.
+
+There are two matching intake items in the `ops` repo
+(`data/bug-reports/2026-08-05-pre-workout-time-window-remap-…` and
+`data/feature-requests/2026-08-05-fuel-hydration-sodium-should-query-template-foods`), but
+**that repo has no git remote**, so they are unreachable from anywhere but Xuan's machine.
+Everything you need is duplicated here and in `apply_all.sql` section 6 for that reason.
+
+---
+
 ## ⚠️ Read these three first
 
 ### 1. Selection filters on the time-window **text**, not on category

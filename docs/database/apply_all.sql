@@ -16,6 +16,10 @@
 --   • Section 3 (users sweat-profile columns) — DEV + PROD: safe to apply now.
 --     Independent of formula-kit; fixes a live 42703 error that makes EVERY
 --     profile save (name/allergies/diet) fail to reach Supabase.
+--   • Section 6 (pre-workout food-composition v3) — DEV: ✅ applied 2026-08-05.
+--     PROD: ⛔ HOLD — do NOT paste until the app code lands. Section 6 is a
+--     POINTER, not runnable SQL, precisely so a top-to-bottom paste can't
+--     apply it early. Read its header before touching prod.
 --   • Section 5 (users.is_internal analytics earmark) — ✅ APPLIED to DEV +
 --     PROD on 2026-07-08 via Supabase MCP. Flags internal team/test accounts
 --     for exclusion from Mixpanel + engagement metrics. No longer pending —
@@ -496,6 +500,59 @@ WHERE id IN (
 -- run the UPDATE for these too once confirmed internal:
 --   'aada1a31-24a5-4ac0-a4d6-88e4c5e57885'  -- anon, created 2025-11-27 (Xuan's signup day)
 --   '64dd093b-28d3-4442-bfc7-59679791089d'  -- anon, created 2025-11-29 (test coach's signup day)
+
+
+-- ── 6. Pre-workout food-composition v3 — POINTER ONLY, PROD IS GATED ────────
+--
+-- ⛔ THERE IS DELIBERATELY NO SQL IN THIS SECTION. Do not paste anything here.
+--
+-- The SQL lives in two files on branch `data/pre-workout-food-composition-v3`:
+--     supabase/migrations/20260805120000_pre_workout_food_composition_v3_structure.sql
+--     supabase/migrations/20260805120100_pre_workout_food_composition_v3_data.sql
+--   Run them IN THAT ORDER. Both are idempotent and safe to re-run.
+--
+-- DEV:  ✅ applied 2026-08-05 via the Supabase Management API. Verified: 39 rows
+--       (30 -> 39), 0 unexpected hard-gate violations.
+-- PROD: ⛔ HOLD. Applying to prod BEFORE the app code lands will silently
+--       front-load every long-lead pre-workout plan into the last 30 minutes.
+--
+-- WHY PROD IS GATED — this is a coordinated data + code release:
+--   Template eligibility is a string equality on the time-window TEXT, not a
+--   category lookup (supabase/functions/generate-macros-v4/pre-workout.ts:492).
+--   The data migration remaps '1.5-3 hours' -> '2-4 hours' and '30-90 min' ->
+--   '30-120 min'. Until the code below is updated, the meal and snack phases
+--   match zero templates; pre-workout.ts:967 then treats them as "empty phases"
+--   and hands their carb/sodium/fluid budget to the top-off. No error is raised
+--   and PASS_1_5_FALLBACK_FOODS still populates the plan, so it LOOKS correct.
+--
+-- SIX CODE SITES THAT MUST SHIP WITH THIS (Lee):
+--   1. supabase/functions/generate-macros-v4/types.ts:17      TimeWindow union literals
+--   2. supabase/functions/generate-macros-v4/pre-workout.ts:428-430
+--                                                             getTimeWindowForPhase()
+--   3. lib/features/formula_kit/domain/before_sub_phase.dart:50-52
+--                                                             fromTimeWindow() switch
+--   4. lib/features/formula_kit/presentation/widgets/personal_formula_card.dart:31-33
+--                                                             display labels
+--   5. lib/shared/database/tables/pre_workout_templates_table.dart
+--                                     >>> DRIFT: add fiberPerServing (fiber_per_serving)
+--   6. lib/shared/database/tables/template_foods_table.dart
+--                                     >>> DRIFT: add foodGroup (food_group)
+--
+--   5 and 6 block the app BUILDING. 1-4 build fine and produce wrong behaviour.
+--   Pin resolution also compares the literal (pre-workout.ts:965, :1033).
+--   pre-workout-matrix.test.ts carries the old literals in ~25 fixtures and will
+--   go red until updated.
+--
+-- FULL ANALYSIS, including the deletions, the 17 new formulas and the four spec
+-- ambiguities that were judged (with SSOT citations):
+--     docs/pre_workout_food_composition_v3_migration_report.md
+--
+-- SSOT provenance: qa repo tag `pre-workout-food-composition@v1`,
+--                  spec/fueling/pre-workout-food-composition.md (v3, ratified 2026-08-05).
+--
+-- After applying to prod:
+--   1. Move both .sql files to supabase/migrations/_archived/
+--   2. Replace this section with an "✅ APPLIED to DEV + PROD on <date>" note.
 
 
 -- ============================================================================
