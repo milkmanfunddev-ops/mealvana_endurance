@@ -580,9 +580,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     final beforeFat = hasBefore
         ? _getSectionMacroTarget(beforeSection, 'fat')
         : 0.0;
-    final beforeSodium = hasBefore
-        ? _getSectionMacroTarget(beforeSection, 'sodium')
-        : 0.0;
+    // Sodium v3: the BEFORE phase has no sodium target, so we reconstruct
+    // none. Reading the section here would turn an absent target back into a
+    // 0 mg one — a recommendation to consume no sodium.
     final beforeFluids = hasBefore
         ? _getSectionMacroTarget(beforeSection, 'fluids')
         : 0.0;
@@ -620,7 +620,6 @@ class ActivityDetailController extends _$ActivityDetailController {
         proteinG: beforeProtein,
         fatCapG: beforeFat,
         fluidsMl: beforeFluids,
-        sodiumMg: beforeSodium,
       ),
       duringRun: DuringRunMacros(
         carbRateGPerH: duringCarbs / safeDurationH,

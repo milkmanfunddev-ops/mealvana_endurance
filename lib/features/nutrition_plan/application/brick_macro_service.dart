@@ -593,17 +593,14 @@ class BrickMacroService {
     );
     final preRunFat = _toDouble(beforePhase['fat_g'], 'before.fat_g');
     final preRunFluids = _toDouble(beforePhase['water_ml'], 'before.water_ml');
-    final preRunSodium = _toDouble(
-      beforePhase['sodium_mg'],
-      'before.sodium_mg',
-    );
+    // Sodium v3: `before.sodium_mg` is deliberately not read. It was a
+    // *required* parse, so a current server (which sends null) would have
+    // thrown here — this is also the PW-013 old-client/new-server fix.
     // V4 range fields
     final preRunCarbsLow = _toDoubleOrNull(beforePhase['carbs_low_g']);
     final preRunCarbsHigh = _toDoubleOrNull(beforePhase['carbs_high_g']);
     final preRunProteinLow = _toDoubleOrNull(beforePhase['protein_low_g']);
     final preRunProteinHigh = _toDoubleOrNull(beforePhase['protein_high_g']);
-    final preRunSodiumLow = _toDoubleOrNull(beforePhase['sodium_low_mg']);
-    final preRunSodiumHigh = _toDoubleOrNull(beforePhase['sodium_high_mg']);
     final preRunFluidsLow = _toDoubleOrNull(beforePhase['water_low_ml']);
     final preRunFluidsHigh = _toDoubleOrNull(beforePhase['water_high_ml']);
 
@@ -861,13 +858,13 @@ class BrickMacroService {
         proteinG: preRunProtein,
         fatCapG: preRunFat,
         fluidsMl: preRunFluids,
-        sodiumMg: preRunSodium,
+        // Sodium v3: Mealvana sets no pre-workout sodium target, so neither
+        // the figure nor the band from the edge response is carried forward.
+        // An older server still emits the retired 450/150 mg target.
         carbsLowG: preRunCarbsLow,
         carbsHighG: preRunCarbsHigh,
         proteinLowG: preRunProteinLow,
         proteinHighG: preRunProteinHigh,
-        sodiumLowMg: preRunSodiumLow,
-        sodiumHighMg: preRunSodiumHigh,
         fluidsLowMl: preRunFluidsLow,
         fluidsHighMl: preRunFluidsHigh,
       ),

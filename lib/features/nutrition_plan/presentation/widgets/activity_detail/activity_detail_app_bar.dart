@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../providers/activity_detail_controller.dart';
 import '../../providers/activity_detail_state.dart';
+import '../../utils/activity_detail_helpers.dart';
 import '../../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 
 /// AppBar for ActivityDetailScreen with back button, title, and action buttons
@@ -134,27 +135,48 @@ class ActivityDetailAppBar extends ConsumerWidget
                   isNewActivity: isNewActivity,
                 ),
               );
-        final (String? eventName, String? activityTitle) =
+        final (String? eventName, String? activityTitle, int? leadMinutes) =
             asyncState.whenOrNull(
               data: (data) {
                 if (data is ActivityDetailState) {
-                  return (data.eventName, data.activity?.title);
+                  return (
+                    data.eventName,
+                    data.activity?.title,
+                    data.activity?.timeBeforeMinutes,
+                  );
                 }
-                return (null, null);
+                return (null, null, null);
               },
             ) ??
-            (null, null);
+            (null, null, null);
         final title =
             eventName ??
             activityTitle ??
             (isNewActivity ? 'New Activity' : 'Activity Details');
-        return Text(
+        final titleText = Text(
           key: const ValueKey('plan_detail.title'),
           title,
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
           overflow: TextOverflow.ellipsis,
+        );
+        // Frozen lead time — the minutes-before-workout captured at plan
+        // generation, not the clock ("Planned 3 hours ahead", digest §5).
+        if (leadMinutes == null || leadMinutes <= 0) return titleText;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            titleText,
+            Text(
+              'Planned ${ActivityDetailHelpers.formatLeadTime(leadMinutes)} ahead',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         );
       },
     );

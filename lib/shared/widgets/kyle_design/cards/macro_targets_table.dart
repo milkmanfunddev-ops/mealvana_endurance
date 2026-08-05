@@ -131,7 +131,10 @@ class MacroTargetsTable extends ConsumerWidget {
           rowKey: const ValueKey('adjust_macros.row_sodium'),
           cells: [
             'SODIUM',
-            '${macroData.preSodium}mg',
+            // Sodium v3: there is no pre-workout sodium target, so this cell
+            // is an em dash — never "0 mg", which would read as "consume no
+            // sodium". DURING and POST are unchanged.
+            macroData.preSodium == null ? '—' : '${macroData.preSodium}mg',
             '${macroData.duringSodium}mg',
             '${macroData.postSodium}mg',
           ],
@@ -239,7 +242,9 @@ class MacroTableData {
   final int preFluids;
   final int duringFluids;
   final int postFluids;
-  final int preSodium;
+  /// Sodium v3: `null` for the BEFORE column — Mealvana sets no pre-workout
+  /// sodium target. Renders as an em dash, never `0 mg`.
+  final int? preSodium;
   final int duringSodium;
   final int postSodium;
 }

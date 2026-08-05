@@ -1,13 +1,30 @@
 import 'dart:math' as math;
 
-/// Offline calculator for macro recommendations when edge function is unavailable.
+/// Offline calculator for macro recommendations when the edge function is
+/// unavailable.
 ///
-/// Math mirrors the generate-macros-v4 Supabase edge function exactly:
-///   supabase/functions/generate-macros-v4/single-sport.ts
-///   supabase/functions/generate-macros-v4/pre-workout.ts
+/// **Authority is split, and it is not "whatever the edge function does".**
 ///
-/// Hydration & sodium (lines below the HYDRATION section header) were already
-/// correct and are NOT changed by this update.
+/// * The **pre-workout** surfaces — [OfflineMacroCalculator.calculatePreWorkoutHydration]
+///   and [OfflineMacroCalculator.calculatePreWorkoutCarbs] — implement the ratified
+///   SSOTs directly. The edge function
+///   (`supabase/functions/generate-macros-v4/pre-workout.ts`) is a *mirror* of the
+///   same specs, not the source. Where the two disagree, the spec wins and the
+///   conformance vectors say so:
+///     - `docs/ssot/spec/fueling/pre-workout-hydration.md` v6
+///     - `docs/ssot/spec/fueling/pre-workout-carbs.md`     v2
+///     - `docs/ssot/spec/fueling/pre-workout-sodium.md`    v3
+///     - vectors: `docs/ssot/vectors/fueling/pre-workout-{hydration,carbs,sodium}.json`
+///
+/// * **During-workout** and **post-workout** math still mirrors the edge function
+///   exactly (`single-sport.ts`, `brick-workout.ts`,
+///   `_shared/nutrition/sweat-hydration.ts`) and is untouched by the v6/v2/v3
+///   pre-workout bundle.
+///
+/// **The pre-workout engine never rounds.** Its outputs are exact doubles;
+/// rounding is a display concern owned by the consumer. The only place an int
+/// appears is the legacy [calculatePreWorkoutTargets] map boundary, which rounds
+/// at the very last step so existing consumers keep working.
 class OfflineMacroCalculator {
   static const double _miToKm = 1.60934;
   static const double _mlToFlOz = 0.033814;
@@ -94,23 +111,215 @@ class OfflineMacroCalculator {
   }
 
   // ============================================================================
-  // PRE-WORKOUT TARGETS (mirrors calculatePreWorkoutTargets in pre-workout.ts)
+  // PRE-WORKOUT CARBOHYDRATE — SSOT: docs/ssot/spec/fueling/pre-workout-carbs.md v2
+  // ============================================================================
+
+  /// Minutes before the workout at which the `meal` tier opens.
+  ///
+  /// SSOT: pre-workout-carbs.md v2 — `TIER_MEAL_MIN = 120.0`. Basis: Tougas/ANMS
+  /// gastric-emptying normals (a low-fat solid meal is 30–60 % retained at 2 h).
+  ///
+  /// Numerically equal to [tRef] for an **unrelated** reason. Pinned equal by
+  /// [assertCrossSpecPin]; neither is derived from the other.
+  static const double tierMealMin = 120.0;
+
+  /// Minutes before the workout at which the `top_off` tier closes.
+  /// SSOT: pre-workout-carbs.md v2 — `TIER_TOPOFF_MAX = 30.0` (Mealvana design
+  /// choice; cited practice is 10–15 min, J&G p. 491 — 30 errs early).
+  static const double tierTopOffMax = 30.0;
+
+  /// Outer edge of Thomas 2016's carbohydrate window, in minutes.
+  /// SSOT: pre-workout-carbs.md v2 — `WINDOW_MAX = 240.0`.
+  static const double windowMax = 240.0;
+
+  /// Tier shares when a meal window exists (t >= [tierMealMin]): 60 / 30 / 10.
+  /// SSOT: pre-workout-carbs.md v2 — Mealvana design choice, Xuan 2026-08-03.
+  static const double shareMeal = 0.60;
+  static const double shareSnack = 0.30;
+  static const double shareTopOff = 0.10;
+
+  /// Tier shares when no meal window exists: 75 / 25.
+  /// SSOT: pre-workout-carbs.md v2 — Mealvana design choice, Xuan 2026-08-03.
+  static const double shareSnackNoMeal = 0.75;
+  static const double shareTopOffNoMeal = 0.25;
+
+  /// ±12.5 % — the one tolerance, used for every carbohydrate number: each
+  /// tier's food-match window and (in the design_choice regime) the plan band.
+  /// SSOT: pre-workout-carbs.md v2 — `TIER_TOL = 0.125` (design choice,
+  /// explicitly not research).
+  static const double tierTol = 0.125;
+
+  /// Lower edge of Thomas 2016 Table 2's carbohydrate window, in minutes.
+  /// SSOT: pre-workout-carbs.md v2 — the `inWindow` lower test.
+  static const double citedWindowMinMin = 60.0;
+
+  /// Minimum workout duration for Thomas 2016 Table 2's "before exercise
+  /// >= 60 min" situation. Inclusive.
+  /// SSOT: pre-workout-carbs.md v2.
+  static const double citedMinWorkoutMin = 60.0;
+
+  /// Cited dose band, g/kg. SSOT: pre-workout-carbs.md v2 — Thomas 2016
+  /// Table 2, verbatim (origin Burke 2011 Table II).
+  static const double carbBandLowGPerKg = 1.0;
+  static const double carbBandHighGPerKg = 4.0;
+
+  /// Pre-workout carbohydrate plan.
+  ///
+  /// SSOT: `docs/ssot/spec/fueling/pre-workout-carbs.md` v2 (RATIFIED,
+  /// Xuan 2026-08-04). Conformance vectors:
+  /// `docs/ssot/vectors/fueling/pre-workout-carbs.json`.
+  ///
+  /// Exact doubles — **this function never rounds.**
+  ///
+  /// Shape of the algorithm:
+  ///   * `isFasted` short-circuits **first** → zeros, empty tiers,
+  ///     `targetBasis: 'none'` (D-001, shipped, still unratified).
+  ///   * `carbPerKg = min(t / 60, 4.0)` — v1's `max(0.5, …)` floor is REMOVED
+  ///     (D-002 superseded, Xuan 2026-08-03).
+  ///   * Three-way tier split by lead time; the `top_off` tier is always
+  ///     present, even carrying 0 at t = 0 (distinguishable from the fasted
+  ///     path, which emits no tiers at all).
+  ///   * Plan band is Thomas's cited `[1, 4] g/kg` only when BOTH the lead time
+  ///     is inside `[60, 240]` and the workout is >= 60 min; otherwise ±12.5 %
+  ///     of the total, tagged `design_choice`.
+  static PreWorkoutCarbResult calculatePreWorkoutCarbs({
+    required double bodyWeightKg,
+    required double timeBeforeWorkoutMin,
+    required double workoutDurationMin,
+    bool isFasted = false,
+  }) {
+    assert(_crossSpecPinHolds, _crossSpecPinMessage);
+
+    // D-001 — fasted returns nothing at all, and does so BEFORE any tier work.
+    // Empty `tiers` + basis 'none' is what distinguishes it from the t = 0 path.
+    if (isFasted) {
+      return const PreWorkoutCarbResult(
+        carbsG: 0.0,
+        carbsLowG: 0.0,
+        carbsHighG: 0.0,
+        tiers: <PreWorkoutCarbTier>[],
+        targetBasis: 'none',
+      );
+    }
+
+    final t = math.max(timeBeforeWorkoutMin, 0.0);
+    final bw = bodyWeightKg;
+
+    // No 0.5 g/kg floor — the plain diagonal of Thomas's cited box, running to
+    // 0 at t = 0 ("you can drink at the gun, not eat").
+    final carbPerKg = math.min(t / 60.0, carbBandHighGPerKg);
+    final total = bw * carbPerKg;
+
+    final double meal;
+    final double snack;
+    final double topOff;
+    if (t >= tierMealMin) {
+      meal = shareMeal * total;
+      snack = shareSnack * total;
+      topOff = shareTopOff * total;
+    } else if (t >= tierTopOffMax) {
+      meal = 0.0;
+      snack = shareSnackNoMeal * total;
+      topOff = shareTopOffNoMeal * total;
+    } else {
+      meal = 0.0;
+      snack = 0.0;
+      topOff = total; // only window open
+    }
+
+    // Tier membership (invariant 6): `meal` iff t >= 120; `snack` iff t >= 30;
+    // `top_off` always. Ordered furthest-out first.
+    final tiers = <PreWorkoutCarbTier>[
+      if (t >= tierMealMin) _carbTier('meal', meal),
+      if (t >= tierTopOffMax) _carbTier('snack', snack),
+      _carbTier('top_off', topOff),
+    ];
+
+    // Plan band. `WINDOW_MAX`'s upper test cannot fire false while the app caps
+    // input at 240 (D-016 notwithstanding) — it is kept as the guard that stops
+    // a raised input maximum silently escaping Thomas's window.
+    final inWindow =
+        t >= citedWindowMinMin &&
+        t <= windowMax &&
+        workoutDurationMin >= citedMinWorkoutMin;
+
+    final double carbsLowG;
+    final double carbsHighG;
+    final String targetBasis;
+    if (inWindow) {
+      carbsLowG = carbBandLowGPerKg * bw;
+      carbsHighG = carbBandHighGPerKg * bw;
+      targetBasis = 'evidenced_band';
+    } else {
+      carbsLowG = total * (1.0 - tierTol);
+      carbsHighG = total * (1.0 + tierTol);
+      targetBasis = 'design_choice';
+    }
+
+    return PreWorkoutCarbResult(
+      carbsG: total,
+      carbsLowG: carbsLowG,
+      carbsHighG: carbsHighG,
+      tiers: List.unmodifiable(tiers),
+      targetBasis: targetBasis,
+    );
+  }
+
+  /// Build one carbohydrate tier with its ±[tierTol] food-match window.
+  /// `composition` mirrors `tier`; its *value set* is owned by
+  /// `docs/ssot/spec/fueling/pre-workout-food-composition.md`, not by this file.
+  static PreWorkoutCarbTier _carbTier(String tier, double carbsG) {
+    return PreWorkoutCarbTier(
+      tier: tier,
+      carbsG: carbsG,
+      rangeLowG: carbsG * (1.0 - tierTol),
+      rangeHighG: carbsG * (1.0 + tierTol),
+      composition: tier,
+    );
+  }
+
+  // ============================================================================
+  // PRE-WORKOUT TARGETS (legacy map shape; carbs delegate to the v2 SSOT)
   // ============================================================================
 
   /// Calculate pre-workout macro targets with low/high ranges.
   ///
-  /// Algorithm C (V4):
-  ///   - fasted  → all zeros, meal_type='fasted'
-  ///   - carbs   = max(0.5, min(hoursBefore, 4.0)) g/kg, ±12.5% band
-  ///   - full_meal  (≥2.5h): protein=0.25g/kg [0.15–0.35], fat=0.4g/kg
-  ///   - snack      (1–2.5h): protein=0.15g/kg [0–0.25], fat=5g
-  ///   - top_up     (<1h):    protein=0 [0–10g], fat=0
+  /// **Carbohydrate is no longer computed here** — `carbs_g` / `carbs_low_g` /
+  /// `carbs_high_g` delegate to [calculatePreWorkoutCarbs]
+  /// (SSOT: `docs/ssot/spec/fueling/pre-workout-carbs.md` v2) and are rounded to
+  /// int **only at this map boundary**, so the legacy consumers of this shape
+  /// keep working. The engine itself stays exact.
+  ///
+  /// Everything else in the map (protein / fat / meal_type / water_* / sodium_*)
+  /// is out of the v6/v2/v3 pre-workout bundle's scope, still feeds food
+  /// selection, and is deliberately unchanged.
+  ///
+  /// [workoutDurationMin] is only used to decide whether the carbohydrate plan
+  /// band may be tagged `evidenced_band` (Thomas 2016 scopes its band to
+  /// sessions >= 60 min). When it is null the band falls back to ±12.5 % of the
+  /// total — which is exactly what the legacy v1 code produced.
+  ///
+  /// The **occasion boundaries follow the tier boundaries** — [tierMealMin]
+  /// (120 min) and [tierTopOffMax] (30 min), read from those constants so they
+  /// cannot drift from the tier definitions again. v1 branched at 2.5 h / 1.0 h,
+  /// which made this map say `snack` at a 120-min lead while the engine opened
+  /// the `meal` tier. The edge-function mirror has moved to 120/30 as well.
+  ///
+  /// The per-branch **formulas** below are untouched legacy behaviour — no
+  /// ratified SSOT governs pre-workout protein / fat / water / sodium, and this
+  /// bundle does not introduce one. Only the boundary moved.
+  ///
+  ///   - fasted     → all zeros, meal_type='fasted'
+  ///   - full_meal  (≥120 min): protein=0.25g/kg [0.15–0.35], fat=0.4g/kg
+  ///   - snack      (30–120 min): protein=0.15g/kg [0–0.25], fat=5g
+  ///   - top_up     (<30 min):  protein=0 [0–10g], fat=0
   static Map<String, dynamic> calculatePreWorkoutTargets({
     required double weightKg,
     required double hoursBefore,
     required bool isFasted,
     String sweatSodiumCat = 'average',
     String envLabel = 'normal',
+    double? workoutDurationMin,
   }) {
     if (isFasted) {
       return {
@@ -131,11 +340,17 @@ class OfflineMacroCalculator {
       };
     }
 
-    // Carbs: 1 g/kg per hour, capped at 4h, floor 0.5
-    final carbPerKg = math.max(0.5, math.min(hoursBefore, 4.0));
-    final carbs = (weightKg * carbPerKg).round();
-    final carbsLow = (carbs * 0.875).round();
-    final carbsHigh = (carbs * 1.125).round();
+    // Carbs — SSOT: docs/ssot/spec/fueling/pre-workout-carbs.md v2.
+    // Delegated, exact, then rounded once here at the map boundary.
+    final carbPlan = calculatePreWorkoutCarbs(
+      bodyWeightKg: weightKg,
+      timeBeforeWorkoutMin: hoursBefore * 60.0,
+      workoutDurationMin: workoutDurationMin ?? 0.0,
+      isFasted: false, // the fasted path returned above
+    );
+    final carbs = carbPlan.carbsG.round();
+    final carbsLow = carbPlan.carbsLowG.round();
+    final carbsHigh = carbPlan.carbsHighG.round();
 
     // Sodium base by sweat category
     final baseSodium = sweatSodiumCat == 'low'
@@ -160,8 +375,22 @@ class OfflineMacroCalculator {
     int hydrationHigh;
     String mealType;
 
-    if (hoursBefore >= 2.5) {
-      // Full meal
+    // The occasion boundaries are the TIER boundaries, read from the same named
+    // constants the tier split uses — NOT fresh literals, and no longer v1's
+    // 2.5 h / 1.0 h. At a 120-min lead the engine opens the `meal` tier, so the
+    // map must say `full_meal`; at a 30-min lead the engine opens `snack`, so
+    // the map must say `snack`. Anything else has the map contradicting the
+    // tiers it is now built from — and diverging from the edge-function mirror,
+    // which has already moved to 120/30.
+    //
+    // Only the BOUNDARY is governed by the SSOT here. The protein / fat /
+    // water / sodium formulas inside each branch are out-of-bundle legacy
+    // behaviour that no ratified spec covers; they are deliberately unchanged.
+    final timeBeforeMin = hoursBefore * 60.0;
+
+    if (timeBeforeMin >= tierMealMin) {
+      // Full meal — the `meal` tier is open (SSOT: pre-workout-carbs.md v2
+      // TIER_MEAL_MIN).
       protein = (weightKg * 0.25).round();
       proteinLow = (weightKg * 0.15).round();
       proteinHigh = (weightKg * 0.35).round();
@@ -173,8 +402,9 @@ class OfflineMacroCalculator {
       sodiumHigh = 2000;
       hydrationLow = math.max(200, (hydration * 0.50).round());
       hydrationHigh = math.max(600, (hydration * 1.50).round());
-    } else if (hoursBefore >= 1.0) {
-      // Snack
+    } else if (timeBeforeMin >= tierTopOffMax) {
+      // Snack — no meal window, but the `snack` tier is open (SSOT:
+      // pre-workout-carbs.md v2 TIER_TOPOFF_MAX).
       protein = (weightKg * 0.15).round();
       proteinLow = 0;
       proteinHigh = (weightKg * 0.25).round();
@@ -187,7 +417,7 @@ class OfflineMacroCalculator {
       hydrationLow = math.max(150, (hydration * 0.50).round());
       hydrationHigh = math.max(500, (hydration * 1.50).round());
     } else {
-      // Top-up
+      // Top-up — only the `top_off` tier is open.
       protein = 0;
       proteinLow = 0;
       proteinHigh = 10;
@@ -611,6 +841,9 @@ class OfflineMacroCalculator {
       hoursBefore: hoursBefore,
       isFasted: isFasted,
       sweatSodiumCat: sweatSodiumCat,
+      // Lets the carbohydrate plan band claim Thomas 2016's cited [1,4] g/kg
+      // when the session is >= 60 min. SSOT: pre-workout-carbs.md v2.
+      workoutDurationMin: durationMin,
     );
 
     // During-workout carbs
@@ -1067,88 +1300,247 @@ class OfflineMacroCalculator {
   }
 
   // ---------------------------------------------------------------------------
-  // Pre-workout hydration
+  // PRE-WORKOUT HYDRATION — SSOT: docs/ssot/spec/fueling/pre-workout-hydration.md v6
+  // PRE-WORKOUT SODIUM    — SSOT: docs/ssot/spec/fueling/pre-workout-sodium.md    v3
   // ---------------------------------------------------------------------------
 
-  /// Pre-workout hydration targets per spec tiers.
+  /// ml — start-line anchor. SSOT: pre-workout-hydration.md v6 —
+  /// `A0_ML = 250.0` (Jeukendrup & Gleeson 2019 p. 493).
+  static const double a0Ml = 250.0;
+
+  /// ml — gastric volume tolerated at t = 0. SSOT: pre-workout-hydration.md v6 —
+  /// `R_CEILING = 400.0` (NATA 2017: "Maintaining 400 to 600 mL of fluid in the
+  /// stomach optimizes gastric emptying").
+  static const double rCeiling = 400.0;
+
+  /// per minute — first-order gastric emptying coefficient, 3.2 h⁻¹.
+  /// SSOT: pre-workout-hydration.md v6 — `K = 3.2 / 60` (Mudie 2014).
   ///
-  /// Gate: workoutDurationMin < 60 AND tempC < 30 → no structured plan.
+  /// **MUST be computed**, never written as the rounded literal 0.0533333 —
+  /// the spec says so explicitly and the clearance vectors are pinned to 1e-3 ml.
+  static const double k = 3.2 / 60;
+
+  /// min — lower edge of Thomas 2016's fluid window.
+  /// SSOT: pre-workout-hydration.md v6 — `T_REF = 120.0`.
   ///
-  /// Tier 1 (timeBeforeWorkoutMin >= 120):
-  ///   fluid = BW×6 ml [BW×5 .. BW×7]; sodium = 450 mg [300 .. 600]
-  /// Tier 2 (10 <= timeBeforeWorkoutMin < 120):
-  ///   fluid = 250 ml [200 .. 300]; sodium = 150 mg [100 .. 200]
-  /// Tier 3 (timeBeforeWorkoutMin < 10):
-  ///   all zeros; message = "Too late for structured pre-hydration."
+  /// Numerically equal to [tierMealMin] for an **unrelated** reason (this one is
+  /// epistemic — the edge of a position statement's authority; that one is
+  /// physiological). Pinned equal by [assertCrossSpecPin], never derived from it.
+  static const double tRef = 120.0;
+
+  /// ml/kg — dark-urine correction target. SSOT: pre-workout-hydration.md v6 —
+  /// `TOPUP_ML_KG = 4.0` (ACSM 2007, midpoint of its 3–5 band).
+  static const double topUpMlKg = 4.0;
+
+  /// ml/kg — top of ACSM 2007's 3–5 correction band.
+  /// SSOT: pre-workout-hydration.md v6 — `TOPUP_HIGH_ML_KG = 5.0`.
+  static const double topUpHighMlKg = 5.0;
+
+  /// ml/kg — ACSM 2007's own maximum for the same protocol (5–7 + 3–5).
+  /// SSOT: pre-workout-hydration.md v6 — `PLAN_CAP_ML_KG = 12.0`.
+  static const double planCapMlKg = 12.0;
+
+  /// ml/kg — Thomas 2016's cited band, verbatim ("5-10 ml/kg BW").
+  /// SSOT: pre-workout-hydration.md v6.
+  static const double citedFluidLowMlKg = 5.0;
+  static const double citedFluidHighMlKg = 10.0;
+
+  /// ml/kg — the target above [tRef]: the midpoint of Thomas's band.
+  /// SSOT: pre-workout-hydration.md v6 (Mealvana rule — no source names a point
+  /// inside the range).
+  static const double citedFluidTargetMlKg = 7.5;
+
+  /// °C — assumed ambient when `tempC` is null.
+  /// SSOT: pre-workout-hydration.md v6 inputs table.
+  static const double defaultTempC = 22.0;
+
+  /// °C — the gate's heat carve-out. SSOT: pre-workout-hydration.md v6 —
+  /// gate fires when `workoutDurationMin < 60 AND tempC < 30`.
+  static const double gateTempC = 30.0;
+
+  /// min — the gate's duration carve-out (Mealvana proxy for NATA 2017's
+  /// recreational carve-out). SSOT: pre-workout-hydration.md v6.
+  static const double gateWorkoutMin = 60.0;
+
+  /// Cross-spec pin — SSOT: pre-workout-hydration.md v6 invariant 10 and
+  /// pre-workout-carbs.md v2 invariant 10.
+  ///
+  /// [tRef] and [tierMealMin] are two different constants that happen to hold
+  /// the same value for two unrelated reasons. Either may move without the
+  /// other; what may NOT happen is one silently drifting while code assumes
+  /// they agree. Enforced three ways, loudest first:
+  ///   1. compile time — the const [_crossSpecPin] below,
+  ///   2. debug runtime — `assert` at the head of both pre-workout functions,
+  ///   3. release runtime — [assertCrossSpecPin], for the conformance harness.
+  static const bool _crossSpecPinHolds = tRef == tierMealMin;
+  static const String _crossSpecPinMessage =
+      'CROSS-SPEC PIN BROKEN: pre-workout-hydration.T_REF ($tRef) != '
+      'pre-workout-carbs.TIER_MEAL_MIN ($tierMealMin). '
+      'See pre-workout-hydration.md v6 invariant 10.';
+
+  /// Build-time guard. A const constructor whose `assert` fails is a
+  /// **compile-time error**, so a divergence here breaks the build rather than
+  /// shipping two disagreeing tier boundaries.
+  // ignore: unused_field
+  static const _CrossSpecPin _crossSpecPin = _CrossSpecPin(tRef, tierMealMin);
+
+  /// Runtime form of the cross-spec pin, for conformance runners (which run in
+  /// release mode where `assert` is stripped). Throws [StateError] on
+  /// divergence.
+  static void assertCrossSpecPin() {
+    if (!_crossSpecPinHolds) throw StateError(_crossSpecPinMessage);
+  }
+
+  /// Pre-workout hydration plan, and the (deliberately absent) pre-workout
+  /// sodium target.
+  ///
+  /// SSOT: `docs/ssot/spec/fueling/pre-workout-hydration.md` v6 (RATIFIED,
+  /// Xuan 2026-08-04) and `docs/ssot/spec/fueling/pre-workout-sodium.md` v3
+  /// (RATIFIED, Xuan 2026-08-03). Conformance vectors:
+  /// `docs/ssot/vectors/fueling/pre-workout-{hydration,sodium}.json`.
+  ///
+  /// Exact doubles — **this function never rounds.**
+  ///
+  /// Three things a reader is most likely to get wrong, all load-bearing:
+  ///   * **The gate returns `null`, not `0`.** `null` means "no statement is
+  ///     made"; below [tRef] `fluidLowMl` is `0.0`, which means "nothing is
+  ///     required". A consumer that conflates them misreports both.
+  ///   * **Sodium is `null` on every path.** Mealvana sets no pre-workout sodium
+  ///     target — a deliberate decision, not an omission. A `0` is a failure.
+  ///   * **`hydrationCheck` never touches the band.** It moves `fluidMl` only,
+  ///     and only inside the `t >= T_REF` branch, because the band is shown from
+  ///     entry (t−240) while the check is answered at t−120.
+  ///
+  /// [timeBeforeWorkoutMin] is the lead time **captured at plan generation and
+  /// frozen** — it is not re-read from the clock. A recompute triggered by a
+  /// late-arriving [hydrationCheck] MUST reuse the original value.
   static PreWorkoutHydrationResult calculatePreWorkoutHydration({
     required double bodyWeightKg,
     required double workoutDurationMin,
     required double timeBeforeWorkoutMin,
     double? tempC,
+    HydrationCheck hydrationCheck = HydrationCheck.unknown,
   }) {
-    final temp = tempC ?? 22.0;
+    assert(_crossSpecPinHolds, _crossSpecPinMessage);
 
-    // Gate: duration < 60 AND temp < 30
-    final gateTriggered = workoutDurationMin < 60 && temp < 30.0;
-    if (gateTriggered) {
+    final temp = tempC ?? defaultTempC;
+
+    // Gate — ours (a NATA 2017 recreational-carve-out proxy), NOT part of
+    // Thomas 2016's scope. Returns nulls and an empty tier list, never zeros.
+    if (workoutDurationMin < gateWorkoutMin && temp < gateTempC) {
       return const PreWorkoutHydrationResult(
-        tier: 1,
         gateTriggered: true,
-        fluidMl: 0,
-        fluidLowMl: 0,
-        fluidHighMl: 0,
-        sodiumMg: 0,
-        sodiumLowMg: 0,
-        sodiumHighMg: 0,
-        message:
-            'No structured pre-hydration needed for short workouts in mild conditions.',
+        fluidMl: null,
+        fluidLowMl: null,
+        fluidHighMl: null,
+        tiers: <PreWorkoutFluidTier>[],
+        regime: 'gated',
+        targetBasis: 'none',
+        hydrationCheckUsed: null,
+        sodiumMg: null,
+        sodiumLowMg: null,
+        sodiumHighMg: null,
       );
     }
 
-    // Tier 1
-    if (timeBeforeWorkoutMin >= 120) {
-      final fluid = (bodyWeightKg * 6).round();
-      return PreWorkoutHydrationResult(
-        tier: 1,
-        gateTriggered: false,
-        fluidMl: fluid,
-        fluidLowMl: (bodyWeightKg * 5).round(),
-        fluidHighMl: (bodyWeightKg * 7).round(),
-        sodiumMg: 450,
-        sodiumLowMg: 300,
-        sodiumHighMg: 600,
-        message: null,
+    final t = math.max(timeBeforeWorkoutMin, 0.0);
+    final bw = bodyWeightKg;
+
+    // A0 guard: binds only below 33.3 kg, where the flat 250 ml anchor would
+    // otherwise exceed the cited target itself.
+    final a0 = math.min(a0Ml, citedFluidTargetMlKg * bw);
+
+    /// Linear taper from the start-line anchor up to the cited target at T_REF.
+    /// Mealvana design choice — no source covers the final two hours.
+    double f(double x) =>
+        a0 + (citedFluidTargetMlKg * bw - a0) * math.min(x, tRef) / tRef;
+
+    final double fluidMl;
+    final double fluidLowMl;
+    final double fluidHighMl;
+    final String regime;
+    final String targetBasis;
+    final String hydrationCheckUsed;
+    final List<PreWorkoutFluidTier> tiers;
+
+    if (t >= tRef) {
+      // `unknown` normalises to `pale` HERE AND ONLY HERE (PROVISIONAL —
+      // pre-workout-hydration.md v6 notes §2.5). Below T_REF the raw value is
+      // echoed back untouched, because it changes nothing there.
+      final effectiveCheck = hydrationCheck == HydrationCheck.unknown
+          ? HydrationCheck.pale
+          : hydrationCheck;
+      hydrationCheckUsed = effectiveCheck.wireValue;
+
+      final mealMl = citedFluidTargetMlKg * bw; // consumed in [t, 120]
+      // ACSM 2007 places the correction at ~2 h, i.e. in the snack window.
+      final topUpMl = effectiveCheck == HydrationCheck.dark
+          ? topUpMlKg * bw
+          : 0.0;
+      final snackMl = topUpMl;
+      const topOffMl = 0.0; // the gel chase is carbohydrate delivery, not this
+
+      fluidMl = mealMl + snackMl;
+      fluidLowMl = citedFluidLowMlKg * bw;
+      // NOT conditioned on hydrationCheck (invariant 8b): this states what the
+      // protocol can sanction, not what this athlete's reading turned out to be.
+      fluidHighMl = math.min(
+        citedFluidTargetMlKg * bw + topUpHighMlKg * bw,
+        planCapMlKg * bw,
       );
+      regime = 'cited';
+      targetBasis = 'evidenced_band';
+      tiers = <PreWorkoutFluidTier>[
+        PreWorkoutFluidTier(tier: 'meal', fluidMl: mealMl),
+        PreWorkoutFluidTier(tier: 'snack', fluidMl: snackMl),
+        const PreWorkoutFluidTier(tier: 'top_off', fluidMl: topOffMl),
+      ];
+    } else {
+      // Everything below T_REF is a Mealvana design choice in a region no
+      // source addresses. hydrationCheck is advisory copy here, not a code
+      // path — the athlete has drunk nothing, so there is nothing to evaluate.
+      hydrationCheckUsed = hydrationCheck.wireValue;
+
+      final double snackMl;
+      final double topOffMl;
+      if (t >= tierTopOffMax) {
+        snackMl = f(t);
+        topOffMl = 0.0;
+      } else {
+        snackMl = 0.0;
+        topOffMl = f(t);
+      }
+
+      final ceiling = rCeiling * math.exp(k * t);
+      fluidMl = snackMl + topOffMl;
+      fluidLowMl = 0.0; // 0, NOT null — "nothing is required"
+      fluidHighMl = math.min(citedFluidHighMlKg * bw, ceiling);
+      regime = ceiling < citedFluidHighMlKg * bw
+          ? 'clearance_bound'
+          : 'extrapolated';
+      targetBasis = 'design_choice';
+      tiers = <PreWorkoutFluidTier>[
+        if (t >= tierTopOffMax)
+          PreWorkoutFluidTier(tier: 'snack', fluidMl: snackMl),
+        PreWorkoutFluidTier(tier: 'top_off', fluidMl: topOffMl),
+      ];
     }
 
-    // Tier 2
-    if (timeBeforeWorkoutMin >= 10) {
-      return const PreWorkoutHydrationResult(
-        tier: 2,
-        gateTriggered: false,
-        fluidMl: 250,
-        fluidLowMl: 200,
-        fluidHighMl: 300,
-        sodiumMg: 150,
-        sodiumLowMg: 100,
-        sodiumHighMg: 200,
-        message:
-            'Not enough time for full protocol. Sip 250 ml steadily. consider hydrating well the evening before.',
-      );
-    }
-
-    // Tier 3: too late
-    return const PreWorkoutHydrationResult(
-      tier: 3,
+    return PreWorkoutHydrationResult(
       gateTriggered: false,
-      fluidMl: 0,
-      fluidLowMl: 0,
-      fluidHighMl: 0,
-      sodiumMg: 0,
-      sodiumLowMg: 0,
-      sodiumHighMg: 0,
-      message:
-          'Too late for structured pre-hydration. Focus on your during-workout plan.',
+      fluidMl: fluidMl,
+      fluidLowMl: fluidLowMl,
+      fluidHighMl: fluidHighMl,
+      tiers: List.unmodifiable(tiers),
+      regime: regime,
+      targetBasis: targetBasis,
+      hydrationCheckUsed: hydrationCheckUsed,
+      // Sodium v3: Mealvana sets NO pre-workout sodium target, in any tier and
+      // on the gate path. null, never 0 — 0 would be the recommendation
+      // "consume no sodium", which is not what is meant.
+      sodiumMg: null,
+      sodiumLowMg: null,
+      sodiumHighMg: null,
     );
   }
 
@@ -1453,29 +1845,189 @@ class DuringWorkoutHydrationResult {
   final bool isTested;
 }
 
+// -----------------------------------------------------------------------------
+// PRE-WORKOUT value types
+// SSOT: docs/ssot/spec/fueling/pre-workout-hydration.md v6
+//       docs/ssot/spec/fueling/pre-workout-carbs.md      v2
+//       docs/ssot/spec/fueling/pre-workout-sodium.md     v3
+// -----------------------------------------------------------------------------
+
+/// The athlete's urine-colour self-check.
+///
+/// SSOT: pre-workout-hydration.md v6. Collected by the consumer inline with the
+/// snack-window fluid card, never scheduled by the engine, and it only affects
+/// output when `timeBeforeWorkoutMin >= T_REF`.
+///
+/// `unknown` is treated as `pale` — a **PROVISIONAL** Mealvana design choice —
+/// and only inside that branch.
+enum HydrationCheck {
+  pale('pale'),
+  dark('dark'),
+  unknown('unknown');
+
+  const HydrationCheck(this.wireValue);
+
+  /// The string form used on the wire and echoed in
+  /// [PreWorkoutHydrationResult.hydrationCheckUsed].
+  final String wireValue;
+
+  /// Parse a wire value, defaulting to [HydrationCheck.unknown] for anything
+  /// unrecognised (including null) — the spec's own default.
+  static HydrationCheck fromWire(String? value) {
+    for (final check in HydrationCheck.values) {
+      if (check.wireValue == value) return check;
+    }
+    return HydrationCheck.unknown;
+  }
+}
+
+/// One fluid feeding occasion within the pre-workout plan.
+///
+/// SSOT: pre-workout-hydration.md v6 "Tier integration". The tier is a
+/// **presentation container** — `targetBasis` is per-nutrient and per-minute and
+/// MUST NOT be derived from it.
+class PreWorkoutFluidTier {
+  const PreWorkoutFluidTier({required this.tier, required this.fluidMl});
+
+  /// `'meal'` · `'snack'` · `'top_off'`.
+  final String tier;
+
+  /// Exact ml for this occasion. Never rounded by the engine.
+  final double fluidMl;
+}
+
 /// Result from [OfflineMacroCalculator.calculatePreWorkoutHydration].
+///
+/// SSOT: pre-workout-hydration.md v6 (fluid) + pre-workout-sodium.md v3
+/// (sodium). The v1 integer `tier` field is **RETIRED** and is not emitted.
 class PreWorkoutHydrationResult {
   const PreWorkoutHydrationResult({
-    required this.tier,
     required this.gateTriggered,
     required this.fluidMl,
     required this.fluidLowMl,
     required this.fluidHighMl,
+    required this.tiers,
+    required this.regime,
+    required this.targetBasis,
+    required this.hydrationCheckUsed,
     required this.sodiumMg,
     required this.sodiumLowMg,
     required this.sodiumHighMg,
-    required this.message,
   });
 
-  final int tier;
+  /// True when the short-and-cool carve-out fired
+  /// (`workoutDurationMin < 60 AND tempC < 30`).
   final bool gateTriggered;
-  final int fluidMl;
-  final int fluidLowMl;
-  final int fluidHighMl;
-  final int sodiumMg;
-  final int sodiumLowMg;
-  final int sodiumHighMg;
-  final String? message;
+
+  /// Exact ml — the **plan total** across all tiers. `null` on the gate path,
+  /// where no statement is made at all.
+  final double? fluidMl;
+
+  /// Exact ml — the permissible range.
+  ///
+  /// `fluidLowMl` is `0.0` below `T_REF` ("nothing is required"), and `null`
+  /// only on the gate path ("no statement is made"). These are different
+  /// things; a consumer that conflates them will misreport both.
+  final double? fluidLowMl;
+  final double? fluidHighMl;
+
+  /// Ordered furthest-out first. Never null; empty on the gate path.
+  final List<PreWorkoutFluidTier> tiers;
+
+  /// `'cited'` · `'extrapolated'` · `'clearance_bound'` · `'gated'`.
+  final String regime;
+
+  /// `'evidenced_band'` · `'design_choice'` · `'none'`.
+  final String targetBasis;
+
+  /// Echo of the check value actually applied: the normalised value above
+  /// `T_REF` (`unknown` → `pale`), the raw value below it, `null` on the gate
+  /// path.
+  final String? hydrationCheckUsed;
+
+  /// **Always `null`.** SSOT: pre-workout-sodium.md v3 — Mealvana sets no
+  /// pre-workout sodium target, in any tier and on the gate path. A `0` in any
+  /// of these three is a conformance failure, not a pass: zero would be the
+  /// recommendation "consume no sodium".
+  final int? sodiumMg;
+  final int? sodiumLowMg;
+  final int? sodiumHighMg;
+}
+
+/// One carbohydrate feeding occasion within the pre-workout plan.
+///
+/// SSOT: pre-workout-carbs.md v2.
+class PreWorkoutCarbTier {
+  const PreWorkoutCarbTier({
+    required this.tier,
+    required this.carbsG,
+    required this.rangeLowG,
+    required this.rangeHighG,
+    required this.composition,
+  });
+
+  /// `'meal'` · `'snack'` · `'top_off'`.
+  final String tier;
+
+  /// Exact grams — the aim for this occasion.
+  final double carbsG;
+
+  /// The **food-match window**: ±12.5 % of this feeding's portion. Distinct in
+  /// job from the plan-level `carbsLowG`/`carbsHighG` — this one says how
+  /// loosely one feeding may be matched, not what the plan may be.
+  final double rangeLowG;
+  final double rangeHighG;
+
+  /// Mirrors [tier]. The value set and its rules are owned by
+  /// `docs/ssot/spec/fueling/pre-workout-food-composition.md`; this spec only
+  /// carries the tag through.
+  final String composition;
+}
+
+/// Result from [OfflineMacroCalculator.calculatePreWorkoutCarbs].
+///
+/// SSOT: pre-workout-carbs.md v2. No integer `tier`, ever.
+class PreWorkoutCarbResult {
+  const PreWorkoutCarbResult({
+    required this.carbsG,
+    required this.carbsLowG,
+    required this.carbsHighG,
+    required this.tiers,
+    required this.targetBasis,
+  });
+
+  /// Exact grams — the **plan total** across all tiers, not one feeding.
+  final double carbsG;
+
+  /// Plan-level permissible range: Thomas's cited `[1, 4] g/kg` inside the
+  /// window, ±12.5 % of the total outside it.
+  final double carbsLowG;
+  final double carbsHighG;
+
+  /// Ordered furthest-out first. Empty (not null) when `isFasted`.
+  ///
+  /// **Load-bearing**: a consumer reading only [carbsG] will present a plan
+  /// total as a single feeding — exactly the misreading v1 encouraged.
+  final List<PreWorkoutCarbTier> tiers;
+
+  /// `'evidenced_band'` · `'design_choice'` · `'none'`.
+  final String targetBasis;
+}
+
+/// Compile-time carrier for the hydration↔carbs tier-boundary pin.
+///
+/// A `const` invocation whose `assert` fails is a compile-time error, so
+/// `T_REF` drifting away from `TIER_MEAL_MIN` breaks the build rather than
+/// silently shipping two disagreeing tier boundaries.
+/// SSOT: pre-workout-hydration.md v6 invariant 10; pre-workout-carbs.md v2
+/// invariant 10.
+class _CrossSpecPin {
+  const _CrossSpecPin(double tRef, double tierMealMin)
+    : assert(
+        tRef == tierMealMin,
+        'CROSS-SPEC PIN BROKEN: pre-workout-hydration.T_REF != '
+        'pre-workout-carbs.TIER_MEAL_MIN. See invariant 10 in both specs.',
+      );
 }
 
 /// Segment input for [OfflineMacroCalculator.calculateBrickHydration].

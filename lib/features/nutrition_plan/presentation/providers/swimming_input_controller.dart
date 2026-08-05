@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/fueling_window_limits.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/run_parameters.dart' show UnitSystem;
@@ -336,8 +337,10 @@ class SwimmingInputController extends _$SwimmingInputController {
   }
 
   void updatePreSwimMinutes(int minutes) {
+    // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
+    // carry persisted lead times up to 480 (see FuelingWindowLimits).
     state = state.copyWith(
-      preSwimMinutes: minutes,
+      preSwimMinutes: clampFuelingWindowMinutes(minutes),
       preSwimMinutesManuallySet: true,
     );
   }

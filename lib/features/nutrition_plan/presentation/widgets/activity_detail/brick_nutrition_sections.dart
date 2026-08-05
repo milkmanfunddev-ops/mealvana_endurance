@@ -357,6 +357,9 @@ class BrickNutritionSections extends StatelessWidget {
                 sodiumHigh: _getSodiumHigh(section, category),
                 fluidsLow: _getFluidsLow(section, category),
                 fluidsHigh: _getFluidsHigh(section, category),
+                preRun: category.startsWith('before')
+                    ? macroTargets?.preRun
+                    : null,
               ),
               const SizedBox(height: AppSpacing.md),
             ],

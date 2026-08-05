@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../providers/brick_input_controller.dart';
+import '../../../../domain/fueling_window_limits.dart';
 import 'brick_sport_toggle_selector.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
@@ -75,9 +76,9 @@ class BrickTabContent extends ConsumerWidget {
           label: 'Pre-Activity Fueling Window',
           value: formState.preActivityMinutes,
           onChanged: controller.updatePreActivityMinutes,
-          min: 0,
-          max: 480,
-          step: 15,
+          min: FuelingWindowLimits.minMinutes,
+          max: FuelingWindowLimits.maxMinutes,
+          step: FuelingWindowLimits.stepMinutes,
           unit: 'minutes',
         ),
 

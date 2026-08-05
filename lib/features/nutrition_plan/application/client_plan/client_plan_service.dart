@@ -342,7 +342,10 @@ class ClientPlanService {
         carbsG: macroTargets.preRun.carbsG,
         proteinG: macroTargets.preRun.proteinG,
         fatG: macroTargets.preRun.fatCapG,
-        sodiumMg: macroTargets.preRun.sodiumMg,
+        // Sodium v3: no pre-workout sodium target, so the greedy solver gets
+        // none. Leaving `sodiumMg` at its 0 default disables sodium seeking
+        // entirely (`sodiumDeficit` is gated on `> 0`) — which is the point:
+        // a salted pre-workout item is doing its job, not a defect.
         fluidMl: macroTargets.preRun.fluidsMl,
       ),
       activityType: activityType,

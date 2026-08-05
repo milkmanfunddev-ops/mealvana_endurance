@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_target_overrides.dart';
+import '../domain/pre_run_macros_wire.dart';
 import '../domain/intensity_distribution.dart';
 import '../data/macro_repository.dart';
 import '../data/offline_macro_calculator.dart';
@@ -758,19 +759,35 @@ class MacroGenerationService {
         ),
         fatCapG: _toDouble(macrosData['pre_run_fat_g'], 'pre_run_fat_g'),
         fluidsMl: _toDouble(macrosData['pre_run_water_ml'], 'pre_run_water_ml'),
-        sodiumMg: _toDouble(
-          macrosData['pre_run_sodium_mg'],
-          'pre_run_sodium_mg',
-        ),
+        // Sodium v3: no pre-workout sodium target exists. A current server
+        // sends null; an older server still sends the retired 450/150 mg
+        // target, which we drop on the floor rather than resurrect.
+        sodiumMg: null,
         carbsLowG: _toDoubleOrNull(macrosData['pre_run_carbs_low_g']),
         carbsHighG: _toDoubleOrNull(macrosData['pre_run_carbs_high_g']),
         proteinLowG: _toDoubleOrNull(macrosData['pre_run_protein_low_g']),
         proteinHighG: _toDoubleOrNull(macrosData['pre_run_protein_high_g']),
-        sodiumLowMg: _toDoubleOrNull(macrosData['pre_run_sodium_low_mg']),
-        sodiumHighMg: _toDoubleOrNull(macrosData['pre_run_sodium_high_mg']),
         fluidsLowMl: _toDoubleOrNull(macrosData['pre_run_water_low_ml']),
         fluidsHighMl: _toDoubleOrNull(macrosData['pre_run_water_high_ml']),
-        hydrationTier: (macrosData['pre_run_hydration_tier'] as num?)?.toInt(),
+        // PW-013: accepts the new `pre_run_hydration_regime` string *and* the
+        // retired `pre_run_hydration_tier` integer, in that order. Client and
+        // edge function deploy separately, so both shapes are live at once.
+        hydrationRegime: PreRunMacrosWire.regimeFrom(macrosData),
+        fluidTargetBasis: PreRunMacrosWire.targetBasisFrom(
+          macrosData,
+          'pre_run_fluid_target_basis',
+        ),
+        carbTargetBasis: PreRunMacrosWire.targetBasisFrom(
+          macrosData,
+          'pre_run_carb_target_basis',
+        ),
+        fluidTiers: PreRunMacrosWire.fluidTiersFrom(
+          macrosData['pre_run_fluid_tiers'],
+        ),
+        carbTiers: PreRunMacrosWire.carbTiersFrom(
+          macrosData['pre_run_carb_tiers'],
+        ),
+        hydrationCheckUsed: macrosData['pre_run_hydration_check_used'] as String?,
       ),
       preRunSelections: _toMapListOrNull(macrosData['pre_run_selections']),
       duringRun: () {

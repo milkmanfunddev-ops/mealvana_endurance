@@ -362,9 +362,10 @@ class NutritionPlanMapper {
             ((post['sodium_mg'] as num?) ?? 0);
         final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9)
             .round();
-        // Extract pre-workout range fields (V4)
-        final preSodiumLow = pre['sodium_low_mg'] as num?;
-        final preSodiumHigh = pre['sodium_high_mg'] as num?;
+        // Extract pre-workout range fields (V4).
+        // Sodium v3: no pre-workout sodium band — `sodium_low_mg` /
+        // `sodium_high_mg` are deliberately not read, so `sodiumMin`/
+        // `sodiumMax` stay null and no range renders.
         final preFluidsLow = pre['water_low_ml'] as num?;
         final preFluidsHigh = pre['water_high_ml'] as num?;
 
@@ -374,8 +375,8 @@ class NutritionPlanMapper {
           protein: totalProtein.round(),
           fat: totalFat.round(),
           sodium: totalSodium.round(),
-          sodiumMin: preSodiumLow?.round(),
-          sodiumMax: preSodiumHigh?.round(),
+          sodiumMin: null,
+          sodiumMax: null,
           fluidsMin: preFluidsLow != null
               ? (preFluidsLow * 0.033814).round()
               : null,

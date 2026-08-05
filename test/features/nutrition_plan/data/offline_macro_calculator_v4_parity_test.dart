@@ -168,109 +168,12 @@ void main() {
   });
 
   // =========================================================================
-  // pre-workout — continuous formula (2h before, 70 kg, not fasted)
+  // pre-workout lives in its own dedicated files:
+  //   offline_macro_calculator_pre_workout_carbs_test.dart     (carbs v2 +
+  //     the calculatePreWorkoutTargets map boundary that delegates to it)
+  //   offline_macro_calculator_pre_workout_hydration_test.dart (fluid v6)
+  //   offline_macro_calculator_pre_workout_sodium_test.dart    (sodium v3)
   // =========================================================================
-  group('calculatePreWorkoutTargets — 2h before, 70 kg', () {
-    // hoursBefore=2.0 → carbPerKg=min(2.0,4.0)=2.0; carbs=140g
-    // 2.0 < 2.5 so snack tier: protein=0.15*70=10g, fat=5g
-    late Map<String, dynamic> result;
-    setUp(() {
-      result = OfflineMacroCalculator.calculatePreWorkoutTargets(
-        weightKg: 70.0,
-        hoursBefore: 2.0,
-        isFasted: false,
-      );
-    });
-
-    test('carbs = 140g (2 g/kg)', () {
-      expect(result['carbs_g'], 140);
-    });
-
-    test('carbs_low ≈ 122 (×0.875)', () {
-      expect(result['carbs_low_g'], (140 * 0.875).round());
-    });
-
-    test('carbs_high ≈ 158 (×1.125)', () {
-      expect(result['carbs_high_g'], (140 * 1.125).round());
-    });
-
-    test('meal_type = snack (1–2.5h)', () {
-      expect(result['meal_type'], 'snack');
-    });
-
-    test('protein = 0.15 × 70 = 10.5 → rounds to 11g', () {
-      expect(result['protein_g'], (70 * 0.15).round()); // 10.5 → 11
-    });
-
-    test('fat = 5g (snack tier)', () {
-      expect(result['fat_g'], 5);
-    });
-  });
-
-  // =========================================================================
-  // pre-workout — 3h before → full_meal tier
-  // =========================================================================
-  group('calculatePreWorkoutTargets — 3h before, 70 kg, full_meal', () {
-    late Map<String, dynamic> result;
-    setUp(() {
-      result = OfflineMacroCalculator.calculatePreWorkoutTargets(
-        weightKg: 70.0,
-        hoursBefore: 3.0,
-        isFasted: false,
-      );
-    });
-
-    test('carbs = 210g (3 g/kg)', () {
-      expect(result['carbs_g'], 210);
-    });
-
-    test('meal_type = full_meal (≥2.5h)', () {
-      expect(result['meal_type'], 'full_meal');
-    });
-
-    test('protein = 0.25 × 70 = 18g (rounded)', () {
-      expect(result['protein_g'], (70 * 0.25).round());
-    });
-
-    test('fat = 0.4 × 70 = 28g', () {
-      expect(result['fat_g'], (70 * 0.4).round());
-    });
-  });
-
-  // =========================================================================
-  // pre-workout — 4+ hours: cap at 4 g/kg
-  // =========================================================================
-  test('calculatePreWorkoutTargets caps at 4 g/kg for hoursBefore=5', () {
-    final result = OfflineMacroCalculator.calculatePreWorkoutTargets(
-      weightKg: 70.0,
-      hoursBefore: 5.0,
-      isFasted: false,
-    );
-    // carbPerKg = min(5.0, 4.0) = 4.0 → carbs = 280
-    expect(result['carbs_g'], 280);
-    expect(result['meal_type'], 'full_meal');
-  });
-
-  // =========================================================================
-  // pre-workout — fasted → all zeros
-  // =========================================================================
-  group('calculatePreWorkoutTargets — fasted', () {
-    late Map<String, dynamic> result;
-    setUp(() {
-      result = OfflineMacroCalculator.calculatePreWorkoutTargets(
-        weightKg: 70.0,
-        hoursBefore: 2.0,
-        isFasted: true,
-      );
-    });
-
-    test('carbs_g = 0', () => expect(result['carbs_g'], 0));
-    test('protein_g = 0', () => expect(result['protein_g'], 0));
-    test('fat_g = 0', () => expect(result['fat_g'], 0));
-    test('sodium_mg = 0', () => expect(result['sodium_mg'], 0));
-    test('water_ml = 0', () => expect(result['water_ml'], 0));
-    test('meal_type = fasted', () => expect(result['meal_type'], 'fasted'));
-  });
 
   // =========================================================================
   // post-workout carbs

@@ -178,14 +178,8 @@ class _MacroSectionCardState extends State<MacroSectionCard>
           widget.macroTargets.preRun.fluidsFlOz,
           MacroField.preRunFluids,
         ),
-        SizedBox(height: 12.h),
-        _buildMacroField(
-          context,
-          'Sodium (mg)',
-          'mg',
-          widget.macroTargets.preRun.sodiumMg,
-          MacroField.preRunSodium,
-        ),
+        // Sodium v3: Mealvana sets no pre-workout sodium target, so there is
+        // no pre-workout sodium field to adjust. DURING and POST keep theirs.
       ],
     );
   }
@@ -442,7 +436,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
           MacroField.preRunProtein,
           MacroField.preRunFatCap,
           MacroField.preRunFluids,
-          MacroField.preRunSodium,
+          // Sodium v3: no pre-workout sodium target, so no editable field.
         ];
       case MacroSection.duringRun:
         return [
@@ -472,8 +466,8 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         return widget.macroTargets.preRun.fatCapG;
       case MacroField.preRunFluids:
         return widget.macroTargets.preRun.fluidsFlOz;
-      case MacroField.preRunSodium:
-        return widget.macroTargets.preRun.sodiumMg;
+      // MacroField.preRunSodium falls through to the default: sodium v3 sets
+      // no pre-workout sodium target, so there is no value to edit.
 
       // During-run fields
       case MacroField.duringRunCarbTotal:
@@ -541,10 +535,8 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         if (valueML < 5.0 * bodyWeightKg) return 'May lead to dehydration';
         if (valueML > 7.0 * bodyWeightKg) return 'Risk of overhydration';
         break;
-      case MacroField.preRunSodium:
-        if (value < 200) return 'May be insufficient';
-        if (value > 400) return 'Higher than typically needed';
-        break;
+      // MacroField.preRunSodium removed with sodium v3 — there is no
+      // pre-workout sodium target, so no value can be too low or too high.
       default:
         break;
     }

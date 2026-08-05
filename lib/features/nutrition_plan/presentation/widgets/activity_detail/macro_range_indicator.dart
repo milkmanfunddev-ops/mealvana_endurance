@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 ///
 /// Renders a thin track spanning [min, max] with a diamond-shaped marker
 /// at the value position. No left-fill — clearly a position indicator, not a progress bar.
+///
+/// When [target] is provided, a small triangle tick is drawn above the track
+/// at the target position, so the bar shows both what the plan suggests and
+/// what the food delivers (the ratified BEFORE design, digest §5). Old callers
+/// that pass no target are unchanged.
 class MacroRangeIndicator extends StatelessWidget {
   const MacroRangeIndicator({
     super.key,
@@ -12,6 +17,8 @@ class MacroRangeIndicator extends StatelessWidget {
     required this.max,
     required this.color,
     this.trackColor,
+    this.target,
+    this.targetColor,
   });
 
   final int value;
@@ -19,6 +26,12 @@ class MacroRangeIndicator extends StatelessWidget {
   final int max;
   final Color color;
   final Color? trackColor;
+
+  /// Optional target position — draws a second, triangle marker when set.
+  final int? target;
+
+  /// Colour for the target triangle; defaults to a prominent on-surface tone.
+  final Color? targetColor;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +46,10 @@ class MacroRangeIndicator extends StatelessWidget {
           trackColor:
               trackColor ??
               Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+          target: target,
+          targetColor:
+              targetColor ??
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
         ),
         size: const Size(double.infinity, 12),
       ),
@@ -47,6 +64,8 @@ class _RangePositionPainter extends CustomPainter {
     required this.max,
     required this.markerColor,
     required this.trackColor,
+    this.target,
+    required this.targetColor,
   });
 
   final int value;
@@ -54,6 +73,8 @@ class _RangePositionPainter extends CustomPainter {
   final int max;
   final Color markerColor;
   final Color trackColor;
+  final int? target;
+  final Color targetColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -96,6 +117,24 @@ class _RangePositionPainter extends CustomPainter {
     final range = max - min;
     if (range <= 0) return;
 
+    // Target marker: small downward triangle above the track. Drawn first so
+    // the delivered diamond stays on top when the two coincide.
+    if (target != null) {
+      final targetFraction = ((target! - min) / range).clamp(0.0, 1.0);
+      final targetX = trackLeft + (trackWidth * targetFraction);
+      const triHalfWidth = 3.0;
+      final triTop = centerY - markerSize - 1.5;
+      final targetPaint = Paint()
+        ..color = targetColor
+        ..style = PaintingStyle.fill;
+      final triPath = Path()
+        ..moveTo(targetX - triHalfWidth, triTop)
+        ..lineTo(targetX + triHalfWidth, triTop)
+        ..lineTo(targetX, centerY - 1.5)
+        ..close();
+      canvas.drawPath(triPath, targetPaint);
+    }
+
     final fraction = ((value - min) / range).clamp(0.0, 1.0);
     final markerX = trackLeft + (trackWidth * fraction);
 
@@ -117,6 +156,8 @@ class _RangePositionPainter extends CustomPainter {
     return oldDelegate.value != value ||
         oldDelegate.min != min ||
         oldDelegate.max != max ||
-        oldDelegate.markerColor != markerColor;
+        oldDelegate.markerColor != markerColor ||
+        oldDelegate.target != target ||
+        oldDelegate.targetColor != targetColor;
   }
 }

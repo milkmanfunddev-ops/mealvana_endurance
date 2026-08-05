@@ -331,7 +331,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preFluids: preFluids,
           duringFluids: duringFluids,
           postFluids: postFluids,
-          preSodium: macros.preRun.sodiumMg.round(),
+          // Sodium v3: no pre-workout sodium target. Null renders as an
+          // em dash in the table rather than a fabricated 0 mg.
+          preSodium: macros.preRun.sodiumMg?.round(),
           duringSodium: macros.duringRun.sodiumTotalMg.round(),
           postSodium: macros.postRun.sodiumMg.round(),
         ),
@@ -373,7 +375,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preFluids: fluids(macros.preRun.fluidsMl),
           duringFluids: fluids(macros.duringRun.fluidTotalMl),
           postFluids: fluids(macros.postRun.fluidsMl),
-          preSodium: macros.preRun.sodiumMg.round(),
+          // Sodium v3: no pre-workout sodium target. Null renders as an
+          // em dash in the table rather than a fabricated 0 mg.
+          preSodium: macros.preRun.sodiumMg?.round(),
           duringSodium: macros.duringRun.sodiumTotalMg.round(),
           postSodium: macros.postRun.sodiumMg.round(),
         ),

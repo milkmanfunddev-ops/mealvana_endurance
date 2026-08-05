@@ -600,14 +600,144 @@ class BrickTransitionMacroTarget {
   );
 }
 
-/// Pre-run nutrition targets (1-4 hours before)
+/// Regime strings emitted by pre-workout hydration v6.
+///
+/// These replace the retired integer `hydrationTier`. See
+/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §1.
+abstract final class PreRunHydrationRegime {
+  /// `t >= 120 min` — Thomas 2016's cited fluid window.
+  static const String cited = 'cited';
+
+  /// `t < 120 min` — Mealvana's linear ramp, below the cited window.
+  static const String extrapolated = 'extrapolated';
+
+  /// `t < 120 min` and gastric clearance, not body weight, sets the ceiling.
+  static const String clearanceBound = 'clearance_bound';
+
+  /// Short + mild session — no pre-workout fluid target is set at all.
+  static const String gated = 'gated';
+}
+
+/// Provenance of a pre-workout target's low/high band.
+abstract final class PreRunTargetBasis {
+  /// The band comes from a published guideline.
+  static const String evidencedBand = 'evidenced_band';
+
+  /// The band is a Mealvana design choice (the ±12.5 % solver tolerance).
+  static const String designChoice = 'design_choice';
+
+  /// No target is being made at all (gated fluid / fasted carbohydrate).
+  static const String none = 'none';
+}
+
+/// One pre-workout feeding window's fluid allocation.
+///
+/// Ordered furthest-out first by the engine: `meal`, `snack`, `top_off`.
+class PreRunFluidTier {
+  const PreRunFluidTier({required this.tier, required this.fluidMl});
+
+  /// `meal` | `snack` | `top_off`.
+  final String tier;
+  final double fluidMl;
+
+  Map<String, dynamic> toJson() => {'tier': tier, 'fluidMl': fluidMl};
+
+  factory PreRunFluidTier.fromJson(Map<String, dynamic> json) {
+    return PreRunFluidTier(
+      tier: json['tier'] as String,
+      fluidMl: (json['fluidMl'] as num).toDouble(),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PreRunFluidTier &&
+          other.tier == tier &&
+          other.fluidMl == fluidMl);
+
+  @override
+  int get hashCode => Object.hash(tier, fluidMl);
+
+  @override
+  String toString() => 'PreRunFluidTier($tier, $fluidMl ml)';
+}
+
+/// One pre-workout feeding window's carbohydrate allocation.
+///
+/// Tiers *stack* — at t−180 the athlete gets all three feedings and
+/// [PreRunMacros.carbsG] is the plan total, not one feeding. Never show
+/// `carbsG` alone; show the tiers.
+class PreRunCarbTier {
+  const PreRunCarbTier({
+    required this.tier,
+    required this.carbsG,
+    required this.rangeLowG,
+    required this.rangeHighG,
+    required this.composition,
+  });
+
+  /// `meal` | `snack` | `top_off`.
+  final String tier;
+  final double carbsG;
+
+  /// The ±12.5 % solver tolerance. A food-selection tolerance, **not** a range
+  /// the athlete should be shown or asked to aim at.
+  final double rangeLowG;
+  final double rangeHighG;
+
+  /// Pass-through of [tier] until `pre-workout-food-composition` is ratified.
+  final String composition;
+
+  Map<String, dynamic> toJson() => {
+    'tier': tier,
+    'carbsG': carbsG,
+    'rangeLowG': rangeLowG,
+    'rangeHighG': rangeHighG,
+    'composition': composition,
+  };
+
+  factory PreRunCarbTier.fromJson(Map<String, dynamic> json) {
+    return PreRunCarbTier(
+      tier: json['tier'] as String,
+      carbsG: (json['carbsG'] as num).toDouble(),
+      rangeLowG: (json['rangeLowG'] as num).toDouble(),
+      rangeHighG: (json['rangeHighG'] as num).toDouble(),
+      composition: (json['composition'] as String?) ?? json['tier'] as String,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PreRunCarbTier &&
+          other.tier == tier &&
+          other.carbsG == carbsG &&
+          other.rangeLowG == rangeLowG &&
+          other.rangeHighG == rangeHighG &&
+          other.composition == composition);
+
+  @override
+  int get hashCode =>
+      Object.hash(tier, carbsG, rangeLowG, rangeHighG, composition);
+
+  @override
+  String toString() => 'PreRunCarbTier($tier, $carbsG g)';
+}
+
+/// Pre-run nutrition targets (up to 4 hours before).
+///
+/// Implements the consumer side of hydration v6 / carbs v2 / sodium v3 — see
+/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. Three states must never be
+/// rendered alike: a real zero, *no target set* ([isHydrationGated]) and
+/// *no recommendation at all* ([isCarbRecommendationAbsent]).
 class PreRunMacros {
   const PreRunMacros({
     required this.carbsG,
     required this.proteinG,
     required this.fatCapG,
     required this.fluidsMl,
-    required this.sodiumMg,
+    this.sodiumMg,
     this.carbsLowG,
     this.carbsHighG,
     this.proteinLowG,
@@ -616,30 +746,91 @@ class PreRunMacros {
     this.sodiumHighMg,
     this.fluidsLowMl,
     this.fluidsHighMl,
-    this.hydrationTier,
+    this.hydrationRegime,
+    this.fluidTargetBasis,
+    this.carbTargetBasis,
+    this.fluidTiers,
+    this.carbTiers,
+    this.hydrationCheckUsed,
   });
 
   final double carbsG;
   final double proteinG;
   final double fatCapG;
+
+  /// Plan-total pre-workout fluid, in ml, **already collapsed to 0 on the
+  /// gate path**. Read [isHydrationGated] before showing it — a gated 0 means
+  /// "we set no target", not "drink nothing". Never render raw: the display
+  /// layer rounds it to the nearest 25 ml.
   final double fluidsMl;
-  final double sodiumMg;
+
+  /// Delivered/observed pre-workout sodium, or `null` when no figure is
+  /// available.
+  ///
+  /// **Sodium v3: Mealvana sets no pre-workout sodium target.** This is never
+  /// a target — render it with no range bar, no marker, no in-range state and
+  /// no colour change. `0` here would be a recommendation to consume no
+  /// sodium; absence is `null`.
+  final double? sodiumMg;
+
   final double? carbsLowG;
   final double? carbsHighG;
   final double? proteinLowG;
   final double? proteinHighG;
+
+  /// Sodium v3 retired the pre-workout sodium band. These stay only so cached
+  /// legacy plans round-trip unchanged; new plans leave them `null` and
+  /// nothing may render a band from them.
+  @Deprecated('Sodium v3: there is no pre-workout sodium band. Do not render.')
   final double? sodiumLowMg;
+  @Deprecated('Sodium v3: there is no pre-workout sodium band. Do not render.')
   final double? sodiumHighMg;
+
   final double? fluidsLowMl;
   final double? fluidsHighMl;
-  // Pre-workout hydration tier from edge function:
-  // 1 = body-weight scaled (>=2h before, BW*6 ml), 2 = fixed 250 ml top-up
-  // (10 min - 2 h), 3 = no hydration (<10 min before / gated). Null when
-  // emitted by legacy paths that do not yet supply the tier.
-  final int? hydrationTier;
+
+  /// Hydration v6 regime — one of [PreRunHydrationRegime]. Replaces the
+  /// retired integer `hydrationTier`. Null on legacy cached plans.
+  final String? hydrationRegime;
+
+  /// Provenance of the fluid band — one of [PreRunTargetBasis].
+  final String? fluidTargetBasis;
+
+  /// Provenance of the carbohydrate band — one of [PreRunTargetBasis].
+  /// [PreRunTargetBasis.none] means the athlete is fasted and no
+  /// recommendation is being made.
+  final String? carbTargetBasis;
+
+  /// Per-feeding fluid split, furthest-out first. Empty on the gate path.
+  final List<PreRunFluidTier>? fluidTiers;
+
+  /// Per-feeding carbohydrate split, furthest-out first. Empty when fasted.
+  final List<PreRunCarbTier>? carbTiers;
+
+  /// Urine-colour reading actually used — `pale` | `dark` | `unknown`.
+  final String? hydrationCheckUsed;
 
   /// Convert fluids to US units (fl oz)
   double get fluidsFlOz => fluidsMl * 0.033814;
+
+  /// True when the hydration gate fired: short + mild session, so **no fluid
+  /// target was set**. Distinct from a target of zero.
+  bool get isHydrationGated =>
+      hydrationRegime == PreRunHydrationRegime.gated ||
+      fluidTargetBasis == PreRunTargetBasis.none;
+
+  /// True when a pre-workout fluid target exists and may be shown.
+  bool get hasFluidTarget => !isHydrationGated;
+
+  /// True when no carbohydrate recommendation is being made at all (fasted),
+  /// as opposed to a recommendation of zero grams (no time to eat).
+  bool get isCarbRecommendationAbsent =>
+      carbTargetBasis == PreRunTargetBasis.none ||
+      (carbTiers != null && carbTiers!.isEmpty);
+
+  /// Sodium v3: always false for new plans. Only legacy cached plans that
+  /// still carry a figure return true.
+  bool get hasSodiumFigure => sodiumMg != null;
 
   PreRunMacros copyWith({
     double? carbsG,
@@ -655,7 +846,12 @@ class PreRunMacros {
     double? sodiumHighMg,
     double? fluidsLowMl,
     double? fluidsHighMl,
-    int? hydrationTier,
+    String? hydrationRegime,
+    String? fluidTargetBasis,
+    String? carbTargetBasis,
+    List<PreRunFluidTier>? fluidTiers,
+    List<PreRunCarbTier>? carbTiers,
+    String? hydrationCheckUsed,
   }) {
     return PreRunMacros(
       carbsG: carbsG ?? this.carbsG,
@@ -667,11 +863,18 @@ class PreRunMacros {
       carbsHighG: carbsHighG ?? this.carbsHighG,
       proteinLowG: proteinLowG ?? this.proteinLowG,
       proteinHighG: proteinHighG ?? this.proteinHighG,
+      // ignore: deprecated_member_use_from_same_package
       sodiumLowMg: sodiumLowMg ?? this.sodiumLowMg,
+      // ignore: deprecated_member_use_from_same_package
       sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
       fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
       fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
-      hydrationTier: hydrationTier ?? this.hydrationTier,
+      hydrationRegime: hydrationRegime ?? this.hydrationRegime,
+      fluidTargetBasis: fluidTargetBasis ?? this.fluidTargetBasis,
+      carbTargetBasis: carbTargetBasis ?? this.carbTargetBasis,
+      fluidTiers: fluidTiers ?? this.fluidTiers,
+      carbTiers: carbTiers ?? this.carbTiers,
+      hydrationCheckUsed: hydrationCheckUsed ?? this.hydrationCheckUsed,
     );
   }
 
@@ -681,16 +884,28 @@ class PreRunMacros {
       'proteinG': proteinG,
       'fatCapG': fatCapG,
       'fluidsMl': fluidsMl,
+      // Emitted even when null: an absent key would be indistinguishable from
+      // a legacy plan that simply predates the field, and sodium v3 needs the
+      // absence to be explicit.
       'sodiumMg': sodiumMg,
       if (carbsLowG != null) 'carbsLowG': carbsLowG,
       if (carbsHighG != null) 'carbsHighG': carbsHighG,
       if (proteinLowG != null) 'proteinLowG': proteinLowG,
       if (proteinHighG != null) 'proteinHighG': proteinHighG,
+      // ignore: deprecated_member_use_from_same_package
       if (sodiumLowMg != null) 'sodiumLowMg': sodiumLowMg,
+      // ignore: deprecated_member_use_from_same_package
       if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
       if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
       if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
-      if (hydrationTier != null) 'hydrationTier': hydrationTier,
+      if (hydrationRegime != null) 'hydrationRegime': hydrationRegime,
+      if (fluidTargetBasis != null) 'fluidTargetBasis': fluidTargetBasis,
+      if (carbTargetBasis != null) 'carbTargetBasis': carbTargetBasis,
+      if (fluidTiers != null)
+        'fluidTiers': fluidTiers!.map((t) => t.toJson()).toList(),
+      if (carbTiers != null)
+        'carbTiers': carbTiers!.map((t) => t.toJson()).toList(),
+      if (hydrationCheckUsed != null) 'hydrationCheckUsed': hydrationCheckUsed,
     };
   }
 
@@ -700,7 +915,7 @@ class PreRunMacros {
       proteinG: (json['proteinG'] as num).toDouble(),
       fatCapG: (json['fatCapG'] as num).toDouble(),
       fluidsMl: (json['fluidsMl'] as num).toDouble(),
-      sodiumMg: (json['sodiumMg'] as num).toDouble(),
+      sodiumMg: (json['sodiumMg'] as num?)?.toDouble(),
       carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
       carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
       proteinLowG: (json['proteinLowG'] as num?)?.toDouble(),
@@ -709,8 +924,41 @@ class PreRunMacros {
       sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
       fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
       fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
-      hydrationTier: (json['hydrationTier'] as num?)?.toInt(),
+      // `hydrationTier` is the retired integer field. A cached plan written by
+      // an older build still carries it; map it forward rather than dropping
+      // the athlete's plan on the floor (PW-013).
+      hydrationRegime:
+          json['hydrationRegime'] as String? ??
+          regimeFromLegacyTier((json['hydrationTier'] as num?)?.toInt()),
+      fluidTargetBasis: json['fluidTargetBasis'] as String?,
+      carbTargetBasis: json['carbTargetBasis'] as String?,
+      fluidTiers: (json['fluidTiers'] as List<dynamic>?)
+          ?.map((e) => PreRunFluidTier.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      carbTiers: (json['carbTiers'] as List<dynamic>?)
+          ?.map((e) => PreRunCarbTier.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hydrationCheckUsed: json['hydrationCheckUsed'] as String?,
     );
+  }
+
+  /// Best-effort forward map of the retired integer tier onto a v6 regime.
+  ///
+  /// Legacy tiers were 1 = body-weight scaled (>= 2 h), 2 = fixed top-up
+  /// (10 min – 2 h), 3 = no hydration. Only tier 3 maps cleanly, and even then
+  /// it conflated "gated" with "too late"; tiers 1 and 2 map to the regime
+  /// that covers the same window. Nothing is invented for an unknown value.
+  static String? regimeFromLegacyTier(int? tier) {
+    switch (tier) {
+      case 1:
+        return PreRunHydrationRegime.cited;
+      case 2:
+        return PreRunHydrationRegime.extrapolated;
+      case 3:
+        return PreRunHydrationRegime.gated;
+      default:
+        return null;
+    }
   }
 
   @override
@@ -726,11 +974,27 @@ class PreRunMacros {
         other.carbsHighG == carbsHighG &&
         other.proteinLowG == proteinLowG &&
         other.proteinHighG == proteinHighG &&
+        // ignore: deprecated_member_use_from_same_package
         other.sodiumLowMg == sodiumLowMg &&
+        // ignore: deprecated_member_use_from_same_package
         other.sodiumHighMg == sodiumHighMg &&
         other.fluidsLowMl == fluidsLowMl &&
         other.fluidsHighMl == fluidsHighMl &&
-        other.hydrationTier == hydrationTier;
+        other.hydrationRegime == hydrationRegime &&
+        other.fluidTargetBasis == fluidTargetBasis &&
+        other.carbTargetBasis == carbTargetBasis &&
+        _listEquals(other.fluidTiers, fluidTiers) &&
+        _listEquals(other.carbTiers, carbTiers) &&
+        other.hydrationCheckUsed == hydrationCheckUsed;
+  }
+
+  static bool _listEquals<T>(List<T>? a, List<T>? b) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null || a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   @override
@@ -745,17 +1009,24 @@ class PreRunMacros {
       carbsHighG,
       proteinLowG,
       proteinHighG,
+      // ignore: deprecated_member_use_from_same_package
       sodiumLowMg,
+      // ignore: deprecated_member_use_from_same_package
       sodiumHighMg,
       fluidsLowMl,
       fluidsHighMl,
-      hydrationTier,
+      hydrationRegime,
+      fluidTargetBasis,
+      carbTargetBasis,
+      fluidTiers == null ? null : Object.hashAll(fluidTiers!),
+      carbTiers == null ? null : Object.hashAll(carbTiers!),
+      hydrationCheckUsed,
     );
   }
 
   @override
   String toString() {
-    return 'PreRunMacros(carbsG: $carbsG, proteinG: $proteinG, fatCapG: $fatCapG, fluidsMl: $fluidsMl, sodiumMg: $sodiumMg)';
+    return 'PreRunMacros(carbsG: $carbsG, proteinG: $proteinG, fatCapG: $fatCapG, fluidsMl: $fluidsMl, sodiumMg: $sodiumMg, hydrationRegime: $hydrationRegime)';
   }
 }
 

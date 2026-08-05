@@ -41,6 +41,10 @@ class MacroTargetBadgesWidget extends StatelessWidget {
   List<MacroType> _getMacroTypesForPhase() {
     switch (phase) {
       case RunPhase.beforeRun:
+        // Sodium v3: no pre-workout sodium target, so no pre-workout sodium
+        // badge. A badge here would read "310/450 mg" against a target that
+        // does not exist. DURING is unchanged.
+        return [MacroType.carbs, MacroType.fluids];
       case RunPhase.duringRun:
         return [MacroType.carbs, MacroType.fluids, MacroType.sodium];
       case RunPhase.afterRun:
@@ -91,7 +95,7 @@ class MacroTargetBadgesWidget extends StatelessWidget {
         return {
           MacroType.carbs: targets.preRun.carbsG.round(),
           MacroType.fluids: targets.preRun.fluidsMl.round(),
-          MacroType.sodium: targets.preRun.sodiumMg.round(),
+          // Sodium v3: deliberately absent — there is no pre-workout target.
           MacroType.protein: targets.preRun.proteinG.round(),
         };
       case RunPhase.duringRun:
@@ -186,9 +190,7 @@ class MacroTargetBadgesWidget extends StatelessWidget {
         }
         return null;
       case MacroType.sodium:
-        if (pre.sodiumLowMg != null && pre.sodiumHighMg != null) {
-          return '${pre.sodiumLowMg!.round()}-${pre.sodiumHighMg!.round()}';
-        }
+        // Sodium v3: no pre-workout sodium band, ever.
         return null;
       case MacroType.fluids:
         if (pre.fluidsLowMl != null && pre.fluidsHighMl != null) {

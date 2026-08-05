@@ -1,5 +1,6 @@
 import 'food_item_data.dart';
 import 'macro_shortfall.dart';
+import 'pre_workout_feeding_labels.dart';
 import 'time_slot_assignment.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -41,19 +42,14 @@ class BeforeSubPhase {
   /// (Formula Kit PR 2 substep 9).
   final PinDecision? pinDecision;
 
-  /// Display title for this sub-phase
-  String get displayTitle {
-    switch (subPhaseType) {
-      case 'meal':
-        return 'Full Meal';
-      case 'snack':
-        return 'Pre-Workout Snack';
-      case 'top_up':
-        return 'Top-Off';
-      default:
-        return subPhaseType;
-    }
-  }
+  /// Display title for this sub-phase, sport-aware when [sport] is known
+  /// ("Pre-Run Meal" / "Pre-Ride Meal"), generic ("Pre-Workout Meal")
+  /// otherwise. See [preWorkoutFeedingTitle].
+  String displayTitleFor(ActivityType? sport) =>
+      preWorkoutFeedingTitle(subPhaseType, sport: sport);
+
+  /// Sport-agnostic display title for this sub-phase.
+  String get displayTitle => displayTitleFor(null);
 
   /// Summary of this sub-phase for collapsed display.
   ///

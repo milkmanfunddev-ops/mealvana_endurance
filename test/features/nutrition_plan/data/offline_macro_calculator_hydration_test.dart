@@ -353,109 +353,11 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // Pre-workout hydration tests
+  // Pre-workout hydration lives in
+  //   offline_macro_calculator_pre_workout_hydration_test.dart (fluid, v6)
+  //   offline_macro_calculator_pre_workout_carbs_test.dart     (carbs, v2)
+  //   offline_macro_calculator_pre_workout_sodium_test.dart    (sodium, v3)
   // ---------------------------------------------------------------------------
-
-  group('calculatePreWorkoutHydration', () {
-    // Pre-Test 2: Tier 1, 65 kg, 180 min before, 90-min workout, 14°C
-    test('Tier 1 (BW 65, 180 min before): fluid=390, sodium=450', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 65,
-        workoutDurationMin: 90,
-        timeBeforeWorkoutMin: 180,
-        tempC: 14,
-      );
-      expect(result.gateTriggered, isFalse);
-      expect(result.tier, 1);
-      expect(result.fluidMl, 390); // 65 * 6
-      expect(result.fluidLowMl, 325); // 65 * 5
-      expect(result.fluidHighMl, 455); // 65 * 7
-      expect(result.sodiumMg, 450);
-      expect(result.sodiumLowMg, 300);
-      expect(result.sodiumHighMg, 600);
-      expect(result.message, isNull);
-    });
-
-    // Pre-Test 3: Tier 2, 80 kg, 90 min before, 180-min workout
-    test('Tier 2 (BW 80, 90 min before): fluid=250, sodium=150', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 80,
-        workoutDurationMin: 180,
-        timeBeforeWorkoutMin: 90,
-        tempC: 31,
-      );
-      expect(result.gateTriggered, isFalse);
-      expect(result.tier, 2);
-      expect(result.fluidMl, 250);
-      expect(result.fluidLowMl, 200);
-      expect(result.fluidHighMl, 300);
-      expect(result.sodiumMg, 150);
-      expect(result.sodiumLowMg, 100);
-      expect(result.sodiumHighMg, 200);
-      expect(
-        result.message,
-        contains('consider hydrating well the evening before'),
-      );
-    });
-
-    test('Gate triggered: 45-min workout, 22°C → all zeros', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 70,
-        workoutDurationMin: 45,
-        timeBeforeWorkoutMin: 180,
-        tempC: 22,
-      );
-      expect(result.gateTriggered, isTrue);
-      expect(result.fluidMl, 0);
-      expect(result.sodiumMg, 0);
-      expect(result.message, contains('No structured pre-hydration needed'));
-    });
-
-    test('Gate bypassed: 45-min workout, 33°C (hot) → Tier 1', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 72,
-        workoutDurationMin: 45,
-        timeBeforeWorkoutMin: 150,
-        tempC: 33,
-      );
-      expect(result.gateTriggered, isFalse);
-      expect(result.tier, 1);
-      expect(result.fluidMl, 432); // 72 * 6
-    });
-
-    test('Tier 3: 5 min before → fluid=0, sodium=0, too-late message', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 75,
-        workoutDurationMin: 120,
-        timeBeforeWorkoutMin: 5,
-        tempC: 25,
-      );
-      expect(result.tier, 3);
-      expect(result.fluidMl, 0);
-      expect(result.sodiumMg, 0);
-      expect(result.message, contains('Too late for structured pre-hydration'));
-    });
-
-    test('Boundary: exactly 120 min before → Tier 1', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 70,
-        workoutDurationMin: 90,
-        timeBeforeWorkoutMin: 120,
-        tempC: 20,
-      );
-      expect(result.tier, 1);
-    });
-
-    test('Boundary: exactly 10 min before → Tier 2', () {
-      final result = OfflineMacroCalculator.calculatePreWorkoutHydration(
-        bodyWeightKg: 70,
-        workoutDurationMin: 90,
-        timeBeforeWorkoutMin: 10,
-        tempC: 20,
-      );
-      expect(result.tier, 2);
-    });
-  });
 
   // ---------------------------------------------------------------------------
   // Brick hydration tests

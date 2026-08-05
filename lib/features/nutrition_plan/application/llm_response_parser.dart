@@ -210,9 +210,9 @@ class LLMResponseParser {
     // Use inputMacroTargets directly when available (from Adjust Macros screen)
     // This ensures the targets displayed match exactly what the user saw/edited
     // Fall back to parsing from response only when inputMacroTargets is not provided
-    final preRunSodiumTarget =
-        inputMacroTargets?.preRun.sodiumMg ??
-        (preRun['sodium_mg'] as num? ?? 200).toDouble();
+    // Sodium v3: there is no pre-workout sodium target. The old `?? 200`
+    // fallback would now fire on every plan and quietly re-invent one.
+    final double? preRunSodiumTarget = null;
     final preRunFluidsTarget =
         inputMacroTargets?.preRun.fluidsMl ??
         (preRun['water_ml'] as num? ?? 500).toDouble();
@@ -260,7 +260,7 @@ class LLMResponseParser {
           id: 'before-run',
           title: planActivityType.getSectionTitle('before'),
           subtitle:
-              '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein, ${preRunSodiumTarget.round()}mg sodium',
+              '${preRunCarbsTarget.round()}g carbs, ${preRunProteinTarget.round()}g protein',
           timing: 'Before',
           foodItems: beforeItems,
           carbsTarget: preRunCarbsTarget,

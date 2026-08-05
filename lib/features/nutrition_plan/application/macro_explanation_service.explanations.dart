@@ -87,27 +87,29 @@ extension _$ExplanationsExt on MacroExplanationService {
       ),
     );
 
-    // Sodium
+    // Sodium — pre-workout sodium v3: Mealvana sets **no** pre-workout sodium
+    // target. What we show is what the chosen food delivers, with no band, no
+    // marker and no in-range state. The retired v1 copy explained a 450 mg
+    // [300–600] target that rested on a concentration range only valid for
+    // athletes between ~65 kg and 163 kg.
     explanations.add(
       MacroExplanation(
         macroName: 'Sodium',
-        value: '${pre.sodiumMg.round()}',
+        value: pre.sodiumMg != null ? '${pre.sodiumMg!.round()}' : '—',
         unit: 'mg',
-        rangeLow: pre.sodiumLowMg?.round().toString(),
-        rangeHigh: pre.sodiumHighMg?.round().toString(),
+        rangeLow: null,
+        rangeHigh: null,
         actualValue: actuals != null ? '${actuals['sodium'] ?? 0}' : null,
         formulaText:
-            'Sodium helps your body absorb and retain the fluids you drink '
-            'before your workout.\n\n'
-            'Formula:  base_sodium (by sweat level)  +  environment_bump\n'
-            'Your target of ${pre.sodiumMg.round()}mg is based on your '
-            'sweat sodium level and $mealType timing.\n\n'
-            'Base sodium: low=300, medium=450, high=600 mg.\n'
-            'Hot weather adds +100mg.',
-        rangeRationale:
-            'The wide range '
-            '(${pre.sodiumLowMg?.round() ?? 0}–${pre.sodiumHighMg?.round() ?? 0}mg) '
-            'is intentional — sodium needs vary a lot between individuals.',
+            'We don\'t set a pre-workout sodium target.\n\n'
+            'A salty snack or an electrolyte drink alongside your pre-workout '
+            'fluid helps that fluid stay in — but the evidence doesn\'t support '
+            'putting a number on it beforehand, and normal pre-workout food '
+            'already carries plenty. The figure shown is simply what your '
+            'chosen food delivers, not something to hit.\n\n'
+            'Your sodium plan lives in the during-workout section, where it is '
+            'individualised to your sweat.',
+        rangeRationale: null,
       ),
     );
 

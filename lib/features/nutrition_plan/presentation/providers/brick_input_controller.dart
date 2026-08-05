@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../../core/utils/debug_logger.dart';
+import '../../domain/fueling_window_limits.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -25,7 +26,7 @@ class BrickSegmentInput {
   /// Duration/Pace mode for WorkoutDetailsWidget
   final DurationPaceMode durationPaceMode;
 
-  /// Pre-activity fueling window in minutes (0-480)
+  /// Pre-activity fueling window in minutes (0-240, see FuelingWindowLimits / D-016)
   final int preActivityMinutes;
 
   /// Session goal for cycling/swimming
@@ -266,7 +267,7 @@ class BrickFormState {
   /// Form data for each sport
   final Map<String, BrickSegmentInput> segmentInputs;
 
-  /// Brick-level pre-activity fueling window in minutes (0-480)
+  /// Brick-level pre-activity fueling window in minutes (0-240, see FuelingWindowLimits / D-016)
   final int preActivityMinutes;
 
   /// Tracks whether the user manually changed the pre-activity timing
@@ -639,8 +640,10 @@ class BrickInputController extends _$BrickInputController {
   }
 
   void updatePreActivityMinutes(int minutes) {
+    // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
+    // carry persisted lead times up to 480 (see FuelingWindowLimits).
     state = state.copyWith(
-      preActivityMinutes: minutes,
+      preActivityMinutes: clampFuelingWindowMinutes(minutes),
       preActivityMinutesManuallySet: true,
     );
   }
