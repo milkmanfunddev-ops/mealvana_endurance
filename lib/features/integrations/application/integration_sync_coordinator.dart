@@ -176,24 +176,40 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
         print('🔄 Starting integration sync for $provider...');
       }
 
+      // Every sync service catches its own errors and reports the outcome in
+      // its result object rather than throwing, so the catch block below never
+      // sees an ordinary sync failure. Read `success` off the result — without
+      // it a failed sync stamps a fresh timestamp, locking the provider out of
+      // retries for the 4h staleness window and never arming the 5m cooldown.
+      final bool succeeded;
+      final String? failure;
+
       switch (provider) {
         case 'final_surge':
           final service = ref.read(finalSurgeSyncServiceProvider);
-          await service.syncWorkouts(userId);
+          final result = await service.syncWorkouts(userId);
+          succeeded = result.success;
+          failure = result.error;
           break;
         case 'training_peaks':
           final service = await ref.read(
             trainingPeaksSyncServiceProvider.future,
           );
-          await service.syncAll(userId);
+          final result = await service.syncAll(userId);
+          succeeded = result.success;
+          failure = result.workoutResult.error;
           break;
         case 'vdot':
           final service = ref.read(vdotSyncServiceProvider);
-          await service.syncWorkouts(userId);
+          final result = await service.syncWorkouts(userId);
+          succeeded = result.success;
+          failure = result.error;
           break;
         case 'runna':
           final service = ref.read(runnaSyncServiceProvider);
-          await service.syncWorkouts(userId);
+          final result = await service.syncWorkouts(userId);
+          succeeded = result.success;
+          failure = result.error;
           break;
         case 'garmin':
           // Garmin is push-only — no client-side sync needed.
@@ -202,6 +218,8 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           if (kDebugMode) {
             print('🔄 Garmin is push-only - no sync needed');
           }
+          succeeded = true;
+          failure = null;
           break;
         default:
           _logger.warning(
@@ -209,6 +227,21 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
             context: 'INTEGRATION_SYNC',
           );
           return;
+      }
+
+      if (!succeeded) {
+        // Arm the cooldown and leave the staleness clock untouched so the next
+        // ensureIntegrationsSynced retries instead of reporting "data is fresh".
+        _lastFailedAttempt[provider] = DateTime.now();
+        _logger.warning(
+          'Integration sync reported failure for $provider',
+          context: 'INTEGRATION_SYNC',
+          data: {'userId': userId, 'provider': provider, 'error': failure},
+        );
+        if (kDebugMode) {
+          print('❌ Integration sync failed for $provider: $failure');
+        }
+        return;
       }
 
       // Success: update timestamp, clear failure tracking
