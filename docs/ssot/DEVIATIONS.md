@@ -464,3 +464,34 @@ co-publication), NATA 2017 (via the free nata.org PDF). Arithmetic was recompute
 - **Conformance:** the ratified vectors enumerate 0–240 in 15-minute steps (17 points). Add a
   boundary vector asserting the engine is never called above 240, so a regression in the widget
   fails here rather than silently producing 4.5 g/kg.
+
+## D-017 — Landing the pre-workout bundle moved the meal occasion from ≥90 min to ≥120 min
+- **Status:** `pending-ruling` (2026-08-05). Two ratified specs now disagree; the code follows the
+  newer one. **This is a live, athlete-visible behaviour change and it has not been ruled on.**
+- **Observed (code, this repo):** implementing `pre-workout-macros@v1` replaced the occasion
+  threshold in `supabase/functions/generate-macros-v4/pre-workout.ts`. Before the bundle the
+  branch was `hoursBefore >= 1.5` (**90 min**); it is now `t >= TIER_MEAL_MIN` (**120 min**), and
+  `generate-nutrition-plan-v3` takes its `sub_phase_type` from that same tier result. So the plan's
+  BEFORE occasions now stack at 30/120, not 30/90.
+- **The conflict:**
+  - `spec/recommendation/generate-plan.md` **H5** (RATIFIED 2026-07-28) states the occasion bands
+    as **≤30 → {top-up} · 30–90 → {snack, top-up} · ≥90 → {meal, snack, top-up}**, and records
+    "✅ *Code MATCHES*".
+  - `PRE-WORKOUT-BUNDLE-DIGEST.md` (the newer ratification) states `TIER_MEAL_MIN = 120`,
+    boundaries inclusive at the bottom, `t >= 120 → meal`.
+  - D-015 asked only whether **90 itself** falls in the upper band. It did not contemplate moving
+    the boundary, so **this is not covered by D-015's pending ruling.**
+- **Who it affects:** an athlete with a fueling window of **90–119 minutes** previously got a
+  Full Meal occasion and now does not. That is the same population as the 2026-07-21 fix, whose
+  own code comment reads: *"These had drifted to 2.5h/1.0h, which denied a full meal to athletes
+  eating 1.5-2.5h out (bug, 2026-07-21)."* Moving to 120 re-denies part of that band.
+- **Resolution options:** (a) rule that the bundle supersedes H5 for occasions and amend H5 to
+  30/120 — one-line spec fix, no code change; (b) rule that occasions stay at 90 while the *carb
+  tier shares* use 120, and split the two constants in code; (c) rule the bundle's 120 was only
+  ever about carb share allocation and restore `>= 90` for tier membership.
+- **Blocking:** `integration_test/flows/recommendation_stacking_flow_test.dart` (from
+  `qa/patrol-recommendation-h5-stacking`) asserts the **90-minute** stacking and is therefore
+  currently asserting pre-bundle behaviour. It has been brought onto develop but is deliberately
+  **NOT wired into either CI target list** until this is ruled — see the note in its header.
+- **Conformance:** whichever way it is ruled, the H5 harness needs vectors at exactly 90 and
+  exactly 120 min. Today neither spec can adjudicate 90–119.
