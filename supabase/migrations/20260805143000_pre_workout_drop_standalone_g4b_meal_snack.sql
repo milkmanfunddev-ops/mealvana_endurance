@@ -21,16 +21,26 @@
 --  about what a composed feeding MAY CONTAIN, not a licence to publish each G4b
 --  item as a feeding in its own right. Permission is not sufficiency.
 --
---  >>> KNOWN DEVIATION, needs logging in the qa repo's DEVIATIONS.md <<<
---      After this migration the MEAL tier contains no G4b item at all, which is
---      the one thing v3 actually changed. A conformance harness asserting
---      "a sports drink is available at the meal tier" will fail against this
---      data. That is a deliberate product decision, not a data error -- but it
---      is a genuine divergence from the ratified SSOT and must not be silent.
+--  NOT A DEVIATION -- corrected 2026-08-05. An earlier version of this header
+--  claimed dropping these rows conflicted with section 11 check 10 and needed a
+--  DEVIATIONS.md entry. That was wrong.
 --
---      The SNACK tier keeps G4b representation through 'Pretzels + Sports Drink'
---      (38 g carbohydrate, section 3.11 canonical snack #5), so only the meal
---      tier diverges.
+--      The conformance vectors test a SUITABILITY FUNCTION, not this table.
+--      `matrix-G4b-meal` takes {tier, foodGroup, gutTolerance} and asserts
+--      {available: true, rating: 'FREE'} -- a pure function of the section 3.10
+--      table. `g4b-sports-drink-meal` passes summed macros straight in. No
+--      vector reads pre_workout_templates, the vectors' `engine` field is null,
+--      and their note states that food-to-macro lookup "is a separate food-
+--      database concern."
+--
+--      So check 10 requires the ENGINE to permit a G4b item at the meal tier.
+--      It does not require this catalog to CONTAIN one. pre_workout_templates
+--      is a curated subset that must CONFORM to the SSOT, not EXHAUST it.
+--      Declining to publish a formula is a curation decision, outside the
+--      SSOT's remit. No DEVIATIONS.md entry is needed.
+--
+--  The SNACK tier keeps G4b representation anyway through 'Pretzels + Sports
+--  Drink' (38 g carbohydrate, section 3.11 canonical snack #5).
 --
 --  Not touched: the top-off rows. Energy Gel, Energy Chews, Sports Drink and
 --  Energy Gel + Water at '< 30 min' are exactly what a top-off is for
