@@ -543,7 +543,19 @@ WHERE id IN (
 --   pre-workout-matrix.test.ts carries the old literals in ~25 fixtures and will
 --   go red until updated.
 --
--- FULL ANALYSIS, including the deletions, the 17 new formulas and the four spec
+-- THIRD MIGRATION, applied to dev the same day:
+--     supabase/migrations/20260805143000_pre_workout_drop_standalone_g4b_meal_snack.sql
+--   Drops five standalone G4b rows (Sports Drink / Energy Gel / Energy Chews at the
+--   meal and snack tiers). Run it third. Final dev state: 34 rows.
+--
+-- NOTION RECORDS (both filed 2026-08-05):
+--   Bug — the six code sites above:
+--     https://app.notion.com/p/Pre-workout-time_window-remap-empties-the-meal-and-snack-template-pools-full-budget-silently-lands-3b3e3fdb754c81779170e48d5ff08d98
+--   Sprint Task, assigned to Lee — repoint pickDrink/pickElectrolyte at template_foods,
+--   then drop the six ingredient rows (water, electrolytes) from this table:
+--     https://app.notion.com/p/Repoint-pickDrink-pickElectrolyte-at-template_foods-then-drop-the-six-ingredient-rows-water-elec-3b3e3fdb754c817b9c8dc46d7d161458
+--
+-- FULL ANALYSIS, including the deletions, the new formulas and the spec
 -- ambiguities that were judged (with SSOT citations):
 --     docs/pre_workout_food_composition_v3_migration_report.md
 --

@@ -1,7 +1,7 @@
 # Pre-workout formula regeneration — review report
 
 **Generated from:** qa tag `pre-workout-food-composition@v1` → spec `food-composition v3` (RATIFIED 2026-08-05, Xuan) + 87 vectors
-**Target:** dev only. Nothing has been applied — this is the pre-approval report.
+**Target:** dev only. **APPLIED to dev 2026-08-05** and verified. Prod is gated — see `apply_all.sql` section 6.
 **Date:** 2026-08-05
 
 | | count |
@@ -9,9 +9,9 @@
 | Existing standard templates inspected | 30 |
 | EDITED (window remap + fibre backfill) | 30 |
 | DELETED (hard-gate violation) | 8 |
-| NEW | 17 |
-| BORDERLINE (left in place, your call) | 4 |
-| Net standard pool | 30 → 39 |
+| NEW | 17 added, then **5 dropped** — see the G4b subsection | 
+| BORDERLINE (left in place, ruled on) | 4 |
+| Net standard pool | **30 → 34** |
 
 ---
 
@@ -30,11 +30,17 @@ It is deliberately not merged to `develop` and has no PR. Collect it when you pi
    cycling/swim plan generation and a 42703 breaking every profile save. Worth a look while
    you are in that file.
 
-There are two matching intake items in the `ops` repo
-(`data/bug-reports/2026-08-05-pre-workout-time-window-remap-…` and
-`data/feature-requests/2026-08-05-fuel-hydration-sodium-should-query-template-foods`), but
-**that repo has no git remote**, so they are unreachable from anywhere but Xuan's machine.
-Everything you need is duplicated here and in `apply_all.sql` section 6 for that reason.
+### Your two Notion records
+
+Both were filed 2026-08-05. **One of them is a Sprint Task already assigned to you.**
+
+| record | board | what |
+|---|---|---|
+| [Pre-workout `time_window` remap empties the meal and snack template pools](https://app.notion.com/p/Pre-workout-time_window-remap-empties-the-meal-and-snack-template-pools-full-budget-silently-lands-3b3e3fdb754c81779170e48d5ff08d98) | 🐛 Bug Reports, New | the six code sites in item 2 above |
+| [Repoint `pickDrink`/`pickElectrolyte` at `template_foods`, then drop the six ingredient rows](https://app.notion.com/p/Repoint-pickDrink-pickElectrolyte-at-template_foods-then-drop-the-six-ingredient-rows-water-elec-3b3e3fdb754c817b9c8dc46d7d161458) | ✅ Sprint Tasks — **Lee, To Do** | flag #2 below; unblocks deleting Water / Electrolyte Tablet / Electrolyte Packet |
+
+Everything actionable is also duplicated in this document and in `apply_all.sql` section 6, so the
+branch stands alone if you are working offline.
 
 ---
 
@@ -64,7 +70,7 @@ be applied ahead of time, but the *data* migration must ship with the code.
 Saved personal formulas are safe in a different way than assumed: they live in `personal_formulas` /
 `personal_templates`, which carry their own `sub_phase` column and never read `pre_workout_templates.time_window`.
 
-### 2. One decision I need from you before applying — H5 vs. the excluded hydration/sodium slices
+### 2. H5 vs. the excluded hydration/sodium slices — RULED: rows stay, repoint is your Sprint Task
 
 Three rows fail **H5** ("the top-off must deliver carbohydrate"):
 
@@ -80,11 +86,21 @@ slices the bundle manifest *explicitly excludes* ("shipped in `pre-workout-macro
 food selection"). H5's actual text is about what may be *offered as the top-off carbohydrate item*, not about
 what may exist in a table that also feeds the fluid and sodium passes.
 
-Deleting them would strip pre-workout hydration and sodium delivery entirely. **I have left all three in
-place and excluded them from the migration.** Per your freeze rule I stopped rather than reach outside the
-bundle. Options: (a) leave as-is — H5 becomes an engine-side rule about *carb* candidates only; (b) add a
-flag marking them ineligible as carb top-offs; (c) delete and accept the hydration/sodium regression.
-**My recommendation is (a)** — it is the reading H5's own wording supports, and it keeps the excluded slices untouched.
+Deleting them would strip pre-workout hydration and sodium delivery entirely, so **all three are still in
+the table** — a deliberate hold, not an oversight.
+
+**Ruling (Xuan, 2026-08-05):** leave them for now. The real fix is structural and is your Sprint Task —
+repoint `pickDrink` at `template_foods where is_drink_pool` and `pickElectrolyte` at
+`template_foods where is_electrolyte` / `sodium_top_up_eligible`. Those columns already exist and are
+populated, so it needs no schema work. **Once both passes are off this table, the six ingredient-shaped
+rows can be dropped and H5 becomes enforceable literally, with no hydration/sodium regression.**
+
+Until then the formula table cannot be cleanly conformed to its own SSOT — every future pre-workout
+ratification hits the same collision, and each time the safe move is to hold rows back rather than enforce
+the gate. That is the argument for doing the repoint rather than living with it.
+
+*(`Electrolyte Packet` also has an empty `component_food_names` — a parent with no composition. Pre-existing,
+and it disappears with the repoint.)*
 
 ### 3. Two NEW columns — Drift needs updating before the app builds
 
@@ -219,9 +235,17 @@ needed; the catalog already carried every food the SSOT names.
 
 ### G4b availability at every tier — the v3 ruling (§3.4, §11 check 10)
 
-v3's single rule change is that a sports drink, mix, gel or chew is permitted in the **meal and snack** tiers,
-reversing v2. Today every G4b item exists only at `< 30 min`, so the meal and snack phases have no G4b
-candidate at all — `pickDrink` has an empty pool outside the top-off. These five rows close that gap:
+> ### ⚠️ These five rows were created and then DROPPED the same day. They are not in the database.
+> Migration `20260805143000_pre_workout_drop_standalone_g4b_meal_snack.sql` removes them.
+> The table below is kept as the record of what was tried and why it was wrong.
+
+**Why they were added (a misreading):** check 10 was read as requiring the *catalog* to contain a G4b
+item at each tier. It does not — it requires the **engine** to permit one. See the appendix.
+
+**Why they were dropped (the real reason):** a row must be a **standalone-sufficient** feeding for its
+window; the engine does not stack two formulas inside one window. A sports drink is 15 g of carbohydrate
+and a gel is 25 g. `Sports Drink (Meal)` came to 210 kcal against §2's ~240–960 kcal meal band.
+**Permission to appear in a composed feeding is not sufficiency as a feeding.**
 
 | name | window | C/P/F/fibre (g) | vector |
 |---|---|---|---|
@@ -231,9 +255,9 @@ candidate at all — `pickDrink` has an empty pool outside the top-off. These fi
 | Energy Gel (Snack) | 30-120 min | 25.0 / 0 / 0 / 0 | check 10 |
 | Energy Chews (Snack) | 30-120 min | 25.0 / 0 / 0 / 0 | check 10 |
 
-These are the rows most worth a sanity read: the SSOT rules them *permitted*, which is not the same as
-*recommended as a standalone feeding*. Trim any you think read oddly in the UI — the gates don't require them
-individually, only that G4b be available at each tier.
+**Net effect:** the meal tier ships no G4b item. That is a deliberate curation choice and needs no
+deviation entry — `pre_workout_templates` must *conform* to the SSOT, not *exhaust* it. The snack tier
+still carries G4b through `Pretzels + Sports Drink` (38 g carb, §3.11 canonical snack #5).
 
 ---
 
@@ -315,7 +339,15 @@ Both carry a provenance header naming the tag and spec version. Every statement 
 not exists`, `drop constraint if exists`, `delete … where name =`, and `insert … on conflict (id) do update`
 with deterministic uuid5 ids — so the pair replays cleanly on prod.
 
-**Not yet applied to dev.** Awaiting approval.
+**Applied to dev 2026-08-05**, in this order:
+
+| # | file | what |
+|---|---|---|
+| 1 | `20260805120000_..._v3_structure.sql` | CHECK widening + 2 new columns |
+| 2 | `20260805120100_..._v3_data.sql` | groups, remap, 8 deletes, fibre backfill, 17 inserts |
+| 3 | `20260805143000_pre_workout_drop_standalone_g4b_meal_snack.sql` | drops the 5 standalone G4b rows |
+
+Verified against live dev: 34 rows, 0 unexpected hard-gate violations.
 
 ---
 
