@@ -4,7 +4,8 @@ import '../../../../shared/domain/activity_type.dart';
 ///
 /// - [inBaseline]: long effort with enough same-sport history to plot a trend.
 /// - [buildingBaseline]: long effort, but fewer than the unlock threshold of
-///   prior same-sport efforts — show progress dots instead of a trend.
+///   qualifying same-sport efforts *including this session* — show progress
+///   dots instead of a trend.
 /// - [excluded]: this effort is not tracked against the fueling baseline
 ///   (too short, a swim, or speed work).
 enum CarbsHrState { inBaseline, buildingBaseline, excluded }
@@ -17,8 +18,8 @@ enum CarbsHrExclusionReason { none, tooShort, swim, speedWork }
 /// [history] holds the per-session carbs/hr of prior qualifying efforts in
 /// chronological order (oldest → newest) and is already trimmed to the trend
 /// window. [count] is the total number of qualifying prior efforts (which can
-/// exceed [history].length) and is what gates the [CarbsHrState.inBaseline]
-/// unlock.
+/// exceed [history].length); the [CarbsHrState.inBaseline] unlock is gated on
+/// [count] plus the current session.
 class CarbsPerHourBaseline {
   const CarbsPerHourBaseline({required this.history, required this.count});
 
@@ -84,7 +85,8 @@ class CarbsPerHourSummary {
   /// Why the session is excluded (only meaningful when [state] is excluded).
   final CarbsHrExclusionReason exclusionReason;
 
-  /// Number of qualifying efforts needed before the trend unlocks.
+  /// Number of qualifying efforts needed before the trend unlocks, counting
+  /// this session alongside [baselineCount] priors.
   final int unlockThreshold;
 
   /// Minimum effort length (minutes) for carbs/hr to be tracked.
