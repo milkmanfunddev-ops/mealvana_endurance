@@ -787,7 +787,8 @@ class MacroGenerationService {
         carbTiers: PreRunMacrosWire.carbTiersFrom(
           macrosData['pre_run_carb_tiers'],
         ),
-        hydrationCheckUsed: macrosData['pre_run_hydration_check_used'] as String?,
+        hydrationCheckUsed:
+            macrosData['pre_run_hydration_check_used'] as String?,
       ),
       preRunSelections: _toMapListOrNull(macrosData['pre_run_selections']),
       duringRun: () {

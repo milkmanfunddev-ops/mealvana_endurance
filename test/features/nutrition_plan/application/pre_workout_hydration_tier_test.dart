@@ -27,13 +27,13 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 ///   * `extrapolated`/`clearance_bound` → '10–120 min window'
 ///   * `gated`                        → 'no structured intake'
 void main() {
-  group('PreWorkout fluid transparency — explicit regime beats the heuristic', () {
-    final service = MacroExplanationService();
+  group(
+    'PreWorkout fluid transparency — explicit regime beats the heuristic',
+    () {
+      final service = MacroExplanationService();
 
-    test(
-      '47.6 kg, regime=cited, fluidsMl=286 renders the full protocol '
-      '(not the short window)',
-      () {
+      test('47.6 kg, regime=cited, fluidsMl=286 renders the full protocol '
+          '(not the short window)', () {
         final macroTargets = _sampleMacroTargetsWithPreRun(
           preRun: const PreRunMacros(
             carbsG: 190,
@@ -72,97 +72,97 @@ void main() {
               'Short-window markup would mislabel a body-weight-scaled '
               'full-protocol recommendation for low-bodyweight athletes.',
         );
-      },
-    );
+      });
 
-    test('regime=extrapolated with fluidsMl=250 renders the short window', () {
-      final formulaText = _formulaTextFor(
-        service,
-        const PreRunMacros(
-          carbsG: 0,
-          proteinG: 0,
-          fatCapG: 0,
-          fluidsMl: 250,
-          fluidsLowMl: 0,
-          fluidsHighMl: 300,
-          hydrationRegime: PreRunHydrationRegime.extrapolated,
-        ),
+      test(
+        'regime=extrapolated with fluidsMl=250 renders the short window',
+        () {
+          final formulaText = _formulaTextFor(
+            service,
+            const PreRunMacros(
+              carbsG: 0,
+              proteinG: 0,
+              fatCapG: 0,
+              fluidsMl: 250,
+              fluidsLowMl: 0,
+              fluidsHighMl: 300,
+              hydrationRegime: PreRunHydrationRegime.extrapolated,
+            ),
+          );
+          expect(formulaText, contains('10–120 min window'));
+          expect(formulaText, isNot(contains('full ACSM protocol')));
+        },
       );
-      expect(formulaText, contains('10–120 min window'));
-      expect(formulaText, isNot(contains('full ACSM protocol')));
-    });
 
-    test(
-      'regime=clearance_bound renders the short window too — it is a sub-2 h '
-      'regime, and a large dose must not flip it to the full protocol',
-      () {
-        // The mirror of #16: a heavy athlete very close to the start gets a
-        // clearance-capped dose well over 300 ml. Magnitude would say "full
-        // protocol"; the regime says otherwise, and the regime wins.
+      test(
+        'regime=clearance_bound renders the short window too — it is a sub-2 h '
+        'regime, and a large dose must not flip it to the full protocol',
+        () {
+          // The mirror of #16: a heavy athlete very close to the start gets a
+          // clearance-capped dose well over 300 ml. Magnitude would say "full
+          // protocol"; the regime says otherwise, and the regime wins.
+          final formulaText = _formulaTextFor(
+            service,
+            const PreRunMacros(
+              carbsG: 0,
+              proteinG: 0,
+              fatCapG: 0,
+              fluidsMl: 400,
+              fluidsLowMl: 0,
+              fluidsHighMl: 890,
+              hydrationRegime: PreRunHydrationRegime.clearanceBound,
+            ),
+            bodyWeightKg: 100,
+          );
+          expect(formulaText, contains('10–120 min window'));
+          expect(formulaText, isNot(contains('full ACSM protocol')));
+        },
+      );
+
+      test('regime=gated renders no structured intake', () {
         final formulaText = _formulaTextFor(
           service,
           const PreRunMacros(
             carbsG: 0,
             proteinG: 0,
             fatCapG: 0,
-            fluidsMl: 400,
-            fluidsLowMl: 0,
-            fluidsHighMl: 890,
-            hydrationRegime: PreRunHydrationRegime.clearanceBound,
+            // The gate path sets no target at all; the domain collapses it to 0
+            // for the legacy field, which is exactly why the regime — not the
+            // number — has to be what the copy branches on.
+            fluidsMl: 0,
+            hydrationRegime: PreRunHydrationRegime.gated,
           ),
-          bodyWeightKg: 100,
         );
-        expect(formulaText, contains('10–120 min window'));
+        expect(formulaText, contains('no structured intake'));
         expect(formulaText, isNot(contains('full ACSM protocol')));
-      },
-    );
+        expect(formulaText, isNot(contains('10–120 min window')));
+      });
 
-    test('regime=gated renders no structured intake', () {
-      final formulaText = _formulaTextFor(
-        service,
-        const PreRunMacros(
-          carbsG: 0,
-          proteinG: 0,
-          fatCapG: 0,
-          // The gate path sets no target at all; the domain collapses it to 0
-          // for the legacy field, which is exactly why the regime — not the
-          // number — has to be what the copy branches on.
-          fluidsMl: 0,
-          hydrationRegime: PreRunHydrationRegime.gated,
-        ),
+      test(
+        'legacy plan without a regime still falls back to the fluid heuristic',
+        () {
+          // Older cached plans carry no regime — the service must stay backwards
+          // compatible and use the historical fluid-magnitude heuristic.
+          final formulaText = _formulaTextFor(
+            service,
+            const PreRunMacros(
+              carbsG: 280,
+              proteinG: 14,
+              fatCapG: 14,
+              fluidsMl: 420,
+              sodiumMg: 450,
+              fluidsLowMl: 350,
+              fluidsHighMl: 490,
+              // hydrationRegime intentionally null
+            ),
+          );
+          // 420 ml > 300 → legacy heuristic resolves to the full protocol.
+          expect(formulaText, contains('full ACSM protocol'));
+        },
       );
-      expect(formulaText, contains('no structured intake'));
-      expect(formulaText, isNot(contains('full ACSM protocol')));
-      expect(formulaText, isNot(contains('10–120 min window')));
-    });
 
-    test(
-      'legacy plan without a regime still falls back to the fluid heuristic',
-      () {
-        // Older cached plans carry no regime — the service must stay backwards
-        // compatible and use the historical fluid-magnitude heuristic.
-        final formulaText = _formulaTextFor(
-          service,
-          const PreRunMacros(
-            carbsG: 280,
-            proteinG: 14,
-            fatCapG: 14,
-            fluidsMl: 420,
-            sodiumMg: 450,
-            fluidsLowMl: 350,
-            fluidsHighMl: 490,
-            // hydrationRegime intentionally null
-          ),
-        );
-        // 420 ml > 300 → legacy heuristic resolves to the full protocol.
-        expect(formulaText, contains('full ACSM protocol'));
-      },
-    );
-
-    test(
-      'the regime, not the magnitude, decides: identical fluidsMl renders '
-      'different copy under different regimes',
-      () {
+      test('the regime, not the magnitude, decides: identical fluidsMl renders '
+          'different copy under different regimes', () {
         // The whole point of #16 in one assertion. Same number, same athlete,
         // opposite copy — impossible under a magnitude heuristic.
         const fluidsMl = 286.0;
@@ -192,9 +192,9 @@ void main() {
         expect(cited, contains('full ACSM protocol'));
         expect(extrapolated, contains('10–120 min window'));
         expect(cited, isNot(extrapolated));
-      },
-    );
-  });
+      });
+    },
+  );
 }
 
 /// Render [preRun] and flatten its pre-workout fluid calculation copy.

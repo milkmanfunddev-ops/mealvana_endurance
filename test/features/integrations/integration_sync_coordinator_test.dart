@@ -116,9 +116,9 @@ void main() {
 
   group('failed sync does not count as fresh data', () {
     test('a network failure leaves the staleness clock unstamped', () async {
-      when(
-        () => runnaSync.syncWorkouts(any()),
-      ).thenAnswer((_) async => RunnaSyncResult.networkError('Connection refused'));
+      when(() => runnaSync.syncWorkouts(any())).thenAnswer(
+        (_) async => RunnaSyncResult.networkError('Connection refused'),
+      );
 
       await coordinator().ensureIntegrationsSynced(_userId);
 
@@ -151,25 +151,28 @@ void main() {
   });
 
   group('failure cooldown', () {
-    test('a failure arms the 5-minute cooldown, suppressing the next attempt', () async {
-      when(
-        () => runnaSync.syncWorkouts(any()),
-      ).thenAnswer((_) async => RunnaSyncResult.networkError('Connection refused'));
+    test(
+      'a failure arms the 5-minute cooldown, suppressing the next attempt',
+      () async {
+        when(() => runnaSync.syncWorkouts(any())).thenAnswer(
+          (_) async => RunnaSyncResult.networkError('Connection refused'),
+        );
 
-      final sut = coordinator();
-      await sut.ensureIntegrationsSynced(_userId);
-      await sut.ensureIntegrationsSynced(_userId);
+        final sut = coordinator();
+        await sut.ensureIntegrationsSynced(_userId);
+        await sut.ensureIntegrationsSynced(_userId);
 
-      // Second pass is inside the cooldown, so the service is hit exactly once.
-      verify(() => runnaSync.syncWorkouts(_userId)).called(1);
-    });
+        // Second pass is inside the cooldown, so the service is hit exactly once.
+        verify(() => runnaSync.syncWorkouts(_userId)).called(1);
+      },
+    );
 
     test(
       'forceSyncIntegrations bypasses the cooldown so manual retry still works',
       () async {
-        when(
-          () => runnaSync.syncWorkouts(any()),
-        ).thenAnswer((_) async => RunnaSyncResult.networkError('Connection refused'));
+        when(() => runnaSync.syncWorkouts(any())).thenAnswer(
+          (_) async => RunnaSyncResult.networkError('Connection refused'),
+        );
 
         final sut = coordinator();
         await sut.ensureIntegrationsSynced(_userId);
@@ -196,9 +199,9 @@ void main() {
 
   group('post-sync upload', () {
     test('dirty activities are not uploaded when the sync failed', () async {
-      when(
-        () => runnaSync.syncWorkouts(any()),
-      ).thenAnswer((_) async => RunnaSyncResult.networkError('Connection refused'));
+      when(() => runnaSync.syncWorkouts(any())).thenAnswer(
+        (_) async => RunnaSyncResult.networkError('Connection refused'),
+      );
 
       await coordinator().ensureIntegrationsSynced(_userId);
 

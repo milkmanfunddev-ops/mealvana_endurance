@@ -35,6 +35,7 @@ class MacroExplanation {
   final String? rangeLow;
   final String? rangeHigh;
   final String formulaText;
+
   /// Nullable since sodium v3: pre-workout sodium has no range, so there is
   /// nothing to rationalise.
   final String? rangeRationale;

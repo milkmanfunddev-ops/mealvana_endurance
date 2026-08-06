@@ -18,7 +18,23 @@ import 'package:mealvana_endurance/features/nutrition_plan/data/offline_macro_ca
 
 /// The ratified input domain: 0..240 min in 15-minute steps.
 const List<double> _tGrid = <double>[
-  0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240,
+  0,
+  15,
+  30,
+  45,
+  60,
+  75,
+  90,
+  105,
+  120,
+  135,
+  150,
+  165,
+  180,
+  195,
+  210,
+  225,
+  240,
 ];
 
 const List<double> _bwGrid = <double>[30, 50, 65, 90, 100, 130, 160];
@@ -231,17 +247,20 @@ void main() {
     });
   });
 
-  test('the fields are nullable ints — a 0 could never be mistaken for absent', () {
-    final r = OfflineMacroCalculator.calculatePreWorkoutHydration(
-      bodyWeightKg: 65,
-      workoutDurationMin: 90,
-      timeBeforeWorkoutMin: 180,
-      tempC: 22,
-    );
-    // Typed as int?, so `0` is representable and distinct from null. This
-    // asserts the widening from v1's non-nullable int actually happened.
-    final int? sodium = r.sodiumMg;
-    expect(sodium, isNull);
-    expect(sodium == 0, isFalse);
-  });
+  test(
+    'the fields are nullable ints — a 0 could never be mistaken for absent',
+    () {
+      final r = OfflineMacroCalculator.calculatePreWorkoutHydration(
+        bodyWeightKg: 65,
+        workoutDurationMin: 90,
+        timeBeforeWorkoutMin: 180,
+        tempC: 22,
+      );
+      // Typed as int?, so `0` is representable and distinct from null. This
+      // asserts the widening from v1's non-nullable int actually happened.
+      final int? sodium = r.sodiumMg;
+      expect(sodium, isNull);
+      expect(sodium == 0, isFalse);
+    },
+  );
 }

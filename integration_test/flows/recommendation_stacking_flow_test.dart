@@ -101,12 +101,14 @@ void main() {
       expect(
         $(_topOff),
         findsWidgets,
-        reason: 'A ≤30 min window must still recommend a Top-Off occasion (H5).',
+        reason:
+            'A ≤30 min window must still recommend a Top-Off occasion (H5).',
       );
       expect(
         $(_fullMeal),
         findsNothing,
-        reason: 'A ≤30 min window must NOT recommend a Full Meal occasion (H5).',
+        reason:
+            'A ≤30 min window must NOT recommend a Full Meal occasion (H5).',
       );
       expect(
         $(_snack),
@@ -267,5 +269,7 @@ Future<void> _ensureVisibleInForm(
   // version pinned `view: find.byType(SingleChildScrollView).first`, which
   // grabbed a wrong nested view and failed to reveal below-the-fold controls
   // (duration field, fueling-window stepper).
-  await $(key).scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1));
+  await $(
+    key,
+  ).scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1));
 }

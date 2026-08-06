@@ -121,7 +121,6 @@ class ContextualBanner extends StatelessWidget {
     // Sodium v3: there is no pre-workout sodium target, so there is nothing to
     // validate and no banner to raise about it.
 
-
     // Check during-run macros
     if (_validateDuringRunMacro(
           MacroField.duringRunCarbTotal,

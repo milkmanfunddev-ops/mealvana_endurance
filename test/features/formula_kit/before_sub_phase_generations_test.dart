@@ -15,24 +15,33 @@ import 'package:mealvana_endurance/features/formula_kit/domain/before_sub_phase.
 
 void main() {
   group('BeforeSubPhase.fromTimeWindow', () {
-    test('classifies the current generation (dev catalog, post 2026-08-05)', () {
-      expect(BeforeSubPhase.fromTimeWindow('2-4 hours'), BeforeSubPhase.meal);
-      expect(BeforeSubPhase.fromTimeWindow('30-120 min'), BeforeSubPhase.snack);
-      expect(BeforeSubPhase.fromTimeWindow('< 30 min'), BeforeSubPhase.topUp);
-    });
+    test(
+      'classifies the current generation (dev catalog, post 2026-08-05)',
+      () {
+        expect(BeforeSubPhase.fromTimeWindow('2-4 hours'), BeforeSubPhase.meal);
+        expect(
+          BeforeSubPhase.fromTimeWindow('30-120 min'),
+          BeforeSubPhase.snack,
+        );
+        expect(BeforeSubPhase.fromTimeWindow('< 30 min'), BeforeSubPhase.topUp);
+      },
+    );
 
     test('still classifies the previous generation (prod catalog)', () {
       expect(BeforeSubPhase.fromTimeWindow('1.5-3 hours'), BeforeSubPhase.meal);
       expect(BeforeSubPhase.fromTimeWindow('30-90 min'), BeforeSubPhase.snack);
     });
 
-    test('unknown windows return null — shown in All, excluded from filters', () {
-      expect(BeforeSubPhase.fromTimeWindow('2-4 hrs'), isNull);
-      // En-dash, not hyphen: catalogs are hand-migrated, so near-misses are
-      // the realistic failure and must not be silently bucketed.
-      expect(BeforeSubPhase.fromTimeWindow('30–120 min'), isNull);
-      expect(BeforeSubPhase.fromTimeWindow(null), isNull);
-      expect(BeforeSubPhase.fromTimeWindow(''), isNull);
-    });
+    test(
+      'unknown windows return null — shown in All, excluded from filters',
+      () {
+        expect(BeforeSubPhase.fromTimeWindow('2-4 hrs'), isNull);
+        // En-dash, not hyphen: catalogs are hand-migrated, so near-misses are
+        // the realistic failure and must not be silently bucketed.
+        expect(BeforeSubPhase.fromTimeWindow('30–120 min'), isNull);
+        expect(BeforeSubPhase.fromTimeWindow(null), isNull);
+        expect(BeforeSubPhase.fromTimeWindow(''), isNull);
+      },
+    );
   });
 }

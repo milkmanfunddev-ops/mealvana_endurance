@@ -242,6 +242,7 @@ class MacroTableData {
   final int preFluids;
   final int duringFluids;
   final int postFluids;
+
   /// Sodium v3: `null` for the BEFORE column — Mealvana sets no pre-workout
   /// sodium target. Renders as an em dash, never `0 mg`.
   final int? preSodium;

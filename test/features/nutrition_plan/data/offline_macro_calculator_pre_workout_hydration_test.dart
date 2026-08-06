@@ -26,12 +26,41 @@ const double _eps = 1e-6;
 
 /// The ratified input domain: 0..240 min in 15-minute steps (17 points).
 const List<double> _tGrid = <double>[
-  0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240,
+  0,
+  15,
+  30,
+  45,
+  60,
+  75,
+  90,
+  105,
+  120,
+  135,
+  150,
+  165,
+  180,
+  195,
+  210,
+  225,
+  240,
 ];
 
 /// Body weights swept by the property tests, 30..160 kg.
 const List<double> _bwGrid = <double>[
-  30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
+  30,
+  40,
+  50,
+  60,
+  70,
+  80,
+  90,
+  100,
+  110,
+  120,
+  130,
+  140,
+  150,
+  160,
 ];
 
 /// A duration that never trips the gate, so the sweeps exercise the real math.
@@ -606,7 +635,11 @@ void main() {
         for (final t in <double>[-0.5, -15, -240]) {
           final negative = _hyd(bw, t);
           expect(negative.fluidMl, atZero.fluidMl, reason: 'bw=$bw t=$t');
-          expect(negative.fluidHighMl, atZero.fluidHighMl, reason: 'bw=$bw t=$t');
+          expect(
+            negative.fluidHighMl,
+            atZero.fluidHighMl,
+            reason: 'bw=$bw t=$t',
+          );
           expect(negative.regime, atZero.regime, reason: 'bw=$bw t=$t');
           expect(negative.tiers.length, atZero.tiers.length);
         }
@@ -619,17 +652,20 @@ void main() {
   // ===========================================================================
 
   group('A0 guard and clearance ceiling', () {
-    test('A0 binds below 33.3 kg: the anchor never exceeds the cited target', () {
-      // 7.5 * 30 = 225 < 250, so A0 = 225 and the taper is flat at 225.
-      final r = _hyd(30, 0);
-      _expectMl(r.fluidMl, 225);
-      _expectMl(r.fluidHighMl, 300); // min(10*30, 400)
-      expect(r.regime, 'extrapolated');
-      // Flat: the same value at every sub-T_REF lead time.
-      for (final t in _tGrid.where((t) => t < 120)) {
-        _expectMl(_hyd(30, t).fluidMl, 225, reason: 't=$t');
-      }
-    });
+    test(
+      'A0 binds below 33.3 kg: the anchor never exceeds the cited target',
+      () {
+        // 7.5 * 30 = 225 < 250, so A0 = 225 and the taper is flat at 225.
+        final r = _hyd(30, 0);
+        _expectMl(r.fluidMl, 225);
+        _expectMl(r.fluidHighMl, 300); // min(10*30, 400)
+        expect(r.regime, 'extrapolated');
+        // Flat: the same value at every sub-T_REF lead time.
+        for (final t in _tGrid.where((t) => t < 120)) {
+          _expectMl(_hyd(30, t).fluidMl, 225, reason: 't=$t');
+        }
+      },
+    );
 
     test('A0 does not bind at 34 kg (7.5 kg/ml exceeds the 250 ml anchor)', () {
       _expectMl(_hyd(34, 0).fluidMl, 250);
@@ -641,23 +677,30 @@ void main() {
         final r = _hyd(40, t);
         if (t < 120) {
           expect(r.regime, 'extrapolated', reason: 't=$t');
-          _expectMl(r.fluidHighMl, 400, reason: 't=$t'); // 10 * 40, not clearance
+          _expectMl(
+            r.fluidHighMl,
+            400,
+            reason: 't=$t',
+          ); // 10 * 40, not clearance
         } else {
           expect(r.regime, 'cited', reason: 't=$t');
         }
       }
     });
 
-    test('BW > 100: clearance binds near the start line and lets go by t=30', () {
-      final atStart = _hyd(110, 0);
-      expect(atStart.regime, 'clearance_bound');
-      _expectMl(atStart.fluidHighMl, 400); // R_CEILING * exp(0)
-      expect(_hyd(110, 15).regime, 'clearance_bound');
-      // Invariant 9: the clearance-bound region is strictly inside the top-off
-      // tier, so by t = 30 it has released even at 160 kg.
-      expect(_hyd(110, 30).regime, 'extrapolated');
-      expect(_hyd(160, 30).regime, 'extrapolated');
-    });
+    test(
+      'BW > 100: clearance binds near the start line and lets go by t=30',
+      () {
+        final atStart = _hyd(110, 0);
+        expect(atStart.regime, 'clearance_bound');
+        _expectMl(atStart.fluidHighMl, 400); // R_CEILING * exp(0)
+        expect(_hyd(110, 15).regime, 'clearance_bound');
+        // Invariant 9: the clearance-bound region is strictly inside the top-off
+        // tier, so by t = 30 it has released even at 160 kg.
+        expect(_hyd(110, 30).regime, 'extrapolated');
+        expect(_hyd(160, 30).regime, 'extrapolated');
+      },
+    );
   });
 
   // ===========================================================================
@@ -678,16 +721,22 @@ void main() {
 
       final dark = _hyd(65, 180, check: HydrationCheck.dark);
       _expectMl(dark.tiers[0].fluidMl, 487.5);
-      _expectMl(dark.tiers[1].fluidMl, 260); // 4 ml/kg lands in the snack window
+      _expectMl(
+        dark.tiers[1].fluidMl,
+        260,
+      ); // 4 ml/kg lands in the snack window
       _expectMl(dark.tiers[2].fluidMl, 0);
     });
 
-    test('30 <= t < 120 emits snack/top_off with all the fluid in the snack', () {
-      final r = _hyd(65, 90);
-      expect(r.tiers.map((e) => e.tier), <String>['snack', 'top_off']);
-      _expectMl(r.tiers[0].fluidMl, 428.125);
-      _expectMl(r.tiers[1].fluidMl, 0);
-    });
+    test(
+      '30 <= t < 120 emits snack/top_off with all the fluid in the snack',
+      () {
+        final r = _hyd(65, 90);
+        expect(r.tiers.map((e) => e.tier), <String>['snack', 'top_off']);
+        _expectMl(r.tiers[0].fluidMl, 428.125);
+        _expectMl(r.tiers[1].fluidMl, 0);
+      },
+    );
 
     test('t < 30 emits top_off only, carrying the whole target', () {
       final r = _hyd(65, 15);
@@ -695,22 +744,27 @@ void main() {
       _expectMl(r.tiers.single.fluidMl, 279.6875);
     });
 
-    test('fluid never splits: exactly one tier is non-zero off the gate path', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid) {
-          for (final check in HydrationCheck.values) {
-            final r = _hyd(bw, t, check: check);
-            final nonZero = r.tiers.where((e) => e.fluidMl > 0).length;
-            final expected = (t >= 120 && check == HydrationCheck.dark) ? 2 : 1;
-            expect(
-              nonZero,
-              expected,
-              reason: 'bw=$bw t=$t check=${check.wireValue}',
-            );
+    test(
+      'fluid never splits: exactly one tier is non-zero off the gate path',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid) {
+            for (final check in HydrationCheck.values) {
+              final r = _hyd(bw, t, check: check);
+              final nonZero = r.tiers.where((e) => e.fluidMl > 0).length;
+              final expected = (t >= 120 && check == HydrationCheck.dark)
+                  ? 2
+                  : 1;
+              expect(
+                nonZero,
+                expected,
+                reason: 'bw=$bw t=$t check=${check.wireValue}',
+              );
+            }
           }
         }
-      }
-    });
+      },
+    );
   });
 
   // ===========================================================================
@@ -813,7 +867,11 @@ void main() {
             final where = 'bw=$bw t=$t check=${check.wireValue}';
             expect(r.fluidLowMl! >= 0, isTrue, reason: where);
             expect(r.fluidLowMl! <= r.fluidMl! + _tolMl, isTrue, reason: where);
-            expect(r.fluidMl! <= r.fluidHighMl! + _tolMl, isTrue, reason: where);
+            expect(
+              r.fluidMl! <= r.fluidHighMl! + _tolMl,
+              isTrue,
+              reason: where,
+            );
           }
         }
       }
@@ -834,34 +892,44 @@ void main() {
       }
     });
 
-    test('3: fluidMl is non-decreasing in t on both the pale and dark paths', () {
-      for (final bw in _bwGrid) {
-        for (final check in <HydrationCheck>[
-          HydrationCheck.pale,
-          HydrationCheck.dark,
-        ]) {
-          var previous = double.negativeInfinity;
-          for (final t in _tGrid) {
-            final value = _hyd(bw, t, check: check).fluidMl!;
-            expect(
-              value >= previous - _tolMl,
-              isTrue,
-              reason: 'bw=$bw t=$t check=${check.wireValue} '
-                  '($value < $previous)',
-            );
-            previous = value;
+    test(
+      '3: fluidMl is non-decreasing in t on both the pale and dark paths',
+      () {
+        for (final bw in _bwGrid) {
+          for (final check in <HydrationCheck>[
+            HydrationCheck.pale,
+            HydrationCheck.dark,
+          ]) {
+            var previous = double.negativeInfinity;
+            for (final t in _tGrid) {
+              final value = _hyd(bw, t, check: check).fluidMl!;
+              expect(
+                value >= previous - _tolMl,
+                isTrue,
+                reason:
+                    'bw=$bw t=$t check=${check.wireValue} '
+                    '($value < $previous)',
+              );
+              previous = value;
+            }
           }
         }
-      }
-    });
+      },
+    );
 
     test('4: the pale path is continuous at t = 120 and t = 30', () {
       for (final bw in _bwGrid) {
         for (final boundary in <double>[120, 30]) {
-          final below = _hyd(bw, boundary - _eps, check: HydrationCheck.pale)
-              .fluidMl!;
-          final above = _hyd(bw, boundary + _eps, check: HydrationCheck.pale)
-              .fluidMl!;
+          final below = _hyd(
+            bw,
+            boundary - _eps,
+            check: HydrationCheck.pale,
+          ).fluidMl!;
+          final above = _hyd(
+            bw,
+            boundary + _eps,
+            check: HydrationCheck.pale,
+          ).fluidMl!;
           expect(
             (above - below).abs() < 1e-6 * bw + _tolMl,
             isTrue,
@@ -899,26 +967,29 @@ void main() {
       }
     });
 
-    test('8a: the plan cap has teeth — plan <= 12 ml/kg, and it binds the band', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid) {
-          for (final check in HydrationCheck.values) {
-            final r = _hyd(bw, t, check: check);
-            expect(
-              r.fluidMl! <= 12.0 * bw + _tolMl,
-              isTrue,
-              reason: 'bw=$bw t=$t check=${check.wireValue}',
-            );
+    test(
+      '8a: the plan cap has teeth — plan <= 12 ml/kg, and it binds the band',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid) {
+            for (final check in HydrationCheck.values) {
+              final r = _hyd(bw, t, check: check);
+              expect(
+                r.fluidMl! <= 12.0 * bw + _tolMl,
+                isTrue,
+                reason: 'bw=$bw t=$t check=${check.wireValue}',
+              );
+            }
           }
+          // min(7.5 + 5, 12) selected the cap, on the dark path too.
+          expect(
+            _hyd(bw, 180, check: HydrationCheck.dark).fluidHighMl,
+            closeTo(12.0 * bw, _tolMl),
+            reason: 'bw=$bw',
+          );
         }
-        // min(7.5 + 5, 12) selected the cap, on the dark path too.
-        expect(
-          _hyd(bw, 180, check: HydrationCheck.dark).fluidHighMl,
-          closeTo(12.0 * bw, _tolMl),
-          reason: 'bw=$bw',
-        );
-      }
-    });
+      },
+    );
 
     test('8b: the band above T_REF is independent of hydrationCheck', () {
       for (final bw in _bwGrid) {
@@ -947,7 +1018,7 @@ void main() {
       for (var bw = 40.0; bw <= 198.0; bw += 1.0) {
         final crossing =
             math.log(10.0 * bw / OfflineMacroCalculator.rCeiling) /
-                OfflineMacroCalculator.k;
+            OfflineMacroCalculator.k;
         expect(crossing <= 30.0, isTrue, reason: 'bw=$bw crossing=$crossing');
       }
       // Behavioural form: no swept athlete is clearance-bound at or above t=30.
@@ -962,21 +1033,24 @@ void main() {
       }
     });
 
-    test('11: the gate path returns null/null/null and empty tiers, never 0', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid) {
-          final r = _hyd(bw, t, dur: 30, tempC: 12);
-          final where = 'bw=$bw t=$t';
-          expect(r.gateTriggered, isTrue, reason: where);
-          expect(r.fluidMl, isNull, reason: where);
-          expect(r.fluidLowMl, isNull, reason: where);
-          expect(r.fluidHighMl, isNull, reason: where);
-          expect(r.tiers, isEmpty, reason: where);
-          expect(r.regime, 'gated', reason: where);
-          expect(r.targetBasis, 'none', reason: where);
+    test(
+      '11: the gate path returns null/null/null and empty tiers, never 0',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid) {
+            final r = _hyd(bw, t, dur: 30, tempC: 12);
+            final where = 'bw=$bw t=$t';
+            expect(r.gateTriggered, isTrue, reason: where);
+            expect(r.fluidMl, isNull, reason: where);
+            expect(r.fluidLowMl, isNull, reason: where);
+            expect(r.fluidHighMl, isNull, reason: where);
+            expect(r.tiers, isEmpty, reason: where);
+            expect(r.regime, 'gated', reason: where);
+            expect(r.targetBasis, 'none', reason: where);
+          }
         }
-      }
-    });
+      },
+    );
 
     test('below T_REF fluidLowMl is 0.0 — zero, not null', () {
       for (final t in _tGrid.where((t) => t < 120)) {
@@ -996,7 +1070,8 @@ void main() {
       expect(
         OfflineMacroCalculator.tRef,
         OfflineMacroCalculator.tierMealMin,
-        reason: 'CROSS-SPEC PIN BROKEN: pre-workout-hydration.T_REF != '
+        reason:
+            'CROSS-SPEC PIN BROKEN: pre-workout-hydration.T_REF != '
             'pre-workout-carbs.TIER_MEAL_MIN. See invariant 10 in both specs.',
       );
     });

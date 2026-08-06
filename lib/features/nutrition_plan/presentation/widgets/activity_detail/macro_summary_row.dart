@@ -142,7 +142,9 @@ class MacroSummaryRow extends StatelessWidget {
             target: targetCarbs,
             unit: 'g',
             label: 'CARBS',
-            low: isBeforeSection ? _beforeCarbBand(carbsLow, carbsHigh)?.$1 : carbsLow,
+            low: isBeforeSection
+                ? _beforeCarbBand(carbsLow, carbsHigh)?.$1
+                : carbsLow,
             high: isBeforeSection
                 ? _beforeCarbBand(carbsLow, carbsHigh)?.$2
                 : carbsHigh,
@@ -162,12 +164,24 @@ class MacroSummaryRow extends StatelessWidget {
               target: displayFluidsTarget,
               unit: fluidsUnit,
               label: 'FLUIDS',
-              low: _fluidBandEnd(fluidsLow, isBeforeSection, floor25, useImperial),
-              high: _fluidBandEnd(fluidsHigh, isBeforeSection, ceil25, useImperial),
+              low: _fluidBandEnd(
+                fluidsLow,
+                isBeforeSection,
+                floor25,
+                useImperial,
+              ),
+              high: _fluidBandEnd(
+                fluidsHigh,
+                isBeforeSection,
+                ceil25,
+                useImperial,
+              ),
               isOverridden: fluidsOverridden,
               overrideLabel: fluidsOverrideLabel,
               hasNoTarget: fluidsHasNoTarget,
-              noTargetNote: fluidsHasNoTarget ? 'no target for this session' : null,
+              noTargetNote: fluidsHasNoTarget
+                  ? 'no target for this session'
+                  : null,
               prominent: isBeforeSection,
             ),
           )
@@ -354,10 +368,7 @@ class MacroSummaryItem extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
-                      text: '$actual',
-                      style: _valueStyle(actualColor),
-                    ),
+                    TextSpan(text: '$actual', style: _valueStyle(actualColor)),
                     TextSpan(
                       text: showFlat ? unit : '/$target$unit',
                       style: _valueStyle(

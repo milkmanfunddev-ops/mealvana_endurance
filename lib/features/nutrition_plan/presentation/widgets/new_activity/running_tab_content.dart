@@ -604,9 +604,11 @@ class _TimeBeforeRunControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canIncrement =
-        value + FuelingWindowLimits.stepMinutes <= FuelingWindowLimits.maxMinutes;
+        value + FuelingWindowLimits.stepMinutes <=
+        FuelingWindowLimits.maxMinutes;
     final canDecrement =
-        value - FuelingWindowLimits.stepMinutes >= FuelingWindowLimits.minMinutes;
+        value - FuelingWindowLimits.stepMinutes >=
+        FuelingWindowLimits.minMinutes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

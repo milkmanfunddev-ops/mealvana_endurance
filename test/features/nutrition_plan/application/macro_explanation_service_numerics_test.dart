@@ -238,14 +238,13 @@ void main() {
   // athlete as a bug.
   // SSOT: docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md §3.
   group('Pre-sodium Full Story — sodium v3', () {
-    NutrientTransparencyData preSodium() =>
-        service.getSodiumTransparencyData(
-          bodyWeightKg: 70,
-          phase: ExplanationPhase.before,
-          // A delivered figure may still be threaded through — it is an
-          // observation, never a target.
-          macroTargets: _sampleTargets(durationH: 1.5, preSodiumMg: 450),
-        )![Scenario.singleSport]!;
+    NutrientTransparencyData preSodium() => service.getSodiumTransparencyData(
+      bodyWeightKg: 70,
+      phase: ExplanationPhase.before,
+      // A delivered figure may still be threaded through — it is an
+      // observation, never a target.
+      macroTargets: _sampleTargets(durationH: 1.5, preSodiumMg: 450),
+    )![Scenario.singleSport]!;
 
     test('the card sets no target and no band', () {
       final data = preSodium();
@@ -324,7 +323,8 @@ void main() {
       expect(
         questions.any((q) => q.contains('sodium loading')),
         isFalse,
-        reason: 'the loading distinction explained a target that no longer '
+        reason:
+            'the loading distinction explained a target that no longer '
             'exists; if copy wants it back it needs re-deriving under v3',
       );
     });

@@ -23,12 +23,41 @@ const double _eps = 1e-6;
 
 /// The ratified input domain: 0..240 min in 15-minute steps (17 points).
 const List<double> _tGrid = <double>[
-  0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240,
+  0,
+  15,
+  30,
+  45,
+  60,
+  75,
+  90,
+  105,
+  120,
+  135,
+  150,
+  165,
+  180,
+  195,
+  210,
+  225,
+  240,
 ];
 
 /// Body weights swept by the property tests, 30..160 kg.
 const List<double> _bwGrid = <double>[
-  30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
+  30,
+  40,
+  50,
+  60,
+  70,
+  80,
+  90,
+  100,
+  110,
+  120,
+  130,
+  140,
+  150,
+  160,
 ];
 
 PreWorkoutCarbResult _carbs(
@@ -283,9 +312,7 @@ const List<_CVec> _carbVectors = <_CVec>[
     lowG: 14.21875,
     highG: 18.28125,
     basis: 'design_choice',
-    tiers: <_CTier>[
-      _CTier('top_off', 16.25, 14.21875, 18.28125, 'top_off'),
-    ],
+    tiers: <_CTier>[_CTier('top_off', 16.25, 14.21875, 18.28125, 'top_off')],
   ),
   _CVec(
     id: 'design-anchor-0-65',
@@ -297,9 +324,7 @@ const List<_CVec> _carbVectors = <_CVec>[
     lowG: 0.0,
     highG: 0.0,
     basis: 'design_choice',
-    tiers: <_CTier>[
-      _CTier('top_off', 0.0, 0.0, 0.0, 'top_off'),
-    ],
+    tiers: <_CTier>[_CTier('top_off', 0.0, 0.0, 0.0, 'top_off')],
   ),
   _CVec(
     id: 'fasted-180-65',
@@ -414,7 +439,11 @@ void main() {
         );
 
         expect(r.carbsG, closeTo(v.carbsG, _tolG), reason: '${v.id} carbsG');
-        expect(r.carbsLowG, closeTo(v.lowG, _tolG), reason: '${v.id} carbsLowG');
+        expect(
+          r.carbsLowG,
+          closeTo(v.lowG, _tolG),
+          reason: '${v.id} carbsLowG',
+        );
         expect(
           r.carbsHighG,
           closeTo(v.highG, _tolG),
@@ -482,7 +511,10 @@ void main() {
       final atZero = _carbs(65, 0);
       final fasted = _carbs(65, 0, isFasted: true);
       expect(atZero.carbsG, fasted.carbsG); // identical number...
-      expect(atZero.tiers.length, isNot(fasted.tiers.length)); // ...different shape
+      expect(
+        atZero.tiers.length,
+        isNot(fasted.tiers.length),
+      ); // ...different shape
       expect(atZero.targetBasis, isNot(fasted.targetBasis));
     });
 
@@ -586,12 +618,15 @@ void main() {
       }
     });
 
-    test('carbohydrate has no gate: a 20-min session at t-10 still gets a number', () {
-      final r = _carbs(65, 10, dur: 20);
-      expect(r.carbsG, closeTo(65 * 10 / 60, _tolG));
-      expect(r.targetBasis, 'design_choice');
-      expect(r.tiers, hasLength(1));
-    });
+    test(
+      'carbohydrate has no gate: a 20-min session at t-10 still gets a number',
+      () {
+        final r = _carbs(65, 10, dur: 20);
+        expect(r.carbsG, closeTo(65 * 10 / 60, _tolG));
+        expect(r.targetBasis, 'design_choice');
+        expect(r.tiers, hasLength(1));
+      },
+    );
   });
 
   // ===========================================================================
@@ -616,15 +651,22 @@ void main() {
 
     test('scales across the whole weight sweep at t = 240', () {
       for (final bw in _bwGrid) {
-        expect(_carbs(bw, 240).carbsG, closeTo(4.0 * bw, _tolG), reason: 'bw=$bw');
+        expect(
+          _carbs(bw, 240).carbsG,
+          closeTo(4.0 * bw, _tolG),
+          reason: 'bw=$bw',
+        );
       }
     });
 
-    test('WINDOW_MAX is the mirror guard: past 240 the band leaves the window', () {
-      final r = _carbs(65, 300);
-      expect(r.carbsG, closeTo(260, _tolG)); // still capped at 4 g/kg
-      expect(r.targetBasis, 'design_choice'); // but no longer Thomas's window
-    });
+    test(
+      'WINDOW_MAX is the mirror guard: past 240 the band leaves the window',
+      () {
+        final r = _carbs(65, 300);
+        expect(r.carbsG, closeTo(260, _tolG)); // still capped at 4 g/kg
+        expect(r.targetBasis, 'design_choice'); // but no longer Thomas's window
+      },
+    );
   });
 
   // ===========================================================================
@@ -669,15 +711,26 @@ void main() {
       }
     });
 
-    test('4: containment in the cited box — 1 <= carbsG/BW <= 4 for 60 <= t <= 240', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid.where((t) => t >= 60 && t <= 240)) {
-          final perKg = _carbs(bw, t).carbsG / bw;
-          expect(perKg >= 1.0 - _tolG, isTrue, reason: 'bw=$bw t=$t -> $perKg');
-          expect(perKg <= 4.0 + _tolG, isTrue, reason: 'bw=$bw t=$t -> $perKg');
+    test(
+      '4: containment in the cited box — 1 <= carbsG/BW <= 4 for 60 <= t <= 240',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid.where((t) => t >= 60 && t <= 240)) {
+            final perKg = _carbs(bw, t).carbsG / bw;
+            expect(
+              perKg >= 1.0 - _tolG,
+              isTrue,
+              reason: 'bw=$bw t=$t -> $perKg',
+            );
+            expect(
+              perKg <= 4.0 + _tolG,
+              isTrue,
+              reason: 'bw=$bw t=$t -> $perKg',
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
     test('5: shares are exact to 1e-9', () {
       for (final bw in _bwGrid) {
@@ -722,110 +775,140 @@ void main() {
       }
     });
 
-    test('6: membership is exactly meal iff t>=120, snack iff t>=30, top_off always', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid) {
-          final r = _carbs(bw, t);
-          final where = 'bw=$bw t=$t';
-          expect(_tier(r, 'meal') != null, t >= 120, reason: '$where meal');
-          expect(_tier(r, 'snack') != null, t >= 30, reason: '$where snack');
-          expect(_tier(r, 'top_off'), isNotNull, reason: '$where top_off');
-        }
-      }
-    });
-
-    test('7: the boundary steps are intentional; carbsG itself is continuous', () {
-      for (final bw in _bwGrid) {
-        // t = 120: the meal's share transfers to the snack.
-        final below120 = _carbs(bw, 120 - _eps);
-        final at120 = _carbs(bw, 120);
-        expect(
-          below120.carbsG,
-          closeTo(at120.carbsG, _tolG),
-          reason: 'bw=$bw total continuous at 120',
-        );
-        expect(
-          _tier(below120, 'snack')!.carbsG,
-          closeTo(0.75 * below120.carbsG, _exact),
-          reason: 'bw=$bw snack below 120',
-        );
-        expect(
-          _tier(at120, 'snack')!.carbsG,
-          closeTo(0.30 * at120.carbsG, _exact),
-          reason: 'bw=$bw snack at 120',
-        );
-
-        // t = 30: the snack's share transfers to the top-off.
-        final below30 = _carbs(bw, 30 - _eps);
-        final at30 = _carbs(bw, 30);
-        expect(
-          below30.carbsG,
-          closeTo(at30.carbsG, _tolG),
-          reason: 'bw=$bw total continuous at 30',
-        );
-        expect(
-          _tier(below30, 'top_off')!.carbsG,
-          closeTo(below30.carbsG, _exact),
-          reason: 'bw=$bw top_off below 30',
-        );
-        expect(
-          _tier(at30, 'top_off')!.carbsG,
-          closeTo(0.25 * at30.carbsG, _exact),
-          reason: 'bw=$bw top_off at 30',
-        );
-      }
-
-      // The worked 65 kg figures the spec pins by name.
-      expect(_tier(_carbs(65, 120 - _eps), 'snack')!.carbsG, closeTo(97.5, _tolG));
-      expect(_tier(_carbs(65, 120), 'snack')!.carbsG, closeTo(39.0, _tolG));
-      expect(_tier(_carbs(65, 30 - _eps), 'top_off')!.carbsG, closeTo(32.5, _tolG));
-      expect(_tier(_carbs(65, 30), 'top_off')!.carbsG, closeTo(8.125, _tolG));
-    });
-
-    test('11: tier windows are +/-12.5 % and sum to the design_choice plan band', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid) {
-          // dur = 30 keeps every point in the design_choice regime, where the
-          // tier envelope must sum to the plan band exactly.
-          final r = _carbs(bw, t, dur: 30);
-          final where = 'bw=$bw t=$t';
-          var sumLow = 0.0;
-          var sumHigh = 0.0;
-          for (final tier in r.tiers) {
-            expect(
-              tier.rangeLowG,
-              closeTo(tier.carbsG * 0.875, _exact),
-              reason: '$where ${tier.tier} low',
-            );
-            expect(
-              tier.rangeHighG,
-              closeTo(tier.carbsG * 1.125, _exact),
-              reason: '$where ${tier.tier} high',
-            );
-            expect(tier.rangeLowG <= tier.carbsG + _exact, isTrue, reason: where);
-            expect(tier.carbsG <= tier.rangeHighG + _exact, isTrue, reason: where);
-            sumLow += tier.rangeLowG;
-            sumHigh += tier.rangeHighG;
+    test(
+      '6: membership is exactly meal iff t>=120, snack iff t>=30, top_off always',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid) {
+            final r = _carbs(bw, t);
+            final where = 'bw=$bw t=$t';
+            expect(_tier(r, 'meal') != null, t >= 120, reason: '$where meal');
+            expect(_tier(r, 'snack') != null, t >= 30, reason: '$where snack');
+            expect(_tier(r, 'top_off'), isNotNull, reason: '$where top_off');
           }
-          expect(sumLow, closeTo(r.carbsLowG, _exact), reason: '$where sum low');
+        }
+      },
+    );
+
+    test(
+      '7: the boundary steps are intentional; carbsG itself is continuous',
+      () {
+        for (final bw in _bwGrid) {
+          // t = 120: the meal's share transfers to the snack.
+          final below120 = _carbs(bw, 120 - _eps);
+          final at120 = _carbs(bw, 120);
           expect(
-            sumHigh,
-            closeTo(r.carbsHighG, _exact),
-            reason: '$where sum high',
+            below120.carbsG,
+            closeTo(at120.carbsG, _tolG),
+            reason: 'bw=$bw total continuous at 120',
+          );
+          expect(
+            _tier(below120, 'snack')!.carbsG,
+            closeTo(0.75 * below120.carbsG, _exact),
+            reason: 'bw=$bw snack below 120',
+          );
+          expect(
+            _tier(at120, 'snack')!.carbsG,
+            closeTo(0.30 * at120.carbsG, _exact),
+            reason: 'bw=$bw snack at 120',
+          );
+
+          // t = 30: the snack's share transfers to the top-off.
+          final below30 = _carbs(bw, 30 - _eps);
+          final at30 = _carbs(bw, 30);
+          expect(
+            below30.carbsG,
+            closeTo(at30.carbsG, _tolG),
+            reason: 'bw=$bw total continuous at 30',
+          );
+          expect(
+            _tier(below30, 'top_off')!.carbsG,
+            closeTo(below30.carbsG, _exact),
+            reason: 'bw=$bw top_off below 30',
+          );
+          expect(
+            _tier(at30, 'top_off')!.carbsG,
+            closeTo(0.25 * at30.carbsG, _exact),
+            reason: 'bw=$bw top_off at 30',
           );
         }
-      }
-    });
 
-    test('9: composition is present on every tier and mirrors the tier name', () {
-      for (final bw in _bwGrid) {
-        for (final t in _tGrid) {
-          for (final tier in _carbs(bw, t).tiers) {
-            expect(tier.composition, tier.tier, reason: 'bw=$bw t=$t');
+        // The worked 65 kg figures the spec pins by name.
+        expect(
+          _tier(_carbs(65, 120 - _eps), 'snack')!.carbsG,
+          closeTo(97.5, _tolG),
+        );
+        expect(_tier(_carbs(65, 120), 'snack')!.carbsG, closeTo(39.0, _tolG));
+        expect(
+          _tier(_carbs(65, 30 - _eps), 'top_off')!.carbsG,
+          closeTo(32.5, _tolG),
+        );
+        expect(_tier(_carbs(65, 30), 'top_off')!.carbsG, closeTo(8.125, _tolG));
+      },
+    );
+
+    test(
+      '11: tier windows are +/-12.5 % and sum to the design_choice plan band',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid) {
+            // dur = 30 keeps every point in the design_choice regime, where the
+            // tier envelope must sum to the plan band exactly.
+            final r = _carbs(bw, t, dur: 30);
+            final where = 'bw=$bw t=$t';
+            var sumLow = 0.0;
+            var sumHigh = 0.0;
+            for (final tier in r.tiers) {
+              expect(
+                tier.rangeLowG,
+                closeTo(tier.carbsG * 0.875, _exact),
+                reason: '$where ${tier.tier} low',
+              );
+              expect(
+                tier.rangeHighG,
+                closeTo(tier.carbsG * 1.125, _exact),
+                reason: '$where ${tier.tier} high',
+              );
+              expect(
+                tier.rangeLowG <= tier.carbsG + _exact,
+                isTrue,
+                reason: where,
+              );
+              expect(
+                tier.carbsG <= tier.rangeHighG + _exact,
+                isTrue,
+                reason: where,
+              );
+              sumLow += tier.rangeLowG;
+              sumHigh += tier.rangeHighG;
+            }
+            expect(
+              sumLow,
+              closeTo(r.carbsLowG, _exact),
+              reason: '$where sum low',
+            );
+            expect(
+              sumHigh,
+              closeTo(r.carbsHighG, _exact),
+              reason: '$where sum high',
+            );
           }
         }
-      }
-    });
+      },
+    );
+
+    test(
+      '9: composition is present on every tier and mirrors the tier name',
+      () {
+        for (final bw in _bwGrid) {
+          for (final t in _tGrid) {
+            for (final tier in _carbs(bw, t).tiers) {
+              expect(tier.composition, tier.tier, reason: 'bw=$bw t=$t');
+            }
+          }
+        }
+      },
+    );
   });
 
   // ===========================================================================
@@ -838,28 +921,35 @@ void main() {
   // ===========================================================================
 
   group('calculatePreWorkoutTargets — legacy map delegates carbs to v2', () {
-    test('carbs_g / carbs_low_g / carbs_high_g are the engine values, rounded', () {
-      for (final hours in <double>[0, 0.5, 1, 1.75, 2, 3, 4, 5]) {
-        for (final dur in <double?>[null, 90]) {
-          final map = OfflineMacroCalculator.calculatePreWorkoutTargets(
-            weightKg: 70,
-            hoursBefore: hours,
-            isFasted: false,
-            workoutDurationMin: dur,
-          );
-          final engine = OfflineMacroCalculator.calculatePreWorkoutCarbs(
-            bodyWeightKg: 70,
-            timeBeforeWorkoutMin: hours * 60,
-            workoutDurationMin: dur ?? 0.0,
-            isFasted: false,
-          );
-          final where = 'hours=$hours dur=$dur';
-          expect(map['carbs_g'], engine.carbsG.round(), reason: where);
-          expect(map['carbs_low_g'], engine.carbsLowG.round(), reason: where);
-          expect(map['carbs_high_g'], engine.carbsHighG.round(), reason: where);
+    test(
+      'carbs_g / carbs_low_g / carbs_high_g are the engine values, rounded',
+      () {
+        for (final hours in <double>[0, 0.5, 1, 1.75, 2, 3, 4, 5]) {
+          for (final dur in <double?>[null, 90]) {
+            final map = OfflineMacroCalculator.calculatePreWorkoutTargets(
+              weightKg: 70,
+              hoursBefore: hours,
+              isFasted: false,
+              workoutDurationMin: dur,
+            );
+            final engine = OfflineMacroCalculator.calculatePreWorkoutCarbs(
+              bodyWeightKg: 70,
+              timeBeforeWorkoutMin: hours * 60,
+              workoutDurationMin: dur ?? 0.0,
+              isFasted: false,
+            );
+            final where = 'hours=$hours dur=$dur';
+            expect(map['carbs_g'], engine.carbsG.round(), reason: where);
+            expect(map['carbs_low_g'], engine.carbsLowG.round(), reason: where);
+            expect(
+              map['carbs_high_g'],
+              engine.carbsHighG.round(),
+              reason: where,
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
     test('the 4 g/kg cap survives the map boundary (5 h, 70 kg -> 280 g)', () {
       final map = OfflineMacroCalculator.calculatePreWorkoutTargets(
@@ -900,7 +990,8 @@ void main() {
     expect(
       OfflineMacroCalculator.tierMealMin,
       OfflineMacroCalculator.tRef,
-      reason: 'CROSS-SPEC PIN BROKEN: pre-workout-carbs.TIER_MEAL_MIN != '
+      reason:
+          'CROSS-SPEC PIN BROKEN: pre-workout-carbs.TIER_MEAL_MIN != '
           'pre-workout-hydration.T_REF. See invariant 10 in both specs.',
     );
   });

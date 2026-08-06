@@ -47,7 +47,10 @@ String preWorkoutFeedingTitle(String subPhaseType, {ActivityType? sport}) {
 ///
 /// [hasMealTier] — whether the plan carries a meal tier at all; it moves the
 /// snack window's near edge from "2h out" to "now".
-String? preWorkoutWindowLabel(String subPhaseType, {required bool hasMealTier}) {
+String? preWorkoutWindowLabel(
+  String subPhaseType, {
+  required bool hasMealTier,
+}) {
   switch (subPhaseType) {
     case 'meal':
       return 'FINISH BY 2H OUT';

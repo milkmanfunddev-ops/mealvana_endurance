@@ -133,18 +133,25 @@ void main() {
       hydrationRegime: PreRunHydrationRegime.extrapolated,
     );
 
-    test('fluid blurb uses the short-window wording and the rounded target', () {
-      final data = _fluid(service, targets, bodyWeightKg);
+    test(
+      'fluid blurb uses the short-window wording and the rounded target',
+      () {
+        final data = _fluid(service, targets, bodyWeightKg);
 
-      expect(data.tldrBody, contains('Not enough time for the full protocol'));
-      // round25(428.125) = 425 — the card rounds, the engine never does.
-      expect(data.tldrBody, contains('425 mL'));
-      expect(
-        data.tldrBody,
-        isNot(contains('428')),
-        reason: 'a raw engine value on screen reads as though it were measured',
-      );
-    });
+        expect(
+          data.tldrBody,
+          contains('Not enough time for the full protocol'),
+        );
+        // round25(428.125) = 425 — the card rounds, the engine never does.
+        expect(data.tldrBody, contains('425 mL'));
+        expect(
+          data.tldrBody,
+          isNot(contains('428')),
+          reason:
+              'a raw engine value on screen reads as though it were measured',
+        );
+      },
+    );
 
     test('fluid formula shows the window label, not "Tier 2"', () {
       final data = _fluid(service, targets, bodyWeightKg);
@@ -170,10 +177,7 @@ void main() {
       );
       final data = _fluid(service, clearanceTargets, bodyWeightKg);
       expect(data.tldrBody, contains('Not enough time for the full protocol'));
-      expect(
-        _flattenLines(data.tldrLines),
-        contains('10–120 min window'),
-      );
+      expect(_flattenLines(data.tldrLines), contains('10–120 min window'));
     });
 
     test('sodium sets no target and no band in the short window either', () {
@@ -343,13 +347,10 @@ void main() {
 
     test('the removal is explained, not silently absent', () {
       // A deleted target with no explanation reads as a bug to the athlete.
-      final removalQ = _sodium(
-        service,
-        targets,
-        bodyWeightKg,
-      ).storySections.firstWhere(
-        (s) => s.question.contains('no pre-workout sodium target'),
-      );
+      final removalQ = _sodium(service, targets, bodyWeightKg).storySections
+          .firstWhere(
+            (s) => s.question.contains('no pre-workout sodium target'),
+          );
       expect(removalQ.answer, contains('We used to set one'));
       expect(removalQ.answer, contains('during-workout plan'));
       expect(removalQ.citation, isNotNull);
@@ -468,11 +469,7 @@ void main() {
         tempC: 32,
       );
       final gatedBody = _fluid(service, noTargetSet, bodyWeightKg).tldrBody;
-      final tooLateBody = _fluid(
-        service,
-        legacyTooLate,
-        bodyWeightKg,
-      ).tldrBody;
+      final tooLateBody = _fluid(service, legacyTooLate, bodyWeightKg).tldrBody;
 
       expect(gatedBody, isNot(tooLateBody));
       expect(gatedBody, contains('short and mild'));

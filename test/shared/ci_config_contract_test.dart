@@ -418,32 +418,36 @@ void main() {
       );
     });
 
-    test('every script parses as shell', () async {
-      final failures = <String>[];
+    test(
+      'every script parses as shell',
+      () async {
+        final failures = <String>[];
 
-      for (final entry in (codemagic['workflows'] as YamlMap).entries) {
-        final steps = (workflow(entry.key as String)['scripts'] as YamlList?);
-        for (final step in steps ?? const []) {
-          if (step is! YamlMap) continue;
-          final script = step['script']?.toString();
-          if (script == null) continue;
+        for (final entry in (codemagic['workflows'] as YamlMap).entries) {
+          final steps = (workflow(entry.key as String)['scripts'] as YamlList?);
+          for (final step in steps ?? const []) {
+            if (step is! YamlMap) continue;
+            final script = step['script']?.toString();
+            if (script == null) continue;
 
-          // `bash -n` parses without executing — it catches truncation,
-          // unbalanced quotes and unterminated heredocs, none of which any
-          // text assertion can see.
-          final proc = await Process.start('bash', ['-n']);
-          proc.stdin.write(script);
-          await proc.stdin.close();
-          final stderrText = await proc.stderr
-              .transform(const SystemEncoding().decoder)
-              .join();
-          if (await proc.exitCode != 0) {
-            failures.add('${entry.key} / "${step['name']}": $stderrText');
+            // `bash -n` parses without executing — it catches truncation,
+            // unbalanced quotes and unterminated heredocs, none of which any
+            // text assertion can see.
+            final proc = await Process.start('bash', ['-n']);
+            proc.stdin.write(script);
+            await proc.stdin.close();
+            final stderrText = await proc.stderr
+                .transform(const SystemEncoding().decoder)
+                .join();
+            if (await proc.exitCode != 0) {
+              failures.add('${entry.key} / "${step['name']}": $stderrText');
+            }
           }
         }
-      }
 
-      expect(failures, isEmpty, reason: failures.join('\n'));
-    }, skip: !Platform.isMacOS && !Platform.isLinux ? 'needs bash' : null);
+        expect(failures, isEmpty, reason: failures.join('\n'));
+      },
+      skip: !Platform.isMacOS && !Platform.isLinux ? 'needs bash' : null,
+    );
   });
 }

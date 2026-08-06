@@ -126,15 +126,9 @@ void main() {
       final snackMinHours = OfflineMacroCalculator.tierTopOffMax / 60.0;
 
       expect(_map(hoursBefore: mealMinHours)['meal_type'], 'full_meal');
-      expect(
-        _map(hoursBefore: mealMinHours - 1 / 60)['meal_type'],
-        'snack',
-      );
+      expect(_map(hoursBefore: mealMinHours - 1 / 60)['meal_type'], 'snack');
       expect(_map(hoursBefore: snackMinHours)['meal_type'], 'snack');
-      expect(
-        _map(hoursBefore: snackMinHours - 1 / 60)['meal_type'],
-        'top_up',
-      );
+      expect(_map(hoursBefore: snackMinHours - 1 / 60)['meal_type'], 'top_up');
     });
 
     test('the map agrees with the engine across the whole ratified grid', () {
@@ -190,13 +184,16 @@ void main() {
       expect(m['fat_g'], 5); // flat, not per-kg
     });
 
-    test('top_up (< 30 min): no protein target, a flat 10 g ceiling, no fat', () {
-      final m = _map(hoursBefore: 0.25);
-      expect(m['protein_g'], 0);
-      expect(m['protein_low_g'], 0);
-      expect(m['protein_high_g'], 10); // flat, not per-kg
-      expect(m['fat_g'], 0);
-    });
+    test(
+      'top_up (< 30 min): no protein target, a flat 10 g ceiling, no fat',
+      () {
+        final m = _map(hoursBefore: 0.25);
+        expect(m['protein_g'], 0);
+        expect(m['protein_low_g'], 0);
+        expect(m['protein_high_g'], 10); // flat, not per-kg
+        expect(m['fat_g'], 0);
+      },
+    );
 
     test('protein scales with body weight in the two per-kg occasions', () {
       expect(_map(weightKg: 50, hoursBefore: 3)['protein_g'], 13); // 12.5 -> 13
@@ -320,9 +317,15 @@ void main() {
     test('sweatSodiumCat moves the base: low 300, medium 450, average 600', () {
       expect(_map(hoursBefore: 3, sweatSodiumCat: 'low')['sodium_mg'], 550);
       expect(_map(hoursBefore: 3, sweatSodiumCat: 'medium')['sodium_mg'], 775);
-      expect(_map(hoursBefore: 3, sweatSodiumCat: 'average')['sodium_mg'], 1000);
+      expect(
+        _map(hoursBefore: 3, sweatSodiumCat: 'average')['sodium_mg'],
+        1000,
+      );
       // Anything unrecognised falls through to the 'average' base.
-      expect(_map(hoursBefore: 3, sweatSodiumCat: 'very_high')['sodium_mg'], 1000);
+      expect(
+        _map(hoursBefore: 3, sweatSodiumCat: 'very_high')['sodium_mg'],
+        1000,
+      );
     });
 
     test('a hot envLabel adds 100 mg per occasion', () {
@@ -424,7 +427,11 @@ void main() {
     for (final fasted in <bool>[false, true]) {
       for (final hours in <double>[0, 0.25, 0.5, 1, 1.9, 2, 2.5, 3, 5]) {
         final m = _map(hoursBefore: hours, isFasted: fasted);
-        expect(m.keys, unorderedEquals(keys), reason: 'hours=$hours fasted=$fasted');
+        expect(
+          m.keys,
+          unorderedEquals(keys),
+          reason: 'hours=$hours fasted=$fasted',
+        );
       }
     }
   });

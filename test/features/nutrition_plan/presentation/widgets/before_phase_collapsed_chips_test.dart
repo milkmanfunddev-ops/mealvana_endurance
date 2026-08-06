@@ -97,21 +97,17 @@ PlanSection _section(List<BeforeSubPhase> subPhases) => PlanSection(
   subPhases: subPhases,
 );
 
-FoodItemData _food(
-  String id, {
-  int? carbs,
-  double? fluidsMl,
-  int? sodium,
-}) => FoodItemData(
-  id: id,
-  name: id,
-  quantity: '1',
-  nutritionalInfo: NutritionalInfo(
-    carbs: carbs,
-    fluids: fluidsMl,
-    sodium: sodium,
-  ),
-);
+FoodItemData _food(String id, {int? carbs, double? fluidsMl, int? sodium}) =>
+    FoodItemData(
+      id: id,
+      name: id,
+      quantity: '1',
+      nutritionalInfo: NutritionalInfo(
+        carbs: carbs,
+        fluids: fluidsMl,
+        sodium: sodium,
+      ),
+    );
 
 void main() {
   // The truncation assertion below is only meaningful with the real Sansita
@@ -341,10 +337,7 @@ void main() {
 
   testWidgets('meal title is sport-aware', (tester) async {
     await tester.pumpWidget(
-      _buildBeforePhase(
-        _section([meal]),
-        activityType: ActivityType.running,
-      ),
+      _buildBeforePhase(_section([meal]), activityType: ActivityType.running),
     );
     expect(find.text('Pre-Run Meal'), findsOneWidget);
 

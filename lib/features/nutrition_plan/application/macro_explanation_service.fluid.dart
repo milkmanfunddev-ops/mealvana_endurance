@@ -69,7 +69,8 @@ extension _$FluidExt on MacroExplanationService {
     // Digest §5: target `round25`, band `[floor25(low), ceil25(high)]`.
     final fluidsMl = round25(pre.fluidsMl).round();
     final roundedBand = roundFluidBand(pre.fluidsLowMl, pre.fluidsHighMl);
-    final rangeLowMl = roundedBand?.low.round() ?? floor25(fluidsMl * 0.8).round();
+    final rangeLowMl =
+        roundedBand?.low.round() ?? floor25(fluidsMl * 0.8).round();
     final rangeHighMl =
         roundedBand?.high.round() ?? ceil25(fluidsMl * 1.2).round();
 
@@ -175,14 +176,18 @@ extension _$FluidExt on MacroExplanationService {
       final floorMl = rangeLowMl;
       final ceilMl = rangeHighMl;
       final floorPerKg = bodyWeightKg > 0
-          ? _trimZero(pre.fluidsLowMl != null
-                ? pre.fluidsLowMl! / bodyWeightKg
-                : floorMl / bodyWeightKg)
+          ? _trimZero(
+              pre.fluidsLowMl != null
+                  ? pre.fluidsLowMl! / bodyWeightKg
+                  : floorMl / bodyWeightKg,
+            )
           : null;
       final ceilPerKg = bodyWeightKg > 0
-          ? _trimZero(pre.fluidsHighMl != null
-                ? pre.fluidsHighMl! / bodyWeightKg
-                : ceilMl / bodyWeightKg)
+          ? _trimZero(
+              pre.fluidsHighMl != null
+                  ? pre.fluidsHighMl! / bodyWeightKg
+                  : ceilMl / bodyWeightKg,
+            )
           : null;
       tldrLines = [
         FormulaLine([
