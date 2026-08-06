@@ -103,6 +103,15 @@ Delete: `welcome_screen_controller.dart`(+.g), `food_preferences_v2_screen.dart`
 **Survive** (Settings routes): `dietary_preference_screen.dart`, `allergies_screen.dart`, `running/cycling/swimming_details_screen.dart` (`/settings/*` ScreenMode.settings), `ConnectedAppsScreen`, controller save methods they use.
 
 ### 10. Phasing (commit-sized chunks)
+
+> **Status (2026-08-06):** phases 0–4 landed. Phase 4 notes: shared step
+> layout lives in `presentation/widgets/onboarding_multi_select_step.dart`
+> (rows reuse the existing `FigmaCheckboxCard`); pages 4–8 are stubs
+> (`_StubStepScreen` in the pageview file) awaiting phase 5; the connect step
+> still shows its internal 3-segment progress bar — phase 5 restyle switches
+> it to the 9-segment bar; copy is hardcoded with ValueKeys, matching the
+> sibling-screen convention (no onboarding.* content keys exist).
+
 0. **Plan doc** — commit this plan into the repo as `docs/features/onboarding-redesign/README.md` (first commit on the branch; it doubles as the feature doc that replaces the stale `onboarding-revamp` docs, updated as phases land).
 1. **Engine + domain** — draft, calculator, preview service, insight engine (`training_insight_service.dart` + workout fixtures), parity fixtures + unit tests (pure Dart, no codegen).
 2. **Persistence** — Drift v16 + repository + sync registration + migrateUserData; dev SQL applied + archived; Drift tests. `dart run build_runner build --delete-conflicting-outputs`.

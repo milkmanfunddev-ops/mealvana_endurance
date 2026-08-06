@@ -51,12 +51,21 @@ class OnboardingAnalytics {
 /// built on it. Keep this list in step with `_buildPages`; [onboardingStepName]
 /// falls back to a positional name if the two ever drift, so a mismatch
 /// degrades to a usable event rather than crashing.
+///
+/// 2026-08 redesign: deliberate clean break from the old 5-step list
+/// (connect_training/user_profile/sports_selection/dietary_preference/
+/// allergies) — the Mixpanel funnel is rebuilt on these names and the old
+/// funnel archived (see docs/features/onboarding-redesign/README.md).
 const List<String> kOnboardingStepNames = <String>[
-  'connect_training',
-  'user_profile',
   'sports_selection',
-  'dietary_preference',
-  'allergies',
+  'goals',
+  'pitfalls',
+  'connect_training',
+  'personal_info',
+  'body_composition',
+  'nutrition_settings',
+  'plan_reveal',
+  'daily_plan_preview',
 ];
 
 /// Analytics name for the onboarding step at [index].

@@ -8,8 +8,11 @@ import '../../../../shared/services/privacy/analytics_consent.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../providers/onboarding_analytics.dart';
 
-/// Welcome Screen - Design System
-/// First screen in onboarding flow
+/// Welcome Screen (splash) - 2026-08 onboarding redesign
+/// First screen in onboarding flow: logo, value-first headline, and the
+/// "Build My Plan" / "I already have an account" entry points. Controller
+/// wiring (fresh anonymous session, consent routing, funnel start mark) is
+/// unchanged from the pre-redesign screen.
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key, this.onContinue});
 
@@ -65,18 +68,27 @@ class WelcomeScreen extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Full-width orange pill, per the redesign prototype.
           KylePrimaryButton(
             key: const ValueKey('welcome.get_started_button'),
-            text: 'Get Started',
+            text: 'Build My Plan',
             onPressed: () => _getStarted(context, ref),
-            isFullWidth: false,
+            isFullWidth: true,
           ),
-          const SizedBox(height: AppSpacing.md),
-          KyleSecondaryButton(
+          const SizedBox(height: AppSpacing.sm),
+          // Plain text link (was a secondary button pre-redesign); same
+          // login-mode auth route as before.
+          TextButton(
             key: const ValueKey('welcome.log_in_button'),
-            text: 'Log In',
             onPressed: () => _goToLogin(context, ref),
-            isFullWidth: false,
+            child: Text(
+              'I already have an account',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.cream.withValues(alpha: 0.9),
+                decoration: TextDecoration.underline,
+                decorationColor: AppColors.cream.withValues(alpha: 0.5),
+              ),
+            ),
           ),
         ],
       ),
@@ -84,43 +96,17 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
-      children: [
-        // App logo
-        // Container(
-        //   width: 120,
-        //   height: 120,
-        //   decoration: BoxDecoration(
-        //     color: AppColors.cream.withOpacity(0.2),
-        //     shape: BoxShape.circle,
-        //   ),
-        //   child: Icon(
-        //     FontAwesomeIcons.personRunning.data,
-        //     size: AppIconSizes.xl,
-        //     color: AppColors.cream,
-        //   ),
-        // ),
-
-        // const SizedBox(height: AppSpacing.lg),
-
-        // App title
-        Text(
-          key: const ValueKey('welcome.title'),
-          'Mealvana',
-          style: AppTextStyles.pageTitle.copyWith(color: AppColors.cream),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        // Subtitle
-        Text(
-          key: const ValueKey('welcome.subtitle'),
-          'Endurance',
-          style: AppTextStyles.subtitle.copyWith(
-            color: AppColors.cream.withValues(alpha: 0.8),
-          ),
-        ),
-      ],
+    return Text(
+      key: const ValueKey('welcome.title'),
+      'Get more out of every session.',
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontFamily: 'Sansita',
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        color: AppColors.orange,
+        height: 1.1,
+      ),
     );
   }
 
@@ -148,7 +134,8 @@ class WelcomeScreen extends ConsumerWidget {
   Widget _buildWelcomeMessage(BuildContext context) {
     return Text(
       key: const ValueKey('welcome.description'),
-      'Get personalized nutrition plans tailored to your endurance activities. Track your fueling, optimize your performance, and achieve your goals.',
+      'Fueling plans built for how you train — so you stop guessing your '
+      'carbs mid-race.',
       style: AppTextStyles.bodyMedium.copyWith(
         color: AppColors.cream.withValues(alpha: 0.9),
         height: 1.5,

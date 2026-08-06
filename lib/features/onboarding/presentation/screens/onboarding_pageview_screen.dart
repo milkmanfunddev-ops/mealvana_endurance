@@ -2,29 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/onboarding_analytics.dart';
-import '../providers/onboarding_controller.dart';
+import '../widgets/onboarding_navigation_footer.dart';
+import '../widgets/onboarding_progress_bar.dart';
 import '../widgets/page_keep_alive_wrapper.dart';
-import 'user_profile_screen.dart';
 import 'sports_selection_screen.dart';
-import 'dietary_preference_screen.dart';
-import 'allergies_screen.dart';
+import 'goals_screen.dart';
+import 'pitfalls_screen.dart';
 import '../../../settings/presentation/screens/connected_apps_screen.dart';
 
 /// Onboarding PageView Screen - Wrapper for all onboarding steps
 ///
-/// Uses PageView to maintain state across all screens and enable swipe navigation.
-/// Dynamically builds pages based on selected sports to show/hide sport detail screens.
+/// Uses PageView to maintain state across all screens and enable swipe
+/// navigation. The page list is static (no more sports-dependent dynamic
+/// pages) and index-aligned with [kOnboardingStepNames] — that alignment IS
+/// the Mixpanel funnel contract.
 ///
-/// Note: Welcome screen is shown separately at /welcome before navigating here.
+/// Note: the splash (welcome screen) is shown separately at /welcome before
+/// navigating here.
 ///
-/// Flow:
-/// 1. Connect Training (Final Surge, TrainingPeaks, etc.)
-/// 2. User Profile
-/// 3. Sports Selection
-/// 4-6. [Dynamic] Sport Details (Running, Cycling, Swimming based on selection)
-/// 7. Dietary Preference
-/// 8. Allergies (final step)
+/// Flow (2026-08 redesign):
+/// 0. Sports Selection   4. Personal Info (stub)      8. Daily Plan Preview (stub)
+/// 1. Goals              5. Body Composition (stub)
+/// 2. Pitfalls           6. Nutrition Settings (stub)
+/// 3. Connect Training   7. Plan Reveal (stub)
+///
+/// Steps 4-8 are temporary placeholder pages until redesign phase 5 lands the
+/// real screens; they keep the flow navigable end-to-end and the final stub's
+/// Continue routes to /auth/post-onboarding exactly like the finished flow.
 class OnboardingPageViewScreen extends ConsumerStatefulWidget {
   const OnboardingPageViewScreen({super.key});
 
@@ -50,102 +57,96 @@ class _OnboardingPageViewScreenState
     super.dispose();
   }
 
-  /// Build the list of pages dynamically based on selected sports
+  /// Build the list of pages.
   ///
   /// The `stepIndex` passed to each screen must stay aligned with this list's
   /// order — it is what stamps `step_index` onto the per-screen `screen_viewed`
   /// events, and with [kOnboardingStepNames] it defines the drop-off funnel.
-  List<Widget> _buildPages(Set<String> selectedSports) {
+  /// Change one, change both.
+  List<Widget> _buildPages() {
     return [
-      // 1. Connect Training (Final Surge, TrainingPeaks, etc.)
+      // 0. Sports Selection (first page — can't go back)
       PageKeepAliveWrapper(
-        child: ConnectedAppsScreen(
+        child: SportsSelectionScreen(
           onContinue: _nextPage,
-          onBack: null, // First page - can't go back
+          onBack: null,
           stepIndex: 0,
         ),
       ),
 
-      // 2. User Profile
+      // 1. Goals
       PageKeepAliveWrapper(
-        child: UserProfileScreen(
+        child: GoalsScreen(
           onContinue: _nextPage,
           onBack: _previousPage,
           stepIndex: 1,
         ),
       ),
 
-      // 3. Sports Selection
+      // 2. Pitfalls
       PageKeepAliveWrapper(
-        child: SportsSelectionScreen(
+        child: PitfallsScreen(
           onContinue: _nextPage,
           onBack: _previousPage,
-          onSportsChanged: _handleSportsChanged,
           stepIndex: 2,
         ),
       ),
 
-      // Sport detail pages skipped for v1.16 - fields left null/unset
-      // Running/Cycling/Swimming detail screens are preserved but not shown
-
-      // 4. Dietary Preference
+      // 3. Connect Training (Garmin, Final Surge, TrainingPeaks, etc.) —
+      // existing screen, wiring unchanged from the pre-redesign flow, just
+      // repositioned. Restyle lands in redesign phase 5.
       PageKeepAliveWrapper(
-        child: DietaryPreferenceScreen(
+        child: ConnectedAppsScreen(
           onContinue: _nextPage,
           onBack: _previousPage,
           stepIndex: 3,
         ),
       ),
 
-      // 7. Allergies (final onboarding step — its Continue routes to post-onboarding auth)
+      // 4-8. Temporary stubs until redesign phase 5 (see class doc).
       PageKeepAliveWrapper(
-        child: AllergiesScreen(
+        child: _StubStepScreen(
+          title: 'Personal Info',
+          stepIndex: 4,
           onContinue: _nextPage,
           onBack: _previousPage,
-          stepIndex: 4,
         ),
       ),
-
-      // Food Preferences step removed (2026-06-25): food likes/dislikes are no
-      // longer collected. Allergies + dietary restrictions are kept; nutrition
-      // planning is driven by formulas/pinned formulas, not food preferences.
+      PageKeepAliveWrapper(
+        child: _StubStepScreen(
+          title: 'Body Composition',
+          stepIndex: 5,
+          onContinue: _nextPage,
+          onBack: _previousPage,
+        ),
+      ),
+      PageKeepAliveWrapper(
+        child: _StubStepScreen(
+          title: 'Nutrition Settings',
+          stepIndex: 6,
+          onContinue: _nextPage,
+          onBack: _previousPage,
+        ),
+      ),
+      PageKeepAliveWrapper(
+        child: _StubStepScreen(
+          title: 'Plan Reveal',
+          stepIndex: 7,
+          onContinue: _nextPage,
+          onBack: _previousPage,
+        ),
+      ),
+      // Final step — its Continue routes to /auth/post-onboarding via
+      // _nextPage's last-page branch.
+      PageKeepAliveWrapper(
+        child: _StubStepScreen(
+          title: 'Daily Plan Preview',
+          stepIndex: 8,
+          onContinue: _nextPage,
+          onBack: _previousPage,
+        ),
+      ),
     ];
-  }
-
-  /// Handle sports selection changes
-  void _handleSportsChanged(Set<String> newSports) {
-    final controller = ref.read(onboardingControllerProvider.notifier);
-    final oldSports = controller.cachedSelectedSports;
-
-    // Cache the new sports selection
-    controller.cacheSelectedSports(newSports);
-
-    // If we're currently on a sport detail page that's being removed,
-    // we need to adjust the page index
-    if (oldSports.length > newSports.length) {
-      // A sport was removed - check if we need to adjust current page
-      // Rebuild pages to get new structure
-      setState(() {
-        // The state rebuild will trigger a new page list build
-        // We'll handle page adjustment after the rebuild
-      });
-
-      // If we're past the sports selection screen, we might need to adjust
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _currentPageIndex > 2) {
-          // We're on or past sport details - may need to adjust
-          // For simplicity, just stay on current page if valid, else go to sports selection
-          final newPages = _buildPages(newSports);
-          if (_currentPageIndex >= newPages.length) {
-            // Current page index is now invalid, go back to sports selection (page 2)
-            _goToPage(2);
-          }
-        }
-      });
-    } else {
-      // Sports added or unchanged - just rebuild
-      setState(() {});
-    }
   }
 
   /// Navigate to next page or complete onboarding
@@ -154,10 +155,7 @@ class _OnboardingPageViewScreenState
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_pageController.hasClients) {
-      final selectedSports = ref
-          .read(onboardingControllerProvider.notifier)
-          .cachedSelectedSports;
-      final pages = _buildPages(selectedSports);
+      final pages = _buildPages();
 
       // Every step's Continue routes through here, so this is the one place
       // that sees the whole funnel. Fires only on an explicit Continue tap —
@@ -232,29 +230,9 @@ class _OnboardingPageViewScreenState
     }
   }
 
-  /// Jump to specific page
-  void _goToPage(int pageIndex) {
-    // Dismiss keyboard before navigation
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    if (_pageController.hasClients) {
-      _pageController.animateToPage(
-        pageIndex,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Watch the controller to rebuild when sports selection changes
-    ref.watch(onboardingControllerProvider);
-
-    final selectedSports = ref
-        .read(onboardingControllerProvider.notifier)
-        .cachedSelectedSports;
-    final pages = _buildPages(selectedSports);
+    final pages = _buildPages();
 
     // Each screen has its own Scaffold and progress bar, so we just use PageView
     // Note: ContentArea.narrow is applied within each individual screen's Scaffold
@@ -270,6 +248,86 @@ class _OnboardingPageViewScreenState
         });
       },
       children: pages,
+    );
+  }
+}
+
+/// Minimal placeholder for a not-yet-built onboarding step (redesign phase 5).
+///
+/// Renders the step title on the standard dark scaffold with a working
+/// Continue/Back footer so the flow stays navigable end-to-end, and stamps
+/// the same `screen_viewed` + `step_index` event as a real step so funnel
+/// indices stay comparable before/after phase 5 lands.
+class _StubStepScreen extends ConsumerStatefulWidget {
+  const _StubStepScreen({
+    required this.title,
+    required this.stepIndex,
+    required this.onContinue,
+    this.onBack,
+  });
+
+  final String title;
+  final int stepIndex;
+  final VoidCallback onContinue;
+  final VoidCallback? onBack;
+
+  @override
+  ConsumerState<_StubStepScreen> createState() => _StubStepScreenState();
+}
+
+class _StubStepScreenState extends ConsumerState<_StubStepScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': '${widget.title} Onboarding',
+            'step_index': widget.stepIndex,
+          },
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AdaptivePageScaffold(
+      backgroundColor: AppColors.blackberry,
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: Column(
+        children: [
+          Container(
+            color: AppColors.blackberry,
+            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+            child: OnboardingProgressBar(
+              currentSegment: widget.stepIndex + 1,
+              totalSegments: kOnboardingStepNames.length,
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                widget.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Sansita',
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.orange,
+                  height: 1.0,
+                ),
+              ),
+            ),
+          ),
+          OnboardingNavigationFooter(
+            onContinue: widget.onContinue,
+            onBack: widget.onBack,
+            showBack: widget.onBack != null,
+          ),
+        ],
+      ),
     );
   }
 }

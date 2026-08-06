@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
-import '../widgets/onboarding_widgets.dart';
+import '../../domain/onboarding_draft.dart';
+import '../widgets/onboarding_multi_select_step.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
-import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
-import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 
-/// Sports Selection Screen - Step 2 of Onboarding
+/// Sports Selection Screen - Step 1 of Onboarding (2026-08 redesign)
 ///
-/// Allows users to select which sports they participate in:
-/// - Running (default selected)
-/// - Cycling
-/// - Swimming
-///
-/// Based on selection, navigates to sport-specific detail screens.
-/// Matches Figma design specification exactly.
+/// Multi-select over [OnboardingSport] (Running, Cycling, Swimming,
+/// Triathlon). Nothing is pre-selected; at least one selection is required to
+/// continue. Selections are mirrored into the controller draft on every
+/// toggle (plus the legacy sports cache, which older analytics/dynamic-page
+/// code still reads until redesign phase 7 deletes it).
 class SportsSelectionScreen extends ConsumerStatefulWidget {
   const SportsSelectionScreen({
     super.key,
@@ -37,7 +32,10 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
   /// drop-off funnel can order the steps. Null outside onboarding.
   final int? stepIndex;
 
-  /// Callback when sports selection changes (for PageView to rebuild pages)
+  /// Callback when sports selection changes. Legacy hook kept for callers
+  /// that mirrored the selection (the pre-redesign PageView rebuilt its
+  /// dynamic sport-detail pages from it); the current PageView is static and
+  /// no longer passes it.
   final void Function(Set<String>)? onSportsChanged;
 
   @override
@@ -46,16 +44,18 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
 }
 
 class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
-  // Sport selection state
-  late Set<String> _selectedSports;
+  /// Local selection state, seeded from the draft so revisiting the step
+  /// (back navigation, keep-alive eviction) restores prior answers.
+  /// Deliberately NOT defaulted — nothing is pre-selected in the redesign.
+  late Set<OnboardingSport> _selected;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize from controller cache (or default to running)
-    final controller = ref.read(onboardingControllerProvider.notifier);
-    _selectedSports = Set.from(controller.cachedSelectedSports);
+    _selected = Set.of(
+      ref.read(onboardingControllerProvider.notifier).draft.sports,
+    );
 
     ref
         .read(appExternalDepsProvider)
@@ -69,180 +69,75 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
         );
   }
 
-  void _toggleSport(String sport) {
+  void _toggle(OnboardingSport sport) {
     setState(() {
-      if (_selectedSports.contains(sport)) {
-        // Don't allow deselecting if it's the only sport
-        if (_selectedSports.length > 1) {
-          _selectedSports.remove(sport);
-        }
-      } else {
-        _selectedSports.add(sport);
+      if (!_selected.remove(sport)) {
+        _selected.add(sport);
       }
     });
 
-    // Notify PageView of sports change
-    if (widget.onSportsChanged != null) {
-      widget.onSportsChanged!(_selectedSports);
-    }
+    final controller = ref.read(onboardingControllerProvider.notifier);
+    controller.updateSports(_selected);
+    // Legacy bridge: cachedSelectedSports is still read by pre-redesign code
+    // paths until phase 7 removes them. 'triathlon' round-trips through
+    // OnboardingSport.fromDbValue inside the cache bridge.
+    controller.cacheSelectedSports(_selected.map((s) => s.dbValue).toSet());
+    widget.onSportsChanged?.call(_selected.map((s) => s.dbValue).toSet());
   }
 
   void _continue() async {
-    // Validate at least one sport selected
-    if (_selectedSports.isEmpty) {
+    // Defensive guard — the Continue button is already disabled while the
+    // selection is empty, but a stale tap must not advance the flow.
+    if (_selected.isEmpty) {
       MealvanaSnackbar.showInfo(context, 'Please select at least one sport');
       return;
     }
 
-    // Track selection
     final analytics = ref.read(appExternalDepsProvider).analytics;
     await analytics.track(
       'sports_selected',
       properties: {
-        'running': _selectedSports.contains('running'),
-        'cycling': _selectedSports.contains('cycling'),
-        'swimming': _selectedSports.contains('swimming'),
-        'count': _selectedSports.length,
+        // Canonical shape for the redesigned funnel (§6): dbValue strings.
+        'sports': _selected.map((s) => s.dbValue).toList()..sort(),
+        // Legacy booleans kept so existing Mixpanel reports don't go dark.
+        'running': _selected.contains(OnboardingSport.running),
+        'cycling': _selected.contains(OnboardingSport.cycling),
+        'swimming': _selected.contains(OnboardingSport.swimming),
+        'triathlon': _selected.contains(OnboardingSport.triathlon),
+        'count': _selected.length,
       },
     );
 
     if (!mounted) return;
 
-    // Cache sports selection in controller
-    final controller = ref.read(onboardingControllerProvider.notifier);
-    controller.cacheSelectedSports(_selectedSports);
-
-    // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
-    if (widget.onContinue != null) {
-      widget.onContinue!();
-    } else {
-      // Navigate to first sport detail screen or skip to diet if only running with no details needed
-      // For now, go to running details if running selected, else cycling, else swimming
-      if (_selectedSports.contains('running')) {
-        context.push(
-          '/onboarding/running-details',
-          extra: _selectedSports.toList(),
-        );
-      } else if (_selectedSports.contains('cycling')) {
-        context.push(
-          '/onboarding/cycling-details',
-          extra: _selectedSports.toList(),
-        );
-      } else if (_selectedSports.contains('swimming')) {
-        context.push(
-          '/onboarding/swimming-details',
-          extra: _selectedSports.toList(),
-        );
-      } else {
-        // Fallback to dietary preferences
-        context.push('/onboarding/dietary-preference');
-      }
-    }
+    // PageView mode advances via callback. Standalone mode (widget tests,
+    // deep links) has no follow-up step in the redesigned flow — the old
+    // sport-detail routes are no longer part of onboarding.
+    widget.onContinue?.call();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AdaptivePageScaffold(
-      backgroundColor: AppColors.blackberry,
-      contentWidth: AdaptiveContentWidth.narrow,
-      body: Column(
-        children: [
-          // Progress bar at the very top (no SafeArea padding)
-          Container(
-            color: AppColors.blackberry,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: const OnboardingProgressBar(
-              currentSegment: 2, // Sports + Details segment
-            ),
+    return OnboardingMultiSelectStep<OnboardingSport>(
+      title: 'Which sports do you train for?',
+      subtitle: "We'll tune carb targets to each one. Nothing is pre-selected.",
+      titleKey: const ValueKey('sport_selection.title'),
+      stepIndex: widget.stepIndex,
+      options: [
+        for (final sport in OnboardingSport.values)
+          OnboardingMultiSelectOption(
+            value: sport,
+            label: sport.displayName,
+            itemKey: ValueKey('sport_selection.${sport.dbValue}_chip'),
           ),
-
-          // Content
-          Expanded(
-            child: AdaptiveScrollableBody(
-              safeAreaTop: false,
-              safeAreaBottom: false,
-              padding: const EdgeInsets.all(20),
-              child: Align(
-                alignment: Alignment.center,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Title
-                    const Text(
-                      key: ValueKey('sport_selection.title'),
-                      'Which sports do you train for?',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Sansita',
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
-                        height: 1.0,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Subtitle
-                    const Text(
-                      'We\'ll customize your nutrition plans for each sport.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Apercu',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textDark,
-                        letterSpacing: 0.192,
-                        height: 1.0,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Sport selection cards
-                    FigmaCheckboxCard(
-                      key: const ValueKey('sport_selection.running_chip'),
-                      label: 'Running',
-                      isSelected: _selectedSports.contains('running'),
-                      onTap: () => _toggleSport('running'),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    FigmaCheckboxCard(
-                      key: const ValueKey('sport_selection.cycling_chip'),
-                      label: 'Cycling',
-                      isSelected: _selectedSports.contains('cycling'),
-                      onTap: () => _toggleSport('cycling'),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    FigmaCheckboxCard(
-                      key: const ValueKey('sport_selection.swimming_chip'),
-                      label: 'Swimming',
-                      isSelected: _selectedSports.contains('swimming'),
-                      onTap: () => _toggleSport('swimming'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Footer navigation
-          FigmaOnboardingFooter(
-            onContinue: _continue,
-            onBack: widget.onBack ?? () => context.pop(),
-            canContinue: _selectedSports.isNotEmpty,
-            continueButtonKey: const ValueKey(
-              'sport_selection.continue_button',
-            ),
-            backButtonKey: const ValueKey('sport_selection.back_button'),
-          ),
-        ],
-      ),
+      ],
+      selected: _selected,
+      onToggle: _toggle,
+      onContinue: _continue,
+      onBack: widget.onBack,
+      canContinue: _selected.isNotEmpty,
+      continueButtonKey: const ValueKey('sport_selection.continue_button'),
+      backButtonKey: const ValueKey('sport_selection.back_button'),
     );
   }
 }
