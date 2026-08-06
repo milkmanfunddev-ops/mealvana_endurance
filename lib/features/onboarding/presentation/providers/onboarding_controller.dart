@@ -10,12 +10,16 @@ import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../auth/application/auth_service.dart';
+import '../../../auth/data/user_repository.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
+import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../formula_kit/application/formula_library_controller.dart';
 import '../../application/onboarding_service.dart';
+import '../../data/onboarding_survey_repository.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
+import '../../domain/onboarding_draft.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'food_selections_cache_provider.dart';
 
@@ -34,7 +38,14 @@ class OnboardingController extends _$OnboardingController {
   AuthService get _authService => ref.read(authServiceProvider);
   UserProfile? _currentUser;
 
-  // Cached onboarding data (in-memory only until batch save)
+  /// The immutable accumulator for everything the redesigned flow collects.
+  /// Screens mutate it through the typed updaters below; saveAllOnboardingData
+  /// persists it in one batch after auth.
+  OnboardingDraft _draft = const OnboardingDraft();
+
+  // Legacy caches, kept only until the old screens are deleted (redesign
+  // phases 4–7). cacheUserProfileData/cacheSelectedSports bridge into the
+  // draft so the old flow keeps working through the new save path.
   Map<String, dynamic>? _cachedUserProfileData;
   Set<String> _cachedSelectedSports = {'running'}; // Default: running
   Map<String, dynamic>? _cachedSportPreferences;
@@ -488,6 +499,100 @@ class OnboardingController extends _$OnboardingController {
   UserProfile? get currentUser => _currentUser;
 
   // ============================================================================
+  // DRAFT API (redesigned flow)
+  // ============================================================================
+
+  /// Current onboarding draft (immutable snapshot).
+  OnboardingDraft get draft => _draft;
+
+  /// True once the profile-bearing steps (personal info + body composition)
+  /// have produced enough data to create a user. The post-onboarding auth
+  /// screen uses this to distinguish "finishing onboarding" from the
+  /// Settings anonymous→registered upgrade (where there is nothing to save).
+  bool get hasCompletedProfileDraft =>
+      _draft.gender != null &&
+      _draft.birthYear != null &&
+      _draft.weightPounds != null;
+
+  void _updateDraft(OnboardingDraft next) {
+    _draft = next;
+    // Trigger rebuild so dependent widgets (progress, previews) refresh.
+    state = const AsyncData(null);
+  }
+
+  void updateSports(Set<OnboardingSport> sports) =>
+      _updateDraft(_draft.copyWith(sports: sports));
+
+  void updateGoals(Set<OnboardingGoal> goals) =>
+      _updateDraft(_draft.copyWith(goals: goals));
+
+  void updatePitfalls(Set<OnboardingPitfall> pitfalls) =>
+      _updateDraft(_draft.copyWith(pitfalls: pitfalls));
+
+  void updatePersonalInfo({
+    String? firstName,
+    String? lastName,
+    String? email,
+    Gender? gender,
+    int? birthYear,
+  }) {
+    _updateDraft(
+      _draft.copyWith(
+        firstName: () => _nullIfBlank(firstName) ?? _draft.firstName,
+        lastName: () => _nullIfBlank(lastName) ?? _draft.lastName,
+        email: () => _nullIfBlank(email) ?? _draft.email,
+        gender: gender != null ? () => gender : null,
+        birthYear: birthYear != null ? () => birthYear : null,
+      ),
+    );
+  }
+
+  void updateBodyComposition({
+    bool? useMetricUnits,
+    int? heightFeet,
+    int? heightInches,
+    double? weightPounds,
+  }) {
+    _updateDraft(
+      _draft.copyWith(
+        useMetricUnits: useMetricUnits,
+        heightFeet: heightFeet != null ? () => heightFeet : null,
+        heightInches: heightInches != null ? () => heightInches : null,
+        weightPounds: weightPounds != null ? () => weightPounds : null,
+      ),
+    );
+  }
+
+  void updateNutritionSettings({
+    GutTraining? gutTraining,
+    SweatRateCat? sweatRate,
+  }) {
+    _updateDraft(
+      _draft.copyWith(gutTraining: gutTraining, sweatRate: sweatRate),
+    );
+  }
+
+  void applyPlanEdits(OnboardingPlanEdits edits) =>
+      _updateDraft(_draft.copyWith(planEdits: edits));
+
+  void recordConnectedProvider(String? provider) =>
+      _updateDraft(_draft.copyWith(connectedProvider: () => provider));
+
+  void recordDeclinedTrainingApps() =>
+      _updateDraft(_draft.copyWith(declinedTrainingApps: true));
+
+  void recordTridotNotifyRequested() =>
+      _updateDraft(_draft.copyWith(tridotNotifyRequested: true));
+
+  void recordSweatTestInterest() =>
+      _updateDraft(_draft.copyWith(sweatTestInterest: true));
+
+  static String? _nullIfBlank(String? value) {
+    final trimmed = value?.trim();
+    return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+  }
+
+  // ============================================================================
   // BATCH SAVE METHODS FOR POST-OAUTH ONBOARDING
   // ============================================================================
 
@@ -516,6 +621,19 @@ class OnboardingController extends _$OnboardingController {
       'email': email,
       'unitSystem': unitSystem,
     };
+    // Bridge into the draft so the old screens keep working through the new
+    // draft-based save path during the redesign transition.
+    _draft = _draft.copyWith(
+      gender: () => gender,
+      birthYear: () => birthday.year,
+      heightFeet: () => heightFeet,
+      heightInches: () => heightInches,
+      weightPounds: () => weightPounds,
+      firstName: () => firstName ?? _draft.firstName,
+      lastName: () => lastName ?? _draft.lastName,
+      email: () => email ?? _draft.email,
+      useMetricUnits: unitSystem == UnitSystem.metric,
+    );
     DebugLogger.debug('📝 Cached user profile data');
   }
 
@@ -560,6 +678,14 @@ class OnboardingController extends _$OnboardingController {
   /// Cache selected sports
   void cacheSelectedSports(Set<String> sports) {
     _cachedSelectedSports = sports;
+    // Bridge into the draft (unknown legacy strings are dropped).
+    _draft = _draft.copyWith(
+      sports: {
+        for (final s in sports)
+          if (OnboardingSport.fromDbValue(s) case final OnboardingSport sport)
+            sport,
+      },
+    );
     DebugLogger.debug(
       '📝 Cached ${sports.length} sports: ${sports.join(", ")}',
     );
@@ -595,55 +721,67 @@ class OnboardingController extends _$OnboardingController {
     );
 
     // Guard the invalid state where the user reached the post-onboarding screen
-    // without a cached profile (e.g. the app was relaunched mid-onboarding and
-    // the in-memory cache was lost). Previously this threw inside
-    // AsyncValue.guard, surfacing as an AsyncError that the Sentry
+    // without a completed profile draft (e.g. the app was relaunched
+    // mid-onboarding and the in-memory draft was lost). Previously this threw
+    // inside AsyncValue.guard, surfacing as an AsyncError that the Sentry
     // ProviderObserver reported (MEALVANA-ENDURANCE-DEV-4M). There is nothing to
     // save and retrying can't help, so fail cleanly and let the caller route the
     // user back to finish onboarding.
-    if (_cachedUserProfileData == null) {
+    if (!hasCompletedProfileDraft) {
       DebugLogger.info(
-        '⚠️ saveAllOnboardingData: no cached user profile — cannot create '
+        '⚠️ saveAllOnboardingData: profile draft incomplete — cannot create '
         'user; returning failure without throwing.',
       );
       state = const AsyncData(null);
       return false;
     }
 
+    final sentry = ref.read(appExternalDepsProvider).sentry;
+
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      // 1. Create user profile
-      {
-        final data = _cachedUserProfileData!;
-        // Auto-populate email from Supabase auth if not manually provided
-        final cachedEmail = (data['email'] as String?)?.trim();
-        final authEmail = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient
-            .auth
-            .currentUser
-            ?.email
-            ?.trim();
-        final email = (cachedEmail != null && cachedEmail.isNotEmpty)
-            ? cachedEmail
-            : ((authEmail != null && authEmail.isNotEmpty) ? authEmail : null);
-        _currentUser = await _onboardingService.createUserProfile(
-          gender: data['gender'] as Gender,
-          birthday: data['birthday'] as DateTime,
-          heightFeet: data['heightFeet'] as int,
-          heightInches: data['heightInches'] as int,
-          weightPounds: data['weightPounds'] as double,
-          runsWithWaterBottle: data['runsWithWaterBottle'] as bool,
-          authProvider: authProvider,
-          isAnonymous: isAnonymous,
-          firstName: data['firstName'] as String?,
-          lastName: data['lastName'] as String?,
-          email: email,
-          unitSystem: data['unitSystem'] as UnitSystem? ?? UnitSystem.imperial,
-        );
-        DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
-      }
+      final draft = _draft;
+
+      // 1. Create user profile from the draft.
+      // Auto-populate email from Supabase auth if not manually provided.
+      final authEmail = ref
+          .read(appExternalDepsProvider)
+          .supabaseClient
+          .auth
+          .currentUser
+          ?.email
+          ?.trim();
+      final email =
+          draft.email ??
+          ((authEmail != null && authEmail.isNotEmpty) ? authEmail : null);
+
+      sentry.addBreadcrumb(
+        message: 'saveAllOnboardingData: creating user profile',
+        category: 'onboarding',
+      );
+      _currentUser = await _onboardingService.createUserProfile(
+        gender: draft.gender!,
+        // Year-only birthday, documented mid-year convention (age error
+        // ≤6 months ≈ ±2.5 kcal RMR).
+        birthday: draft.birthday!,
+        heightFeet: draft.heightFeet ?? 0,
+        heightInches: draft.heightInches ?? 0,
+        weightPounds: draft.weightPounds!,
+        // No longer asked in the redesigned flow; keep the column populated.
+        runsWithWaterBottle: false,
+        gutTraining: draft.gutTraining,
+        sweatRate: draft.sweatRate,
+        authProvider: authProvider,
+        isAnonymous: isAnonymous,
+        firstName: draft.firstName,
+        lastName: draft.lastName,
+        email: email,
+        unitSystem: draft.useMetricUnits
+            ? UnitSystem.metric
+            : UnitSystem.imperial,
+      );
+      DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
 
       final userId = _currentUser!.id;
 
@@ -661,36 +799,45 @@ class OnboardingController extends _$OnboardingController {
       // garmin_user_mappings row now that the user profile exists in Supabase.
       await _syncGarminMappingIfNeeded(userId);
 
-      // 2. Save sport preferences
-      if (_cachedSportPreferences != null) {
-        final prefs = _cachedSportPreferences!;
-        await _onboardingService.saveSportPreferences(
-          userId,
-          giSensitivity: prefs['giSensitivity'] as bool?,
-          ftpWatts: prefs['ftpWatts'] as int?,
-          typicalBikeBottles: prefs['typicalBikeBottles'] as int?,
-          hasAeroBottle: prefs['hasAeroBottle'] as bool?,
-          hasBentoBox: prefs['hasBentoBox'] as bool?,
-          cssPacePer100mSeconds: prefs['cssPacePer100mSeconds'] as int?,
-          typicalWetsuit: prefs['typicalWetsuit'] as bool?,
-          typicalSwimCapType: prefs['typicalSwimCapType'] as String?,
-        );
-        DebugLogger.info('✅ Sport preferences saved');
-      }
+      // 2. Default dietary preference + allergies.
+      // Onboarding no longer collects diet/allergies (2026-08 redesign):
+      // default omnivore/none unconditionally so downstream food filtering
+      // (`getFoodsToAvoid`, FormulaLibrary allergy filter) keeps a defined
+      // value; the user edits later in Settings
+      // (`/settings/dietary-preference`, `/settings/allergies`).
+      sentry.addBreadcrumb(
+        message: 'saveAllOnboardingData: defaulting diet/allergies',
+        category: 'onboarding',
+      );
+      await _onboardingService.saveDietaryPreference(
+        userId,
+        DietaryPreference.omnivore,
+      );
+      await _onboardingService.saveAllergies(userId, const []);
+      DebugLogger.info('✅ Diet/allergy defaults saved (omnivore / none)');
 
-      // 3. Save dietary preference
-      if (_cachedDietaryPreference != null) {
-        await _onboardingService.saveDietaryPreference(
-          userId,
-          _cachedDietaryPreference,
-        );
-        DebugLogger.info('✅ Dietary preference saved');
-      }
+      // 3. Persist the survey row (sports/goals/pitfalls + payload flags).
+      // The repository reports Drift constraint failures to Sentry and
+      // rethrows — a failed survey write fails the save visibly.
+      sentry.addBreadcrumb(
+        message: 'saveAllOnboardingData: writing survey',
+        category: 'onboarding',
+      );
+      await ref
+          .read(onboardingSurveyRepositoryProvider)
+          .saveSurveyFromDraft(userId: userId, draft: draft);
+      DebugLogger.info('✅ Onboarding survey saved');
 
-      // 4. Save allergies
-      if (_cachedAllergies != null) {
-        await _onboardingService.saveAllergies(userId, _cachedAllergies!);
-        DebugLogger.info('✅ Allergies saved');
+      // 4. Persist plan-reveal edits as NutritionTargetOverrides — only the
+      // fields the user actually touched (null = algorithm default, per the
+      // overrides contract).
+      if (draft.planEdits.hasAnyEdit) {
+        sentry.addBreadcrumb(
+          message: 'saveAllOnboardingData: writing plan-edit overrides',
+          category: 'onboarding',
+        );
+        await _savePlanEditOverrides(userId, draft.planEdits);
+        DebugLogger.info('✅ Plan-edit overrides saved');
       }
 
       // NOTE: onboarding no longer pre-computes or writes "default" formula
@@ -699,54 +846,8 @@ class OnboardingController extends _$OnboardingController {
       // there is nothing to seed here. Only user-created pins live in
       // `formula_pins`.
 
-      // 5. Save food preferences
-      final foodSelections = ref.read(foodSelectionsCacheProvider);
-      if (foodSelections.isNotEmpty) {
-        final foodRepository = ref.read(foodRepositoryProvider);
-        final allFoods = await foodRepository.getPrimaryFoodsForPreferences();
-
-        final Map<String, FoodPreference> preferences = {};
-        final Map<String, int> sliderLevels = {};
-
-        for (final food in allFoods) {
-          if (foodSelections.contains(food.id)) {
-            preferences[food.name] = FoodPreference.like;
-            sliderLevels[food.name] = 3;
-          } else {
-            preferences[food.name] = FoodPreference.willingToTry;
-            sliderLevels[food.name] = 2;
-          }
-        }
-
-        // Auto-set conflicting foods to "dislike" based on dietary preference and allergies
-        if (_cachedDietaryPreference != null ||
-            (_cachedAllergies?.isNotEmpty ?? false)) {
-          final foodsToAvoid = await foodRepository.getFoodsToAvoid(
-            dietaryPreference: _cachedDietaryPreference,
-            allergies: _cachedAllergies ?? [],
-          );
-
-          for (final foodName in foodsToAvoid) {
-            preferences[foodName] = FoodPreference.dislike;
-            sliderLevels[foodName] = 0;
-          }
-
-          if (foodsToAvoid.isNotEmpty) {
-            DebugLogger.info(
-              '✅ Auto-set ${foodsToAvoid.length} foods to dislike based on diet/allergies',
-            );
-          }
-        }
-
-        await _onboardingService.saveFoodPreferences(
-          userId,
-          preferences,
-          sliderLevels: sliderLevels,
-        );
-        DebugLogger.info('✅ Food preferences saved');
-      }
-
-      // Clear all caches
+      // Clear the draft and legacy caches.
+      _draft = const OnboardingDraft();
       _cachedUserProfileData = null;
       _cachedSportPreferences = null;
       _cachedDietaryPreference = null;
@@ -769,10 +870,84 @@ class OnboardingController extends _$OnboardingController {
 
     if (state.hasError) {
       DebugLogger.error('❌ Batch save failed: ${state.error}');
+      // No silent failures: the batch save is the moment onboarding data
+      // becomes durable — its failure must reach Sentry even though the UI
+      // also surfaces the AsyncError.
+      await sentry.captureMessage(
+        'saveAllOnboardingData failed',
+        tags: {
+          'feature': 'onboarding',
+          'step': 'batch_save',
+          'auth_provider': authProvider,
+        },
+        extra: {'error': state.error.toString()},
+      );
       return false;
     }
 
     return true;
+  }
+
+  /// Persist the plan-reveal edits onto the user profile's
+  /// `nutrition_target_overrides` JSON, merged over any existing overrides
+  /// and clamped by the shared guardrails. Fluid/sodium edits apply to both
+  /// run and ride contexts (one dial on the reveal screen).
+  Future<void> _savePlanEditOverrides(
+    String userId,
+    OnboardingPlanEdits edits,
+  ) async {
+    final userRepository = await ref.read(userRepositoryProvider.future);
+    final profile = await userRepository.getCurrentUser();
+    if (profile == null) {
+      throw StateError('No user profile found to attach plan edits to');
+    }
+
+    final clamped = mergedOverridesForEdits(
+      profile.nutritionTargetOverrides,
+      edits,
+    );
+    await userRepository.updateUserProfile(
+      profile.copyWith(nutritionTargetOverrides: clamped),
+    );
+  }
+
+  /// Pure merge of plan-reveal [edits] over [existing] overrides, clamped by
+  /// the shared guardrails. Only edited fields are written; fluid/sodium
+  /// apply to both run and ride contexts (one dial on the reveal screen).
+  static NutritionTargetOverrides mergedOverridesForEdits(
+    NutritionTargetOverrides? existing,
+    OnboardingPlanEdits edits,
+  ) {
+    final base = existing ?? const NutritionTargetOverrides();
+    final baseRun = base.duringRun ?? const DuringActivityOverrides();
+    final baseRide = base.duringCycling ?? const DuringActivityOverrides();
+
+    final updated = base.copyWith(
+      duringRun: () => baseRun.copyWith(
+        carbRateGPerH: edits.longRunCarbGph != null
+            ? () => edits.longRunCarbGph
+            : null,
+        fluidRateMlPerH: edits.fluidMlPerHr != null
+            ? () => edits.fluidMlPerHr
+            : null,
+        sodiumRateMgPerH: edits.sodiumMgPerHr != null
+            ? () => edits.sodiumMgPerHr
+            : null,
+      ),
+      duringCycling: () => baseRide.copyWith(
+        carbRateGPerH: edits.longRideCarbGph != null
+            ? () => edits.longRideCarbGph
+            : null,
+        fluidRateMlPerH: edits.fluidMlPerHr != null
+            ? () => edits.fluidMlPerHr
+            : null,
+        sodiumRateMgPerH: edits.sodiumMgPerHr != null
+            ? () => edits.sodiumMgPerHr
+            : null,
+      ),
+    );
+
+    return NutritionTargetGuardrails.clampAll(updated);
   }
 
   /// Push everything captured during onboarding up to Supabase.
@@ -817,7 +992,8 @@ class OnboardingController extends _$OnboardingController {
       await _onboardingService.resetOnboarding();
       _currentUser = null;
 
-      // Clear all cached data
+      // Clear the draft and all cached data
+      _draft = const OnboardingDraft();
       _cachedUserProfileData = null;
       _cachedSelectedSports = {'running'}; // Reset to default
       _cachedSportPreferences = null;

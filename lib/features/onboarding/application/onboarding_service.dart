@@ -27,6 +27,8 @@ class OnboardingService {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
+    GutTraining? gutTraining,
+    SweatRateCat? sweatRate,
     String authProvider =
         'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
@@ -42,6 +44,8 @@ class OnboardingService {
       heightInches: heightInches,
       weightPounds: weightPounds,
       runsWithWaterBottle: runsWithWaterBottle,
+      gutTraining: gutTraining,
+      sweatRate: sweatRate,
       authProvider: authProvider,
       isAnonymous: isAnonymous,
       firstName: firstName,

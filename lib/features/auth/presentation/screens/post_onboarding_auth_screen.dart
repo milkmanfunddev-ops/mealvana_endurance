@@ -366,16 +366,16 @@ class _PostOnboardingAuthScreenState
 
     // This screen serves two arrivals:
     //
-    //  - FIRST-RUN onboarding, where the cached profile answers are still in
+    //  - FIRST-RUN onboarding, where the draft profile answers are still in
     //    memory and must be written out here.
     //  - Settings -> "Create Account", where onboarding finished long ago.
-    //    There is no cache (it is per-run and in-memory), the profile is
+    //    There is no draft (it is per-run and in-memory), the profile is
     //    already persisted, and the link preserved the uid — so there is
     //    nothing to save and nothing to migrate. Calling saveAllOnboardingData
-    //    here returned false on the null cache and showed the user "Failed to
+    //    here returned false on the empty draft and showed the user "Failed to
     //    save your preferences" on an upgrade that had actually succeeded.
     final authService = ref.read(authServiceProvider);
-    if (onboardingController.cachedUserProfileData == null) {
+    if (!onboardingController.hasCompletedProfileDraft) {
       final existingUser = await authService.getCurrentUser();
       if (!mounted) return;
 
