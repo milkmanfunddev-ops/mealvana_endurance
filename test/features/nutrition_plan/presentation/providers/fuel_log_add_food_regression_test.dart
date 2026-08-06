@@ -55,7 +55,7 @@ Activity _activity() {
     title: 'Long Run',
     scheduledDateTime: DateTime(2026, 7, 18, 7),
     durationMinutes: 120,
-    status: ActivityStatus.upcoming,
+    status: ActivityStatus.planned,
     createdAt: DateTime(2026, 7, 17),
     updatedAt: DateTime(2026, 7, 17),
   );
