@@ -2461,7 +2461,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     _trackAnalytics('food_added_to_fuel_log', {
       'food_name': food?.name,
+      'food_id': food?.id,
       'section': category,
+      'quantity': customAmount,
     });
   }
 
