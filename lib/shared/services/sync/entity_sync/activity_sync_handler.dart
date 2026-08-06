@@ -127,16 +127,12 @@ class ActivitySyncHandler {
                 supabaseUpdatedAt: supabaseUpdatedAt,
               ) &&
               !NotificationService.isRemotePushConfigured) {
-            final title = (data['title'] as String?)?.trim();
             final scheduledAt = DateTime.parse(
               data['scheduled_date_time'] as String,
             );
 
             await NotificationService.showActivityUploadedNotification(
               activityId: activityId,
-              title: title == null || title.isEmpty
-                  ? 'Workout uploaded'
-                  : title,
               activityDate: scheduledAt,
               provider: 'Garmin Connect',
             );
@@ -251,14 +247,12 @@ class ActivitySyncHandler {
               supabaseUpdatedAt: supabaseUpdatedAt,
             ) &&
             !NotificationService.isRemotePushConfigured) {
-          final title = (data['title'] as String?)?.trim();
           final scheduledAt = DateTime.parse(
             data['scheduled_date_time'] as String,
           );
 
           await NotificationService.showActivityUploadedNotification(
             activityId: activityId,
-            title: title == null || title.isEmpty ? 'Workout uploaded' : title,
             activityDate: scheduledAt,
             provider: 'Garmin Connect',
           );
