@@ -518,7 +518,12 @@ class OnboardingController extends _$OnboardingController {
   void _updateDraft(OnboardingDraft next) {
     _draft = next;
     // Trigger rebuild so dependent widgets (progress, previews) refresh.
+    // The draft lives outside `state`, so re-assigning an identical
+    // `AsyncData(null)` alone would NOT notify (updateShouldNotify compares
+    // equal) — force the notification so watchers such as
+    // `onboardingPlanPreviewProvider` recompute on every draft change.
     state = const AsyncData(null);
+    ref.notifyListeners();
   }
 
   void updateSports(Set<OnboardingSport> sports) =>

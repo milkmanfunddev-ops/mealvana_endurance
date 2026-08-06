@@ -11,10 +11,15 @@ import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
+import '../../../onboarding/presentation/providers/onboarding_analytics.dart';
+import '../../../onboarding/presentation/providers/onboarding_controller.dart';
+import '../../../onboarding/presentation/widgets/onboarding_progress_bar.dart';
+import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 
 /// Connected Apps Screen - Used for both settings and onboarding flows
 ///
@@ -160,55 +165,65 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     );
   }
 
-  /// Onboarding mode layout with header and footer
+  /// Onboarding mode layout: shared 9-segment progress bar, dark scaffold
+  /// and Sansita/orange header matching the other redesigned steps, then the
+  /// provider list and footer. (Settings mode is untouched.)
   Widget _buildOnboardingLayout(
     BuildContext context,
     WidgetRef ref,
     AsyncValue<ConnectTrainingState> state,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AppColors.blackberry,
       body: Column(
         children: [
+          // Progress bar at the very top, one segment per funnel step so the
+          // bar stays aligned with the analytics names.
+          Container(
+            color: AppColors.blackberry,
+            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+            child: OnboardingProgressBar(
+              currentSegment: (widget.stepIndex ?? 0) + 1,
+              totalSegments: kOnboardingStepNames.length,
+            ),
+          ),
+
           // Main content
           Expanded(
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: AppSpacing.screenPadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: AppSpacing.lg),
+            child: Padding(
+              padding: AppSpacing.screenPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
 
-                    // Header
-                    _buildOnboardingHeader(context),
+                  // Header
+                  _buildOnboardingHeader(context),
 
-                    const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
-                    // Integration providers list
-                    Expanded(
-                      child: state.when(
-                        data: (data) =>
-                            _buildOnboardingProvidersList(context, ref, data),
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.dragonfruit,
-                          ),
+                  // Integration providers list
+                  Expanded(
+                    child: state.when(
+                      data: (data) =>
+                          _buildOnboardingProvidersList(context, ref, data),
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.dragonfruit,
                         ),
-                        error: (error, _) =>
-                            _buildError(context, ref, error.toString()),
                       ),
+                      error: (error, _) =>
+                          _buildError(context, ref, error.toString()),
                     ),
+                  ),
 
-                    const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.md),
 
-                    // Skip button
-                    _buildSkipButton(context, ref),
+                  // Skip button
+                  _buildSkipButton(context, ref),
 
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
               ),
             ),
           ),
@@ -233,22 +248,22 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   Widget _buildOnboardingHeader(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          key: const ValueKey('connect_training.title'),
-          'Connect Your Training',
-          style: AppTextStyles.pageTitle.copyWith(color: onSurface),
+          key: ValueKey('connect_training.title'),
+          'Your training changes daily. Your fueling should too.',
+          textAlign: TextAlign.center,
+          style: kOnboardingTitleStyle,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Text(
-          key: const ValueKey('connect_training.description'),
-          'Import your upcoming workouts to get personalized nutrition plans for each session.',
-          style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
+          key: ValueKey('connect_training.description'),
+          'Connect your training calendar so we can import your workouts and '
+          'periodize your nutrition.',
+          textAlign: TextAlign.center,
+          style: kOnboardingSubtitleStyle,
         ),
       ],
     );
@@ -575,6 +590,13 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           hasSynced: _finalSurgeSynced,
         ),
 
+        // History-window caption: FS only exposes ~7 days back, which is
+        // exactly the insight engine's reliability minimum (§1b).
+        _buildHistoryWindowCaption(
+          key: const ValueKey('connect_training.finalsurge_window_caption'),
+          text: 'Imports about your last 7 days of workouts.',
+        ),
+
         const SizedBox(height: AppSpacing.md),
 
         // TrainingPeaks - shows "Sync Now" when connected (allows re-sync)
@@ -597,6 +619,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
           showSyncButton: true,
           hasSynced: _trainingPeaksSynced,
+        ),
+
+        _buildHistoryWindowCaption(
+          key: const ValueKey('connect_training.trainingpeaks_window_caption'),
+          text: 'Imports about your last 30 days of workouts.',
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -667,8 +694,46 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           isOnboardingMode: true,
           spacing: AppSpacing.md,
         ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // "I don't use training plan apps." — an affirmative answer,
+        // distinct from Skip-for-now (which stays below): it records a
+        // survey flag + its own analytics event, then advances.
+        FigmaCheckboxCard(
+          key: const ValueKey('connect_training.declined_tile'),
+          label: "I don't use training plan apps.",
+          isSelected: false,
+          onTap: _declineTrainingApps,
+        ),
       ],
     );
+  }
+
+  /// Small history-window caption rendered under a provider row in
+  /// onboarding mode (dark scaffold — hardcoded light-on-dark style).
+  Widget _buildHistoryWindowCaption({required Key key, required String text}) {
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.only(left: AppSpacing.md, top: AppSpacing.xs),
+      child: Text(text, style: kOnboardingBodyMutedStyle),
+    );
+  }
+
+  /// "I don't use training plan apps." tile handler (onboarding only).
+  void _declineTrainingApps() {
+    ref
+        .read(onboardingControllerProvider.notifier)
+        .recordDeclinedTrainingApps();
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track('connect_training_declined');
+    } catch (_) {
+      // Analytics must never block onboarding navigation.
+    }
+    widget.onContinue?.call();
   }
 
   Widget _buildError(BuildContext context, WidgetRef ref, String error) {
@@ -777,12 +842,30 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       _notifiedProviders.add(provider);
     });
 
-    ref
-        .read(connectTrainingControllerProvider.notifier)
-        .trackNotifyMe(
-          provider: provider,
-          source: isOnboardingMode ? 'onboarding' : 'settings',
-        );
+    if (isOnboardingMode) {
+      // 2026-08 redesign funnel event (replaces the legacy
+      // integration_notify_requested in onboarding; settings keeps it).
+      if (provider == 'tridot') {
+        ref
+            .read(onboardingControllerProvider.notifier)
+            .recordTridotNotifyRequested();
+      }
+      try {
+        ref
+            .read(appExternalDepsProvider)
+            .analytics
+            .track(
+              'integration_notify_me_tapped',
+              properties: {'provider': provider, 'source': 'onboarding'},
+            );
+      } catch (_) {
+        // Analytics must never block onboarding.
+      }
+    } else {
+      ref
+          .read(connectTrainingControllerProvider.notifier)
+          .trackNotifyMe(provider: provider, source: 'settings');
+    }
 
     if (context.mounted) {
       MealvanaSnackbar.showSuccess(context, 'Notified!');
@@ -842,6 +925,30 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // Onboarding Mode Connection Methods (with auto-import)
   // ============================================================
 
+  /// Connect-failure surface for onboarding mode: MealvanaSnackbar with the
+  /// controller's error. The provider card is already back in its Connect
+  /// state (the controller resets isConnecting in its catch), so the same
+  /// button is the retry path. Sentry capture happens controller-side.
+  void _showConnectFailure(
+    BuildContext context,
+    WidgetRef ref,
+    String providerName,
+  ) {
+    if (!context.mounted) return;
+    final message = ref
+        .read(connectTrainingControllerProvider)
+        .value
+        ?.errorMessage;
+    MealvanaSnackbar.showError(
+      context,
+      message != null
+          ? 'Could not connect $providerName: $message. '
+                'Tap Connect to try again.'
+          : 'Could not connect $providerName. Tap Connect to try again.',
+      duration: const Duration(seconds: 5),
+    );
+  }
+
   Future<void> _connectFinalSurgeOnboarding(
     BuildContext context,
     WidgetRef ref,
@@ -849,7 +956,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectFinalSurge();
 
+    if (!success && context.mounted) {
+      _showConnectFailure(context, ref, 'Final Surge');
+      return;
+    }
+
     if (success && context.mounted) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('final_surge');
       MealvanaSnackbar.showSuccess(
         context,
         'Final Surge connected! Importing workouts...',
@@ -896,7 +1011,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectTrainingPeaks();
 
+    if (!success && context.mounted) {
+      _showConnectFailure(context, ref, 'TrainingPeaks');
+      return;
+    }
+
     if (success && context.mounted) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('training_peaks');
       MealvanaSnackbar.showSuccess(
         context,
         'TrainingPeaks connected! Importing workouts...',
@@ -950,7 +1073,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     // Sentry MEALVANA-ENDURANCE-AF.
     final success = await controller.connectGarmin(isOnboarding: true);
 
+    if (!success && context.mounted) {
+      _showConnectFailure(context, ref, 'Garmin Connect');
+      return;
+    }
+
     if (success && context.mounted) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('garmin');
       final notificationsGranted =
           await NotificationService.requestPermissions();
       if (!context.mounted) return;
@@ -1063,8 +1194,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectVdot();
 
-    if (!success || !context.mounted) return;
+    if (!context.mounted) return;
+    if (!success) {
+      _showConnectFailure(context, ref, 'V.O2');
+      return;
+    }
 
+    ref
+        .read(onboardingControllerProvider.notifier)
+        .recordConnectedProvider('vdot');
     MealvanaSnackbar.showSuccess(
       context,
       'V.O2 connected! Importing workouts...',
@@ -1144,6 +1282,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         duration: const Duration(seconds: 5),
       );
       return;
+    }
+
+    if (isOnboarding) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('runna');
     }
 
     MealvanaSnackbar.showSuccess(

@@ -491,6 +491,38 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     return tempUserId;
   }
 
+  /// Report an integration failure to Sentry in addition to the state/
+  /// snackbar surface — connect/import failures used to reach only
+  /// DebugLogger/kDebugMode prints (onboarding redesign §6: no silent
+  /// failures). Never throws; guarded against provider disposal.
+  void _reportFailureToSentry(
+    String provider,
+    String phase,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (!ref.mounted) return;
+    try {
+      unawaited(
+        ref
+            .read(appExternalDepsProvider)
+            .sentry
+            .reportCriticalError(
+              error,
+              stackTrace: stackTrace,
+              context: 'connect_training',
+              tags: {
+                'feature': 'integrations',
+                'provider': provider,
+                'phase': phase,
+              },
+            ),
+      );
+    } catch (_) {
+      // Reporting must never cascade into a second failure.
+    }
+  }
+
   /// Get the current user ID (real or temporary)
   /// This is exposed so the OnboardingController can use it for migration
   String? get currentUserId => _currentUserId;
@@ -567,6 +599,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         print('   Error: $e');
         print('   Stack: $stackTrace');
       }
+      _reportFailureToSentry(providerId, 'connect', e, stackTrace);
       state = AsyncData(
         state.value!.copyWith(
           isConnecting: false,
@@ -607,7 +640,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       await disconnect();
       state = AsyncData(updateState());
       _trackIntegrationDisconnected(providerId, reason: 'user_initiated');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _reportFailureToSentry(providerId, 'disconnect', e, stackTrace);
       state = AsyncData(
         state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
       );
@@ -1006,7 +1040,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         skippedCount: result.skipped,
       );
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -1016,6 +1050,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
+      _reportFailureToSentry('vdot', 'import', e, stackTrace);
       _trackIntegrationSyncFailed(
         'vdot',
         'exception',
@@ -1116,10 +1151,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         errorMessage: e.message,
       );
       return false;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
         print('❌ connectRunna: $e');
       }
+      _reportFailureToSentry('runna', 'connect', e, stackTrace);
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -1281,7 +1317,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         skippedCount: result.skipped,
       );
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -1291,6 +1327,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
+      _reportFailureToSentry('runna', 'import', e, stackTrace);
       _trackIntegrationSyncFailed(
         'runna',
         'exception',
@@ -1517,7 +1554,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         eventsCount: savedEventsCount,
       );
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -1527,6 +1564,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
+      _reportFailureToSentry(providerId, 'import', e, stackTrace);
       _trackIntegrationSyncFailed(
         providerId,
         'exception',
