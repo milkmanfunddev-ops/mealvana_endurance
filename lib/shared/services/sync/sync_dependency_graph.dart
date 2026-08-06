@@ -29,6 +29,7 @@ class SyncDependencyGraph {
     'pre_workout_templates': ['template_foods'],
     'personal_templates': ['users'],
     'formula_pins': ['users'],
+    'onboarding_surveys': ['users'],
     'personal_formulas': ['users'],
     'meal_logs': ['users'],
     'saved_meals': ['users'],

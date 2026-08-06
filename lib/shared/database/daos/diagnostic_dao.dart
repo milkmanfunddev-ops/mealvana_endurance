@@ -297,6 +297,18 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
         [toUserId, fromUserId],
       );
 
+      // ============ ONBOARDING SURVEYS ============
+      // user_id is the PRIMARY KEY here (one survey per user), so the
+      // delete-then-update pattern doubles as conflict protection.
+      await db.customStatement(
+        'DELETE FROM onboarding_surveys WHERE user_id = ?',
+        [toUserId],
+      );
+      await db.customStatement(
+        'UPDATE onboarding_surveys SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
       // ============ USER PROFILE ============
       // Delete the old anonymous user profile
       await db.customStatement('DELETE FROM users WHERE id = ?', [fromUserId]);

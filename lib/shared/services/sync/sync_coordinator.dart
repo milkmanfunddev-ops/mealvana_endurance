@@ -21,6 +21,7 @@ import '../../../features/meal_logging/data/meal_log_repository.dart';
 import '../../../features/meal_logging/data/saved_meals_repository.dart';
 import '../../../features/integrations/presentation/providers/integrations_providers.dart';
 import '../../../features/formula_kit/data/formula_pins_repository.dart';
+import '../../../features/onboarding/data/onboarding_survey_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -295,6 +296,8 @@ class SyncCoordinator extends _$SyncCoordinator {
           return ref.read(integrationsRepositoryProvider);
         case 'formula_pins':
           return ref.read(formulaPinsRepositoryProvider);
+        case 'onboarding_surveys':
+          return ref.read(onboardingSurveyRepositoryProvider);
         default:
           return null;
       }
