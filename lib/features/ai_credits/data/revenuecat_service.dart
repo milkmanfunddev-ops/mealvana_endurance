@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -277,6 +278,18 @@ class RevenueCatService {
       );
       return false;
     } catch (e, st) {
+      // A user tapping Cancel does not always arrive as a typed
+      // `PurchasesError`. purchases_flutter also surfaces it raw, as a
+      // PlatformException out of `_invokeReturningMap` carrying
+      // `readable_error_code: PURCHASE_CANCELLED` / `userCancelled: true`.
+      // That shape misses the branch above and used to be reported as
+      // "purchase failed (unexpected)" — Sentry MEALVANA-ENDURANCE-DEV-6E,
+      // 14 events from 2 users, none of them a fault. Someone declining a
+      // purchase is the system working.
+      if (e is PlatformException && _isUserCancellation(e)) {
+        _crumb('purchase cancelled by user (platform channel)', {'sku': sku});
+        return false;
+      }
       _report(
         'purchase failed (unexpected)',
         e,
@@ -285,6 +298,28 @@ class RevenueCatService {
       );
       return false;
     }
+  }
+
+  /// Whether a raw [PlatformException] from purchases_flutter represents the
+  /// user cancelling, rather than a failure.
+  ///
+  /// Checks the structured `details` map first and falls back to the error
+  /// code, because the two platforms disagree: iOS populates `userCancelled`,
+  /// Android leads with `readable_error_code`. Anything unrecognised returns
+  /// false, so a genuine failure is still reported.
+  @visibleForTesting
+  static bool debugIsUserCancellation(PlatformException e) =>
+      _isUserCancellation(e);
+
+  static bool _isUserCancellation(PlatformException e) {
+    final details = e.details;
+    if (details is Map) {
+      if (details['userCancelled'] == true) return true;
+      if (details['readable_error_code'] == 'PURCHASE_CANCELLED') return true;
+      if (details['readableErrorCode'] == 'PURCHASE_CANCELLED') return true;
+    }
+    // RevenueCat's numeric code 1 is PURCHASE_CANCELLED on both platforms.
+    return e.code == '1' || e.code == 'PURCHASE_CANCELLED';
   }
 
   /// Restore previous purchases.
