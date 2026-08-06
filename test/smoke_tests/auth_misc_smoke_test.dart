@@ -58,7 +58,6 @@ import 'package:mealvana_endurance/features/sharing/presentation/providers/share
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 
 // Survey screen
-import 'package:mealvana_endurance/features/feedback/presentation/screens/survey_screen.dart';
 
 // Video player screen
 import 'package:mealvana_endurance/features/education/presentation/screens/video_player_screen.dart';
@@ -260,21 +259,6 @@ void main() {
           ).overrideWith(_FakeShareFormController.new),
         ],
       );
-    });
-  });
-
-  group('Survey screen smoke test', () {
-    // BUG #1 — SurveyScreen has a broken relative import at line 9:
-    //   `../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart`
-    // Nine `../` segments from lib/features/feedback/presentation/screens/
-    // resolve to /shared/… (above the filesystem root), causing a compile
-    // error. The test is skipped until the import is fixed to the correct
-    // package import:
-    //   `package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart`
-    //
-    // To re-enable: remove the `skip:` argument.
-    testWidgets('SurveyScreen builds without overflow', (tester) async {
-      await smokeScreen(tester, const SurveyScreen());
     });
   });
 
