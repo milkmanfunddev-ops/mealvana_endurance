@@ -13,14 +13,21 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
+import '../../../onboarding/presentation/providers/onboarding_preview_providers.dart';
+import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
 import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
-/// Shown after food preferences to encourage account creation
-/// Offers Apple Sign-In, Google Sign-In, Email/Password, or Skip
+/// Shown after the daily-plan preview (2026-08 onboarding redesign) to
+/// encourage account creation: "Your plan is ready. Don't leave it behind."
+/// Offers Apple Sign-In, Google Sign-In, Email/Password, or Skip.
+/// Visual language matches the redesigned onboarding steps (dark blackberry
+/// scaffold, Sansita/orange title); controller wiring (credential linking,
+/// saveAllOnboardingData, background upload, Settings anon→upgrade branch)
+/// is unchanged from the pre-redesign screen.
 class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
   const PostOnboardingAuthScreen({super.key, this.mode = 'signup'});
 
@@ -537,11 +544,10 @@ class _PostOnboardingAuthScreenState
   Widget build(BuildContext context) {
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
     final contentService = ref.watch(contentServiceProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLogin = widget.mode == 'login';
 
     return AdaptivePageScaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AppColors.blackberry,
       appBar: _buildAppBar(
         context,
         isLoading: asyncState.isLoading,
@@ -565,16 +571,15 @@ class _PostOnboardingAuthScreenState
                   ),
                   contentService.getValue(
                     isLogin ? 'auth.login.title' : 'auth.post_onboarding.title',
-                    defaultValue: isLogin ? 'Log In' : 'Create Your Account',
+                    defaultValue: isLogin
+                        ? 'Log In'
+                        : "Your plan is ready. Don't leave it behind.",
                   ),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 28,
-                  ),
+                  style: kOnboardingTitleStyle,
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
 
                 // Subtitle
                 Text(
@@ -589,38 +594,20 @@ class _PostOnboardingAuthScreenState
                         : 'auth.post_onboarding.subtitle',
                     defaultValue: isLogin
                         ? 'Welcome back'
-                        : 'Secure your data and sync across devices',
+                        : 'Save it in seconds. Free through launch month, '
+                              'no card needed.',
                   ),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style: kOnboardingSubtitleStyle,
                   textAlign: TextAlign.center,
                 ),
 
                 const SizedBox(height: AppSpacing.xxl),
 
-                if (!isLogin) ...[
-                  // Hero text
-                  Text(
-                    contentService.getValue(
-                      'auth.post_onboarding.hero_text',
-                      defaultValue:
-                          'Save your nutrition plans, training progress, and preferences with a free account.',
-                    ),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: AppSpacing.xxl),
-
-                  // Benefits card
-                  _buildBenefitsCard(context, contentService, isDark),
-
-                  const SizedBox(height: AppSpacing.xxxl),
-                ],
+                // Plan-summary chip: a one-line reminder of what they'd be
+                // walking away from. Only rendered when this arrival came
+                // straight out of the onboarding flow with a completed draft
+                // (never in login mode or the Settings anon→upgrade branch).
+                if (!isLogin) ..._buildPlanSummaryChip(),
 
                 // Apple Sign-In button (iOS/Android only)
                 if (!kIsWeb)
@@ -691,27 +678,27 @@ class _PostOnboardingAuthScreenState
                     child: Text(
                       contentService.getValue(
                         'auth.post_onboarding.skip_button',
-                        defaultValue: 'Continue without signing in',
+                        defaultValue: 'Continue without an account',
                       ),
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: AppColors.cream.withValues(alpha: 0.9),
                         decoration: TextDecoration.underline,
+                        decorationColor: AppColors.cream.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: AppSpacing.sm),
 
-                  // Skip reminder text
+                  // Skip reminder text (local-only note)
                   Text(
                     contentService.getValue(
                       'auth.post_onboarding.skip_reminder',
                       defaultValue:
-                          'You can always create an account later in Settings',
+                          'Your plan stays on this device only — save it to '
+                          'keep it if you switch phones.',
                     ),
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    style: kOnboardingBodyMutedStyle,
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -724,16 +711,14 @@ class _PostOnboardingAuthScreenState
           // Loading overlay for OAuth sign-in flows
           if (asyncState.isLoading)
             Container(
-              color: Theme.of(
-                context,
-              ).scaffoldBackgroundColor.withValues(alpha: 0.9),
+              color: AppColors.blackberry.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const CircularProgressIndicator(
                       strokeWidth: 3,
-                      color: AppColors.electrolyte,
+                      color: AppColors.orange,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     // Text(
@@ -788,10 +773,10 @@ class _PostOnboardingAuthScreenState
               },
               enabled: !isLoading,
               margin: EdgeInsets.zero,
-              iconColor: Theme.of(context).colorScheme.onSurface,
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.1),
+              // Dark blackberry scaffold — fixed light-on-dark colors, same
+              // as the redesigned onboarding steps.
+              iconColor: AppColors.cream,
+              backgroundColor: AppColors.cream.withValues(alpha: 0.1),
             ),
           ),
         ],
@@ -799,101 +784,66 @@ class _PostOnboardingAuthScreenState
     );
   }
 
-  Widget _buildBenefitsCard(
-    BuildContext context,
-    ContentService contentService,
-    bool isDark,
-  ) {
-    // Get benefits list from content service
-    final benefitsList = [
-      contentService.getValue(
-        'auth.post_onboarding.benefits[0]',
-        defaultValue: 'Sync your data across all your devices',
-      ),
-      contentService.getValue(
-        'auth.post_onboarding.benefits[1]',
-        defaultValue: 'Never lose your nutrition plans and training history',
-      ),
-      contentService.getValue(
-        'auth.post_onboarding.benefits[2]',
-        defaultValue: 'Get personalized recommendations based on your progress',
-      ),
-      contentService.getValue(
-        'auth.post_onboarding.benefits[3]',
-        defaultValue: 'Share plans with coaches and training partners',
-      ),
-    ];
+  /// One-line "what you'd lose" chip above the auth buttons, e.g.
+  /// "60 g/hr · 2,804 kcal workout days".
+  ///
+  /// Only rendered when the onboarding draft is complete (first-run flow);
+  /// the preview provider is keepAlive and was already computed by the
+  /// plan-reveal step, so this read is cheap. Best-effort: while the preview
+  /// is (re)computing or has no fueling numbers, render nothing rather than
+  /// a placeholder. Copy convention follows the plan-reveal cards (hardcoded
+  /// units, matching the redesigned onboarding screens) rather than this
+  /// screen's content keys, because the chip is composed from computed data.
+  List<Widget> _buildPlanSummaryChip() {
+    final onboardingController = ref.read(
+      onboardingControllerProvider.notifier,
+    );
+    if (!onboardingController.hasCompletedProfileDraft) return const [];
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.blackberry.withValues(alpha: 0.3)
-            : AppColors.electrolyte.withValues(alpha: 0.1),
-        borderRadius: AppRadius.cardRadius,
-        border: Border.all(
-          color: AppColors.electrolyte.withValues(alpha: 0.3),
-          width: 2,
+    final bundle = ref.watch(onboardingPlanPreviewProvider).value;
+    if (bundle == null) return const [];
+
+    final preview = bundle.preview;
+    final edits = onboardingController.draft.planEdits;
+    // Show the athlete's (possibly edited) primary carb target: run first,
+    // ride for cyclists — mirroring the plan-reveal card order.
+    final carbGph = preview.longRun != null
+        ? (edits.longRunCarbGph ?? preview.longRun!.carbGph)
+        : preview.longRide != null
+        ? (edits.longRideCarbGph ?? preview.longRide!.carbGph)
+        : null;
+    final kcal = _formatThousands(preview.workoutDay.calories);
+    final summary = carbGph != null
+        ? '${carbGph.round()} g/hr · $kcal kcal workout days'
+        : '$kcal kcal workout days';
+
+    return [
+      Container(
+        key: const ValueKey('post_onboarding.plan_chip'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        decoration: onboardingCardDecoration(),
+        child: Text(
+          summary,
+          textAlign: TextAlign.center,
+          style: kOnboardingSubtitleStyle.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Benefits title
-          Row(
-            children: [
-              FaIcon(
-                FontAwesomeIcons.circleCheck,
-                size: AppIconSizes.md,
-                color: AppColors.electrolyte,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  contentService.getValue(
-                    'auth.post_onboarding.benefits_card_title',
-                    defaultValue: 'Account Benefits',
-                  ),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
+      const SizedBox(height: AppSpacing.xxl),
+    ];
+  }
 
-          const SizedBox(height: AppSpacing.md),
-
-          // Benefits list
-          ...benefitsList.map(
-            (benefit) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FaIcon(
-                    FontAwesomeIcons.check,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      benefit,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  /// 2804 → "2,804". Avoids pulling intl in for one label.
+  static String _formatThousands(int value) {
+    final digits = value.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
   }
 
   Widget _buildOAuthButton({
@@ -904,8 +854,8 @@ class _PostOnboardingAuthScreenState
     required VoidCallback? onPressed,
     required bool isLoading,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    // Fixed light-on-dark styling for the blackberry scaffold (same in both
+    // app themes, like the redesigned onboarding steps).
     return SizedBox(
       width: double.infinity,
       height: AppSizes.buttonHeightPrimary,
@@ -913,17 +863,13 @@ class _PostOnboardingAuthScreenState
         key: key,
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDark
-              ? AppColors.blackberry.withValues(alpha: 0.5)
-              : Colors.white,
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          elevation: isDark ? 0 : 2,
+          backgroundColor: AppColors.blackberryLight,
+          foregroundColor: AppColors.cream,
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.buttonRadius,
             side: BorderSide(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.2),
+              color: AppColors.cream.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -937,17 +883,13 @@ class _PostOnboardingAuthScreenState
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    icon,
-                    size: AppIconSizes.button,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                  Icon(icon, size: AppIconSizes.button, color: AppColors.cream),
                   const SizedBox(width: AppSpacing.sm),
                   Flexible(
                     child: Text(
                       label,
                       style: AppTextStyles.buttonPrimary.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: AppColors.cream,
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
