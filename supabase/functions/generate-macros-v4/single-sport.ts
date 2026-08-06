@@ -14,6 +14,7 @@ import {
   applyPreWorkoutHydrationOverlay,
   calculatePreWorkoutCarbs,
   calculatePreWorkoutHydration,
+  legacyHydrationTier,
   calculatePreWorkoutTargets,
   type HydrationCheck,
   selectPreWorkoutFoods,
@@ -785,13 +786,14 @@ export async function calculateMacrosV4(
   // NOTE: applied regardless of is_fasted — fasted only affects carbs/protein/
   // fat, not fluid/sodium. The spec's pre-workout gate is duration < 60 AND
   // temp < 30, not fasted status.
-  const preHydration = calculatePreWorkoutHydration({
+  const preHydrationInput = {
     bodyWeightKg: weightKg,
     workoutDurationMin: durationMin,
     timeBeforeWorkoutMin: input.hours_before * 60,
     tempC: input.temp_c ?? null,
     hydrationCheck: input.hydration_check ?? "unknown",
-  });
+  };
+  const preHydration = calculatePreWorkoutHydration(preHydrationInput);
   const preTargets = applyPreWorkoutHydrationOverlay(
     preTargetsLegacy,
     preHydration,
@@ -1013,9 +1015,13 @@ export async function calculateMacrosV4(
     pre_run_carb_target_basis: preCarbPlan.target_basis,
     pre_run_carb_tiers: preCarbPlan.tiers,
 
-    // Pre-workout hydration transparency (hydration SSOT v6). The integer
-    // `pre_run_hydration_tier` is RETIRED — `regime` replaces it.
+    // Pre-workout hydration transparency (hydration SSOT v6). `regime`
+    // replaces the integer `pre_run_hydration_tier`, but the integer is still
+    // emitted alongside it for clients up to 1.22.x, which read it and would
+    // otherwise fall back to their offline path (PW-013 — see
+    // `legacyHydrationTier`).
     pre_run_hydration_regime: preHydration.regime,
+    pre_run_hydration_tier: legacyHydrationTier(preHydrationInput),
     pre_run_fluid_target_basis: preHydration.target_basis,
     pre_run_hydration_check_used: preHydration.hydration_check_used,
     pre_run_fluid_tiers: preHydration.tiers,

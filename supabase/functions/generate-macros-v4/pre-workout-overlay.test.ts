@@ -93,15 +93,54 @@ describe('Pre-workout overlay — cited regime (t >= 120)', () => {
     );
   });
 
-  it('the retired `pre_run_hydration_tier` is absent from the payload', async () => {
-    const result = await calculateMacrosV4(
+  // REVERSED, deliberately (Lee, 2026-08-05). This assertion previously read
+  // "the retired `pre_run_hydration_tier` is absent from the payload" and
+  // required the integer never to reappear. Dropping it turned out to break
+  // every shipped client: App Store builds up to 1.22.x read the integer, and
+  // with the key gone they silently fall back to their offline path and lose
+  // the server's pre-workout hydration entirely. That is the PW-013 hazard the
+  // spec names, and it bites on any deploy that lands before the matching app
+  // build reaches users.
+  //
+  // So the integer is emitted ALONGSIDE the regime. The contract is now
+  // "present and faithful to the retired rule", not "absent".
+  it('still emits the retired `pre_run_hydration_tier` for pre-1.23 clients', async () => {
+    const result = (await calculateMacrosV4(
       baseRunningInput({ hours_before: 3, temp_c: 22 }),
       EMPTY_TEMPLATES,
-    );
+    )) as Record<string, unknown>;
+
     assert(
-      !('pre_run_hydration_tier' in (result as Record<string, unknown>)),
-      'PW-013 retired the integer tier; it must not reappear on the wire',
+      'pre_run_hydration_tier' in result,
+      'PW-013: clients up to 1.22.x read this key. Removing it does not crash '
+        + 'them — it empties their pre-workout hydration, which is worse '
+        + 'because nothing reports it. Remove only once no supported client '
+        + 'reads it.',
     );
+    // t = 180 min >= 120, 90 min workout so the gate is not triggered -> 1.
+    assertEquals(result.pre_run_hydration_tier, 1);
+    // And the replacement is emitted too — this is dual-emit, not a revert.
+    assertEquals(result.pre_run_hydration_regime, 'cited');
+  });
+
+  it('the legacy tier tracks the retired rule, not the new regime', async () => {
+    // t = 45 min: new regime is `extrapolated`, retired tier is 2.
+    const mid = (await calculateMacrosV4(
+      baseRunningInput({ hours_before: 0.75, temp_c: 22 }),
+      EMPTY_TEMPLATES,
+    )) as Record<string, unknown>;
+    assertEquals(mid.pre_run_hydration_tier, 2);
+
+    // The case a regime->tier map gets wrong: a gated plan emitted tier 1
+    // under the retired rule regardless of lead time. Duration comes from
+    // distance x pace, so 3 mi @ 9 min/mi = 27 min puts it under the 60 min
+    // gate; at t = 0 the ungated rule would say 3.
+    const gated = (await calculateMacrosV4(
+      baseRunningInput({ hours_before: 0, temp_c: 22, run_distance: 3 }),
+      EMPTY_TEMPLATES,
+    )) as Record<string, unknown>;
+    assertEquals(gated.pre_run_hydration_tier, 1);
+    assertEquals(gated.pre_run_hydration_gate_triggered, true);
   });
 });
 

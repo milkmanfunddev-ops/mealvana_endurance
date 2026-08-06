@@ -1961,3 +1961,40 @@ export function selectPreWorkoutFoods(
 
   return results;
 }
+
+/**
+ * The RETIRED integer hydration tier, reproduced for backwards compatibility.
+ *
+ * PW-013. `pre_run_hydration_tier` was replaced by the v6
+ * `pre_run_hydration_regime` string, but a Flutter build and a Supabase deploy
+ * ship independently and users sit on old builds for weeks. App Store clients
+ * up to and including 1.22.x read the integer with a null-safe cast, so
+ * dropping the key does not crash them — it silently empties their
+ * pre-workout hydration and drops them onto their offline path. Emitting both
+ * keys costs nothing and removes the hazard.
+ *
+ * This deliberately recomputes the OLD rule from the OLD inputs rather than
+ * mapping the new regime backwards. A regime->tier map would be a guess:
+ * `clearance_bound` has no legacy counterpart, and the legacy gate returned
+ * tier 1 regardless of lead time. Replaying the retired branch instead means
+ * an old client receives byte-identical values to what it received before the
+ * bundle landed.
+ *
+ * Retired rule (pre-bundle `calculatePreWorkoutHydration`):
+ *   gate (workoutDurationMin < 60 && tempC < 30) -> 1  ("irrelevant when
+ *                                                       gated", but that is
+ *                                                       what it emitted)
+ *   timeBeforeWorkoutMin >= 120                  -> 1
+ *   timeBeforeWorkoutMin >= 10                   -> 2
+ *   otherwise                                    -> 3
+ *
+ * Delete this once no supported client reads the integer.
+ */
+export function legacyHydrationTier(input: PreWorkoutHydrationInput): number {
+  const { workoutDurationMin, timeBeforeWorkoutMin, tempC } = input;
+  const temp = tempC ?? 22;
+  if (workoutDurationMin < 60 && temp < 30) return 1;
+  if (timeBeforeWorkoutMin >= 120) return 1;
+  if (timeBeforeWorkoutMin >= 10) return 2;
+  return 3;
+}

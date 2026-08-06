@@ -428,7 +428,11 @@ co-publication), NATA 2017 (via the free nata.org PDF). Arithmetic was recompute
   `fluidHighMl`. Add one when adjudicated.
 
 ## D-015 — H5 stacking bands overlap at exactly 90 min (spec text ambiguity)
-- **Status:** `pending-ruling` (2026-08-02). Spec-text clarification, not a code bug.
+- **Status:** `resolved` (2026-08-05) — **superseded by D-017.** H5's meal boundary moved to
+  120 min, so there is no longer a band edge at 90 for this entry to adjudicate. The
+  closed/open convention it asked about was settled the way this entry proposed:
+  **inclusive at the bottom**, now stated explicitly in H5 and applied at both 30 and 120.
+- **Status (original):** `pending-ruling` (2026-08-02). Spec-text clarification, not a code bug.
 - **Observed (sim):** `spec/recommendation/generate-plan.md` H5 writes the bands as
   "**≤30 → {top-up}** · **30–90 → {snack, top-up}** · **≥90 → {meal, snack, top-up}**" — the
   value **90 belongs to BOTH the middle and upper bands** (and 30 to both lower bands). A
@@ -466,8 +470,12 @@ co-publication), NATA 2017 (via the free nata.org PDF). Arithmetic was recompute
   fails here rather than silently producing 4.5 g/kg.
 
 ## D-017 — Landing the pre-workout bundle moved the meal occasion from ≥90 min to ≥120 min
-- **Status:** `pending-ruling` (2026-08-05). Two ratified specs now disagree; the code follows the
-  newer one. **This is a live, athlete-visible behaviour change and it has not been ruled on.**
+- **Status:** `resolved` (2026-08-05). **Ruling (Lee, 2026-08-05): ship 120; the bundle
+  supersedes H5.** H5's band text in `spec/recommendation/generate-plan.md` has been amended to
+  `t < 30 / 30 <= t < 120 / t >= 120`, inclusive at the bottom. No code change — the engine
+  already implements 120 and the carbs conformance vectors already pin it (inv 6).
+  **This resolves D-015 as well**: that entry asked only whether 90 belonged to the upper band,
+  and there is no longer a band edge at 90.
 - **Observed (code, this repo):** implementing `pre-workout-macros@v1` replaced the occasion
   threshold in `supabase/functions/generate-macros-v4/pre-workout.ts`. Before the bundle the
   branch was `hoursBefore >= 1.5` (**90 min**); it is now `t >= TIER_MEAL_MIN` (**120 min**), and

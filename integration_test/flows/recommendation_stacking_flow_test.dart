@@ -1,17 +1,19 @@
 /// Recommendation test under **Patrol** — pre-workout occasion *stacking* by
 /// fueling window (QA generate-plan SSOT invariant **H5**).
 ///
-/// ⚠️ **NOT wired into either CI target list — see D-017.** This flow was
-/// written against H5's ratified 30/90 bands. Landing `pre-workout-macros@v1`
-/// moved the meal occasion to `t >= 120` (`TIER_MEAL_MIN`), so the ≥90 case
-/// below now asserts **pre-bundle** behaviour and would fail against the
-/// current engine. Two ratified specs disagree and the question is open, so
-/// the flow is kept here — unmodified, so the conflict stays visible — rather
-/// than silently retuned to 120 or deleted. Once Lee/Xuan rule on D-017
-/// (`docs/ssot/DEVIATIONS.md`), fix the boundary and add it to BOTH the M1
+/// **D-017 is settled (Lee, 2026-08-05): the meal occasion is `t >= 120`.**
+/// H5's bands are now `t < 30 / 30 <= t < 120 / t >= 120`, inclusive at the
+/// bottom. Both cases below happen to sit clear of the moved boundary — the
+/// stacking case steps to **120 min** and the top-off-only case to **15 min**
+/// — so the assertions hold unchanged under the new rule; only the prose
+/// needed correcting from "≥90" to "≥120".
+///
+/// ⚠️ **Still NOT in either CI target list.** Not because of the spec — that
+/// is resolved — but because this flow has never had a green Patrol run on
+/// this repo. Give it one against the dev backend, then add it to BOTH the M1
 /// list in `.github/workflows/tests-selfhosted.yml` and the two Codemagic dev
-/// lanes in `codemagic.yaml` — `ci_config_contract_test` asserts those two
-/// lists agree.
+/// lanes in `codemagic.yaml`; `ci_config_contract_test` asserts those lists
+/// agree, so a one-sided edit fails the unit suite.
 ///
 /// Unlike `activities_crud_flow_test.dart` (which deliberately only asserts that
 /// a plan *renders*), this asserts on the RECOMMENDATION output itself: which
@@ -21,9 +23,9 @@
 ///
 /// H5 (qa/spec/recommendation/generate-plan.md): pre-workout occasions stack by
 /// the fueling window —
-///   • ≤30 min  → {Top-Off}
-///   • 30–90    → {Pre-Workout Snack, Top-Off}
-///   • ≥90 min  → {Full Meal, Pre-Workout Snack, Top-Off}
+///   • t < 30        → {Top-Off}
+///   • 30 <= t < 120 → {Pre-Workout Snack, Top-Off}
+///   • t >= 120      → {Full Meal, Pre-Workout Snack, Top-Off}
 /// Occasion labels are the domain displayLabels 'Full Meal' / 'Pre-Workout
 /// Snack' / 'Top-Off' (lib/features/nutrition_plan/domain/plan_section.dart:48-52).
 ///
@@ -53,9 +55,10 @@ const _topOff = 'Top-Off';
 
 void main() {
   patrolTest(
-    'recommendation H5: a >=90 min fueling window stacks Full Meal + Snack + Top-Off',
+    'recommendation H5: a >=120 min fueling window stacks Full Meal + Snack + Top-Off',
     ($) async {
-      // 8 × 15-min steps up from the floor = 120 min → the ≥90 band.
+      // 8 × 15-min steps up from the floor = 120 min → the ≥120 band
+      // (exactly on the boundary, which H5 defines as inclusive).
       final ready = await _generateRunPlanWithWindow(
         $,
         plusStepsFromFloor: 8,
@@ -68,17 +71,17 @@ void main() {
       expect(
         $(_fullMeal),
         findsWidgets,
-        reason: 'A ≥90 min window must recommend a Full Meal occasion (H5).',
+        reason: 'A ≥120 min window must recommend a Full Meal occasion (H5).',
       );
       expect(
         $(_snack),
         findsWidgets,
-        reason: 'A ≥90 min window must recommend a Pre-Workout Snack (H5).',
+        reason: 'A ≥120 min window must recommend a Pre-Workout Snack (H5).',
       );
       expect(
         $(_topOff),
         findsWidgets,
-        reason: 'A ≥90 min window must recommend a Top-Off occasion (H5).',
+        reason: 'A ≥120 min window must recommend a Top-Off occasion (H5).',
       );
     },
     timeout: const Timeout(Duration(minutes: 10)),
@@ -87,7 +90,7 @@ void main() {
   patrolTest(
     'recommendation H5: a <=30 min fueling window yields Top-Off only (no Meal / Snack)',
     ($) async {
-      // 1 × 15-min step up from the floor = 15 min → the ≤30 band.
+      // 1 × 15-min step up from the floor = 15 min → the t < 30 band.
       final ready = await _generateRunPlanWithWindow(
         $,
         plusStepsFromFloor: 1,
@@ -180,7 +183,7 @@ Future<bool> _generateRunPlanWithWindow(
 
   // Fasted must be OFF or the pre-workout occasions are all zeroed. The form
   // defaults to off, so we do not toggle it. (If a profile ever defaults
-  // fasted-on, the ≥90 test would lose its occasions — revisit here if so.)
+  // fasted-on, the ≥120 test would lose its occasions — revisit here if so.)
 
   // ---- Deterministic fueling window ---------------------------------------
   // Floor it (the minus button clamps at 0 and becomes a no-op ElevatedButton),

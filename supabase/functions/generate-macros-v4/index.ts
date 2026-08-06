@@ -35,6 +35,7 @@ import {
   applyPreWorkoutHydrationOverlay,
   calculatePreWorkoutCarbs,
   calculatePreWorkoutHydration,
+  legacyHydrationTier,
   calculatePreWorkoutTargets,
   selectPreWorkoutFoods,
 } from "./pre-workout.ts";
@@ -177,13 +178,14 @@ serve(withSentry(async (req: Request) => {
       );
 
       // Spec-compliant pre-workout hydration overlay (hydration SSOT v6).
-      const preHydration = calculatePreWorkoutHydration({
+      const preHydrationInput = {
         bodyWeightKg: weightKg,
         workoutDurationMin: totalDurationMin,
         timeBeforeWorkoutMin: input.hours_before * 60,
         tempC: input.temp_c ?? null,
         hydrationCheck: input.hydration_check ?? "unknown",
-      });
+      };
+      const preHydration = calculatePreWorkoutHydration(preHydrationInput);
       // Per-feeding carbohydrate split (carbs SSOT v2) — `tiers` is
       // load-bearing; see single-sport.ts.
       const preCarbPlan = calculatePreWorkoutCarbs({
@@ -220,8 +222,10 @@ serve(withSentry(async (req: Request) => {
       const brickMacrosWithSelections = {
         ...brickMacros,
         pre_run_selections: preSelections,
-        // `pre_run_hydration_tier` (int) is RETIRED — `regime` replaces it.
+        // `regime` replaces the integer `pre_run_hydration_tier`, which is
+        // still emitted for clients up to 1.22.x (PW-013).
         pre_run_hydration_regime: preHydration.regime,
+        pre_run_hydration_tier: legacyHydrationTier(preHydrationInput),
         pre_run_fluid_target_basis: preHydration.target_basis,
         pre_run_hydration_check_used: preHydration.hydration_check_used,
         pre_run_fluid_tiers: preHydration.tiers,
