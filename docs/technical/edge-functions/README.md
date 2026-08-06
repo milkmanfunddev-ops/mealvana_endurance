@@ -8,7 +8,9 @@
 ## Source of Truth
 - Edge function folders: `supabase/functions/`
 - App invocation points: `lib/**` (`functions.invoke(...)`)
-- Deployment workflows: `.github/workflows/deploy-dev.yml`, `.github/workflows/deploy-prod.yml`
+- Deployment: manual only — `scripts/deploy_dev.sh` / `scripts/deploy_prod.sh` (or the
+  `/deploy-edge` Claude skill). The CI deploy workflows were deleted in `b2f86b4f` (2026-05-22);
+  no workflow runs `supabase functions deploy`.
 - Deployment hub: `/docs/deployment/README.md`
 
 ## Runbook / Commands
@@ -20,14 +22,17 @@ ls -1 supabase/functions
 ```bash
 rg -n "functions\.invoke\(" lib -S
 ```
-- Deploy one function manually:
+- Deploy one or more functions (the process of record — nothing deploys automatically):
+```bash
+./scripts/deploy_dev.sh <function-name> [<function-name> ...]
+./scripts/deploy_prod.sh <function-name> [<function-name> ...]
+```
+- Raw CLI equivalent:
 ```bash
 supabase functions deploy <function-name> --project-ref <project-ref> --no-verify-jwt
 ```
-- Deploy all functions in linked project context:
-```bash
-supabase functions deploy
-```
+- Avoid bare `supabase functions deploy` (no `--project-ref`): it trusts
+  `supabase/.temp/project-ref`, which can silently point at prod after any `supabase link`.
 
 ## Verification Checklist
 - Every function documented as active exists as a folder under `supabase/functions/`.

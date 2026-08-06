@@ -1271,7 +1271,12 @@ git commit -m "ci(codemagic): add flavor-specific workflows"
 
 ### 6.2 Update GitHub Actions (if used)
 
-**Files:**
+> **Stale (2026-05-22):** `deploy-dev.yml` / `deploy-prod.yml` were deleted in `b2f86b4f`
+> and are not coming back — backend deploys are manual (see `/docs/deployment/README.md`).
+> If flavors land, the current workflows to touch are `tests-selfhosted.yml` (and the
+> deploy scripts under `scripts/`), not the files below.
+
+**Files (historical):**
 - `.github/workflows/deploy-dev.yml`
 - `.github/workflows/deploy-prod.yml`
 - `.github/workflows/test.yml`
