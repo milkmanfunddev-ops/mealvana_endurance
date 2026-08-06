@@ -737,6 +737,11 @@ function buildSupabaseInsertStub(
 describe('insertGarminActivityIfMissing', () => {
   const TEST_USER = '550e8400-e29b-41d4-a716-446655440000';
 
+  // activities.id has NO database default — the server must generate it or
+  // the insert 23502s and the activity is silently dropped.
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   it('inserts a completed activity for a no-match endurance push', async () => {
     const activity = fixtures.swimmingActivityPush.activities![0];
     const mapped = mapGarminActivityToActivity(activity, TEST_USER);
@@ -758,6 +763,11 @@ describe('insertGarminActivityIfMissing', () => {
 
     const row = stub.capturedRow();
     assertExists(row);
+    // The insert payload MUST carry a server-generated uuid id — activities.id
+    // has no DB default, so omitting it fails with a 23502 not-null violation.
+    assertExists(row!.id);
+    assertEquals(typeof row!.id, 'string');
+    assertEquals(UUID_RE.test(row!.id as string), true);
     assertEquals(row!.user_id, TEST_USER);
     assertEquals(row!.activity_type, 'swimming');
     assertEquals(row!.status, 'completed');
@@ -820,9 +830,27 @@ describe('insertGarminActivityIfMissing', () => {
     }
     const row = stub.capturedRow();
     assertExists(row);
+    assertEquals(UUID_RE.test(String(row!.id)), true);
     assertEquals(row!.activity_type, 'other');
     assertEquals(row!.title, 'Leg Day');
     assertEquals(stub.insertCallCount(), 1);
+  });
+
+  it('generates a unique uuid id per auto-created activity', async () => {
+    const activity = fixtures.runningActivityPush.activities![0];
+    const mapped = mapGarminActivityToActivity(activity, TEST_USER);
+
+    const first = buildSupabaseInsertStub({ data: { id: 'a' }, error: null });
+    await insertGarminActivityIfMissing(first.client, activity, mapped);
+    const second = buildSupabaseInsertStub({ data: { id: 'b' }, error: null });
+    await insertGarminActivityIfMissing(second.client, activity, mapped);
+
+    const firstId = String(first.capturedRow()!.id);
+    const secondId = String(second.capturedRow()!.id);
+    assertEquals(UUID_RE.test(firstId), true);
+    assertEquals(UUID_RE.test(secondId), true);
+    // Fresh uuid per insert — not a constant, not copied from the payload.
+    assertEquals(firstId === secondId, false);
   });
 
   it('skips Garmin "transition" legs without inserting', async () => {

@@ -416,6 +416,11 @@ export async function insertGarminActivityIfMissing(
   const insertRow: Record<string, unknown> = {
     ...mappedActivity,
     ...completionFields,
+    // activities.id has NO database default — client-created rows generate
+    // their id in Dart, so server-side auto-creates must generate one too or
+    // the insert fails with a 23502 not-null violation and the activity is
+    // silently lost (bug: unmatched Garmin activities never imported).
+    id: crypto.randomUUID(),
     garmin_summary_id: String(summaryId),
     // Server-created — no client-side upload queue entry needed.
     needs_upload: false,
@@ -445,6 +450,15 @@ export async function insertGarminActivityIfMissing(
       );
       return { kind: "skipped_enum_not_ready", sportType };
     }
+    // Log loudly here (in addition to the caller): garmin-push intentionally
+    // returns 200 to Garmin even on per-activity failures (their webhook
+    // retry semantics), so this log line is the only durable evidence that
+    // an activity import was dropped.
+    console.error(
+      `[garmin] Auto-create insert FAILED for summaryId=${summaryId} ` +
+        `sport=${sportType} user=${mappedActivity.user_id} — activity NOT imported:`,
+      error,
+    );
     return { kind: "error", error };
   }
 
