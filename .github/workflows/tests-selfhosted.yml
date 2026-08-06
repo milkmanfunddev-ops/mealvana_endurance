@@ -61,12 +61,12 @@ env:
   PATROL_CLI_VERSION: 4.4.0
   # Below this the box swaps hard enough to kill the runner's heartbeat.
   MIN_FREE_DISK_GB: 25
-  # patrolTest() case count across the --target list below. 16 targets, but
+  # patrolTest() case count across the --target list below. 17 targets, but
   # integrations_connect_flow_test declares three cases (garmin, trainingpeaks,
-  # finalsurge), so 18. Bump this when you add a target or a case — the
+  # finalsurge) and recommendation_stacking_flow_test declares two, so 20. Bump this when you add a target or a case — the
   # "Assert the suite actually ran" step uses it to catch a silently dropped
   # target, which otherwise still exits 0.
-  EXPECTED_PATROL_TESTS: 18
+  EXPECTED_PATROL_TESTS: 20
 
 jobs:
   # Device-less suites — fast, reliable, no Xcode/simulator needed.
@@ -259,6 +259,7 @@ jobs:
             --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
             --target integration_test/flows/paywall_render_flow_test.dart \
+            --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=secrets/integration_test.env \
             -d "$PATROL_DEVICE" \

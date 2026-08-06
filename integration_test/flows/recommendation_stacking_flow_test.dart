@@ -8,12 +8,11 @@
 /// — so the assertions hold unchanged under the new rule; only the prose
 /// needed correcting from "≥90" to "≥120".
 ///
-/// ⚠️ **Still NOT in either CI target list.** Not because of the spec — that
-/// is resolved — but because this flow has never had a green Patrol run on
-/// this repo. Give it one against the dev backend, then add it to BOTH the M1
-/// list in `.github/workflows/tests-selfhosted.yml` and the two Codemagic dev
-/// lanes in `codemagic.yaml`; `ci_config_contract_test` asserts those lists
-/// agree, so a one-sided edit fails the unit suite.
+/// **In all three CI target lists as of 2026-08-06** (the M1 list in
+/// `.github/workflows/tests-selfhosted.yml` and both Codemagic dev lanes in
+/// `codemagic.yaml`), after QA's green 2/2 local Patrol run on the iPhone 17
+/// sim. `ci_config_contract_test` asserts those lists agree, so a one-sided
+/// edit fails the unit suite.
 ///
 /// Unlike `activities_crud_flow_test.dart` (which deliberately only asserts that
 /// a plan *renders*), this asserts on the RECOMMENDATION output itself: which

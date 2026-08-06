@@ -1477,6 +1477,7 @@ workflows:
             --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
             --target integration_test/flows/paywall_render_flow_test.dart \
+            --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=.env.dev.local \
             --dart-define-from-file=secrets/integration_test.env \
@@ -1573,6 +1574,7 @@ workflows:
             --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
             --target integration_test/flows/paywall_render_flow_test.dart \
+            --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=.env.dev.local \
             --dart-define-from-file=secrets/integration_test.env \
