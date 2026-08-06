@@ -19,7 +19,8 @@ class PreWorkoutTemplatesTable extends Table {
   /// e.g. 'Bagel', 'Oats / Granola', 'Hydration'.
   TextColumn get baseCategory => text().named('base_category')();
 
-  /// Timing label, e.g. '< 30 min', '30-90 min', '1.5-3 hours'.
+  /// Timing label, e.g. '< 30 min', '30-120 min', '2-4 hours' (older
+  /// catalogs: '30-90 min', '1.5-3 hours' — see BeforeSubPhase.fromTimeWindow).
   TextColumn get timeWindow => text().named('time_window')();
 
   /// Digestion speed bucket as stored in Supabase, e.g. 'Fast', 'Medium'.

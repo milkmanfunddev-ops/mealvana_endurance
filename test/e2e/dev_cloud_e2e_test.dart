@@ -1010,24 +1010,40 @@ void main() {
               1.1,
               'Before carbs',
             );
-            assertMacroInRangeBand(
-              sums['sodium']!,
-              (v4Macros['pre_run_sodium_mg'] as num).toDouble(),
-              v4Macros['pre_run_sodium_low_mg'] as num?,
-              v4Macros['pre_run_sodium_high_mg'] as num?,
-              0.85,
-              1.1,
-              'Before sodium',
-            );
-            assertMacroInRangeBand(
-              sums['water']!,
-              (v4Macros['pre_run_water_ml'] as num).toDouble(),
-              v4Macros['pre_run_water_low_ml'] as num?,
-              v4Macros['pre_run_water_high_ml'] as num?,
-              0.85,
-              1.1,
-              'Before water',
-            );
+            // Sodium v3 (pre-workout bundle): all three pre-run sodium fields
+            // are strictly NULL — the engine deliberately makes no sodium
+            // statement, and null is not 0 (asserting a band against it would
+            // invent a claim the spec refuses to make). Only assert when a
+            // target actually exists, i.e. against a pre-bundle engine.
+            final preRunSodium = v4Macros['pre_run_sodium_mg'] as num?;
+            if (preRunSodium != null) {
+              assertMacroInRangeBand(
+                sums['sodium']!,
+                preRunSodium.toDouble(),
+                v4Macros['pre_run_sodium_low_mg'] as num?,
+                v4Macros['pre_run_sodium_high_mg'] as num?,
+                0.85,
+                1.1,
+                'Before sodium',
+              );
+            }
+            // Hydration v6 (pre-workout bundle): when the gate fires
+            // (duration < 60 min AND temp < 30 C) the fluid fields are NULL,
+            // not 0 — "no statement is made", which is a different claim from
+            // "drink nothing". The 5K personas trip this gate. Assert the
+            // band only when the engine actually states a target.
+            final preRunWater = v4Macros['pre_run_water_ml'] as num?;
+            if (preRunWater != null) {
+              assertMacroInRangeBand(
+                sums['water']!,
+                preRunWater.toDouble(),
+                v4Macros['pre_run_water_low_ml'] as num?,
+                v4Macros['pre_run_water_high_ml'] as num?,
+                0.85,
+                1.1,
+                'Before water',
+              );
+            }
           }
         }
 

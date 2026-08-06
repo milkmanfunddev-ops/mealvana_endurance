@@ -139,11 +139,12 @@ function beforeSubPhaseFit(
 /** Timing meaning carried by the Formula Kit chip, made explicit to the model. */
 function beforeTimingWindow(subPhase: string | null | undefined): string {
   switch (subPhase) {
+    // Windows follow the ratified 120-minute meal boundary (D-017, 2026-08-05).
     case "full_meal":
     case "meal":
-      return "1.5-3 hours before exercise";
+      return "2-4 hours before exercise";
     case "snack":
-      return "30-90 minutes before exercise";
+      return "30-120 minutes before exercise";
     case "top_up":
       return "less than 30 minutes before exercise";
     default:

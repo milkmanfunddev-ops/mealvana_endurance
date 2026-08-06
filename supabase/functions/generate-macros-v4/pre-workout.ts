@@ -737,11 +737,34 @@ export function getActiveSubPhases(hoursBefore: number): SubPhaseType[] {
   return ['top_up'];
 }
 
-function getTimeWindowForPhase(phase: SubPhaseType): string {
-  switch (phase) {
-    case 'meal': return '1.5-3 hours';
-    case 'snack': return '30-90 min';
-    case 'top_up': return '< 30 min';
+/**
+ * Classify a `pre_workout_templates.time_window` string to its sub-phase,
+ * accepting BOTH catalog generations.
+ *
+ * The catalog's window labels moved with the 120-minute ruling (D-017): the
+ * dev catalog was bulk-migrated on 2026-08-05 to `2-4 hours` / `30-120 min`,
+ * while prod still carries `1.5-3 hours` / `30-90 min`. The same function
+ * code deploys to both projects, so matching on ONE generation of strings
+ * breaks whichever catalog holds the other — that is exactly the failure that
+ * produced flat-50 g before-phases on dev: `meal` and `snack` matched zero
+ * templates and only the top-off slot delivered.
+ *
+ * Every template filter must therefore compare PHASES
+ * (`timeWindowToPhase(t.time_window) === phase`), never raw strings.
+ * An unknown window returns null and simply matches no phase.
+ */
+export function timeWindowToPhase(timeWindow: string): SubPhaseType | null {
+  switch (timeWindow) {
+    case '2-4 hours': // current generation (dev catalog, post 2026-08-05)
+    case '1.5-3 hours': // previous generation (prod catalog)
+      return 'meal';
+    case '30-120 min': // current generation
+    case '30-90 min': // previous generation
+      return 'snack';
+    case '< 30 min': // unchanged across generations
+      return 'top_up';
+    default:
+      return null;
   }
 }
 
@@ -802,8 +825,9 @@ export function getEligibleTemplates(
   dislikedFoods: string[] = [],
   allergies: string[] = [],
 ): PreWorkoutTemplate[] {
-  const timeWindow = getTimeWindowForPhase(phase);
-  let filtered = templates.filter((t) => t.time_window === timeWindow);
+  // Phase comparison, not string comparison — the catalog's window labels
+  // differ between projects (see timeWindowToPhase).
+  let filtered = templates.filter((t) => timeWindowToPhase(t.time_window) === phase);
   const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
 
   // Diet filtering (dietary preference like 'vegan', 'keto', etc.)
@@ -1290,7 +1314,7 @@ export function selectPreWorkoutFoods(
     foodTemplates.some(
       (t) =>
         pinnedTemplateIds.has(t.id) &&
-        t.time_window === getTimeWindowForPhase(p),
+        timeWindowToPhase(t.time_window) === p,
     );
   const emptyPhases = phases.filter(
     (p) =>
@@ -1355,10 +1379,11 @@ export function selectPreWorkoutFoods(
     // they take over candidate selection — bypassing dietary/dislike/allergen
     // filters, cross-phase dedup, and the scale clamp. Per locked Formula Kit
     // policy (2026-05-21): in-scope pins are honored unconditionally.
-    const phaseTimeWindow = getTimeWindowForPhase(phase);
     const pinnedForPhase = pinsActive
       ? foodTemplates.filter(
-          (t) => pinnedTemplateIds!.has(t.id) && t.time_window === phaseTimeWindow,
+          (t) =>
+            pinnedTemplateIds!.has(t.id) &&
+            timeWindowToPhase(t.time_window) === phase,
         )
       : [];
     const pinOverrideActive = pinnedForPhase.length > 0;

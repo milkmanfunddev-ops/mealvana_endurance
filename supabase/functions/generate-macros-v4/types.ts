@@ -14,7 +14,20 @@ import type { FormulaDecisionSource } from '../_shared/nutrition/formula-decisio
 // ============================================================================
 
 export type TemplateType = 'food' | 'drink' | 'electrolyte';
-export type TimeWindow = '< 30 min' | '30-90 min' | '1.5-3 hours';
+/**
+ * `pre_workout_templates.time_window` values, BOTH catalog generations.
+ *
+ * The labels moved with the 120-minute ruling (D-017): dev's catalog was
+ * migrated to `30-120 min` / `2-4 hours` on 2026-08-05, prod still holds
+ * `30-90 min` / `1.5-3 hours`. Code must never compare these strings
+ * directly — classify through `timeWindowToPhase` (pre-workout.ts) instead.
+ */
+export type TimeWindow =
+  | '< 30 min'
+  | '30-90 min'
+  | '1.5-3 hours'
+  | '30-120 min'
+  | '2-4 hours';
 export type SubPhaseType = 'meal' | 'snack' | 'top_up';
 
 export interface PreWorkoutTemplate {
