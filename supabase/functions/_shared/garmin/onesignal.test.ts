@@ -49,6 +49,9 @@ interface CapturedRequest {
 const originalFetch = globalThis.fetch;
 let captured: CapturedRequest[] = [];
 let oneSignalAccepts = true;
+// OneSignal answers 200 even when nothing was delivered; these model the body.
+let oneSignalRecipients = 1;
+let oneSignalBodyErrors: unknown = undefined;
 
 const oneSignalRequest = () =>
   captured.find((r) => r.url.includes("onesignal.com"));
@@ -72,6 +75,8 @@ describe("sendActivityUploadedPush", () => {
   beforeEach(() => {
     captured = [];
     oneSignalAccepts = true;
+    oneSignalRecipients = 1;
+    oneSignalBodyErrors = undefined;
 
     globalThis.fetch = ((input: unknown, init?: RequestInit) => {
       const url = typeof input === "string" ? input : String(input);
@@ -80,9 +85,14 @@ describe("sendActivityUploadedPush", () => {
       if (url.includes("onesignal.com")) {
         return Promise.resolve(
           oneSignalAccepts
-            ? new Response(JSON.stringify({ id: "notification-1" }), {
-              status: 200,
-            })
+            ? new Response(
+              JSON.stringify({
+                id: "notification-1",
+                recipients: oneSignalRecipients,
+                ...(oneSignalBodyErrors ? { errors: oneSignalBodyErrors } : {}),
+              }),
+              { status: 200 },
+            )
             : new Response("invalid_player_ids", { status: 400 }),
         );
       }
@@ -194,6 +204,29 @@ describe("sendActivityUploadedPush", () => {
 
     it("does not count a send OneSignal rejected", async () => {
       oneSignalAccepts = false;
+
+      await send();
+
+      assertEquals(mixpanelRequest(), undefined);
+    });
+
+    it("does not count a 200 that reached no device", async () => {
+      // OneSignal returns 200 with recipients: 0 when the athlete has no
+      // subscription — e.g. every dev build, which ships without an
+      // ONESIGNAL_APP_ID and so never registers one. Counting these would
+      // inflate the denominator with notifications nobody could receive.
+      oneSignalRecipients = 0;
+
+      await send();
+
+      assertEquals(mixpanelRequest(), undefined);
+    });
+
+    it("does not count a 200 carrying an errors body", async () => {
+      oneSignalRecipients = 1;
+      oneSignalBodyErrors = {
+        invalid_aliases: { external_id: [USER_ID] },
+      };
 
       await send();
 

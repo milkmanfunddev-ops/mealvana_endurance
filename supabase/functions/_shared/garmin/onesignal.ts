@@ -145,8 +145,28 @@ export async function sendActivityUploadedPush(params: {
     return;
   }
 
+  // A 200 does NOT mean anyone was reached. OneSignal answers 200 with an
+  // `errors` body when the alias has no subscription ("All included players
+  // are not subscribed", or invalid_aliases.external_id) — which is the normal
+  // case for an athlete who has never opened a build with push configured.
+  // Treating that as sent would inflate the click-through denominator with
+  // notifications nobody could receive, understating CTR.
+  const result = await response.json().catch(() => null) as
+    | { id?: string; recipients?: number; errors?: unknown }
+    | null;
+
+  const recipients = result?.recipients ?? 0;
+  if (result?.errors || recipients < 1) {
+    console.warn(
+      `${prefix} OneSignal accepted the request but reached no device for user ${params.userId} ` +
+        `(recipients=${recipients}) — not counting it as sent:`,
+      JSON.stringify(result?.errors ?? {}),
+    );
+    return;
+  }
+
   console.log(
-    `${prefix} OneSignal notification sent for activity ${params.activityId} to user ${params.userId}`,
+    `${prefix} OneSignal notification sent for activity ${params.activityId} to user ${params.userId} (recipients=${recipients})`,
   );
 
   // Denominator for push click-through. Only emitted once OneSignal has
