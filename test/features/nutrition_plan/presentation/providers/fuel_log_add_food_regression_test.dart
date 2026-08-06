@@ -121,8 +121,7 @@ ProviderContainer _containerWithSeed(
     overrides: [
       activitiesServiceProvider.overrideWithValue(activitiesService),
       authServiceProvider.overrideWithValue(authService),
-      foodOperationsServiceProvider
-          .overrideWithValue(FoodOperationsService()),
+      foodOperationsServiceProvider.overrideWithValue(FoodOperationsService()),
       activityDetailControllerProvider(
         activityId: _activityId,
         isNewActivity: false,
@@ -138,11 +137,9 @@ void main() {
     registerFallbackValue(FakeActivity());
   });
 
-  group(
-      'Bug 3a3e3fdb — addFoodToFuelLogFromRawFood writes to fuelLogData, '
+  group('Bug 3a3e3fdb — addFoodToFuelLogFromRawFood writes to fuelLogData, '
       'not nutritionPlan', () {
-    test(
-        'adding a food in fuel-log mode appends a FuelLogItem with '
+    test('adding a food in fuel-log mode appends a FuelLogItem with '
         'isAdded: true to fuelLogData.items', () {
       final mockActivitiesService = MockActivitiesService();
       final mockAuthService = MockAuthService();
@@ -180,21 +177,29 @@ void main() {
 
       // The fuel log must now contain the added food.
       expect(fuelLog, isNotNull);
-      expect(fuelLog!.items.length, 2,
-          reason: 'Fuel log should have the original item plus the new one.');
+      expect(
+        fuelLog!.items.length,
+        2,
+        reason: 'Fuel log should have the original item plus the new one.',
+      );
 
       final addedItem = fuelLog.items.firstWhere(
         (item) => item.name == 'Honey Stinger Honey Waffle',
       );
-      expect(addedItem.isAdded, isTrue,
-          reason: 'The added food must be marked isAdded: true.');
-      expect(addedItem.plannedQuantity, 0,
-          reason: 'An ad-hoc addition has plannedQuantity 0.');
+      expect(
+        addedItem.isAdded,
+        isTrue,
+        reason: 'The added food must be marked isAdded: true.',
+      );
+      expect(
+        addedItem.plannedQuantity,
+        0,
+        reason: 'An ad-hoc addition has plannedQuantity 0.',
+      );
       expect(addedItem.sectionId, 'during_run');
     });
 
-    test(
-        'adding a food in fuel-log mode does NOT modify the nutrition plan '
+    test('adding a food in fuel-log mode does NOT modify the nutrition plan '
         'section food list', () {
       final mockActivitiesService = MockActivitiesService();
       final mockAuthService = MockAuthService();
@@ -237,9 +242,13 @@ void main() {
           .firstWhere((s) => s.id == 'during_run')
           .foodItems;
 
-      expect(duringAfter.length, duringBefore.length,
-          reason: 'Nutrition plan must not gain a food item when in fuel-log '
-              'mode — the write must go to fuelLogData only.');
+      expect(
+        duringAfter.length,
+        duringBefore.length,
+        reason:
+            'Nutrition plan must not gain a food item when in fuel-log '
+            'mode — the write must go to fuelLogData only.',
+      );
       expect(duringAfter.map((f) => f.id), duringBefore.map((f) => f.id));
     });
   });

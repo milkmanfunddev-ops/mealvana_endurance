@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -119,6 +120,14 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
   // Private Methods
   // ========================================================================
 
+  /// Test seam for the delete-and-batch-insert mapper — drives
+  /// [_syncToLocalDatabase] directly with Supabase-wire-shaped rows, matching
+  /// the pattern used by formula_pins_repository_test.dart (mocking the full
+  /// SupabaseQueryBuilder chain isn't worth the brittleness).
+  @visibleForTesting
+  Future<void> syncRowsToLocalForTest(List<dynamic> supabaseData) =>
+      _syncToLocalDatabase(supabaseData);
+
   Future<void> _syncToLocalDatabase(List<dynamic> supabaseData) async {
     await _database.delete(_database.preWorkoutTemplatesTable).go();
 
@@ -129,6 +138,9 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
         name: json['name'] as String,
         baseCategory: json['base_category'] as String,
         timeWindow: json['time_window'] as String,
+        // Nullable: prod's catalog predates the sub_phase column until its
+        // migration replays there (client falls back to fromTimeWindow).
+        subPhase: Value(json['sub_phase'] as String?),
         digestionSpeed: json['digestion_speed'] as String,
         allergens: Value(_arrayToJsonString(json['allergens'])),
         servingUnit: json['serving_unit'] as String,
@@ -139,6 +151,9 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
         notes: Value(json['notes'] as String?),
         isActive: Value(json['is_active'] as bool? ?? true),
         carbsPerServing: (json['carbs_per_serving'] as num).toDouble(),
+        fiberPerServing: Value(
+          (json['fiber_per_serving'] as num?)?.toDouble() ?? 0,
+        ),
         proteinPerServing: (json['protein_per_serving'] as num).toDouble(),
         fatPerServing: (json['fat_per_serving'] as num).toDouble(),
         sodiumMg: (json['sodium_mg'] as num).toDouble(),

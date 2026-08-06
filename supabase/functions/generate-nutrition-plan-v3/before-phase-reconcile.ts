@@ -16,9 +16,11 @@
  *      above the ceiling;
  *   2. trims electrolyte sodium down toward the phase sodium target when the
  *      total is above the ceiling;
- *   3. adds universal carb add-ons (banana / dates / applesauce / raisins —
- *      the same Pass 1.5 pool) when the total is below the carb floor,
- *      aiming at the carb target without breaching any ceiling.
+ *   3. adds the universal banana add-on when the total is below the carb
+ *      floor, aiming at the carb target without breaching any ceiling.
+ *      (Dates/applesauce/raisins were removed 2026-08-06 — see
+ *      makeAddOnPool; carb gaps are now closed from the real template
+ *      catalog inside Algorithm C, before the pin overlay.)
  *
  * Pass/fail is the calculated range and scaling aims at the point target —
  * never at the nearest boundary, and with no percentage grace
@@ -34,19 +36,10 @@ import type {
 } from "../_shared/nutrition/templates/types.ts";
 import {
   type AddOn,
-  APPLESAUCE_CARBS,
-  APPLESAUCE_FLUID,
-  APPLESAUCE_SODIUM,
   BANANA_CARBS,
   BANANA_FLUID,
   BANANA_SODIUM,
-  DATES_CARBS,
-  DATES_FLUID,
-  DATES_SODIUM,
   type PreWorkoutTargets,
-  RAISINS_CARBS,
-  RAISINS_FLUID,
-  RAISINS_SODIUM,
 } from "../generate-macros-v4/types.ts";
 import { addOnToFoodResult } from "./before-phase-explosion.ts";
 import { getSubPhaseTimingLabel } from "./sub-phase-timing.ts";
@@ -179,9 +172,15 @@ function makeAddOnPool(disliked: Set<string>): Array<{
   name: string;
   addOn: AddOn;
 }> {
-  // Same universal pool as Algorithm C's Pass 1.5: vegan, gluten-free, and
-  // free of the common allergens the phase filters on, so only dislikes and
-  // macro headroom gate them here.
+  // Banana only. The old dates/applesauce/raisins entries were removed with
+  // Algorithm C's hardcoded Pass 1.5 fallback list (bug 3b4e3fdb,
+  // 2026-08-06): they emitted foods that exist in no pinnable template — the
+  // athlete saw "Medjool Dates" fill the Top-Off with no formula to pin —
+  // and dates fail food-composition v3's H2 fibre gate at the top-off tier.
+  // Algorithm C now closes carb gaps from the real template catalog before
+  // the pin overlay runs; this post-pin pass keeps only the banana (a real,
+  // universally-safe add-on with an established wire type) and otherwise
+  // reports the shortfall honestly in the log rather than inventing food.
   const pool: Array<{ name: string; addOn: AddOn }> = [
     {
       name: "banana",
@@ -190,36 +189,6 @@ function makeAddOnPool(disliked: Set<string>): Array<{
         carbs_g: BANANA_CARBS,
         sodium_mg: BANANA_SODIUM,
         fluid_ml: BANANA_FLUID,
-        servings: 1,
-      },
-    },
-    {
-      name: "dates",
-      addOn: {
-        type: "dates",
-        carbs_g: DATES_CARBS,
-        sodium_mg: DATES_SODIUM,
-        fluid_ml: DATES_FLUID,
-        servings: 1,
-      },
-    },
-    {
-      name: "applesauce",
-      addOn: {
-        type: "applesauce",
-        carbs_g: APPLESAUCE_CARBS,
-        sodium_mg: APPLESAUCE_SODIUM,
-        fluid_ml: APPLESAUCE_FLUID,
-        servings: 1,
-      },
-    },
-    {
-      name: "raisins",
-      addOn: {
-        type: "raisins",
-        carbs_g: RAISINS_CARBS,
-        sodium_mg: RAISINS_SODIUM,
-        fluid_ml: RAISINS_FLUID,
         servings: 1,
       },
     },
@@ -300,12 +269,18 @@ export function reconcileBeforePhaseAfterPins(
           const newFluid = totals.fluid + candidate.addOn.fluid_ml;
           if (newCarbs > targets.carbs_high_g + 1e-9) continue;
           // A pinned slot may already hold a macro above its ceiling (pins
-          // are honored unconditionally); that pre-existing overage must not
-          // veto zero-contribution add-ons. Block only additions that would
-          // push the macro further past the ceiling.
+          // are honored unconditionally); that pre-existing overage is
+          // reported, not repaired, and must not veto the carb-floor fill:
+          // refusing a banana's 1 mg of sodium while honoring a pin's
+          // 300 mg overage protects nobody and starves carbs (2026-08-06,
+          // with the removal of the zero-sodium hardcoded fallbacks that
+          // used to slip through this guard). So a ceiling is only enforced
+          // while it is still intact — an add-on may never take a macro
+          // from inside its ceiling to past it.
           if (
             targets.sodium_mg > 0 &&
             candidate.addOn.sodium_mg > 0 &&
+            totals.sodium <= targets.sodium_high_mg + 1e-9 &&
             newSodium > targets.sodium_high_mg
           ) {
             continue;
@@ -313,6 +288,7 @@ export function reconcileBeforePhaseAfterPins(
           if (
             targets.water_ml > 0 &&
             candidate.addOn.fluid_ml > 0 &&
+            totals.fluid <= targets.water_high_ml + 1e-9 &&
             newFluid > targets.water_high_ml
           ) {
             continue;

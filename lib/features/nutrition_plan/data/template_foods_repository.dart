@@ -202,6 +202,7 @@ class TemplateFoodsRepository with SyncableRepository {
         isActive: Value(json['is_active'] as bool? ?? true),
         excludedDiets: Value(_arrayToJsonString(json['excluded_diets'])),
         productType: Value(json['product_type'] as String? ?? 'real_food'),
+        foodGroup: Value(json['food_group'] as String?),
         activityTypes: Value(_arrayToJsonString(json['activity_types'])),
         categories: Value(_arrayToJsonString(json['categories'])),
         isElectrolyte: Value(json['is_electrolyte'] as bool? ?? false),

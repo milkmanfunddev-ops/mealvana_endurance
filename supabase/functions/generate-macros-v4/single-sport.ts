@@ -11,6 +11,10 @@
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import type { PreWorkoutTemplate } from "./types.ts";
 import {
+  loadPreWorkoutDrinkPool,
+  loadPreWorkoutElectrolytePool,
+} from "./ingredient-pools.ts";
+import {
   applyPreWorkoutHydrationOverlay,
   calculatePreWorkoutCarbs,
   calculatePreWorkoutHydration,
@@ -524,19 +528,18 @@ export async function loadPreWorkoutTemplates(
 }> {
   const supabase = clientOverride ?? createServiceClient();
 
-  const [foodResult, drinkResult, electrolyteResult] = await Promise.all([
+  // Food formulas come from pre_workout_templates; the drink and electrolyte
+  // pools come from template_foods (the ingredient catalog) — see
+  // ingredient-pools.ts. The ingredient-shaped rows that used to carry the
+  // drink/electrolyte pools inside pre_workout_templates are dropped
+  // (food-composition v3, H5).
+  const [foodResult, drink, electrolyte] = await Promise.all([
     supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
       "template_type",
       "food",
     ),
-    supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
-      "template_type",
-      "drink",
-    ),
-    supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
-      "template_type",
-      "electrolyte",
-    ),
+    loadPreWorkoutDrinkPool(clientOverride),
+    loadPreWorkoutElectrolytePool(),
   ]);
 
   if (foodResult.error) {
@@ -544,21 +547,11 @@ export async function loadPreWorkoutTemplates(
       `Failed to load food templates: ${foodResult.error.message}`,
     );
   }
-  if (drinkResult.error) {
-    throw new Error(
-      `Failed to load drink templates: ${drinkResult.error.message}`,
-    );
-  }
-  if (electrolyteResult.error) {
-    throw new Error(
-      `Failed to load electrolyte templates: ${electrolyteResult.error.message}`,
-    );
-  }
 
   return {
     food: (foodResult.data ?? []) as PreWorkoutTemplate[],
-    drink: (drinkResult.data ?? []) as PreWorkoutTemplate[],
-    electrolyte: (electrolyteResult.data ?? []) as PreWorkoutTemplate[],
+    drink,
+    electrolyte,
   };
 }
 

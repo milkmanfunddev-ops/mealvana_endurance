@@ -56,13 +56,17 @@ Widget _card(CarbsPerHourBaseline baseline) {
 /// Pump the card, ignoring RenderFlex overflow. The card's fixed-width readout
 /// overflows under the test font's metrics, which is unrelated to the copy this
 /// test asserts on.
-Future<void> _pumpCard(WidgetTester tester, CarbsPerHourBaseline baseline) async {
+Future<void> _pumpCard(
+  WidgetTester tester,
+  CarbsPerHourBaseline baseline,
+) async {
   bool isOverflow(String s) =>
       s.contains('overflowed') || s.contains('infinite size');
 
   final previousOnError = FlutterError.onError;
   FlutterError.onError = (details) {
-    if (!isOverflow(details.exceptionAsString())) previousOnError?.call(details);
+    if (!isOverflow(details.exceptionAsString()))
+      previousOnError?.call(details);
   };
   try {
     await tester.pumpWidget(_card(baseline));

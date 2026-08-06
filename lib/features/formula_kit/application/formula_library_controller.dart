@@ -222,26 +222,38 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     // this build() should follow the same isStale() + syncFromRemote() pattern.
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
+
+    // The four catalog tables are READ-ONLY PUBLIC reference data (their
+    // syncFromRemote implementations don't use userId, and their RLS read
+    // policies are open), so they sync regardless of auth state. Gating them
+    // on a matched user profile was the 2026-08-06 "no formulas showing"
+    // bug: after a local delete-and-resync wipe (e.g. the v15 schema-repair
+    // resync), nothing but this screen repopulates these tables — and a
+    // session without a matching local `users` row (anon purchase testing,
+    // mid-account-bind) skipped the sync entirely, rendering an empty
+    // library and starving every other reader of pre_workout_templates
+    // (activity-detail pin banner included). Only formula_pins is
+    // user-scoped and keeps the auth gate.
+    if (await templateFoodsRepo.isStale()) {
+      await templateFoodsRepo.syncFromRemote(userId ?? '');
+    }
+    if (await preWorkoutRepo.isStale()) {
+      await preWorkoutRepo.syncFromRemote(userId ?? '');
+    }
+    if (await duringRepo.isStale()) {
+      await duringRepo.syncFromRemote(userId ?? '');
+    }
+    if (await postRepo.isStale()) {
+      await postRepo.syncFromRemote(userId ?? '');
+    }
     if (userId != null) {
-      if (await templateFoodsRepo.isStale()) {
-        await templateFoodsRepo.syncFromRemote(userId);
-      }
-      if (await preWorkoutRepo.isStale()) {
-        await preWorkoutRepo.syncFromRemote(userId);
-      }
-      if (await duringRepo.isStale()) {
-        await duringRepo.syncFromRemote(userId);
-      }
-      if (await postRepo.isStale()) {
-        await postRepo.syncFromRemote(userId);
-      }
       if (await pinsRepo.isStale()) {
         await pinsRepo.syncFromRemote(userId);
       }
     } else {
       logger.warning(
         'FormulaLibraryController build with no authenticated user — '
-        'reading from local cache only',
+        'catalogs synced, pins read from local cache only',
         context: 'FORMULA_KIT',
       );
     }
@@ -724,8 +736,12 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     return BeforeFormulaView(
       id: e.id,
       name: e.name,
-      // pre_workout_templates has no meal_type column — derive from time_window.
-      subPhase: BeforeSubPhase.fromTimeWindow(e.timeWindow),
+      // Category-first (Lee ruling 2026-08-06): the sub_phase column is
+      // authoritative; time_window is a display label and only classifies
+      // pre-migration catalogs (prod, until the sub_phase migration replays).
+      subPhase:
+          BeforeSubPhase.fromStorageValue(e.subPhase) ??
+          BeforeSubPhase.fromTimeWindow(e.timeWindow),
       // Lowercase to match FormulaDigestionSpeed.storageValue (`fast`/`medium`).
       digestionSpeed: e.digestionSpeed.toLowerCase(),
       templateType: e.templateType,

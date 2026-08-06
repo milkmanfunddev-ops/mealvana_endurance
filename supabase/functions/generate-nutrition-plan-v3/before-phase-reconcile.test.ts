@@ -188,10 +188,15 @@ describe('reconcileBeforePhaseAfterPins', () => {
       (f) => f.food_id === 'addon_banana',
     );
     assert(!addedBanana, 'disliked banana must not be added');
+    // With banana disliked the pool is empty (dates/applesauce/raisins were
+    // removed 2026-08-06 — they emitted foods that exist in no pinnable
+    // template; see makeAddOnPool). The honest outcome is an unchanged carb
+    // total plus the out-of-range warning in the log — the reconcile pass
+    // must never invent food to close the gap.
     const after = totals(result);
     assert(
-      after.carbs >= TARGETS.carbs_low_g,
-      `carb floor must still be met via other add-ons, got ${after.carbs}`,
+      after.carbs < TARGETS.carbs_low_g,
+      `with the whole pool disliked the shortfall must remain, got ${after.carbs}`,
     );
   });
 });

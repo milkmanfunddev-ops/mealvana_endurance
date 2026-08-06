@@ -176,6 +176,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 16: pre-workout food-composition v3 + category-based
+  /// selection (2026-08-06). Three additive columns:
+  ///   • pre_workout_templates.sub_phase (TEXT, nullable) — explicit tier
+  ///     membership ('full_meal' | 'snack' | 'top_up'); time_window becomes a
+  ///     display label only. Matches the Supabase sub_phase migration
+  ///     (20260806150000, applied to dev).
+  ///   • pre_workout_templates.fiber_per_serving (REAL NOT NULL DEFAULT 0) —
+  ///     H2 per-feeding fibre gate (Supabase v3 structure migration).
+  ///   • template_foods.food_group (TEXT, nullable) — Layer A food group
+  ///     G1…G9 for the §3.10 tier matrix (same migration).
+  /// All three use the idempotent addColumn helper, so a web user_version
+  /// replay of the step is harmless.
+  ///
   /// Schema version 14: build-a-meal redesign — `meal_logs.slot` becomes
   /// optional (nullable). SQLite has no `ALTER COLUMN ... DROP NOT NULL`, so
   /// the `from < 14` step rebuilds the table (rename → recreate via the
@@ -245,7 +258,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -461,6 +474,21 @@ class AppDatabase extends _$AppDatabase {
             'is_fasted',
             'INTEGER NOT NULL DEFAULT 0',
           );
+        }
+
+        // v16: pre-workout food-composition v3 + category-based selection.
+        // sub_phase is the authoritative tier ('full_meal'/'snack'/'top_up');
+        // fiber_per_serving feeds the H2 fibre gate; food_group carries the
+        // Layer A classification on the ingredient catalog. All nullable or
+        // defaulted, all idempotent via addColumn.
+        if (from < 16) {
+          await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
+          await addColumn(
+            'pre_workout_templates',
+            'fiber_per_serving',
+            'REAL NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'food_group', 'TEXT');
         }
       },
 

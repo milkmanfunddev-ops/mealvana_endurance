@@ -21,16 +21,19 @@ void main() {
       expect(parsed.copyVariant, isNull);
     });
 
-    test('parses a three-segment payload and strips the variant from the id', () {
-      final parsed = NotificationService.parseTypedNotificationPayload(
-        'activity:abc-123:accuracy_hook_v2',
-      );
+    test(
+      'parses a three-segment payload and strips the variant from the id',
+      () {
+        final parsed = NotificationService.parseTypedNotificationPayload(
+          'activity:abc-123:accuracy_hook_v2',
+        );
 
-      expect(parsed, isNotNull);
-      expect(parsed!.type, 'activity');
-      expect(parsed.activityId, 'abc-123');
-      expect(parsed.copyVariant, 'accuracy_hook_v2');
-    });
+        expect(parsed, isNotNull);
+        expect(parsed!.type, 'activity');
+        expect(parsed.activityId, 'abc-123');
+        expect(parsed.copyVariant, 'accuracy_hook_v2');
+      },
+    );
 
     test('parses a real UUID activity id', () {
       final parsed = NotificationService.parseTypedNotificationPayload(
@@ -85,13 +88,16 @@ void main() {
       );
     });
 
-    test('returns null when the activity id is empty but a variant follows', () {
-      expect(
-        NotificationService.parseTypedNotificationPayload(
-          'activity::accuracy_hook_v2',
-        ),
-        isNull,
-      );
-    });
+    test(
+      'returns null when the activity id is empty but a variant follows',
+      () {
+        expect(
+          NotificationService.parseTypedNotificationPayload(
+            'activity::accuracy_hook_v2',
+          ),
+          isNull,
+        );
+      },
+    );
   });
 }
