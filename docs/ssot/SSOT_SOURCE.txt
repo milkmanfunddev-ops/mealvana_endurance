@@ -1,4 +1,5 @@
-tag: pre-workout-macros@v1
-commit: 9ee128361f1483b2e740e3ca7bc9b9a90146aab3
+tag: pre-workout-food-composition@v1
+commit: fe31443b0edef302267bdc1fa661c7e3bf4b5b9b
 source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
-synced: 2026-08-05
+synced: 2026-08-06
+note: tag lives on qa/pre-workout-drawers (not yet on QA main); includes pre-workout-macros@v1
