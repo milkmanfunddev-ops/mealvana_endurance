@@ -16,6 +16,7 @@ import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../formula_kit/application/formula_library_controller.dart';
 import '../../application/onboarding_service.dart';
+import '../../application/onboarding_snapshot_service.dart';
 import '../../data/onboarding_survey_repository.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
@@ -845,6 +846,13 @@ class OnboardingController extends _$OnboardingController {
       // nutrition-plan edge function (`emit_ephemeral_default_formula`), so
       // there is nothing to seed here. Only user-created pins live in
       // `formula_pins`.
+
+      // Best-effort local snapshot OUTSIDE Drift (SharedPreferences), so the
+      // delete-and-recreate upgrade path can restore an anonymous user whose
+      // data never reached Supabase (plan §7). Never fails the save.
+      await ref
+          .read(onboardingSnapshotServiceProvider)
+          .writeSnapshot(profile: _currentUser!, draft: draft);
 
       // Clear the draft and legacy caches.
       _draft = const OnboardingDraft();
