@@ -3,6 +3,27 @@
 Branch: `copy/garmin-activity-push-accuracy-hook`
 Notion: Sprint Tasks — "Rework the Garmin-connect notification copy with AI"
 
+## ⚠️ Release checklist — merging is not enough
+
+Nothing in CI deploys edge functions (see the note under "Two deployables").
+Merging this branch ships the **app** half only; the notification keeps its old
+wording until someone runs the deploy by hand.
+
+- [ ] `supabase secrets set MIXPANEL_PROJECT_TOKEN=<token> --project-ref <prod-ref>`
+      — one-time; without it the click-through denominator records nothing
+- [ ] `./scripts/deploy_prod.sh garmin-push garmin-ping`
+      — **both**; `_shared/garmin/onesignal.ts` changed and each imports it
+- [ ] App build carrying the client half (`copy_variant` on the click event)
+
+Deploy the functions close to the app release. Ship the server well ahead and
+athletes get the new copy while their old app reports clicks with no variant —
+sent events tagged `accuracy_hook_v2`, clicks untagged. Total click-through
+still computes; the per-variant split has a blind window until the app lands.
+
+Verify after: `./scripts/edge_logs.sh -m 5 garmin-push` should show
+`OneSignal notification sent … (recipients=N)` with N ≥ 1. A `recipients=0`
+line means the send reached no device.
+
 ## What changed
 
 The push an athlete gets when a Garmin activity syncs.
