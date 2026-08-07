@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_footer.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,6 +10,10 @@ import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
+import '../../../onboarding/presentation/providers/onboarding_controller.dart';
+import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
+import '../../../onboarding/presentation/widgets/onboarding_multi_select_step.dart';
+import '../../../onboarding/presentation/widgets/onboarding_week_chart_card.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
@@ -34,6 +37,7 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
     this.onContinue,
     this.onBack,
     this.stepIndex,
+    this.isRevisit = false,
   });
 
   /// Callback to advance to next page in onboarding PageView
@@ -46,6 +50,14 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
   /// Position in the onboarding flow, stamped onto `screen_viewed` so the
   /// drop-off funnel can order the steps. Null in settings mode.
   final int? stepIndex;
+
+  /// Spec revisit mode — the page pushed by the plan-reveal / daily-preview
+  /// "Connect now" nudges. Same providers list and behavior, but the intro
+  /// block (orange title, subtitle, chart card) collapses to the teal
+  /// "CONNECT TRAINING" kicker, and both Back and Continue return to the
+  /// pushing page (the callbacks pop the route) instead of moving the
+  /// PageView.
+  final bool isRevisit;
 
   @override
   ConsumerState<ConnectedAppsScreen> createState() =>
@@ -97,6 +109,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                 ? 'Connect Training Onboarding'
                 : 'Connected Apps Settings',
             if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+            // Distinguishes the pushed revisit page (from the reveal/daily
+            // nudges) from the step-3 funnel view.
+            if (widget.isRevisit) 'is_revisit': true,
           },
         );
 
@@ -160,97 +175,112 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     );
   }
 
-  /// Onboarding mode layout with header and footer
+  /// Onboarding mode layout — pixel port of the HTML spec's connect-training
+  /// screen: shared spec header (back circle + progress segments), flat
+  /// OnbTokens.bg scaffold, left-aligned Sansita/orange title, the
+  /// "YOUR WEEK, FUELED" chart card, spec-styled provider rows, skip link,
+  /// and the shared Continue pill. (Settings mode is untouched.)
   Widget _buildOnboardingLayout(
     BuildContext context,
     WidgetRef ref,
     AsyncValue<ConnectTrainingState> state,
   ) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          // Main content
-          Expanded(
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: AppSpacing.screenPadding,
+      backgroundColor: OnbTokens.bg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            OnboardingStepHeader(
+              stepIndex: widget.stepIndex ?? 3,
+              onBack: widget.onBack,
+              backButtonKey: const ValueKey('connect_training.back_button'),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Header
-                    _buildOnboardingHeader(context),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    // Integration providers list
-                    Expanded(
-                      child: state.when(
-                        data: (data) =>
-                            _buildOnboardingProvidersList(context, ref, data),
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.dragonfruit,
+                    // Same header→title rhythm as the step screens.
+                    const SizedBox(height: 48),
+                    if (widget.isRevisit)
+                      // Spec revisit intro: just the teal kicker
+                      // (Apercu 500 11, ls .14em, uppercase, 18px below).
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 18),
+                        child: Text(
+                          key: ValueKey('connect_training.revisit_kicker'),
+                          'CONNECT TRAINING',
+                          style: TextStyle(
+                            fontFamily: OnbTokens.fontBody,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1.54,
+                            color: OnbTokens.teal,
                           ),
                         ),
-                        error: (error, _) =>
-                            _buildError(context, ref, error.toString()),
+                      )
+                    else ...[
+                      const Text(
+                        key: ValueKey('connect_training.title'),
+                        'Your training changes daily. Your fueling should too.',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: OnbTokens.orange,
+                          height: 1.05,
+                        ),
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        key: const ValueKey('connect_training.description'),
+                        'Connect your training calendar so we can import your '
+                        'workouts and periodize your nutrition.',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontBody,
+                          fontSize: 14,
+                          height: 1.45,
+                          color: OnbTokens.creamA(0.62),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // Carries its own 22px bottom margin per spec.
+                      const OnboardingWeekChartCard(),
+                    ],
+                    state.when(
+                      data: (data) =>
+                          _buildOnboardingProvidersList(context, ref, data),
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.dragonfruit,
+                        ),
+                      ),
+                      error: (error, _) =>
+                          _buildError(context, ref, error.toString()),
                     ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Skip button
-                    _buildSkipButton(context, ref),
-
-                    const SizedBox(height: AppSpacing.md),
                   ],
                 ),
               ),
             ),
-          ),
-
-          // Footer navigation
-          SafeArea(
-            top: false,
-            child: FigmaOnboardingFooter(
-              onContinue: () => widget.onContinue?.call(),
-              onBack: widget.onBack,
-              canContinue: true,
-              isLoading: state.isLoading,
-              continueButtonKey: const ValueKey(
-                'connect_training.continue_button',
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                2,
+                24,
+                bottomInset > 34 ? bottomInset : 34,
               ),
-              backButtonKey: const ValueKey('connect_training.back_button'),
+              child: OnboardingSpecCta(
+                label: 'Continue',
+                buttonKey: const ValueKey('connect_training.continue_button'),
+                onTap: () => widget.onContinue?.call(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildOnboardingHeader(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          key: const ValueKey('connect_training.title'),
-          'Connect Your Training',
-          style: AppTextStyles.pageTitle.copyWith(color: onSurface),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          key: const ValueKey('connect_training.description'),
-          'Import your upcoming workouts to get personalized nutrition plans for each session.',
-          style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
-        ),
-      ],
     );
   }
 
@@ -534,9 +564,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     );
   }
 
-  /// Content for onboarding mode
-  /// - Coming soon providers show "Notify Me"
-  /// - Workouts are automatically synced after connecting
+  /// Content for onboarding mode — spec row order (TrainingPeaks, Final
+  /// Surge, V.O2, Runna, Garmin Connect, TriDot coming-soon, declined tile)
+  /// with the spec's 10px row gap and spec-styled cards. Workouts are
+  /// automatically synced after connecting.
   Widget _buildOnboardingProvidersList(
     BuildContext context,
     WidgetRef ref,
@@ -552,31 +583,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     const trainingPeaksLogo =
         'assets/images/integrations/training_peaks_horizontal_dark.jpg';
 
-    return ListView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Final Surge - fully integrated
-        // Logo includes wordmark - no separate text label needed
-        IntegrationProviderCard(
-          key: const ValueKey('connect_training.finalsurge_connect_button'),
-          name: 'Final Surge',
-          iconPath: finalSurgeLogo,
-          logoHeight: 18,
-          isAvailable: true,
-          isConnected: data.isFinalSurgeConnected,
-          isConnecting:
-              data.isConnecting && data.connectingProvider == 'final_surge',
-          isSyncing: data.syncingProvider == 'final_surge',
-          athleteName: data.finalSurgeAthleteName,
-          lastSyncAt: data.finalSurgeLastSyncAt,
-          onConnect: () => _connectFinalSurgeOnboarding(context, ref),
-          onSync: () => _syncFinalSurgeWithState(context, ref),
-          onDisconnect: () => _disconnectFinalSurge(context, ref),
-          showSyncButton: true,
-          hasSynced: _finalSurgeSynced,
-        ),
-
-        const SizedBox(height: AppSpacing.md),
-
         // TrainingPeaks - shows "Sync Now" when connected (allows re-sync)
         // Using horizontal logo with wordmark per Brand Guidelines
         // Larger height because logo has built-in dark background padding
@@ -592,14 +601,80 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           isSyncing: data.syncingProvider == 'training_peaks',
           athleteName: data.trainingPeaksAthleteName,
           lastSyncAt: data.trainingPeaksLastSyncAt,
+          windowCaption: 'Imports ~30 days of history',
           onConnect: () => _connectTrainingPeaksOnboarding(context, ref),
           onSync: () => _syncTrainingPeaksWithState(context, ref),
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
           showSyncButton: true,
           hasSynced: _trainingPeaksSynced,
+          specStyle: true,
         ),
 
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 10),
+
+        // Final Surge - fully integrated
+        // Logo includes wordmark - no separate text label needed
+        IntegrationProviderCard(
+          key: const ValueKey('connect_training.finalsurge_connect_button'),
+          name: 'Final Surge',
+          iconPath: finalSurgeLogo,
+          logoHeight: 18,
+          isAvailable: true,
+          isConnected: data.isFinalSurgeConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'final_surge',
+          isSyncing: data.syncingProvider == 'final_surge',
+          athleteName: data.finalSurgeAthleteName,
+          lastSyncAt: data.finalSurgeLastSyncAt,
+          windowCaption: 'Imports ~7 days of history',
+          onConnect: () => _connectFinalSurgeOnboarding(context, ref),
+          onSync: () => _syncFinalSurgeWithState(context, ref),
+          onDisconnect: () => _disconnectFinalSurge(context, ref),
+          showSyncButton: true,
+          hasSynced: _finalSurgeSynced,
+          specStyle: true,
+        ),
+
+        const SizedBox(height: 10),
+
+        // V.O2 (VDOT) — OAuth + pull-based workout sync.
+        IntegrationProviderCard(
+          key: const ValueKey('connect_training.vdot_connect_button'),
+          name: 'V.O2',
+          isAvailable: true,
+          isConnected: data.isVdotConnected,
+          isConnecting: data.isConnecting && data.connectingProvider == 'vdot',
+          isSyncing: data.syncingProvider == 'vdot',
+          athleteName: data.vdotAthleteName,
+          lastSyncAt: data.vdotLastSyncAt,
+          onConnect: () => _connectVdotOnboarding(context, ref),
+          onSync: () => _syncVdotWithState(context, ref),
+          onDisconnect: () => _disconnectVdot(context, ref),
+          showSyncButton: true,
+          hasSynced: _vdotSynced,
+          specStyle: true,
+        ),
+
+        const SizedBox(height: 10),
+
+        // Runna — calendar-feed (.ics) import, no OAuth.
+        IntegrationProviderCard(
+          key: const ValueKey('connect_training.runna_connect'),
+          name: 'Runna',
+          isAvailable: true,
+          isConnected: data.isRunnaConnected,
+          isConnecting: data.isConnecting && data.connectingProvider == 'runna',
+          isSyncing: data.syncingProvider == 'runna',
+          lastSyncAt: data.runnaLastSyncAt,
+          onConnect: () => _connectRunna(context, ref),
+          onSync: () => _syncRunnaWithState(context, ref),
+          onDisconnect: () => _disconnectRunna(context, ref),
+          showSyncButton: true,
+          hasSynced: _runnaSynced,
+          specStyle: true,
+        ),
+
+        const SizedBox(height: 10),
 
         // Garmin Connect — push-only integration.
         // Brand Guidelines: Use the official Garmin Connect badge (per Garmin
@@ -620,55 +695,56 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectGarmin(context, ref),
           onSync: () => _refreshGarminWithState(context, ref),
           showSyncButton: data.isGarminConnected,
+          specStyle: true,
         ),
 
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 10),
 
-        // V.O2 (VDOT) — OAuth + pull-based workout sync.
-        IntegrationProviderCard(
-          key: const ValueKey('connect_training.vdot_connect_button'),
-          name: 'V.O2',
-          isAvailable: true,
-          isConnected: data.isVdotConnected,
-          isConnecting: data.isConnecting && data.connectingProvider == 'vdot',
-          isSyncing: data.syncingProvider == 'vdot',
-          athleteName: data.vdotAthleteName,
-          lastSyncAt: data.vdotLastSyncAt,
-          onConnect: () => _connectVdotOnboarding(context, ref),
-          onSync: () => _syncVdotWithState(context, ref),
-          onDisconnect: () => _disconnectVdot(context, ref),
-          showSyncButton: true,
-          hasSynced: _vdotSynced,
+        // Coming-soon rows with outlined Notify Me pills. TriDot is the
+        // spec's enumerated row; Strava added back per the design owner's
+        // 2026-08 ruling (count-worthy interest signal).
+        _ComingSoonSpecRow(
+          name: 'TRIDOT',
+          notifyKey: const ValueKey('connect_training.tridot_notify_button'),
+          isNotified: _notifiedProviders.contains('tridot'),
+          onNotify: () =>
+              _notifyProvider(context, ref, 'tridot', isOnboardingMode: true),
         ),
 
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 10),
 
-        // Runna — calendar-feed (.ics) import, no OAuth.
-        IntegrationProviderCard(
-          key: const ValueKey('connect_training.runna_connect'),
-          name: 'Runna',
-          isAvailable: true,
-          isConnected: data.isRunnaConnected,
-          isConnecting: data.isConnecting && data.connectingProvider == 'runna',
-          isSyncing: data.syncingProvider == 'runna',
-          lastSyncAt: data.runnaLastSyncAt,
-          onConnect: () => _connectRunna(context, ref),
-          onSync: () => _syncRunnaWithState(context, ref),
-          onDisconnect: () => _disconnectRunna(context, ref),
-          showSyncButton: true,
-          hasSynced: _runnaSynced,
+        _ComingSoonSpecRow(
+          name: 'STRAVA',
+          notifyKey: const ValueKey('connect_training.strava_notify_button'),
+          isNotified: _notifiedProviders.contains('strava'),
+          onNotify: () =>
+              _notifyProvider(context, ref, 'strava', isOnboardingMode: true),
         ),
 
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 10),
 
-        ..._buildComingSoonProviders(
-          context,
-          ref,
-          isOnboardingMode: true,
-          spacing: AppSpacing.md,
-        ),
+        // "I don't use training plan apps." — an affirmative answer,
+        // distinct from Skip-for-now (which stays below): it records a
+        // survey flag + its own analytics event, then advances.
+        _DeclinedTrainingAppsTile(onTap: _declineTrainingApps),
       ],
     );
+  }
+
+  /// "I don't use training plan apps." tile handler (onboarding only).
+  void _declineTrainingApps() {
+    ref
+        .read(onboardingControllerProvider.notifier)
+        .recordDeclinedTrainingApps();
+    try {
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track('connect_training_declined');
+    } catch (_) {
+      // Analytics must never block onboarding navigation.
+    }
+    widget.onContinue?.call();
   }
 
   Widget _buildError(BuildContext context, WidgetRef ref, String error) {
@@ -701,22 +777,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
             onPressed: () => ref.invalidate(connectTrainingControllerProvider),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSkipButton(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: TextButton(
-        key: const ValueKey('connect_training.skip_button'),
-        onPressed: () => _skipConnection(ref),
-        child: Text(
-          'Skip for now',
-          style: AppTextStyles.buttonTertiary.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            decoration: TextDecoration.underline,
-          ),
-        ),
       ),
     );
   }
@@ -777,15 +837,33 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       _notifiedProviders.add(provider);
     });
 
-    ref
-        .read(connectTrainingControllerProvider.notifier)
-        .trackNotifyMe(
-          provider: provider,
-          source: isOnboardingMode ? 'onboarding' : 'settings',
-        );
+    if (isOnboardingMode) {
+      // 2026-08 redesign funnel event (replaces the legacy
+      // integration_notify_requested in onboarding; settings keeps it).
+      if (provider == 'tridot') {
+        ref
+            .read(onboardingControllerProvider.notifier)
+            .recordTridotNotifyRequested();
+      }
+      try {
+        ref
+            .read(appExternalDepsProvider)
+            .analytics
+            .track(
+              'integration_notify_me_tapped',
+              properties: {'provider': provider, 'source': 'onboarding'},
+            );
+      } catch (_) {
+        // Analytics must never block onboarding.
+      }
+    } else {
+      ref
+          .read(connectTrainingControllerProvider.notifier)
+          .trackNotifyMe(provider: provider, source: 'settings');
+    }
 
     if (context.mounted) {
-      MealvanaSnackbar.showSuccess(context, 'Notified!');
+      MealvanaSnackbar.showSuccess(context, 'Noted!');
     }
   }
 
@@ -842,6 +920,30 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // Onboarding Mode Connection Methods (with auto-import)
   // ============================================================
 
+  /// Connect-failure surface for onboarding mode: MealvanaSnackbar with the
+  /// controller's error. The provider card is already back in its Connect
+  /// state (the controller resets isConnecting in its catch), so the same
+  /// button is the retry path. Sentry capture happens controller-side.
+  void _showConnectFailure(
+    BuildContext context,
+    WidgetRef ref,
+    String providerName,
+  ) {
+    if (!context.mounted) return;
+    final message = ref
+        .read(connectTrainingControllerProvider)
+        .value
+        ?.errorMessage;
+    MealvanaSnackbar.showError(
+      context,
+      message != null
+          ? 'Could not connect $providerName: $message. '
+                'Tap Connect to try again.'
+          : 'Could not connect $providerName. Tap Connect to try again.',
+      duration: const Duration(seconds: 5),
+    );
+  }
+
   Future<void> _connectFinalSurgeOnboarding(
     BuildContext context,
     WidgetRef ref,
@@ -849,7 +951,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectFinalSurge();
 
+    if (!success && context.mounted) {
+      _showConnectFailure(context, ref, 'Final Surge');
+      return;
+    }
+
     if (success && context.mounted) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('final_surge');
       MealvanaSnackbar.showSuccess(
         context,
         'Final Surge connected! Importing workouts...',
@@ -896,7 +1006,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectTrainingPeaks();
 
+    if (!success && context.mounted) {
+      _showConnectFailure(context, ref, 'TrainingPeaks');
+      return;
+    }
+
     if (success && context.mounted) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('training_peaks');
       MealvanaSnackbar.showSuccess(
         context,
         'TrainingPeaks connected! Importing workouts...',
@@ -950,7 +1068,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     // Sentry MEALVANA-ENDURANCE-AF.
     final success = await controller.connectGarmin(isOnboarding: true);
 
+    if (!success && context.mounted) {
+      _showConnectFailure(context, ref, 'Garmin Connect');
+      return;
+    }
+
     if (success && context.mounted) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('garmin');
       final notificationsGranted =
           await NotificationService.requestPermissions();
       if (!context.mounted) return;
@@ -1063,8 +1189,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectVdot();
 
-    if (!success || !context.mounted) return;
+    if (!context.mounted) return;
+    if (!success) {
+      _showConnectFailure(context, ref, 'V.O2');
+      return;
+    }
 
+    ref
+        .read(onboardingControllerProvider.notifier)
+        .recordConnectedProvider('vdot');
     MealvanaSnackbar.showSuccess(
       context,
       'V.O2 connected! Importing workouts...',
@@ -1144,6 +1277,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         duration: const Duration(seconds: 5),
       );
       return;
+    }
+
+    if (isOnboarding) {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .recordConnectedProvider('runna');
     }
 
     MealvanaSnackbar.showSuccess(
@@ -1411,11 +1550,128 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       );
     }
   }
+}
 
-  void _skipConnection(WidgetRef ref) {
-    // Track skip and continue
-    ref.read(connectTrainingControllerProvider.notifier).trackSkip();
-    widget.onContinue?.call();
+/// Spec coming-soon row (onboarding only): provider name + italic
+/// 'COMING SOON' on the left, outlined 'Notify Me' pill on the right, in
+/// the same card chrome as the spec provider rows (radius 15, cream-5%
+/// fill, 1px cream-12% border, padding 15/16, min-height 70).
+class _ComingSoonSpecRow extends StatelessWidget {
+  const _ComingSoonSpecRow({
+    required this.name,
+    required this.notifyKey,
+    required this.isNotified,
+    required this.onNotify,
+  });
+
+  final String name;
+  final Key notifyKey;
+  final bool isNotified;
+  final VoidCallback onNotify;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 70),
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.05),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: OnbTokens.creamA(0.12)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontLabel,
+                    fontSize: 15,
+                    color: OnbTokens.creamA(0.7),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'COMING SOON',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: OnbTokens.creamA(0.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Outlined Notify Me pill; the 'Noted' disabled state keeps the
+          // same chrome so the row doesn't shift.
+          GestureDetector(
+            key: notifyKey,
+            onTap: isNotified ? null : onNotify,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(OnbTokens.rPill),
+                border: Border.all(color: OnbTokens.creamA(0.75), width: 1.5),
+              ),
+              child: Text(
+                isNotified ? 'Noted' : 'Notify Me',
+                style: const TextStyle(
+                  fontFamily: OnbTokens.fontBody,
+                  fontSize: 14,
+                  color: OnbTokens.cream,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Spec declined tile (onboarding only): same card chrome as the provider
+/// rows but min-height 47, with the italic fontLabel copy. Tapping it is an
+/// affirmative "I don't use training plan apps" answer (survey flag +
+/// analytics + advance) — wiring lives in the owning screen.
+class _DeclinedTrainingAppsTile extends StatelessWidget {
+  const _DeclinedTrainingAppsTile({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: OnbTokens.creamA(0.05),
+      borderRadius: BorderRadius.circular(OnbTokens.rCard),
+      child: InkWell(
+        key: const ValueKey('connect_training.declined_tile'),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 47),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(OnbTokens.rCard),
+            border: Border.all(color: OnbTokens.creamA(0.12)),
+          ),
+          alignment: Alignment.centerLeft,
+          child: Text(
+            "I don't use training plan apps.",
+            style: TextStyle(
+              fontFamily: OnbTokens.fontLabel,
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              color: OnbTokens.creamA(0.6),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

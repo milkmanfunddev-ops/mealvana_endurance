@@ -67,11 +67,18 @@ void main() {
     test('maps each live onboarding page index to its funnel name', () {
       // These strings are the analytics contract — Mixpanel funnels key off
       // them, so a silent reorder would break every historical report.
-      expect(onboardingStepName(0), 'connect_training');
-      expect(onboardingStepName(1), 'user_profile');
-      expect(onboardingStepName(2), 'sports_selection');
-      expect(onboardingStepName(3), 'dietary_preference');
-      expect(onboardingStepName(4), 'allergies');
+      // 2026-08 redesign: deliberate clean break to the 9-step list; the
+      // funnel is rebuilt on these names and the old one archived.
+      expect(onboardingStepName(0), 'sports_selection');
+      expect(onboardingStepName(1), 'goals');
+      expect(onboardingStepName(2), 'pitfalls');
+      expect(onboardingStepName(3), 'connect_training');
+      expect(onboardingStepName(4), 'personal_info');
+      expect(onboardingStepName(5), 'body_composition');
+      expect(onboardingStepName(6), 'nutrition_settings');
+      expect(onboardingStepName(7), 'plan_reveal');
+      expect(onboardingStepName(8), 'daily_plan_preview');
+      expect(kOnboardingStepNames, hasLength(9));
     });
 
     test('degrades to a positional name if a page is added without a name', () {

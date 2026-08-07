@@ -173,10 +173,21 @@ class VersionCheckService {
   ///
   /// IMPORTANT: The database must be reinitialized after this method returns true.
   /// The app should restart or reinitialize the database connection.
+  ///
+  /// **Anonymous data protection** (onboarding-redesign plan §7): when the
+  /// current user is anonymous (or the auth session is gone entirely) and
+  /// dirty local rows could not reach Supabase, deleting the database would
+  /// destroy the only copy of their data. In that case the resync is
+  /// DEFERRED — [wasDeferredForDataProtection] is set, no delete happens,
+  /// and the caller continues on the old schema; the mismatch retries next
+  /// launch, by which point the upload has usually succeeded.
+  bool wasDeferredForDataProtection = false;
+
   Future<bool> performSchemaResync(
     String? userId, {
     int? targetSchemaVersion,
   }) async {
+    wasDeferredForDataProtection = false;
     try {
       _logger.info(
         'Starting schema resync',
@@ -242,6 +253,26 @@ class VersionCheckService {
         );
       }
 
+      // Step 3.5: Anonymous data-protection guard. If dirty rows could not
+      // be uploaded (offline, or no auth session at all) and the local user
+      // is anonymous — meaning Supabase may hold no copy of this data —
+      // deleting now would be unrecoverable. Defer instead.
+      final shouldGuard = userId == null || uploadErrors.isNotEmpty;
+      if (shouldGuard && await _hasUnprotectedAnonymousData(userId)) {
+        wasDeferredForDataProtection = true;
+        _logger.warning(
+          'Deferring schema resync: anonymous user has dirty local rows '
+          'that did not reach Supabase — deleting would lose them. '
+          'Will retry on next launch.',
+          context: 'VERSION_CHECK_SERVICE',
+          data: {
+            'userId': userId ?? 'null',
+            'failedUploads': uploadErrors.length,
+          },
+        );
+        return false;
+      }
+
       // Step 4: Delete the database files
       _logger.info(
         'Deleting database for schema resync',
@@ -281,6 +312,53 @@ class VersionCheckService {
         stackTrace: stackTrace,
       );
       return false;
+    }
+  }
+
+  /// True when the local database holds an anonymous user with any dirty
+  /// (`needs_upload = 1`) rows — the state where delete-and-resync would
+  /// destroy the only copy of that user's data.
+  ///
+  /// With [userId] null (no auth session) any anonymous user row counts;
+  /// with a session, only that user's rows are checked.
+  Future<bool> _hasUnprotectedAnonymousData(String? userId) async {
+    try {
+      final userFilter = userId != null ? "AND id = '$userId'" : '';
+      final anonUsers = await _database
+          .customSelect(
+            'SELECT id FROM users WHERE is_anonymous = 1 $userFilter',
+          )
+          .get();
+      if (anonUsers.isEmpty) return false;
+
+      final ids = anonUsers.map((r) => "'${r.read<String>('id')}'").join(',');
+      // The tables onboarding + core usage write locally-first. A dirty user
+      // row alone also counts — it carries the whole profile.
+      for (final table in [
+        'users',
+        'onboarding_surveys',
+        'activities',
+        'events',
+        'meal_logs',
+      ]) {
+        final idColumn = table == 'users' ? 'id' : 'user_id';
+        final rows = await _database
+            .customSelect(
+              'SELECT 1 FROM $table WHERE needs_upload = 1 '
+              'AND $idColumn IN ($ids) LIMIT 1',
+            )
+            .get();
+        if (rows.isNotEmpty) return true;
+      }
+      return false;
+    } catch (e) {
+      // If the check itself fails, err toward protecting data.
+      _logger.warning(
+        'Anonymous-data check failed; deferring resync defensively',
+        context: 'VERSION_CHECK_SERVICE',
+        data: {'error': e.toString()},
+      );
+      return true;
     }
   }
 

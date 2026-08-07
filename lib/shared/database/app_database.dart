@@ -39,6 +39,7 @@ import 'tables/post_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/formula_pins_table.dart';
+import 'tables/onboarding_surveys_table.dart';
 import 'tables/personal_formulas_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
@@ -131,6 +132,9 @@ part 'app_database.g.dart';
 
     // Formula Kit pins (user preference signal for plan generation)
     FormulaPinsTable,
+
+    // Onboarding survey answers (sports/goals/pitfalls; one row per user)
+    OnboardingSurveysTable,
 
     // Formula Kit personal formulas (user-authored fueling recipes)
     PersonalFormulasTable,
@@ -258,7 +262,15 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 16;
+  ///
+  /// v17 added the onboarding_surveys table (sports/goals/pitfalls from the
+  /// redesigned onboarding flow — docs/features/onboarding-redesign/README.md).
+  /// The branch originally shipped this as v16, but develop's v16 (sub_phase /
+  /// fiber_per_serving / food_group) landed first, so surveys became v17 at
+  /// merge time. Supabase app_config.current_schema_version must be bumped to
+  /// 17 only when the build carrying this ships (it triggers client
+  /// delete-and-resync).
+  int get schemaVersion => 17;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -482,6 +494,27 @@ class AppDatabase extends _$AppDatabase {
         // Layer A classification on the ingredient catalog. All nullable or
         // defaulted, all idempotent via addColumn.
         if (from < 16) {
+          await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
+          await addColumn(
+            'pre_workout_templates',
+            'fiber_per_serving',
+            'REAL NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'food_group', 'TEXT');
+        }
+
+        // v17: onboarding_surveys — the one new table of the onboarding
+        // redesign (sports/goals/pitfalls + survey_payload JSON escape
+        // hatch). ensureTable is idempotent for web user_version replays.
+        //
+        // The onboarding branch shipped this step as its own v16 in parallel
+        // with the sub_phase v16 above, so a device that ran the branch's v16
+        // sits at 16 WITH onboarding_surveys but WITHOUT the sub_phase
+        // columns. This step therefore re-runs the sub_phase addColumns
+        // (idempotent) so both v16 lineages converge at 17 instead of
+        // tripping the schema-integrity wipe.
+        if (from < 17) {
+          await ensureTable(onboardingSurveysTable);
           await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
           await addColumn(
             'pre_workout_templates',

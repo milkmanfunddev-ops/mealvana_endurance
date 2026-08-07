@@ -34095,6 +34095,657 @@ class FormulaPinsTableCompanion extends UpdateCompanion<FormulaPinEntry> {
   }
 }
 
+class $OnboardingSurveysTableTable extends OnboardingSurveysTable
+    with TableInfo<$OnboardingSurveysTableTable, OnboardingSurveyEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OnboardingSurveysTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sportsMeta = const VerificationMeta('sports');
+  @override
+  late final GeneratedColumn<String> sports = GeneratedColumn<String>(
+    'sports',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalsMeta = const VerificationMeta('goals');
+  @override
+  late final GeneratedColumn<String> goals = GeneratedColumn<String>(
+    'goals',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pitfallsMeta = const VerificationMeta(
+    'pitfalls',
+  );
+  @override
+  late final GeneratedColumn<String> pitfalls = GeneratedColumn<String>(
+    'pitfalls',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _surveyPayloadMeta = const VerificationMeta(
+    'surveyPayload',
+  );
+  @override
+  late final GeneratedColumn<String> surveyPayload = GeneratedColumn<String>(
+    'survey_payload',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    sports,
+    goals,
+    pitfalls,
+    surveyPayload,
+    completedAt,
+    createdAt,
+    updatedAt,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'onboarding_surveys';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OnboardingSurveyEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('sports')) {
+      context.handle(
+        _sportsMeta,
+        sports.isAcceptableOrUnknown(data['sports']!, _sportsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sportsMeta);
+    }
+    if (data.containsKey('goals')) {
+      context.handle(
+        _goalsMeta,
+        goals.isAcceptableOrUnknown(data['goals']!, _goalsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalsMeta);
+    }
+    if (data.containsKey('pitfalls')) {
+      context.handle(
+        _pitfallsMeta,
+        pitfalls.isAcceptableOrUnknown(data['pitfalls']!, _pitfallsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pitfallsMeta);
+    }
+    if (data.containsKey('survey_payload')) {
+      context.handle(
+        _surveyPayloadMeta,
+        surveyPayload.isAcceptableOrUnknown(
+          data['survey_payload']!,
+          _surveyPayloadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId};
+  @override
+  OnboardingSurveyEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OnboardingSurveyEntry(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      sports: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sports'],
+      )!,
+      goals: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goals'],
+      )!,
+      pitfalls: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pitfalls'],
+      )!,
+      surveyPayload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}survey_payload'],
+      ),
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $OnboardingSurveysTableTable createAlias(String alias) {
+    return $OnboardingSurveysTableTable(attachedDatabase, alias);
+  }
+}
+
+class OnboardingSurveyEntry extends DataClass
+    implements Insertable<OnboardingSurveyEntry> {
+  final String userId;
+
+  /// JSON array of OnboardingSport dbValues, e.g. ["running","triathlon"].
+  final String sports;
+
+  /// JSON array of OnboardingGoal dbValues.
+  final String goals;
+
+  /// JSON array of OnboardingPitfall dbValues.
+  final String pitfalls;
+
+  /// JSON object for small survey flags (tridot_notify, sweat_test_interest,
+  /// declined_training_apps, connected_provider, ...).
+  final String? surveyPayload;
+  final DateTime completedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const OnboardingSurveyEntry({
+    required this.userId,
+    required this.sports,
+    required this.goals,
+    required this.pitfalls,
+    this.surveyPayload,
+    required this.completedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['sports'] = Variable<String>(sports);
+    map['goals'] = Variable<String>(goals);
+    map['pitfalls'] = Variable<String>(pitfalls);
+    if (!nullToAbsent || surveyPayload != null) {
+      map['survey_payload'] = Variable<String>(surveyPayload);
+    }
+    map['completed_at'] = Variable<DateTime>(completedAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  OnboardingSurveysTableCompanion toCompanion(bool nullToAbsent) {
+    return OnboardingSurveysTableCompanion(
+      userId: Value(userId),
+      sports: Value(sports),
+      goals: Value(goals),
+      pitfalls: Value(pitfalls),
+      surveyPayload: surveyPayload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(surveyPayload),
+      completedAt: Value(completedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory OnboardingSurveyEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OnboardingSurveyEntry(
+      userId: serializer.fromJson<String>(json['userId']),
+      sports: serializer.fromJson<String>(json['sports']),
+      goals: serializer.fromJson<String>(json['goals']),
+      pitfalls: serializer.fromJson<String>(json['pitfalls']),
+      surveyPayload: serializer.fromJson<String?>(json['surveyPayload']),
+      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'sports': serializer.toJson<String>(sports),
+      'goals': serializer.toJson<String>(goals),
+      'pitfalls': serializer.toJson<String>(pitfalls),
+      'surveyPayload': serializer.toJson<String?>(surveyPayload),
+      'completedAt': serializer.toJson<DateTime>(completedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  OnboardingSurveyEntry copyWith({
+    String? userId,
+    String? sports,
+    String? goals,
+    String? pitfalls,
+    Value<String?> surveyPayload = const Value.absent(),
+    DateTime? completedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => OnboardingSurveyEntry(
+    userId: userId ?? this.userId,
+    sports: sports ?? this.sports,
+    goals: goals ?? this.goals,
+    pitfalls: pitfalls ?? this.pitfalls,
+    surveyPayload: surveyPayload.present
+        ? surveyPayload.value
+        : this.surveyPayload,
+    completedAt: completedAt ?? this.completedAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  OnboardingSurveyEntry copyWithCompanion(
+    OnboardingSurveysTableCompanion data,
+  ) {
+    return OnboardingSurveyEntry(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      sports: data.sports.present ? data.sports.value : this.sports,
+      goals: data.goals.present ? data.goals.value : this.goals,
+      pitfalls: data.pitfalls.present ? data.pitfalls.value : this.pitfalls,
+      surveyPayload: data.surveyPayload.present
+          ? data.surveyPayload.value
+          : this.surveyPayload,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OnboardingSurveyEntry(')
+          ..write('userId: $userId, ')
+          ..write('sports: $sports, ')
+          ..write('goals: $goals, ')
+          ..write('pitfalls: $pitfalls, ')
+          ..write('surveyPayload: $surveyPayload, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    userId,
+    sports,
+    goals,
+    pitfalls,
+    surveyPayload,
+    completedAt,
+    createdAt,
+    updatedAt,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OnboardingSurveyEntry &&
+          other.userId == this.userId &&
+          other.sports == this.sports &&
+          other.goals == this.goals &&
+          other.pitfalls == this.pitfalls &&
+          other.surveyPayload == this.surveyPayload &&
+          other.completedAt == this.completedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class OnboardingSurveysTableCompanion
+    extends UpdateCompanion<OnboardingSurveyEntry> {
+  final Value<String> userId;
+  final Value<String> sports;
+  final Value<String> goals;
+  final Value<String> pitfalls;
+  final Value<String?> surveyPayload;
+  final Value<DateTime> completedAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const OnboardingSurveysTableCompanion({
+    this.userId = const Value.absent(),
+    this.sports = const Value.absent(),
+    this.goals = const Value.absent(),
+    this.pitfalls = const Value.absent(),
+    this.surveyPayload = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OnboardingSurveysTableCompanion.insert({
+    required String userId,
+    required String sports,
+    required String goals,
+    required String pitfalls,
+    this.surveyPayload = const Value.absent(),
+    required DateTime completedAt,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       sports = Value(sports),
+       goals = Value(goals),
+       pitfalls = Value(pitfalls),
+       completedAt = Value(completedAt),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<OnboardingSurveyEntry> custom({
+    Expression<String>? userId,
+    Expression<String>? sports,
+    Expression<String>? goals,
+    Expression<String>? pitfalls,
+    Expression<String>? surveyPayload,
+    Expression<DateTime>? completedAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (sports != null) 'sports': sports,
+      if (goals != null) 'goals': goals,
+      if (pitfalls != null) 'pitfalls': pitfalls,
+      if (surveyPayload != null) 'survey_payload': surveyPayload,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OnboardingSurveysTableCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? sports,
+    Value<String>? goals,
+    Value<String>? pitfalls,
+    Value<String?>? surveyPayload,
+    Value<DateTime>? completedAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return OnboardingSurveysTableCompanion(
+      userId: userId ?? this.userId,
+      sports: sports ?? this.sports,
+      goals: goals ?? this.goals,
+      pitfalls: pitfalls ?? this.pitfalls,
+      surveyPayload: surveyPayload ?? this.surveyPayload,
+      completedAt: completedAt ?? this.completedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (sports.present) {
+      map['sports'] = Variable<String>(sports.value);
+    }
+    if (goals.present) {
+      map['goals'] = Variable<String>(goals.value);
+    }
+    if (pitfalls.present) {
+      map['pitfalls'] = Variable<String>(pitfalls.value);
+    }
+    if (surveyPayload.present) {
+      map['survey_payload'] = Variable<String>(surveyPayload.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OnboardingSurveysTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('sports: $sports, ')
+          ..write('goals: $goals, ')
+          ..write('pitfalls: $pitfalls, ')
+          ..write('surveyPayload: $surveyPayload, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PersonalFormulasTableTable extends PersonalFormulasTable
     with TableInfo<$PersonalFormulasTableTable, PersonalFormulaEntry> {
   @override
@@ -40982,6 +41633,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FormulaPinsTableTable formulaPinsTable = $FormulaPinsTableTable(
     this,
   );
+  late final $OnboardingSurveysTableTable onboardingSurveysTable =
+      $OnboardingSurveysTableTable(this);
   late final $PersonalFormulasTableTable personalFormulasTable =
       $PersonalFormulasTableTable(this);
   late final $AthletePairingCodesTableTable athletePairingCodesTable =
@@ -41036,6 +41689,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tpWritebackTable,
     personalTemplatesTable,
     formulaPinsTable,
+    onboardingSurveysTable,
     personalFormulasTable,
     athletePairingCodesTable,
     coachPairingCodesTable,
@@ -55931,6 +56585,328 @@ typedef $$FormulaPinsTableTableProcessedTableManager =
       FormulaPinEntry,
       PrefetchHooks Function()
     >;
+typedef $$OnboardingSurveysTableTableCreateCompanionBuilder =
+    OnboardingSurveysTableCompanion Function({
+      required String userId,
+      required String sports,
+      required String goals,
+      required String pitfalls,
+      Value<String?> surveyPayload,
+      required DateTime completedAt,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$OnboardingSurveysTableTableUpdateCompanionBuilder =
+    OnboardingSurveysTableCompanion Function({
+      Value<String> userId,
+      Value<String> sports,
+      Value<String> goals,
+      Value<String> pitfalls,
+      Value<String?> surveyPayload,
+      Value<DateTime> completedAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$OnboardingSurveysTableTableFilterComposer
+    extends Composer<_$AppDatabase, $OnboardingSurveysTableTable> {
+  $$OnboardingSurveysTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sports => $composableBuilder(
+    column: $table.sports,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goals => $composableBuilder(
+    column: $table.goals,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pitfalls => $composableBuilder(
+    column: $table.pitfalls,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get surveyPayload => $composableBuilder(
+    column: $table.surveyPayload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OnboardingSurveysTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $OnboardingSurveysTableTable> {
+  $$OnboardingSurveysTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sports => $composableBuilder(
+    column: $table.sports,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goals => $composableBuilder(
+    column: $table.goals,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pitfalls => $composableBuilder(
+    column: $table.pitfalls,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get surveyPayload => $composableBuilder(
+    column: $table.surveyPayload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OnboardingSurveysTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OnboardingSurveysTableTable> {
+  $$OnboardingSurveysTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get sports =>
+      $composableBuilder(column: $table.sports, builder: (column) => column);
+
+  GeneratedColumn<String> get goals =>
+      $composableBuilder(column: $table.goals, builder: (column) => column);
+
+  GeneratedColumn<String> get pitfalls =>
+      $composableBuilder(column: $table.pitfalls, builder: (column) => column);
+
+  GeneratedColumn<String> get surveyPayload => $composableBuilder(
+    column: $table.surveyPayload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$OnboardingSurveysTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OnboardingSurveysTableTable,
+          OnboardingSurveyEntry,
+          $$OnboardingSurveysTableTableFilterComposer,
+          $$OnboardingSurveysTableTableOrderingComposer,
+          $$OnboardingSurveysTableTableAnnotationComposer,
+          $$OnboardingSurveysTableTableCreateCompanionBuilder,
+          $$OnboardingSurveysTableTableUpdateCompanionBuilder,
+          (
+            OnboardingSurveyEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $OnboardingSurveysTableTable,
+              OnboardingSurveyEntry
+            >,
+          ),
+          OnboardingSurveyEntry,
+          PrefetchHooks Function()
+        > {
+  $$OnboardingSurveysTableTableTableManager(
+    _$AppDatabase db,
+    $OnboardingSurveysTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OnboardingSurveysTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$OnboardingSurveysTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OnboardingSurveysTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> sports = const Value.absent(),
+                Value<String> goals = const Value.absent(),
+                Value<String> pitfalls = const Value.absent(),
+                Value<String?> surveyPayload = const Value.absent(),
+                Value<DateTime> completedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OnboardingSurveysTableCompanion(
+                userId: userId,
+                sports: sports,
+                goals: goals,
+                pitfalls: pitfalls,
+                surveyPayload: surveyPayload,
+                completedAt: completedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String sports,
+                required String goals,
+                required String pitfalls,
+                Value<String?> surveyPayload = const Value.absent(),
+                required DateTime completedAt,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OnboardingSurveysTableCompanion.insert(
+                userId: userId,
+                sports: sports,
+                goals: goals,
+                pitfalls: pitfalls,
+                surveyPayload: surveyPayload,
+                completedAt: completedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OnboardingSurveysTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OnboardingSurveysTableTable,
+      OnboardingSurveyEntry,
+      $$OnboardingSurveysTableTableFilterComposer,
+      $$OnboardingSurveysTableTableOrderingComposer,
+      $$OnboardingSurveysTableTableAnnotationComposer,
+      $$OnboardingSurveysTableTableCreateCompanionBuilder,
+      $$OnboardingSurveysTableTableUpdateCompanionBuilder,
+      (
+        OnboardingSurveyEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $OnboardingSurveysTableTable,
+          OnboardingSurveyEntry
+        >,
+      ),
+      OnboardingSurveyEntry,
+      PrefetchHooks Function()
+    >;
 typedef $$PersonalFormulasTableTableCreateCompanionBuilder =
     PersonalFormulasTableCompanion Function({
       Value<String> id,
@@ -59165,6 +60141,11 @@ class $AppDatabaseManager {
       );
   $$FormulaPinsTableTableTableManager get formulaPinsTable =>
       $$FormulaPinsTableTableTableManager(_db, _db.formulaPinsTable);
+  $$OnboardingSurveysTableTableTableManager get onboardingSurveysTable =>
+      $$OnboardingSurveysTableTableTableManager(
+        _db,
+        _db.onboardingSurveysTable,
+      );
   $$PersonalFormulasTableTableTableManager get personalFormulasTable =>
       $$PersonalFormulasTableTableTableManager(_db, _db.personalFormulasTable);
   $$AthletePairingCodesTableTableTableManager get athletePairingCodesTable =>

@@ -37,7 +37,7 @@ feature shipped. Useful history; not guaranteed current. Includes (among ~50):
 `analytics/`, `formula-kit/`, `sodium_hydration/`, `new_macros/`,
 `new_activity/` (fuel timeline spec — referenced from lib), `new_sync/`,
 `food_templates/`, `revenue_cat/`, `public_events/`, `catalog/`, `coach_mode/`,
-`onboarding-revamp/`, `app_startup_optimization/`.
+`onboarding-redesign/`, `app_startup_optimization/`.
 
 ## `_archived/`
 

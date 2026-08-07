@@ -1,0 +1,48 @@
+{
+  "_comment": "Shared parity fixtures pinning DailyBaselineCalculator (Dart) against calculate-daily-macros formulas (TS). Consumed by test/features/onboarding/daily_baseline_calculator_test.dart AND supabase/functions/calculate-daily-macros/parity-fixtures.test.ts. Values hand-derived from rmr.ts / baseline.ts / session.ts / neat-tef.ts. When the daily-macro SSOT doc ratifies, regenerate BOTH sides from one edit here.",
+  "rmr": [
+    { "name": "male baseline", "weight_kg": 70, "height_cm": 172, "age": 35, "sex": "male", "body_fat_pct": null, "expected": 1605.0 },
+    { "name": "female baseline", "weight_kg": 60, "height_cm": 165, "age": 30, "sex": "female", "body_fat_pct": null, "expected": 1320.25 },
+    { "name": "non-male branch (other) equals female offset", "weight_kg": 60, "height_cm": 165, "age": 30, "sex": "other", "body_fat_pct": null, "expected": 1320.25 },
+    { "name": "cunningham when body fat known", "weight_kg": 70, "height_cm": 172, "age": 35, "sex": "male", "body_fat_pct": 15, "expected": 1809.0 },
+    { "name": "generic defaults case (non-male)", "weight_kg": 70, "height_cm": 172, "age": 35, "sex": "female", "body_fat_pct": null, "expected": 1439.0 }
+  ],
+  "baseline": [
+    { "name": "no lbm, under masters", "weight_kg": 70, "lbm_kg": null, "age": 35, "expected_carb_g": 280.0, "expected_prot_g": 98.0 },
+    { "name": "masters boundary at 45", "weight_kg": 70, "lbm_kg": null, "age": 45, "expected_carb_g": 280.0, "expected_prot_g": 112.7 },
+    { "name": "just under masters at 44", "weight_kg": 70, "lbm_kg": null, "age": 44, "expected_carb_g": 280.0, "expected_prot_g": 98.0 },
+    { "name": "lbm-driven protein", "weight_kg": 70, "lbm_kg": 59.5, "age": 35, "expected_carb_g": 280.0, "expected_prot_g": 107.1 }
+  ],
+  "clamp": [
+    { "name": "carb ceiling 12 g/kg", "carb_g": 900, "prot_g": 98, "weight_kg": 70, "expected_carb_g": 840.0, "expected_prot_g": 98.0 },
+    { "name": "carb floor 3 g/kg", "carb_g": 100, "prot_g": 98, "weight_kg": 70, "expected_carb_g": 210.0, "expected_prot_g": 98.0 },
+    { "name": "protein floor 1.2 g/kg", "carb_g": 280, "prot_g": 80, "weight_kg": 70, "expected_carb_g": 280.0, "expected_prot_g": 84.0 },
+    { "name": "protein ceiling 2.5 g/kg", "carb_g": 280, "prot_g": 200, "weight_kg": 70, "expected_carb_g": 280.0, "expected_prot_g": 175.0 }
+  ],
+  "session": [
+    {
+      "name": "preview representative endurance session (run 2.5h)",
+      "pct_conversational": 0.80, "pct_tempo": 0.15, "pct_allout": 0.05,
+      "sport": "running", "duration_hr": 2.5, "weight_kg": 70,
+      "expected_if": 0.7378346698278687, "if_tolerance": 0.000001,
+      "expected_kcal": 1863.0577777777778, "kcal_tolerance": 0.001,
+      "expected_carb_g": 122.56178793905049, "carb_tolerance": 0.001
+    },
+    {
+      "name": "short easy session gets no 1.15 multiplier",
+      "pct_conversational": 1.0, "pct_tempo": 0.0, "pct_allout": 0.0,
+      "sport": "running", "duration_hr": 1.0, "weight_kg": 70,
+      "expected_if": 0.68, "if_tolerance": 0.000001,
+      "expected_kcal": 632.9742222222224, "kcal_tolerance": 0.001,
+      "expected_carb_g": 35.46666666666667, "carb_tolerance": 0.001
+    }
+  ],
+  "tdee": [
+    {
+      "name": "rest day converges (male 70kg baseline, moderate NEAT)",
+      "rmr": 1605, "neat": 401.25, "session_kcal": 0,
+      "carb_g": 280, "prot_g": 98, "weight_kg": 70,
+      "expected_tdee": 2229, "expected_fat_g": 80
+    }
+  ]
+}

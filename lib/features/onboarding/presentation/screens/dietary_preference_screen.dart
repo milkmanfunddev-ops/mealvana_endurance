@@ -76,15 +76,6 @@ class _DietaryPreferenceScreenState
           },
         );
 
-    // In onboarding mode, initialize from cache
-    if (_isOnboarding) {
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      final cachedPreference = controller.cachedDietaryPreference;
-      if (cachedPreference != null) {
-        _selectedPreference = cachedPreference;
-      }
-    }
-
     // In settings mode, load the current preference
     if (_isSettings) {
       _loadCurrentPreference();
@@ -111,8 +102,6 @@ class _DietaryPreferenceScreenState
     }
   }
 
-  bool get _hasChanges => _selectedPreference != _originalPreference;
-
   void _continue() async {
     if (_isSaving) return;
 
@@ -122,21 +111,11 @@ class _DietaryPreferenceScreenState
       final controller = ref.read(onboardingControllerProvider.notifier);
 
       if (_isOnboarding) {
-        // ONBOARDING MODE: Cache dietary preference
-        controller.cacheDietaryPreference(_selectedPreference);
-
+        // ONBOARDING MODE (legacy — diet left the onboarding flow in the
+        // 2026-08 redesign; saveAllOnboardingData writes the omnivore
+        // default). Nothing to persist here; just advance if hosted.
         if (!mounted) return;
-
-        // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
-        if (widget.onContinue != null) {
-          widget.onContinue!();
-        } else {
-          // Navigate to allergies screen
-          context.push(
-            '/onboarding/allergies',
-            extra: {'dietaryPreference': _selectedPreference},
-          );
-        }
+        widget.onContinue?.call();
       } else {
         // SETTINGS MODE: Save to database
         final success = await controller.saveDietaryPreference(
@@ -175,33 +154,6 @@ class _DietaryPreferenceScreenState
         setState(() => _isSaving = false);
       }
     }
-  }
-
-  void _skip() async {
-    if (_isSaving) return;
-
-    setState(() => _isSaving = true);
-
-    try {
-      // Save null preference via controller (skip)
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      await controller.saveDietaryPreference(null);
-
-      if (!mounted) return;
-
-      // Navigate to allergies screen without a preference
-      context.push('/onboarding/allergies');
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  void _clearPreference() {
-    setState(() {
-      _selectedPreference = null;
-    });
   }
 
   @override
@@ -346,28 +298,5 @@ class _DietaryPreferenceScreenState
       onSelected: (value) => setState(() => _selectedPreference = value),
       useDarkStyle: useDarkStyle,
     );
-  }
-
-  String _getDescription(DietaryPreference diet) {
-    switch (diet) {
-      case DietaryPreference.none:
-        return 'No specific dietary preference';
-      case DietaryPreference.omnivore:
-        return 'No dietary restrictions';
-      case DietaryPreference.vegetarian:
-        return 'No meat or fish';
-      case DietaryPreference.pescatarian:
-        return 'Fish but no meat';
-      case DietaryPreference.vegan:
-        return 'No animal products';
-      case DietaryPreference.mediterranean:
-        return 'Plant-based with fish and olive oil';
-      case DietaryPreference.paleo:
-        return 'No grains, legumes, or dairy';
-      case DietaryPreference.keto:
-        return 'Very low carb, high fat';
-      case DietaryPreference.lowCarb:
-        return 'Reduced carbohydrate intake';
-    }
   }
 }

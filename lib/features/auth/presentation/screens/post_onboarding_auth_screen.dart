@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -13,14 +12,21 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
+import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
+import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
 import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
-/// Shown after food preferences to encourage account creation
-/// Offers Apple Sign-In, Google Sign-In, Email/Password, or Skip
+/// Shown after the daily-plan preview (2026-08 onboarding redesign) to
+/// encourage account creation: "Your plan is ready. Don't leave it behind."
+/// Offers Apple Sign-In, Google Sign-In, Email/Password, or Skip.
+/// Visual language matches the redesigned onboarding steps (dark blackberry
+/// scaffold, Sansita/orange title); controller wiring (credential linking,
+/// saveAllOnboardingData, background upload, Settings anon→upgrade branch)
+/// is unchanged from the pre-redesign screen.
 class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
   const PostOnboardingAuthScreen({super.key, this.mode = 'signup'});
 
@@ -366,16 +372,16 @@ class _PostOnboardingAuthScreenState
 
     // This screen serves two arrivals:
     //
-    //  - FIRST-RUN onboarding, where the cached profile answers are still in
+    //  - FIRST-RUN onboarding, where the draft profile answers are still in
     //    memory and must be written out here.
     //  - Settings -> "Create Account", where onboarding finished long ago.
-    //    There is no cache (it is per-run and in-memory), the profile is
+    //    There is no draft (it is per-run and in-memory), the profile is
     //    already persisted, and the link preserved the uid — so there is
     //    nothing to save and nothing to migrate. Calling saveAllOnboardingData
-    //    here returned false on the null cache and showed the user "Failed to
+    //    here returned false on the empty draft and showed the user "Failed to
     //    save your preferences" on an upgrade that had actually succeeded.
     final authService = ref.read(authServiceProvider);
-    if (onboardingController.cachedUserProfileData == null) {
+    if (!onboardingController.hasCompletedProfileDraft) {
       final existingUser = await authService.getCurrentUser();
       if (!mounted) return;
 
@@ -537,11 +543,10 @@ class _PostOnboardingAuthScreenState
   Widget build(BuildContext context) {
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
     final contentService = ref.watch(contentServiceProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLogin = widget.mode == 'login';
 
     return AdaptivePageScaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: OnbTokens.bg,
       appBar: _buildAppBar(
         context,
         isLoading: asyncState.isLoading,
@@ -558,25 +563,29 @@ class _PostOnboardingAuthScreenState
               children: [
                 const SizedBox(height: AppSpacing.xl),
 
-                // Title
+                // Title (spec: cream Sansita 27, left-aligned)
                 Text(
                   key: ValueKey(
                     isLogin ? 'login_options.title' : 'post_onboarding.title',
                   ),
                   contentService.getValue(
                     isLogin ? 'auth.login.title' : 'auth.post_onboarding.title',
-                    defaultValue: isLogin ? 'Log In' : 'Create Your Account',
+                    defaultValue: isLogin
+                        ? 'Log In'
+                        : "Your plan is ready. Don't leave it behind.",
                   ),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 28,
+                  style: const TextStyle(
+                    fontFamily: OnbTokens.fontDisplay,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w700,
+                    height: 1.05,
+                    color: OnbTokens.cream,
                   ),
-                  textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 8),
 
-                // Subtitle
+                // Subtitle (spec: Apercu 14 cream-62%, left-aligned)
                 Text(
                   key: ValueKey(
                     isLogin
@@ -589,128 +598,131 @@ class _PostOnboardingAuthScreenState
                         : 'auth.post_onboarding.subtitle',
                     defaultValue: isLogin
                         ? 'Welcome back'
-                        : 'Secure your data and sync across devices',
+                        : 'Save it in seconds. Free through launch month, '
+                              'no card needed.',
                   ),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
+                  style: kOnboardingSubtitleStyle,
                 ),
 
-                const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: 16),
 
-                if (!isLogin) ...[
-                  // Hero text
-                  Text(
-                    contentService.getValue(
-                      'auth.post_onboarding.hero_text',
-                      defaultValue:
-                          'Save your nutrition plans, training progress, and preferences with a free account.',
-                    ),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: AppSpacing.xxl),
-
-                  // Benefits card
-                  _buildBenefitsCard(context, contentService, isDark),
-
-                  const SizedBox(height: AppSpacing.xxxl),
+                // Testimonial card (spec content, verbatim).
+                if (!isLogin) ...const [
+                  _TestimonialCard(),
+                  SizedBox(height: 18),
                 ],
 
-                // Apple Sign-In button (iOS/Android only)
-                if (!kIsWeb)
-                  _buildOAuthButton(
+                // Apple Sign-In button (iOS/Android only) — spec primary:
+                // orange filled pill.
+                if (!kIsWeb) ...[
+                  _SpecAuthButton(
                     key: ValueKey(
                       isLogin
                           ? 'login_options.apple_button'
                           : 'post_onboarding.apple_button',
                     ),
-                    context: context,
                     label: contentService.getValue(
                       'auth.post_onboarding.apple_button',
                       defaultValue: 'Continue with Apple',
                     ),
                     icon: FontAwesomeIcons.apple.data,
+                    background: OnbTokens.orange,
+                    foreground: OnbTokens.bg,
                     onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
                     isLoading: asyncState.isLoading,
                   ),
 
-                if (!kIsWeb) const SizedBox(height: AppSpacing.md),
+                  // Spec "or" divider between the primary and the rest.
+                  const SizedBox(height: 12),
+                  const _OrDivider(),
+                  const SizedBox(height: 12),
+                ],
 
-                // Google Sign-In button
-                _buildOAuthButton(
+                // Google Sign-In button — spec: cream filled pill.
+                _SpecAuthButton(
                   key: ValueKey(
                     isLogin
                         ? 'login_options.google_button'
                         : 'post_onboarding.google_button',
                   ),
-                  context: context,
                   label: contentService.getValue(
                     'auth.post_onboarding.google_button',
                     defaultValue: 'Continue with Google',
                   ),
                   icon: FontAwesomeIcons.google.data,
+                  background: OnbTokens.cream,
+                  foreground: OnbTokens.bg,
                   onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
                   isLoading: asyncState.isLoading,
                 ),
 
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: 10),
 
-                // Email button
-                KylePrimaryButton(
+                // Email button — spec: outlined pill, cream-75% label.
+                _SpecAuthButton(
                   key: ValueKey(
                     isLogin
                         ? 'login_options.email_button'
                         : 'post_onboarding.email_button',
                   ),
-                  text: contentService.getValue(
+                  label: contentService.getValue(
                     isLogin
                         ? 'auth.login.email_button'
                         : 'auth.post_onboarding.email_button',
                     defaultValue: isLogin
-                        ? 'Log in with Email'
-                        : 'Sign up with Email',
+                        ? 'Log in with email'
+                        : 'Sign up with email',
                   ),
+                  background: Colors.transparent,
+                  foreground: OnbTokens.creamA(0.75),
+                  outlineColor: OnbTokens.creamA(0.2),
                   onPressed: asyncState.isLoading
                       ? null
                       : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
+                  isLoading: false,
                 ),
-
-                const SizedBox(height: AppSpacing.xxl),
 
                 // Skip button (only for signup mode)
                 if (!isLogin) ...[
+                  const SizedBox(height: 16),
+
                   TextButton(
                     key: const ValueKey('create_account.skip_button'),
                     onPressed: asyncState.isLoading ? null : _handleSkip,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.all(10),
+                    ),
                     child: Text(
                       contentService.getValue(
                         'auth.post_onboarding.skip_button',
-                        defaultValue: 'Continue without signing in',
+                        defaultValue: 'Continue without an account',
                       ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      style: const TextStyle(
+                        fontFamily: OnbTokens.fontBody,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: OnbTokens.cream,
                         decoration: TextDecoration.underline,
+                        decorationColor: OnbTokens.cream,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: 2),
 
-                  // Skip reminder text
+                  // Skip reminder text (local-only note)
                   Text(
                     contentService.getValue(
                       'auth.post_onboarding.skip_reminder',
                       defaultValue:
-                          'You can always create an account later in Settings',
+                          'Your plan stays on this device only — save it to '
+                          'keep it if you switch phones.',
                     ),
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    style: TextStyle(
+                      fontFamily: OnbTokens.fontBody,
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: OnbTokens.creamA(0.4),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -724,16 +736,14 @@ class _PostOnboardingAuthScreenState
           // Loading overlay for OAuth sign-in flows
           if (asyncState.isLoading)
             Container(
-              color: Theme.of(
-                context,
-              ).scaffoldBackgroundColor.withValues(alpha: 0.9),
+              color: OnbTokens.bg.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const CircularProgressIndicator(
                       strokeWidth: 3,
-                      color: AppColors.electrolyte,
+                      color: AppColors.orange,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     // Text(
@@ -767,128 +777,43 @@ class _PostOnboardingAuthScreenState
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          // Custom back button (disabled during loading)
+          // Back button (disabled during loading) — spec: the same 32px
+          // cream-10% chevron circle as the onboarding step headers.
           Opacity(
             opacity: isLoading ? 0.5 : 1.0,
-            child: CustomAppBarBackButton(
+            child: InkWell(
               key: ValueKey(
                 isLogin
                     ? 'login_options.back_button'
                     : 'create_account.back_button',
               ),
-              onPressed: () {
-                // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be reached
-                // via context.go() (post-onboarding flow) as well as push(),
-                // so guard against GoError "There is nothing to pop".
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/main');
-                }
-              },
-              enabled: !isLoading,
-              margin: EdgeInsets.zero,
-              iconColor: Theme.of(context).colorScheme.onSurface,
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.1),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefitsCard(
-    BuildContext context,
-    ContentService contentService,
-    bool isDark,
-  ) {
-    // Get benefits list from content service
-    final benefitsList = [
-      contentService.getValue(
-        'auth.post_onboarding.benefits[0]',
-        defaultValue: 'Sync your data across all your devices',
-      ),
-      contentService.getValue(
-        'auth.post_onboarding.benefits[1]',
-        defaultValue: 'Never lose your nutrition plans and training history',
-      ),
-      contentService.getValue(
-        'auth.post_onboarding.benefits[2]',
-        defaultValue: 'Get personalized recommendations based on your progress',
-      ),
-      contentService.getValue(
-        'auth.post_onboarding.benefits[3]',
-        defaultValue: 'Share plans with coaches and training partners',
-      ),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.blackberry.withValues(alpha: 0.3)
-            : AppColors.electrolyte.withValues(alpha: 0.1),
-        borderRadius: AppRadius.cardRadius,
-        border: Border.all(
-          color: AppColors.electrolyte.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Benefits title
-          Row(
-            children: [
-              FaIcon(
-                FontAwesomeIcons.circleCheck,
-                size: AppIconSizes.md,
-                color: AppColors.electrolyte,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  contentService.getValue(
-                    'auth.post_onboarding.benefits_card_title',
-                    defaultValue: 'Account Benefits',
-                  ),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              customBorder: const CircleBorder(),
+              onTap: isLoading
+                  ? null
+                  : () {
+                      // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
+                      // reached via context.go() (post-onboarding flow) as
+                      // well as push(), so guard against GoError "There is
+                      // nothing to pop".
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/main');
+                      }
+                    },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: OnbTokens.creamA(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_left,
+                  size: 18,
+                  color: OnbTokens.creamA(0.8),
                 ),
               ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Benefits list
-          ...benefitsList.map(
-            (benefit) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FaIcon(
-                    FontAwesomeIcons.check,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      benefit,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -896,65 +821,170 @@ class _PostOnboardingAuthScreenState
     );
   }
 
-  Widget _buildOAuthButton({
-    Key? key,
-    required BuildContext context,
-    required String label,
-    required IconData icon,
-    required VoidCallback? onPressed,
-    required bool isLoading,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+}
 
-    return SizedBox(
-      width: double.infinity,
-      height: AppSizes.buttonHeightPrimary,
-      child: ElevatedButton(
-        key: key,
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isDark
-              ? AppColors.blackberry.withValues(alpha: 0.5)
-              : Colors.white,
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          elevation: isDark ? 0 : 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-            side: BorderSide(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.2),
-              width: 1,
+/// Spec testimonial card: cream-5% fill, 1px teal-28% border, radius 15,
+/// 14/16 padding. Orange stars, Compadre 15 quote (uppercased for the
+/// unicase face), Apercu 11.5 cream-55% attribution. Content is the spec's,
+/// verbatim.
+class _TestimonialCard extends StatelessWidget {
+  const _TestimonialCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('post_onboarding.testimonial'),
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.05),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: const Color(0x471CF9CF)), // teal 28%
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      // Spec: stars sit in a left column BESIDE the quote block.
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '★★★★★',
+            style: TextStyle(
+              fontFamily: OnbTokens.fontBody,
+              fontSize: 15,
+              color: OnbTokens.orange,
             ),
           ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: AppIconSizes.button,
-                    color: Theme.of(context).colorScheme.onSurface,
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '“GETTING NUTRITION RIGHT IS HOW I FINISH MY TRAINING '
+                  'BLOCK STRONG AND TOE THE START LINE HEALTHY, FIT, '
+                  'AND READY.”',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontLabel,
+                    fontSize: 15,
+                    height: 1.4,
+                    color: OnbTokens.cream,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: AppTextStyles.buttonPrimary.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  'Xuan H. · 6x marathoner · 2x half IM',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 11.5,
+                    color: OnbTokens.creamA(0.55),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Spec "or" divider: cream-15% hairlines flanking an 11.5 cream-40% "or",
+/// 12px gaps.
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final line = Expanded(child: Container(height: 1, color: OnbTokens.creamA(0.15)));
+    return Row(
+      children: [
+        line,
+        const SizedBox(width: 12),
+        Text(
+          'or',
+          style: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontSize: 11.5,
+            color: OnbTokens.creamA(0.4),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Container(height: 1, color: OnbTokens.creamA(0.15))),
+      ],
+    );
+  }
+}
+
+/// Spec auth pill: radius 100, 14px vertical padding, Sansita 15/700 label,
+/// optional 16px leading icon with a 10px gap. Filled (orange/cream) or
+/// outlined (transparent + cream-20% hairline).
+class _SpecAuthButton extends StatelessWidget {
+  const _SpecAuthButton({
+    super.key,
+    required this.label,
+    this.icon,
+    required this.background,
+    required this.foreground,
+    this.outlineColor,
+    required this.onPressed,
+    required this.isLoading,
+  });
+
+  final String label;
+  final IconData? icon;
+  final Color background;
+  final Color foreground;
+  final Color? outlineColor;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(OnbTokens.rPill),
+        side: outlineColor != null
+            ? BorderSide(color: outlineColor!)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(OnbTokens.rPill),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: isLoading
+              ? Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: foreground,
                     ),
                   ),
-                ],
-              ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 16, color: foreground),
+                      const SizedBox(width: 10),
+                    ],
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: foreground,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
