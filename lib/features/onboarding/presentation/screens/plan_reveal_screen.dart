@@ -9,11 +9,33 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../domain/onboarding_draft.dart';
 import '../../domain/onboarding_plan_preview.dart';
+import '../../domain/training_insights.dart';
 import '../providers/onboarding_controller.dart';
 import '../providers/onboarding_preview_providers.dart';
 import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_build_loader.dart';
 import '../widgets/onboarding_step_scaffold.dart';
+
+/// Display name for the reveal's "we read your plan" card — same brand
+/// names the connect-training rows use (`connected_apps_screen.dart`).
+/// Falls back to the raw key for a provider added there but not mirrored
+/// here yet, rather than showing nothing.
+String _providerDisplayName(String provider) {
+  switch (provider) {
+    case 'final_surge':
+      return 'Final Surge';
+    case 'training_peaks':
+      return 'TrainingPeaks';
+    case 'garmin':
+      return 'Garmin Connect';
+    case 'vdot':
+      return 'V.O2';
+    case 'runna':
+      return 'Runna';
+    default:
+      return provider;
+  }
+}
 
 /// Plan Reveal Screen - Step 8 of Onboarding (2026-08 redesign)
 ///
@@ -210,6 +232,13 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             key: const ValueKey('plan_reveal.connect_nudge'),
             onConnectNow: widget.onConnectTap!,
             connectButtonKey: const ValueKey('plan_reveal.connect_now'),
+          ),
+          const SizedBox(height: 16),
+        ] else if (draft.connectedProvider != null) ...[
+          _ConnectedPlanCard(
+            key: const ValueKey('plan_reveal.connected_plan_card'),
+            providerName: _providerDisplayName(draft.connectedProvider!),
+            insights: bundle.insights,
           ),
           const SizedBox(height: 16),
         ],
@@ -441,6 +470,113 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   /// so the algorithm default takes over again.
   void _resetEdit(OnboardingPlanEdits cleared) {
     _controller.applyPlanEdits(cleared);
+  }
+}
+
+/// "We read your plan" card — the spec's complement to
+/// [OnboardingConnectNudgeCard]: shown instead of the nudge once a training
+/// platform is connected. Teal-6% fill, teal-30% border, radius 15, padding
+/// 16; a checkmark + `planConnectedLine` ("We read your {provider} plan for
+/// the next four weeks."), then — when [TrainingInsights.hasWeekdayPattern]
+/// — the heavy/light weekday line (indented under the checkmark, day names
+/// in full-cream against a cream-60% label), and a static ACSM caption.
+///
+/// The heavy/light split is a real (if simple) heuristic over the imported
+/// activities' weekdays — see `TrainingInsightService._weekdayPattern` —
+/// not fabricated copy; it just quietly omits itself when the window is too
+/// thin to say anything meaningful (`hasWeekdayPattern` false).
+class _ConnectedPlanCard extends StatelessWidget {
+  const _ConnectedPlanCard({
+    super.key,
+    required this.providerName,
+    required this.insights,
+  });
+
+  final String providerName;
+  final TrainingInsights insights;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = TextStyle(
+      fontFamily: OnbTokens.fontBody,
+      fontSize: 12.5,
+      height: 1.5,
+      color: OnbTokens.creamA(0.6),
+    );
+    final dayNameStyle = const TextStyle(
+      fontFamily: OnbTokens.fontBody,
+      fontSize: 12.5,
+      height: 1.5,
+      color: OnbTokens.cream,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: OnbTokens.teal.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: OnbTokens.teal30),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(Icons.check, size: 16, color: OnbTokens.teal),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  'We read your $providerName plan for the next four weeks.',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 13,
+                    height: 1.45,
+                    color: OnbTokens.creamA(0.82),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Icon width (16) + gap (11) — matches the checkmark row above.
+          Padding(
+            padding: const EdgeInsets.only(left: 27, top: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (insights.hasWeekdayPattern)
+                  Text.rich(
+                    TextSpan(
+                      style: labelStyle,
+                      children: [
+                        const TextSpan(text: 'Heavy days: '),
+                        TextSpan(
+                          text: insights.heavyDayNames,
+                          style: dayNameStyle,
+                        ),
+                        const TextSpan(text: ' · Lighter days: '),
+                        TextSpan(
+                          text: insights.lightDayNames,
+                          style: dayNameStyle,
+                        ),
+                      ],
+                    ),
+                  ),
+                if (insights.hasWeekdayPattern) const SizedBox(height: 8),
+                Text(
+                  'We set your carb target based on ACSM recommendation and '
+                  'your goal, but you can still edit it.',
+                  style: labelStyle,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

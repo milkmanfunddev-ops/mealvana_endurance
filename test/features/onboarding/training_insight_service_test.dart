@@ -80,6 +80,50 @@ void main() {
       expect(insights.longestRide!.durationMinutes, 130);
       // 385 min over exactly 7 days → 6.4 h/week (rounded to 1dp).
       expect(insights.weeklyDurationHours, closeTo(6.4, 0.05));
+
+      // Weekday load pattern: 4 distinct weekdays clears the ≥4 minimum.
+      // By minutes — d(+6,150) > b(+2,130) > c(+4,60) > a(+0,45) — the top
+      // two (+6, +2) are heavy, the bottom two (+0, +4) are light.
+      expect(insights.hasWeekdayPattern, isTrue);
+      expect(
+        insights.heavyWeekdays,
+        [monday.add(const Duration(days: 6)).weekday,
+            monday.add(const Duration(days: 2)).weekday]
+          ..sort(),
+      );
+      expect(
+        insights.lightWeekdays,
+        [monday.weekday, monday.add(const Duration(days: 4)).weekday]..sort(),
+      );
+    });
+
+    test('fewer than 4 distinct weekdays yields no weekday pattern', () {
+      final insights = TrainingInsightService.digest([
+        _activity(
+          id: 'a',
+          type: ActivityType.running,
+          when: monday,
+          durationMinutes: 45,
+        ),
+        _activity(
+          id: 'b',
+          type: ActivityType.running,
+          when: monday.add(const Duration(days: 2)),
+          durationMinutes: 90,
+        ),
+        _activity(
+          id: 'c',
+          type: ActivityType.running,
+          when: monday.add(const Duration(days: 6)),
+          durationMinutes: 60,
+        ),
+      ]);
+
+      // Only 3 distinct weekdays — below minWeekdaysForPattern (4), so the
+      // card should quietly omit the heavy/light line rather than guess.
+      expect(insights.hasWeekdayPattern, isFalse);
+      expect(insights.heavyDayNames, isNull);
+      expect(insights.lightDayNames, isNull);
     });
 
     test('window under 7 days is unreliable even with many sessions', () {

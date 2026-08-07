@@ -185,6 +185,54 @@ void main() {
     );
   });
 
+  testWidgets(
+    'connected-plan card replaces the nudge and shows the weekday pattern',
+    (tester) async {
+      final connectedBundle = OnboardingPreviewBundle(
+        preview: genericBundle.preview,
+        insights: const TrainingInsights(
+          isReliable: true,
+          windowDays: 7,
+          sessionCount: 4,
+          weeklyDurationHours: 6.4,
+          heavyWeekdays: [DateTime.wednesday, DateTime.sunday],
+          lightWeekdays: [DateTime.monday, DateTime.friday],
+        ),
+      );
+      final container = await pumpScreen(
+        tester,
+        bundle: connectedBundle,
+        onConnectTap: () {},
+      );
+      final controller = container.read(onboardingControllerProvider.notifier);
+      controller.recordConnectedProvider('final_surge');
+      await settleReveal(tester);
+
+      expect(
+        find.byKey(const ValueKey('plan_reveal.connect_nudge')),
+        findsNothing,
+      );
+      final card = find.byKey(
+        const ValueKey('plan_reveal.connected_plan_card'),
+      );
+      expect(card, findsOneWidget);
+      expect(
+        find.text(
+          'We read your Final Surge plan for the next four weeks.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Heavy days: Wednesday, Sunday'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Lighter days: Monday, Friday'),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('sweat test tile records interest and shows the info snack', (
     tester,
   ) async {

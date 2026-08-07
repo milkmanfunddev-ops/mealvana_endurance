@@ -46,6 +46,8 @@ class TrainingInsights {
     this.longestRun,
     this.longestRide,
     this.heavyDayCount = 0,
+    this.heavyWeekdays = const [],
+    this.lightWeekdays = const [],
   });
 
   /// An empty, unreliable digest (no import / nothing usable).
@@ -74,4 +76,36 @@ class TrainingInsights {
 
   /// Days in the window with ≥1 qualifying session (the workout-day pattern).
   final int heavyDayCount;
+
+  /// The most- and least-loaded weekdays in the imported window
+  /// ([DateTime.monday]..[DateTime.sunday], ascending), surfaced on the
+  /// plan-reveal "we read your plan" card. Empty when the window doesn't
+  /// cover enough distinct weekdays to say anything meaningful — see
+  /// `TrainingInsightService.minWeekdaysForPattern`.
+  final List<int> heavyWeekdays;
+  final List<int> lightWeekdays;
+
+  static const _weekdayNames = {
+    DateTime.monday: 'Monday',
+    DateTime.tuesday: 'Tuesday',
+    DateTime.wednesday: 'Wednesday',
+    DateTime.thursday: 'Thursday',
+    DateTime.friday: 'Friday',
+    DateTime.saturday: 'Saturday',
+    DateTime.sunday: 'Sunday',
+  };
+
+  static String _names(List<int> weekdays) =>
+      weekdays.map((d) => _weekdayNames[d]!).join(', ');
+
+  /// "Saturday, Sunday" — null when [heavyWeekdays] is empty.
+  String? get heavyDayNames =>
+      heavyWeekdays.isEmpty ? null : _names(heavyWeekdays);
+
+  /// "Monday, Friday" — null when [lightWeekdays] is empty.
+  String? get lightDayNames =>
+      lightWeekdays.isEmpty ? null : _names(lightWeekdays);
+
+  /// Whether there's a heavy/light weekday pattern to show at all.
+  bool get hasWeekdayPattern => heavyWeekdays.isNotEmpty && lightWeekdays.isNotEmpty;
 }

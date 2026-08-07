@@ -33,6 +33,11 @@ class TrainingInsightService {
   /// A ride at least this long counts as a qualifying long session.
   static const int longRideMinMinutes = 120;
 
+  /// Minimum distinct weekdays with training before we'll claim a
+  /// heavy/light pattern on the reveal card — below this a single sample
+  /// (e.g. one Tuesday) looks arbitrary rather than a real pattern.
+  static const int minWeekdaysForPattern = 4;
+
   /// Digest [activities] (typically everything the onboarding auto-import
   /// wrote) into insights. Soft-deleted, skipped, and import-only "other"
   /// activities are ignored; brick/multisport count toward load but not
@@ -54,6 +59,7 @@ class TrainingInsightService {
     var latest = usable.first.scheduledDateTime;
     var totalMinutes = 0;
     final trainingDays = <DateTime>{};
+    final minutesByWeekday = <int, int>{};
     Activity? longestRun;
     Activity? longestRide;
 
@@ -61,8 +67,14 @@ class TrainingInsightService {
       final when = activity.scheduledDateTime;
       if (when.isBefore(earliest)) earliest = when;
       if (when.isAfter(latest)) latest = when;
-      totalMinutes += _durationOf(activity);
+      final minutes = _durationOf(activity);
+      totalMinutes += minutes;
       trainingDays.add(DateTime(when.year, when.month, when.day));
+      minutesByWeekday.update(
+        when.weekday,
+        (total) => total + minutes,
+        ifAbsent: () => minutes,
+      );
 
       if (activity.activityType == ActivityType.running &&
           _beats(activity, longestRun)) {
@@ -87,6 +99,8 @@ class TrainingInsightService {
     final weeklyDurationHours =
         (totalMinutes / 60.0) * (7.0 / math.max(windowDays, 1));
 
+    final pattern = _weekdayPattern(minutesByWeekday);
+
     return TrainingInsights(
       isReliable: isReliable,
       windowDays: windowDays,
@@ -95,7 +109,27 @@ class TrainingInsightService {
       longestRun: longestRun == null ? null : _toSession(longestRun),
       longestRide: longestRide == null ? null : _toSession(longestRide),
       heavyDayCount: trainingDays.length,
+      heavyWeekdays: pattern.heavy,
+      lightWeekdays: pattern.light,
     );
+  }
+
+  /// The two most- and two least-loaded weekdays by total imported minutes,
+  /// each returned in weekday order (Monday-first). Needs at least
+  /// [minWeekdaysForPattern] distinct weekdays represented — with fewer,
+  /// "heavy" vs "light" is just noise — and with exactly that minimum the
+  /// two groups are disjoint by construction (top 2 / bottom 2 of ≥4).
+  static ({List<int> heavy, List<int> light}) _weekdayPattern(
+    Map<int, int> minutesByWeekday,
+  ) {
+    if (minutesByWeekday.length < minWeekdaysForPattern) {
+      return (heavy: const [], light: const []);
+    }
+    final byLoad = minutesByWeekday.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final heavy = byLoad.take(2).map((e) => e.key).toList()..sort();
+    final light = byLoad.reversed.take(2).map((e) => e.key).toList()..sort();
+    return (heavy: heavy, light: light);
   }
 
   /// Planned duration wins; completed actuals fill in when the plan had none
