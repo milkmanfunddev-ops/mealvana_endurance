@@ -81,6 +81,7 @@ class FoodSearchBar extends StatelessWidget {
                 children: [
                   // Barcode button
                   IconButton(
+                    key: const ValueKey('add_food.barcode_button'),
                     icon: FaIcon(
                       FontAwesomeIcons.barcode,
                       color: AppColors.orange,

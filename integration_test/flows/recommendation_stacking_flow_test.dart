@@ -25,8 +25,12 @@
 ///   • t < 30        → {Top-Off}
 ///   • 30 <= t < 120 → {Pre-Workout Snack, Top-Off}
 ///   • t >= 120      → {Full Meal, Pre-Workout Snack, Top-Off}
-/// Occasion labels are the domain displayLabels 'Full Meal' / 'Pre-Workout
-/// Snack' / 'Top-Off' (lib/features/nutrition_plan/domain/plan_section.dart:48-52).
+/// Occasion labels come from `preWorkoutFeedingTitle`
+/// (lib/features/nutrition_plan/domain/pre_workout_feeding_labels.dart) and are
+/// sport-aware for the meal: a running activity reads **"Pre-Run Meal"**, not
+/// "Full Meal". This flow imports that function rather than hardcoding the
+/// strings — see the note on the label constants below for what the hardcoded
+/// version cost.
 ///
 /// Diet-independent, so it runs as the single integration account
 /// (avery@test.com) — no per-athlete credentials needed. Self-skips when there
@@ -44,13 +48,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
+import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_feeding_labels.dart';
+import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+
 import '../helpers/flow_launcher.dart';
 
-// Pre-workout occasion labels — the domain displayLabels rendered as the
-// BEFORE sub-section titles on the plan-detail screen.
-const _fullMeal = 'Full Meal';
-const _snack = 'Pre-Workout Snack';
-const _topOff = 'Top-Off';
+// Pre-workout occasion labels — the BEFORE sub-section titles rendered on the
+// plan-detail screen (before_phase_widget.dart:295, title case, not uppercased).
+//
+// Derived from the domain function rather than hardcoded. The literals used to
+// be `'Full Meal' / 'Pre-Workout Snack' / 'Top-Off'`, and the meal one went
+// stale when the fueling rework made the title sport-aware: the app now renders
+// "Pre-Run Meal" / "Pre-Ride Meal" / "Pre-Workout Meal" and emits the string
+// "Full Meal" nowhere on this screen at all.
+//
+// That did NOT surface as a clean failure. `expect($(_fullMeal), findsWidgets)`
+// blocked until the 600s test timeout instead of failing on the assertion, and
+// the ≤30 case's `findsNothing` checks silently went VACUOUS — passing because
+// the label could never appear, rather than because the engine withheld it.
+//
+// Deriving from `preWorkoutFeedingTitle` means a future rename moves these with
+// the app. The flow builds a RUNNING activity, so that is the sport to pass.
+final _fullMeal = preWorkoutFeedingTitle('meal', sport: ActivityType.running);
+final _snack = preWorkoutFeedingTitle('snack');
+final _topOff = preWorkoutFeedingTitle('top_up');
 
 void main() {
   patrolTest(
@@ -177,8 +198,14 @@ Future<bool> _generateRunPlanWithWindow(
         const ValueKey('activity_create.duration_mins_field'),
         '0',
       );
-    } on Exception catch (_) {
+    } on Object catch (_) {
       // Fall back to the form's derived default duration.
+      //
+      // Catch Object, not Exception: _ensureVisibleInForm raises a StateError
+      // (an Error, not an Exception) when a field is absent entirely, which is
+      // exactly the Pace-mode case this block is already best-effort about.
+      // `on Exception` let that escape and fail the whole flow over an optional
+      // field.
     }
   }
 
@@ -253,22 +280,49 @@ Future<void> _fillField(
   await $.pump(const Duration(milliseconds: 200));
 }
 
-/// Bring [key] into view. Prefer not scrolling (the form usually fits once the
-/// keyboard is dismissed); a blind scrollTo is dangerous because its default
-/// view is the FIRST Scrollable, which on this screen is the horizontal sport
-/// strip. When a scroll is genuinely needed, pin it to the form's vertical
-/// SingleChildScrollView.
+/// Bring [key] into view without guessing a scroll direction.
+///
+/// This used a blind `scrollTo`, which is what burned the 600s timeout on
+/// `activity_create.duration_hr_field` in the M1 run of 2026-08-07. `scrollTo`
+/// drags ONE way — it takes its direction from the scrollable's `axisDirection`,
+/// always `down` on this form — so when the target sits *above* the current
+/// offset every drag moves further from it, and the finder walks its full
+/// `maxScrolls` to the bottom before throwing. At a 1s settle per drag that is
+/// minutes of wall clock per attempt.
+///
+/// The old comment here also claimed this form has no horizontal scrollables.
+/// It does: the sport selector strip. activities_crud_flow_test hit the same
+/// wall on the same field on 2026-07-31 and documented both facts.
+///
+/// `ensureVisible` asks the target's own nearest Scrollable to reveal it, so it
+/// needs neither a direction nor an iteration count and cannot overshoot. In
+/// the 2026-08-07 run activities_crud passed on this exact key using it while
+/// this flow timed out without — same app, same form, same build.
+///
+/// A widget that exists but still refuses to become hit-testable is a real
+/// finding, not something to scroll harder at.
 Future<void> _ensureVisibleInForm(
   PatrolIntegrationTester $,
   ValueKey<String> key,
 ) async {
-  // Blind scrollTo (no pinned view). The create form is a single vertical
-  // SingleChildScrollView (new_activity_screen.dart:601) with NO horizontal
-  // scrollables, so Patrol scrolls the correct one on its own. An earlier
-  // version pinned `view: find.byType(SingleChildScrollView).first`, which
-  // grabbed a wrong nested view and failed to reveal below-the-fold controls
-  // (duration field, fueling-window stepper).
-  await $(
-    key,
-  ).scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1));
+  // Cheapest path first: once the keyboard is dismissed the form usually
+  // already fits the viewport, and then no scroll is needed at all.
+  try {
+    await $(key).waitUntilVisible(timeout: const Duration(seconds: 3));
+    return;
+  } on Exception {
+    // Fall through to an explicit, direction-free reveal.
+  }
+
+  final target = find.byKey(key);
+  if (target.evaluate().isEmpty) {
+    throw StateError(
+      '${key.value} is not in the widget tree at all — the create form is '
+      'showing a different mode or tab than this flow expects.',
+    );
+  }
+
+  await $.tester.ensureVisible(target.first);
+  // Fixed pump, never settle: this form can hold a weather/zone spinner.
+  await $.pump(const Duration(milliseconds: 400));
 }
