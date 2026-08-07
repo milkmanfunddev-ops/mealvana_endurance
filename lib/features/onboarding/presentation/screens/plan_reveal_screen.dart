@@ -6,15 +6,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/widgets/adaptive/adaptive.dart';
-import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../domain/onboarding_draft.dart';
 import '../../domain/onboarding_plan_preview.dart';
-import '../providers/onboarding_analytics.dart';
 import '../providers/onboarding_controller.dart';
 import '../providers/onboarding_preview_providers.dart';
-import '../widgets/onboarding_progress_bar.dart';
+import '../theme/onboarding_design_tokens.dart';
+import '../widgets/onboarding_build_loader.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
 /// Plan Reveal Screen - Step 8 of Onboarding (2026-08 redesign)
@@ -54,9 +52,9 @@ class PlanRevealScreen extends ConsumerStatefulWidget {
 }
 
 class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
-  /// Minimum loader time — perceived work even for the no-connect path,
-  /// where the preview computes instantly.
-  static const _minLoaderDuration = Duration(milliseconds: 1500);
+  /// Minimum loader time — long enough for the spec's four build lines to
+  /// play at their 700ms cadence (the prototype's transition length).
+  static const _minLoaderDuration = Duration(milliseconds: 2800);
 
   Timer? _minDelayTimer;
   bool _minDelayElapsed = false;
@@ -131,57 +129,11 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   // ---------------------------------------------------------------------
 
   Widget _buildLoader() {
-    return AdaptivePageScaffold(
-      backgroundColor: AppColors.blackberry,
-      contentWidth: AdaptiveContentWidth.narrow,
-      body: Column(
-        children: [
-          Container(
-            color: AppColors.blackberry,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: OnboardingProgressBar(
-              currentSegment: (widget.stepIndex ?? 0) + 1,
-              totalSegments: kOnboardingStepNames.length,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/images/endurance_welcome_logo.png',
-                    width: 120,
-                  ),
-                  const SizedBox(height: 28),
-                  const CircularProgressIndicator(color: AppColors.orange),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Building your plan…',
-                    key: ValueKey('plan_reveal.loader'),
-                    textAlign: TextAlign.center,
-                    style: kOnboardingTitleStyle,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Crunching your carbs, fluids and sodium.',
-                    textAlign: TextAlign.center,
-                    style: kOnboardingBodyMutedStyle,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Footer stays visible but disabled so the layout doesn't jump.
-          FigmaOnboardingFooter(
-            onContinue: widget.onContinue,
-            onBack: widget.onBack,
-            canContinue: false,
-            continueButtonKey: const ValueKey('plan_reveal.continue_button'),
-            backButtonKey: const ValueKey('plan_reveal.back_button'),
-          ),
-        ],
-      ),
+    // Spec BUILDING state: full-bleed gradient, spinner ring, cycling teal
+    // build lines, 220x5 progress bar — no header or footer chrome.
+    return const Scaffold(
+      backgroundColor: OnbTokens.bg,
+      body: OnboardingBuildLoader(),
     );
   }
 

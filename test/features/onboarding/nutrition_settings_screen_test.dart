@@ -51,11 +51,11 @@ void main() {
 
     // Default captions render.
     expect(
-      find.text("I'm regularly fueling my long workouts."),
+      find.text("I'M REGULARLY FUELING MY LONG WORKOUTS."),
       findsOneWidget,
     );
     expect(
-      find.text('A normal amount — damp after a hard session.'),
+      find.text('A NORMAL AMOUNT — DAMP AFTER A HARD SESSION.'),
       findsOneWidget,
     );
 
@@ -78,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.draft.gutTraining, GutTraining.high);
     expect(
-      find.text("I've trained my gut to handle high carb intake."),
+      find.text("I'VE TRAINED MY GUT TO HANDLE HIGH CARB INTAKE."),
       findsOneWidget,
     );
 
@@ -88,7 +88,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.draft.sweatRate, SweatRateCat.heavy);
     expect(
-      find.text("I'm drenched — kit soaked after hard sessions."),
+      find.text("I'M DRENCHED — KIT SOAKED AFTER HARD SESSIONS."),
       findsOneWidget,
     );
 

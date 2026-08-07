@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/onboarding_controller.dart';
+import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
 /// Nutrition Settings Screen - Step 7 of Onboarding (2026-08 redesign)
@@ -158,7 +158,7 @@ class _NutritionSettingsScreenState
               ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _SettingCard(
           label: 'SWEAT RATE',
           sublabel: 'How much you typically sweat during exercise',
@@ -175,11 +175,15 @@ class _NutritionSettingsScreenState
           ],
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           "Not sure? Keep the defaults — we'll refine both as you log "
           'sessions.',
-          textAlign: TextAlign.center,
-          style: kOnboardingBodyMutedStyle,
+          style: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontSize: 12,
+            height: 1.4,
+            color: OnbTokens.creamA(0.45),
+          ),
         ),
       ],
     );
@@ -219,15 +223,37 @@ class _SettingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Spec card: radius 15, cream-4% fill, 1px cream-12% border,
+    // padding 18/16; fontLabel 16 cream header (Compadre renders unicase —
+    // copy stays uppercase under the stand-in); Apercu 12.5 cream-55% sub;
+    // teal fontLabel 13.5 selection caption.
     return Container(
-      decoration: onboardingCardDecoration(),
-      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.04),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: OnbTokens.creamA(0.12)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: kOnboardingSectionLabelStyle),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: OnbTokens.fontLabel,
+              fontSize: 16,
+              color: OnbTokens.cream,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(sublabel, style: kOnboardingBodyMutedStyle),
+          Text(
+            sublabel,
+            style: TextStyle(
+              fontFamily: OnbTokens.fontBody,
+              fontSize: 12.5,
+              color: OnbTokens.creamA(0.55),
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -238,7 +264,34 @@ class _SettingCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(caption, style: kOnboardingBodyMutedStyle),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Spec: small teal dot leading the selection caption.
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: OnbTokens.teal,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  caption.toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: OnbTokens.fontLabel,
+                    fontSize: 13.5,
+                    color: OnbTokens.teal,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -252,39 +305,44 @@ class _SegmentChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = spec.isSelected
-        ? AppColors.blackberry
-        : AppColors.cream.withValues(alpha: 0.7);
-
+    // Spec segment: radius 12, padding 12/4; unselected cream-3% fill with
+    // cream-22% border, cream 12.5/700 ls .625 label + fontMono 12
+    // cream-50% multiplier; selected fills cream (plum label, plum-60%
+    // multiplier).
     return GestureDetector(
       key: spec.key,
       onTap: spec.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
-          color: spec.isSelected ? AppColors.cream : Colors.transparent,
-          border: Border.all(color: AppColors.cream, width: 2),
-          borderRadius: BorderRadius.circular(12),
+          color: spec.isSelected ? OnbTokens.cream : OnbTokens.creamA(0.03),
+          border: Border.all(
+            color: spec.isSelected ? OnbTokens.cream : OnbTokens.creamA(0.22),
+          ),
+          borderRadius: BorderRadius.circular(OnbTokens.rChip),
         ),
         child: Column(
           children: [
             Text(
-              spec.label,
+              spec.label.toUpperCase(),
               style: TextStyle(
-                fontFamily: 'Apercu',
-                fontSize: 13,
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w700,
-                color: foreground,
+                letterSpacing: 0.625,
+                color: spec.isSelected ? OnbTokens.bg : OnbTokens.cream,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               spec.multiplier,
               style: TextStyle(
-                fontFamily: 'Apercu',
-                fontSize: 11,
-                color: foreground,
+                fontFamily: OnbTokens.fontMono,
+                fontSize: 12,
+                color: spec.isSelected
+                    ? const Color(0x99381633)
+                    : OnbTokens.creamA(0.5),
               ),
             ),
           ],
