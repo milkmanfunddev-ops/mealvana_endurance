@@ -109,6 +109,93 @@ void main() {
       );
     });
 
+    test(
+      'distance-prescribed plan (Final Surge shape) is digested, not dropped',
+      () {
+        // Final Surge writes durationMinutes: null whenever the workout
+        // carries distance or pace — see
+        // FinalSurgeTransformer._getFallbackDurationMinutes. A whole
+        // running block therefore arrives distance-only, and used to
+        // digest to nothing: 21 synced workouts, "no scheduled sessions
+        // to read yet", empty diagnostic list.
+        final insights = TrainingInsightService.digest([
+          _activity(
+            id: 'a',
+            type: ActivityType.running,
+            when: monday,
+            distanceMiles: 5,
+          ),
+          _activity(
+            id: 'b',
+            type: ActivityType.running,
+            when: monday.add(const Duration(days: 2)),
+            distanceMiles: 8,
+          ),
+          _activity(
+            id: 'c',
+            type: ActivityType.running,
+            when: monday.add(const Duration(days: 4)),
+            distanceMiles: 6,
+          ),
+          _activity(
+            id: 'd',
+            type: ActivityType.running,
+            when: monday.add(const Duration(days: 6)),
+            distanceMiles: 15,
+          ),
+        ]);
+
+        expect(insights.sessionCount, 4);
+        expect(insights.sessions, hasLength(4));
+        expect(insights.windowRangeLabel, 'Jul 20 to Jul 26');
+
+        // The 15-miler is the long run, and the reveal quotes its
+        // distance — the estimated minutes never reach the copy.
+        expect(insights.longestRun, isNotNull);
+        expect(insights.longestRun!.descriptor, 'your 15-mile long run');
+        // 15 mi × 9.5 min/mi ≈ 143 min, clearing the 90-min long-session
+        // bar, so a distance-only block is reliable like any other.
+        expect(insights.longestRun!.durationMinutes, closeTo(143, 2));
+        expect(insights.longestRun!.durationIsEstimated, isTrue);
+        expect(insights.isReliable, isTrue);
+
+        // Load still ranks correctly by distance: the 15 and 8 mile days
+        // are heavy, the 5 and 6 mile days light.
+        expect(insights.heavyWeekdays, [
+          monday.add(const Duration(days: 2)).weekday,
+          monday.add(const Duration(days: 6)).weekday,
+        ]..sort());
+        expect(insights.lightWeekdays, [
+          monday.weekday,
+          monday.add(const Duration(days: 4)).weekday,
+        ]..sort());
+      },
+    );
+
+    test('explicit duration is never overwritten by a distance estimate', () {
+      final insights = TrainingInsightService.digest([
+        _activity(
+          id: 'a',
+          type: ActivityType.running,
+          when: monday,
+          durationMinutes: 30,
+          distanceMiles: 10, // would estimate 95 min if it took over
+        ),
+      ]);
+
+      expect(insights.sessions.single.durationMinutes, 30);
+      expect(insights.sessions.single.durationIsEstimated, isFalse);
+    });
+
+    test('rows with neither duration nor distance are still ignored', () {
+      final insights = TrainingInsightService.digest([
+        _activity(id: 'a', type: ActivityType.running, when: monday),
+      ]);
+
+      expect(insights.sessionCount, 0);
+      expect(insights.sessions, isEmpty);
+    });
+
     test('fewer than 4 distinct weekdays yields no weekday pattern', () {
       final insights = TrainingInsightService.digest([
         _activity(

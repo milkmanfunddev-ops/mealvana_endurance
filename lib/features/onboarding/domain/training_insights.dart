@@ -6,6 +6,7 @@ class InsightSession {
   const InsightSession({
     required this.activityType,
     required this.durationMinutes,
+    this.durationIsEstimated = false,
     this.distanceMiles,
     this.title,
     required this.scheduledDateTime,
@@ -13,6 +14,13 @@ class InsightSession {
 
   final ActivityType activityType;
   final int durationMinutes;
+
+  /// True when the provider scheduled this session by distance only and
+  /// [durationMinutes] was derived from an assumed pace rather than sent to
+  /// us. The reveal's diagnostic sheet marks these so an estimate is never
+  /// read as provider data.
+  final bool durationIsEstimated;
+
   final double? distanceMiles;
   final String? title;
   final DateTime scheduledDateTime;
@@ -51,6 +59,8 @@ class TrainingInsights {
     this.heavyWeekdays = const [],
     this.lightWeekdays = const [],
     this.sessions = const [],
+    this.rawActivityCount = 0,
+    this.dataUserId,
   });
 
   /// An empty, unreliable digest (no import / nothing usable).
@@ -99,6 +109,33 @@ class TrainingInsights {
   /// Backs the reveal card's diagnostic sheet (7 taps) so the numbers on
   /// screen can always be traced to the rows that produced them.
   final List<InsightSession> sessions;
+
+  /// How many activity rows the digest was handed BEFORE filtering, and the
+  /// user id they were read under. Purely diagnostic: together with
+  /// [sessionCount] they separate "we read nothing" (wrong id, or the
+  /// import hadn't landed yet) from "we read rows but discarded them all"
+  /// — the two failure modes look identical on the card otherwise.
+  final int rawActivityCount;
+  final String? dataUserId;
+
+  /// Same digest, tagged with the id it was read under (the pure digest
+  /// has no business knowing about auth).
+  TrainingInsights withDataUserId(String? userId) => TrainingInsights(
+    isReliable: isReliable,
+    windowDays: windowDays,
+    windowStart: windowStart,
+    windowEnd: windowEnd,
+    sessionCount: sessionCount,
+    weeklyDurationHours: weeklyDurationHours,
+    longestRun: longestRun,
+    longestRide: longestRide,
+    heavyDayCount: heavyDayCount,
+    heavyWeekdays: heavyWeekdays,
+    lightWeekdays: lightWeekdays,
+    sessions: sessions,
+    rawActivityCount: rawActivityCount,
+    dataUserId: userId,
+  );
 
   static const _weekdayNames = {
     DateTime.monday: 'Monday',

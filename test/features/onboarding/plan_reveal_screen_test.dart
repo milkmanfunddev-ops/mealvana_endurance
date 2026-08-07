@@ -311,11 +311,28 @@ void main() {
 
     expect(sheet, findsOneWidget);
     expect(find.text('Imported from Final Surge'), findsOneWidget);
-    // Summary block traces the card's claims back to their inputs...
+    // Summary block traces the card's claims back to their inputs, and
+    // leads with the read path so an empty digest can be diagnosed.
+    expect(find.text('Rows read'), findsOneWidget);
     expect(find.text('Jul 20 to Jul 26'), findsOneWidget);
     expect(find.text('Wednesday, Sunday'), findsOneWidget);
-    // ...and every digested session is listed.
     expect(find.text('SESSIONS (2)'), findsOneWidget);
+
+    // ...and every digested session is listed below it. Drive the sheet's
+    // own scrollable — a plain drag would be swallowed by the draggable
+    // sheet growing toward its max height instead of scrolling.
+    await tester.scrollUntilVisible(
+      find.text('Long run'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(DraggableScrollableSheet),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Easy shakeout'), findsOneWidget);
     expect(find.text('Long run'), findsOneWidget);
     expect(find.text('150 min · 15.0 mi'), findsOneWidget);

@@ -95,7 +95,10 @@ Future<TrainingInsights> _digestImportedActivities(Ref ref) async {
         now.subtract(const Duration(days: 90)),
         now.add(const Duration(days: 366)),
       );
-  return TrainingInsightService.digest(activities);
+  // Tag with the id we read under so the reveal's diagnostic sheet can show
+  // whether an empty digest means "nothing was there" or "we looked in the
+  // wrong place".
+  return TrainingInsightService.digest(activities).withDataUserId(userId);
 }
 
 /// The plan preview both reveal screens render, personalized from imported

@@ -38,6 +38,23 @@ class TrainingInsightService {
   /// (e.g. one Tuesday) looks arbitrary rather than a real pattern.
   static const int minWeekdaysForPattern = 4;
 
+  // Assumed paces for sessions a provider scheduled by DISTANCE alone.
+  //
+  // Final Surge deliberately writes `durationMinutes: null` whenever the
+  // workout carries distance or pace (see
+  // `FinalSurgeTransformer._getFallbackDurationMinutes`) and leaves the
+  // estimate to the UI. A distance-prescribed plan ("8 mi easy") is the
+  // normal shape of a running block, so treating those rows as zero-length
+  // discarded entire imports: 21 synced workouts digested to nothing, and
+  // the reveal claimed no sessions were found.
+  //
+  // These are coarse on purpose — they only need to rank days against each
+  // other and clear the long-session bar, and the reveal's own copy quotes
+  // distance ("your 15-mile long run"), never these minutes.
+  static const double _runMinutesPerMile = 9.5;
+  static const double _rideMinutesPerMile = 3.75; // ≈16 mph
+  static const double _swimMinutesPerMile = 32.0; // ≈2:00 / 100 m
+
   /// Digest [activities] (typically everything the onboarding auto-import
   /// wrote) into insights. Soft-deleted, skipped, and import-only "other"
   /// activities are ignored; brick/multisport count toward load but not
@@ -53,7 +70,18 @@ class TrainingInsightService {
         )
         .toList();
 
-    if (usable.isEmpty) return TrainingInsights.none;
+    if (usable.isEmpty) {
+      // Still report what we were handed: "21 rows in, 0 usable" is a very
+      // different bug from "0 rows in", and the reveal's diagnostic sheet
+      // is where that gets told apart.
+      return TrainingInsights(
+        isReliable: false,
+        windowDays: 0,
+        sessionCount: 0,
+        weeklyDurationHours: 0,
+        rawActivityCount: activities.length,
+      );
+    }
 
     var earliest = usable.first.scheduledDateTime;
     var latest = usable.first.scheduledDateTime;
@@ -118,6 +146,7 @@ class TrainingInsightService {
       heavyWeekdays: pattern.heavy,
       lightWeekdays: pattern.light,
       sessions: sessions,
+      rawActivityCount: activities.length,
     );
   }
 
@@ -140,9 +169,48 @@ class TrainingInsightService {
   }
 
   /// Planned duration wins; completed actuals fill in when the plan had none
-  /// (Runna ICS and completed Garmin activities both stay usable).
-  static int _durationOf(Activity a) =>
-      a.durationMinutes ?? a.actualDurationMinutes ?? 0;
+  /// (Runna ICS and completed Garmin activities both stay usable); failing
+  /// both, a distance-prescribed session is estimated from its distance so
+  /// it still counts (see the pace constants above). 0 only when the row
+  /// carries no usable signal at all.
+  static int _durationOf(Activity a) {
+    final explicit = a.durationMinutes ?? a.actualDurationMinutes;
+    if (explicit != null && explicit > 0) return explicit;
+    return _estimateMinutesFromDistance(a);
+  }
+
+  /// True when [_durationOf] had to fall back to a distance estimate —
+  /// surfaced in the reveal's diagnostic sheet so an estimated minute count
+  /// is never mistaken for one the provider actually sent.
+  static bool _isEstimated(Activity a) {
+    final explicit = a.durationMinutes ?? a.actualDurationMinutes;
+    return (explicit == null || explicit <= 0) &&
+        _estimateMinutesFromDistance(a) > 0;
+  }
+
+  static int _estimateMinutesFromDistance(Activity a) {
+    final miles = a.distanceMiles ?? a.actualDistanceMiles;
+    if (miles == null || miles <= 0) return 0;
+
+    final double minutesPerMile;
+    switch (a.activityType) {
+      case ActivityType.cycling:
+        minutesPerMile = _rideMinutesPerMile;
+      case ActivityType.swimming:
+        minutesPerMile = _swimMinutesPerMile;
+      case ActivityType.running:
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+      case ActivityType.brick:
+      case ActivityType.other:
+        // Mixed-discipline distances are dominated by their run/ride legs;
+        // the run pace is the safer of the two (it never over-counts a
+        // day's load the way a 16 mph assumption would).
+        minutesPerMile = _runMinutesPerMile;
+    }
+    return (miles * minutesPerMile).round();
+  }
 
   static bool _beats(Activity candidate, Activity? incumbent) =>
       incumbent == null || _durationOf(candidate) > _durationOf(incumbent);
@@ -150,6 +218,7 @@ class TrainingInsightService {
   static InsightSession _toSession(Activity a) => InsightSession(
     activityType: a.activityType,
     durationMinutes: _durationOf(a),
+    durationIsEstimated: _isEstimated(a),
     distanceMiles: a.distanceMiles ?? a.actualDistanceMiles,
     title: a.title,
     scheduledDateTime: a.scheduledDateTime,

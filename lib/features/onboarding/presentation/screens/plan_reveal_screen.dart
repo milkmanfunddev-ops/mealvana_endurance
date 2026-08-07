@@ -688,57 +688,76 @@ class _ImportedPlanDebugSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _DebugRow('Window', insights.windowRangeLabel ?? '—'),
-            _DebugRow('Window days', '${insights.windowDays}'),
-            _DebugRow('Sessions', '${insights.sessionCount}'),
-            _DebugRow('Training days', '${insights.heavyDayCount}'),
-            _DebugRow(
-              'Weekly hours',
-              insights.weeklyDurationHours.toStringAsFixed(1),
-            ),
-            _DebugRow('Reliable', insights.isReliable ? 'yes' : 'no'),
-            _DebugRow('Heavy days', insights.heavyDayNames ?? '—'),
-            _DebugRow('Light days', insights.lightDayNames ?? '—'),
-            _DebugRow(
-              'Longest run',
-              insights.longestRun?.descriptor ?? '—',
-            ),
-            _DebugRow(
-              'Longest ride',
-              insights.longestRide?.descriptor ?? '—',
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'SESSIONS (${sessions.length})',
-              style: TextStyle(
-                fontFamily: OnbTokens.fontBody,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 1.2,
-                color: OnbTokens.creamA(0.5),
-              ),
-            ),
-            const SizedBox(height: 8),
+            // Summary and sessions scroll as one column: on a small phone a
+            // fixed summary would squeeze the session list — the part you
+            // actually came here to read — down to nothing.
             Expanded(
-              child: sessions.isEmpty
-                  ? Text(
-                      'No usable sessions were imported.',
+              child: ListView(
+                controller: scrollController,
+                padding: EdgeInsets.zero,
+                children: [
+                  // Read-path first: rows-in vs rows-kept is what separates
+                  // "nothing imported / wrong user id" from "imported but
+                  // the digest discarded it".
+                  _DebugRow('Rows read', '${insights.rawActivityCount}'),
+                  _DebugRow(
+                    'Read as',
+                    insights.dataUserId ?? '— (no user id)',
+                  ),
+                  _DebugRow('Window', insights.windowRangeLabel ?? '—'),
+                  _DebugRow('Window days', '${insights.windowDays}'),
+                  _DebugRow('Sessions kept', '${insights.sessionCount}'),
+                  _DebugRow('Training days', '${insights.heavyDayCount}'),
+                  _DebugRow(
+                    'Weekly hours',
+                    insights.weeklyDurationHours.toStringAsFixed(1),
+                  ),
+                  _DebugRow('Reliable', insights.isReliable ? 'yes' : 'no'),
+                  _DebugRow('Heavy days', insights.heavyDayNames ?? '—'),
+                  _DebugRow('Light days', insights.lightDayNames ?? '—'),
+                  _DebugRow(
+                    'Longest run',
+                    insights.longestRun?.descriptor ?? '—',
+                  ),
+                  _DebugRow(
+                    'Longest ride',
+                    insights.longestRide?.descriptor ?? '—',
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'SESSIONS (${sessions.length})',
+                    style: TextStyle(
+                      fontFamily: OnbTokens.fontBody,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1.2,
+                      color: OnbTokens.creamA(0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (sessions.isEmpty)
+                    Text(
+                      insights.rawActivityCount > 0
+                          ? 'Read ${insights.rawActivityCount} rows, but none '
+                                'were usable — every one was deleted, '
+                                'skipped, untyped, or had no duration and no '
+                                'distance.'
+                          : 'No activity rows were read at all.',
                       style: TextStyle(
                         fontFamily: OnbTokens.fontBody,
                         fontSize: 13,
+                        height: 1.4,
                         color: OnbTokens.creamA(0.55),
                       ),
                     )
-                  : ListView.separated(
-                      controller: scrollController,
-                      itemCount: sessions.length,
-                      separatorBuilder: (_, _) => Divider(
-                        height: 1,
-                        color: OnbTokens.creamA(0.08),
-                      ),
-                      itemBuilder: (context, index) =>
-                          _DebugSessionRow(session: sessions[index]),
-                    ),
+                  else
+                    for (var i = 0; i < sessions.length; i++) ...[
+                      if (i > 0)
+                        Divider(height: 1, color: OnbTokens.creamA(0.08)),
+                      _DebugSessionRow(session: sessions[i]),
+                    ],
+                ],
+              ),
             ),
           ],
         ),
@@ -842,16 +861,32 @@ class _DebugSessionRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            distance != null && distance > 0
-                ? '${session.durationMinutes} min · '
-                      '${distance.toStringAsFixed(1)} mi'
-                : '${session.durationMinutes} min',
-            style: const TextStyle(
-              fontFamily: OnbTokens.fontMono,
-              fontSize: 12,
-              color: OnbTokens.cream,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                distance != null && distance > 0
+                    ? '${session.durationMinutes} min · '
+                          '${distance.toStringAsFixed(1)} mi'
+                    : '${session.durationMinutes} min',
+                style: const TextStyle(
+                  fontFamily: OnbTokens.fontMono,
+                  fontSize: 12,
+                  color: OnbTokens.cream,
+                ),
+              ),
+              // The provider sent distance but no duration; the minutes
+              // above are ours, not theirs.
+              if (session.durationIsEstimated)
+                Text(
+                  'est. from distance',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 10.5,
+                    color: OnbTokens.creamA(0.4),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
