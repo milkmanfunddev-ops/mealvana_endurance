@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../activities/domain/activity.dart';
 import '../../../integrations/domain/integration.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../application/plan_preview_service.dart';
@@ -37,14 +39,39 @@ class OnboardingPreviewBundle {
   final TrainingInsights insights;
 }
 
-/// The user id the onboarding auto-import wrote activities under: the (often
-/// anonymous) Supabase auth uid when a session exists, else the persisted
-/// temp uid — mirroring ConnectTrainingController's id resolution.
-String? _onboardingDataUserId(Ref ref) {
+/// Every id the onboarding import might have written under, most likely
+/// first.
+///
+/// ConnectTrainingController picks its id through a richer path than a
+/// single lookup can reproduce: it prefers the LOCAL PROFILE id
+/// (`user.id`) whenever one exists and looks real, only then the anonymous
+/// `auth.uid`, and a temp UUID last. For a returning athlete the profile id
+/// and the auth uid are not the same value, so reading under just one of
+/// them silently finds nothing — the import is fine, we are looking in the
+/// wrong place.
+///
+/// Rather than duplicate that decision tree (and drift from it again), read
+/// under each candidate and take the first that actually holds data.
+Future<List<String>> _candidateDataUserIds(Ref ref) async {
   final deps = ref.read(appExternalDepsProvider);
-  final authUserId = deps.supabaseClient.auth.currentUser?.id;
-  if (authUserId != null && authUserId.isNotEmpty) return authUserId;
-  return deps.sharedPreferences.getString(_onboardingTempUserIdKey);
+  final ids = <String>[];
+
+  void add(String? id) {
+    if (id != null && id.isNotEmpty && !ids.contains(id)) ids.add(id);
+  }
+
+  try {
+    final profile = await ref
+        .read(appDatabaseProvider)
+        .userDao
+        .getLocalUserProfile();
+    add(profile?.id);
+  } catch (_) {
+    // No local profile yet (first run) — the ids below still apply.
+  }
+  add(deps.supabaseClient.auth.currentUser?.id);
+  add(deps.sharedPreferences.getString(_onboardingTempUserIdKey));
+  return ids;
 }
 
 /// Digest of the workouts imported during onboarding.
@@ -82,25 +109,35 @@ Future<TrainingInsights> onboardingTrainingInsights(Ref ref) async {
 }
 
 Future<TrainingInsights> _digestImportedActivities(Ref ref) async {
-  final userId = _onboardingDataUserId(ref);
-  if (userId == null) return TrainingInsights.none;
+  final candidates = await _candidateDataUserIds(ref);
+  if (candidates.isEmpty) return TrainingInsights.none;
 
   // Reuse the existing date-range read (no new repository API): wide enough
   // to cover every provider's import window — completed Garmin history
   // backwards, planned FS/TP/VDOT/Runna calendars forwards. The digest
   // derives its own window span from the data.
   final now = DateTime.now();
-  final activities = await ref
-      .read(activitiesRepositoryProvider)
-      .getActivitiesForDateRange(
-        userId,
-        now.subtract(const Duration(days: 90)),
-        now.add(const Duration(days: 366)),
-      );
+  final repo = ref.read(activitiesRepositoryProvider);
+
+  var readUnder = candidates.first;
+  var activities = const <Activity>[];
+  for (final candidate in candidates) {
+    final rows = await repo.getActivitiesForDateRange(
+      candidate,
+      now.subtract(const Duration(days: 90)),
+      now.add(const Duration(days: 366)),
+    );
+    if (rows.isNotEmpty) {
+      readUnder = candidate;
+      activities = rows;
+      break;
+    }
+  }
+
   // Tag with the id we read under so the reveal's diagnostic sheet can show
   // whether an empty digest means "nothing was there" or "we looked in the
   // wrong place".
-  return TrainingInsightService.digest(activities).withDataUserId(userId);
+  return TrainingInsightService.digest(activities).withDataUserId(readUnder);
 }
 
 /// The plan preview both reveal screens render, personalized from imported
@@ -140,11 +177,26 @@ Future<OnboardingPreviewBundle> onboardingPlanPreview(Ref ref) async {
 Future<OnboardingIntegrationProfile> onboardingIntegrationProfile(
   Ref ref,
 ) async {
-  final userId = _onboardingDataUserId(ref);
-  if (userId == null) return OnboardingIntegrationProfile.empty;
-
+  // Draft mutators call ref.notifyListeners(), so connecting a platform
+  // (recordConnectedProvider) re-runs this. Without the watch, a keepAlive
+  // provider first read before the connect would cache "nothing connected"
+  // forever.
+  ref.watch(onboardingControllerProvider);
   try {
     final repo = ref.read(integrationsRepositoryProvider);
+    final candidates = await _candidateDataUserIds(ref);
+    if (candidates.isEmpty) return OnboardingIntegrationProfile.empty;
+
+    // Use the first id that actually has integrations — see
+    // _candidateDataUserIds for why more than one is in play.
+    var userId = candidates.first;
+    for (final candidate in candidates) {
+      final existing = await repo.getIntegrationsForUser(candidate);
+      if (existing.any((i) => i.isActive)) {
+        userId = candidate;
+        break;
+      }
+    }
 
     Future<IntegrationModel?> active(String provider) async {
       final integration = await repo.getIntegration(userId, provider);

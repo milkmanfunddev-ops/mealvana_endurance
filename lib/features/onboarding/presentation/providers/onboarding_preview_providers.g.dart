@@ -222,7 +222,7 @@ final class OnboardingIntegrationProfileProvider
 }
 
 String _$onboardingIntegrationProfileHash() =>
-    r'70850cd09641ac914722e341cf920ccbd4367594';
+    r'cd85e741184af07fdcb918b507a4fc363b653930';
 
 /// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
 /// provider so the body-composition wheel can listen to just that value.
