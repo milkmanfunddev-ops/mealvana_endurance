@@ -232,7 +232,12 @@ flutter:
         - asset: assets/fonts/Apercu/Apercu-BoldItalic.otf
           weight: 700
           style: italic
-    
+
+    - family: Apercu Mono
+      fonts:
+        - asset: assets/fonts/ApercuMono/ApercuMono-Regular.otf
+          weight: 400
+
     - family: Helvetica
       fonts:
         - asset: assets/fonts/Helvetica/Helvetica.ttf

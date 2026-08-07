@@ -65,11 +65,13 @@ abstract final class OnbTokens {
   static const String fontDisplay = 'Sansita';
   static const String fontBody = 'Apercu';
 
-  // TODO(fonts): flip to 'Compadre' when the licensed files land in
-  // assets/fonts/Compadre/. Sansita is the approved stand-in until then.
-  static const String fontLabel = 'Sansita';
+  // Compadre: the app's existing brand font family (already bundled and
+  // shipping elsewhere — calendar, activities, fuel timeline). Backed by
+  // Compadre-Demo-*.otf; licensing is tracked at the pubspec registration,
+  // not here — this token just points at the family name.
+  static const String fontLabel = 'Compadre';
 
-  // TODO(fonts): flip to 'Apercu Mono' when the licensed files land in
-  // assets/fonts/ApercuMono/. Apercu is the approved stand-in until then.
-  static const String fontMono = 'Apercu';
+  // Apercu Mono: bundled 2026-08 for the onboarding redesign (same foundry,
+  // The Entente, as the already-licensed Apercu family).
+  static const String fontMono = 'Apercu Mono';
 }
