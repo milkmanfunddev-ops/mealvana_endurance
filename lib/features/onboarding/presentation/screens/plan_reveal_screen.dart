@@ -60,6 +60,20 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   bool _minDelayElapsed = false;
   bool _revealTracked = false;
 
+  /// Which carb-target card has its slider open — spec `editingHero`
+  /// ('run' | 'ride' | null). Single field so opening one closes the other.
+  String? _editingHero;
+
+  /// Which compact row has its slider open — spec `editingHydra`
+  /// ('fluid' | 'sodium' | null).
+  String? _editingHydra;
+
+  void _toggleHero(String key) =>
+      setState(() => _editingHero = _editingHero == key ? null : key);
+
+  void _toggleHydra(String key) =>
+      setState(() => _editingHydra = _editingHydra == key ? null : key);
+
   OnboardingController get _controller =>
       ref.read(onboardingControllerProvider.notifier);
 
@@ -193,22 +207,33 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
           _TargetCard(
             label: 'LONG-RUN CARB TARGET',
             value: (edits.longRunCarbGph ?? preview.longRun!.carbGph).round(),
+            recommended: preview.longRun!.carbGph.round(),
             unit: 'g/hr',
+            sliderUnitLabel: 'g',
+            kind: 'run',
             insightLine: preview.longRun!.insightDescriptor != null
                 ? 'Built around ${preview.longRun!.insightDescriptor}.'
                 : null,
             editKey: const ValueKey('plan_reveal.edit_long_run'),
-            onEdit: () => _editTarget(
+            sliderKey: const ValueKey('plan_reveal.slider_long_run'),
+            resetKey: const ValueKey('plan_reveal.reset_long_run'),
+            isEditing: _editingHero == 'run',
+            onToggleEdit: () => _toggleHero('run'),
+            min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
+            // Sport-specific ceiling — same constant the guardrails use
+            // for run-context UI validation.
+            max: NutritionTargetGuardrails.duringMaxCarbRateRunning,
+            step: 5,
+            onCommit: (value) => _commitEdit(
               field: 'long_run_carb_gph',
-              title: 'Long-run carb target',
-              unit: 'g/hr',
               current: edits.longRunCarbGph ?? preview.longRun!.carbGph,
+              value: value,
               min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
-              // Sport-specific ceiling — same constant the guardrails use
-              // for run-context UI validation.
               max: NutritionTargetGuardrails.duringMaxCarbRateRunning,
-              step: 5,
-              apply: (value) => edits.copyWith(longRunCarbGph: () => value),
+              apply: (v) => edits.copyWith(longRunCarbGph: () => v),
+            ),
+            onReset: () => _resetEdit(
+              edits.copyWith(longRunCarbGph: () => null),
             ),
           ),
           const SizedBox(height: 14),
@@ -217,20 +242,31 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
           _TargetCard(
             label: 'LONG-RIDE CARB TARGET',
             value: (edits.longRideCarbGph ?? preview.longRide!.carbGph).round(),
+            recommended: preview.longRide!.carbGph.round(),
             unit: 'g/hr',
+            sliderUnitLabel: 'g',
+            kind: 'ride',
             insightLine: preview.longRide!.insightDescriptor != null
                 ? 'Built around ${preview.longRide!.insightDescriptor}.'
                 : null,
             editKey: const ValueKey('plan_reveal.edit_long_ride'),
-            onEdit: () => _editTarget(
+            sliderKey: const ValueKey('plan_reveal.slider_long_ride'),
+            resetKey: const ValueKey('plan_reveal.reset_long_ride'),
+            isEditing: _editingHero == 'ride',
+            onToggleEdit: () => _toggleHero('ride'),
+            min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
+            max: NutritionTargetGuardrails.duringMaxCarbRateCycling,
+            step: 5,
+            onCommit: (value) => _commitEdit(
               field: 'long_ride_carb_gph',
-              title: 'Long-ride carb target',
-              unit: 'g/hr',
               current: edits.longRideCarbGph ?? preview.longRide!.carbGph,
+              value: value,
               min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
               max: NutritionTargetGuardrails.duringMaxCarbRateCycling,
-              step: 5,
-              apply: (value) => edits.copyWith(longRideCarbGph: () => value),
+              apply: (v) => edits.copyWith(longRideCarbGph: () => v),
+            ),
+            onReset: () => _resetEdit(
+              edits.copyWith(longRideCarbGph: () => null),
             ),
           ),
           const SizedBox(height: 12),
@@ -253,16 +289,21 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             value: (edits.fluidMlPerHr ?? preview.fluidMlPerHr!.toDouble())
                 .round(),
             unit: 'ml/hr',
+            sliderUnitLabel: 'ml',
             editKey: const ValueKey('plan_reveal.edit_fluid'),
-            onEdit: () => _editTarget(
+            sliderKey: const ValueKey('plan_reveal.slider_fluid'),
+            isEditing: _editingHydra == 'fluid',
+            onToggleEdit: () => _toggleHydra('fluid'),
+            min: NutritionTargetGuardrails.duringMinFluidRateMlPerH,
+            max: NutritionTargetGuardrails.duringMaxFluidRateMlPerH,
+            step: 50,
+            onCommit: (value) => _commitEdit(
               field: 'fluid_ml_per_hr',
-              title: 'Fluid target',
-              unit: 'ml/hr',
               current: edits.fluidMlPerHr ?? preview.fluidMlPerHr!.toDouble(),
+              value: value,
               min: NutritionTargetGuardrails.duringMinFluidRateMlPerH,
               max: NutritionTargetGuardrails.duringMaxFluidRateMlPerH,
-              step: 50,
-              apply: (value) => edits.copyWith(fluidMlPerHr: () => value),
+              apply: (v) => edits.copyWith(fluidMlPerHr: () => v),
             ),
           ),
           const SizedBox(height: 10),
@@ -271,16 +312,21 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             value: (edits.sodiumMgPerHr ?? preview.sodiumMgPerHr!.toDouble())
                 .round(),
             unit: 'mg/hr',
+            sliderUnitLabel: 'mg',
             editKey: const ValueKey('plan_reveal.edit_sodium'),
-            onEdit: () => _editTarget(
+            sliderKey: const ValueKey('plan_reveal.slider_sodium'),
+            isEditing: _editingHydra == 'sodium',
+            onToggleEdit: () => _toggleHydra('sodium'),
+            min: NutritionTargetGuardrails.duringMinSodiumRateMgPerH,
+            max: NutritionTargetGuardrails.duringMaxSodiumRateMgPerH,
+            step: 50,
+            onCommit: (value) => _commitEdit(
               field: 'sodium_mg_per_hr',
-              title: 'Sodium target',
-              unit: 'mg/hr',
               current: edits.sodiumMgPerHr ?? preview.sodiumMgPerHr!.toDouble(),
+              value: value,
               min: NutritionTargetGuardrails.duringMinSodiumRateMgPerH,
               max: NutritionTargetGuardrails.duringMaxSodiumRateMgPerH,
-              step: 50,
-              apply: (value) => edits.copyWith(sodiumMgPerHr: () => value),
+              apply: (v) => edits.copyWith(sodiumMgPerHr: () => v),
             ),
           ),
           const SizedBox(height: 12),
@@ -351,30 +397,21 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
     );
   }
 
-  Future<void> _editTarget({
+  /// Commits a slider's released value to the draft (clamped, no-op if
+  /// unchanged) and fires the edit analytics event. `current` is the
+  /// pre-edit value (possibly already-edited) used for the `from` property.
+  void _commitEdit({
     required String field,
-    required String title,
-    required String unit,
     required double current,
+    required double value,
     required double min,
     required double max,
-    required double step,
     required OnboardingPlanEdits Function(double value) apply,
-  }) async {
-    final result = await showDialog<double>(
-      context: context,
-      builder: (_) => _TargetEditDialog(
-        title: title,
-        unit: unit,
-        initial: current,
-        min: min,
-        max: max,
-        step: step,
-      ),
-    );
-    if (result == null || result == current) return;
+  }) {
+    final clamped = value.clamp(min, max);
+    if (clamped == current) return;
 
-    _controller.applyPlanEdits(apply(result));
+    _controller.applyPlanEdits(apply(clamped));
     try {
       ref
           .read(appExternalDepsProvider)
@@ -384,34 +421,118 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             properties: {
               'field': field,
               'from': current.round(),
-              'to': result.round(),
+              'to': clamped.round(),
             },
           );
     } catch (_) {
       // Analytics must never block onboarding.
     }
-    if (mounted) setState(() {});
+  }
+
+  /// "Reset to our recommendation" — clears the touched field back to null
+  /// so the algorithm default takes over again.
+  void _resetEdit(OnboardingPlanEdits cleared) {
+    _controller.applyPlanEdits(cleared);
   }
 }
 
 /// One editable target card: label, big value + unit, pencil affordance,
-/// optional "Built around your…" insight line.
-class _TargetCard extends StatelessWidget {
+/// optional "Built around your…" insight line — spec's inline bounded
+/// slider expand (not a dialog): tapping the pencil opens a slider bounded
+/// to [min]..[max] under the caption; the big number and caption only
+/// update once the slider is released (spec binds them to the app's
+/// on-change/committed state, not the drag position), matching
+/// `editingHero`/`onEditRun`/`onRunSlide`/`runMsg`/`onRunReset`.
+class _TargetCard extends StatefulWidget {
   const _TargetCard({
     required this.label,
     required this.value,
+    required this.recommended,
     required this.unit,
+    required this.sliderUnitLabel,
+    required this.kind,
     required this.editKey,
-    required this.onEdit,
+    required this.sliderKey,
+    required this.resetKey,
+    required this.isEditing,
+    required this.onToggleEdit,
+    required this.min,
+    required this.max,
+    required this.step,
+    required this.onCommit,
+    required this.onReset,
     this.insightLine,
   });
 
   final String label;
   final int value;
+
+  /// The algorithm's unedited recommendation (rounded) — the slider's
+  /// "home" value and the deviation-message baseline.
+  final int recommended;
   final String unit;
+
+  /// Bare unit for the slider's min/max endpoint labels (e.g. 'g', no
+  /// '/hr' suffix — spec: "30 g" / "120 g").
+  final String sliderUnitLabel;
+
+  /// 'run' or 'ride' — feeds the deviation message's "...long {kind}s".
+  final String kind;
   final Key editKey;
-  final VoidCallback onEdit;
+  final Key sliderKey;
+  final Key resetKey;
+  final bool isEditing;
+  final VoidCallback onToggleEdit;
+  final double min;
+  final double max;
+  final double step;
+  final ValueChanged<double> onCommit;
+  final VoidCallback onReset;
   final String? insightLine;
+
+  @override
+  State<_TargetCard> createState() => _TargetCardState();
+}
+
+class _TargetCardState extends State<_TargetCard> {
+  late double _dragValue = widget.value.toDouble();
+
+  @override
+  void didUpdateWidget(covariant _TargetCard old) {
+    super.didUpdateWidget(old);
+    // Re-sync the thumb to the committed value whenever it changes
+    // externally (a fresh commit, or a reset) — never mid-drag.
+    if (old.value != widget.value) {
+      _dragValue = widget.value.toDouble();
+    }
+  }
+
+  /// Spec `carbMsg`: at the recommendation, prefer a training insight line
+  /// when one is available; off it, describe how aggressive/conservative
+  /// the edit is rather than repeating the (no-longer-applicable) rationale
+  /// for the original recommendation.
+  String get _message {
+    final delta = widget.value - widget.recommended;
+    if (delta == 0) {
+      return widget.insightLine ??
+          'Our recommendation for you: ACSM guidance at your body weight, '
+              'scaled to your gut-training level.';
+    }
+    if (delta <= -20) {
+      return 'Well under your ${widget.recommended} g/hr recommendation — '
+          'expect to fade in the back half of long ${widget.kind}s.';
+    }
+    if (delta < 0) {
+      return 'A little conservative. Reasonable if your gut is still '
+          'adapting, but leaves headroom.';
+    }
+    if (delta <= 20) {
+      return 'Above your recommendation. Achievable, but practise this '
+          'rate in training before race day.';
+    }
+    return 'Aggressive fueling. Needs multiple carb sources and weeks of '
+        'gut training to absorb.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -439,7 +560,7 @@ class _TargetCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  widget.label,
                   style: TextStyle(
                     fontFamily: OnbTokens.fontBody,
                     fontSize: 11,
@@ -453,7 +574,7 @@ class _TargetCard extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: '$value',
+                        text: '${widget.value}',
                         style: const TextStyle(
                           fontFamily: OnbTokens.fontDisplay,
                           fontSize: 40,
@@ -463,7 +584,7 @@ class _TargetCard extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: ' $unit',
+                        text: ' ${widget.unit}',
                         style: const TextStyle(
                           fontFamily: OnbTokens.fontBody,
                           fontSize: 16,
@@ -473,11 +594,34 @@ class _TargetCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (widget.isEditing) ...[
+                  const SizedBox(height: 14),
+                  _SpecSlider(
+                    sliderKey: widget.sliderKey,
+                    value: _dragValue,
+                    min: widget.min,
+                    max: widget.max,
+                    onChanged: (v) => setState(() => _dragValue = v),
+                    onChangeEnd: (v) => widget.onCommit(
+                      (v / widget.step).round() * widget.step,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _SliderEndpointLabel(
+                        '${widget.min.round()} ${widget.sliderUnitLabel}',
+                      ),
+                      _SliderEndpointLabel(
+                        '${widget.max.round()} ${widget.sliderUnitLabel}',
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
-                  insightLine ??
-                      'Our recommendation for you: ACSM guidance at your '
-                          'body weight, scaled to your gut-training level.',
+                  _message,
                   style: TextStyle(
                     fontFamily: OnbTokens.fontBody,
                     fontSize: 13,
@@ -485,11 +629,21 @@ class _TargetCard extends StatelessWidget {
                     color: OnbTokens.creamA(0.72),
                   ),
                 ),
+                if (widget.value != widget.recommended) ...[
+                  const SizedBox(height: 12),
+                  _ResetToRecommendationLink(
+                    resetKey: widget.resetKey,
+                    label:
+                        'Reset to our recommendation · '
+                        '${widget.recommended} ${widget.unit}',
+                    onTap: widget.onReset,
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 12),
-          _PencilButton(editKey: editKey, onEdit: onEdit),
+          _PencilButton(editKey: widget.editKey, onEdit: widget.onToggleEdit),
         ],
       ),
     );
@@ -499,20 +653,51 @@ class _TargetCard extends StatelessWidget {
 /// Compact fluid/sodium row — spec: cream-5% fill, radius 15, cream-12%
 /// border, padding 16/18; Apercu 10 ls .6 uppercase cream-50% label left;
 /// Apercu Mono 27 cream value + mono 13 cream-50% unit right; pencil circle.
-class _CompactTargetRow extends StatelessWidget {
+/// Same inline-slider-on-pencil-tap pattern as [_TargetCard], but per spec
+/// carries no deviation message or reset link — just the bounded slider.
+class _CompactTargetRow extends StatefulWidget {
   const _CompactTargetRow({
     required this.label,
     required this.value,
     required this.unit,
+    required this.sliderUnitLabel,
     required this.editKey,
-    required this.onEdit,
+    required this.sliderKey,
+    required this.isEditing,
+    required this.onToggleEdit,
+    required this.min,
+    required this.max,
+    required this.step,
+    required this.onCommit,
   });
 
   final String label;
   final int value;
   final String unit;
+  final String sliderUnitLabel;
   final Key editKey;
-  final VoidCallback onEdit;
+  final Key sliderKey;
+  final bool isEditing;
+  final VoidCallback onToggleEdit;
+  final double min;
+  final double max;
+  final double step;
+  final ValueChanged<double> onCommit;
+
+  @override
+  State<_CompactTargetRow> createState() => _CompactTargetRowState();
+}
+
+class _CompactTargetRowState extends State<_CompactTargetRow> {
+  late double _dragValue = widget.value.toDouble();
+
+  @override
+  void didUpdateWidget(covariant _CompactTargetRow old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value) {
+      _dragValue = widget.value.toDouble();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -523,51 +708,84 @@ class _CompactTargetRow extends StatelessWidget {
         border: Border.all(color: OnbTokens.creamA(0.12)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: OnbTokens.fontBody,
-              fontSize: 10,
-              letterSpacing: 0.6,
-              color: OnbTokens.creamA(0.5),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text.rich(
-                  TextSpan(
-                    children: [
+          Row(
+            children: [
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: OnbTokens.fontBody,
+                  fontSize: 10,
+                  letterSpacing: 0.6,
+                  color: OnbTokens.creamA(0.5),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text.rich(
                       TextSpan(
-                        text: '$value',
-                        style: const TextStyle(
-                          fontFamily: OnbTokens.fontMono,
-                          fontSize: 27,
-                          height: 1.0,
-                          color: OnbTokens.cream,
-                        ),
+                        children: [
+                          TextSpan(
+                            text: '${widget.value}',
+                            style: const TextStyle(
+                              fontFamily: OnbTokens.fontMono,
+                              fontSize: 27,
+                              height: 1.0,
+                              color: OnbTokens.cream,
+                            ),
+                          ),
+                          TextSpan(
+                            text: ' ${widget.unit}',
+                            style: TextStyle(
+                              fontFamily: OnbTokens.fontMono,
+                              fontSize: 13,
+                              color: OnbTokens.creamA(0.5),
+                            ),
+                          ),
+                        ],
                       ),
-                      TextSpan(
-                        text: ' $unit',
-                        style: TextStyle(
-                          fontFamily: OnbTokens.fontMono,
-                          fontSize: 13,
-                          color: OnbTokens.creamA(0.5),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(width: 10),
+              _PencilButton(
+                editKey: widget.editKey,
+                onEdit: widget.onToggleEdit,
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          _PencilButton(editKey: editKey, onEdit: onEdit),
+          if (widget.isEditing) ...[
+            const SizedBox(height: 14),
+            _SpecSlider(
+              sliderKey: widget.sliderKey,
+              value: _dragValue,
+              min: widget.min,
+              max: widget.max,
+              onChanged: (v) => setState(() => _dragValue = v),
+              onChangeEnd: (v) => widget.onCommit(
+                (v / widget.step).round() * widget.step,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _SliderEndpointLabel(
+                  '${widget.min.round()} ${widget.sliderUnitLabel}',
+                ),
+                _SliderEndpointLabel(
+                  '${widget.max.round()} ${widget.sliderUnitLabel}',
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -604,118 +822,147 @@ class _PencilButton extends StatelessWidget {
   }
 }
 
-/// Stepper dialog for adjusting one target. Values clamp to [min]..[max]
-/// (the shared guardrail range for the field). Returns the new value on
-/// Save, null on Cancel.
-class _TargetEditDialog extends StatefulWidget {
-  const _TargetEditDialog({
-    required this.title,
-    required this.unit,
-    required this.initial,
+/// Spec `.me-range`: flat 4px cream-18% track (no active-fill highlight),
+/// bounded [min]..[max]. The thumb moves continuously while dragging (a
+/// native mobile-slider expectation); the caller only applies the value on
+/// release via [onChangeEnd] — matching the spec's on-change (not on-input)
+/// commit and avoiding a preview recompute per drag pixel.
+class _SpecSlider extends StatelessWidget {
+  const _SpecSlider({
+    required this.sliderKey,
+    required this.value,
     required this.min,
     required this.max,
-    required this.step,
+    required this.onChanged,
+    required this.onChangeEnd,
   });
 
-  final String title;
-  final String unit;
-  final double initial;
+  final Key sliderKey;
+  final double value;
   final double min;
   final double max;
-  final double step;
-
-  @override
-  State<_TargetEditDialog> createState() => _TargetEditDialogState();
-}
-
-class _TargetEditDialogState extends State<_TargetEditDialog> {
-  late double _value;
-
-  @override
-  void initState() {
-    super.initState();
-    _value = widget.initial.clamp(widget.min, widget.max);
-  }
-
-  void _adjust(double delta) {
-    setState(() {
-      _value = (_value + delta).clamp(widget.min, widget.max);
-    });
-  }
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double> onChangeEnd;
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.blackberryLight,
-      title: Text(
-        widget.title,
-        style: const TextStyle(
-          fontFamily: 'Sansita',
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textDark,
-        ),
+    return SliderTheme(
+      data: SliderThemeData(
+        trackHeight: 4,
+        activeTrackColor: OnbTokens.creamA(0.18),
+        inactiveTrackColor: OnbTokens.creamA(0.18),
+        thumbShape: const _SpecThumbShape(),
+        overlayShape: SliderComponentShape.noOverlay,
       ),
-      content: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Slider(
+        key: sliderKey,
+        value: value.clamp(min, max),
+        min: min,
+        max: max,
+        onChanged: onChanged,
+        onChangeEnd: onChangeEnd,
+      ),
+    );
+  }
+}
+
+/// Spec thumb: 22px orange circle with a 3px plum (#3a1835) border, drawn
+/// as two concentric filled circles (simpler and just as exact as a
+/// stroke — the border color is opaque, so an inner-orange/outer-border
+/// disc pair reads identically).
+class _SpecThumbShape extends SliderComponentShape {
+  const _SpecThumbShape();
+
+  static const double _outerRadius = 11;
+  static const double _innerRadius = 8;
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
+      const Size.fromRadius(_outerRadius);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final canvas = context.canvas;
+    canvas.drawCircle(
+      center,
+      _outerRadius,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
+    );
+    canvas.drawCircle(center, _outerRadius, Paint()..color = OnbTokens.cardSubtle);
+    canvas.drawCircle(center, _innerRadius, Paint()..color = OnbTokens.orange);
+  }
+}
+
+/// Slider min/max endpoint caption — spec: Apercu 10.5 cream-35%.
+class _SliderEndpointLabel extends StatelessWidget {
+  const _SliderEndpointLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontFamily: OnbTokens.fontBody,
+        fontSize: 10.5,
+        color: OnbTokens.creamA(0.35),
+      ),
+    );
+  }
+}
+
+/// "Reset to our recommendation · X" — spec: teal refresh glyph (13px) +
+/// Apercu 500 12.5 teal label, shown only when the value differs from the
+/// recommendation.
+class _ResetToRecommendationLink extends StatelessWidget {
+  const _ResetToRecommendationLink({
+    required this.resetKey,
+    required this.label,
+    required this.onTap,
+  });
+
+  final Key resetKey;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: resetKey,
+      onTap: onTap,
+      child: Row(
         children: [
-          IconButton(
-            key: const ValueKey('plan_reveal.edit_minus'),
-            onPressed: _value > widget.min ? () => _adjust(-widget.step) : null,
-            icon: const Icon(Icons.remove_circle_outline),
-            color: AppColors.orange,
-            disabledColor: AppColors.disabled,
-            iconSize: 32,
-          ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${_value.round()}',
-                key: const ValueKey('plan_reveal.edit_value'),
-                style: const TextStyle(
-                  fontFamily: 'Sansita',
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.orange,
-                ),
+          const Icon(Icons.refresh, size: 13, color: OnbTokens.teal),
+          const SizedBox(width: 7),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: OnbTokens.teal,
               ),
-              Text(widget.unit, style: kOnboardingBodyMutedStyle),
-            ],
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            key: const ValueKey('plan_reveal.edit_plus'),
-            onPressed: _value < widget.max ? () => _adjust(widget.step) : null,
-            icon: const Icon(Icons.add_circle_outline),
-            color: AppColors.orange,
-            disabledColor: AppColors.disabled,
-            iconSize: 32,
+            ),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          key: const ValueKey('plan_reveal.edit_cancel'),
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: AppColors.textDarkSecondary),
-          ),
-        ),
-        TextButton(
-          key: const ValueKey('plan_reveal.edit_save'),
-          onPressed: () => Navigator.of(context).pop(_value),
-          child: const Text(
-            'Save',
-            style: TextStyle(
-              color: AppColors.orange,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
