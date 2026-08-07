@@ -75,16 +75,6 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           },
         );
 
-    // In onboarding mode, initialize from cache
-    if (_isOnboarding) {
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      final cachedAllergies = controller.cachedAllergies;
-      if (cachedAllergies != null && cachedAllergies.isNotEmpty) {
-        _selectedAllergies.addAll(cachedAllergies);
-        _noAllergies = false;
-      }
-    }
-
     // In settings mode, load the current allergies
     if (_isSettings) {
       _loadCurrentAllergies();
@@ -115,11 +105,6 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  bool get _hasChanges {
-    if (_selectedAllergies.length != _originalAllergies.length) return true;
-    return !_selectedAllergies.every((a) => _originalAllergies.contains(a));
   }
 
   void _toggleAllergy(Allergy allergy) {
@@ -153,19 +138,11 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
       final controller = ref.read(onboardingControllerProvider.notifier);
 
       if (_isOnboarding) {
-        // ONBOARDING MODE: Cache allergies
-        controller.cacheAllergies(_selectedAllergies.toList());
-
+        // ONBOARDING MODE (legacy — allergies left the onboarding flow in the
+        // 2026-08 redesign; saveAllOnboardingData writes the no-allergies
+        // default). Nothing to persist here; just advance if hosted.
         if (!mounted) return;
-
-        // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
-        if (widget.onContinue != null) {
-          widget.onContinue!();
-        } else {
-          // Allergies is the final onboarding step (Food Preferences was
-          // removed from the flow) - proceed to post-onboarding auth.
-          context.go('/auth/post-onboarding');
-        }
+        widget.onContinue?.call();
       } else {
         // SETTINGS MODE: Save to database
         final success = await controller.saveAllergies(
@@ -207,34 +184,6 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
         setState(() => _isSaving = false);
       }
     }
-  }
-
-  void _skip() async {
-    if (_isSaving) return;
-
-    setState(() => _isSaving = true);
-
-    try {
-      // Save empty allergies via controller (skip)
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      await controller.saveAllergies([]);
-
-      if (!mounted) return;
-
-      // Allergies is the final onboarding step (Food Preferences was removed
-      // from the flow) - proceed to post-onboarding auth without allergies.
-      context.go('/auth/post-onboarding');
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  void _clearAll() {
-    setState(() {
-      _selectedAllergies.clear();
-    });
   }
 
   @override
@@ -394,28 +343,5 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
         }),
       ],
     );
-  }
-
-  String _getEmoji(Allergy allergy) {
-    switch (allergy) {
-      case Allergy.dairy:
-        return '🥛';
-      case Allergy.eggs:
-        return '🥚';
-      case Allergy.fish:
-        return '🐟';
-      case Allergy.gluten:
-        return '🌾';
-      case Allergy.peanuts:
-        return '🥜';
-      case Allergy.sesame:
-        return '🌱';
-      case Allergy.shellfish:
-        return '🦐';
-      case Allergy.soy:
-        return '🫘';
-      case Allergy.treeNuts:
-        return '🌰';
-    }
   }
 }

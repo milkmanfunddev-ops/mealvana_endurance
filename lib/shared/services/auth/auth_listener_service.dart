@@ -18,7 +18,6 @@ import '../../../features/carb_loading/presentation/providers/carb_loading_contr
 import '../../../features/carb_loading/presentation/providers/carb_loading_day_detail_controller.dart';
 import '../../../features/carb_loading/presentation/providers/carb_loading_food_selection_controller.dart';
 import '../../../features/calendar/presentation/providers/calendar_controller.dart';
-import '../../../features/onboarding/presentation/providers/food_preferences_controller.dart';
 import '../../../features/integrations/presentation/providers/connect_training_controller.dart';
 import '../../../features/nutrition_plan/presentation/providers/macro_targets_controller.dart';
 
@@ -191,9 +190,6 @@ class AuthListenerService {
 
       // Calendar
       _ref.invalidate(calendarControllerProvider);
-
-      // Food preferences
-      _ref.invalidate(foodPreferencesControllerProvider);
 
       // Integrations
       _ref.invalidate(connectTrainingControllerProvider);

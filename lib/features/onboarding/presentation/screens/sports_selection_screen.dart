@@ -11,14 +11,12 @@ import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 /// Multi-select over [OnboardingSport] (Running, Cycling, Swimming,
 /// Triathlon). Nothing is pre-selected; at least one selection is required to
 /// continue. Selections are mirrored into the controller draft on every
-/// toggle (plus the legacy sports cache, which older analytics/dynamic-page
-/// code still reads until redesign phase 7 deletes it).
+/// toggle.
 class SportsSelectionScreen extends ConsumerStatefulWidget {
   const SportsSelectionScreen({
     super.key,
     this.onContinue,
     this.onBack,
-    this.onSportsChanged,
     this.stepIndex,
   });
 
@@ -31,12 +29,6 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
   /// Position in the onboarding flow, stamped onto `screen_viewed` so the
   /// drop-off funnel can order the steps. Null outside onboarding.
   final int? stepIndex;
-
-  /// Callback when sports selection changes. Legacy hook kept for callers
-  /// that mirrored the selection (the pre-redesign PageView rebuilt its
-  /// dynamic sport-detail pages from it); the current PageView is static and
-  /// no longer passes it.
-  final void Function(Set<String>)? onSportsChanged;
 
   @override
   ConsumerState<SportsSelectionScreen> createState() =>
@@ -76,13 +68,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
       }
     });
 
-    final controller = ref.read(onboardingControllerProvider.notifier);
-    controller.updateSports(_selected);
-    // Legacy bridge: cachedSelectedSports is still read by pre-redesign code
-    // paths until phase 7 removes them. 'triathlon' round-trips through
-    // OnboardingSport.fromDbValue inside the cache bridge.
-    controller.cacheSelectedSports(_selected.map((s) => s.dbValue).toSet());
-    widget.onSportsChanged?.call(_selected.map((s) => s.dbValue).toSet());
+    ref.read(onboardingControllerProvider.notifier).updateSports(_selected);
   }
 
   void _continue() async {

@@ -254,6 +254,11 @@ void main() {
             targetSchemaVersion: any(named: 'targetSchemaVersion'),
           ),
         ).thenAnswer((_) async => false);
+        // A false WITHOUT the data-protection deferral flag is a genuine
+        // resync failure and must still surface the resync-error state.
+        when(
+          () => mockVersionCheckService.wasDeferredForDataProtection,
+        ).thenReturn(false);
 
         // Act
         final result = await container.read(appStartupProvider.future);

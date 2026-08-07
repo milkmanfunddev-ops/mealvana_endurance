@@ -22,7 +22,6 @@ import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
 import '../../domain/onboarding_draft.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
-import 'food_selections_cache_provider.dart';
 
 part 'onboarding_controller.g.dart';
 
@@ -44,15 +43,6 @@ class OnboardingController extends _$OnboardingController {
   /// persists it in one batch after auth.
   OnboardingDraft _draft = const OnboardingDraft();
 
-  // Legacy caches, kept only until the old screens are deleted (redesign
-  // phases 4–7). cacheUserProfileData/cacheSelectedSports bridge into the
-  // draft so the old flow keeps working through the new save path.
-  Map<String, dynamic>? _cachedUserProfileData;
-  Set<String> _cachedSelectedSports = {'running'}; // Default: running
-  Map<String, dynamic>? _cachedSportPreferences;
-  DietaryPreference? _cachedDietaryPreference;
-  List<Allergy>? _cachedAllergies;
-
   @override
   FutureOr<void> build() {
     // Prevent auto-dispose during onboarding navigation
@@ -63,39 +53,7 @@ class OnboardingController extends _$OnboardingController {
     return null;
   }
 
-  /// Create user profile (step 1 of onboarding)
-  Future<bool> createUserProfile({
-    required Gender gender,
-    required DateTime birthday,
-    required int heightFeet,
-    required int heightInches,
-    required double weightPounds,
-    required bool runsWithWaterBottle,
-    String authProvider =
-        'anonymous', // 'anonymous', 'email', 'google', 'apple'
-    bool isAnonymous = true, // false when user signs up with email/OAuth
-    UnitSystem unitSystem = UnitSystem.imperial,
-  }) async {
-    state = const AsyncLoading();
-
-    state = await AsyncValue.guard(() async {
-      _currentUser = await _onboardingService.createUserProfile(
-        gender: gender,
-        birthday: birthday,
-        heightFeet: heightFeet,
-        heightInches: heightInches,
-        weightPounds: weightPounds,
-        runsWithWaterBottle: runsWithWaterBottle,
-        authProvider: authProvider,
-        isAnonymous: isAnonymous,
-        unitSystem: unitSystem,
-      );
-    });
-
-    return !state.hasError;
-  }
-
-  /// Save sport preferences (step 2 of onboarding)
+  /// Save sport preferences (Settings sport-detail screens)
   Future<bool> saveSportPreferences({
     bool? giSensitivity,
     int? ftpWatts,
@@ -161,8 +119,9 @@ class OnboardingController extends _$OnboardingController {
     return !state.hasError;
   }
 
-  /// Save dietary preference (step 3a of onboarding)
-  /// When called from settings, also updates food preferences for excluded foods
+  /// Save dietary preference (Settings dual-mode screen; onboarding writes
+  /// its omnivore default through saveAllOnboardingData instead)
+  /// Also updates food preferences for excluded foods
   /// Removes auto-avoided foods when dietary preference changes (using preference_source tracking)
   Future<bool> saveDietaryPreference(DietaryPreference? preference) async {
     // Get current user from auth service (works for both session users and restored users)
@@ -247,8 +206,9 @@ class OnboardingController extends _$OnboardingController {
     return !state.hasError;
   }
 
-  /// Save allergies (step 3b of onboarding)
-  /// When called from settings, also updates food preferences for allergen-containing foods
+  /// Save allergies (Settings dual-mode screen; onboarding writes its
+  /// no-allergies default through saveAllOnboardingData instead)
+  /// Also updates food preferences for allergen-containing foods
   /// Removes auto-avoided foods when allergies are removed (using preference_source tracking)
   Future<bool> saveAllergies(List<Allergy> allergies) async {
     // Get current user from auth service (works for both session users and restored users)
@@ -415,77 +375,6 @@ class OnboardingController extends _$OnboardingController {
     }
   }
 
-  /// Save food preferences (step 4 of onboarding)
-  Future<bool> saveFoodPreferences(
-    Map<String, FoodPreference> preferences,
-    Map<String, int> sliderLevels,
-  ) async {
-    // Get current user from auth service (works for both session users and restored users)
-    final currentUser = _currentUser ?? await _authService.getCurrentUser();
-
-    DebugLogger.debug(
-      '👤 Food preferences - Current user: ${currentUser?.id ?? "null"}',
-    );
-    DebugLogger.debug('🍎 Food preferences - Count: ${preferences.length}');
-
-    if (currentUser == null) {
-      final errorMsg = _contentService.getValue(
-        ContentKeys.errorGeneric,
-        defaultValue:
-            'No user profile found. Please complete user profile first.',
-      );
-      DebugLogger.error('❌ Food preferences - No current user found');
-      state = AsyncError(errorMsg, StackTrace.current);
-      return false;
-    }
-
-    DebugLogger.info(
-      '🚀 Food preferences - Starting save process for user: ${currentUser.id}',
-    );
-    state = const AsyncLoading();
-
-    state = await AsyncValue.guard(() async {
-      DebugLogger.debug('📞 Food preferences - Calling onboarding service');
-      await _onboardingService.saveFoodPreferences(
-        currentUser.id,
-        preferences,
-        sliderLevels: sliderLevels,
-      );
-      DebugLogger.info('✅ Food preferences - Save completed successfully');
-      // Update our session user reference
-      _currentUser = currentUser;
-
-      // Clear the food selections cache after successful save
-      ref.read(foodSelectionsCacheProvider.notifier).clear();
-      DebugLogger.debug('🧹 Food preferences - Cache cleared');
-
-      // Policy (2026-07-29): we always push to Supabase, for anonymous users
-      // too. This used to be a deliberate no-op ("new users don't need to sync
-      // yet"), which left food preferences local-only until some unrelated sync
-      // happened to run.
-      //
-      // Fire-and-forget so an offline device doesn't stall the save (the row is
-      // already committed to Drift with needs_upload = true and retries), but
-      // the upload result IS inspected and logged inside
-      // [uploadOnboardingDataToSupabase] — never silently dropped.
-      unawaited(uploadOnboardingDataToSupabase(currentUser.id));
-      DebugLogger.info('📥 Food preferences saved');
-    });
-
-    if (state.hasError) {
-      DebugLogger.error('❌ Food preferences - Error occurred: ${state.error}');
-      DebugLogger.debug(
-        '📍 Food preferences - Stack trace: ${state.stackTrace}',
-      );
-    } else {
-      DebugLogger.info(
-        '🎉 Food preferences - Save operation completed without errors',
-      );
-    }
-
-    return !state.hasError;
-  }
-
   /// Check if onboarding is complete
   Future<bool> isOnboardingComplete() async {
     return await _onboardingService.isOnboardingComplete();
@@ -599,123 +488,11 @@ class OnboardingController extends _$OnboardingController {
   }
 
   // ============================================================================
-  // BATCH SAVE METHODS FOR POST-OAUTH ONBOARDING
+  // BATCH SAVE (post-onboarding auth)
   // ============================================================================
 
-  /// Cache user profile data (don't save to DB yet)
-  void cacheUserProfileData({
-    required Gender gender,
-    required DateTime birthday,
-    required int heightFeet,
-    required int heightInches,
-    required double weightPounds,
-    required bool runsWithWaterBottle,
-    String? firstName,
-    String? lastName,
-    String? email,
-    UnitSystem unitSystem = UnitSystem.imperial,
-  }) {
-    _cachedUserProfileData = {
-      'gender': gender,
-      'birthday': birthday,
-      'heightFeet': heightFeet,
-      'heightInches': heightInches,
-      'weightPounds': weightPounds,
-      'runsWithWaterBottle': runsWithWaterBottle,
-      'firstName': firstName,
-      'lastName': lastName,
-      'email': email,
-      'unitSystem': unitSystem,
-    };
-    // Bridge into the draft so the old screens keep working through the new
-    // draft-based save path during the redesign transition.
-    _draft = _draft.copyWith(
-      gender: () => gender,
-      birthYear: () => birthday.year,
-      heightFeet: () => heightFeet,
-      heightInches: () => heightInches,
-      weightPounds: () => weightPounds,
-      firstName: () => firstName ?? _draft.firstName,
-      lastName: () => lastName ?? _draft.lastName,
-      email: () => email ?? _draft.email,
-      useMetricUnits: unitSystem == UnitSystem.metric,
-    );
-    DebugLogger.debug('📝 Cached user profile data');
-  }
-
-  /// Cache sport preferences (don't save to DB yet)
-  void cacheSportPreferences({
-    bool? giSensitivity,
-    int? ftpWatts,
-    int? typicalBikeBottles,
-    bool? hasAeroBottle,
-    bool? hasBentoBox,
-    int? cssPacePer100mSeconds,
-    bool? typicalWetsuit,
-    String? typicalSwimCapType,
-  }) {
-    _cachedSportPreferences = {
-      'giSensitivity': giSensitivity,
-      'ftpWatts': ftpWatts,
-      'typicalBikeBottles': typicalBikeBottles,
-      'hasAeroBottle': hasAeroBottle,
-      'hasBentoBox': hasBentoBox,
-      'cssPacePer100mSeconds': cssPacePer100mSeconds,
-      'typicalWetsuit': typicalWetsuit,
-      'typicalSwimCapType': typicalSwimCapType,
-    };
-    DebugLogger.debug('📝 Cached sport preferences');
-  }
-
-  /// Cache dietary preference (don't save to DB yet)
-  void cacheDietaryPreference(DietaryPreference? preference) {
-    _cachedDietaryPreference = preference;
-    DebugLogger.debug(
-      '📝 Cached dietary preference: ${preference?.name ?? "none"}',
-    );
-  }
-
-  /// Cache allergies (don't save to DB yet)
-  void cacheAllergies(List<Allergy> allergies) {
-    _cachedAllergies = allergies;
-    DebugLogger.debug('📝 Cached ${allergies.length} allergies');
-  }
-
-  /// Cache selected sports
-  void cacheSelectedSports(Set<String> sports) {
-    _cachedSelectedSports = sports;
-    // Bridge into the draft (unknown legacy strings are dropped).
-    _draft = _draft.copyWith(
-      sports: {
-        for (final s in sports)
-          if (OnboardingSport.fromDbValue(s) case final OnboardingSport sport)
-            sport,
-      },
-    );
-    DebugLogger.debug(
-      '📝 Cached ${sports.length} sports: ${sports.join(", ")}',
-    );
-    // Trigger rebuild to update dynamic pages
-    state = const AsyncData(null);
-  }
-
-  /// Get cached sports selections
-  Set<String> get cachedSelectedSports => _cachedSelectedSports;
-
-  /// Get cached user profile data
-  Map<String, dynamic>? get cachedUserProfileData => _cachedUserProfileData;
-
-  /// Get cached sport preferences
-  Map<String, dynamic>? get cachedSportPreferences => _cachedSportPreferences;
-
-  /// Get cached dietary preference
-  DietaryPreference? get cachedDietaryPreference => _cachedDietaryPreference;
-
-  /// Get cached allergies
-  List<Allergy>? get cachedAllergies => _cachedAllergies;
-
-  /// Save all cached onboarding data to DB and Supabase
-  /// This is called after OAuth registration to save everything at once
+  /// Save the accumulated draft to DB and Supabase
+  /// This is called after auth (registered or anonymous) to save everything at once
   /// [authProvider] - 'anonymous', 'email', 'google', 'apple'
   /// [isAnonymous] - false when user signs up with email/OAuth
   Future<bool> saveAllOnboardingData({
@@ -859,13 +636,8 @@ class OnboardingController extends _$OnboardingController {
           .read(onboardingSnapshotServiceProvider)
           .writeSnapshot(profile: _currentUser!, draft: draft);
 
-      // Clear the draft and legacy caches.
+      // Clear the draft.
       _draft = const OnboardingDraft();
-      _cachedUserProfileData = null;
-      _cachedSportPreferences = null;
-      _cachedDietaryPreference = null;
-      _cachedAllergies = null;
-      ref.read(foodSelectionsCacheProvider.notifier).clear();
 
       // Policy (2026-07-29): onboarding data ALWAYS goes to Supabase, whether
       // the user created a real account or skipped and stayed anonymous. The
@@ -1005,16 +777,8 @@ class OnboardingController extends _$OnboardingController {
       await _onboardingService.resetOnboarding();
       _currentUser = null;
 
-      // Clear the draft and all cached data
+      // Clear the draft
       _draft = const OnboardingDraft();
-      _cachedUserProfileData = null;
-      _cachedSelectedSports = {'running'}; // Reset to default
-      _cachedSportPreferences = null;
-      _cachedDietaryPreference = null;
-      _cachedAllergies = null;
-
-      // Clear the food selections cache
-      ref.read(foodSelectionsCacheProvider.notifier).clear();
     });
   }
 

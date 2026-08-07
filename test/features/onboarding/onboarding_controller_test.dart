@@ -13,7 +13,6 @@ import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import 'package:mealvana_endurance/features/onboarding/domain/onboarding_draft.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 
 void main() {
   late ProviderContainer container;
@@ -92,38 +91,6 @@ void main() {
       expect(ok, isFalse);
       // MEALVANA-ENDURANCE-DEV-4M regression: must not surface an AsyncError.
       expect(container.read(onboardingControllerProvider).hasError, isFalse);
-    });
-  });
-
-  group('legacy cache bridge (transition safety)', () {
-    test('cacheUserProfileData populates the draft', () {
-      controller.cacheUserProfileData(
-        gender: Gender.male,
-        birthday: DateTime(1988, 3, 20),
-        heightFeet: 6,
-        heightInches: 0,
-        weightPounds: 175,
-        runsWithWaterBottle: true,
-        firstName: 'Sam',
-        unitSystem: UnitSystem.metric,
-      );
-
-      final draft = controller.draft;
-      expect(draft.gender, Gender.male);
-      expect(draft.birthYear, 1988);
-      expect(draft.heightFeet, 6);
-      expect(draft.weightPounds, 175);
-      expect(draft.firstName, 'Sam');
-      expect(draft.useMetricUnits, isTrue);
-      expect(controller.hasCompletedProfileDraft, isTrue);
-    });
-
-    test('cacheSelectedSports maps known strings and drops unknowns', () {
-      controller.cacheSelectedSports({'running', 'cycling', 'pickleball'});
-      expect(controller.draft.sports, {
-        OnboardingSport.running,
-        OnboardingSport.cycling,
-      });
     });
   });
 

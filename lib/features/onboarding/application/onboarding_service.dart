@@ -141,22 +141,6 @@ class OnboardingService {
     );
   }
 
-  /// Complete food preferences step
-  Future<void> saveFoodPreferences(
-    String userId,
-    Map<String, FoodPreference> preferences, {
-    Map<String, int>? sliderLevels,
-  }) async {
-    await _authService.saveFoodPreferences(
-      userId,
-      preferences,
-      sliderLevels: sliderLevels,
-    );
-
-    // No need to track onboarding completion as we only track the events in README
-    // User registration was already tracked when profile was created
-  }
-
   /// Check if onboarding is complete
   Future<bool> isOnboardingComplete() async {
     return await _authService.hasCompletedOnboarding();

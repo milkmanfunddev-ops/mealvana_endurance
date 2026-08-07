@@ -77,9 +77,6 @@ void main() {
       OnboardingSport.running,
       OnboardingSport.triathlon,
     });
-    // Legacy bridge consumed by pre-redesign code until phase 7.
-    expect(controller.cachedSelectedSports, {'running', 'triathlon'});
-
     // Deselecting works too — including down to the last selection (the old
     // "can't deselect the only sport" rule is gone; gating moved to Continue).
     await tester.tap(

@@ -104,7 +104,18 @@ Delete: `welcome_screen_controller.dart`(+.g), `food_preferences_v2_screen.dart`
 
 ### 10. Phasing (commit-sized chunks)
 
-> **Status (2026-08-06):** phases 0–5 landed. Phase 4 notes: shared
+> **Status (2026-08-06): phases 0–7 all landed — implementation complete.**
+> Remaining release-time steps: apply `docs/database/apply_all.sql` §6 to
+> Supabase DEV now and PROD at release; bump `app_config`
+> `current_schema_version` (and `latest_schema_version` if present) to 16
+> only when the schema-16 build ships; rebuild the Mixpanel funnel on the
+> new `kOnboardingStepNames`. Phase 7 removed: the old user-profile /
+> food-preferences screens+providers, the legacy controller cache API, the
+> old db_flows onboarding test, and the stale onboarding-revamp +
+> screen-audit docs (this README supersedes them). Sport-detail screens
+> survive for Settings with their onboarding-mode branches inert.
+>
+> Phase 4 notes: shared
 > multi-select layout lives in
 > `presentation/widgets/onboarding_multi_select_step.dart` (rows reuse the
 > existing `FigmaCheckboxCard`); copy is hardcoded with ValueKeys, matching
