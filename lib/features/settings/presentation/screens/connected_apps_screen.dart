@@ -203,8 +203,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Same header→title rhythm as the step screens.
-                    const SizedBox(height: 48),
+                    // Spec: the connect screen's scroll content carries its
+                    // own 22px top padding (header block already ends with
+                    // 6px), distinct from the 48px rhythm the other step
+                    // screens use.
+                    const SizedBox(height: 22),
                     if (widget.isRevisit)
                       // Spec revisit intro: just the teal kicker
                       // (Apercu 500 11, ls .14em, uppercase, 18px below).
