@@ -64,18 +64,23 @@ class PlanPreviewService {
     final wantsRun = draft.wantsRunFueling;
     final wantsRide = draft.wantsRideFueling;
 
-    final runMinutes = reliable && insights.longestRun != null
-        ? insights.longestRun!.durationMinutes
-        : defaultLongRunMinutes;
-    final rideMinutes = reliable && insights.longestRide != null
-        ? insights.longestRide!.durationMinutes
-        : defaultLongRideMinutes;
-
+    // The carb-target cards are a RATE for a long session — what to take in
+    // per hour when the athlete does one — so they are deliberately built
+    // on the representative ≥90-minute session, never on whatever happened
+    // to be the longest workout in the imported window. Scaling them to the
+    // import produced nonsense: a week whose only ride was 45 minutes gave
+    // a "long-ride carb target" of 15 g/hr, which is not a long-ride
+    // fueling rate, it is the consequence of asking about a short ride.
+    // A thin training week means we saw no long session, not that this
+    // athlete fuels long sessions differently.
     final longRun = wantsRun
         ? _fuelingTarget(
             sport: 'running',
-            minutes: runMinutes,
+            minutes: defaultLongRunMinutes,
             gutTraining: draft.gutTraining,
+            // Their real longest session, carried for the daily screen's
+            // workout-day caption. NOT shown on the rate card, whose number
+            // no longer derives from it.
             insightDescriptor: reliable && insights.longestRun != null
                 ? insights.longestRun!.descriptor
                 : null,
@@ -84,7 +89,7 @@ class PlanPreviewService {
     final longRide = wantsRide
         ? _fuelingTarget(
             sport: 'cycling',
-            minutes: rideMinutes,
+            minutes: defaultLongRideMinutes,
             gutTraining: draft.gutTraining,
             insightDescriptor: reliable && insights.longestRide != null
                 ? insights.longestRide!.descriptor
@@ -98,7 +103,11 @@ class PlanPreviewService {
     int? sodiumMgPerHr;
     if (wantsRun || wantsRide) {
       final hydration = OfflineMacroCalculator.calculateDuringWorkoutHydration(
-        durationMin: (wantsRun ? runMinutes : rideMinutes).toDouble(),
+        // Also a per-hour rate for a long session — same reasoning as the
+        // carb cards, so also the representative duration.
+        durationMin:
+            (wantsRun ? defaultLongRunMinutes : defaultLongRideMinutes)
+                .toDouble(),
         weightKg: weightKg,
         sweatRateCategory: draft.sweatRate.name,
         sweatSodiumCat: 'average',
@@ -123,9 +132,19 @@ class PlanPreviewService {
       age: age,
     );
 
-    // Workout day: baseline + the representative long session's carb demand.
+    // Workout day: baseline + a training session's carb demand. Unlike the
+    // rate cards above, this is a TOTAL for a day the athlete actually
+    // trains, so it legitimately scales with their real sessions when the
+    // import is reliable, and falls back to the representative long
+    // session otherwise.
     final sessionSport = wantsRun || !wantsRide ? 'running' : 'cycling';
-    final sessionMinutes = sessionSport == 'running' ? runMinutes : rideMinutes;
+    final sessionMinutes = sessionSport == 'running'
+        ? (reliable && insights.longestRun != null
+              ? insights.longestRun!.durationMinutes
+              : defaultLongRunMinutes)
+        : (reliable && insights.longestRide != null
+              ? insights.longestRide!.durationMinutes
+              : defaultLongRideMinutes);
     final sessionHr = sessionMinutes / 60.0;
     final intensityFactor = DailyBaselineCalculator.zoneDistributionToIf(
       pctConversational: _pctConversational,

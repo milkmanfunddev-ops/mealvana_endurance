@@ -250,9 +250,10 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             unit: 'g/hr',
             sliderUnitLabel: 'g',
             kind: 'run',
-            insightLine: preview.longRun!.insightDescriptor != null
-                ? 'Built around ${preview.longRun!.insightDescriptor}.'
-                : null,
+            // No insight line: the rate is ACSM guidance for a long
+            // session, not something derived from their imported workouts,
+            // so 'Built around your 13-mile long run' would misattribute it.
+            insightLine: null,
             editKey: const ValueKey('plan_reveal.edit_long_run'),
             sliderKey: const ValueKey('plan_reveal.slider_long_run'),
             resetKey: const ValueKey('plan_reveal.reset_long_run'),
@@ -283,9 +284,7 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             unit: 'g/hr',
             sliderUnitLabel: 'g',
             kind: 'ride',
-            insightLine: preview.longRide!.insightDescriptor != null
-                ? 'Built around ${preview.longRide!.insightDescriptor}.'
-                : null,
+            insightLine: null,
             editKey: const ValueKey('plan_reveal.edit_long_ride'),
             sliderKey: const ValueKey('plan_reveal.slider_long_ride'),
             resetKey: const ValueKey('plan_reveal.reset_long_ride'),
