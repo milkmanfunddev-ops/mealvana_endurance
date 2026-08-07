@@ -52,30 +52,15 @@ void main() {
     expect(continued, 0);
 
     // Gender alone is not enough.
+    // The spec's inline wheel always carries a value — the default year is
+    // written to the draft on first frame, so gender is the only gate.
+    expect(controller.draft.birthYear, 1994);
+
     await tester.tap(find.byKey(const ValueKey('personal_info.gender_male')));
     await tester.pumpAndSettle();
     expect(controller.draft.gender, Gender.male);
-    await tester.tap(
-      find.byKey(const ValueKey('personal_info.continue_button')),
-    );
-    await tester.pumpAndSettle();
-    expect(continued, 0);
 
-    // Pick a birth year via the shared sheet. Tests confirm with the
-    // pre-selected default (1990) rather than scrolling the Cupertino wheel —
-    // the same workaround the Patrol suite needs on Android, where the wheel
-    // ignores synthetic scroll gestures.
-    await tester.tap(
-      find.byKey(const ValueKey('personal_info.birth_year_button')),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(const ValueKey('profile.birth_year_done_button')),
-    );
-    await tester.pumpAndSettle();
-    expect(controller.draft.birthYear, 1990);
-
-    // Both gates satisfied — Continue advances.
+    // Gate satisfied — Continue advances.
     await tester.tap(
       find.byKey(const ValueKey('personal_info.continue_button')),
     );

@@ -1,13 +1,13 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../providers/onboarding_controller.dart';
 import '../providers/onboarding_preview_providers.dart';
+import '../theme/onboarding_design_tokens.dart';
+import '../widgets/onboarding_spec_wheel.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
 /// Body Composition Screen - Step 6 of Onboarding (2026-08 redesign)
@@ -149,6 +149,9 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
       onBack: widget.onBack,
       continueButtonKey: const ValueKey('body_comp.continue_button'),
       backButtonKey: const ValueKey('body_comp.back_button'),
+      // Spec: this step's CTA reads 'Build My Plan' (the nutrition-settings
+      // step that follows keeps plain 'Continue').
+      continueLabel: 'Build My Plan',
       children: [
         _buildUnitToggle(),
         const SizedBox(height: 20),
@@ -160,23 +163,35 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
   }
 
   Widget _buildUnitToggle() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _UnitSegment(
-            segmentKey: const ValueKey('body_comp.units_imperial_button'),
-            label: 'Imperial',
-            isSelected: !_useMetric,
-            onTap: () => _setUnitSystem(false),
+        const Text('Unit preferences', style: _specFieldLabelStyle),
+        const SizedBox(height: 8),
+        // Spec toggle: cream-6% pill track, padding 4, h40, content-hugging;
+        // selected segment is an orange pill with plum 13/500 text.
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: OnbTokens.creamA(0.06),
+            borderRadius: BorderRadius.circular(OnbTokens.rPill),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _UnitSegment(
-            segmentKey: const ValueKey('body_comp.units_metric_button'),
-            label: 'Metric',
-            isSelected: _useMetric,
-            onTap: () => _setUnitSystem(true),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _UnitSegment(
+                segmentKey: const ValueKey('body_comp.units_imperial_button'),
+                label: 'Imperial',
+                isSelected: !_useMetric,
+                onTap: () => _setUnitSystem(false),
+              ),
+              _UnitSegment(
+                segmentKey: const ValueKey('body_comp.units_metric_button'),
+                label: 'Metric',
+                isSelected: _useMetric,
+                onTap: () => _setUnitSystem(true),
+              ),
+            ],
           ),
         ),
       ],
@@ -184,133 +199,136 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
   }
 
   Widget _buildHeightCard() {
-    return Container(
-      decoration: onboardingCardDecoration(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('HEIGHT', style: kOnboardingSectionLabelStyle),
-          const SizedBox(height: 8),
-          if (_useMetric)
-            _WheelPicker(
-              // Key includes the wheel epoch so external changes (unit
-              // toggle, autofill) rebuild the wheel at the right position.
-              key: ValueKey('body_comp.height_cm_wheel.e$_wheelEpoch'),
-              wheelKey: const ValueKey('body_comp.height_cm_wheel'),
-              // 91–244 cm ≈ the 3–8 ft imperial range.
-              min: 91,
-              max: 244,
-              value: _heightCm,
-              unit: 'cm',
-              onChanged: (cm) {
-                final (feet, inches) = UnitFormatter.cmToFeetInches(cm);
-                setState(() {
-                  _heightFeet = feet;
-                  _heightInches = inches;
-                });
-                _pushToDraft();
-              },
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: _WheelPicker(
-                    key: ValueKey('body_comp.height_ft_wheel.e$_wheelEpoch'),
-                    wheelKey: const ValueKey('body_comp.height_ft_wheel'),
-                    min: 3,
-                    max: 8,
-                    value: _heightFeet,
-                    unit: 'ft',
-                    onChanged: (feet) {
-                      setState(() => _heightFeet = feet);
-                      _pushToDraft();
-                    },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Height', style: _specFieldLabelStyle),
+        const SizedBox(height: 4),
+        Column(
+          children: [
+            if (_useMetric)
+              _WheelPicker(
+                // Key includes the wheel epoch so external changes (unit
+                // toggle, autofill) rebuild the wheel at the right position.
+                key: ValueKey('body_comp.height_cm_wheel.e$_wheelEpoch'),
+                wheelKey: const ValueKey('body_comp.height_cm_wheel'),
+                // 91–244 cm ≈ the 3–8 ft imperial range.
+                min: 91,
+                max: 244,
+                value: _heightCm,
+                unit: 'cm',
+                onChanged: (cm) {
+                  final (feet, inches) = UnitFormatter.cmToFeetInches(cm);
+                  setState(() {
+                    _heightFeet = feet;
+                    _heightInches = inches;
+                  });
+                  _pushToDraft();
+                },
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: _WheelPicker(
+                      key: ValueKey('body_comp.height_ft_wheel.e$_wheelEpoch'),
+                      wheelKey: const ValueKey('body_comp.height_ft_wheel'),
+                      min: 3,
+                      max: 8,
+                      value: _heightFeet,
+                      unit: 'ft',
+                      onChanged: (feet) {
+                        setState(() => _heightFeet = feet);
+                        _pushToDraft();
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _WheelPicker(
-                    key: ValueKey('body_comp.height_in_wheel.e$_wheelEpoch'),
-                    wheelKey: const ValueKey('body_comp.height_in_wheel'),
-                    min: 0,
-                    max: 11,
-                    value: _heightInches,
-                    unit: 'in',
-                    onChanged: (inches) {
-                      setState(() => _heightInches = inches);
-                      _pushToDraft();
-                    },
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _WheelPicker(
+                      key: ValueKey('body_comp.height_in_wheel.e$_wheelEpoch'),
+                      wheelKey: const ValueKey('body_comp.height_in_wheel'),
+                      min: 0,
+                      max: 11,
+                      value: _heightInches,
+                      unit: 'in',
+                      onChanged: (inches) {
+                        setState(() => _heightInches = inches);
+                        _pushToDraft();
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-        ],
-      ),
+                ],
+              ),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _buildWeightCard() {
-    return Container(
-      decoration: onboardingCardDecoration(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('WEIGHT', style: kOnboardingSectionLabelStyle),
-          if (_weightFromGarmin) ...[
-            const SizedBox(height: 8),
-            const Center(
-              key: ValueKey('body_comp.garmin_badge'),
-              child: GarminAttributionMessage(subject: 'Weight', compact: true),
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Weight', style: _specFieldLabelStyle),
+        if (_weightFromGarmin) ...[
           const SizedBox(height: 8),
-          if (_useMetric)
-            _WheelPicker(
-              key: ValueKey('body_comp.weight_kg_wheel.e$_wheelEpoch'),
-              wheelKey: const ValueKey('body_comp.weight_wheel'),
-              // 36–181 kg ≈ the 80–400 lb imperial range.
-              min: 36,
-              max: 181,
-              value: _weightKg,
-              unit: 'kg',
-              onChanged: (kg) {
-                setState(() {
-                  _weightPounds = UnitFormatter.kgToPounds(kg.toDouble());
-                  _userAdjustedWeight = true;
-                  _weightFromGarmin = false;
-                });
-                _pushToDraft();
-              },
-            )
-          else
-            _WheelPicker(
-              key: ValueKey('body_comp.weight_lb_wheel.e$_wheelEpoch'),
-              wheelKey: const ValueKey('body_comp.weight_wheel'),
-              min: 80,
-              max: 400,
-              value: _weightPounds.round(),
-              unit: 'lb',
-              onChanged: (lb) {
-                setState(() {
-                  _weightPounds = lb.toDouble();
-                  _userAdjustedWeight = true;
-                  _weightFromGarmin = false;
-                });
-                _pushToDraft();
-              },
-            ),
+          const Center(
+            key: ValueKey('body_comp.garmin_badge'),
+            child: GarminAttributionMessage(subject: 'Weight', compact: true),
+          ),
         ],
-      ),
+        const SizedBox(height: 4),
+        if (_useMetric)
+          _WheelPicker(
+            key: ValueKey('body_comp.weight_kg_wheel.e$_wheelEpoch'),
+            wheelKey: const ValueKey('body_comp.weight_wheel'),
+            // 36–181 kg ≈ the 80–400 lb imperial range.
+            min: 36,
+            max: 181,
+            value: _weightKg,
+            unit: 'kg',
+            onChanged: (kg) {
+              setState(() {
+                _weightPounds = UnitFormatter.kgToPounds(kg.toDouble());
+                _userAdjustedWeight = true;
+                _weightFromGarmin = false;
+              });
+              _pushToDraft();
+            },
+          )
+        else
+          _WheelPicker(
+            key: ValueKey('body_comp.weight_lb_wheel.e$_wheelEpoch'),
+            wheelKey: const ValueKey('body_comp.weight_wheel'),
+            min: 80,
+            max: 400,
+            value: _weightPounds.round(),
+            unit: 'lb',
+            onChanged: (lb) {
+              setState(() {
+                _weightPounds = lb.toDouble();
+                _userAdjustedWeight = true;
+                _weightFromGarmin = false;
+              });
+              _pushToDraft();
+            },
+          ),
+      ],
     );
   }
 }
 
-/// One segment of the Imperial/Metric toggle (dark-scaffold styling;
-/// KyleSegmentedControl is theme-driven and would render blackberry-on-
-/// blackberry here).
+/// Spec field label (Apercu 13/500 cream) shared by the three sections.
+const _specFieldLabelStyle = TextStyle(
+  fontFamily: OnbTokens.fontBody,
+  fontSize: 13,
+  fontWeight: FontWeight.w500,
+  color: OnbTokens.cream,
+);
+
+/// One segment of the Imperial/Metric toggle — spec: selected is an orange
+/// pill with plum 13/500 text; unselected is transparent cream-70% text.
 class _UnitSegment extends StatelessWidget {
   const _UnitSegment({
     required this.segmentKey,
@@ -331,23 +349,18 @@ class _UnitSegment extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.cream : Colors.transparent,
-          border: Border.all(color: AppColors.cream, width: 2),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? OnbTokens.orange : Colors.transparent,
+          borderRadius: BorderRadius.circular(OnbTokens.rPill),
         ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: isSelected
-                  ? AppColors.blackberry
-                  : AppColors.cream.withValues(alpha: 0.7),
-            ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? OnbTokens.bg : OnbTokens.creamA(0.7),
           ),
         ),
       ),
@@ -385,13 +398,14 @@ class _WheelPicker extends StatefulWidget {
 
 class _WheelPickerState extends State<_WheelPicker> {
   late final FixedExtentScrollController _scrollController;
+  late int _selected;
 
   @override
   void initState() {
     super.initState();
-    final clamped = widget.value.clamp(widget.min, widget.max);
+    _selected = widget.value.clamp(widget.min, widget.max);
     _scrollController = FixedExtentScrollController(
-      initialItem: clamped - widget.min,
+      initialItem: _selected - widget.min,
     );
   }
 
@@ -403,50 +417,25 @@ class _WheelPickerState extends State<_WheelPicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 120,
-            child: CupertinoPicker(
-              key: widget.wheelKey,
-              scrollController: _scrollController,
-              itemExtent: 36,
-              useMagnifier: true,
-              magnification: 1.1,
-              squeeze: 1.0,
-              selectionOverlay: CupertinoPickerDefaultSelectionOverlay(
-                background: AppColors.orange.withValues(alpha: 0.1),
-              ),
-              onSelectedItemChanged: (index) =>
-                  widget.onChanged(widget.min + index),
-              children: [
-                for (var v = widget.min; v <= widget.max; v++)
-                  Center(
-                    child: Text(
-                      '$v',
-                      style: const TextStyle(
-                        fontFamily: 'Apercu',
-                        fontSize: 20,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          widget.unit,
-          style: const TextStyle(
-            fontFamily: 'Apercu',
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textDarkSecondary,
-          ),
-        ),
-      ],
+    // Spec wheel (body-composition sizes 25/20): the unit rides inside the
+    // SELECTED row's label ('5 ft'); neighbors show the bare number.
+    return KeyedSubtree(
+      key: widget.wheelKey,
+      child: OnboardingSpecWheel(
+        controller: _scrollController,
+        itemCount: widget.max - widget.min + 1,
+        selectedIndex: _selected - widget.min,
+        centerFontSize: 25,
+        adjacentFontSize: 20,
+        labelFor: (index) {
+          final v = widget.min + index;
+          return v == _selected ? '$v ${widget.unit}' : '$v';
+        },
+        onChanged: (index) {
+          setState(() => _selected = widget.min + index);
+          widget.onChanged(widget.min + index);
+        },
+      ),
     );
   }
 }

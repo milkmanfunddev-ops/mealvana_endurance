@@ -3,18 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/widgets/birth_year_picker.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/onboarding_controller.dart';
+import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
-/// Personal Info Screen - Step 5 of Onboarding (2026-08 redesign)
+/// Personal Info Screen - Step 5 of Onboarding — HTML-spec pixel port.
 ///
 /// Names/email are optional (grouped under the "PERSONAL INFORMATION ·
-/// optional" card); gender + birth year gate Continue — they're the inputs
-/// the RMR formula needs. Every change is mirrored into the controller draft
-/// immediately, so Continue is pure navigation.
+/// optional" card); gender gates Continue (the spec's dimmed-CTA state).
+/// Birth year is an inline wheel that always carries a value (spec default
+/// 1994), written to the draft on mount and on scroll. Every change is
+/// mirrored into the controller draft immediately, so Continue is pure
+/// navigation.
 ///
 /// NOTE: unlike the old user_profile_screen, email is NOT auto-filled from
 /// Supabase auth here — saveAllOnboardingData resolves the auth email at
@@ -45,9 +46,15 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _emailController;
+  late final FixedExtentScrollController _yearController;
+
+  /// Spec wheel: default-centered year when the athlete hasn't chosen one.
+  static const int _defaultYear = 1994;
+  static const int _minYear = 1930;
+  static const int _maxYear = 2012;
 
   Gender? _gender;
-  int? _birthYear;
+  late int _birthYear;
 
   OnboardingController get _controller =>
       ref.read(onboardingControllerProvider.notifier);
@@ -62,7 +69,17 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     _lastNameController = TextEditingController(text: draft.lastName ?? '');
     _emailController = TextEditingController(text: draft.email ?? '');
     _gender = draft.gender;
-    _birthYear = draft.birthYear;
+    _birthYear = draft.birthYear ?? _defaultYear;
+    _yearController = FixedExtentScrollController(
+      initialItem: _birthYear - _minYear,
+    );
+    // The wheel always shows a year, so the draft carries it from first
+    // render (spec behavior: only gender gates Continue).
+    if (draft.birthYear == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.updatePersonalInfo(birthYear: _birthYear);
+      });
+    }
 
     ref
         .read(appExternalDepsProvider)
@@ -81,31 +98,15 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
+    _yearController.dispose();
     super.dispose();
   }
 
-  bool get _canContinue => _gender != null && _birthYear != null;
+  bool get _canContinue => _gender != null;
 
   void _selectGender(Gender gender) {
     setState(() => _gender = gender);
     _controller.updatePersonalInfo(gender: gender);
-  }
-
-  Future<void> _selectBirthYear() async {
-    FocusScope.of(context).unfocus();
-    // Reuses the shared bottom-sheet wheel (same widget the old
-    // user_profile_screen used). Known Android Patrol quirk carried over:
-    // the Cupertino wheel doesn't respond to Patrol scroll gestures on
-    // Android, so integration tests tap Done with the pre-selected year
-    // rather than scrolling. Sheet keys remain 'profile.birth_year_*'.
-    final year = await showBirthYearPicker(
-      context: context,
-      initialYear: _birthYear,
-    );
-    if (year != null) {
-      setState(() => _birthYear = year);
-      _controller.updatePersonalInfo(birthYear: year);
-    }
   }
 
   @override
@@ -135,14 +136,42 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
 
   Widget _buildOptionalInfoCard() {
     return Container(
-      decoration: onboardingCardDecoration(),
-      padding: const EdgeInsets.all(16),
+      // Spec card: radius 20, cream-5% fill, 1px cream-12% border,
+      // padding 15/16/17.
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.05),
+        borderRadius: BorderRadius.circular(OnbTokens.rLarge),
+        border: Border.all(color: OnbTokens.creamA(0.12)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 17),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'PERSONAL INFORMATION · optional',
-            style: kOnboardingSectionLabelStyle,
+          // Spec label row: Apercu 16/500 ls 2.08 uppercase cream, with the
+          // '· optional' aside at 12px cream-45%.
+          Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(
+                  text: 'PERSONAL INFORMATION',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 2.08,
+                    color: OnbTokens.cream,
+                  ),
+                ),
+                TextSpan(
+                  text: '  · optional',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 12,
+                    color: OnbTokens.creamA(0.45),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -152,6 +181,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                   fieldKey: const ValueKey('personal_info.first_name_field'),
                   controller: _firstNameController,
                   hint: 'First name',
+                  icon: Icons.person_outline,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                   onChanged: (value) =>
@@ -162,6 +192,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
               Expanded(
                 child: _darkTextField(
                   fieldKey: const ValueKey('personal_info.last_name_field'),
+
                   controller: _lastNameController,
                   hint: 'Last name',
                   keyboardType: TextInputType.name,
@@ -177,6 +208,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
             fieldKey: const ValueKey('personal_info.email_field'),
             controller: _emailController,
             hint: 'Email address',
+            icon: Icons.mail_outline,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             autofillHints: const [AutofillHints.email],
@@ -192,11 +224,14 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     required TextEditingController controller,
     required String hint,
     required ValueChanged<String> onChanged,
+    IconData? icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
     bool autocorrect = true,
     Iterable<String>? autofillHints,
   }) {
+    // Spec input: radius 14, cream-4% fill, 1px cream-30% border,
+    // padding 11/12, Apercu 15 cream text, dim leading glyph.
     return TextField(
       key: fieldKey,
       controller: controller,
@@ -205,32 +240,39 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       autocorrect: autocorrect,
       autofillHints: autofillHints,
       onChanged: onChanged,
-      cursorColor: AppColors.orange,
+      cursorColor: OnbTokens.orange,
       style: const TextStyle(
-        fontFamily: 'Apercu',
+        fontFamily: OnbTokens.fontBody,
         fontSize: 15,
-        color: AppColors.textDark,
+        color: OnbTokens.cream,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          fontFamily: 'Apercu',
+          fontFamily: OnbTokens.fontBody,
           fontSize: 15,
-          color: AppColors.textDark.withValues(alpha: 0.4),
+          color: OnbTokens.creamA(0.35),
         ),
+        prefixIcon: icon != null
+            ? Icon(icon, size: 16, color: OnbTokens.creamA(0.45))
+            : null,
+        prefixIconConstraints: icon != null
+            ? const BoxConstraints(minWidth: 34, minHeight: 16)
+            : null,
+        isDense: true,
         filled: true,
-        fillColor: AppColors.inputBackground,
+        fillColor: OnbTokens.creamA(0.04),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
-          vertical: 12,
+          vertical: 11,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(OnbTokens.rTile),
+          borderSide: BorderSide(color: OnbTokens.creamA(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.orange, width: 2),
+          borderRadius: BorderRadius.circular(OnbTokens.rTile),
+          borderSide: const BorderSide(color: OnbTokens.orange),
         ),
       ),
     );
@@ -240,7 +282,16 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('GENDER', style: kOnboardingSectionLabelStyle),
+        // Spec: 'Gender' Apercu 15/700 cream (sentence case).
+        const Text(
+          'Gender',
+          style: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: OnbTokens.cream,
+          ),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -253,7 +304,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                 onTap: _selectGender,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 11),
             Expanded(
               child: _GenderCard(
                 cardKey: const ValueKey('personal_info.gender_female'),
@@ -263,7 +314,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                 onTap: _selectGender,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 11),
             Expanded(
               child: _GenderCard(
                 cardKey: const ValueKey('personal_info.gender_non_binary'),
@@ -283,42 +334,81 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('BIRTH YEAR', style: kOnboardingSectionLabelStyle),
-        const SizedBox(height: 8),
-        InkWell(
+        // Spec: 'Birth year' Apercu 13/500 cream.
+        const Text(
+          'Birth year',
+          style: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: OnbTokens.cream,
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Spec inline wheel: center year Sansita 27/700 cream between two
+        // 1px orange-40% hairlines; neighbors Apercu 21 cream-40%. The wheel
+        // always has a value, so no tap-to-open sheet exists any more.
+        SizedBox(
           key: const ValueKey('personal_info.birth_year_button'),
-          onTap: _selectBirthYear,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.calendar,
-                  size: 16,
-                  color: AppColors.textDark.withValues(alpha: 0.6),
+          height: 132,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              ListWheelScrollView.useDelegate(
+                controller: _yearController,
+                itemExtent: 44,
+                physics: const FixedExtentScrollPhysics(),
+                diameterRatio: 8,
+                onSelectedItemChanged: (index) {
+                  setState(() => _birthYear = _minYear + index);
+                  _controller.updatePersonalInfo(birthYear: _birthYear);
+                },
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: _maxYear - _minYear + 1,
+                  builder: (context, index) {
+                    final year = _minYear + index;
+                    final selected = year == _birthYear;
+                    return Center(
+                      child: Text(
+                        '$year',
+                        style: selected
+                            ? const TextStyle(
+                                fontFamily: OnbTokens.fontDisplay,
+                                fontSize: 27,
+                                fontWeight: FontWeight.w700,
+                                color: OnbTokens.cream,
+                              )
+                            : TextStyle(
+                                fontFamily: OnbTokens.fontBody,
+                                fontSize: 21,
+                                color: OnbTokens.creamA(0.4),
+                              ),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _birthYear != null
-                        ? '$_birthYear'
-                        : 'Select your birth year',
-                    style: TextStyle(
-                      fontFamily: 'Apercu',
-                      fontSize: 15,
-                      color: _birthYear != null
-                          ? AppColors.textDark
-                          : AppColors.textDark.withValues(alpha: 0.4),
+              ),
+              // Hairlines framing the selected row (spec: 1px orange-40%,
+              // inset from the edges).
+              IgnorePointer(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 22),
+                      color: OnbTokens.orange40,
                     ),
-                  ),
+                    const SizedBox(height: 43),
+                    Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 22),
+                      color: OnbTokens.orange40,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -345,34 +435,37 @@ class _GenderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = isSelected
-        ? AppColors.blackberry
-        : AppColors.cream.withValues(alpha: 0.6);
+    // Spec card: radius 14, transparent fill, 1px cream-55% border,
+    // padding 12/6, h76.5; label Apercu 11/700 ls .66 cream-50%. Selected
+    // fills cream with plum content (per the rendered prototype).
+    final foreground = isSelected ? OnbTokens.bg : OnbTokens.creamA(0.5);
 
     return GestureDetector(
       key: cardKey,
       onTap: () => onTap(gender),
       child: Container(
-        height: 80,
+        height: 76.5,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.cream : Colors.transparent,
-          border: Border.all(color: AppColors.cream, width: 2),
-          borderRadius: BorderRadius.circular(15),
+          color: isSelected ? OnbTokens.cream : Colors.transparent,
+          border: Border.all(color: OnbTokens.creamA(0.55)),
+          borderRadius: BorderRadius.circular(OnbTokens.rTile),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: foreground),
-            const SizedBox(height: 6),
+            Icon(icon, size: 22, color: foreground),
+            const SizedBox(height: 7),
             Text(
               // Gender.other renders "Non-binary" per its displayName.
               gender.displayName.toUpperCase(),
               textAlign: TextAlign.center,
+              maxLines: 1,
               style: TextStyle(
-                fontFamily: 'Apercu',
-                fontSize: 9,
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+                letterSpacing: 0.66,
                 color: foreground,
               ),
             ),

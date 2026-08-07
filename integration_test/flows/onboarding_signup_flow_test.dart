@@ -329,28 +329,18 @@ Future<void> _startOnboardingFromWelcome(PatrolIntegrationTester $) async {
   ).waitUntilVisible(timeout: const Duration(seconds: 15));
 }
 
-/// Satisfies the personal-info gate (gender + birth year) and continues.
+/// Satisfies the personal-info gate (gender) and continues.
 ///
-/// The birth-year sheet is driven with the RAW WidgetTester (no Patrol
-/// wrapper / no auto-settle) + bounded manual pumps, accepting the
-/// pre-selected 1990 via Done — the CupertinoPicker wheel ignores Patrol
-/// scrolls on Android, and the Done tap is the documented Android deadlock
-/// point (see the library docs above).
+/// The 2026-08 spec port replaced the birth-year bottom sheet with an
+/// inline wheel that always carries a value (default 1994, written to the
+/// draft on first frame) — so gender is the only gate and no sheet
+/// interaction exists. This also removes the old Android CupertinoPicker
+/// Done-tap deadlock from this flow entirely.
 Future<void> _fillPersonalInfoMinimum(PatrolIntegrationTester $) async {
   await $(
     const ValueKey('personal_info.gender_female'),
   ).waitUntilVisible(timeout: const Duration(seconds: 15));
   await $(const ValueKey('personal_info.gender_female')).tap();
-
-  await $.tester.tap(
-    find.byKey(const ValueKey('personal_info.birth_year_button')),
-  );
-  await $.tester.pump(const Duration(seconds: 1));
-  await $.tester.tap(
-    find.byKey(const ValueKey('profile.birth_year_done_button')),
-    warnIfMissed: false,
-  );
-  await $.tester.pump(const Duration(milliseconds: 400));
 
   await $(const ValueKey('personal_info.continue_button')).tap();
 }

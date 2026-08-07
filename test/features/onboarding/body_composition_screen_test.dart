@@ -72,10 +72,11 @@ void main() {
     final container = await pumpScreen(tester);
     final controller = container.read(onboardingControllerProvider.notifier);
 
-    // Imperial wheels + unit labels by default.
-    expect(find.text('ft'), findsOneWidget);
-    expect(find.text('in'), findsOneWidget);
-    expect(find.text('lb'), findsOneWidget);
+    // Imperial wheels by default — the spec puts the unit inside the
+    // selected row's label ('5 ft' / '8 in' / '150 lb').
+    expect(find.textContaining(' ft'), findsOneWidget);
+    expect(find.textContaining(' in'), findsOneWidget);
+    expect(find.textContaining(' lb'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const ValueKey('body_comp.units_metric_button')),
@@ -83,12 +84,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.draft.useMetricUnits, isTrue);
-    expect(find.text('cm'), findsOneWidget);
-    expect(find.text('kg'), findsOneWidget);
+    expect(find.textContaining(' cm'), findsOneWidget);
+    expect(find.textContaining(' kg'), findsOneWidget);
     // 5 ft 8 in = 68 in → 173 cm; 150 lb → 68 kg. Both selected wheel items
     // are visible (they may collide on '68' — assert the cm value plus the
     // canonical draft staying imperial).
-    expect(find.text('173'), findsWidgets);
+    expect(find.textContaining('173'), findsWidgets);
     expect(controller.draft.heightFeet, 5);
     expect(controller.draft.heightInches, 8);
     expect(controller.draft.weightPounds, 150);

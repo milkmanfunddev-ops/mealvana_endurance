@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/adaptive/adaptive.dart';
-import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
-import '../providers/onboarding_analytics.dart';
-import 'onboarding_progress_bar.dart';
+import '../theme/onboarding_design_tokens.dart';
+import 'onboarding_multi_select_step.dart';
 
-/// Serif page title used across the redesigned onboarding steps.
+/// Serif page title used across the redesigned onboarding steps
+/// (HTML-spec values: Sansita 700 26, line-height 1.05, #f78b14, left).
 const kOnboardingTitleStyle = TextStyle(
-  fontFamily: 'Sansita',
+  fontFamily: OnbTokens.fontDisplay,
   fontSize: 26,
   fontWeight: FontWeight.w700,
-  color: AppColors.orange,
-  height: 1.0,
+  color: OnbTokens.orange,
+  height: 1.05,
 );
 
-/// Subcopy line under the title.
+/// Subcopy line under the title (spec: Apercu 14, lh 1.45, cream 62%).
 const kOnboardingSubtitleStyle = TextStyle(
-  fontFamily: 'Apercu',
-  fontSize: 16,
+  fontFamily: OnbTokens.fontBody,
+  fontSize: 14,
   fontWeight: FontWeight.w400,
-  color: AppColors.textDark,
-  letterSpacing: 0.192,
-  height: 1.2,
+  color: Color(0x9EF8F6EB),
+  height: 1.45,
 );
 
 /// Small-caps section label inside cards (e.g. "PERSONAL INFORMATION").
@@ -98,64 +96,54 @@ class OnboardingStepScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AdaptivePageScaffold(
-      backgroundColor: AppColors.blackberry,
-      contentWidth: AdaptiveContentWidth.narrow,
-      body: Column(
-        children: [
-          // Progress bar at the very top, one segment per funnel step so the
-          // bar stays aligned with the analytics names.
-          Container(
-            color: AppColors.blackberry,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: OnboardingProgressBar(
-              currentSegment: (stepIndex ?? 0) + 1,
-              totalSegments: kOnboardingStepNames.length,
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return Scaffold(
+      backgroundColor: OnbTokens.bg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            OnboardingStepHeader(
+              stepIndex: stepIndex ?? 0,
+              onBack: onBack,
+              backButtonKey: backButtonKey,
             ),
-          ),
-
-          // Content
-          Expanded(
-            child: AdaptiveScrollableBody(
-              safeAreaTop: false,
-              safeAreaBottom: false,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    key: titleKey,
-                    textAlign: TextAlign.center,
-                    style: kOnboardingTitleStyle,
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      subtitle!,
-                      textAlign: TextAlign.center,
-                      style: kOnboardingSubtitleStyle,
-                    ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Spec: ~54px segment-bottom → title-top (6 is header
+                    // bottom padding), matching the multi-select steps.
+                    const SizedBox(height: 48),
+                    Text(title, key: titleKey, style: kOnboardingTitleStyle),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 8),
+                      Text(subtitle!, style: kOnboardingSubtitleStyle),
+                    ],
+                    const SizedBox(height: 26),
+                    ...children,
                   ],
-                  const SizedBox(height: 20),
-                  ...children,
-                ],
+                ),
               ),
             ),
-          ),
-
-          // Footer navigation
-          FigmaOnboardingFooter(
-            onContinue: onContinue,
-            onBack: onBack,
-            canContinue: canContinue,
-            isLoading: isLoading,
-            buttonText: continueLabel,
-            continueButtonKey: continueButtonKey,
-            backButtonKey: backButtonKey,
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                8,
+                24,
+                bottomInset > 34 ? bottomInset : 34,
+              ),
+              child: OnboardingSpecCta(
+                label: continueLabel,
+                buttonKey: continueButtonKey,
+                enabled: canContinue && !isLoading,
+                onTap: () => onContinue?.call(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

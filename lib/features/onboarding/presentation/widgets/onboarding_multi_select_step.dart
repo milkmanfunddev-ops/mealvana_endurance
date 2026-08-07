@@ -218,33 +218,39 @@ class OnboardingSpecCta extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.buttonKey,
+    this.enabled = true,
   });
 
   final String label;
   final VoidCallback onTap;
   final Key? buttonKey;
 
+  /// Spec disabled state (personal-info step): bg rgba(247,139,20,.22),
+  /// cream-40% label, tap inert. Steps without a spec disabled state pass
+  /// true and keep the gate behavioral.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: OnbTokens.orange,
+        color: enabled ? OnbTokens.orange : const Color(0x38F78B14),
         borderRadius: BorderRadius.circular(OnbTokens.rPill),
         child: InkWell(
           key: buttonKey,
           borderRadius: BorderRadius.circular(OnbTokens.rPill),
-          onTap: onTap,
+          onTap: enabled ? onTap : null,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: OnbTokens.fontDisplay,
                 fontWeight: FontWeight.w700,
                 fontSize: 17,
-                color: OnbTokens.bg,
+                color: enabled ? OnbTokens.bg : OnbTokens.creamA(0.4),
               ),
             ),
           ),
@@ -293,10 +299,7 @@ class _SpecOptionRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(7),
                   border: isSelected
                       ? null
-                      : Border.all(
-                          color: OnbTokens.creamA(0.35),
-                          width: 1.5,
-                        ),
+                      : Border.all(color: OnbTokens.creamA(0.35), width: 1.5),
                 ),
                 child: isSelected
                     ? const Icon(
