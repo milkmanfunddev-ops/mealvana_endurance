@@ -76,6 +76,11 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   /// wheel's change callback can tell that apart from a human scroll.
   bool _applyingAutofill = false;
 
+  /// Autofill is a one-shot. Applying it writes back into the draft, and
+  /// re-applying on a later emission would re-notify and could feed a
+  /// provider/listener cycle.
+  bool _autofillApplied = false;
+
   OnboardingController get _controller =>
       ref.read(onboardingControllerProvider.notifier);
 
@@ -114,7 +119,13 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     // so an already-resolved (keepAlive) value still lands.
     ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
       final profile = next.value;
-      if (profile == null || !profile.hasAnything || !mounted) return;
+      if (profile == null ||
+          !profile.hasAnything ||
+          !mounted ||
+          _autofillApplied) {
+        return;
+      }
+      _autofillApplied = true;
       _applyIntegrationProfile(profile);
     }, fireImmediately: true);
 

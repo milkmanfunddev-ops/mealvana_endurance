@@ -177,11 +177,14 @@ Future<OnboardingPreviewBundle> onboardingPlanPreview(Ref ref) async {
 Future<OnboardingIntegrationProfile> onboardingIntegrationProfile(
   Ref ref,
 ) async {
-  // Draft mutators call ref.notifyListeners(), so connecting a platform
-  // (recordConnectedProvider) re-runs this. Without the watch, a keepAlive
-  // provider first read before the connect would cache "nothing connected"
-  // forever.
-  ref.watch(onboardingControllerProvider);
+  // Deliberately does NOT watch onboardingControllerProvider. The screens
+  // that consume this write the pre-filled values back into the draft,
+  // which notifies controller listeners — watching here would invalidate
+  // this provider on its own consumers' writes and spin forever, starving
+  // onboardingPlanPreview (which does watch the controller) so the plan
+  // reveal never leaves its loader. Staleness isn't a concern in practice:
+  // the first read happens on personal-info (step 4), after the connect
+  // step has already run.
   try {
     final repo = ref.read(integrationsRepositoryProvider);
     final candidates = await _candidateDataUserIds(ref);

@@ -291,6 +291,60 @@ void main() {
       expect(controller.draft.email, 'lee@example.com');
     });
 
+    testWidgets('autofill applies once and does not re-notify in a loop', (
+      tester,
+    ) async {
+      // Applying autofill writes back into the draft, which notifies
+      // controller listeners. If anything the screen listens to also
+      // watches the controller, that closes a cycle: the draft never
+      // settles, onboardingPlanPreview is invalidated forever, and the
+      // plan reveal is stranded on its loader. Pin that it settles.
+      tester.view.physicalSize = standardPhoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = ProviderContainer(
+        overrides: [
+          mockAppExternalDeps(),
+          mockSharedPreferences(),
+          onboardingIntegrationProfileProvider.overrideWith(
+            (ref) async => tpProfile,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      var notifications = 0;
+      container.listen(
+        onboardingControllerProvider,
+        (_, _) => notifications++,
+        fireImmediately: false,
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: wrapForTest(const PersonalInfoScreen(stepIndex: 4)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final afterSettle = notifications;
+      // Let any runaway cycle show itself.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(
+        notifications,
+        afterSettle,
+        reason: 'draft kept changing after settle — autofill is re-applying',
+      );
+      // A handful of writes is expected (default year, the autofill batch);
+      // an unbounded cycle is not.
+      expect(afterSettle, lessThan(10));
+    });
+
     testWidgets('no notice and no changes when nothing is connected', (
       tester,
     ) async {

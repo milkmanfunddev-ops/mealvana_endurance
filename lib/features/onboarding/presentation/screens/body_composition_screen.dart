@@ -60,6 +60,9 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
   /// Once the user touches the weight wheel, integration autofill backs off.
   bool _userAdjustedWeight = false;
 
+  /// Integration weight autofill is a one-shot (see the listener below).
+  bool _weightAutofillApplied = false;
+
   /// Display name of the platform the autofilled weight came from, or null
   /// when the athlete set it themselves. Garmin gets its required
   /// attribution message; anyone else gets a plain note — claiming
@@ -102,7 +105,15 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
     // (keepAlive) provider value still lands.
     ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
       final lbs = next.value?.weightLbs;
-      if (lbs == null || _userAdjustedWeight || !mounted) return;
+      // One-shot: applying writes back into the draft, which notifies
+      // controller listeners.
+      if (lbs == null ||
+          _userAdjustedWeight ||
+          !mounted ||
+          _weightAutofillApplied) {
+        return;
+      }
+      _weightAutofillApplied = true;
       setState(() {
         _weightPounds = lbs;
         _weightSource = next.value?.weightSource;
