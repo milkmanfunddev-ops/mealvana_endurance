@@ -112,8 +112,8 @@ void main() {
       final controller = container.read(onboardingControllerProvider.notifier);
       await settleReveal(tester);
 
-      // The generic run-only bundle sits at the run ceiling (70 g/hr) —
-      // recommended == max, so no reset link yet.
+      // The generic run-only bundle's recommendation (70 g/hr) is untouched
+      // — no reset link yet.
       expect(
         find.byKey(const ValueKey('plan_reveal.reset_long_run')),
         findsNothing,
@@ -128,13 +128,13 @@ void main() {
       expect(slider, findsOneWidget);
 
       // Drag far past the left edge — the Slider clamps to its min (the
-      // shared guardrail floor), so this is a deterministic way to commit
+      // run card's 30 g/hr floor), so this is a deterministic way to commit
       // a new value without needing exact per-pixel math.
       await tester.drag(slider, const Offset(-2000, 0));
       await tester.pumpAndSettle();
 
       final edits = controller.draft.planEdits;
-      expect(edits.longRunCarbGph, 0);
+      expect(edits.longRunCarbGph, 30);
       // Only the touched field is set — untouched targets stay null
       // (= algorithm default per the overrides contract).
       expect(edits.longRideCarbGph, isNull);
@@ -143,7 +143,7 @@ void main() {
 
       // The card now renders the committed value, and off-recommendation
       // surfaces the reset link.
-      expect(find.text('0 g/hr'), findsOneWidget);
+      expect(find.text('30 g/hr'), findsOneWidget);
       final resetLink = find.byKey(
         const ValueKey('plan_reveal.reset_long_run'),
       );

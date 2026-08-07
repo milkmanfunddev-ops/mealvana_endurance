@@ -21,9 +21,10 @@ import '../widgets/onboarding_step_scaffold.dart';
 /// work; awaits the imported-workout digest — with its 10 s timeout — when a
 /// platform was connected), reveals the computed fueling targets from
 /// [onboardingPlanPreviewProvider] with per-target edit affordances. Edits go
-/// through `applyPlanEdits` (only touched fields non-null) and are clamped in
-/// the UI by the same `NutritionTargetGuardrails` constants the save path
-/// applies.
+/// through `applyPlanEdits` (only touched fields non-null). The carb-target
+/// sliders clamp to their own editable range (30-120 g/hr run, 30-130 g/hr
+/// ride); fluid/sodium clamp to the shared `NutritionTargetGuardrails`
+/// constants the save path applies.
 class PlanRevealScreen extends ConsumerStatefulWidget {
   const PlanRevealScreen({
     super.key,
@@ -59,6 +60,15 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   Timer? _minDelayTimer;
   bool _minDelayElapsed = false;
   bool _revealTracked = false;
+
+  /// Slider bounds for the carb-target cards — deliberately not the shared
+  /// `NutritionTargetGuardrails` during-workout constants (those also gate
+  /// the unrelated activity-detail carb-rate editor); the onboarding
+  /// reveal slider gets its own editable range.
+  static const double _runCarbMin = 30;
+  static const double _runCarbMax = 120;
+  static const double _rideCarbMin = 30;
+  static const double _rideCarbMax = 130;
 
   /// Which carb-target card has its slider open — spec `editingHero`
   /// ('run' | 'ride' | null). Single field so opening one closes the other.
@@ -219,17 +229,15 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             resetKey: const ValueKey('plan_reveal.reset_long_run'),
             isEditing: _editingHero == 'run',
             onToggleEdit: () => _toggleHero('run'),
-            min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
-            // Sport-specific ceiling — same constant the guardrails use
-            // for run-context UI validation.
-            max: NutritionTargetGuardrails.duringMaxCarbRateRunning,
+            min: _runCarbMin,
+            max: _runCarbMax,
             step: 5,
             onCommit: (value) => _commitEdit(
               field: 'long_run_carb_gph',
               current: edits.longRunCarbGph ?? preview.longRun!.carbGph,
               value: value,
-              min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
-              max: NutritionTargetGuardrails.duringMaxCarbRateRunning,
+              min: _runCarbMin,
+              max: _runCarbMax,
               apply: (v) => edits.copyWith(longRunCarbGph: () => v),
             ),
             onReset: () => _resetEdit(
@@ -254,15 +262,15 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
             resetKey: const ValueKey('plan_reveal.reset_long_ride'),
             isEditing: _editingHero == 'ride',
             onToggleEdit: () => _toggleHero('ride'),
-            min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
-            max: NutritionTargetGuardrails.duringMaxCarbRateCycling,
+            min: _rideCarbMin,
+            max: _rideCarbMax,
             step: 5,
             onCommit: (value) => _commitEdit(
               field: 'long_ride_carb_gph',
               current: edits.longRideCarbGph ?? preview.longRide!.carbGph,
               value: value,
-              min: NutritionTargetGuardrails.duringMinCarbRateGPerH,
-              max: NutritionTargetGuardrails.duringMaxCarbRateCycling,
+              min: _rideCarbMin,
+              max: _rideCarbMax,
               apply: (v) => edits.copyWith(longRideCarbGph: () => v),
             ),
             onReset: () => _resetEdit(
