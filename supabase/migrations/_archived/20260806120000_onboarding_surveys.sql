@@ -50,7 +50,7 @@ CREATE POLICY "Users update own onboarding survey"
 
 -- app_config.current_schema_version → 16: DO NOT run until the schema-17
 -- build is released (it force-resyncs every client).
---   UPDATE public.app_config SET value = '16' WHERE key = 'current_schema_version';
+--   UPDATE public.app_config SET value = '17' WHERE key = 'current_schema_version';
 -- If a latest_schema_version row exists it takes precedence in
 -- VersionCheckService — bump it too:
---   UPDATE public.app_config SET value = '16' WHERE key = 'latest_schema_version';
+--   UPDATE public.app_config SET value = '17' WHERE key = 'latest_schema_version';

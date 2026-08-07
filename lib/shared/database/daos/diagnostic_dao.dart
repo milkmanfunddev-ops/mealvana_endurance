@@ -304,8 +304,13 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
         'DELETE FROM onboarding_surveys WHERE user_id = ?',
         [toUserId],
       );
+      // Re-dirty the moved row: if it was already uploaded under the anon
+      // uid, the remote copy is stranded behind RLS under that uid — the
+      // survey must be re-uploaded under the new uid or it never reaches
+      // the account's other devices.
       await db.customStatement(
-        'UPDATE onboarding_surveys SET user_id = ? WHERE user_id = ?',
+        'UPDATE onboarding_surveys SET user_id = ?, needs_upload = 1 '
+        'WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 

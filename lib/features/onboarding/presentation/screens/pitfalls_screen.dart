@@ -68,14 +68,18 @@ class _PitfallsScreenState extends ConsumerState<PitfallsScreen> {
   }
 
   void _continue() async {
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track(
-      'pitfalls_selected',
-      properties: {
-        'pitfalls': _selected.map((p) => p.dbValue).toList()..sort(),
-        'count': _selected.length,
-      },
-    );
+    try {
+      final analytics = ref.read(appExternalDepsProvider).analytics;
+      await analytics.track(
+        'pitfalls_selected',
+        properties: {
+          'pitfalls': _selected.map((p) => p.dbValue).toList()..sort(),
+          'count': _selected.length,
+        },
+      );
+    } catch (_) {
+      // Analytics must never block onboarding.
+    }
 
     if (!mounted) return;
     widget.onContinue?.call();

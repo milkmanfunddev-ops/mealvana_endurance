@@ -568,9 +568,11 @@ WHERE id IN (
 
 
 -- ── 7. onboarding_surveys — onboarding redesign survey answers ──────────────
--- ⏳ NOT YET APPLIED. Apply to DEV now; apply to PROD only when the schema-17
--- app build ships (bumping app_config.current_schema_version to 17 triggers
--- client delete-and-resync — see docs/features/onboarding-redesign/README.md §3).
+-- ✅ DEV: applied 2026-08-07 (table + 3 RLS policies verified; the branch's
+--    claim that it was applied 2026-08-06 was wrong — the table was absent).
+-- ⛔ PROD: apply only when the schema-17 app build ships (bumping
+-- app_config.current_schema_version to 17 triggers client delete-and-resync
+-- — see docs/features/onboarding-redesign/README.md §3).
 --
 -- One row per user: sports/goals/pitfalls multi-selects from the new
 -- onboarding flow, plus survey_payload jsonb for small flags (tridot_notify,

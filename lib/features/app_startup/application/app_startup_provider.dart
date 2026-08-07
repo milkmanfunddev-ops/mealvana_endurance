@@ -215,7 +215,9 @@ class AppStartup extends _$AppStartup {
       // lost gets nothing back from the re-pull. If no user row exists but
       // an onboarding snapshot does, re-import it locally with
       // needs_upload = true so sync can push it once a session exists.
-      user ??= await _maybeRestoreOnboardingSnapshot();
+      user ??= await _maybeRestoreOnboardingSnapshot(
+        currentAuthUserId: currentAuthUserId,
+      );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
 
       // Track startup completion in Sentry
@@ -256,11 +258,32 @@ class AppStartup extends _$AppStartup {
   /// Rows are written with `needs_upload = true` so a future session pushes
   /// them. Returns the restored profile, or null when there is no snapshot
   /// or the restore fails (startup proceeds as a fresh install either way).
-  Future<UserProfile?> _maybeRestoreOnboardingSnapshot() async {
+  Future<UserProfile?> _maybeRestoreOnboardingSnapshot({
+    required String? currentAuthUserId,
+  }) async {
     try {
       final snapshotService = ref.read(onboardingSnapshotServiceProvider);
       final snapshot = await snapshotService.readSnapshot();
       if (snapshot == null) return null;
+
+      // The snapshot is a recovery net for the SAME user whose session was
+      // lost. If a different account is signed in (fresh login after a wipe,
+      // shared device, deleted account), restoring would resurrect a ghost
+      // profile under the wrong session — its dirty rows would then be
+      // pushed to Supabase as that user or bounce off RLS forever. Skip.
+      if (currentAuthUserId != null &&
+          currentAuthUserId != snapshot.profile.id) {
+        _logger.warning(
+          'Onboarding snapshot belongs to a different user than the current '
+          'session - skipping restore',
+          context: 'ONBOARDING_SNAPSHOT',
+          data: {
+            'snapshotUserId': snapshot.profile.id,
+            'currentAuthUserId': currentAuthUserId,
+          },
+        );
+        return null;
+      }
 
       _logger.warning(
         'No local user row but an onboarding snapshot exists - restoring '

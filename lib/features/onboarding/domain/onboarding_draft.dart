@@ -290,9 +290,12 @@ class OnboardingDraft {
     bool? sweatTestInterest,
   }) {
     return OnboardingDraft(
-      sports: sports ?? this.sports,
-      goals: goals ?? this.goals,
-      pitfalls: pitfalls ?? this.pitfalls,
+      // Defensive copies: the selection screens pass their live _selected
+      // sets and keep mutating them in place, which would otherwise alias
+      // every "immutable" draft snapshot to the screen's mutable state.
+      sports: sports != null ? Set.unmodifiable(sports) : this.sports,
+      goals: goals != null ? Set.unmodifiable(goals) : this.goals,
+      pitfalls: pitfalls != null ? Set.unmodifiable(pitfalls) : this.pitfalls,
       firstName: firstName != null ? firstName() : this.firstName,
       lastName: lastName != null ? lastName() : this.lastName,
       email: email != null ? email() : this.email,

@@ -49,7 +49,17 @@ class WelcomeScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
-                Expanded(child: Center(child: _buildCenterBlock())),
+                // scaleDown is a no-op at spec sizes; on very short screens
+                // (320x568-class) the fixed-size spec block shrinks to fit
+                // instead of overflowing the column.
+                Expanded(
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: _buildCenterBlock(),
+                    ),
+                  ),
+                ),
                 _buildFooter(context, ref),
               ],
             ),

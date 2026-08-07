@@ -79,20 +79,24 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
       return;
     }
 
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track(
-      'sports_selected',
-      properties: {
-        // Canonical shape for the redesigned funnel (§6): dbValue strings.
-        'sports': _selected.map((s) => s.dbValue).toList()..sort(),
-        // Legacy booleans kept so existing Mixpanel reports don't go dark.
-        'running': _selected.contains(OnboardingSport.running),
-        'cycling': _selected.contains(OnboardingSport.cycling),
-        'swimming': _selected.contains(OnboardingSport.swimming),
-        'triathlon': _selected.contains(OnboardingSport.triathlon),
-        'count': _selected.length,
-      },
-    );
+    try {
+      final analytics = ref.read(appExternalDepsProvider).analytics;
+      await analytics.track(
+        'sports_selected',
+        properties: {
+          // Canonical shape for the redesigned funnel (§6): dbValue strings.
+          'sports': _selected.map((s) => s.dbValue).toList()..sort(),
+          // Legacy booleans kept so existing Mixpanel reports don't go dark.
+          'running': _selected.contains(OnboardingSport.running),
+          'cycling': _selected.contains(OnboardingSport.cycling),
+          'swimming': _selected.contains(OnboardingSport.swimming),
+          'triathlon': _selected.contains(OnboardingSport.triathlon),
+          'count': _selected.length,
+        },
+      );
+    } catch (_) {
+      // Analytics must never block onboarding.
+    }
 
     if (!mounted) return;
 

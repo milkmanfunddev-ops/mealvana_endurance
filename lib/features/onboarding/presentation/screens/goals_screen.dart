@@ -61,14 +61,18 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   }
 
   void _continue() async {
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track(
-      'goals_selected',
-      properties: {
-        'goals': _selected.map((g) => g.dbValue).toList()..sort(),
-        'count': _selected.length,
-      },
-    );
+    try {
+      final analytics = ref.read(appExternalDepsProvider).analytics;
+      await analytics.track(
+        'goals_selected',
+        properties: {
+          'goals': _selected.map((g) => g.dbValue).toList()..sort(),
+          'count': _selected.length,
+        },
+      );
+    } catch (_) {
+      // Analytics must never block onboarding.
+    }
 
     if (!mounted) return;
     widget.onContinue?.call();

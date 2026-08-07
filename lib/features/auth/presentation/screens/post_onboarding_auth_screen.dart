@@ -794,11 +794,16 @@ class _PostOnboardingAuthScreenState
                       // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
                       // reached via context.go() (post-onboarding flow) as
                       // well as push(), so guard against GoError "There is
-                      // nothing to pop".
+                      // nothing to pop". The go() arrival replaces the stack,
+                      // so in the redesigned flow canPop() is false for EVERY
+                      // new user landing here — the fallback must return to
+                      // the flow they came from, not /main: going to /main
+                      // would silently abandon all nine onboarding steps
+                      // before saveAllOnboardingData ever runs.
                       if (context.canPop()) {
                         context.pop();
                       } else {
-                        context.go('/main');
+                        context.go(isLogin ? '/welcome' : '/onboarding');
                       }
                     },
               child: Container(

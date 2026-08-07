@@ -431,11 +431,16 @@ class OnboardingController extends _$OnboardingController {
     Gender? gender,
     int? birthYear,
   }) {
+    // A passed-but-blank value CLEARS the field (the screens call this per
+    // keystroke, so backspacing to empty must not leave the last non-blank
+    // fragment behind — a stale draft email would later override the real
+    // auth email in saveAllOnboardingData). Only an omitted (null) argument
+    // keeps the existing value.
     _updateDraft(
       _draft.copyWith(
-        firstName: () => _nullIfBlank(firstName) ?? _draft.firstName,
-        lastName: () => _nullIfBlank(lastName) ?? _draft.lastName,
-        email: () => _nullIfBlank(email) ?? _draft.email,
+        firstName: firstName != null ? () => _nullIfBlank(firstName) : null,
+        lastName: lastName != null ? () => _nullIfBlank(lastName) : null,
+        email: email != null ? () => _nullIfBlank(email) : null,
         gender: gender != null ? () => gender : null,
         birthYear: birthYear != null ? () => birthYear : null,
       ),

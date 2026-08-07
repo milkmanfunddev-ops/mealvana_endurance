@@ -60,11 +60,18 @@ void main() {
       expect(draft.sweatRate, SweatRateCat.heavy);
     });
 
-    test('blank strings do not clobber earlier personal info', () {
+    test('blank strings CLEAR a field; omitted arguments retain it', () {
+      // The screens call updatePersonalInfo per keystroke, so backspacing a
+      // field to empty must clear the draft value — retaining the last
+      // non-blank fragment would let a half-typed email ("x@") outrank the
+      // real auth email in saveAllOnboardingData. Omitting the argument
+      // (null) is what means "no change".
       controller.updatePersonalInfo(firstName: 'Avery', email: 'a@b.c');
-      controller.updatePersonalInfo(firstName: '  ', email: '');
-      expect(controller.draft.firstName, 'Avery');
-      expect(controller.draft.email, 'a@b.c');
+      controller.updatePersonalInfo(email: '');
+      expect(controller.draft.firstName, 'Avery'); // omitted → retained
+      expect(controller.draft.email, isNull); // blank → cleared
+      controller.updatePersonalInfo(firstName: '  ');
+      expect(controller.draft.firstName, isNull); // whitespace → cleared
     });
 
     test('hasCompletedProfileDraft requires gender, birth year and weight', () {

@@ -124,8 +124,15 @@ class PlanPreviewService {
     );
 
     // Workout day: baseline + the representative long session's carb demand.
-    final sessionSport = wantsRun || !wantsRide ? 'running' : 'cycling';
-    final sessionMinutes = sessionSport == 'running' ? runMinutes : rideMinutes;
+    // Swim-only selections cost a swim (7 kcal/kg/hr), not a phantom run
+    // (11 kcal/kg/hr) — the old `wantsRun || !wantsRide` collapsed swim-only
+    // into 'running' and overstated workout-day energy by ~55%.
+    final sessionSport = wantsRun
+        ? 'running'
+        : wantsRide
+        ? 'cycling'
+        : 'swimming';
+    final sessionMinutes = sessionSport == 'cycling' ? rideMinutes : runMinutes;
     final sessionHr = sessionMinutes / 60.0;
     final intensityFactor = DailyBaselineCalculator.zoneDistributionToIf(
       pctConversational: _pctConversational,
