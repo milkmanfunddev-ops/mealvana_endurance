@@ -200,10 +200,16 @@ class _OnboardingPageViewScreenState
           curve: Curves.easeInOut,
         );
       } else {
-        // Last page - navigate to post-onboarding auth
+        // Last page - navigate to post-onboarding auth.
+        //
+        // PUSH, not go: the auth screen's back control has to lead back to
+        // the daily-plan preview. With go() there is nothing to pop, and
+        // back fell through to /main — dropping the athlete into the app
+        // with onboarding never saved. Signing up or continuing without an
+        // account both go() to /main from there, which clears this stack.
         _trackOnboardingCompleted(pages.length);
         if (mounted) {
-          context.go('/auth/post-onboarding');
+          context.push('/auth/post-onboarding');
         }
       }
     }
