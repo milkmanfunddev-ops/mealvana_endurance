@@ -13,6 +13,7 @@
 // text, then tap through with a dedicated dev test account. flutter drive can
 // drive the widget tree directly (it is not blind to the canvas the way
 // Playwright is).
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -51,9 +52,22 @@ void main() {
     // pumpAndSettle would time out even on a healthy boot. Instead, pump in
     // fixed steps and check each frame — this tolerates slow web startup and
     // never hangs.
+    // Match on the welcome CTAs' Keys, NOT their copy. The 2026-08 onboarding
+    // pixel-port renamed both ("Get Started" → "Build My Plan", "Log In" →
+    // "I already have an account"), which silently broke the old text finders:
+    // the app booted fine, this poll never matched, and the run failed 40s
+    // later claiming "the app likely crashed on startup" — a false alarm that
+    // also blocked the Patrol job gated behind this one. The Keys are the
+    // stable contract the rest of the suite already tests against.
     bool welcomeVisible() =>
-        find.text('Get Started').evaluate().isNotEmpty ||
-        find.text('Log In').evaluate().isNotEmpty;
+        find
+            .byKey(const ValueKey('welcome.get_started_button'))
+            .evaluate()
+            .isNotEmpty ||
+        find
+            .byKey(const ValueKey('welcome.log_in_button'))
+            .evaluate()
+            .isNotEmpty;
 
     const deadline = Duration(seconds: 40);
     final sw = Stopwatch()..start();
