@@ -287,7 +287,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
             Center(
               key: const ValueKey('body_comp.weight_source_note'),
               child: Text(
-                'Filled in from $_weightSource',
+                'Weight filled in from $_weightSource — check and adjust.',
                 style: TextStyle(
                   fontFamily: OnbTokens.fontBody,
                   fontSize: 11.5,

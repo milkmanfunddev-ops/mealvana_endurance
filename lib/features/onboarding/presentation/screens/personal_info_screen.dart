@@ -67,8 +67,10 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   bool _userPickedGender = false;
   bool _userPickedYear = false;
 
-  /// Provider whose profile filled these fields in, for the caption.
+  /// Provider whose profile filled fields in, and which fields those were
+  /// — the notice names them so it's obvious what synced and what didn't.
   String? _autofillSource;
+  List<String> _autofilledFields = const [];
 
   /// True only while integration autofill is driving the widgets, so the
   /// wheel's change callback can tell that apart from a human scroll.
@@ -142,23 +144,27 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   /// Writes a connected platform's athlete details into the fields the
   /// athlete hasn't filled in themselves, and mirrors them into the draft.
   void _applyIntegrationProfile(OnboardingIntegrationProfile profile) {
-    var filledAnything = false;
+    // Named in screen order so the notice reads top-to-bottom.
+    final filled = <String>[];
+    var filledName = false;
 
     if (!_userEditedFirstName && profile.firstName != null) {
       _firstNameController.text = profile.firstName!;
-      filledAnything = true;
+      filledName = true;
     }
     if (!_userEditedLastName && profile.lastName != null) {
       _lastNameController.text = profile.lastName!;
-      filledAnything = true;
+      filledName = true;
     }
+    if (filledName) filled.add('Name');
+
     if (!_userEditedEmail && profile.email != null) {
       _emailController.text = profile.email!;
-      filledAnything = true;
+      filled.add('Email');
     }
     if (!_userPickedGender && profile.gender != null) {
       _gender = profile.gender;
-      filledAnything = true;
+      filled.add('Gender');
     }
     // Only accept a birth year the wheel can actually show.
     final year = profile.birthYear;
@@ -169,12 +175,15 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
         year <= _maxYear) {
       _birthYear = year;
       scrollYearTo = year - _minYear;
-      filledAnything = true;
+      filled.add('Birth year');
     }
 
-    if (!filledAnything) return;
+    if (filled.isEmpty) return;
 
-    setState(() => _autofillSource = profile.nameSource);
+    setState(() {
+      _autofillSource = profile.detailsSource;
+      _autofilledFields = filled;
+    });
     if (scrollYearTo >= 0 && _yearController.hasClients) {
       _applyingAutofill = true;
       _yearController.jumpToItem(scrollYearTo);
@@ -214,7 +223,10 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       backButtonKey: const ValueKey('personal_info.back_button'),
       children: [
         if (_autofillSource != null) ...[
-          _AutofillNotice(source: _autofillSource!),
+          _AutofillNotice(
+            source: _autofillSource!,
+            fields: _autofilledFields,
+          ),
           const SizedBox(height: 12),
         ],
         _buildOptionalInfoCard(),
@@ -586,9 +598,27 @@ class _GenderCard extends StatelessWidget {
 /// silently pre-filled personal details are worse than none: the athlete
 /// needs to know these are claims to check, not answers they gave.
 class _AutofillNotice extends StatelessWidget {
-  const _AutofillNotice({required this.source});
+  const _AutofillNotice({required this.source, required this.fields});
 
   final String source;
+
+  /// The fields that were actually filled, in screen order. Naming them
+  /// makes the gaps legible too — Final Surge sends a name and email but
+  /// no gender or birth year, and the athlete should be able to see that
+  /// rather than wonder whether those were filled and wrong.
+  final List<String> fields;
+
+  /// 'Name', 'Name and email', 'Name, email and birth year' — subsequent
+  /// items lowercased so the sentence reads naturally.
+  String get _fieldList {
+    final items = [
+      fields.first,
+      ...fields.skip(1).map((f) => f.toLowerCase()),
+    ];
+    if (items.length == 1) return items.single;
+    return '${items.sublist(0, items.length - 1).join(', ')} '
+        'and ${items.last}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -610,7 +640,7 @@ class _AutofillNotice extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Filled in from $source — check and adjust.',
+              '$_fieldList filled in from $source — check and adjust.',
               style: TextStyle(
                 fontFamily: OnbTokens.fontBody,
                 fontSize: 12.5,

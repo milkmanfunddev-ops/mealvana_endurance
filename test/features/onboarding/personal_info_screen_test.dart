@@ -129,7 +129,7 @@ void main() {
       gender: Gender.male,
       birthYear: 1988,
       weightLbs: 161,
-      nameSource: 'TrainingPeaks',
+      detailsSource: 'TrainingPeaks',
       weightSource: 'TrainingPeaks',
     );
 
@@ -156,7 +156,76 @@ void main() {
       expect(find.text('Martin'), findsOneWidget);
       expect(find.text('lee@example.com'), findsOneWidget);
       expect(
-        find.text('Filled in from TrainingPeaks — check and adjust.'),
+        find.text(
+          'Name, email, gender and birth year filled in from TrainingPeaks '
+          '— check and adjust.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the notice names only the fields that actually filled', (
+      tester,
+    ) async {
+      // Final Surge sends a name and email but no gender or birth year.
+      // Naming what landed makes the gaps legible: the athlete can see
+      // gender and birth year are still theirs to answer, rather than
+      // wondering whether they were filled and wrong.
+      await pumpScreen(
+        tester,
+        integrationProfile: const OnboardingIntegrationProfile(
+          firstName: 'Xuan',
+          lastName: 'Huang',
+          email: 'xuan@example.com',
+          detailsSource: 'Final Surge',
+        ),
+      );
+
+      expect(
+        find.text(
+          'Name and email filled in from Final Surge — check and adjust.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('details filled without a name are still attributed', (
+      tester,
+    ) async {
+      // TrainingPeaks can supply gender/birth year without a usable name.
+      // Those fields must not land unattributed — a silent pre-fill is the
+      // thing this notice exists to prevent.
+      await pumpScreen(
+        tester,
+        integrationProfile: const OnboardingIntegrationProfile(
+          gender: Gender.female,
+          birthYear: 1990,
+          detailsSource: 'TrainingPeaks',
+        ),
+      );
+
+      expect(
+        find.text(
+          'Gender and birth year filled in from TrainingPeaks '
+          '— check and adjust.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a single filled field reads as a singular phrase', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        integrationProfile: const OnboardingIntegrationProfile(
+          email: 'xuan@example.com',
+          detailsSource: 'Final Surge',
+        ),
+      );
+
+      expect(
+        find.text('Email filled in from Final Surge — check and adjust.'),
         findsOneWidget,
       );
     });

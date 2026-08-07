@@ -16,7 +16,7 @@ class OnboardingIntegrationProfile {
     this.gender,
     this.birthYear,
     this.weightLbs,
-    this.nameSource,
+    this.detailsSource,
     this.weightSource,
   });
 
@@ -29,9 +29,12 @@ class OnboardingIntegrationProfile {
   final int? birthYear;
   final double? weightLbs;
 
-  /// Display names of the providers each group came from, for the "we
-  /// filled this in from X" captions.
-  final String? nameSource;
+  /// Display name of the provider that supplied the personal details
+  /// (name/email/gender/birth year) and of the one that supplied the
+  /// weight, for the "filled in from X" captions. Separate because they
+  /// routinely differ — Garmin has the scale, TrainingPeaks has the
+  /// profile.
+  final String? detailsSource;
   final String? weightSource;
 
   bool get hasAnything =>

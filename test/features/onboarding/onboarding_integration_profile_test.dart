@@ -81,7 +81,7 @@ void main() {
     );
     // Source labels alone are not data worth pre-filling from.
     expect(
-      const OnboardingIntegrationProfile(nameSource: 'Garmin Connect')
+      const OnboardingIntegrationProfile(detailsSource: 'Garmin Connect')
           .hasAnything,
       isFalse,
     );

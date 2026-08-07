@@ -237,7 +237,16 @@ Future<OnboardingIntegrationProfile> onboardingIntegrationProfile(
       ),
       birthYear: trainingPeaks?.providerAthleteBirthday?.year,
       weightLbs: weightSource?.providerAthleteWeightLbs,
-      nameSource: identity?.providerDisplayName,
+      // Whoever supplied the personal details on that screen: the identity
+      // provider when there's a name/email, else TrainingPeaks when it was
+      // only good for gender/birth year. Never left null while something
+      // was filled — an unattributed pre-fill is the thing to avoid.
+      detailsSource:
+          identity?.providerDisplayName ??
+          ((trainingPeaks?.providerAthleteGender != null ||
+                  trainingPeaks?.providerAthleteBirthday != null)
+              ? trainingPeaks?.providerDisplayName
+              : null),
       weightSource: weightSource?.providerDisplayName,
     );
   } catch (_) {
