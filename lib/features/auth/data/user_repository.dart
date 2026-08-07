@@ -1,9 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
-import '../../onboarding/domain/dietary_preference.dart';
-import '../../onboarding/domain/allergy.dart';
-import '../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -106,8 +103,18 @@ class UserRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      // Convert to UserProfile domain object using UserDao's helper
-      final userProfile = _convertToDomainUserProfile(dirtyUser);
+      // Delegate to the DAO's conversion — the single source of truth for
+      // every UserProfile field. A hand-duplicated copy used to live here
+      // and silently dropped sweatRate/unitSystem/nutritionTargetOverrides/
+      // etc. on every background upload (MEALVANA-ENDURANCE onboarding
+      // redesign: sweat rate and edited carb targets not surviving
+      // "Continue without an account").
+      final userProfile = await database.userDao.getUserProfileById(userId);
+      if (userProfile == null) {
+        return UploadResult.failed(
+          'Dirty user row disappeared before upload',
+        );
+      }
 
       // Upload to Supabase
       await supabase
@@ -135,57 +142,6 @@ class UserRepository with SyncableRepository {
       );
       return UploadResult.failed(e.toString());
     }
-  }
-
-  /// Convert database entry to domain model
-  /// Same as UserDao._convertToDomainUserProfile but accessible here
-  UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) {
-    return UserProfile(
-      id: dbUser.id,
-      deviceId: dbUser.deviceId,
-      authUserId: dbUser.authUserId,
-      authProvider: dbUser.authProvider,
-      isAnonymous: dbUser.isAnonymous,
-      gender: Gender.values.firstWhere(
-        (g) => g.name == dbUser.gender,
-        orElse: () => Gender.other,
-      ),
-      birthday: dbUser.birthday ?? DateTime.now(),
-      heightFeet: dbUser.heightFeet ?? 0,
-      heightInches: dbUser.heightInches ?? 0,
-      weightPounds: dbUser.weightPounds ?? 0.0,
-      runsWithWaterBottle: dbUser.runsWithWaterBottle,
-      gutTraining: GutTraining.values.firstWhere(
-        (g) => g.name == dbUser.gutTrainingLevel,
-        orElse: () => GutTraining.moderate,
-      ),
-      onboardingCompleted: dbUser.onboardingCompleted,
-      createdAt: dbUser.createdAt,
-      updatedAt: dbUser.updatedAt,
-      appVersion: dbUser.appVersion ?? '',
-      swipeHintShown: dbUser.swipeHintShown,
-      // Dietary preference and allergies (onboarding revamp)
-      // Convert null to DietaryPreference.none for UI
-      dietaryPreference:
-          DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
-          DietaryPreference.none,
-      allergies: Allergy.fromDbArray(dbUser.allergies),
-      // Optional name fields for coach mode athlete identification
-      firstName: dbUser.firstName,
-      lastName: dbUser.lastName,
-      // Contact information
-      email: dbUser.email,
-      // Sweat profile fields
-      sweatSodium: SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
-      knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
-      knownSodiumConcentrationMgPerLiter:
-          dbUser.knownSodiumConcentrationMgPerLiter,
-      sweatTestDate: dbUser.sweatTestDate,
-      sweatTestSource: dbUser.sweatTestSource,
-      // Garmin precedence timestamps
-      weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
-      bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
-    );
   }
 
   // ========== End SyncableRepository Implementation ==========
@@ -744,7 +700,7 @@ class UserRepository with SyncableRepository {
             category: 'sync',
             data: {'user_id': userId},
           );
-          return _convertToDomainUserProfile(localProfile!);
+          return database.userDao.getUserProfileById(userId);
         }
 
         final user = _parseUserFromSupabase(response, userId);
@@ -884,99 +840,35 @@ class UserRepository with SyncableRepository {
     }
   }
 
-  /// Parse user data from Supabase response
+  /// Parse user data from Supabase response.
+  ///
+  /// Delegates to [UserProfile.fromJson] — the single source of truth for
+  /// every column — instead of a hand-duplicated field list. That duplicate
+  /// (removed 2026-08) never mapped `sweat_rate`/`unit_system`/several other
+  /// columns, so every profile pulled through this path silently reverted
+  /// those fields to their class defaults. The defensive fallbacks below
+  /// (missing id/device_id/timestamps/biometrics) reproduce this function's
+  /// previous null-safety behavior; `fromJson` itself expects those columns
+  /// present.
   UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
-    // Handle both single object and array responses
-    final userData = response is List ? response.first : response;
+    // Handle both single object and array responses.
+    final userData =
+        (response is List ? response.first : response)
+            as Map<String, dynamic>;
+    final nowIso = DateTime.now().toIso8601String();
 
-    return UserProfile(
-      id: userData['id'] ?? deviceId,
-      deviceId: userData['device_id'] ?? deviceId,
-      authUserId: userData['auth_user_id'] as String?,
-      authProvider: userData['auth_provider'] as String? ?? 'anonymous',
-      isAnonymous: userData['is_anonymous'] as bool? ?? true,
-      gender: Gender.values.firstWhere(
-        (e) => e.name == userData['gender'],
-        orElse: () => Gender.other,
-      ),
-      birthday: DateTime.parse(
-        userData['birthday'] ?? DateTime.now().toIso8601String(),
-      ),
-      heightFeet: userData['height_feet'] ?? 5,
-      heightInches: userData['height_inches'] ?? 8,
-      weightPounds: (userData['weight_pounds'] as num?)?.toDouble() ?? 150.0,
-      runsWithWaterBottle: userData['runs_with_water_bottle'] ?? false,
-      gutTraining: GutTraining.values.firstWhere(
-        (e) => e.name == userData['gut_training_level'],
-        orElse: () => GutTraining.moderate,
-      ),
-      onboardingCompleted: userData['onboarding_completed'] ?? false,
-      createdAt: DateTime.parse(
-        userData['created_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      updatedAt: DateTime.parse(
-        userData['updated_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      appVersion: userData['app_version'] ?? '1.0.0',
-      giSensitivity: userData['gi_sensitivity'] as bool?,
-      ftpWatts: userData['cycling_ftp_watts'] as int?,
-      typicalBikeBottles: userData['typical_bike_bottles'] as int?,
-      hasAeroBottle: userData['has_aero_bottle'] as bool?,
-      hasBentoBox: userData['has_bento_box'] as bool?,
-      cssPacePer100mSeconds: userData['swimming_css_seconds_per_100m'] as int?,
-      typicalWetsuit: userData['typical_wetsuit'] as bool?,
-      typicalSwimCapType: userData['typical_swim_cap_type'] as String?,
-      // Dietary preference and allergies (already parsed by UserProfile.fromJson in some paths)
-      // Convert null to DietaryPreference.none for consistency (database stores null, domain uses none)
-      dietaryPreference:
-          DietaryPreference.fromDbValue(
-            userData['dietary_preference'] as String?,
-          ) ??
-          DietaryPreference.none,
-      allergies: _parseAllergiesFromSupabase(userData['allergies']),
-      // Nutrition target overrides
-      nutritionTargetOverrides: userData['nutrition_target_overrides'] != null
-          ? NutritionTargetOverrides.fromJson(
-              userData['nutrition_target_overrides'] as Map<String, dynamic>,
-            )
-          : null,
-      // User identity
-      firstName: userData['first_name'] as String?,
-      lastName: userData['last_name'] as String?,
-      // Contact information
-      email: userData['email'] as String?,
-      // Garmin precedence timestamps
-      weightPoundsUpdatedAt: userData['weight_pounds_updated_at'] != null
-          ? DateTime.tryParse(userData['weight_pounds_updated_at'] as String)
-          : null,
-      bodyFatPctUpdatedAt: userData['body_fat_pct_updated_at'] != null
-          ? DateTime.tryParse(userData['body_fat_pct_updated_at'] as String)
-          : null,
-    );
-  }
-
-  /// Parse allergies from Supabase response, handling both formats:
-  /// - New format: `List<dynamic>` from PostgreSQL allergy_enum[] array
-  /// - Legacy format: String in PostgreSQL text format like "{dairy,gluten}"
-  List<Allergy> _parseAllergiesFromSupabase(dynamic value) {
-    if (value == null) return [];
-
-    // New format: List<dynamic> from PostgreSQL enum array
-    // This is what Supabase returns after the 20251218 migration
-    if (value is List) {
-      return value
-          .map((item) => Allergy.fromDbValue(item.toString()))
-          .whereType<Allergy>()
-          .toList();
-    }
-
-    // Legacy format: String in PostgreSQL text format
-    // For backwards compatibility with old data
-    if (value is String) {
-      return Allergy.fromDbArray(value);
-    }
-
-    return [];
+    return UserProfile.fromJson({
+      ...userData,
+      'id': userData['id'] ?? deviceId,
+      'device_id': userData['device_id'] ?? deviceId,
+      'birthday': userData['birthday'] ?? nowIso,
+      'height_feet': userData['height_feet'] ?? 5,
+      'height_inches': userData['height_inches'] ?? 8,
+      'weight_pounds': userData['weight_pounds'] ?? 150.0,
+      'runs_with_water_bottle': userData['runs_with_water_bottle'] ?? false,
+      'created_at': userData['created_at'] ?? nowIso,
+      'updated_at': userData['updated_at'] ?? nowIso,
+    });
   }
 
   Future<void> _upsertUserProfileToSupabase(UserProfile profile) async {
