@@ -79,29 +79,32 @@ void main() {
     // Sanity: the fixture actually distinguishes the tabs.
     expect(workoutCarbs, isNot(restCarbs));
 
-    // Workout tab is active by default.
-    expect(find.text('$workoutCarbs g'), findsOneWidget);
-    expect(find.text('Built around a long training session.'), findsOneWidget);
+    // Workout tab is active by default. Captions render uppercased under
+    // the unicase Compadre face; values live inside Text.rich spans.
+    expect(find.textContaining('$workoutCarbs'), findsOneWidget);
+    expect(find.text('BUILT AROUND A LONG TRAINING SESSION.'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('daily_preview.tab_rest')));
     await tester.pumpAndSettle();
-    expect(find.text('$restCarbs g'), findsOneWidget);
+    expect(find.textContaining('$restCarbs'), findsOneWidget);
+    // The running fixture has a long-run card, so the rest-day caption
+    // uses the spec's "your long run" phrasing.
     expect(
-      find.text('Minimal movement — the day after a long session.'),
+      find.text('MINIMAL MOVEMENT — THE DAY AFTER YOUR LONG RUN.'),
       findsOneWidget,
     );
 
     await tester.tap(find.byKey(const ValueKey('daily_preview.tab_carb_load')));
     await tester.pumpAndSettle();
-    expect(find.text('$carbLoadCarbs g'), findsOneWidget);
+    expect(find.textContaining('$carbLoadCarbs'), findsOneWidget);
     expect(
-      find.text('The day before your race — topping up glycogen.'),
+      find.text('THE DAY BEFORE YOUR RACE — TOPPING UP GLYCOGEN.'),
       findsOneWidget,
     );
 
     // Calories row always renders in kcal.
     expect(
-      find.text('${bundle.preview.carbLoadDay.calories} kcal'),
+      find.textContaining('${bundle.preview.carbLoadDay.calories}'),
       findsOneWidget,
     );
     expectNoRenderOverflow(tester);

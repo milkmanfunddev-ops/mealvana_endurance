@@ -217,7 +217,8 @@ class OnboardingStepScaffold extends StatelessWidget {
 /// Reveal variant: 1px DASHED cream-20% border, cream-4% fill, radius 15,
 /// padding 16; teal-tinted 34px icon box; Apercu 13.5/500 cream title;
 /// 12px cream-55% body; teal 13/500 underlined "Connect now".
-/// The daily preview passes its own title/body copy.
+/// The daily preview passes its own copy and the spec's larger icon box
+/// (40px, radius 12, watch glyph — its card is Garmin-specific).
 class OnboardingConnectNudgeCard extends StatelessWidget {
   const OnboardingConnectNudgeCard({
     super.key,
@@ -227,12 +228,18 @@ class OnboardingConnectNudgeCard extends StatelessWidget {
     this.body =
         "These targets stand on their own — connect a platform and we'll "
         'fuel each scheduled session too.',
+    this.icon = Icons.monitor_heart_outlined,
+    this.iconBoxSize = 34,
+    this.iconBoxRadius = 8,
   });
 
   final VoidCallback onConnectNow;
   final Key? connectButtonKey;
   final String title;
   final String body;
+  final IconData icon;
+  final double iconBoxSize;
+  final double iconBoxRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -251,15 +258,15 @@ class OnboardingConnectNudgeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: iconBoxSize,
+              height: iconBoxSize,
               decoration: BoxDecoration(
                 color: const Color(0x261CF9CF), // teal 15%
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(iconBoxRadius),
               ),
-              child: const Icon(
-                Icons.monitor_heart_outlined,
-                size: 18,
+              child: Icon(
+                icon,
+                size: iconBoxSize > 34 ? 20 : 18,
                 color: OnbTokens.teal,
               ),
             ),

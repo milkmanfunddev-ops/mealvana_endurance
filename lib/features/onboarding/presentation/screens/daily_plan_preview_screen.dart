@@ -6,6 +6,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../domain/onboarding_plan_preview.dart';
 import '../providers/onboarding_controller.dart';
 import '../providers/onboarding_preview_providers.dart';
+import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
 /// Daily Plan Preview Screen - Step 9 (final) of Onboarding (2026-08
@@ -15,6 +16,11 @@ import '../widgets/onboarding_step_scaffold.dart';
 /// [onboardingPlanPreviewProvider] bundle the plan reveal rendered, so both
 /// screens show consistent numbers. Continue is "Save My Plan" — the
 /// pageview's last-page branch routes it to /auth/post-onboarding.
+///
+/// Pixel port of the prototype's DAILY screen: teal-eyebrow header without
+/// progress segments, teal-pill day tabs on a cream-6% track, a Compadre
+/// teal day caption, the Garmin nudge, then the "Your Macros" card with
+/// dot-labelled rows and Apercu Mono values.
 class DailyPlanPreviewScreen extends ConsumerStatefulWidget {
   const DailyPlanPreviewScreen({
     super.key,
@@ -116,9 +122,26 @@ class _DailyPlanPreviewScreenState
             ? 'Built around $descriptor.'
             : 'Built around a long training session.';
       case PreviewDayType.rest:
-        return 'Minimal movement — the day after a long session.';
+        // Spec copy names the long run; keep it when the athlete has a run
+        // card, generalize otherwise.
+        return preview.longRun != null
+            ? 'Minimal movement — the day after your long run.'
+            : 'Minimal movement — the day after a long session.';
       case PreviewDayType.carbLoad:
         return 'The day before your race — topping up glycogen.';
+    }
+  }
+
+  /// Small day tag on the Calories row ("workout day" / "rest day" /
+  /// "carb-load day").
+  String get _calorieTag {
+    switch (_tab) {
+      case PreviewDayType.workout:
+        return 'workout day';
+      case PreviewDayType.rest:
+        return 'rest day';
+      case PreviewDayType.carbLoad:
+        return 'carb-load day';
     }
   }
 
@@ -141,12 +164,22 @@ class _DailyPlanPreviewScreenState
     final bundle = ref.watch(onboardingPlanPreviewProvider).value;
 
     return OnboardingStepScaffold(
+      eyebrow: 'YOUR DAILY PLAN',
       title: "And here's how to eat every day.",
+      // Spec: cream Sansita 27 like the reveal, not the step orange.
+      titleStyle: const TextStyle(
+        fontFamily: OnbTokens.fontDisplay,
+        fontSize: 27,
+        fontWeight: FontWeight.w700,
+        height: 1.05,
+        color: OnbTokens.cream,
+      ),
       subtitle:
           'Targets shift with your training — carbs rise on workout days. '
           'Here are three sample days.',
       titleKey: const ValueKey('daily_preview.title'),
       stepIndex: widget.stepIndex,
+      showProgress: false,
       onContinue: widget.onContinue,
       onBack: widget.onBack,
       canContinue: bundle != null,
@@ -166,43 +199,87 @@ class _DailyPlanPreviewScreenState
         else ...[
           _buildTabs(),
           const SizedBox(height: 12),
-          Text(
-            _dayDescription(bundle.preview),
-            key: const ValueKey('daily_preview.day_description'),
-            textAlign: TextAlign.center,
-            style: kOnboardingBodyMutedStyle,
+          // Spec: 7px teal dot + 8px gap ahead of the Compadre caption.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: OnbTokens.teal,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  _dayDescription(bundle.preview).toUpperCase(),
+                  key: const ValueKey('daily_preview.day_description'),
+                  style: const TextStyle(
+                    fontFamily: OnbTokens.fontLabel,
+                    fontSize: 14,
+                    color: OnbTokens.teal,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          _MacrosCard(day: _dayPreview(bundle.preview)),
           if (draft.connectedProvider == null &&
               widget.onConnectTap != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             OnboardingConnectNudgeCard(
               key: const ValueKey('daily_preview.connect_nudge'),
               onConnectNow: widget.onConnectTap!,
               connectButtonKey: const ValueKey('daily_preview.connect_now'),
+              title: 'Connect with Garmin',
+              body:
+                  'When you finish an activity, your daily plan will be '
+                  'adjusted to it.',
+              iconBoxSize: 40,
+              iconBoxRadius: 12,
             ),
           ],
+          const SizedBox(height: 26),
+          const Text(
+            'Your Macros',
+            style: TextStyle(
+              fontFamily: OnbTokens.fontDisplay,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: OnbTokens.cream,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MacrosCard(day: _dayPreview(bundle.preview), dayTag: _calorieTag),
         ],
       ],
     );
   }
 
+  /// Spec tabs: cream-6% pill track (radius 100, 3px padding) with three
+  /// equal pills — selected teal with plum text, unselected transparent
+  /// cream-70%, Apercu 12/500.
   Widget _buildTabs() {
-    return Row(
-      children: [
-        for (final tab in PreviewDayType.values) ...[
-          if (tab != PreviewDayType.values.first) const SizedBox(width: 8),
-          Expanded(
-            child: _DayTab(
-              tabKey: ValueKey('daily_preview.tab_${_tabName(tab)}'),
-              label: _tabLabel(tab),
-              isSelected: tab == _tab,
-              onTap: () => _selectTab(tab),
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.06),
+        borderRadius: BorderRadius.circular(OnbTokens.rPill),
+      ),
+      child: Row(
+        children: [
+          for (final tab in PreviewDayType.values)
+            Expanded(
+              child: _DayTab(
+                tabKey: ValueKey('daily_preview.tab_${_tabName(tab)}'),
+                label: _tabLabel(tab),
+                isSelected: tab == _tab,
+                onTap: () => _selectTab(tab),
+              ),
             ),
-          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -227,23 +304,20 @@ class _DayTab extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.cream : Colors.transparent,
-          border: Border.all(color: AppColors.cream, width: 2),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? OnbTokens.teal : Colors.transparent,
+          borderRadius: BorderRadius.circular(OnbTokens.rPill),
         ),
         child: Center(
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Apercu',
+              fontFamily: OnbTokens.fontBody,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: isSelected
-                  ? AppColors.blackberry
-                  : AppColors.cream.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+              color: isSelected ? OnbTokens.bg : OnbTokens.creamA(0.7),
             ),
           ),
         ),
@@ -252,80 +326,143 @@ class _DayTab extends StatelessWidget {
   }
 }
 
-/// "Your Macros" card for the active day tab: Carbs / Protein / Fat rows
-/// with g/kg + grams, and a Calories row in kcal.
+/// "Your Macros" card: cream-4% fill, 1px cream-12% border, radius 15,
+/// 6px/16px padding. Rows are 13px-vertical-padding flex rows (gap 10):
+/// 9px color dot, Apercu 13.5/500 label, 11.5 cream-45% g/kg (or day tag),
+/// and an Apercu Mono 17 value with an 11px cream-50% unit.
 class _MacrosCard extends StatelessWidget {
-  const _MacrosCard({required this.day});
+  const _MacrosCard({required this.day, required this.dayTag});
 
   final DayPreview day;
+  final String dayTag;
+
+  // Spec dot colors (oklch resolved to sRGB).
+  static const Color _carbsDot = Color(0xFFF7C243);
+  static const Color _proteinDot = Color(0xFFDC2597);
+  static const Color _fatDot = Color(0xFF437DDE);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       key: const ValueKey('daily_preview.macros_card'),
-      decoration: onboardingCardDecoration(),
-      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.04),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: OnbTokens.creamA(0.12)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('YOUR MACROS', style: kOnboardingSectionLabelStyle),
-          const SizedBox(height: 12),
-          _macroRow('Carbs', '${day.carbGPerKg} g/kg', '${day.carbsG} g'),
-          const _RowDivider(),
           _macroRow(
-            'Protein',
-            '${day.proteinGPerKg} g/kg',
-            '${day.proteinG} g',
+            dot: _carbsDot,
+            label: 'Carbs',
+            meta: '${day.carbGPerKg.toStringAsFixed(1)} g/kg',
+            value: '${day.carbsG}',
+            unit: 'g',
           ),
-          const _RowDivider(),
-          _macroRow('Fat', '${day.fatGPerKg} g/kg', '${day.fatG} g'),
-          const _RowDivider(),
-          _macroRow('Calories', '', '${day.calories} kcal'),
+          _macroRow(
+            dot: _proteinDot,
+            label: 'Protein',
+            meta: '${day.proteinGPerKg.toStringAsFixed(1)} g/kg',
+            value: '${day.proteinG}',
+            unit: 'g',
+          ),
+          _macroRow(
+            dot: _fatDot,
+            label: 'Fat',
+            meta: '${day.fatGPerKg.toStringAsFixed(1)} g/kg',
+            value: '${day.fatG}',
+            unit: 'g',
+          ),
+          _macroRow(
+            dot: OnbTokens.creamA(0.35),
+            label: 'Calories',
+            meta: dayTag,
+            value: '${day.calories}',
+            unit: 'kcal',
+            isLast: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _macroRow(String label, String perKg, String amount) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _macroRow({
+    required Color dot,
+    required String label,
+    required String meta,
+    required String value,
+    required String unit,
+    bool isLast = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      decoration: isLast
+          ? null
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: OnbTokens.creamA(0.08)),
+              ),
+            ),
       child: Row(
         children: [
+          Container(
+            width: 9,
+            height: 9,
+            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
               style: const TextStyle(
-                fontFamily: 'Apercu',
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: OnbTokens.cream,
               ),
             ),
           ),
-          if (perKg.isNotEmpty) ...[
-            Text(perKg, style: kOnboardingBodyMutedStyle),
-            const SizedBox(width: 12),
-          ],
-          Text(
-            amount,
-            style: const TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.orange,
+          const SizedBox(width: 10),
+          // Spec: the meta column is shrinkable (flex 0 1 auto) — real
+          // fonts never need it, but it keeps the row overflow-proof.
+          Flexible(
+            child: Text(
+              meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 11.5,
+                color: OnbTokens.creamA(0.45),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: const TextStyle(
+                    fontFamily: OnbTokens.fontMono,
+                    fontSize: 17,
+                    color: OnbTokens.cream,
+                  ),
+                ),
+                TextSpan(
+                  text: ' $unit',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontMono,
+                    fontSize: 11,
+                    color: OnbTokens.creamA(0.5),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(color: AppColors.cream.withValues(alpha: 0.1), height: 1);
   }
 }
