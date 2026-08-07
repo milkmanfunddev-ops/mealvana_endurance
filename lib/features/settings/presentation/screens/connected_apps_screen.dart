@@ -37,6 +37,7 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
     this.onContinue,
     this.onBack,
     this.stepIndex,
+    this.isRevisit = false,
   });
 
   /// Callback to advance to next page in onboarding PageView
@@ -49,6 +50,14 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
   /// Position in the onboarding flow, stamped onto `screen_viewed` so the
   /// drop-off funnel can order the steps. Null in settings mode.
   final int? stepIndex;
+
+  /// Spec revisit mode — the page pushed by the plan-reveal / daily-preview
+  /// "Connect now" nudges. Same providers list and behavior, but the intro
+  /// block (orange title, subtitle, chart card) collapses to the teal
+  /// "CONNECT TRAINING" kicker, and both Back and Continue return to the
+  /// pushing page (the callbacks pop the route) instead of moving the
+  /// PageView.
+  final bool isRevisit;
 
   @override
   ConsumerState<ConnectedAppsScreen> createState() =>
@@ -100,6 +109,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                 ? 'Connect Training Onboarding'
                 : 'Connected Apps Settings',
             if (widget.stepIndex != null) 'step_index': widget.stepIndex,
+            // Distinguishes the pushed revisit page (from the reveal/daily
+            // nudges) from the step-3 funnel view.
+            if (widget.isRevisit) 'is_revisit': true,
           },
         );
 
@@ -193,32 +205,51 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                   children: [
                     // Same header→title rhythm as the step screens.
                     const SizedBox(height: 48),
-                    const Text(
-                      key: ValueKey('connect_training.title'),
-                      'Your training changes daily. Your fueling should too.',
-                      style: TextStyle(
-                        fontFamily: OnbTokens.fontDisplay,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: OnbTokens.orange,
-                        height: 1.05,
+                    if (widget.isRevisit)
+                      // Spec revisit intro: just the teal kicker
+                      // (Apercu 500 11, ls .14em, uppercase, 18px below).
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 18),
+                        child: Text(
+                          key: ValueKey('connect_training.revisit_kicker'),
+                          'CONNECT TRAINING',
+                          style: TextStyle(
+                            fontFamily: OnbTokens.fontBody,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1.54,
+                            color: OnbTokens.teal,
+                          ),
+                        ),
+                      )
+                    else ...[
+                      const Text(
+                        key: ValueKey('connect_training.title'),
+                        'Your training changes daily. Your fueling should too.',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: OnbTokens.orange,
+                          height: 1.05,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      key: const ValueKey('connect_training.description'),
-                      'Connect your training calendar so we can import your '
-                      'workouts and periodize your nutrition.',
-                      style: TextStyle(
-                        fontFamily: OnbTokens.fontBody,
-                        fontSize: 14,
-                        height: 1.45,
-                        color: OnbTokens.creamA(0.62),
+                      const SizedBox(height: 8),
+                      Text(
+                        key: const ValueKey('connect_training.description'),
+                        'Connect your training calendar so we can import your '
+                        'workouts and periodize your nutrition.',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontBody,
+                          fontSize: 14,
+                          height: 1.45,
+                          color: OnbTokens.creamA(0.62),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    // Carries its own 22px bottom margin per spec.
-                    const OnboardingWeekChartCard(),
+                      const SizedBox(height: 18),
+                      // Carries its own 22px bottom margin per spec.
+                      const OnboardingWeekChartCard(),
+                    ],
                     state.when(
                       data: (data) =>
                           _buildOnboardingProvidersList(context, ref, data),

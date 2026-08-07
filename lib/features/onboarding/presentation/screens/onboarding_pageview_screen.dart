@@ -32,7 +32,8 @@ import '../../../settings/presentation/screens/connected_apps_screen.dart';
 ///
 /// The final step's "Save My Plan" routes to /auth/post-onboarding via
 /// _nextPage's last-page branch. The plan-reveal/daily-preview connect
-/// nudges pop back to the connect step (page 3) via [_goToConnectStep].
+/// nudges push the connect screen as a separate revisit page via
+/// [_openConnectRevisit] — they never rewind the PageView.
 class OnboardingPageViewScreen extends ConsumerStatefulWidget {
   const OnboardingPageViewScreen({super.key});
 
@@ -138,7 +139,7 @@ class _OnboardingPageViewScreenState
           onContinue: _nextPage,
           onBack: _previousPage,
           stepIndex: 7,
-          onConnectTap: _goToConnectStep,
+          onConnectTap: _openConnectRevisit,
         ),
       ),
 
@@ -149,23 +150,33 @@ class _OnboardingPageViewScreenState
           onContinue: _nextPage,
           onBack: _previousPage,
           stepIndex: 8,
-          onConnectTap: _goToConnectStep,
+          onConnectTap: _openConnectRevisit,
         ),
       ),
     ];
   }
 
-  /// Pop back to the connect step (page 3) — used by the "Connect now"
-  /// nudge on the plan-reveal and daily-preview screens.
-  void _goToConnectStep() {
+  /// Push the connect screen as a separate revisit page — used by the
+  /// "Connect now" nudge on the plan-reveal and daily-preview screens.
+  ///
+  /// Spec (`onGoConnect`): the nudge does NOT rewind the PageView; it opens
+  /// the connect screen in revisit mode (teal "CONNECT TRAINING" kicker
+  /// instead of the intro block) and both Back and Continue return to the
+  /// page that pushed it.
+  void _openConnectRevisit() {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (_pageController.hasClients) {
-      _pageController.animateToPage(
-        3,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        // No stepIndex: the revisit view must not inflate the step-3
+        // funnel (screen_viewed carries is_revisit instead); the header
+        // still renders the step-3 segments via its own fallback.
+        builder: (routeContext) => ConnectedAppsScreen(
+          isRevisit: true,
+          onContinue: () => Navigator.of(routeContext).pop(),
+          onBack: () => Navigator.of(routeContext).pop(),
+        ),
+      ),
+    );
   }
 
   /// Navigate to next page or complete onboarding

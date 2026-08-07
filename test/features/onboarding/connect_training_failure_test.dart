@@ -144,4 +144,59 @@ void main() {
 
     expect(continued, 1);
   });
+
+  testWidgets(
+    'revisit mode shows the kicker instead of the intro block and its '
+    'Continue fires the return callback',
+    (tester) async {
+      var returned = 0;
+      tester.view.physicalSize = standardPhoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            mockAppExternalDeps(),
+            mockSharedPreferences(),
+            connectTrainingControllerProvider.overrideWith(
+              _FailingConnectTrainingController.new,
+            ),
+          ],
+          child: wrapForTest(
+            ConnectedAppsScreen(
+              isRevisit: true,
+              onContinue: () => returned++,
+              onBack: () => returned++,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Spec revisit intro: teal kicker only — no orange title, no chart.
+      expect(
+        find.byKey(const ValueKey('connect_training.revisit_kicker')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('connect_training.title')),
+        findsNothing,
+      );
+
+      // Providers list is still there.
+      expect(finalSurgeConnect(), findsOneWidget);
+
+      // Continue returns to the pushing page (callback pops the route).
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('connect_training.continue_button')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('connect_training.continue_button')),
+      );
+      await tester.pumpAndSettle();
+      expect(returned, 1);
+    },
+  );
 }
