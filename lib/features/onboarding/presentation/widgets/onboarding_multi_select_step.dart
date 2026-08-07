@@ -1,16 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/adaptive/adaptive.dart';
-import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
-import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/onboarding_analytics.dart';
-import 'onboarding_progress_bar.dart';
+import '../theme/onboarding_design_tokens.dart';
 
 /// One selectable row rendered by [OnboardingMultiSelectStep].
-///
-/// The row visuals themselves come from the existing shared
-/// [FigmaCheckboxCard] (also used by the allergies screen) — this class only
-/// carries the per-option value/label/test-key triple.
 class OnboardingMultiSelectOption<T> {
   const OnboardingMultiSelectOption({
     required this.value,
@@ -29,13 +21,20 @@ class OnboardingMultiSelectOption<T> {
 }
 
 /// Shared layout for the onboarding multi-select steps (sports / goals /
-/// pitfalls): progress bar, serif title, subcopy, a scrollable column of
-/// checkbox card rows, and the standard footer.
+/// pitfalls) — pixel port of the HTML spec's step screens.
 ///
-/// Pure-UI: selection state lives in the owning screen, which mirrors it into
-/// the OnboardingController draft. The options column sits inside an
-/// [AdaptiveScrollableBody], so long lists (the 8-row pitfalls step) scroll
-/// while short lists stay centered.
+/// Spec values (computed styles read from the rendered prototype):
+/// header row padding 16/22/6 with a 32px cream-10% back circle and 4px-high
+/// progress segments (radius 2, gap 14, active #f78b14, inactive cream 14%);
+/// left-aligned Sansita 700 26px orange title; Apercu 14px cream-62% subcopy
+/// 8px below; option rows 26px later — radius 15, cream-5% fill, 1px
+/// cream-12% border, padding 15/16, 11px row gap; 26px checkbox (radius 7,
+/// 1.5px cream-35% border; checked: teal fill + dark 14px check, no border),
+/// 14px to the Apercu 500 16.5px cream label; footer pill identical to the
+/// splash CTA (orange, padding 16, Sansita 700 17, plum text).
+///
+/// Per spec the Continue pill is NEVER dimmed — steps that gate advancement
+/// keep the gate behavioral (tap guard), not visual.
 class OnboardingMultiSelectStep<T> extends StatelessWidget {
   const OnboardingMultiSelectStep({
     super.key,
@@ -63,7 +62,6 @@ class OnboardingMultiSelectStep<T> extends StatelessWidget {
   final bool canContinue;
 
   /// Position in the onboarding flow (0-based); drives the progress bar.
-  /// Null outside the PageView (standalone/test usage) — renders as step 1.
   final int? stepIndex;
 
   final Key? titleKey;
@@ -72,88 +70,257 @@ class OnboardingMultiSelectStep<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AdaptivePageScaffold(
-      backgroundColor: AppColors.blackberry,
-      contentWidth: AdaptiveContentWidth.narrow,
-      body: Column(
-        children: [
-          // Progress bar at the very top (no SafeArea padding), one segment
-          // per funnel step so the bar stays aligned with the analytics names.
-          Container(
-            color: AppColors.blackberry,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: OnboardingProgressBar(
-              currentSegment: (stepIndex ?? 0) + 1,
-              totalSegments: kOnboardingStepNames.length,
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return Scaffold(
+      backgroundColor: OnbTokens.bg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            OnboardingStepHeader(
+              stepIndex: stepIndex ?? 0,
+              onBack: onBack,
+              backButtonKey: backButtonKey,
             ),
-          ),
-
-          // Content
-          Expanded(
-            child: AdaptiveScrollableBody(
-              safeAreaTop: false,
-              safeAreaBottom: false,
-              padding: const EdgeInsets.all(20),
-              child: Align(
-                alignment: Alignment.center,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Spec: ~54px from segment bottom to title top (6 of it
+                    // is the header's own bottom padding), measured off the
+                    // rendered prototype.
+                    const SizedBox(height: 48),
                     Text(
                       title,
                       key: titleKey,
-                      textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontFamily: 'Sansita',
+                        fontFamily: OnbTokens.fontDisplay,
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
-                        height: 1.0,
+                        color: OnbTokens.orange,
+                        height: 1.05,
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
+                    const SizedBox(height: 8),
                     Text(
                       subtitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Apercu',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textDark,
-                        letterSpacing: 0.192,
-                        height: 1.2,
+                      style: TextStyle(
+                        fontFamily: OnbTokens.fontBody,
+                        fontSize: 14,
+                        height: 1.45,
+                        color: OnbTokens.creamA(0.62),
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
+                    const SizedBox(height: 26),
                     for (final option in options) ...[
-                      FigmaCheckboxCard(
+                      _SpecOptionRow(
                         key: option.itemKey,
                         label: option.label,
                         isSelected: selected.contains(option.value),
                         onTap: () => onToggle(option.value),
                       ),
-                      if (option != options.last) const SizedBox(height: 12),
+                      if (option != options.last) const SizedBox(height: 11),
                     ],
                   ],
                 ),
               ),
             ),
-          ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                8,
+                24,
+                bottomInset > 34 ? bottomInset : 34,
+              ),
+              child: OnboardingSpecCta(
+                label: 'Continue',
+                buttonKey: continueButtonKey,
+                onTap: onContinue,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          // Footer navigation
-          FigmaOnboardingFooter(
-            onContinue: onContinue,
-            onBack: onBack,
-            canContinue: canContinue,
-            continueButtonKey: continueButtonKey,
-            backButtonKey: backButtonKey,
-          ),
+/// Spec header row: back circle + equal-width progress segments.
+/// padding 16/22/6; 32px circle at cream 10%; segments 4px high, radius 2,
+/// gap 14, active #f78b14, inactive cream 14%.
+class OnboardingStepHeader extends StatelessWidget {
+  const OnboardingStepHeader({
+    super.key,
+    required this.stepIndex,
+    this.onBack,
+    this.backButtonKey,
+  });
+
+  final int stepIndex;
+  final VoidCallback? onBack;
+  final Key? backButtonKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalSegments = kOnboardingStepNames.length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 16, 22, 6),
+      child: Row(
+        children: [
+          if (onBack != null) ...[
+            InkWell(
+              key: backButtonKey,
+              customBorder: const CircleBorder(),
+              onTap: onBack,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: OnbTokens.creamA(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_left,
+                  size: 18,
+                  color: OnbTokens.creamA(0.8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+          ],
+          for (var i = 0; i < totalSegments; i++) ...[
+            Expanded(
+              child: Container(
+                height: 4,
+                decoration: BoxDecoration(
+                  color: i <= stepIndex
+                      ? OnbTokens.orange
+                      : OnbTokens.creamA(0.14),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            if (i != totalSegments - 1) const SizedBox(width: 14),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Spec primary CTA pill, shared by the step screens (identical values to
+/// the splash "Build My Plan" button, sans glow on step screens).
+class OnboardingSpecCta extends StatelessWidget {
+  const OnboardingSpecCta({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.buttonKey,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final Key? buttonKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: OnbTokens.orange,
+        borderRadius: BorderRadius.circular(OnbTokens.rPill),
+        child: InkWell(
+          key: buttonKey,
+          borderRadius: BorderRadius.circular(OnbTokens.rPill),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: OnbTokens.fontDisplay,
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+                color: OnbTokens.bg,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Spec option row: radius 15, cream-5% fill, 1px cream-12% border,
+/// padding 15/16; 26px checkbox (radius 7) + 14px gap + label.
+class _SpecOptionRow extends StatelessWidget {
+  const _SpecOptionRow({
+    super.key,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: OnbTokens.creamA(0.05),
+      borderRadius: BorderRadius.circular(OnbTokens.rCard),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(OnbTokens.rCard),
+            border: Border.all(color: OnbTokens.creamA(0.12)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isSelected ? OnbTokens.teal : Colors.transparent,
+                  borderRadius: BorderRadius.circular(7),
+                  border: isSelected
+                      ? null
+                      : Border.all(
+                          color: OnbTokens.creamA(0.35),
+                          width: 1.5,
+                        ),
+                ),
+                child: isSelected
+                    ? const Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Color(0xFF10221E),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w500,
+                    color: OnbTokens.cream,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

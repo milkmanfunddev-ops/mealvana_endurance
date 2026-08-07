@@ -101,6 +101,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(continued, 0);
 
+    // The gated tap surfaces an info snackbar (the spec keeps the pill
+    // visually enabled); let it expire so it doesn't cover the button.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
     // One selection: Continue advances.
     await tester.tap(
       find.byKey(const ValueKey('sport_selection.cycling_chip')),

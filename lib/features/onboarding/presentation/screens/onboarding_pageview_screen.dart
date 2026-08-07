@@ -66,11 +66,12 @@ class _OnboardingPageViewScreenState
   /// Change one, change both.
   List<Widget> _buildPages() {
     return [
-      // 0. Sports Selection (first page — can't go back)
+      // 0. Sports Selection. The spec's first step still shows the back
+      // circle — it returns to the splash screen.
       PageKeepAliveWrapper(
         child: SportsSelectionScreen(
           onContinue: _nextPage,
-          onBack: null,
+          onBack: () => context.go('/welcome'),
           stepIndex: 0,
         ),
       ),

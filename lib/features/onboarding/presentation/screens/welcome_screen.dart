@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/privacy/analytics_consent.dart';
-import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../providers/onboarding_analytics.dart';
+import '../theme/onboarding_design_tokens.dart';
 
-/// Welcome Screen (splash) - 2026-08 onboarding redesign
-/// First screen in onboarding flow: logo, value-first headline, and the
-/// "Build My Plan" / "I already have an account" entry points. Controller
-/// wiring (fresh anonymous session, consent routing, funnel start mark) is
-/// unchanged from the pre-redesign screen.
+/// Welcome Screen (splash) — pixel port of the onboarding HTML spec
+/// (../prototypes/onboarding/index.html). Every value below is the
+/// prototype's own CSS value; do not harmonize with the app theme.
+/// Controller wiring (fresh anonymous session, consent routing, funnel
+/// start mark) is unchanged from the pre-redesign screen.
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key, this.onContinue});
 
@@ -21,126 +20,183 @@ class WelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AdaptivePageScaffold(
-      backgroundColor: AppColors.blackberry,
-      contentWidth: AdaptiveContentWidth.narrow,
-      body: AdaptiveScrollableBody(
-        safeAreaTop: true,
-        safeAreaBottom: true,
-        padding: AppSpacing.screenPadding,
-        footer: _buildFooter(context, ref),
-        child: _buildContent(context),
+    return Scaffold(
+      backgroundColor: OnbTokens.bg,
+      body: Container(
+        // Spec: background:radial-gradient(115% 55% at 50% 8%,#4a2143 0%,#381633 55%)
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.84), // 50% x, 8% y
+            radius: 1.0,
+            transform: _SpecEllipse(sx: 1.15, sy: 0.55),
+            colors: [OnbTokens.cardRaised, OnbTokens.bg],
+            stops: [0.0, 0.55],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          // Spec container: padding 52px 30px 34px. 52 sits under the
+          // prototype's fake status bar (real SafeArea supplies it); the
+          // 34px bottom is measured to the frame edge, so the device's
+          // home-indicator inset counts toward it instead of stacking.
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              30,
+              0,
+              30,
+              (34 - MediaQuery.paddingOf(context).bottom).clamp(0, 34) +
+                  MediaQuery.paddingOf(context).bottom,
+            ),
+            child: Column(
+              children: [
+                Expanded(child: Center(child: _buildCenterBlock())),
+                _buildFooter(context, ref),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildCenterBlock() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: AdaptiveSpacing.byHeightClass(
-            context,
-            short: AppSpacing.lg,
-            regular: AppSpacing.xxxl,
-            tall: AppSpacing.huge,
+        // Logo mark, spec stroke #f8f6eb. Derived transparent asset — both
+        // source logos have opaque backgrounds baked in (plum / white), so
+        // tinting them paints a square; onboarding_logo_cream.png is the
+        // same mark alpha-extracted and recolored to the spec cream.
+        Image.asset(
+          'assets/images/onboarding_logo_cream.png',
+          height: 84,
+          semanticLabel: 'Mealvana Endurance logo',
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'Mealvana',
+          key: ValueKey('welcome.wordmark'),
+          style: TextStyle(
+            fontFamily: OnbTokens.fontDisplay,
+            fontWeight: FontWeight.w700,
+            fontSize: 30,
+            color: OnbTokens.cream,
+            height: 1.0,
           ),
         ),
-        // Hero image
-        _buildHeroImage(context),
-        const SizedBox(height: AppSpacing.lg),
-        // Logo and title
-        _buildHeader(context),
-        SizedBox(height: AdaptiveSpacing.sectionGap(context)),
-        // Welcome message
-        _buildWelcomeMessage(context),
+        const SizedBox(height: 6),
+        Text(
+          'ENDURANCE',
+          style: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+            // .42em of 13px, applied left too via the spec's padding-left
+            letterSpacing: 13 * 0.42,
+            color: OnbTokens.creamA(0.55),
+          ),
+        ),
+        const SizedBox(height: 44),
+        const Text(
+          'Get more out of\nevery session.',
+          key: ValueKey('welcome.title'),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: OnbTokens.fontDisplay,
+            fontWeight: FontWeight.w700,
+            fontSize: 34,
+            height: 1.02,
+            letterSpacing: 34 * -0.01,
+            color: OnbTokens.cream,
+          ),
+        ),
+        const SizedBox(height: 18),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 290),
+          child: Text.rich(
+            key: const ValueKey('welcome.description'),
+            TextSpan(
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 15.5,
+                height: 1.5,
+                color: OnbTokens.creamA(0.7),
+              ),
+              children: const [
+                TextSpan(text: 'Fueling plans built for how '),
+                TextSpan(
+                  text: 'you',
+                  style: TextStyle(color: OnbTokens.teal),
+                ),
+                TextSpan(
+                  text: ' train — so you stop guessing your carbs mid-race.',
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildFooter(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: AppSpacing.md,
-        right: AppSpacing.md,
-        bottom: AppSpacing.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Full-width orange pill, per the redesign prototype.
-          KylePrimaryButton(
-            key: const ValueKey('welcome.get_started_button'),
-            text: 'Build My Plan',
-            onPressed: () => _getStarted(context, ref),
-            isFullWidth: true,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // Plain text link (was a secondary button pre-redesign); same
-          // login-mode auth route as before.
-          TextButton(
-            key: const ValueKey('welcome.log_in_button'),
-            onPressed: () => _goToLogin(context, ref),
-            child: Text(
-              'I already have an account',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.cream.withValues(alpha: 0.9),
-                decoration: TextDecoration.underline,
-                decorationColor: AppColors.cream.withValues(alpha: 0.5),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Spec CTA: width 100%; #f78b14; #381633 text; radius 100;
+        // padding 16; Sansita 700 17; glow 0 0 40 rgba(247,139,20,.28).
+        SizedBox(
+          width: double.infinity,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(OnbTokens.rPill),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x47F78B14), // rgba(247,139,20,.28)
+                  blurRadius: 40,
+                ),
+              ],
+            ),
+            child: Material(
+              color: OnbTokens.orange,
+              borderRadius: BorderRadius.circular(OnbTokens.rPill),
+              child: InkWell(
+                key: const ValueKey('welcome.get_started_button'),
+                borderRadius: BorderRadius.circular(OnbTokens.rPill),
+                onTap: () => _getStarted(context, ref),
+                child: const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Build My Plan',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: OnbTokens.fontDisplay,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 17,
+                      color: OnbTokens.bg,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Text(
-      key: const ValueKey('welcome.title'),
-      'Get more out of every session.',
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        fontFamily: 'Sansita',
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: AppColors.orange,
-        height: 1.1,
-      ),
-    );
-  }
-
-  Widget _buildHeroImage(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: AdaptiveSpacing.heroHeight(
-        context,
-        short: 130,
-        regular: 200,
-        tall: 220,
-      ),
-      decoration: BoxDecoration(borderRadius: AppRadius.lgRadius),
-      child: ClipRRect(
-        borderRadius: AppRadius.lgRadius,
-        child: Image.asset(
-          'assets/images/welcome_inverted.png',
-          fit: BoxFit.contain,
-          semanticLabel: 'Mealvana Endurance logo',
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeMessage(BuildContext context) {
-    return Text(
-      key: const ValueKey('welcome.description'),
-      'Fueling plans built for how you train — so you stop guessing your '
-      'carbs mid-race.',
-      style: AppTextStyles.bodyMedium.copyWith(
-        color: AppColors.cream.withValues(alpha: 0.9),
-        height: 1.5,
-      ),
-      textAlign: TextAlign.center,
+        const SizedBox(height: 6),
+        TextButton(
+          key: const ValueKey('welcome.log_in_button'),
+          style: TextButton.styleFrom(padding: const EdgeInsets.all(12)),
+          onPressed: () => _goToLogin(context, ref),
+          child: Text(
+            'I already have an account',
+            style: TextStyle(
+              fontFamily: OnbTokens.fontBody,
+              fontSize: 14,
+              color: OnbTokens.creamA(0.6),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -205,5 +261,25 @@ class WelcomeScreen extends ConsumerWidget {
 
     // Navigate to post-onboarding auth screen in login mode
     context.push('/auth/post-onboarding?mode=login');
+  }
+}
+
+/// Scales the circular Flutter [RadialGradient] into the spec's CSS ellipse
+/// (`radial-gradient(115% 55% at ...)`): x radius 115% of width, y radius
+/// 55% of height, anchored at the gradient center.
+class _SpecEllipse extends GradientTransform {
+  const _SpecEllipse({required this.sx, required this.sy});
+
+  final double sx;
+  final double sy;
+
+  @override
+  Matrix4 transform(Rect bounds, {TextDirection? textDirection}) {
+    final cx = bounds.center.dx;
+    final cy = bounds.top + bounds.height * 0.08;
+    return Matrix4.identity()
+      ..translateByDouble(cx, cy, 0, 1)
+      ..scaleByDouble(sx, sy * (bounds.height / bounds.width), 1, 1)
+      ..translateByDouble(-cx, -cy, 0, 1);
   }
 }
