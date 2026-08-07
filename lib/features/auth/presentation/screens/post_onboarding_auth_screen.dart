@@ -797,9 +797,16 @@ class _PostOnboardingAuthScreenState
                       // nothing to pop".
                       if (context.canPop()) {
                         context.pop();
-                      } else {
-                        context.go('/main');
+                        return;
                       }
+                      // Nothing to pop. In LOGIN mode the person is not
+                      // signed in and just asked to go back — dropping them
+                      // into /main is the opposite of that, and lands an
+                      // unauthenticated user in the app. Send them to the
+                      // welcome screen they came from. Signup mode keeps
+                      // /main: it is only reachable there once onboarding
+                      // has been saved.
+                      context.go(isLogin ? '/welcome' : '/main');
                     },
               child: Container(
                 width: 32,

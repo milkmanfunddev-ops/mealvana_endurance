@@ -490,6 +490,14 @@ class OnboardingController extends _$OnboardingController {
   bool isIntegrationAutofilled(String field) =>
       _integrationAutofilledFields.contains(field);
 
+  /// Bumped every time [clearIntegrationAutofill] runs. Screens watch this
+  /// rather than inferring a disconnect from a field going null: draft
+  /// writes are interleaved (the birth-year wheel notifies mid-autofill,
+  /// before the names have been written), so "null" cannot distinguish
+  /// "cleared" from "not written yet".
+  int get autofillClearedTick => _autofillClearedTick;
+  int _autofillClearedTick = 0;
+
   /// Clears the answers a connected platform supplied, on disconnect.
   ///
   /// Only touches fields still recorded as autofilled — anything the
@@ -498,6 +506,7 @@ class OnboardingController extends _$OnboardingController {
     if (_integrationAutofilledFields.isEmpty) return;
     final fields = Set<String>.from(_integrationAutofilledFields);
     _integrationAutofilledFields.clear();
+    _autofillClearedTick++;
 
     _updateDraft(
       _draft.copyWith(

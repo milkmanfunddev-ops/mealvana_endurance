@@ -63,6 +63,9 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
   /// Integration weight autofill is a one-shot (see the listener below).
   bool _weightAutofillApplied = false;
 
+  /// Last observed value of the controller's disconnect counter.
+  int _lastClearedTick = 0;
+
   /// Display name of the platform the autofilled weight came from, or null
   /// when the athlete set it themselves. Garmin gets its required
   /// attribution message; anyone else gets a plain note — claiming
@@ -122,6 +125,28 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
       });
       _pushToDraft();
     }, fireImmediately: true);
+
+    // A disconnect clears the weight this platform supplied. This screen
+    // stays alive in the PageView, so without this the wheel would keep
+    // showing a value the draft no longer holds.
+    _lastClearedTick = _controller.autofillClearedTick;
+    ref.listenManual(onboardingControllerProvider, (previous, next) {
+      if (!mounted) return;
+      final tick = _controller.autofillClearedTick;
+      if (tick == _lastClearedTick) return;
+      _lastClearedTick = tick;
+      if (_userAdjustedWeight) return;
+      setState(() {
+        _weightPounds = _defaultWeightPounds;
+        _weightSource = null;
+        _weightAutofillApplied = false;
+        _wheelEpoch++;
+      });
+      // The wheels always carry a value, so re-seed the default.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _pushToDraft();
+      });
+    });
 
     ref
         .read(appExternalDepsProvider)

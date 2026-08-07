@@ -372,7 +372,9 @@ void main() {
       expect(controller.draft.lastName, isNull);
       expect(controller.draft.email, isNull);
       expect(controller.draft.gender, isNull);
-      expect(controller.draft.birthYear, isNull);
+      // Birth year returns to the wheel's default rather than to nothing —
+      // the wheel always shows a year, so the draft always carries one.
+      expect(controller.draft.birthYear, 1994);
     });
 
     testWidgets('disconnect leaves a fully hand-entered form alone', (

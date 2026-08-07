@@ -72,6 +72,9 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   String? _autofillSource;
   List<String> _autofilledFields = const [];
 
+  /// Last observed value of the controller's disconnect counter.
+  int _lastClearedTick = 0;
+
   /// True only while integration autofill is driving the widgets, so the
   /// wheel's change callback can tell that apart from a human scroll.
   bool _applyingAutofill = false;
@@ -128,6 +131,23 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       _autofillApplied = true;
       _applyIntegrationProfile(profile);
     }, fireImmediately: true);
+
+    // Disconnecting a platform clears the answers it supplied from the
+    // draft. This screen stays alive in the PageView with its text
+    // controllers seeded once in initState, so without this the fields
+    // would keep displaying values that no longer exist — reading, quite
+    // reasonably, as "disconnect didn't wipe anything".
+    //
+    // Only ever CLEARS local widget state; never writes back to the draft,
+    // which would re-close the feedback loop this screen already had once.
+    _lastClearedTick = _controller.autofillClearedTick;
+    ref.listenManual(onboardingControllerProvider, (previous, next) {
+      if (!mounted) return;
+      final tick = _controller.autofillClearedTick;
+      if (tick == _lastClearedTick) return;
+      _lastClearedTick = tick;
+      _syncClearedFieldsFromDraft();
+    });
 
     ref
         .read(appExternalDepsProvider)
@@ -216,6 +236,63 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       gender: _gender,
       birthYear: _birthYear,
     );
+  }
+
+  /// Mirrors draft fields that have been cleared (by a disconnect) back
+  /// into the widgets. Deliberately one-directional: clears only, and only
+  /// when the draft says the value is gone.
+  void _syncClearedFieldsFromDraft() {
+    final draft = _controller.draft;
+    var changed = false;
+
+    if (draft.firstName == null && _firstNameController.text.isNotEmpty) {
+      _firstNameController.clear();
+      _userEditedFirstName = false;
+      changed = true;
+    }
+    if (draft.lastName == null && _lastNameController.text.isNotEmpty) {
+      _lastNameController.clear();
+      _userEditedLastName = false;
+      changed = true;
+    }
+    if (draft.email == null && _emailController.text.isNotEmpty) {
+      _emailController.clear();
+      _userEditedEmail = false;
+      changed = true;
+    }
+    if (draft.gender == null && _gender != null) {
+      _gender = null;
+      _userPickedGender = false;
+      changed = true;
+    }
+
+    // The wheel always carries a year (spec contract), so a cleared birth
+    // year returns to the default rather than to nothing.
+    if (draft.birthYear == null && _birthYear != _defaultYear) {
+      _birthYear = _defaultYear;
+      _userPickedYear = false;
+      changed = true;
+      if (_yearController.hasClients) {
+        _applyingAutofill = true;
+        _yearController.jumpToItem(_defaultYear - _minYear);
+        _applyingAutofill = false;
+      }
+      // Re-seed the draft with the default. One bounded write: the next
+      // notification sees a non-null year and stops here.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.updatePersonalInfo(birthYear: _defaultYear);
+      });
+    }
+
+    if (!changed) return;
+
+    setState(() {
+      // The notice described a fill that has just been undone.
+      _autofillSource = null;
+      _autofilledFields = const [];
+      // A later reconnect should be able to fill these again.
+      _autofillApplied = false;
+    });
   }
 
   void _selectGender(Gender gender) {
