@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' show Variable;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
@@ -104,28 +104,28 @@ class UserRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      // Delegate to the DAO's conversion — the single source of truth for
-      // every UserProfile field. A hand-duplicated copy used to live here
-      // and silently dropped sweatRate/unitSystem/nutritionTargetOverrides/
-      // etc. on every background upload (MEALVANA-ENDURANCE onboarding
-      // redesign: sweat rate and edited carb targets not surviving
-      // "Continue without an account").
-      final userProfile = await database.userDao.getUserProfileById(userId);
-      if (userProfile == null) {
-        return UploadResult.failed(
-          'Dirty user row disappeared before upload',
-        );
-      }
+      // Serialize the dirty SNAPSHOT via the DAO's canonical mapping — the
+      // single source of truth for every UserProfile field (a hand-duplicated
+      // copy used to live here and silently dropped sweatRate/unitSystem/
+      // nutritionTargetOverrides on every background upload).
+      final userProfile = database.userDao.toDomainProfile(dirtyUser);
 
       // Upload to Supabase
       await supabase
           .from('users')
           .upsert(userProfile.toJson(), onConflict: 'id');
 
-      // Clear dirty flag in local database
-      await database
-          .update(database.userProfilesTable)
-          .replace(dirtyUser.copyWith(needsUpload: false));
+      // Clear the dirty flag with a TARGETED column write, not a full-row
+      // .replace of the earlier snapshot: a concurrent local edit landing
+      // between the read and this write would otherwise be reverted wholesale
+      // AND un-dirtied — local and server permanently diverged. The
+      // updatedAt guard narrows it further: an edit that landed mid-upload
+      // bumps updatedAt, the guard misses, the row stays dirty, and the NEW
+      // value uploads on the next pass instead of being silently dropped.
+      await (database.update(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId))
+            ..where((t) => t.updatedAt.equals(dirtyUser.updatedAt)))
+          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
 
       sentry.addBreadcrumb(
         message: 'Uploaded dirty user profile to Supabase',
@@ -851,8 +851,7 @@ class UserRepository with SyncableRepository {
   UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
     // Handle both single object and array responses.
     final userData =
-        (response is List ? response.first : response)
-            as Map<String, dynamic>;
+        (response is List ? response.first : response) as Map<String, dynamic>;
 
     return UserProfile.fromSupabaseRow(userData, fallbackId: deviceId);
   }
@@ -889,6 +888,24 @@ class UserRepository with SyncableRepository {
         )
         .getSingle();
     return row.read<bool>('has_data');
+  }
+
+  /// Whether [userId]'s server profile exists and has completed onboarding.
+  ///
+  /// Used by `migrateAnonymousUserData` alongside [checkUserHasData]: that
+  /// check probes only activities/events/food_preferences, so an account that
+  /// was set up but hasn't logged workouts yet read as "no data" — and the
+  /// destructive Scenario B migration then deleted its server rows (including
+  /// un-probed user_foods and carb plans) and overwrote its profile with the
+  /// anon draft. A completed profile IS data: it must route to Scenario A
+  /// (account wins).
+  Future<bool> remoteAccountIsOnboarded(String userId) async {
+    final row = await supabase
+        .from('users')
+        .select('onboarding_completed')
+        .eq('id', userId)
+        .maybeSingle();
+    return row != null && (row['onboarding_completed'] as bool? ?? false);
   }
 
   /// Check if a user has any data worth migrating (activities, events, etc.)

@@ -370,26 +370,26 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       );
 
       // ============ RACE CHECKLISTS ============
-      // No needs_upload column — local-only feature; re-key so the items
-      // follow the athlete instead of dying with the anon uid.
-      await db.customStatement(
-        'DELETE FROM race_checklist_items WHERE user_id = ?',
-        [toUserId],
-      );
+      // No needs_upload column — LOCAL-ONLY feature with no Supabase
+      // hydration, so a deleted destination row is gone forever. Unlike the
+      // synced tables above, the destination's rows are therefore KEPT and
+      // the source rows simply re-keyed (no unique constraint to collide).
       await db.customStatement(
         'UPDATE race_checklist_items SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 
       // ============ DAILY MACRO TARGETS ============
-      // Recomputable cache (calculate-daily-macros repopulates), but re-key
-      // anyway so the app has targets to show before the next recompute.
-      // UNIQUE(user_id, target_date) is satisfied by the delete-first shape.
+      // Recomputable cache (calculate-daily-macros repopulates). Keep the
+      // destination's rows (at least as valid as the anon's) and move only
+      // the source days the destination doesn't already have —
+      // UNIQUE(user_id, target_date) forbids a blind re-key.
       // Deliberately NOT re-dirtied: this repository writes needs_upload=0 by
       // design and the server recomputes rather than accepting uploads.
       await db.customStatement(
-        'DELETE FROM daily_macro_targets WHERE user_id = ?',
-        [toUserId],
+        'DELETE FROM daily_macro_targets WHERE user_id = ?1 AND target_date '
+        'IN (SELECT target_date FROM daily_macro_targets WHERE user_id = ?2)',
+        [fromUserId, toUserId],
       );
       await db.customStatement(
         'UPDATE daily_macro_targets SET user_id = ? WHERE user_id = ?',
@@ -397,11 +397,15 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       );
 
       // ============ TRAININGPEAKS WRITEBACK LOG ============
-      // UNIQUE(user_id, tp_workout_id) — delete-first, then re-key so the
-      // dedup ledger survives and completed workouts aren't re-written to TP.
+      // LOCAL-ONLY dedup ledger (no Supabase copy): wiping the destination's
+      // rows would re-push already-completed workouts to TrainingPeaks as
+      // duplicates. Keep the destination ledger; merge in only the source
+      // entries it lacks — UNIQUE(user_id, tp_workout_id) forbids a blind
+      // re-key.
       await db.customStatement(
-        'DELETE FROM tp_writeback_log WHERE user_id = ?',
-        [toUserId],
+        'DELETE FROM tp_writeback_log WHERE user_id = ?1 AND tp_workout_id '
+        'IN (SELECT tp_workout_id FROM tp_writeback_log WHERE user_id = ?2)',
+        [fromUserId, toUserId],
       );
       await db.customStatement(
         'UPDATE tp_writeback_log SET user_id = ? WHERE user_id = ?',

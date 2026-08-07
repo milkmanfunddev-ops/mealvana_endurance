@@ -90,8 +90,14 @@ class UserSyncHandler {
       // profile (this runs before dependent-record sync) was missing their
       // name, units and plan-reveal edits.
       // CRITICAL: Use userId (auth UUID) as the primary id, not localUser.id.
+      // device_id is pinned to userId too: users.device_id carries a UNIQUE
+      // index, and a migrated profile can still hold the anon uid as its
+      // deviceId while the server keeps that same device_id under the anon
+      // row — upserting it unpinned raises 23505, and this method's rethrow
+      // then blocks EVERY downstream entity sync until the collision clears.
       final userData = localUser.toJson()
         ..['id'] = userId
+        ..['device_id'] = userId
         ..['updated_at'] = DateTime.now().toIso8601String();
 
       // Upsert user profile to Supabase

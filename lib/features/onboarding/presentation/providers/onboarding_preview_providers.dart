@@ -45,19 +45,37 @@ String? _onboardingDataUserId(Ref ref) {
   return deps.sharedPreferences.getString(_onboardingTempUserIdKey);
 }
 
+/// The single draft field the imported-workout digest depends on, exposed as
+/// its own provider so the digest is insulated from unrelated draft churn.
+///
+/// The controller's `_updateDraft` force-notifies on EVERY mutator — and the
+/// plan-reveal sliders route each release through `applyPlanEdits` — so a
+/// digest that watched the controller directly re-ran its 456-day activities
+/// scan on every slider release. A plain provider recomputes on notify but
+/// only rebuilds dependents when the returned VALUE changes, which for this
+/// string is exactly the connect/disconnect transitions.
+@Riverpod(keepAlive: true)
+String? onboardingConnectedProviderName(Ref ref) {
+  ref.watch(onboardingControllerProvider);
+  return ref
+      .read(onboardingControllerProvider.notifier)
+      .draft
+      .connectedProvider;
+}
+
 /// Digest of the workouts imported during onboarding.
 ///
-/// Recomputes whenever the draft changes (cheap local Drift read; fast-path
-/// [TrainingInsights.none] when no platform was connected). Contract: never
+/// Recomputes when the connected provider changes (cheap local Drift read;
+/// fast-path [TrainingInsights.none] when no platform was connected) — NOT
+/// on every draft notify; see [onboardingConnectedProviderName]. The plan
+/// reveal additionally invalidates this on entry so imports that finished
+/// landing after the connect step still get digested. Contract: never
 /// throws — timeout or any failure Sentry-captures and falls back to the
 /// generic digest so the plan reveal always renders.
 @Riverpod(keepAlive: true)
 Future<TrainingInsights> onboardingTrainingInsights(Ref ref) async {
-  // Draft mutators call ref.notifyListeners(), so this re-runs after e.g.
-  // recordConnectedProvider flips the connect state.
-  ref.watch(onboardingControllerProvider);
-  final draft = ref.read(onboardingControllerProvider.notifier).draft;
-  if (draft.connectedProvider == null) return TrainingInsights.none;
+  final connectedProvider = ref.watch(onboardingConnectedProviderNameProvider);
+  if (connectedProvider == null) return TrainingInsights.none;
 
   final sentry = ref.read(appExternalDepsProvider).sentry;
   try {

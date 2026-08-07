@@ -56,9 +56,33 @@ class AuthMigrationService {
       // because the auth trigger might have created an empty profile.
       bool oauthUserHasData = false;
       try {
-        oauthUserHasData = await userRepository.checkUserHasData(toOAuthUserId);
+        // A completed profile counts as data even with no activities yet:
+        // checkUserHasData probes only 3 tables, and an activity-less but
+        // configured account routed to Scenario B used to have its server
+        // rows deleted and its profile overwritten by the anon draft.
+        oauthUserHasData =
+            await userRepository.checkUserHasData(toOAuthUserId) ||
+            await userRepository.remoteAccountIsOnboarded(toOAuthUserId);
       } catch (e) {
-        // FAIL SAFE: Assume data exists to prevent data loss on network error
+        // The probes failed, so we cannot know which side should win.
+        // If the anon side holds local rows that never reached Supabase,
+        // guessing EITHER way can destroy data (Scenario A hard-deletes the
+        // local rows; Scenario B deletes the account's server rows) — fail
+        // loudly and let the caller surface a retryable sign-in error.
+        if (await userRepository.hasLocalDataWorthMigrating(
+          fromAnonymousUserId,
+        )) {
+          sentry.addBreadcrumb(
+            message:
+                'OAuth data probe failed with un-uploaded anon data present '
+                '- aborting migration rather than guessing',
+            category: 'auth',
+            data: {'error': e.toString()},
+          );
+          rethrow;
+        }
+        // Nothing local to lose: assume the account has data (Scenario A),
+        // which then merely clears empty anon tables.
         sentry.addBreadcrumb(
           message:
               'Error checking OAuth user data - assuming exists to prevent data loss',

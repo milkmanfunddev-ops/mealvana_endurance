@@ -105,60 +105,53 @@ void main() {
     );
   });
 
-  testWidgets(
-    'pencil opens the inline slider; dragging routes through '
-    'applyPlanEdits (touched-only) on release',
-    (tester) async {
-      final container = await pumpScreen(tester);
-      final controller = container.read(onboardingControllerProvider.notifier);
-      await settleReveal(tester);
+  testWidgets('pencil opens the inline slider; dragging routes through '
+      'applyPlanEdits (touched-only) on release', (tester) async {
+    final container = await pumpScreen(tester);
+    final controller = container.read(onboardingControllerProvider.notifier);
+    await settleReveal(tester);
 
-      // The generic run-only bundle's recommendation (70 g/hr) is untouched
-      // — no reset link yet.
-      expect(
-        find.byKey(const ValueKey('plan_reveal.reset_long_run')),
-        findsNothing,
-      );
+    // The generic run-only bundle's recommendation (70 g/hr) is untouched
+    // — no reset link yet.
+    expect(
+      find.byKey(const ValueKey('plan_reveal.reset_long_run')),
+      findsNothing,
+    );
 
-      await tester.tap(
-        find.byKey(const ValueKey('plan_reveal.edit_long_run')),
-      );
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('plan_reveal.edit_long_run')));
+    await tester.pumpAndSettle();
 
-      final slider = find.byKey(const ValueKey('plan_reveal.slider_long_run'));
-      expect(slider, findsOneWidget);
+    final slider = find.byKey(const ValueKey('plan_reveal.slider_long_run'));
+    expect(slider, findsOneWidget);
 
-      // Drag far past the left edge — the Slider clamps to its min (the
-      // run card's 30 g/hr floor), so this is a deterministic way to commit
-      // a new value without needing exact per-pixel math.
-      await tester.drag(slider, const Offset(-2000, 0));
-      await tester.pumpAndSettle();
+    // Drag far past the left edge — the Slider clamps to its min (the
+    // run card's 30 g/hr floor), so this is a deterministic way to commit
+    // a new value without needing exact per-pixel math.
+    await tester.drag(slider, const Offset(-2000, 0));
+    await tester.pumpAndSettle();
 
-      final edits = controller.draft.planEdits;
-      expect(edits.longRunCarbGph, 30);
-      // Only the touched field is set — untouched targets stay null
-      // (= algorithm default per the overrides contract).
-      expect(edits.longRideCarbGph, isNull);
-      expect(edits.fluidMlPerHr, isNull);
-      expect(edits.sodiumMgPerHr, isNull);
+    final edits = controller.draft.planEdits;
+    expect(edits.longRunCarbGph, 30);
+    // Only the touched field is set — untouched targets stay null
+    // (= algorithm default per the overrides contract).
+    expect(edits.longRideCarbGph, isNull);
+    expect(edits.fluidMlPerHr, isNull);
+    expect(edits.sodiumMgPerHr, isNull);
 
-      // The card now renders the committed value, and off-recommendation
-      // surfaces the reset link.
-      expect(find.text('30 g/hr'), findsOneWidget);
-      final resetLink = find.byKey(
-        const ValueKey('plan_reveal.reset_long_run'),
-      );
-      expect(resetLink, findsOneWidget);
+    // The card now renders the committed value, and off-recommendation
+    // surfaces the reset link.
+    expect(find.text('30 g/hr'), findsOneWidget);
+    final resetLink = find.byKey(const ValueKey('plan_reveal.reset_long_run'));
+    expect(resetLink, findsOneWidget);
 
-      await tester.ensureVisible(resetLink);
-      await tester.pumpAndSettle();
-      await tester.tap(resetLink);
-      await tester.pumpAndSettle();
+    await tester.ensureVisible(resetLink);
+    await tester.pumpAndSettle();
+    await tester.tap(resetLink);
+    await tester.pumpAndSettle();
 
-      expect(controller.draft.planEdits.longRunCarbGph, isNull);
-      expect(find.text('70 g/hr'), findsOneWidget);
-    },
-  );
+    expect(controller.draft.planEdits.longRunCarbGph, isNull);
+    expect(find.text('70 g/hr'), findsOneWidget);
+  });
 
   testWidgets('connect nudge shows iff no provider connected', (tester) async {
     var connectTaps = 0;
@@ -248,10 +241,7 @@ void main() {
         find.textContaining('Heavy days: Wednesday, Sunday'),
         findsOneWidget,
       );
-      expect(
-        find.textContaining('Light days: Monday, Friday'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Light days: Monday, Friday'), findsOneWidget);
     },
   );
 
