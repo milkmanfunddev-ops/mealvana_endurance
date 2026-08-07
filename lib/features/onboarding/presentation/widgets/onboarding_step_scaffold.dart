@@ -58,6 +58,8 @@ class OnboardingStepScaffold extends StatelessWidget {
   const OnboardingStepScaffold({
     super.key,
     required this.title,
+    this.eyebrow,
+    this.titleStyle,
     this.subtitle,
     required this.children,
     required this.onContinue,
@@ -65,6 +67,7 @@ class OnboardingStepScaffold extends StatelessWidget {
     this.canContinue = true,
     this.isLoading = false,
     this.stepIndex,
+    this.showProgress = true,
     this.titleKey,
     this.continueButtonKey,
     this.backButtonKey,
@@ -72,6 +75,14 @@ class OnboardingStepScaffold extends StatelessWidget {
   });
 
   final String title;
+
+  /// Teal letterspaced kicker above the title (spec: Apercu 500 11,
+  /// ls 1.54, uppercase, #1cf9cf) — the reveal/daily screens use it.
+  final String? eyebrow;
+
+  /// Overrides the default orange title style (the reveal titles are cream).
+  final TextStyle? titleStyle;
+
   final String? subtitle;
 
   /// Content rendered below the title/subtitle inside the scrollable body.
@@ -85,6 +96,10 @@ class OnboardingStepScaffold extends StatelessWidget {
   /// Position in the onboarding flow (0-based); drives the progress bar.
   /// Null outside the PageView (standalone/test usage) — renders as step 1.
   final int? stepIndex;
+
+  /// Spec: the reveal/daily screens drop the progress segments and keep
+  /// only the back circle.
+  final bool showProgress;
 
   final Key? titleKey;
   final Key? continueButtonKey;
@@ -103,11 +118,41 @@ class OnboardingStepScaffold extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            OnboardingStepHeader(
-              stepIndex: stepIndex ?? 0,
-              onBack: onBack,
-              backButtonKey: backButtonKey,
-            ),
+            if (showProgress)
+              OnboardingStepHeader(
+                stepIndex: stepIndex ?? 0,
+                onBack: onBack,
+                backButtonKey: backButtonKey,
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 16, 22, 6),
+                child: Row(
+                  children: [
+                    if (onBack != null)
+                      InkWell(
+                        key: backButtonKey,
+                        customBorder: const CircleBorder(),
+                        onTap: onBack,
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: OnbTokens.creamA(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.chevron_left,
+                            size: 18,
+                            color: OnbTokens.creamA(0.8),
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(height: 32),
+                  ],
+                ),
+              ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
@@ -117,7 +162,24 @@ class OnboardingStepScaffold extends StatelessWidget {
                     // Spec: ~54px segment-bottom → title-top (6 is header
                     // bottom padding), matching the multi-select steps.
                     const SizedBox(height: 48),
-                    Text(title, key: titleKey, style: kOnboardingTitleStyle),
+                    if (eyebrow != null) ...[
+                      Text(
+                        eyebrow!.toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: OnbTokens.fontBody,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1.54,
+                          color: OnbTokens.teal,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    Text(
+                      title,
+                      key: titleKey,
+                      style: titleStyle ?? kOnboardingTitleStyle,
+                    ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 8),
                       Text(subtitle!, style: kOnboardingSubtitleStyle),
@@ -149,49 +211,99 @@ class OnboardingStepScaffold extends StatelessWidget {
   }
 }
 
-/// Dashed "no training platform connected yet" nudge card shown on the plan
-/// reveal and daily preview when onboarding finished without a connect.
-/// "Connect now" pops the PageView back to the connect step.
+/// Connect-nudge card shown on the plan reveal and daily preview when
+/// onboarding finished without a connect — spec port.
+///
+/// Reveal variant: 1px DASHED cream-20% border, cream-4% fill, radius 15,
+/// padding 16; teal-tinted 34px icon box; Apercu 13.5/500 cream title;
+/// 12px cream-55% body; teal 13/500 underlined "Connect now".
+/// The daily preview passes its own title/body copy.
 class OnboardingConnectNudgeCard extends StatelessWidget {
   const OnboardingConnectNudgeCard({
     super.key,
     required this.onConnectNow,
     this.connectButtonKey,
+    this.title = 'No training platform connected yet',
+    this.body =
+        "These targets stand on their own — connect a platform and we'll "
+        'fuel each scheduled session too.',
   });
 
   final VoidCallback onConnectNow;
   final Key? connectButtonKey;
+  final String title;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _DashedBorderPainter(
-        color: AppColors.cream.withValues(alpha: 0.4),
-        radius: 16,
+      painter: OnboardingDashedBorderPainter(
+        color: const Color(0x33F8F6EB), // cream 20%
+        radius: 15,
       ),
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(
+          color: OnbTokens.creamA(0.04),
+          borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        ),
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'No training platform connected yet',
-              textAlign: TextAlign.center,
-              style: kOnboardingBodyMutedStyle,
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: const Color(0x261CF9CF), // teal 15%
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.monitor_heart_outlined,
+                size: 18,
+                color: OnbTokens.teal,
+              ),
             ),
-            const SizedBox(height: 4),
-            TextButton(
-              key: connectButtonKey,
-              onPressed: onConnectNow,
-              child: const Text(
-                'Connect now',
-                style: TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.orange,
-                  decoration: TextDecoration.underline,
-                  decorationColor: AppColors.orange,
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: OnbTokens.fontBody,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                      color: OnbTokens.cream,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    body,
+                    style: TextStyle(
+                      fontFamily: OnbTokens.fontBody,
+                      fontSize: 12,
+                      height: 1.4,
+                      color: OnbTokens.creamA(0.55),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    key: connectButtonKey,
+                    onTap: onConnectNow,
+                    child: const Text(
+                      'Connect now',
+                      style: TextStyle(
+                        fontFamily: OnbTokens.fontBody,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: OnbTokens.teal,
+                        decoration: TextDecoration.underline,
+                        decorationColor: OnbTokens.teal,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -201,8 +313,12 @@ class OnboardingConnectNudgeCard extends StatelessWidget {
   }
 }
 
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({required this.color, required this.radius});
+/// Dashed rounded-rect border (spec nudge card + sweat-test tile).
+class OnboardingDashedBorderPainter extends CustomPainter {
+  const OnboardingDashedBorderPainter({
+    required this.color,
+    required this.radius,
+  });
 
   final Color color;
   final double radius;
@@ -235,6 +351,6 @@ class _DashedBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
+  bool shouldRepaint(OnboardingDashedBorderPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.radius != radius;
 }

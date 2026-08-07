@@ -99,7 +99,7 @@ void main() {
     expect(find.text('LONG-RUN CARB TARGET'), findsOneWidget);
     expect(find.text('LONG-RIDE CARB TARGET'), findsNothing);
     expect(
-      find.text('${genericBundle.preview.longRun!.carbGph.round()}'),
+      find.textContaining('${genericBundle.preview.longRun!.carbGph.round()}'),
       findsOneWidget,
     );
   });
@@ -133,7 +133,7 @@ void main() {
     expect(edits.sodiumMgPerHr, isNull);
 
     // The card now renders the edited value.
-    expect(find.text('65'), findsOneWidget);
+    expect(find.textContaining('65'), findsOneWidget);
   });
 
   testWidgets('connect nudge shows iff no provider connected', (tester) async {

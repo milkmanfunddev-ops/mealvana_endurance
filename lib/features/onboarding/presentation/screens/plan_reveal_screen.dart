@@ -148,12 +148,25 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
     final firstName = draft.firstName?.trim();
 
     return OnboardingStepScaffold(
+      eyebrow: 'YOUR FUELING PLAN',
       title: firstName != null && firstName.isNotEmpty
           ? 'We built your plan, $firstName.'
           : 'We built your plan.',
+      // Spec: the reveal title is CREAM Sansita 27, not the step orange.
+      titleStyle: const TextStyle(
+        fontFamily: OnbTokens.fontDisplay,
+        fontSize: 27,
+        fontWeight: FontWeight.w700,
+        height: 1.05,
+        color: OnbTokens.cream,
+      ),
       subtitle: 'Every number traces back to what you told us.',
       titleKey: const ValueKey('plan_reveal.title'),
       stepIndex: widget.stepIndex,
+      // Spec: the reveal drops the progress segments (back circle only)
+      // and labels its CTA with the destination.
+      showProgress: false,
+      continueLabel: 'Continue to See My Daily Plan',
       onContinue: widget.onContinue,
       onBack: widget.onBack,
       continueButtonKey: const ValueKey('plan_reveal.continue_button'),
@@ -198,7 +211,7 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
               apply: (value) => edits.copyWith(longRunCarbGph: () => value),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
         ],
         if (preview.longRide != null) ...[
           _TargetCard(
@@ -223,19 +236,28 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
           const SizedBox(height: 12),
         ],
         if (preview.fluidMlPerHr != null && preview.sodiumMgPerHr != null) ...[
-          const SizedBox(height: 8),
-          const Text('FLUIDS & SODIUM', style: kOnboardingSectionLabelStyle),
-          const SizedBox(height: 8),
-          _TargetCard(
+          const SizedBox(height: 12),
+          // Spec: sentence-case Sansita 700 16 cream section header.
+          const Text(
+            'Fluids & Sodium',
+            style: TextStyle(
+              fontFamily: OnbTokens.fontDisplay,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: OnbTokens.cream,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _CompactTargetRow(
             label: 'FLUID',
             value: (edits.fluidMlPerHr ?? preview.fluidMlPerHr!.toDouble())
                 .round(),
-            unit: 'mL/hr',
+            unit: 'ml/hr',
             editKey: const ValueKey('plan_reveal.edit_fluid'),
             onEdit: () => _editTarget(
               field: 'fluid_ml_per_hr',
               title: 'Fluid target',
-              unit: 'mL/hr',
+              unit: 'ml/hr',
               current: edits.fluidMlPerHr ?? preview.fluidMlPerHr!.toDouble(),
               min: NutritionTargetGuardrails.duringMinFluidRateMlPerH,
               max: NutritionTargetGuardrails.duringMaxFluidRateMlPerH,
@@ -243,8 +265,8 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
               apply: (value) => edits.copyWith(fluidMlPerHr: () => value),
             ),
           ),
-          const SizedBox(height: 12),
-          _TargetCard(
+          const SizedBox(height: 10),
+          _CompactTargetRow(
             label: 'SODIUM',
             value: (edits.sodiumMgPerHr ?? preview.sodiumMgPerHr!.toDouble())
                 .round(),
@@ -269,38 +291,44 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   }
 
   Widget _buildSweatTestTile() {
+    // Spec tile: 1px dashed cream-25%, radius 15, transparent fill,
+    // padding 14; centered flask + Apercu 13 cream label.
     return InkWell(
       key: const ValueKey('plan_reveal.sweat_test_tile'),
       onTap: _onSweatTestTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: onboardingCardDecoration(),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const FaIcon(
-              FontAwesomeIcons.droplet,
-              size: 18,
-              color: AppColors.orange,
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Personalize with a sweat test',
-                style: TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+      borderRadius: BorderRadius.circular(OnbTokens.rCard),
+      child: CustomPaint(
+        painter: OnboardingDashedBorderPainter(
+          color: OnbTokens.creamA(0.25),
+          radius: OnbTokens.rCard,
+        ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const FaIcon(
+                FontAwesomeIcons.flaskVial,
+                size: 14,
+                color: OnbTokens.orange,
+              ),
+              const SizedBox(width: 8),
+              const Flexible(
+                child: Text(
+                  'Personalize with a sweat test',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 13,
+                    color: OnbTokens.cream,
+                  ),
                 ),
               ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: AppColors.textDark.withValues(alpha: 0.5),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -387,55 +415,190 @@ class _TargetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Spec carb-target card: linear-gradient(150deg, #4a2143, #3a1835),
+    // 1px orange-40% border, radius 20, padding 18/20; Apercu 500 11
+    // ls 1.1 uppercase cream-60% label; Sansita 700 40 orange number with
+    // Apercu 16 cream unit; Apercu 13 cream-72% caption; 30px cream-10%
+    // pencil circle.
     return Container(
-      decoration: onboardingCardDecoration(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [OnbTokens.cardRaised, OnbTokens.cardSubtle],
+        ),
+        borderRadius: BorderRadius.circular(OnbTokens.rLarge),
+        border: Border.all(color: OnbTokens.orange40),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: kOnboardingSectionLabelStyle),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$value',
-                style: const TextStyle(
-                  fontFamily: 'Sansita',
-                  fontSize: 34,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.orange,
-                  height: 1.0,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.1,
+                    color: OnbTokens.creamA(0.6),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                unit,
-                style: const TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDarkSecondary,
+                const SizedBox(height: 8),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$value',
+                        style: const TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                          color: OnbTokens.orange,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' $unit',
+                        style: const TextStyle(
+                          fontFamily: OnbTokens.fontBody,
+                          fontSize: 16,
+                          color: OnbTokens.cream,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Spacer(),
-              IconButton(
-                key: editKey,
-                onPressed: onEdit,
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  size: 20,
-                  color: AppColors.orange,
+                const SizedBox(height: 8),
+                Text(
+                  insightLine ??
+                      'Our recommendation for you: ACSM guidance at your '
+                          'body weight, scaled to your gut-training level.',
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 13,
+                    height: 1.45,
+                    color: OnbTokens.creamA(0.72),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          if (insightLine != null) ...[
-            const SizedBox(height: 4),
-            Text(insightLine!, style: kOnboardingBodyMutedStyle),
-          ],
+          const SizedBox(width: 12),
+          _PencilButton(editKey: editKey, onEdit: onEdit),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact fluid/sodium row — spec: cream-5% fill, radius 15, cream-12%
+/// border, padding 16/18; Apercu 10 ls .6 uppercase cream-50% label left;
+/// Apercu Mono 27 cream value + mono 13 cream-50% unit right; pencil circle.
+class _CompactTargetRow extends StatelessWidget {
+  const _CompactTargetRow({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.editKey,
+    required this.onEdit,
+  });
+
+  final String label;
+  final int value;
+  final String unit;
+  final Key editKey;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: OnbTokens.creamA(0.05),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: OnbTokens.creamA(0.12)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: OnbTokens.fontBody,
+              fontSize: 10,
+              letterSpacing: 0.6,
+              color: OnbTokens.creamA(0.5),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$value',
+                        style: const TextStyle(
+                          fontFamily: OnbTokens.fontMono,
+                          fontSize: 27,
+                          height: 1.0,
+                          color: OnbTokens.cream,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' $unit',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontMono,
+                          fontSize: 13,
+                          color: OnbTokens.creamA(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          _PencilButton(editKey: editKey, onEdit: onEdit),
+        ],
+      ),
+    );
+  }
+}
+
+/// Spec pencil affordance: 30px cream-10% circle with a small edit glyph.
+class _PencilButton extends StatelessWidget {
+  const _PencilButton({required this.editKey, required this.onEdit});
+
+  final Key editKey;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: editKey,
+      customBorder: const CircleBorder(),
+      onTap: onEdit,
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: OnbTokens.creamA(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.edit_outlined,
+          size: 14,
+          color: OnbTokens.creamA(0.85),
+        ),
       ),
     );
   }
