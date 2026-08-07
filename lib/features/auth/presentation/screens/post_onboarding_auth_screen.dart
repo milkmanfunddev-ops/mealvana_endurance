@@ -825,7 +825,6 @@ class _PostOnboardingAuthScreenState
       ),
     );
   }
-
 }
 
 /// Spec testimonial card: cream-5% fill, 1px teal-28% border, radius 15,
@@ -898,7 +897,9 @@ class _OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final line = Expanded(child: Container(height: 1, color: OnbTokens.creamA(0.15)));
+    final line = Expanded(
+      child: Container(height: 1, color: OnbTokens.creamA(0.15)),
+    );
     return Row(
       children: [
         line,
