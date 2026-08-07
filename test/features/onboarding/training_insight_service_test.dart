@@ -75,6 +75,18 @@ void main() {
       expect(insights.windowDays, 7);
       expect(insights.sessionCount, 4);
       expect(insights.heavyDayCount, 4);
+
+      // The digest reports the real span it read, and keeps every session
+      // that fed it (earliest first) for the reveal card's debug sheet.
+      expect(insights.windowStart, monday);
+      expect(insights.windowEnd, monday.add(const Duration(days: 6)));
+      expect(insights.windowRangeLabel, 'Jul 20 to Jul 26');
+      expect(insights.sessions.length, 4);
+      expect(insights.sessions.first.scheduledDateTime, monday);
+      expect(
+        insights.sessions.last.scheduledDateTime,
+        monday.add(const Duration(days: 6)),
+      );
       expect(insights.longestRun!.durationMinutes, 150);
       expect(insights.longestRun!.descriptor, 'your 15-mile long run');
       expect(insights.longestRide!.durationMinutes, 130);

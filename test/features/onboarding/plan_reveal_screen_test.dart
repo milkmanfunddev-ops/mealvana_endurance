@@ -17,6 +17,7 @@ import 'package:mealvana_endurance/features/onboarding/domain/training_insights.
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/plan_reveal_screen.dart';
+import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../../helpers/widget_test_harness.dart';
 
@@ -185,23 +186,42 @@ void main() {
     );
   });
 
-  testWidgets(
-    'connected-plan card replaces the nudge and shows the weekday pattern',
-    (tester) async {
-      final connectedBundle = OnboardingPreviewBundle(
-        preview: genericBundle.preview,
-        insights: const TrainingInsights(
-          isReliable: true,
-          windowDays: 7,
-          sessionCount: 4,
-          weeklyDurationHours: 6.4,
-          heavyWeekdays: [DateTime.wednesday, DateTime.sunday],
-          lightWeekdays: [DateTime.monday, DateTime.friday],
+  /// A connected-provider bundle whose digest covers Jul 20–26 2026.
+  OnboardingPreviewBundle connectedBundle() => OnboardingPreviewBundle(
+    preview: genericBundle.preview,
+    insights: TrainingInsights(
+      isReliable: true,
+      windowDays: 7,
+      windowStart: DateTime(2026, 7, 20),
+      windowEnd: DateTime(2026, 7, 26),
+      sessionCount: 2,
+      weeklyDurationHours: 6.4,
+      heavyWeekdays: const [DateTime.wednesday, DateTime.sunday],
+      lightWeekdays: const [DateTime.monday, DateTime.friday],
+      sessions: [
+        InsightSession(
+          activityType: ActivityType.running,
+          durationMinutes: 45,
+          title: 'Easy shakeout',
+          scheduledDateTime: DateTime(2026, 7, 20),
         ),
-      );
+        InsightSession(
+          activityType: ActivityType.running,
+          durationMinutes: 150,
+          distanceMiles: 15,
+          title: 'Long run',
+          scheduledDateTime: DateTime(2026, 7, 26),
+        ),
+      ],
+    ),
+  );
+
+  testWidgets(
+    'connected-plan card replaces the nudge and names the real date window',
+    (tester) async {
       final container = await pumpScreen(
         tester,
-        bundle: connectedBundle,
+        bundle: connectedBundle(),
         onConnectTap: () {},
       );
       final controller = container.read(onboardingControllerProvider.notifier);
@@ -212,13 +232,15 @@ void main() {
         find.byKey(const ValueKey('plan_reveal.connect_nudge')),
         findsNothing,
       );
-      final card = find.byKey(
-        const ValueKey('plan_reveal.connected_plan_card'),
+      expect(
+        find.byKey(const ValueKey('plan_reveal.connected_plan_card')),
+        findsOneWidget,
       );
-      expect(card, findsOneWidget);
+      // The window it claims is the window the digest actually covered —
+      // never the prototype's unbacked "next four weeks".
       expect(
         find.text(
-          'We read your Final Surge plan for the next four weeks.',
+          'We read your Final Surge training plan from Jul 20 to Jul 26.',
         ),
         findsOneWidget,
       );
@@ -227,11 +249,77 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('Lighter days: Monday, Friday'),
+        find.textContaining('Light days: Monday, Friday'),
         findsOneWidget,
       );
     },
   );
+
+  testWidgets('connected card says so plainly when nothing was read', (
+    tester,
+  ) async {
+    final container = await pumpScreen(
+      tester,
+      bundle: OnboardingPreviewBundle(
+        preview: genericBundle.preview,
+        insights: TrainingInsights.none,
+      ),
+      onConnectTap: () {},
+    );
+    container
+        .read(onboardingControllerProvider.notifier)
+        .recordConnectedProvider('runna');
+    await settleReveal(tester);
+
+    expect(
+      find.text(
+        'We connected your Runna account, but found no scheduled sessions '
+        'to read yet.',
+      ),
+      findsOneWidget,
+    );
+    // No pattern to show, so the heavy/light line stays off entirely.
+    expect(find.textContaining('Heavy days:'), findsNothing);
+  });
+
+  testWidgets('7 taps on the connected card open the imported-data sheet', (
+    tester,
+  ) async {
+    final container = await pumpScreen(
+      tester,
+      bundle: connectedBundle(),
+      onConnectTap: () {},
+    );
+    container
+        .read(onboardingControllerProvider.notifier)
+        .recordConnectedProvider('final_surge');
+    await settleReveal(tester);
+
+    final card = find.byKey(const ValueKey('plan_reveal.connected_plan_card'));
+    final sheet = find.byKey(const ValueKey('plan_reveal.debug_sheet'));
+
+    // Six taps must not open it — this is a deliberate gesture, not a
+    // stray tap on a card that otherwise does nothing.
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(card);
+      await tester.pump();
+    }
+    expect(sheet, findsNothing);
+
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+
+    expect(sheet, findsOneWidget);
+    expect(find.text('Imported from Final Surge'), findsOneWidget);
+    // Summary block traces the card's claims back to their inputs...
+    expect(find.text('Jul 20 to Jul 26'), findsOneWidget);
+    expect(find.text('Wednesday, Sunday'), findsOneWidget);
+    // ...and every digested session is listed.
+    expect(find.text('SESSIONS (2)'), findsOneWidget);
+    expect(find.text('Easy shakeout'), findsOneWidget);
+    expect(find.text('Long run'), findsOneWidget);
+    expect(find.text('150 min · 15.0 mi'), findsOneWidget);
+  });
 
   testWidgets('sweat test tile records interest and shows the info snack', (
     tester,

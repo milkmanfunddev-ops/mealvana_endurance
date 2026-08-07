@@ -476,16 +476,23 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
 /// "We read your plan" card — the spec's complement to
 /// [OnboardingConnectNudgeCard]: shown instead of the nudge once a training
 /// platform is connected. Teal-6% fill, teal-30% border, radius 15, padding
-/// 16; a checkmark + `planConnectedLine` ("We read your {provider} plan for
-/// the next four weeks."), then — when [TrainingInsights.hasWeekdayPattern]
-/// — the heavy/light weekday line (indented under the checkmark, day names
-/// in full-cream against a cream-60% label), and a static ACSM caption.
+/// 16; a checkmark + the read line, then — when
+/// [TrainingInsights.hasWeekdayPattern] — the heavy/light weekday line
+/// (indented under the checkmark, day names in full-cream against a
+/// cream-60% label), and a static ACSM caption.
 ///
-/// The heavy/light split is a real (if simple) heuristic over the imported
-/// activities' weekdays — see `TrainingInsightService._weekdayPattern` —
-/// not fabricated copy; it just quietly omits itself when the window is too
-/// thin to say anything meaningful (`hasWeekdayPattern` false).
-class _ConnectedPlanCard extends StatelessWidget {
+/// The copy names the ACTUAL date range digested rather than the
+/// prototype's "for the next four weeks", which would be a claim we can't
+/// back: FinalSurge hands us ~7 days, TrainingPeaks ~30, and Runna
+/// whatever the calendar holds. Likewise the heavy/light split is computed
+/// from the imported sessions' weekdays (see
+/// `TrainingInsightService._weekdayPattern`) and omits itself when the
+/// window is too thin to mean anything.
+///
+/// Tapping the card 7 times opens [_ImportedPlanDebugSheet] — every row the
+/// digest actually read — so the summary above can always be checked
+/// against its inputs.
+class _ConnectedPlanCard extends StatefulWidget {
   const _ConnectedPlanCard({
     super.key,
     required this.providerName,
@@ -496,82 +503,354 @@ class _ConnectedPlanCard extends StatelessWidget {
   final TrainingInsights insights;
 
   @override
+  State<_ConnectedPlanCard> createState() => _ConnectedPlanCardState();
+}
+
+class _ConnectedPlanCardState extends State<_ConnectedPlanCard> {
+  static const _tapsToReveal = 7;
+
+  int _taps = 0;
+
+  void _onTap() {
+    _taps++;
+    if (_taps < _tapsToReveal) return;
+    _taps = 0;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ImportedPlanDebugSheet(
+        providerName: widget.providerName,
+        insights: widget.insights,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final insights = widget.insights;
     final labelStyle = TextStyle(
       fontFamily: OnbTokens.fontBody,
       fontSize: 12.5,
       height: 1.5,
       color: OnbTokens.creamA(0.6),
     );
-    final dayNameStyle = const TextStyle(
+    const dayNameStyle = TextStyle(
       fontFamily: OnbTokens.fontBody,
       fontSize: 12.5,
       height: 1.5,
       color: OnbTokens.cream,
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: OnbTokens.teal.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(OnbTokens.rCard),
-        border: Border.all(color: OnbTokens.teal30),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(Icons.check, size: 16, color: OnbTokens.teal),
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Text(
-                  'We read your $providerName plan for the next four weeks.',
-                  style: TextStyle(
-                    fontFamily: OnbTokens.fontBody,
-                    fontSize: 13,
-                    height: 1.45,
-                    color: OnbTokens.creamA(0.82),
+    final range = insights.windowRangeLabel;
+    final readLine = range != null
+        ? 'We read your ${widget.providerName} training plan from $range.'
+        : 'We connected your ${widget.providerName} account, but found no '
+              'scheduled sessions to read yet.';
+
+    return GestureDetector(
+      onTap: _onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: OnbTokens.teal.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(OnbTokens.rCard),
+          border: Border.all(color: OnbTokens.teal30),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.check, size: 16, color: OnbTokens.teal),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Text(
+                    readLine,
+                    key: const ValueKey('plan_reveal.connected_read_line'),
+                    style: TextStyle(
+                      fontFamily: OnbTokens.fontBody,
+                      fontSize: 13,
+                      height: 1.45,
+                      color: OnbTokens.creamA(0.82),
+                    ),
                   ),
                 ),
+              ],
+            ),
+            // Icon width (16) + gap (11) — matches the checkmark row above.
+            Padding(
+              padding: const EdgeInsets.only(left: 27, top: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (insights.hasWeekdayPattern) ...[
+                    Text.rich(
+                      TextSpan(
+                        style: labelStyle,
+                        children: [
+                          const TextSpan(text: 'Heavy days: '),
+                          TextSpan(
+                            text: insights.heavyDayNames,
+                            style: dayNameStyle,
+                          ),
+                          const TextSpan(text: ' · Light days: '),
+                          TextSpan(
+                            text: insights.lightDayNames,
+                            style: dayNameStyle,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Text(
+                    'We set your carb target based on ACSM recommendation and '
+                    'your goal, but you can still edit it.',
+                    style: labelStyle,
+                  ),
+                ],
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Diagnostic sheet behind the connected card's 7-tap gesture: the exact
+/// sessions [TrainingInsightService] digested, plus the derived numbers the
+/// card and preview are built on. Read-only and deliberately plain — this
+/// exists to check the insight engine's honesty, not to be pretty.
+class _ImportedPlanDebugSheet extends StatelessWidget {
+  const _ImportedPlanDebugSheet({
+    required this.providerName,
+    required this.insights,
+  });
+
+  final String providerName;
+  final TrainingInsights insights;
+
+  @override
+  Widget build(BuildContext context) {
+    final sessions = insights.sessions;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: OnbTokens.cardSubtle,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(OnbTokens.rLarge),
           ),
-          // Icon width (16) + gap (11) — matches the checkmark row above.
-          Padding(
-            padding: const EdgeInsets.only(left: 27, top: 8),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: OnbTokens.creamA(0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Imported from $providerName',
+              key: const ValueKey('plan_reveal.debug_sheet'),
+              style: const TextStyle(
+                fontFamily: OnbTokens.fontDisplay,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: OnbTokens.cream,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'What the insight engine actually read.',
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 12.5,
+                color: OnbTokens.creamA(0.55),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _DebugRow('Window', insights.windowRangeLabel ?? '—'),
+            _DebugRow('Window days', '${insights.windowDays}'),
+            _DebugRow('Sessions', '${insights.sessionCount}'),
+            _DebugRow('Training days', '${insights.heavyDayCount}'),
+            _DebugRow(
+              'Weekly hours',
+              insights.weeklyDurationHours.toStringAsFixed(1),
+            ),
+            _DebugRow('Reliable', insights.isReliable ? 'yes' : 'no'),
+            _DebugRow('Heavy days', insights.heavyDayNames ?? '—'),
+            _DebugRow('Light days', insights.lightDayNames ?? '—'),
+            _DebugRow(
+              'Longest run',
+              insights.longestRun?.descriptor ?? '—',
+            ),
+            _DebugRow(
+              'Longest ride',
+              insights.longestRide?.descriptor ?? '—',
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'SESSIONS (${sessions.length})',
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 1.2,
+                color: OnbTokens.creamA(0.5),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: sessions.isEmpty
+                  ? Text(
+                      'No usable sessions were imported.',
+                      style: TextStyle(
+                        fontFamily: OnbTokens.fontBody,
+                        fontSize: 13,
+                        color: OnbTokens.creamA(0.55),
+                      ),
+                    )
+                  : ListView.separated(
+                      controller: scrollController,
+                      itemCount: sessions.length,
+                      separatorBuilder: (_, _) => Divider(
+                        height: 1,
+                        color: OnbTokens.creamA(0.08),
+                      ),
+                      itemBuilder: (context, index) =>
+                          _DebugSessionRow(session: sessions[index]),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One label/value line in the diagnostic sheet's summary block.
+class _DebugRow extends StatelessWidget {
+  const _DebugRow(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 12.5,
+                color: OnbTokens.creamA(0.55),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontFamily: OnbTokens.fontMono,
+                fontSize: 12.5,
+                color: OnbTokens.cream,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One imported session in the diagnostic sheet's list.
+class _DebugSessionRow extends StatelessWidget {
+  const _DebugSessionRow({required this.session});
+
+  final InsightSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final when = session.scheduledDateTime;
+    final weekday = TrainingInsights.weekdayAbbreviation(when.weekday);
+    final distance = session.distanceMiles;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 76,
+            child: Text(
+              '$weekday ${TrainingInsights.formatDate(when)}',
+              style: TextStyle(
+                fontFamily: OnbTokens.fontMono,
+                fontSize: 12,
+                color: OnbTokens.creamA(0.6),
+              ),
+            ),
+          ),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (insights.hasWeekdayPattern)
-                  Text.rich(
-                    TextSpan(
-                      style: labelStyle,
-                      children: [
-                        const TextSpan(text: 'Heavy days: '),
-                        TextSpan(
-                          text: insights.heavyDayNames,
-                          style: dayNameStyle,
-                        ),
-                        const TextSpan(text: ' · Lighter days: '),
-                        TextSpan(
-                          text: insights.lightDayNames,
-                          style: dayNameStyle,
-                        ),
-                      ],
-                    ),
-                  ),
-                if (insights.hasWeekdayPattern) const SizedBox(height: 8),
                 Text(
-                  'We set your carb target based on ACSM recommendation and '
-                  'your goal, but you can still edit it.',
-                  style: labelStyle,
+                  session.title?.trim().isNotEmpty == true
+                      ? session.title!.trim()
+                      : session.activityType.name,
+                  style: const TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 13,
+                    color: OnbTokens.cream,
+                  ),
+                ),
+                Text(
+                  session.activityType.name,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 11.5,
+                    color: OnbTokens.creamA(0.45),
+                  ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            distance != null && distance > 0
+                ? '${session.durationMinutes} min · '
+                      '${distance.toStringAsFixed(1)} mi'
+                : '${session.durationMinutes} min',
+            style: const TextStyle(
+              fontFamily: OnbTokens.fontMono,
+              fontSize: 12,
+              color: OnbTokens.cream,
             ),
           ),
         ],

@@ -101,9 +101,15 @@ class TrainingInsightService {
 
     final pattern = _weekdayPattern(minutesByWeekday);
 
+    // Earliest first so the diagnostic sheet reads chronologically.
+    final sessions = usable.map(_toSession).toList()
+      ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+
     return TrainingInsights(
       isReliable: isReliable,
       windowDays: windowDays,
+      windowStart: earliest,
+      windowEnd: latest,
       sessionCount: usable.length,
       weeklyDurationHours: (weeklyDurationHours * 10).round() / 10.0,
       longestRun: longestRun == null ? null : _toSession(longestRun),
@@ -111,6 +117,7 @@ class TrainingInsightService {
       heavyDayCount: trainingDays.length,
       heavyWeekdays: pattern.heavy,
       lightWeekdays: pattern.light,
+      sessions: sessions,
     );
   }
 
