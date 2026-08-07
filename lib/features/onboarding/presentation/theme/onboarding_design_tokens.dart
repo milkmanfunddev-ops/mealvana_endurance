@@ -60,13 +60,16 @@ abstract final class OnbTokens {
 
   // ── Typography ────────────────────────────────────────────────────────────
   // Families. Sansita (700) = display headings. Apercu = body.
-  // Compadre = section headers / tile labels / attributions.
-  // Apercu Mono = numeric values + unit labels.
-  // Compadre and Apercu Mono load once their files land in assets/fonts/
-  // (licensed; provided by the design owner) — until then the family names
-  // resolve to the Flutter default and the audit flags them.
+  // fontLabel = section headers / tile labels / attributions.
+  // fontMono = numeric values + unit labels.
   static const String fontDisplay = 'Sansita';
   static const String fontBody = 'Apercu';
-  static const String fontLabel = 'Compadre';
-  static const String fontMono = 'Apercu Mono';
+
+  // TODO(fonts): flip to 'Compadre' when the licensed files land in
+  // assets/fonts/Compadre/. Sansita is the approved stand-in until then.
+  static const String fontLabel = 'Sansita';
+
+  // TODO(fonts): flip to 'Apercu Mono' when the licensed files land in
+  // assets/fonts/ApercuMono/. Apercu is the approved stand-in until then.
+  static const String fontMono = 'Apercu';
 }

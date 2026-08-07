@@ -78,8 +78,9 @@ void main() {
       await $(const ValueKey('goals.continue_button')).tap();
       await $(const ValueKey('pitfalls.continue_button')).tap();
 
-      // ---- Connect training → Skip for now ------------------------------
-      await $(const ValueKey('connect_training.skip_button')).tap();
+      // ---- Connect training → Continue (the 2026-08 design owner removed
+      // Skip-for-now: it was equivalent to Continue) -----------------------
+      await $(const ValueKey('connect_training.continue_button')).tap();
 
       // ---- Personal info (gender + birth year gate the continue) --------
       await _fillPersonalInfoMinimum($);

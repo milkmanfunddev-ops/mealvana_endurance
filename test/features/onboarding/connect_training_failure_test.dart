@@ -77,11 +77,20 @@ void main() {
     matching: find.text('Connect'),
   );
 
+  /// The 2026-08 spec port puts the chart card above the provider rows, so
+  /// the Final Surge card can start below the fold — scroll it into view
+  /// before asserting/tapping.
+  Future<void> revealFinalSurgeConnect(WidgetTester tester) async {
+    await tester.ensureVisible(finalSurgeConnect());
+    await tester.pumpAndSettle();
+  }
+
   testWidgets(
     'failed connect shows the error snackbar and keeps the card in its '
     'Connect (retry) state',
     (tester) async {
       await pumpConnectStep(tester, onContinue: () {});
+      await revealFinalSurgeConnect(tester);
 
       expect(finalSurgeConnect(), findsOneWidget);
       await tester.tap(finalSurgeConnect());
@@ -112,6 +121,7 @@ void main() {
   ) async {
     var continued = 0;
     await pumpConnectStep(tester, onContinue: () => continued++);
+    await revealFinalSurgeConnect(tester);
 
     await tester.tap(finalSurgeConnect());
     await tester.pumpAndSettle();
@@ -123,8 +133,12 @@ void main() {
     // Let the 5s error snackbar time out so it can't swallow the tap.
     await tester.pumpAndSettle(const Duration(seconds: 6));
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('connect_training.continue_button')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const ValueKey('connect_training.skip_button')),
+      find.byKey(const ValueKey('connect_training.continue_button')),
     );
     await tester.pumpAndSettle();
 
