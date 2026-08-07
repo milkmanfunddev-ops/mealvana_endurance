@@ -59,7 +59,12 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
 
   /// Once the user touches the weight wheel, integration autofill backs off.
   bool _userAdjustedWeight = false;
-  bool _weightFromGarmin = false;
+
+  /// Display name of the platform the autofilled weight came from, or null
+  /// when the athlete set it themselves. Garmin gets its required
+  /// attribution message; anyone else gets a plain note — claiming
+  /// "from Garmin" for a TrainingPeaks profile figure would be a lie.
+  String? _weightSource;
 
   /// Bumped on *external* value changes (unit toggle, integration autofill)
   /// to rebuild the wheels at their new positions via value-bearing keys.
@@ -95,12 +100,12 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
 
     // Integration weight autofill — fireImmediately so an already-resolved
     // (keepAlive) provider value still lands.
-    ref.listenManual(onboardingIntegrationWeightLbsProvider, (previous, next) {
-      final lbs = next.value;
+    ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
+      final lbs = next.value?.weightLbs;
       if (lbs == null || _userAdjustedWeight || !mounted) return;
       setState(() {
         _weightPounds = lbs;
-        _weightFromGarmin = true;
+        _weightSource = next.value?.weightSource;
         _wheelEpoch++;
       });
       _pushToDraft();
@@ -271,12 +276,25 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Weight', style: _specFieldLabelStyle),
-        if (_weightFromGarmin) ...[
+        if (_weightSource != null) ...[
           const SizedBox(height: 8),
-          const Center(
-            key: ValueKey('body_comp.garmin_badge'),
-            child: GarminAttributionMessage(subject: 'Weight', compact: true),
-          ),
+          if (_weightSource == 'Garmin Connect')
+            const Center(
+              key: ValueKey('body_comp.garmin_badge'),
+              child: GarminAttributionMessage(subject: 'Weight', compact: true),
+            )
+          else
+            Center(
+              key: const ValueKey('body_comp.weight_source_note'),
+              child: Text(
+                'Filled in from $_weightSource',
+                style: TextStyle(
+                  fontFamily: OnbTokens.fontBody,
+                  fontSize: 11.5,
+                  color: OnbTokens.creamA(0.5),
+                ),
+              ),
+            ),
         ],
         const SizedBox(height: 4),
         if (_useMetric)
@@ -292,7 +310,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
               setState(() {
                 _weightPounds = UnitFormatter.kgToPounds(kg.toDouble());
                 _userAdjustedWeight = true;
-                _weightFromGarmin = false;
+                _weightSource = null;
               });
               _pushToDraft();
             },
@@ -309,7 +327,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
               setState(() {
                 _weightPounds = lb.toDouble();
                 _userAdjustedWeight = true;
-                _weightFromGarmin = false;
+                _weightSource = null;
               });
               _pushToDraft();
             },

@@ -4,9 +4,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../integrations/domain/integration.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../application/plan_preview_service.dart';
 import '../../application/training_insight_service.dart';
+import '../../domain/onboarding_integration_profile.dart';
 import '../../domain/onboarding_plan_preview.dart';
 import '../../domain/training_insights.dart';
 import 'onboarding_controller.dart';
@@ -116,40 +118,84 @@ Future<OnboardingPreviewBundle> onboardingPlanPreview(Ref ref) async {
   );
 }
 
-/// Weight (lbs) reported by an integration connected during onboarding, for
-/// pre-filling the body-composition weight wheel. Lifted from the old
-/// user_profile_screen autofill: prefer Garmin (scale data) over the
-/// TrainingPeaks/FinalSurge athlete profile. Best-effort — any failure
-/// resolves to null (no autofill), never an error.
+/// Athlete details from the platforms connected during onboarding, used to
+/// pre-fill the personal-info and body-composition steps.
+///
+/// Per-field precedence, and the reason for it:
+///
+///  - **weight**: Garmin first (it is scale data, and the freshest), then
+///    TrainingPeaks' profile figure.
+///  - **birth year / gender**: TrainingPeaks only — it is the sole provider
+///    that returns them.
+///  - **name / email**: TrainingPeaks, then Final Surge. Deliberately NOT
+///    Garmin or V.O2: those store the literal strings 'Garmin Connect' and
+///    'V.O2' in `providerAthleteName`, so trusting them would write
+///    "Garmin"/"Connect" into someone's name fields.
+///
+/// No provider reports height, so the height wheels keep their defaults.
+///
+/// Best-effort throughout: any failure resolves to an empty profile (no
+/// autofill), never an error — a convenience must not block onboarding.
 @Riverpod(keepAlive: true)
-Future<double?> onboardingIntegrationWeightLbs(Ref ref) async {
+Future<OnboardingIntegrationProfile> onboardingIntegrationProfile(
+  Ref ref,
+) async {
   final userId = _onboardingDataUserId(ref);
-  if (userId == null) return null;
+  if (userId == null) return OnboardingIntegrationProfile.empty;
 
   try {
-    final integrationsRepo = ref.read(integrationsRepositoryProvider);
+    final repo = ref.read(integrationsRepositoryProvider);
 
-    final garmin = await integrationsRepo.getIntegration(userId, 'garmin');
-    if (garmin != null &&
-        garmin.isActive &&
-        garmin.providerAthleteWeightLbs != null) {
-      return garmin.providerAthleteWeightLbs;
+    Future<IntegrationModel?> active(String provider) async {
+      final integration = await repo.getIntegration(userId, provider);
+      return (integration != null && integration.isActive) ? integration : null;
     }
 
-    var integration = await integrationsRepo.getIntegration(
-      userId,
-      'training_peaks',
+    final garmin = await active('garmin');
+    final trainingPeaks = await active('training_peaks');
+    final finalSurge = await active('final_surge');
+
+    // Weight: scale data beats a self-reported profile figure.
+    final weightSource = garmin?.providerAthleteWeightLbs != null
+        ? garmin
+        : (trainingPeaks?.providerAthleteWeightLbs != null
+              ? trainingPeaks
+              : null);
+
+    // Name/email: only providers that return a real athlete identity.
+    final identity = trainingPeaks?.providerAthleteName != null
+        ? trainingPeaks
+        : (finalSurge?.providerAthleteName != null ? finalSurge : null);
+    final name = OnboardingIntegrationProfile.splitFullName(
+      identity?.providerAthleteName,
     );
-    integration ??= await integrationsRepo.getIntegration(
-      userId,
-      'final_surge',
+
+    final email = trainingPeaks?.providerAthleteEmail?.trim().isNotEmpty == true
+        ? trainingPeaks!.providerAthleteEmail!.trim()
+        : (finalSurge?.providerAthleteEmail?.trim().isNotEmpty == true
+              ? finalSurge!.providerAthleteEmail!.trim()
+              : null);
+
+    return OnboardingIntegrationProfile(
+      firstName: name.first,
+      lastName: name.last,
+      email: email,
+      gender: OnboardingIntegrationProfile.parseGender(
+        trainingPeaks?.providerAthleteGender,
+      ),
+      birthYear: trainingPeaks?.providerAthleteBirthday?.year,
+      weightLbs: weightSource?.providerAthleteWeightLbs,
+      nameSource: identity?.providerDisplayName,
+      weightSource: weightSource?.providerDisplayName,
     );
-    if (integration != null && integration.isActive) {
-      return integration.providerAthleteWeightLbs;
-    }
-    return null;
   } catch (_) {
-    // Autofill is a convenience; the wheels keep their defaults.
-    return null;
+    // Autofill is a convenience; the forms keep their defaults.
+    return OnboardingIntegrationProfile.empty;
   }
 }
+
+/// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
+/// provider so the body-composition wheel can listen to just that value.
+@Riverpod(keepAlive: true)
+Future<double?> onboardingIntegrationWeightLbs(Ref ref) async =>
+    (await ref.watch(onboardingIntegrationProfileProvider.future)).weightLbs;

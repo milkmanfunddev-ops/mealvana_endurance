@@ -10,7 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/onboarding_integration_profile.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/personal_info_screen.dart';
 
 import '../../helpers/widget_test_harness.dart';
@@ -19,6 +21,7 @@ void main() {
   Future<ProviderContainer> pumpScreen(
     WidgetTester tester, {
     VoidCallback? onContinue,
+    OnboardingIntegrationProfile? integrationProfile,
   }) async {
     tester.view.physicalSize = standardPhoneSize;
     tester.view.devicePixelRatio = 1.0;
@@ -27,7 +30,15 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [mockAppExternalDeps(), mockSharedPreferences()],
+        overrides: [
+          mockAppExternalDeps(),
+          mockSharedPreferences(),
+          // Screens must never hit the integrations repository in tests.
+          onboardingIntegrationProfileProvider.overrideWith(
+            (ref) async =>
+                integrationProfile ?? OnboardingIntegrationProfile.empty,
+          ),
+        ],
         child: wrapForTest(
           PersonalInfoScreen(onContinue: onContinue, stepIndex: 4),
         ),
@@ -108,5 +119,117 @@ void main() {
     expect(controller.draft.firstName, 'Ada');
     expect(controller.draft.lastName, 'Lovelace');
     expect(controller.draft.email, 'ada@example.com');
+  });
+
+  group('integration autofill', () {
+    const tpProfile = OnboardingIntegrationProfile(
+      firstName: 'Lee',
+      lastName: 'Martin',
+      email: 'lee@example.com',
+      gender: Gender.male,
+      birthYear: 1988,
+      weightLbs: 161,
+      nameSource: 'TrainingPeaks',
+      weightSource: 'TrainingPeaks',
+    );
+
+    testWidgets('fills name, email, gender and birth year into the draft', (
+      tester,
+    ) async {
+      final container = await pumpScreen(
+        tester,
+        integrationProfile: tpProfile,
+      );
+      final draft = container
+          .read(onboardingControllerProvider.notifier)
+          .draft;
+
+      expect(draft.firstName, 'Lee');
+      expect(draft.lastName, 'Martin');
+      expect(draft.email, 'lee@example.com');
+      expect(draft.gender, Gender.male);
+      expect(draft.birthYear, 1988);
+
+      // Visible in the fields, and attributed so the athlete knows these
+      // are claims to check rather than answers they gave.
+      expect(find.text('Lee'), findsOneWidget);
+      expect(find.text('Martin'), findsOneWidget);
+      expect(find.text('lee@example.com'), findsOneWidget);
+      expect(
+        find.text('Filled in from TrainingPeaks — check and adjust.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('gender autofill satisfies the Continue gate', (tester) async {
+      var continued = 0;
+      await pumpScreen(
+        tester,
+        onContinue: () => continued++,
+        integrationProfile: tpProfile,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('personal_info.continue_button')),
+      );
+      await tester.pumpAndSettle();
+      expect(continued, 1);
+    });
+
+    testWidgets('never overwrites an answer the athlete already gave', (
+      tester,
+    ) async {
+      tester.view.physicalSize = standardPhoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // Build the scope first so the draft can be seeded the way a revisit
+      // to this step would have it — the athlete answered on a previous
+      // pass, and autofill must not silently rewrite that.
+      final container = ProviderContainer(
+        overrides: [
+          mockAppExternalDeps(),
+          mockSharedPreferences(),
+          onboardingIntegrationProfileProvider.overrideWith(
+            (ref) async => tpProfile,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final controller = container.read(onboardingControllerProvider.notifier);
+      controller.updatePersonalInfo(
+        firstName: 'Xuan',
+        gender: Gender.female,
+        birthYear: 1995,
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: wrapForTest(const PersonalInfoScreen(stepIndex: 4)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Their own answers survive...
+      expect(controller.draft.firstName, 'Xuan');
+      expect(controller.draft.gender, Gender.female);
+      expect(controller.draft.birthYear, 1995);
+      // ...and the untouched fields still get filled.
+      expect(controller.draft.lastName, 'Martin');
+      expect(controller.draft.email, 'lee@example.com');
+    });
+
+    testWidgets('no notice and no changes when nothing is connected', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      expect(
+        find.byKey(const ValueKey('personal_info.autofill_notice')),
+        findsNothing,
+      );
+    });
   });
 }
