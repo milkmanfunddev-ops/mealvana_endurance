@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../logging_service.dart';
@@ -313,6 +314,10 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Repository keys that [_repositoryFor] can resolve, i.e. everything that
   /// participates in dirty-record upload.
+  ///
+  /// `onboarding_surveys` must stay in this list: its only other upload path
+  /// is the opportunistic inline push right after onboarding, so without the
+  /// dirty-record walk a survey written offline would never reach Supabase.
   static const List<String> _syncableRepositoryKeys = <String>[
     'users',
     'activities',
@@ -325,7 +330,15 @@ class SyncCoordinator extends _$SyncCoordinator {
     'saved_meals',
     'integrations',
     'formula_pins',
+    'onboarding_surveys',
   ];
+
+  /// Test-only view of the dirty-record upload roster, so a regression test
+  /// can pin repositories (like `onboarding_surveys`) whose absence is
+  /// invisible at runtime — uploads just silently never retry.
+  @visibleForTesting
+  static List<String> get syncableRepositoryKeysForTesting =>
+      _syncableRepositoryKeys;
 
   /// Check if a repository's data is stale and needs syncing.
   ///

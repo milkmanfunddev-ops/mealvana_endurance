@@ -198,11 +198,25 @@ class _PostOnboardingAuthScreenState
           ),
         ),
         content: Text(
-          contentService.getValue(
-            'auth.error.account_exists_message',
-            defaultValue:
-                'This $provider account ${email != null ? "($email) " : ""}is already linked to another user.',
-          ),
+          [
+            contentService.getValue(
+              'auth.error.account_exists_message',
+              defaultValue:
+                  'This $provider account ${email != null ? "($email) " : ""}is already linked to another user.',
+            ),
+            // Be honest about what "Log In" does to the just-finished
+            // onboarding: an already-set-up account keeps its own settings.
+            if (ref
+                .read(onboardingControllerProvider.notifier)
+                .hasCompletedProfileDraft)
+              contentService.getValue(
+                'auth.error.account_exists_draft_note',
+                defaultValue:
+                    'If you log in and that account is already set up, its '
+                    'saved settings will be used instead of the answers you '
+                    'just entered.',
+              ),
+          ].join('\n\n'),
         ),
         actions: [
           TextButton(
@@ -256,8 +270,7 @@ class _PostOnboardingAuthScreenState
     if (kIsWeb) return;
 
     if (success && mounted) {
-      // This is always a sign-in (orphaning anonymous user), so navigate directly
-      await _navigateToMain();
+      await _finishLoginPreservingDraft(authProvider: 'google');
     }
   }
 
@@ -269,9 +282,62 @@ class _PostOnboardingAuthScreenState
     if (kIsWeb) return;
 
     if (success && mounted) {
-      // This is always a sign-in (orphaning anonymous user), so navigate directly
-      await _navigateToMain();
+      await _finishLoginPreservingDraft(authProvider: 'apple');
     }
+  }
+
+  /// Complete a LOGIN (sign-in to an existing account) without discarding a
+  /// completed onboarding draft.
+  ///
+  /// The old behavior navigated straight to /main on every login — but a user
+  /// who walked all nine onboarding steps and then tapped "Log In" (or hit the
+  /// account-already-exists dialog) still had their entire draft in memory
+  /// only, and navigation silently threw it away.
+  ///
+  /// Policy:
+  ///  - If the signed-in account has NOT completed onboarding (no profile, or
+  ///    a stub), the draft the user just filled in is saved onto it.
+  ///  - If the account already has a completed profile, the account's saved
+  ///    settings win (they may be older but were deliberately configured on
+  ///    another device); the user is told their answers were not applied.
+  Future<void> _finishLoginPreservingDraft({
+    required String authProvider,
+  }) async {
+    final onboardingController = ref.read(
+      onboardingControllerProvider.notifier,
+    );
+
+    if (onboardingController.hasCompletedProfileDraft) {
+      final authService = ref.read(authServiceProvider);
+      final contentService = ref.read(contentServiceProvider);
+      final existingUser = await authService.getCurrentUser();
+      if (!mounted) return;
+
+      if (existingUser == null || !existingUser.onboardingCompleted) {
+        // Fresh or stub account: the just-completed onboarding is the best
+        // data we have — persist it under the signed-in uid.
+        await _saveOnboardingDataAndNavigate(
+          authProvider: authProvider,
+          isAnonymous: false,
+        );
+        return;
+      }
+
+      // Existing, fully-onboarded account: its settings win. Say so instead
+      // of silently dropping the user's answers.
+      MealvanaSnackbar.showInfo(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.existing_account_settings_used',
+          defaultValue:
+              "You're signed in to your existing account, so its saved "
+              'settings are being used instead of the answers you just '
+              'entered. You can adjust anything in Settings.',
+        ),
+      );
+    }
+
+    await _navigateToMain();
   }
 
   Future<void> _handleEmailSignUp() async {
@@ -310,9 +376,10 @@ class _PostOnboardingAuthScreenState
     // Navigate to email login screen
     final result = await context.push('/auth/email-login');
 
-    // If email login successful, navigate directly (no onboarding data to save)
+    // If email login successful, finish without discarding any onboarding
+    // draft still in memory (see _finishLoginPreservingDraft).
     if (result == true && mounted) {
-      await _navigateToMain();
+      await _finishLoginPreservingDraft(authProvider: 'email');
     }
   }
 
