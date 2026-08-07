@@ -104,8 +104,18 @@ class UserRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      // Convert to UserProfile domain object using UserDao's helper
-      final userProfile = _convertToDomainUserProfile(dirtyUser);
+      // Delegate to the DAO's conversion — the single source of truth for
+      // every UserProfile field. A hand-duplicated copy used to live here
+      // and silently dropped sweatRate/unitSystem/nutritionTargetOverrides/
+      // etc. on every background upload (MEALVANA-ENDURANCE onboarding
+      // redesign: sweat rate and edited carb targets not surviving
+      // "Continue without an account").
+      final userProfile = await database.userDao.getUserProfileById(userId);
+      if (userProfile == null) {
+        return UploadResult.failed(
+          'Dirty user row disappeared before upload',
+        );
+      }
 
       // Upload to Supabase
       await supabase
@@ -134,15 +144,6 @@ class UserRepository with SyncableRepository {
       return UploadResult.failed(e.toString());
     }
   }
-
-  /// Convert database entry to domain model.
-  ///
-  /// Delegates to [UserDao.toDomainProfile] — the single complete mapping.
-  /// This used to be a hand-maintained partial copy that silently dropped
-  /// unit_system, sweat_rate and nutrition_target_overrides from every
-  /// dirty-record upload (`uploadDirtyRecords` serializes this object).
-  UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) =>
-      database.userDao.toDomainProfile(dbUser);
 
   // ========== End SyncableRepository Implementation ==========
 
@@ -700,7 +701,7 @@ class UserRepository with SyncableRepository {
             category: 'sync',
             data: {'user_id': userId},
           );
-          return _convertToDomainUserProfile(localProfile!);
+          return database.userDao.getUserProfileById(userId);
         }
 
         final user = _parseUserFromSupabase(response, userId);
@@ -842,18 +843,18 @@ class UserRepository with SyncableRepository {
 
   /// Parse user data from Supabase response.
   ///
-  /// Delegates to [UserProfile.fromSupabaseRow], the one complete defensive
-  /// parser. The old inline parser here omitted unit_system and sweat_rate,
-  /// so every remote hydration through this path reset a metric athlete to
-  /// imperial and their sweat profile to medium.
+  /// Delegates to [UserProfile.fromSupabaseRow], the one complete DEFENSIVE
+  /// parser (per-field defaults for missing/null columns — `fromJson` throws
+  /// on sparse legacy rows). The old inline field list here omitted
+  /// unit_system and sweat_rate, so every remote hydration through this path
+  /// reset a metric athlete to imperial and their sweat profile to medium.
   UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
-    // Handle both single object and array responses
-    final userData = response is List ? response.first : response;
+    // Handle both single object and array responses.
+    final userData =
+        (response is List ? response.first : response)
+            as Map<String, dynamic>;
 
-    return UserProfile.fromSupabaseRow(
-      (userData as Map).cast<String, dynamic>(),
-      fallbackId: deviceId,
-    );
+    return UserProfile.fromSupabaseRow(userData, fallbackId: deviceId);
   }
 
   Future<void> _upsertUserProfileToSupabase(UserProfile profile) async {

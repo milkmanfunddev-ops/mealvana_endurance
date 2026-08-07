@@ -176,16 +176,23 @@ class IntegrationProviderCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.md),
 
-              // Action button - fixed width to prevent logo shifting during
-              // state changes (narrower in spec style: the pill is ~92px and
-              // the caption needs the room to stay on one line)
-              SizedBox(
-                width: specStyle ? 116 : 200,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _buildAction(context),
+              // Spec rows: the action sizes to its own content. A fixed slot
+              // used to sit here "to prevent logo shifting", but the logo
+              // lives in the Expanded column above with start alignment — it
+              // is pinned to the left edge no matter how wide the action is,
+              // so the slot bought nothing and instead clipped the widest
+              // state (connected "Sync Now" overflowed it by 12px).
+              // Settings style keeps its fixed 200 slot untouched.
+              if (specStyle)
+                _buildAction(context)
+              else
+                SizedBox(
+                  width: 200,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: _buildAction(context),
+                  ),
                 ),
-              ),
             ],
           ),
 

@@ -6,6 +6,7 @@ class InsightSession {
   const InsightSession({
     required this.activityType,
     required this.durationMinutes,
+    this.durationIsEstimated = false,
     this.distanceMiles,
     this.title,
     required this.scheduledDateTime,
@@ -13,6 +14,13 @@ class InsightSession {
 
   final ActivityType activityType;
   final int durationMinutes;
+
+  /// True when the provider scheduled this session by distance only and
+  /// [durationMinutes] was derived from an assumed pace rather than sent to
+  /// us. The reveal's diagnostic sheet marks these so an estimate is never
+  /// read as provider data.
+  final bool durationIsEstimated;
+
   final double? distanceMiles;
   final String? title;
   final DateTime scheduledDateTime;
@@ -43,9 +51,16 @@ class TrainingInsights {
     required this.windowDays,
     required this.sessionCount,
     required this.weeklyDurationHours,
+    this.windowStart,
+    this.windowEnd,
     this.longestRun,
     this.longestRide,
     this.heavyDayCount = 0,
+    this.heavyWeekdays = const [],
+    this.lightWeekdays = const [],
+    this.sessions = const [],
+    this.rawActivityCount = 0,
+    this.dataUserId,
   });
 
   /// An empty, unreliable digest (no import / nothing usable).
@@ -64,6 +79,13 @@ class TrainingInsights {
   /// Span in whole days between the earliest and latest imported session.
   final int windowDays;
 
+  /// The actual dates the digest covers: the earliest and latest scheduled
+  /// session found in the import. The reveal card names these outright
+  /// rather than claiming a generic "next four weeks" — what we read is
+  /// what we say we read.
+  final DateTime? windowStart;
+  final DateTime? windowEnd;
+
   final int sessionCount;
 
   /// Total training hours normalized to a 7-day week (drives NEAT tiering).
@@ -74,4 +96,90 @@ class TrainingInsights {
 
   /// Days in the window with ≥1 qualifying session (the workout-day pattern).
   final int heavyDayCount;
+
+  /// The most- and least-loaded weekdays in the imported window
+  /// ([DateTime.monday]..[DateTime.sunday], ascending), surfaced on the
+  /// plan-reveal "we read your plan" card. Empty when the window doesn't
+  /// cover enough distinct weekdays to say anything meaningful — see
+  /// `TrainingInsightService.minWeekdaysForPattern`.
+  final List<int> heavyWeekdays;
+  final List<int> lightWeekdays;
+
+  /// Every usable session the digest was computed from, earliest first.
+  /// Backs the reveal card's diagnostic sheet (7 taps) so the numbers on
+  /// screen can always be traced to the rows that produced them.
+  final List<InsightSession> sessions;
+
+  /// How many activity rows the digest was handed BEFORE filtering, and the
+  /// user id they were read under. Purely diagnostic: together with
+  /// [sessionCount] they separate "we read nothing" (wrong id, or the
+  /// import hadn't landed yet) from "we read rows but discarded them all"
+  /// — the two failure modes look identical on the card otherwise.
+  final int rawActivityCount;
+  final String? dataUserId;
+
+  /// Same digest, tagged with the id it was read under (the pure digest
+  /// has no business knowing about auth).
+  TrainingInsights withDataUserId(String? userId) => TrainingInsights(
+    isReliable: isReliable,
+    windowDays: windowDays,
+    windowStart: windowStart,
+    windowEnd: windowEnd,
+    sessionCount: sessionCount,
+    weeklyDurationHours: weeklyDurationHours,
+    longestRun: longestRun,
+    longestRide: longestRide,
+    heavyDayCount: heavyDayCount,
+    heavyWeekdays: heavyWeekdays,
+    lightWeekdays: lightWeekdays,
+    sessions: sessions,
+    rawActivityCount: rawActivityCount,
+    dataUserId: userId,
+  );
+
+  static const _weekdayNames = {
+    DateTime.monday: 'Monday',
+    DateTime.tuesday: 'Tuesday',
+    DateTime.wednesday: 'Wednesday',
+    DateTime.thursday: 'Thursday',
+    DateTime.friday: 'Friday',
+    DateTime.saturday: 'Saturday',
+    DateTime.sunday: 'Sunday',
+  };
+
+  static const _monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  /// "Jul 20" — short, unambiguous, and intl-free (one label, two uses).
+  static String formatDate(DateTime date) =>
+      '${_monthNames[date.month - 1]} ${date.day}';
+
+  /// "Mon" — three-letter weekday, for the diagnostic session list.
+  static String weekdayAbbreviation(int weekday) =>
+      _weekdayNames[weekday]!.substring(0, 3);
+
+  static String _names(List<int> weekdays) =>
+      weekdays.map((d) => _weekdayNames[d]!).join(', ');
+
+  /// "Saturday, Sunday" — null when [heavyWeekdays] is empty.
+  String? get heavyDayNames =>
+      heavyWeekdays.isEmpty ? null : _names(heavyWeekdays);
+
+  /// "Monday, Friday" — null when [lightWeekdays] is empty.
+  String? get lightDayNames =>
+      lightWeekdays.isEmpty ? null : _names(lightWeekdays);
+
+  /// Whether there's a heavy/light weekday pattern to show at all.
+  bool get hasWeekdayPattern =>
+      heavyWeekdays.isNotEmpty && lightWeekdays.isNotEmpty;
+
+  /// "Jul 20 to Jul 26" — null until the digest actually read something.
+  String? get windowRangeLabel {
+    final start = windowStart;
+    final end = windowEnd;
+    if (start == null || end == null) return null;
+    return '${formatDate(start)} to ${formatDate(end)}';
+  }
 }
