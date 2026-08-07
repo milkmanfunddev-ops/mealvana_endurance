@@ -195,6 +195,15 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       _autofillSource = profile.detailsSource;
       _autofilledFields = filled;
     });
+    // Tell the controller which fields the platform owns, so disconnecting
+    // clears exactly these and nothing the athlete typed.
+    _controller.recordIntegrationAutofill({
+      if (filledName && profile.firstName != null) 'firstName',
+      if (filledName && profile.lastName != null) 'lastName',
+      if (filled.contains('Email')) 'email',
+      if (filled.contains('Gender')) 'gender',
+      if (filled.contains('Birth year')) 'birthYear',
+    });
     if (scrollYearTo >= 0 && _yearController.hasClients) {
       _applyingAutofill = true;
       _yearController.jumpToItem(scrollYearTo);
@@ -214,6 +223,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       _gender = gender;
       _userPickedGender = true;
     });
+    _controller.releaseIntegrationAutofill('gender');
     _controller.updatePersonalInfo(gender: gender);
   }
 
@@ -301,6 +311,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                   textCapitalization: TextCapitalization.words,
                   onChanged: (value) {
                     _userEditedFirstName = true;
+                    _controller.releaseIntegrationAutofill('firstName');
                     _controller.updatePersonalInfo(firstName: value);
                   },
                 ),
@@ -316,6 +327,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                   textCapitalization: TextCapitalization.words,
                   onChanged: (value) {
                     _userEditedLastName = true;
+                    _controller.releaseIntegrationAutofill('lastName');
                     _controller.updatePersonalInfo(lastName: value);
                   },
                 ),
@@ -333,6 +345,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
             autofillHints: const [AutofillHints.email],
             onChanged: (value) {
               _userEditedEmail = true;
+              _controller.releaseIntegrationAutofill('email');
               _controller.updatePersonalInfo(email: value);
             },
           ),
@@ -487,7 +500,10 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                     // Autofill drives the wheel through the controller,
                     // which lands here too — don't mistake that for the
                     // athlete choosing a year.
-                    if (!_applyingAutofill) _userPickedYear = true;
+                    if (!_applyingAutofill) {
+                      _userPickedYear = true;
+                      _controller.releaseIntegrationAutofill('birthYear');
+                    }
                   });
                   _controller.updatePersonalInfo(birthYear: _birthYear);
                 },

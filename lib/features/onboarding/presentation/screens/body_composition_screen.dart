@@ -114,6 +114,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
         return;
       }
       _weightAutofillApplied = true;
+      _controller.recordIntegrationAutofill(const {'weightPounds'});
       setState(() {
         _weightPounds = lbs;
         _weightSource = next.value?.weightSource;
@@ -322,6 +323,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
                 _weightPounds = UnitFormatter.kgToPounds(kg.toDouble());
                 _userAdjustedWeight = true;
                 _weightSource = null;
+                _controller.releaseIntegrationAutofill('weightPounds');
               });
               _pushToDraft();
             },
@@ -339,6 +341,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
                 _weightPounds = lb.toDouble();
                 _userAdjustedWeight = true;
                 _weightSource = null;
+                _controller.releaseIntegrationAutofill('weightPounds');
               });
               _pushToDraft();
             },

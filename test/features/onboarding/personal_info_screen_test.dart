@@ -345,6 +345,57 @@ void main() {
       expect(afterSettle, lessThan(10));
     });
 
+    testWidgets('disconnect clears autofilled fields but not typed ones', (
+      tester,
+    ) async {
+      final container = await pumpScreen(
+        tester,
+        integrationProfile: tpProfile,
+      );
+      final controller = container.read(onboardingControllerProvider.notifier);
+
+      // Everything arrived from the platform.
+      expect(controller.draft.firstName, 'Lee');
+      expect(controller.draft.email, 'lee@example.com');
+
+      // The athlete overrides one of them — that field is now theirs.
+      await tester.enterText(
+        find.byKey(const ValueKey('personal_info.first_name_field')),
+        'Xuan',
+      );
+      await tester.pumpAndSettle();
+
+      controller.clearIntegrationAutofill();
+
+      // Their edit survives; the untouched platform values are gone.
+      expect(controller.draft.firstName, 'Xuan');
+      expect(controller.draft.lastName, isNull);
+      expect(controller.draft.email, isNull);
+      expect(controller.draft.gender, isNull);
+      expect(controller.draft.birthYear, isNull);
+    });
+
+    testWidgets('disconnect leaves a fully hand-entered form alone', (
+      tester,
+    ) async {
+      final container = await pumpScreen(tester);
+      final controller = container.read(onboardingControllerProvider.notifier);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('personal_info.first_name_field')),
+        'Xuan',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('personal_info.gender_female')),
+      );
+      await tester.pumpAndSettle();
+
+      controller.clearIntegrationAutofill();
+
+      expect(controller.draft.firstName, 'Xuan');
+      expect(controller.draft.gender, Gender.female);
+    });
+
     testWidgets('no notice and no changes when nothing is connected', (
       tester,
     ) async {

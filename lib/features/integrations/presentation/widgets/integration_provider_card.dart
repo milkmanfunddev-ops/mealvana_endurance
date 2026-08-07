@@ -487,7 +487,9 @@ class _SyncButton extends StatelessWidget {
           style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
         ),
         content: Text(
-          'Your imported workouts will remain, but no new workouts will be synced.\n\nTip: Long-press Sync Now to disconnect.',
+          'This removes the workouts imported from this platform, along with '
+          'any profile details it filled in for you. Anything you entered '
+          'yourself is kept.\n\nTip: Long-press Sync Now to disconnect.',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textDarkSecondary,
           ),
