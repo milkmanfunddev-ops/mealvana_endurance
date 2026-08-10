@@ -93,14 +93,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  String _internalSwitchSubtitle(bool isInternal, bool isForced) {
-    if (isForced) {
-      return 'Locked on: this is a debug / IS_INTERNAL build, or a registered '
-          'team device. Events are tagged is_internal.';
+  String _internalSwitchSubtitle(bool testerMode, bool isForced) {
+    if (testerMode) {
+      return 'Tester features (incl. the \$0.99 test pack) are visible, and '
+          'events are tagged is_internal in Mixpanel.';
     }
-    if (isInternal) {
-      return 'Events from this device are tagged is_internal and filtered out '
-          'of Mixpanel reports.';
+    if (isForced) {
+      return 'Tester features hidden. This debug / IS_INTERNAL build (or '
+          'registered team device) still tags its events is_internal.';
     }
     return 'This device currently reports as a real user. Toggle on if it '
         "belongs to the team.";
@@ -129,13 +129,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (value) {
       MealvanaSnackbar.showSuccess(
         context,
-        'Device marked internal. Events are tagged is_internal from the next '
-        'app launch.',
+        'Device marked internal. Tester features are visible now; events are '
+        'tagged is_internal from the next app launch.',
       );
     } else {
       MealvanaSnackbar.showInfo(
         context,
-        'Device no longer marked internal. Takes effect on the next app launch.',
+        'Tester features hidden on this device. Analytics tagging updates on '
+        'the next app launch.',
       );
     }
   }
@@ -146,28 +147,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildDeviceIdRow(BuildContext context) {
     final deviceId = ref.read(internalUserServiceProvider).deviceId;
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(
-        'Device ID',
-        style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+    // Transparent Material so the tile's ink renders above BaseCard's
+    // decorated background instead of the far scaffold Material.
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(
+          'Device ID',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
-      ),
-      subtitle: Text(
-        deviceId,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontFamily: 'monospace',
+        subtitle: Text(
+          deviceId,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontFamily: 'monospace',
+          ),
         ),
+        trailing: const Icon(Icons.copy, size: 18),
+        onTap: () async {
+          await Clipboard.setData(ClipboardData(text: deviceId));
+          if (!context.mounted) return;
+          MealvanaSnackbar.showInfo(context, 'Device ID copied.');
+        },
       ),
-      trailing: const Icon(Icons.copy, size: 18),
-      onTap: () async {
-        await Clipboard.setData(ClipboardData(text: deviceId));
-        if (!context.mounted) return;
-        MealvanaSnackbar.showInfo(context, 'Device ID copied.');
-      },
     );
   }
 
@@ -369,25 +375,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            SwitchListTile(
-              title: Text(
-                'Mark this device as internal',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+            Material(
+              type: MaterialType.transparency,
+              child: SwitchListTile(
+                title: Text(
+                  'Mark this device as internal',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                _internalSwitchSubtitle(isInternal, isForced),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                subtitle: Text(
+                  _internalSwitchSubtitle(isInternal, isForced),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
+                // Always toggleable: on forced-internal builds the switch
+                // controls tester-surface visibility (the analytics tag stays
+                // internal regardless — see InternalUserService).
+                value: isInternal,
+                onChanged: _onInternalToggled,
+                activeThumbColor: AppColors.electrolyte,
+                contentPadding: EdgeInsets.zero,
               ),
-              value: isInternal,
-              // A dart-define'd or debug build is internal by definition; there
-              // is nothing to toggle.
-              onChanged: isForced ? null : _onInternalToggled,
-              activeThumbColor: AppColors.electrolyte,
-              contentPadding: EdgeInsets.zero,
             ),
             _buildDeviceIdRow(context),
           ],

@@ -5,7 +5,6 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/analytics/internal_user_service.dart';
-import '../../../shared/services/app_config.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../data/credits_repository.dart';
 import '../data/revenuecat_service.dart';
@@ -67,17 +66,20 @@ Future<Offering?> aiCreditOffering(Ref ref) async {
 /// This is [aiCreditOffering] minus the tester-only SKUs
 /// ([kTesterOnlyProductIds]): the $0.99 pipeline-test pack exists in the store
 /// so the whole purchase path (StoreKit → RevenueCat → webhook → wallet) can
-/// be exercised end to end, but only dev builds and 7-tap tester devices may
-/// see it. Filtering lives here — not in the sheet or the screen — so no
-/// future purchase surface can forget it.
+/// be exercised end to end, but only devices with tester mode ON (the 7-tap
+/// switch, defaulting on for IS_INTERNAL/debug builds) may see it. Filtering
+/// lives here — not in the sheet or the screen — so no future purchase
+/// surface can forget it.
 @riverpod
 Future<List<Package>> visibleCreditPackages(Ref ref) async {
+  // Watch before the await so the provider is subscribed even if the offering
+  // fetch is slow, and so toggling tester mode recomputes the list. Tester-SKU
+  // visibility follows the tester-mode switch ONLY — no isDevelopment
+  // short-circuit, so toggling it off hides the $0.99 pack on dev builds too.
+  final showTesterSkus = ref.watch(internalDeviceFlagProvider);
+
   final offering = await ref.watch(aiCreditOfferingProvider.future);
   if (offering == null) return const [];
-
-  final showTesterSkus =
-      ref.watch(appConfigProvider).isDevelopment ||
-      ref.watch(internalDeviceFlagProvider);
 
   return offering.availablePackages
       .where(
