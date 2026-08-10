@@ -469,7 +469,14 @@ class CarbsPerHourCard extends ConsumerWidget {
         Text(
           remaining == 0
               ? 'Your carb trend is ready.'
-              : 'Log $remaining more $lower to unlock your carb trend.',
+              // Only completed sessions WITH a fuel log advance the baseline —
+              // an imported run that stays "planned" never will, which is
+              // exactly what confused testers ("I logged runs and it still
+              // says 3 of 4"). Say the real rule.
+              : 'Log fuel on $remaining more completed '
+                    '${summary.minimumDurationMinutes}+ min $lower to unlock '
+                    'your carb trend. Imported workouts count once you '
+                    'complete them and log your fuel.',
           style: AppTextStyles.smallLabel.copyWith(
             fontSize: 10.5,
             height: 1.35,
