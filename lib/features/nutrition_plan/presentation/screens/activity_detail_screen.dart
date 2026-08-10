@@ -20,7 +20,6 @@ import '../../../coach_mode/presentation/widgets/activity_coach_feedback_widget.
 import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 import '../providers/activity_detail_state.dart';
 import '../widgets/stale_plan_warning.dart';
-import '../widgets/low_fuel_risk_badge.dart';
 import '../../../formula_kit/presentation/widgets/pin_status_banner.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
@@ -374,12 +373,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
                   ),
                 ),
 
-              // Low fuel risk badge (hidden during fuel log)
-              if (state.nutritionPlan != null && _extrasFadeOut.value > 0.01)
-                FadeTransition(
-                  opacity: _extrasFadeOut,
-                  child: LowFuelRiskBadge(nutritionPlan: state.nutritionPlan!),
-                ),
+              // LOW FUEL RISK badge intentionally not rendered (2026-08-10,
+              // Lee): the algorithm trips it often enough that the card reads
+              // as alarming rather than informative. The per-phase red
+              // deficit styling stays; FuelRiskService/LowFuelRiskBadge are
+              // kept for if/when the messaging is softened.
 
               // Planned/Actual toggle for completed activities with fuel log
               if (state.isCompleted && state.hasFuelLog && !state.isFuelLogMode)
