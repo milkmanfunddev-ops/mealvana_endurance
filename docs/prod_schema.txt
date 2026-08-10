@@ -2,6 +2,10 @@
 
 comment on database postgres is 'default administrative connection database';
 
+grant create on database postgres to supabase_etl_admin;
+
+grant connect, create, temporary on database postgres to dashboard_user;
+
 create type gender_enum as enum ('male', 'female', 'other', 'unknown');
 
 alter type gender_enum owner to postgres;
@@ -52,7 +56,7 @@ create type event_subtype_enum as enum ('5k', '10k', '15k', '10_mile', 'half_mar
 
 alter type event_subtype_enum owner to postgres;
 
-create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport', 'brick', 'transition');
+create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport', 'brick', 'transition', 'other');
 
 comment on type activity_type_enum is 'Supported activity types: running, cycling, swimming, triathlon, duathlon, multisport, brick. Brick is a multi-sport workout with 2-3 sequential segments.';
 
@@ -172,7 +176,8 @@ create table users
     sweat_test_source                       text
         constraint users_sweat_test_source_check
             check (sweat_test_source = ANY
-                   (ARRAY ['self_calculated'::text, 'commercial_test'::text, 'gatorade_gx'::text, 'estimated'::text, 'other'::text]))
+                   (ARRAY ['self_calculated'::text, 'commercial_test'::text, 'gatorade_gx'::text, 'estimated'::text, 'other'::text])),
+    is_internal                             boolean                  default false                           not null
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -228,6 +233,8 @@ comment on column users.default_swimming_pace_per_100_sec is 'User default swimm
 comment on column users.nutrition_target_overrides is 'User-configured nutrition target overrides. JSON with pre/during/post activity macro targets. Null = use algorithm defaults.';
 
 comment on column users.email is 'User email address for feedback prefill and profile display';
+
+comment on column users.is_internal is 'Internal team/test account. Exclude from analytics (Mixpanel) and engagement metrics.';
 
 alter table users
     owner to postgres;
@@ -307,7 +314,10 @@ create table feedback
     plan_name            text,
     user_name            text,
     timestamp            timestamp with time zone,
-    created_at           timestamp with time zone default now()
+    created_at           timestamp with time zone default now(),
+    user_id              uuid                     default auth.uid()
+        references ??? ()
+        on delete set null
 );
 
 alter table feedback
@@ -576,7 +586,8 @@ create table activities
     garmin_last_synced_at          timestamp with time zone,
     garmin_device_name             text,
     needs_upload                   boolean              default false,
-    local_updated_at               timestamp            default CURRENT_TIMESTAMP
+    local_updated_at               timestamp            default CURRENT_TIMESTAMP,
+    is_fasted                      boolean              default false not null
 );
 
 comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
@@ -1137,6 +1148,9 @@ create index idx_public_events_city_trgm
 create index idx_public_events_location_trgm
     on public_events using gin (location gin_trgm_ops);
 
+create unique index public_events_canonical_key_uniq
+    on public_events (lower(event_name), event_date, lower(COALESCE(city, ''::text)));
+
 grant delete, insert, references, select, trigger, truncate, update on public_events to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on public_events to authenticated;
@@ -1153,7 +1167,7 @@ create table integrations
     provider                      text                                               not null
         constraint integrations_provider_check
             check (provider = ANY
-                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text, 'vdot'::text])),
+                   (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text, 'vdot'::text, 'runna'::text])),
     access_token                  text                                               not null,
     refresh_token                 text,
     token_expires_at              timestamp with time zone,
@@ -1774,6 +1788,7 @@ create table pre_workout_templates
     component_food_names text[]                   default '{}'::text[],
     component_quantities jsonb                    default '{}'::jsonb,
     excluded_diets       text[]                   default '{}'::text[],
+    is_indivisible       boolean                  default true              not null,
     constraint pre_workout_formulas_check
         check (max_servings >= min_servings)
 );
@@ -2238,13 +2253,14 @@ create table formula_pins
     template_id   uuid                                               not null,
     template_kind text                                               not null
         constraint formula_pins_template_kind_check
-            check (template_kind = ANY (ARRAY ['pre_system'::text, 'during_system'::text, 'post_system'::text])),
+            check (template_kind = ANY
+                   (ARRAY ['pre_system'::text, 'during_system'::text, 'post_system'::text, 'personal_formula'::text])),
     created_at    timestamp with time zone default now()             not null,
     updated_at    timestamp with time zone default now()             not null,
     is_deleted    boolean                  default false             not null
 );
 
-comment on column formula_pins.template_kind is 'Polymorphic ref into pre_workout_templates, during_workout_templates, or post_workout_templates. Intentionally text, not FK. Widened to ''personal_template'' in PR 5 when personal formulas become pinnable.';
+comment on column formula_pins.template_kind is 'Polymorphic ref into pre_workout_templates, during_workout_templates, post_workout_templates, or personal_formulas. Intentionally text, not FK. Widened to ''personal_formula'' when personal formulas became pinnable.';
 
 alter table formula_pins
     owner to postgres;
@@ -2299,6 +2315,8 @@ create table personal_formulas
     created_at           timestamp with time zone default now()             not null,
     updated_at           timestamp with time zone default now()             not null,
     is_deleted           boolean                  default false             not null,
+    coach_insight_text   text,
+    coach_insight_marker text,
     constraint personal_formulas_forked_source_check
         check ((provenance <> 'forked_formula'::text) OR
                ((source_template_id IS NOT NULL) AND (source_template_kind IS NOT NULL)))
@@ -2316,6 +2334,446 @@ grant delete, insert, references, select, trigger, truncate, update on personal_
 grant delete, insert, references, select, trigger, truncate, update on personal_formulas to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on personal_formulas to service_role;
+
+create table events_refresh_runs
+(
+    id             uuid                     default gen_random_uuid() not null
+        primary key,
+    started_at     timestamp with time zone default now()             not null,
+    completed_at   timestamp with time zone,
+    status         text                     default 'running'::text   not null
+        constraint events_refresh_runs_status_check
+            check (status = ANY (ARRAY ['running'::text, 'completed'::text, 'failed'::text])),
+    mode           text
+        constraint events_refresh_runs_mode_check
+            check (mode = ANY (ARRAY ['rollover'::text, 'discovery'::text, 'both'::text])),
+    buckets_swept  integer                  default 0                 not null,
+    events_added   integer                  default 0                 not null,
+    events_updated integer                  default 0                 not null,
+    events_flagged integer                  default 0                 not null,
+    errors         jsonb                    default '[]'::jsonb       not null,
+    notes          text
+);
+
+alter table events_refresh_runs
+    owner to postgres;
+
+create index events_refresh_runs_started
+    on events_refresh_runs (started_at desc);
+
+grant delete, insert, references, select, trigger, truncate, update on events_refresh_runs to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on events_refresh_runs to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on events_refresh_runs to service_role;
+
+create table events_coverage
+(
+    id               uuid                     default gen_random_uuid() not null
+        primary key,
+    bucket_key       text                                               not null
+        unique,
+    state            text                                               not null,
+    category         text                                               not null,
+    last_swept_at    timestamp with time zone,
+    last_found_count integer,
+    created_at       timestamp with time zone default now()             not null,
+    updated_at       timestamp with time zone default now()             not null
+);
+
+alter table events_coverage
+    owner to postgres;
+
+create index events_coverage_staleness
+    on events_coverage (last_swept_at);
+
+grant delete, insert, references, select, trigger, truncate, update on events_coverage to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on events_coverage to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on events_coverage to service_role;
+
+create table ai_usage
+(
+    id            uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id       uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    function_name text                                               not null,
+    model         text                                               not null,
+    input_tokens  integer                  default 0                 not null,
+    output_tokens integer                  default 0                 not null,
+    created_at    timestamp with time zone default now()             not null,
+    cost_usd      numeric
+);
+
+alter table ai_usage
+    owner to postgres;
+
+create index ai_usage_user_created
+    on ai_usage (user_id asc, created_at desc);
+
+create index ai_usage_created
+    on ai_usage (created_at desc);
+
+grant delete, insert, references, select, trigger, truncate, update on ai_usage to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on ai_usage to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on ai_usage to service_role;
+
+create table token_wallets
+(
+    user_id     uuid                                   not null
+        primary key
+        references ??? ()
+        on delete cascade,
+    balance     integer                  default 0     not null
+        constraint token_wallets_balance_check
+            check (balance >= 0),
+    free_period text,
+    created_at  timestamp with time zone default now() not null,
+    updated_at  timestamp with time zone default now() not null
+);
+
+alter table token_wallets
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on token_wallets to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on token_wallets to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on token_wallets to service_role;
+
+create table token_ledger
+(
+    id            uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id       uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    delta         integer                                            not null,
+    reason        text                                               not null,
+    ref           text,
+    balance_after integer                                            not null,
+    created_at    timestamp with time zone default now()             not null
+);
+
+alter table token_ledger
+    owner to postgres;
+
+create index token_ledger_user_created
+    on token_ledger (user_id asc, created_at desc);
+
+create unique index token_ledger_purchase_ref_uniq
+    on token_ledger (ref)
+    where ((reason = 'grant_purchase'::text) AND (ref IS NOT NULL));
+
+grant delete, insert, references, select, trigger, truncate, update on token_ledger to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on token_ledger to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on token_ledger to service_role;
+
+create table nutrition_products
+(
+    id                        uuid                     default gen_random_uuid() not null
+        primary key,
+    barcode                   text                                               not null
+        unique,
+    product_name              text,
+    brand_name                text,
+    image_url                 text,
+    ingredients               text,
+    serving_size              text,
+    serving_grams             numeric,
+    calories_per_100g         numeric,
+    carbohydrates_per_100g    numeric,
+    protein_per_100g          numeric,
+    fat_per_100g              numeric,
+    sodium_mg_per_100g        numeric,
+    calories_per_serving      numeric,
+    carbohydrates_per_serving numeric,
+    protein_per_serving       numeric,
+    fat_per_serving           numeric,
+    sodium_mg_per_serving     numeric,
+    caffeine_mg               numeric,
+    potassium_mg              numeric,
+    sugar_g                   numeric,
+    fiber_g                   numeric,
+    categories                text,
+    suggested_product_type    text,
+    nutrition_data_per        text,
+    source                    text                                               not null,
+    resale_ok                 boolean generated always as ((source = ANY
+                                                            (ARRAY ['usda_fdc'::text, 'usda_bulk'::text, 'user'::text]))) stored,
+    confidence_score          numeric,
+    raw_payload               jsonb,
+    hit_count                 integer                  default 1                 not null,
+    first_cached_at           timestamp with time zone default now()             not null,
+    last_seen_at              timestamp with time zone default now()             not null,
+    updated_at                timestamp with time zone default now()             not null
+);
+
+comment on table nutrition_products is 'Canonical multi-source barcode->nutrition master. Write-through cache for barcode lookups (usda_fdc/open_food_facts), future bulk-USDA-ingest target, and licensed-API source. Self-contained (no app FKs) so it can be forked to a dedicated project. resale_ok excludes ODbL Open Food Facts data.';
+
+alter table nutrition_products
+    owner to postgres;
+
+create index nutrition_products_source_idx
+    on nutrition_products (source);
+
+create index nutrition_products_resale_idx
+    on nutrition_products (resale_ok)
+    where resale_ok;
+
+create index nutrition_products_hits_idx
+    on nutrition_products (hit_count desc);
+
+create index nutrition_products_name_trgm
+    on nutrition_products using gin (product_name gin_trgm_ops);
+
+create index nutrition_products_brand_trgm
+    on nutrition_products using gin (brand_name gin_trgm_ops);
+
+grant delete, insert, references, select, trigger, truncate, update on nutrition_products to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on nutrition_products to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on nutrition_products to service_role;
+
+create table meal_logs
+(
+    id            uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id       uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    log_date      date                                               not null,
+    slot          text
+        constraint meal_logs_slot_check
+            check (slot = ANY (ARRAY ['breakfast'::text, 'lunch'::text, 'dinner'::text, 'snack'::text])),
+    name          text                                               not null,
+    source        text                                               not null
+        constraint meal_logs_source_check
+            check (source = ANY
+                   (ARRAY ['photo'::text, 'manual'::text, 'describe'::text, 'saved'::text, 'recipe'::text, 'jade_baseline'::text])),
+    items         jsonb                    default '[]'::jsonb       not null,
+    calories      integer,
+    carbs_g       numeric,
+    protein_g     numeric,
+    fat_g         numeric,
+    sodium_mg     numeric,
+    photo_path    text,
+    recipe_id     uuid,
+    saved_meal_id uuid,
+    notes         text,
+    eaten_at      timestamp with time zone,
+    created_at    timestamp with time zone default now()             not null,
+    updated_at    timestamp with time zone default now()             not null,
+    is_deleted    boolean                  default false             not null
+);
+
+alter table meal_logs
+    owner to postgres;
+
+create index meal_logs_user_date
+    on meal_logs (user_id, log_date)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on meal_logs to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on meal_logs to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on meal_logs to service_role;
+
+create table saved_meals
+(
+    id           uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id      uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    name         text                                               not null,
+    items        jsonb                    default '[]'::jsonb       not null,
+    calories     integer,
+    carbs_g      numeric,
+    protein_g    numeric,
+    fat_g        numeric,
+    sodium_mg    numeric,
+    photo_path   text,
+    last_used_at timestamp with time zone,
+    created_at   timestamp with time zone default now()             not null,
+    updated_at   timestamp with time zone default now()             not null,
+    is_deleted   boolean                  default false             not null
+);
+
+alter table saved_meals
+    owner to postgres;
+
+create index saved_meals_user
+    on saved_meals (user_id asc, last_used_at desc)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on saved_meals to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on saved_meals to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on saved_meals to service_role;
+
+create table recipes
+(
+    id                uuid                     default gen_random_uuid() not null
+        primary key,
+    name              text                                               not null,
+    description       text                     default ''::text          not null,
+    ingredients       jsonb                    default '[]'::jsonb       not null,
+    instructions      jsonb                    default '[]'::jsonb       not null,
+    prep_time_minutes integer                  default 0                 not null,
+    servings          integer                  default 1                 not null,
+    type              text                     default 'mains'::text     not null
+        constraint recipes_type_check
+            check (type = ANY
+                   (ARRAY ['breakfast'::text, 'mains'::text, 'snacks'::text, 'workout_fuel'::text, 'recovery'::text])),
+    calories          numeric                  default 0                 not null,
+    carbs_g           numeric                  default 0                 not null,
+    protein_g         numeric                  default 0                 not null,
+    fat_g             numeric                  default 0                 not null,
+    fiber_g           numeric                  default 0                 not null,
+    sugar_g           numeric                  default 0                 not null,
+    sodium_mg         numeric                  default 0                 not null,
+    image_url         text,
+    tags              jsonb,
+    is_active         boolean                  default true              not null,
+    created_at        timestamp with time zone default now()             not null,
+    updated_at        timestamp with time zone default now()             not null
+);
+
+alter table recipes
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on recipes to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on recipes to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on recipes to service_role;
+
+create table jade_conversations
+(
+    id         uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id    uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    title      text,
+    created_at timestamp with time zone default now()             not null,
+    updated_at timestamp with time zone default now()             not null,
+    is_deleted boolean                  default false             not null
+);
+
+alter table jade_conversations
+    owner to postgres;
+
+create index jade_conversations_user
+    on jade_conversations (user_id asc, updated_at desc)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on jade_conversations to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on jade_conversations to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on jade_conversations to service_role;
+
+create table jade_messages
+(
+    id              uuid                     default gen_random_uuid() not null
+        primary key,
+    conversation_id uuid                                               not null
+        references jade_conversations
+            on delete cascade,
+    user_id         uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    role            text                                               not null
+        constraint jade_messages_role_check
+            check (role = ANY (ARRAY ['user'::text, 'assistant'::text])),
+    content         text                                               not null,
+    metadata        jsonb,
+    created_at      timestamp with time zone default now()             not null
+);
+
+alter table jade_messages
+    owner to postgres;
+
+create index jade_messages_conversation
+    on jade_messages (conversation_id, created_at);
+
+grant delete, insert, references, select, trigger, truncate, update on jade_messages to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on jade_messages to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on jade_messages to service_role;
+
+create table jade_calls
+(
+    id              uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id         uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    conversation_id uuid,
+    function_name   text                                               not null,
+    model           text                                               not null,
+    input_tokens    integer,
+    output_tokens   integer,
+    created_at      timestamp with time zone default now()             not null
+);
+
+alter table jade_calls
+    owner to postgres;
+
+create index jade_calls_user
+    on jade_calls (user_id asc, created_at desc);
+
+grant delete, insert, references, select, trigger, truncate, update on jade_calls to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on jade_calls to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on jade_calls to service_role;
+
+create table plan_generation_log
+(
+    id                 uuid                     default gen_random_uuid() not null
+        primary key,
+    created_at         timestamp with time zone default now()             not null,
+    plan_id            uuid,
+    device_id          text,
+    activity_type      text,
+    duration_minutes   integer,
+    gut_training_level text,
+    during_path        text,
+    targets            jsonb,
+    delivered          jsonb,
+    shortfalls         jsonb,
+    pin_decision       jsonb,
+    warnings           jsonb
+);
+
+alter table plan_generation_log
+    owner to postgres;
+
+create index plan_generation_log_created_at_idx
+    on plan_generation_log (created_at desc);
+
+create index plan_generation_log_device_id_idx
+    on plan_generation_log (device_id);
+
+grant delete, insert, references, select, trigger, truncate, update on plan_generation_log to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on plan_generation_log to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on plan_generation_log to service_role;
 
 create materialized view catalog_items as
 SELECT v.id,
@@ -2432,6 +2890,32 @@ grant delete, insert, references, select, trigger, truncate, update on v_food_sp
 grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to service_role;
+
+create view ai_usage_per_user
+            (user_id, email, function_name, model, calls, input_tokens, output_tokens, cost_usd, first_call,
+             last_call) as
+SELECT u.user_id,
+       au.email,
+       u.function_name,
+       u.model,
+       count(*)                  AS calls,
+       sum(u.input_tokens)       AS input_tokens,
+       sum(u.output_tokens)      AS output_tokens,
+       round(sum(u.cost_usd), 4) AS cost_usd,
+       min(u.created_at)         AS first_call,
+       max(u.created_at)         AS last_call
+FROM ai_usage u
+         LEFT JOIN auth.users au ON au.id = u.user_id
+GROUP BY u.user_id, au.email, u.function_name, u.model;
+
+alter table ai_usage_per_user
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on ai_usage_per_user to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on ai_usage_per_user to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on ai_usage_per_user to service_role;
 
 create function delete_nutrition_plan_by_device_plan_id(p_device_id text, p_plan_id text) returns boolean
     language plpgsql
@@ -3682,6 +4166,207 @@ grant execute on function personal_formulas_set_updated_at() to anon;
 grant execute on function personal_formulas_set_updated_at() to authenticated;
 
 grant execute on function personal_formulas_set_updated_at() to service_role;
+
+create function grant_credits(p_user_id uuid, p_amount integer, p_reason text, p_ref text DEFAULT NULL::text) returns integer
+    security definer
+    SET search_path = public
+    language plpgsql
+as
+$$
+DECLARE v_balance int;
+BEGIN
+  IF p_amount <= 0 THEN RAISE EXCEPTION 'grant amount must be positive'; END IF;
+  INSERT INTO public.token_wallets (user_id, balance) VALUES (p_user_id, 0)
+    ON CONFLICT (user_id) DO NOTHING;
+  UPDATE public.token_wallets
+    SET balance = balance + p_amount, updated_at = now()
+    WHERE user_id = p_user_id
+    RETURNING balance INTO v_balance;
+  INSERT INTO public.token_ledger (user_id, delta, reason, ref, balance_after)
+    VALUES (p_user_id, p_amount, p_reason, p_ref, v_balance);
+  RETURN v_balance;
+END; $$;
+
+alter function grant_credits(uuid, integer, text, text) owner to postgres;
+
+grant execute on function grant_credits(uuid, integer, text, text) to anon;
+
+grant execute on function grant_credits(uuid, integer, text, text) to authenticated;
+
+grant execute on function grant_credits(uuid, integer, text, text) to service_role;
+
+create function debit_credits(p_user_id uuid, p_amount integer, p_reason text, p_ref text DEFAULT NULL::text) returns jsonb
+    security definer
+    SET search_path = public
+    language plpgsql
+as
+$$
+DECLARE v_balance int;
+BEGIN
+  IF p_amount <= 0 THEN RAISE EXCEPTION 'debit amount must be positive'; END IF;
+  SELECT balance INTO v_balance FROM public.token_wallets
+    WHERE user_id = p_user_id FOR UPDATE;
+  IF v_balance IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'balance', 0);
+  END IF;
+  IF v_balance < p_amount THEN
+    RETURN jsonb_build_object('success', false, 'balance', v_balance);
+  END IF;
+  UPDATE public.token_wallets SET balance = balance - p_amount, updated_at = now()
+    WHERE user_id = p_user_id RETURNING balance INTO v_balance;
+  INSERT INTO public.token_ledger (user_id, delta, reason, ref, balance_after)
+    VALUES (p_user_id, -p_amount, p_reason, p_ref, v_balance);
+  RETURN jsonb_build_object('success', true, 'balance', v_balance);
+END; $$;
+
+alter function debit_credits(uuid, integer, text, text) owner to postgres;
+
+grant execute on function debit_credits(uuid, integer, text, text) to anon;
+
+grant execute on function debit_credits(uuid, integer, text, text) to authenticated;
+
+grant execute on function debit_credits(uuid, integer, text, text) to service_role;
+
+create function ensure_free_credits(p_user_id uuid, p_amount integer) returns integer
+    security definer
+    SET search_path = public
+    language plpgsql
+as
+$$
+DECLARE v_period text := to_char(now(), 'YYYY-MM'); v_balance int; v_last text;
+BEGIN
+  INSERT INTO public.token_wallets (user_id, balance) VALUES (p_user_id, 0)
+    ON CONFLICT (user_id) DO NOTHING;
+  SELECT free_period, balance INTO v_last, v_balance FROM public.token_wallets
+    WHERE user_id = p_user_id FOR UPDATE;
+  IF p_amount > 0 AND v_last IS DISTINCT FROM v_period THEN
+    UPDATE public.token_wallets
+      SET balance = balance + p_amount, free_period = v_period, updated_at = now()
+      WHERE user_id = p_user_id RETURNING balance INTO v_balance;
+    INSERT INTO public.token_ledger (user_id, delta, reason, ref, balance_after)
+      VALUES (p_user_id, p_amount, 'grant_free', v_period, v_balance);
+  END IF;
+  RETURN v_balance;
+END; $$;
+
+alter function ensure_free_credits(uuid, integer) owner to postgres;
+
+grant execute on function ensure_free_credits(uuid, integer) to anon;
+
+grant execute on function ensure_free_credits(uuid, integer) to authenticated;
+
+grant execute on function ensure_free_credits(uuid, integer) to service_role;
+
+create function search_catalog_ranked(q text, lim integer DEFAULT 20, p_product_type text DEFAULT NULL::text, p_product_type_id text DEFAULT NULL::text)
+    returns TABLE(id uuid, title text, variant_title text, brand text, product_type text, barcode text, image_url text, product_url text, price_cents integer, currency_code text, available_for_sale boolean, calories_per_serving integer, carbs_g double precision, protein_g double precision, fat_g double precision, sodium_mg integer, serving_size text, serving_grams double precision, caffeine_mg integer, nutrition_source text, nutrition_confidence double precision, product_type_id text, categories text[], is_electrolyte boolean, is_liquid boolean, allergens text[], excluded_diets text[], score integer)
+    stable
+    language sql
+as
+$$
+  with toks as (
+    select array_remove(
+             string_to_array(
+               regexp_replace(lower(trim(coalesce(q, ''))), '[^a-z0-9]+', ' ', 'g'),
+               ' '
+             ),
+             ''
+           ) as t
+  ),
+  scored as (
+    select
+      c.*,
+      (select count(*)
+         from unnest((select t from toks)) tok
+        where coalesce(c.brand, '') || ' ' || coalesce(c.title, '') ilike '%' || tok || '%'
+      ) as matched,
+      (
+        2 * (select count(*) from unnest((select t from toks)) tok
+              where coalesce(c.brand, '') ilike '%' || tok || '%')
+        +   (select count(*) from unnest((select t from toks)) tok
+              where coalesce(c.title, '') ilike '%' || tok || '%')
+      )::int as sc
+    from public.catalog_items c
+    where c.available_for_sale
+      and (p_product_type    is null or c.product_type    = p_product_type)
+      and (p_product_type_id is null or c.product_type_id = p_product_type_id)
+  )
+  select
+    s.id, s.title, s.variant_title, s.brand, s.product_type, s.barcode,
+    s.image_url, s.product_url, s.price_cents, s.currency_code, s.available_for_sale,
+    s.calories_per_serving, s.carbs_g, s.protein_g, s.fat_g, s.sodium_mg,
+    s.serving_size, s.serving_grams, s.caffeine_mg,
+    s.nutrition_source, s.nutrition_confidence,
+    s.product_type_id, s.categories, s.is_electrolyte, s.is_liquid,
+    s.allergens, s.excluded_diets,
+    s.sc as score
+  from scored s
+  where s.matched > 0
+    and s.matched >= ceil(
+      (select coalesce(array_length(t, 1), 0) from toks) / 2.0
+    )
+  order by s.sc desc, s.nutrition_confidence desc nulls last, s.title
+  limit greatest(1, least(coalesce(lim, 20), 50));
+$$;
+
+comment on function search_catalog_ranked(text, integer, text, text) is 'Relevance-ranked catalog text search. Tokenizes the query, requires >= half the tokens to match brand||title, scores 2x brand + 1x title, orders by score. Deliberately does NOT match variant_title (flavour names cause false positives). See docs/architecture/food-search-scan-audit-2026-07-16.md 9c.';
+
+alter function search_catalog_ranked(text, integer, text, text) owner to postgres;
+
+grant execute on function search_catalog_ranked(text, integer, text, text) to anon;
+
+grant execute on function search_catalog_ranked(text, integer, text, text) to authenticated;
+
+grant execute on function search_catalog_ranked(text, integer, text, text) to service_role;
+
+create function meal_logs_set_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+alter function meal_logs_set_updated_at() owner to postgres;
+
+grant execute on function meal_logs_set_updated_at() to anon;
+
+grant execute on function meal_logs_set_updated_at() to authenticated;
+
+grant execute on function meal_logs_set_updated_at() to service_role;
+
+create function saved_meals_set_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+alter function saved_meals_set_updated_at() owner to postgres;
+
+grant execute on function saved_meals_set_updated_at() to anon;
+
+grant execute on function saved_meals_set_updated_at() to authenticated;
+
+grant execute on function saved_meals_set_updated_at() to service_role;
+
+create function is_active_coach_for(athlete uuid) returns boolean
+    stable
+    security definer
+    SET search_path = public
+    language sql
+as
+$$
+  select exists (
+    select 1
+    from public.coach_athlete_relationships r
+    where r.coach_user_id = auth.uid()
+      and r.athlete_user_id = athlete
+      and r.status = 'active'
+  );
+$$;
+
+alter function is_active_coach_for(uuid) owner to postgres;
+
+grant execute on function is_active_coach_for(uuid) to anon;
+
+grant execute on function is_active_coach_for(uuid) to authenticated;
+
+grant execute on function is_active_coach_for(uuid) to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 
