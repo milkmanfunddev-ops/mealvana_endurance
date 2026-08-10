@@ -348,6 +348,14 @@ definitions:
             fi
           done
           grep -E '^(APP_ENVIRONMENT|DEV_MODE_ENABLED|AI_CREDITS_ENABLED|DESCRIBE_MEAL_ENABLED|COACH_INSIGHTS_ENABLED)=' .env.prod.local || true
+          # AI_CREDITS_ENABLED must be affirmatively true: app_config falls back
+          # to 'false' on prod when unset, which hides the entire token paywall
+          # (token pill, buy screen, RevenueCat configure). Caught 2026-08-10 —
+          # the snapshot carried =false and the gate only echoed it.
+          if ! grep -q '^AI_CREDITS_ENABLED=true' .env.prod.local; then
+            echo "  ERROR: AI_CREDITS_ENABLED must be exactly 'true' in the prod secret — anything else ships with the token paywall invisible"
+            missing="$missing AI_CREDITS_ENABLED(!=true)"
+          fi
           if grep -q '^REVENUECAT_API_KEY_TEST=' .env.prod.local; then
             echo "  ERROR: REVENUECAT_API_KEY_TEST found in .env.prod.local — it must never be in the prod secret"
             missing="$missing REVENUECAT_API_KEY_TEST(forbidden)"
@@ -540,17 +548,13 @@ workflows:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
-    # Auto-triggers on `develop` push, same as dev-ios. The Play Console
+    # Manual-only as of 2026-08-10 (Lee): develop pushes should run tests +
+    # dev-ios only — no Android build. Start this workflow from the Codemagic
+    # UI/API when a dev Android build is actually needed. The Play Console
     # dev app (com.milkman.mealvanaendurance.dev) exists as of 2026-05-06;
     # note its very first AAB may need a manual upload in the Play Console
     # UI before API publishing to the internal track succeeds.
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: develop
-          include: true
-      cancel_previous_builds: true
+    # (No `triggering:` block = manual start only.)
 
     scripts:
       - *write_dotenv_files
