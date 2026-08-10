@@ -34,7 +34,7 @@ class AppConfig {
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
     this.revenueCatApiKeyTest = '',
-    this.describeMealEnabled = false,
+    this.describeMealEnabled = true,
     this.coachInsightsEnabled = false,
     this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
@@ -144,8 +144,10 @@ class AppConfig {
 
   /// Release gate for text/photo meal analysis entry points.
   ///
-  /// Defaults off in every real build so an omitted environment variable
-  /// cannot accidentally expose a metered AI feature.
+  /// Pinned open in every build (2026-08-10, Lee): the Describe tab and the
+  /// photo/describe routes always show, dev and prod alike. The field is kept
+  /// so the gate can be re-closed at one choke point if metering ever demands
+  /// it.
   final bool describeMealEnabled;
 
   /// Release gate for Formula Kit coach insights.
@@ -321,12 +323,12 @@ class AppConfig {
             fallback: isDevMode ? 'true' : 'false',
           ) ==
           'true',
-      describeMealEnabled:
-          dotenv.get(
-            'DESCRIBE_MEAL_ENABLED',
-            fallback: isDevMode ? 'true' : 'false',
-          ) ==
-          'true',
+      // Describe/photo meal AI ships everywhere (2026-08-10, Lee): prod
+      // TestFlight needs the Describe tab visible to exercise real purchase
+      // flows, so the release gate is pinned open — an env value no longer
+      // hides it. Re-introduce the DESCRIBE_MEAL_ENABLED read here if the
+      // gate ever needs to close again.
+      describeMealEnabled: true,
       coachInsightsEnabled:
           dotenv.get(
             'COACH_INSIGHTS_ENABLED',
@@ -598,10 +600,8 @@ class AppConfig {
       aiCreditsEnabled: const String.fromEnvironment('AI_CREDITS_ENABLED') != ''
           ? const String.fromEnvironment('AI_CREDITS_ENABLED') == 'true'
           : isDevMode,
-      describeMealEnabled:
-          const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') != ''
-          ? const String.fromEnvironment('DESCRIBE_MEAL_ENABLED') == 'true'
-          : isDevMode,
+      // Pinned open — same rule as fromEnv (2026-08-10, Lee).
+      describeMealEnabled: true,
       coachInsightsEnabled:
           const String.fromEnvironment('COACH_INSIGHTS_ENABLED') != ''
           ? const String.fromEnvironment('COACH_INSIGHTS_ENABLED') == 'true'
