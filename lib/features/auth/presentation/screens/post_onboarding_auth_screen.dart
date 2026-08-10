@@ -11,6 +11,8 @@ import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
+import '../../../daily_macros/data/daily_macro_targets_repository.dart';
+import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
@@ -436,6 +438,12 @@ class _PostOnboardingAuthScreenState
     // `ref.read` after that point can throw on a disposed ConsumerState.
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
+    // For the post-sync macro-cache bust below. The container (not `ref`) is
+    // captured because the background upload outlives this screen, and the
+    // root container outlives every screen. The macro repository itself is
+    // read lazily off the container in there — constructing it eagerly here
+    // touches Supabase before some callers (and tests) have initialized it.
+    final container = ProviderScope.containerOf(context, listen: false);
 
     // This screen serves two arrivals:
     //
@@ -468,6 +476,7 @@ class _PostOnboardingAuthScreenState
             userId: existingUser.id,
             onboardingController: onboardingController,
             syncCoordinator: syncCoordinator,
+            container: container,
             logger: logger,
           ),
         );
@@ -530,6 +539,7 @@ class _PostOnboardingAuthScreenState
             userId: currentUser.id,
             onboardingController: onboardingController,
             syncCoordinator: syncCoordinator,
+            container: container,
             logger: logger,
           ),
         );
@@ -566,6 +576,7 @@ class _PostOnboardingAuthScreenState
     required String userId,
     required OnboardingController onboardingController,
     required SyncCoordinator syncCoordinator,
+    required ProviderContainer container,
     required AppLogger logger,
   }) async {
     try {
@@ -595,6 +606,20 @@ class _PostOnboardingAuthScreenState
           data: {'userId': userId},
         );
       }
+
+      // Bust the daily-macro cache now that the full activity picture is in
+      // Drift. The dashboard mounts (and fires its one edge-function calc)
+      // BEFORE this background sync lands the user's workouts, so the first
+      // cached row is computed session-less — a rest-day TDEE (e.g. 0/2380)
+      // that sticks until a manual refresh, because `daily_macro_targets`
+      // rows have no TTL and nothing in the sync path invalidates them. The
+      // user has at most days of cache at this point, so the blanket wipe
+      // costs one recompute. Invalidating the controller through the root
+      // container (this screen is disposed by now) triggers that recompute.
+      await container
+          .read(dailyMacroTargetsRepositoryProvider)
+          .invalidateAllForUser(userId);
+      container.invalidate(dailyMacrosControllerProvider);
     } catch (e, stackTrace) {
       logger.error(
         'Post-onboarding upload failed',
