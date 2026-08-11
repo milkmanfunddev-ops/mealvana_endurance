@@ -282,6 +282,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       currentAuthUserId: currentAuthUserId,
     );
 
+    // Guard the first async gap: `getCurrentUserProfile` above can outlive
+    // this auto-dispose provider (onboarding syncs invalidate it), and the
+    // `ref.read(userIdProvider.future)` below throws UnmountedRefException on
+    // a stale ref (Sentry MEALVANA-ENDURANCE-AV family).
+    if (!ref.mounted) return const ConnectTrainingState();
+
     // Resolve canonical user ID from auth session when possible.
     // This avoids false "Connect" states after relogin when local profile
     // hydration lags behind auth restoration.
@@ -576,6 +582,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationConnectStarted(providerId);
       final integration = await authenticate();
 
+      // OAuth easily outlives this auto-dispose provider (user backgrounds
+      // the app / navigates away). The integration row is already persisted
+      // by the service — just skip the state/analytics updates rather than
+      // throwing UnmountedRefException (Sentry MEALVANA-ENDURANCE-AV family).
+      if (!ref.mounted) return true;
+
       if (kDebugMode) {
         print('✅ connect$providerId: Authentication successful');
         print('   Athlete Name: ${integration.providerAthleteName}');
@@ -600,13 +612,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         print('   Stack: $stackTrace');
       }
       _reportFailureToSentry(providerId, 'connect', e, stackTrace);
-      state = AsyncData(
-        state.value!.copyWith(
-          isConnecting: false,
-          clearConnectingProvider: true,
-          errorMessage: e.toString(),
-        ),
-      );
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isConnecting: false,
+            clearConnectingProvider: true,
+            errorMessage: e.toString(),
+          ),
+        );
+      }
       _trackIntegrationConnectFailed(
         providerId,
         'authentication_error',
@@ -638,13 +652,20 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     if (_currentUserId == null) return;
     try {
       await disconnect();
+      // The disconnect await is an async gap on an auto-dispose provider —
+      // writing state through a stale ref throws UnmountedRefException
+      // (Sentry MEALVANA-ENDURANCE-AV family). The disconnect itself already
+      // persisted; only the (now-invisible) UI update is skipped.
+      if (!ref.mounted) return;
       state = AsyncData(updateState());
       _trackIntegrationDisconnected(providerId, reason: 'user_initiated');
     } catch (e, stackTrace) {
       _reportFailureToSentry(providerId, 'disconnect', e, stackTrace);
-      state = AsyncData(
-        state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
-      );
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
+        );
+      }
     }
   }
 
