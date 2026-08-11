@@ -1,38 +1,58 @@
 # Deployment Hub (Repo Truth)
 
 ## Current State (Repo Truth)
-- Backend deployment targets Supabase via GitHub Actions:
-  - `develop` -> `.github/workflows/deploy-dev.yml`
-  - `main` / `release/*` -> `.github/workflows/deploy-prod.yml`
-- CI deploy workflows run tests first, then `supabase db push` and `supabase functions deploy`.
+- **Edge-function deployment is manual.** No CI workflow runs `supabase functions deploy`.
+  The GitHub Actions deploy workflows (`deploy-dev.yml`, `deploy-prod.yml`,
+  `schema-drift-check.yml`) were deleted in `b2f86b4f` (2026-05-22) and are not coming back —
+  the manual flow below is the process of record.
+- Edge functions ship via the wrapper scripts `scripts/deploy_dev.sh` / `scripts/deploy_prod.sh`
+  (or the `/deploy-edge` Claude skill, which wraps the same command with pre/post checks).
+- Schema changes are applied by hand (DataGrip / `supabase db push` per
+  `supabase/migrations/README.md`) — CI does not run `supabase db push` either.
 - Web deployment is Vercel-based through `vercel.json` -> `scripts/build_web.sh`.
 - Web runtime DB connection uses Drift Wasm (`sqlite3.wasm`, `drift_worker.js`) via `lib/shared/database/connection_web.dart`.
 
 ## Source of Truth
-- Supabase deploy workflows:
-  - `.github/workflows/deploy-dev.yml`
-  - `.github/workflows/deploy-prod.yml`
+- Edge-function deploy scripts:
+  - `scripts/deploy_dev.sh` (dev; reads the project ref from `.env.dev.local`)
+  - `scripts/deploy_prod.sh` (prod; same, plus an interactive `yes` confirmation)
+- Deploy skill (checklist + verification): `.claude/skills/deploy-edge/SKILL.md`
 - Vercel config: `vercel.json`
 - Web build script: `scripts/build_web.sh`
 - Web entrypoint: `lib/main_web.dart`
 - Web DB connection: `lib/shared/database/connection_web.dart`
 - Available edge-function folders: `supabase/functions/`
 
-## Supabase Edge-Function Deployment Runbook
-- Project refs used in existing docs/workflows:
+## Supabase Edge-Function Deployment Runbook (Manual — Process of Record)
+- Project refs:
   - Dev: `vlmtsdzpnjnavdgytcmi`
   - Prod: `wvmvsodrvbkxfydabqed`
-- Deploy one function manually:
+- **Nothing deploys automatically.** Merging to `develop`/`main` does NOT ship edge functions.
+  After changing anything under `supabase/functions/`, someone must run a deploy by hand.
+- Preferred: the wrapper scripts (they pin the project ref explicitly, so a stale
+  `supabase/.temp/project-ref` from a prior `supabase link` can't silently target the wrong env):
+```bash
+./scripts/deploy_dev.sh <function-name> [<function-name> ...]
+./scripts/deploy_prod.sh <function-name> [<function-name> ...]   # asks for interactive 'yes'
+```
+- Or the `/deploy-edge` Claude skill, which runs the same deploy plus schema/secret/cross-import
+  pre-checks and post-deploy verification.
+- Raw CLI equivalent (what the scripts/skill run under the hood):
 ```bash
 supabase functions deploy <function-name> --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt
 supabase functions deploy <function-name> --project-ref wvmvsodrvbkxfydabqed --no-verify-jwt
 ```
-- List deployed functions:
+- List deployed functions (verify version/updated_at bumped after a deploy):
 ```bash
 supabase functions list --project-ref vlmtsdzpnjnavdgytcmi
 supabase functions list --project-ref wvmvsodrvbkxfydabqed
 ```
-- If `_shared` code changes, redeploy all impacted importing functions.
+- If `_shared` code changes, redeploy all impacted importing functions (shared modules are
+  bundled into each function at deploy time; already-deployed functions do not pick up
+  `_shared` edits).
+- Version numbers shown by `functions list` are deploy counters, not code versions, and
+  `ezbr_sha256` hashes are not comparable across projects — to audit staleness, download the
+  deployed source (`supabase functions download <fn> --project-ref <ref>`) and diff file contents.
 
 ### Edge-Function Truth Model
 #### App-invoked functions (derived from `lib/** functions.invoke(...)`)
@@ -80,7 +100,8 @@ supabase functions list --project-ref wvmvsodrvbkxfydabqed
 ## Verification Checklist
 - `supabase/functions/` names referenced in docs exist on disk.
 - App-invoked list matches current extraction from `lib/** functions.invoke(...)`.
-- Deploy workflows still contain test -> db push -> functions deploy sequence.
+- After any `supabase/functions/` change lands, a manual deploy (`scripts/deploy_dev.sh` /
+  `scripts/deploy_prod.sh` or `/deploy-edge`) was actually run — there is no CI backstop.
 - `vercel.json` still points to `scripts/build_web.sh`.
 - `connection_web.dart` still references `sqlite3.wasm` and `drift_worker.js` and those files exist in `web/`.
 

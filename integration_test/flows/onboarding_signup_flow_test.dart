@@ -52,6 +52,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
@@ -179,11 +180,16 @@ void main() {
       // ---- Personal info -------------------------------------------------
       await _fillPersonalInfoMinimum($);
 
-      // ---- Body composition: defaults are pre-set ------------------------
+      // ---- Body composition: switch to METRIC as a persistence sentinel --
+      // (the weight/height wheels ignore Patrol scrolls — the unit toggle is
+      // the one distinguishable input on this step, and unit_system is one of
+      // the fields the 2026-08 audit caught being reset to imperial).
+      await $(const ValueKey('body_comp.units_metric_button')).tap();
       await $(const ValueKey('body_comp.continue_button')).tap();
 
-      // ---- Nutrition settings: pick high gut training, continue ---------
+      // ---- Nutrition settings: high gut + HEAVY sweat (both sentinels) ---
       await $(const ValueKey('nutrition_settings.gut_high')).tap();
+      await $(const ValueKey('nutrition_settings.sweat_heavy')).tap();
       await $(const ValueKey('nutrition_settings.continue_button')).tap();
 
       // ---- Plan reveal: wait for the loader, then edit the long-run target
@@ -241,9 +247,90 @@ void main() {
             'The signup save path must not surface the save-failure '
             'snackbar.',
       );
+
+      // ---- THE POINT OF THIS FLOW: the answers actually persisted --------
+      // Probe Supabase AS THE ACCOUNT JUST CREATED (the shared tester session
+      // can't see it under RLS) and assert the sentinel answers landed:
+      // gender female, metric units, high gut training, heavy sweat rate,
+      // the plan-reveal carb edit, and the survey row. These are exactly the
+      // fields the 2026-08 audit found being dropped or reset at the auth
+      // boundary. The upload is a background walk after navigation, so poll.
+      final rows = await _pollForPersistedOnboarding(uniqueEmail, password);
+      final userRow = rows.userRow;
+      final surveyRow = rows.surveyRow;
+
+      if (userRow == null) {
+        fail(
+          'users row for $uniqueEmail never appeared in Supabase within the '
+          'polling window — the post-signup profile upload did not land.',
+        );
+      }
+      expect(userRow['gender'], 'female');
+      expect(
+        userRow['unit_system'],
+        'metric',
+        reason:
+            'unit_system was one of the fields the old upload payload '
+            'omitted — an imperial value here means the payload regressed.',
+      );
+      expect(userRow['gut_training_level'], 'high');
+      expect(
+        userRow['sweat_rate'],
+        'heavy',
+        reason: 'sweat_rate was omitted from the old upload payload.',
+      );
+      expect(userRow['onboarding_completed'], true);
+      final overrides = userRow['nutrition_target_overrides'];
+      expect(
+        overrides,
+        isNotNull,
+        reason:
+            'the plan-reveal edit must persist as a nutrition_target_override '
+            '— it was omitted from the old upload payload.',
+      );
+      expect(
+        (overrides as Map)['duringRun'],
+        isNotNull,
+        reason: 'the edited long-RUN carb target must survive signup.',
+      );
+
+      expect(
+        surveyRow,
+        isNotNull,
+        reason:
+            'the onboarding_surveys row (sports/goals/pitfalls) must reach '
+            'Supabase — it now has a dirty-record retry channel, so absence '
+            'means the upload never ran at all.',
+      );
+      expect(surveyRow!['sports'], contains('running'));
+      expect(surveyRow['goals'], contains('performance'));
     },
     timeout: const Timeout(Duration(minutes: 12)),
   );
+}
+
+/// Poll Supabase (as the just-registered account) for the uploaded profile
+/// and survey rows. The post-signup upload runs in the background after
+/// navigation, so give it up to ~90s of wall clock before giving up.
+Future<({Map<String, dynamic>? userRow, Map<String, dynamic>? surveyRow})>
+_pollForPersistedOnboarding(String email, String password) async {
+  Map<String, dynamic>? userRow;
+  Map<String, dynamic>? surveyRow;
+
+  for (var attempt = 0; attempt < 18; attempt++) {
+    await Future<void>.delayed(const Duration(seconds: 5));
+    final probe = await SupabaseProbe.signInAs(
+      email: email,
+      password: password,
+    );
+    if (probe == null) continue; // auth row may itself lag a beat
+    userRow ??= await probe.userRow();
+    surveyRow ??= await probe.onboardingSurvey();
+    // The users row is a hard requirement; the survey is uploaded by the
+    // same background walk, so once both are present we're done.
+    if (userRow != null && surveyRow != null) break;
+  }
+  return (userRow: userRow, surveyRow: surveyRow);
 }
 
 /// Bounded first-frame settle (default 100ms interval, 2-min ceiling).

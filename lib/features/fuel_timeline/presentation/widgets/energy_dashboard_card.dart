@@ -63,6 +63,7 @@ class EnergyDashboardCard extends ConsumerWidget {
                 : _collapsed(context, onSurface, muted),
           ),
           IconButton(
+            key: const ValueKey('fuel_timeline.dash_expand_toggle'),
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -487,6 +488,7 @@ class EnergyDashboardCard extends ConsumerWidget {
 
   Widget _breakdownButton() {
     return OutlinedButton(
+      key: const ValueKey('fuel_timeline.breakdown_button'),
       onPressed: onOpenBreakdown,
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.electrolyteDark,

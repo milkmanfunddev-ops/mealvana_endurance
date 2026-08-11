@@ -99,9 +99,10 @@ void main() {
       expect(insights.hasWeekdayPattern, isTrue);
       expect(
         insights.heavyWeekdays,
-        [monday.add(const Duration(days: 6)).weekday,
-            monday.add(const Duration(days: 2)).weekday]
-          ..sort(),
+        [
+          monday.add(const Duration(days: 6)).weekday,
+          monday.add(const Duration(days: 2)).weekday,
+        ]..sort(),
       );
       expect(
         insights.lightWeekdays,
@@ -153,22 +154,27 @@ void main() {
         // distance — the estimated minutes never reach the copy.
         expect(insights.longestRun, isNotNull);
         expect(insights.longestRun!.descriptor, 'your 15-mile long run');
-        // 15 mi × 9.5 min/mi ≈ 143 min, clearing the 90-min long-session
-        // bar, so a distance-only block is reliable like any other.
-        expect(insights.longestRun!.durationMinutes, closeTo(143, 2));
+        // 15 mi × 10 min/mi (FinalSurgeDefaults.runningPaceMinPerMile — the
+        // same assumption the transformers and macro engine use) = 150 min,
+        // clearing the 90-min long-session bar, so a distance-only block is
+        // reliable like any other.
+        expect(insights.longestRun!.durationMinutes, closeTo(150, 2));
         expect(insights.longestRun!.durationIsEstimated, isTrue);
         expect(insights.isReliable, isTrue);
 
         // Load still ranks correctly by distance: the 15 and 8 mile days
         // are heavy, the 5 and 6 mile days light.
-        expect(insights.heavyWeekdays, [
-          monday.add(const Duration(days: 2)).weekday,
-          monday.add(const Duration(days: 6)).weekday,
-        ]..sort());
-        expect(insights.lightWeekdays, [
-          monday.weekday,
-          monday.add(const Duration(days: 4)).weekday,
-        ]..sort());
+        expect(
+          insights.heavyWeekdays,
+          [
+            monday.add(const Duration(days: 2)).weekday,
+            monday.add(const Duration(days: 6)).weekday,
+          ]..sort(),
+        );
+        expect(
+          insights.lightWeekdays,
+          [monday.weekday, monday.add(const Duration(days: 4)).weekday]..sort(),
+        );
       },
     );
 

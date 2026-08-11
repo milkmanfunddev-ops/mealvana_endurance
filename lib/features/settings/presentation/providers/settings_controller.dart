@@ -21,6 +21,7 @@ import '../../../food_preferences/data/food_preferences_repository.dart';
 import '../../../meal_logging/data/meal_log_repository.dart';
 import '../../../meal_logging/data/saved_meals_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
+import '../../../onboarding/application/onboarding_snapshot_service.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -708,6 +709,11 @@ class SettingsController extends _$SettingsController {
     // Clear the temp user ID from SharedPreferences
     await prefs.remove(_onboardingTempUserIdKey);
 
+    // Drop the onboarding recovery snapshot: it exists to restore THIS
+    // user's profile after a DB wipe, and surviving a deliberate sign-out
+    // would let a later startup resurrect it under a different account.
+    await prefs.remove(OnboardingSnapshotService.prefsKey);
+
     // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
     // IMPORTANT: After this call, the auth listener will invalidate this controller
     // and GoRouter will navigate to /welcome. Do NOT access ref or state after this.
@@ -807,6 +813,10 @@ class SettingsController extends _$SettingsController {
       // This ensures a new user won't inherit the previous user's integration status
       final prefs = ref.read(sharedPreferencesProvider);
       await prefs.remove(_onboardingTempUserIdKey);
+
+      // The deleted account's onboarding snapshot must not survive to be
+      // restored under the device's next user.
+      await prefs.remove(OnboardingSnapshotService.prefsKey);
 
       // Sign out to trigger auth state listener to create a new anonymous user
       try {

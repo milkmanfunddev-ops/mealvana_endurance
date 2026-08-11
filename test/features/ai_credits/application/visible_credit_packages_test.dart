@@ -1,10 +1,11 @@
 /// Unit tests for [visibleCreditPackagesProvider] — the single place that
 /// decides which credit packs a build may display.
 ///
-/// The rule under test: tester-only SKUs ([kTesterOnlyProductIds], i.e. the
-/// $0.99 pipeline-test pack) are visible on dev builds and on devices flagged
-/// internal via the 7-tap tester reveal — and NEVER to a regular production
-/// user. The regular 50/250 packs are visible everywhere.
+/// The rule under test (since 2026-08-10): tester-only SKUs
+/// ([kTesterOnlyProductIds], i.e. the $0.99 pipeline-test pack) are visible
+/// exactly when tester mode is ON (the 7-tap switch, which defaults on for
+/// IS_INTERNAL/debug builds but can be toggled OFF anywhere — including dev
+/// builds). The regular 50/250 packs are visible everywhere.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +16,6 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/purchase_controller.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/shared/services/analytics/internal_user_service.dart';
-import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 class _MockRevenueCatService extends Mock implements RevenueCatService {}
 
@@ -50,8 +50,7 @@ class _FakeOfferings extends Fake implements Offerings {
       identifier == 'credits' ? _credits : null;
 }
 
-/// Pins the internal-device flag without touching the keychain-backed
-/// singleton.
+/// Pins the tester-mode flag without touching the keychain-backed singleton.
 class _FixedFlag extends InternalDeviceFlagNotifier {
   _FixedFlag(this._value);
 
@@ -61,6 +60,19 @@ class _FixedFlag extends InternalDeviceFlagNotifier {
   bool build() => _value;
 }
 
+/// A live (non-fixed) flag seeded off, so a test can flip it at runtime and
+/// assert the filter actually follows the toggle — the regression the
+/// original fixed-only tests could never catch.
+class _ToggleableFlag extends InternalDeviceFlagNotifier {
+  @override
+  bool build() => false;
+
+  @override
+  Future<void> setInternal(bool value) async {
+    state = value;
+  }
+}
+
 void main() {
   const allSkus = [
     'mealvana_credits_50',
@@ -68,11 +80,11 @@ void main() {
     'mealvana_credits_test_1',
     'mealvana_credits_test_1_prod',
   ];
+  const regularSkus = ['mealvana_credits_50', 'mealvana_credits_250'];
 
   ProviderContainer buildContainer({
-    required String appEnvironment,
-    required bool devModeEnabled,
-    required bool internalDevice,
+    InternalDeviceFlagNotifier Function()? flag,
+    required bool testerMode,
     List<String> skus = allSkus,
   }) {
     final rc = _MockRevenueCatService();
@@ -85,14 +97,8 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         revenueCatServiceProvider.overrideWithValue(rc),
-        appConfigProvider.overrideWithValue(
-          AppConfig.forTesting(
-            appEnvironment: appEnvironment,
-            devModeEnabled: devModeEnabled,
-          ),
-        ),
         internalDeviceFlagProvider.overrideWith(
-          () => _FixedFlag(internalDevice),
+          flag ?? () => _FixedFlag(testerMode),
         ),
       ],
     );
@@ -105,40 +111,28 @@ void main() {
     return packages.map((p) => p.storeProduct.identifier).toList();
   }
 
-  test('dev build → tester pack visible', () async {
-    final c = buildContainer(
-      appEnvironment: 'dev',
-      devModeEnabled: true,
-      internalDevice: false,
-    );
+  test('tester mode ON → tester pack visible', () async {
+    final c = buildContainer(testerMode: true);
     expect(await visibleSkus(c), allSkus);
   });
 
-  test('production build, regular device → tester pack hidden, '
-      'regular packs untouched', () async {
-    final c = buildContainer(
-      appEnvironment: 'prod',
-      devModeEnabled: false,
-      internalDevice: false,
-    );
-    expect(await visibleSkus(c), [
-      'mealvana_credits_50',
-      'mealvana_credits_250',
-    ]);
+  test('tester mode OFF → tester pack hidden, regular packs untouched — '
+      'even on dev builds (no isDevelopment short-circuit)', () async {
+    final c = buildContainer(testerMode: false);
+    expect(await visibleSkus(c), regularSkus);
   });
 
-  test(
-    'production build, 7-tap internal device → tester pack visible '
-    '(this is what enables the real-money \$0.99 test after release)',
-    () async {
-      final c = buildContainer(
-        appEnvironment: 'prod',
-        devModeEnabled: false,
-        internalDevice: true,
-      );
-      expect(await visibleSkus(c), allSkus);
-    },
-  );
+  test('toggling tester mode OFF at runtime hides the tester pack '
+      '(the 7-tap toggle regression)', () async {
+    final c = buildContainer(testerMode: false, flag: _ToggleableFlag.new);
+
+    final flag = c.read(internalDeviceFlagProvider.notifier);
+    await flag.setInternal(true);
+    expect(await visibleSkus(c), allSkus);
+
+    await flag.setInternal(false);
+    expect(await visibleSkus(c), regularSkus);
+  });
 
   test('no credits offering → empty list, no throw', () async {
     final rc = _MockRevenueCatService();
@@ -146,7 +140,6 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         revenueCatServiceProvider.overrideWithValue(rc),
-        appConfigProvider.overrideWithValue(AppConfig.forTesting()),
         internalDeviceFlagProvider.overrideWith(() => _FixedFlag(false)),
       ],
     );

@@ -38,6 +38,10 @@ import { logFormulaCascade } from "../_shared/nutrition/formula-decision.ts";
 import { applyElectrolyteWaterPairing } from "../_shared/nutrition/electrolyte-water-pairing.ts";
 
 import { fetchPreWorkoutTemplates, fetchTemplateFoodsByName } from "./before-phase-db.ts";
+import {
+  loadPreWorkoutDrinkPool,
+  loadPreWorkoutElectrolytePool,
+} from "../generate-macros-v4/ingredient-pools.ts";
 import { reconcileBeforePhaseAfterPins } from "./before-phase-reconcile.ts";
 import { fetchUserFoodsForBefore, findSubstitutions } from "./before-phase-substitution.ts";
 import { phaseResultToSubPhaseResult } from "./before-phase-explosion.ts";
@@ -208,12 +212,15 @@ export async function generateBeforePhaseV3(
     );
     phaseResults = input.pre_run_selections;
   } else {
-    // 2. Fetch pre_workout_templates (3 types in parallel)
+    // 2. Fetch food formulas (pre_workout_templates) + ingredient pools
+    // (template_foods — see generate-macros-v4/ingredient-pools.ts; the
+    // ingredient-shaped drink/electrolyte rows were dropped from
+    // pre_workout_templates per food-composition v3 H5).
     const [foodTemplates, drinkTemplates, electrolyteTemplates] = await Promise
       .all([
         fetchPreWorkoutTemplates(supabase, "food"),
-        fetchPreWorkoutTemplates(supabase, "drink"),
-        fetchPreWorkoutTemplates(supabase, "electrolyte"),
+        loadPreWorkoutDrinkPool(supabase),
+        loadPreWorkoutElectrolytePool(),
       ]);
 
     console.log(

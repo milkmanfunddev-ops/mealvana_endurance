@@ -180,6 +180,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 16: pre-workout food-composition v3 + category-based
+  /// selection (2026-08-06). Three additive columns:
+  ///   • pre_workout_templates.sub_phase (TEXT, nullable) — explicit tier
+  ///     membership ('full_meal' | 'snack' | 'top_up'); time_window becomes a
+  ///     display label only. Matches the Supabase sub_phase migration
+  ///     (20260806150000, applied to dev).
+  ///   • pre_workout_templates.fiber_per_serving (REAL NOT NULL DEFAULT 0) —
+  ///     H2 per-feeding fibre gate (Supabase v3 structure migration).
+  ///   • template_foods.food_group (TEXT, nullable) — Layer A food group
+  ///     G1…G9 for the §3.10 tier matrix (same migration).
+  /// All three use the idempotent addColumn helper, so a web user_version
+  /// replay of the step is harmless.
+  ///
   /// Schema version 14: build-a-meal redesign — `meal_logs.slot` becomes
   /// optional (nullable). SQLite has no `ALTER COLUMN ... DROP NOT NULL`, so
   /// the `from < 14` step rebuilds the table (rename → recreate via the
@@ -250,11 +263,14 @@ class AppDatabase extends _$AppDatabase {
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
   ///
-  /// v16 added the onboarding_surveys table (sports/goals/pitfalls from the
+  /// v17 added the onboarding_surveys table (sports/goals/pitfalls from the
   /// redesigned onboarding flow — docs/features/onboarding-redesign/README.md).
-  /// Supabase app_config.current_schema_version must be bumped to 16 only
-  /// when the build carrying this ships (it triggers client delete-and-resync).
-  int get schemaVersion => 16;
+  /// The branch originally shipped this as v16, but develop's v16 (sub_phase /
+  /// fiber_per_serving / food_group) landed first, so surveys became v17 at
+  /// merge time. Supabase app_config.current_schema_version must be bumped to
+  /// 17 only when the build carrying this ships (it triggers client
+  /// delete-and-resync).
+  int get schemaVersion => 17;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -472,11 +488,40 @@ class AppDatabase extends _$AppDatabase {
           );
         }
 
-        // v16: onboarding_surveys — the one new table of the onboarding
+        // v16: pre-workout food-composition v3 + category-based selection.
+        // sub_phase is the authoritative tier ('full_meal'/'snack'/'top_up');
+        // fiber_per_serving feeds the H2 fibre gate; food_group carries the
+        // Layer A classification on the ingredient catalog. All nullable or
+        // defaulted, all idempotent via addColumn.
+        if (from < 16) {
+          await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
+          await addColumn(
+            'pre_workout_templates',
+            'fiber_per_serving',
+            'REAL NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'food_group', 'TEXT');
+        }
+
+        // v17: onboarding_surveys — the one new table of the onboarding
         // redesign (sports/goals/pitfalls + survey_payload JSON escape
         // hatch). ensureTable is idempotent for web user_version replays.
-        if (from < 16) {
+        //
+        // The onboarding branch shipped this step as its own v16 in parallel
+        // with the sub_phase v16 above, so a device that ran the branch's v16
+        // sits at 16 WITH onboarding_surveys but WITHOUT the sub_phase
+        // columns. This step therefore re-runs the sub_phase addColumns
+        // (idempotent) so both v16 lineages converge at 17 instead of
+        // tripping the schema-integrity wipe.
+        if (from < 17) {
           await ensureTable(onboardingSurveysTable);
+          await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
+          await addColumn(
+            'pre_workout_templates',
+            'fiber_per_serving',
+            'REAL NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'food_group', 'TEXT');
         }
       },
 

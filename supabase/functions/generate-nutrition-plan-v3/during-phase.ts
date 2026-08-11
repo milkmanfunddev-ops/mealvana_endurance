@@ -727,6 +727,8 @@ export async function generateDuringPhase(
     constrainedFoods,
     targets,
     activityType,
+    durationMinutes,
+    gutLevel,
   );
   console.log(
     `[PLAN-V3-TIMING] during_rule_solve completed in ${

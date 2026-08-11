@@ -1,273 +1,96 @@
 # GitHub Actions Workflows
 
-This document describes the GitHub Actions workflows used for backend deployment and testing.
+This document describes the GitHub Actions workflows in `.github/workflows/`.
+
+> **GitHub Actions does NOT deploy the backend.** The Supabase deploy workflows
+> (`deploy-dev.yml`, `deploy-prod.yml`) and the daily `schema-drift-check.yml` were
+> **deleted in `b2f86b4f` (2026-05-22)** — they failed on the migration-history drift and
+> deployed nothing. They are intentionally not being restored. Since then:
+>
+> - **Edge functions** ship manually via `scripts/deploy_dev.sh` / `scripts/deploy_prod.sh`
+>   (or the `/deploy-edge` Claude skill). Merging to `develop`/`main` deploys nothing.
+>   Runbook: [/docs/deployment/README.md](/docs/deployment/README.md).
+> - **Schema** is applied by hand (DataGrip / CLI per `supabase/migrations/README.md`).
+>
+> Codemagic remains the build/deploy SSOT for the mobile apps.
 
 ## Workflows Overview
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
-| **Test** | `test.yml` | PR, push, daily | Run all tests |
-| **Deploy Dev** | `deploy-dev.yml` | Push to `develop` | Auto-deploy to dev Supabase |
-| **Deploy Prod** | `deploy-prod.yml` | Push to `main` | Production deployment (manual approval) |
-| **Schema Drift Check** | `schema-drift-check.yml` | Daily 9 AM UTC | Detect database drift |
-| **CodeRabbit** | `coderabbit.yml` | Pull requests | AI code review |
+| **Tests (self-hosted)** | `tests-selfhosted.yml` | Push, PR, manual | Full test suites on Lee's Mac mini M1 (saves Codemagic minutes); PR status checks |
+| **Changelog on main** | `changelog-on-main.yml` | Push to `main` (code paths) | Generate user-facing changelog via Claude, publish to Sanity |
+| **Refresh TheFeed catalog** | `refresh-feed.yml` | Mondays ~09:23 UTC, manual | Data-ops: import/deactivate/classify `catalog_products`/variants (prod, then dev) |
+| **Sync Prod → Dev** | `sync-prod-to-dev.yml` | Mondays 15:00 UTC, manual | Mirror refresh-managed tables (catalog, public_events) prod → dev |
 
-## Test Workflow (`test.yml`)
+None of these deploy app code or edge functions — they are tests and data-ops only.
 
-**Trigger:** PRs to develop/main, push to develop/main, daily at 10 AM UTC
+## Tests (Self-Hosted) Workflow (`tests-selfhosted.yml`)
 
-**Jobs:**
+**Trigger:** every push, every PR, manual dispatch. Runs on a self-hosted macOS runner
+(Lee's Mac mini M1); results show as PR status checks.
 
-### 1. Flutter Tests
-```yaml
-- Checkout code
-- Setup Flutter (stable)
-- Run code generation (build_runner)
-- Run unit tests with coverage
-- Upload coverage to Codecov
-```
+**Notes:**
+- Concurrency is one in-flight run per ref; newer pushes cancel older ones (single runner).
+- Patrol integration tests run against the iOS simulator (`PATROL_DEVICE`), with an
+  `EXPECTED_PATROL_TESTS` assertion so a silently dropped target fails the run.
+- Codemagic's `pr-validation` remains the merge test gate; this workflow supplements it
+  on owned hardware.
 
-### 2. Edge Function Tests
-```yaml
-- Checkout code
-- Setup Node.js 20
-- Setup Deno
-- Install dependencies
-- Run Vitest tests (150+ tests)
-```
+## Changelog on Main (`changelog-on-main.yml`)
 
-### 3. Edge Integration Tests (Manual/Scheduled)
-```yaml
-- Only runs manually or on schedule
-- Uses real dev Supabase instance
-- Validates edge function integration
-```
+**Trigger:** push to `main`, ignoring docs/markdown-only changes.
 
-### 4. Test Summary
-```yaml
-- Aggregates results from all jobs
-- Creates unified test report
-```
+Generates a user-facing changelog entry from the merged commits (via Claude) and publishes
+it to Sanity, which the marketing site renders.
+See [/docs/deployment/changelog-automation.md](/docs/deployment/changelog-automation.md).
 
-**Required Secrets:**
-- `DEV_SUPABASE_URL` - Dev environment URL
-- `DEV_ANON_KEY` - Dev anonymous key
-- `CODECOV_TOKEN` - Coverage reporting (optional)
+## Refresh TheFeed Catalog (`refresh-feed.yml`)
 
-## Deploy Dev Workflow (`deploy-dev.yml`)
+**Trigger:** Mondays ~09:23 UTC, or manual dispatch (target: prod / dev / both).
 
-**Trigger:** Push to `develop` branch, manual dispatch
+Deterministic data-ops job (not build/test CI): non-destructive importer, removed-product
+deactivation, and classify-new SQL against `catalog_products`/`catalog_variants`.
 
-**Steps:**
+## Sync Prod → Dev (`sync-prod-to-dev.yml`)
 
-```yaml
-1. Run Tests (Flutter + Edge functions)
-2. Link to dev Supabase project
-3. Deploy database migrations
-4. Deploy Edge Functions
-```
+**Trigger:** Mondays 15:00 UTC (after the prod refreshes), or manual dispatch.
 
-**Required Secrets:**
-- `DEV_PROJECT_ID` - Supabase project ID
-- `DEV_DB_PASSWORD` - Database password
-- `SUPABASE_ACCESS_TOKEN` - CLI authentication
-
-## Deploy Prod Workflow (`deploy-prod.yml`)
-
-**Trigger:** Push to `main` branch, manual dispatch
-
-**REQUIRES MANUAL APPROVAL** via GitHub Environments
-
-**Steps:**
-
-```yaml
-1. Run Tests (Flutter + Edge functions)
-2. Wait for manual approval
-3. Link to production Supabase project
-4. Safety check - review schema diff
-5. Deploy database migrations
-6. Deploy Edge Functions
-7. Verify deployment
-8. Post-deployment monitoring checklist
-```
-
-**Required Secrets:**
-- `PROD_PROJECT_ID` - Production Supabase project ID
-- `PROD_DB_PASSWORD` - Production database password
-- `SUPABASE_ACCESS_TOKEN` - CLI authentication
-
-**Safety Features:**
-- Manual approval gate prevents accidental deployments
-- Schema diff review before applying migrations
-- Post-deployment verification step
-- Monitoring checklist output
-
-## Schema Drift Check (`schema-drift-check.yml`)
-
-**Trigger:** Daily at 9 AM UTC, manual dispatch
-
-**Purpose:** Detect when cloud database schema differs from local migrations
-
-**Steps:**
-
-```yaml
-1. Check dev environment for drift
-2. Check production environment for drift
-3. If drift detected:
-   - Create GitHub issue with details
-   - Upload drift report as artifact
-   - Provide remediation instructions
-```
-
-**Required Secrets:**
-- `DEV_PROJECT_ID`, `DEV_DB_PASSWORD`
-- `PROD_PROJECT_ID`, `PROD_DB_PASSWORD`
-- `SUPABASE_ACCESS_TOKEN`
-
-**Example Issue Created:**
-```markdown
-## Schema Drift Detected
-
-**Environment:** production
-**Date:** 2025-12-02
-
-### Drift Details
-[diff output]
-
-### Remediation
-Run: supabase db pull
-Compare with: database_schemas/v1/schema.sql
-```
-
-## CodeRabbit (`coderabbit.yml`)
-
-**Trigger:** Pull requests (opened, synchronized, reopened)
-
-**Purpose:** AI-powered code review with FOA architecture awareness
-
-**Configuration:** `.coderabbit.yaml`
-
-**Custom Instructions:**
-- Enforce Andrea Bizzotto's FOA patterns
-- Check for UI/Controller separation
-- Validate Riverpod patterns
-- Review content service usage
-
-## Setting Up GitHub Environments
-
-### Production Environment
-
-1. Go to Repository Settings → Environments
-2. Click "New environment"
-3. Name: `production`
-4. Enable "Required reviewers"
-5. Add team members who can approve production deploys
-6. Add environment secrets:
-   - `PROD_PROJECT_ID`
-   - `PROD_DB_PASSWORD`
-
-### Development Environment
-
-1. Create environment: `development`
-2. No approval required (auto-deploy)
-3. Add secrets:
-   - `DEV_PROJECT_ID`
-   - `DEV_DB_PASSWORD`
+Mirrors refresh-managed tables (`catalog_products`, `public_events`) from prod to dev.
 
 ## Required GitHub Secrets
 
-### Repository Secrets
+Set in Settings → Secrets and variables → Actions. The exact list is defined by the
+workflow files themselves (grep `secrets.` in `.github/workflows/`); highlights:
 
-```
-SUPABASE_ACCESS_TOKEN    # supabase login → copies token
-DEV_PROJECT_ID           # From Supabase dashboard
-DEV_DB_PASSWORD          # From Supabase dashboard
-DEV_SUPABASE_URL         # https://xxx.supabase.co
-DEV_ANON_KEY             # From Supabase dashboard
-PROD_PROJECT_ID          # Production Supabase project
-PROD_DB_PASSWORD         # Production database password
-```
+- `DEV_SUPABASE_SERVICE_ROLE_KEY` / `PROD_SUPABASE_SERVICE_ROLE_KEY` — data-ops workflows
+- Sanity + Anthropic credentials — changelog workflow
 
-### Generating Supabase Access Token
+> Note: the repo moved to the `milkmanfunddev-ops` org on 2026-07-23, which wiped all
+> Actions secrets — if a workflow suddenly 401s, re-check the secrets exist.
 
-```bash
-supabase login
-# Copies token to clipboard
-# Paste into GitHub secret: SUPABASE_ACCESS_TOKEN
-```
+## Backend Deployment (what replaced the deleted workflows)
 
-## Workflow Dependencies
-
-```
-┌─────────────────┐
-│   test.yml      │◄─── Runs on every PR
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ deploy-dev.yml  │◄─── Auto on develop push
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ deploy-prod.yml │◄─── Manual approval on main
-└─────────────────┘
-
-┌──────────────────────┐
-│ schema-drift-check   │◄─── Daily scheduled
-└──────────────────────┘
-```
-
-## Monitoring & Alerts
-
-**GitHub Actions Notifications:**
-- Enable in repository Settings → Notifications
-- Or use Slack integration via GitHub app
-
-**Failed Workflow Actions:**
-1. Check Actions tab for error logs
-2. Review specific job that failed
-3. Common issues:
-   - Missing secrets
-   - Database connection timeout
-   - Edge function syntax errors
-
-## Troubleshooting
-
-### Tests Pass Locally but Fail in CI
+Manual, human-run, process of record:
 
 ```bash
-# Ensure you're using same versions
-flutter --version
-node --version
-deno --version
+# Edge functions
+./scripts/deploy_dev.sh <fn> [<fn> ...]      # dev (ref pinned from .env.dev.local)
+./scripts/deploy_prod.sh <fn> [<fn> ...]     # prod (interactive 'yes' confirmation)
 ```
 
-### Supabase Deploy Fails
+Or the `/deploy-edge` Claude skill (same deploy plus schema/secret/cross-import pre-checks
+and post-deploy verification). Full runbook, including the `_shared/` redeploy rule and how
+to audit deployed vs repo code: [/docs/deployment/README.md](/docs/deployment/README.md).
 
-```bash
-# Verify CLI is authenticated
-supabase projects list
+## Monitoring & Troubleshooting
 
-# Check project linking
-supabase link --project-ref $PROJECT_ID
-```
-
-### Schema Drift Alert
-
-```bash
-# Pull current remote schema
-supabase db pull
-
-# Compare with local
-diff database_schemas/v1/schema.sql supabase/migrations/
-
-# Generate migration if needed
-supabase db diff --schema public
-```
+- Check the Actions tab for run logs; common failures are missing secrets (see the org-move
+  note above) or the self-hosted runner being offline / low on disk.
+- Mobile build failures are a Codemagic concern, not GitHub Actions — see
+  [Codemagic Procedures](./codemagic-procedures.md).
 
 ## References
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Supabase CLI Reference](https://supabase.com/docs/reference/cli)
-- [GitHub Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments)

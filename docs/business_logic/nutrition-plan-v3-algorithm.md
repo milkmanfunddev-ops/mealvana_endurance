@@ -1,6 +1,6 @@
 # Generate Nutrition Plan V3: Algorithm Flow
 
-> Current implementation map for `generate-nutrition-plan-v3`, verified against the source on July 29, 2026 (HEAD `f2652750` plus uncommitted same-session changes: food-source policy, electrolyte-water pairing, target-seeking fixes, and post-LP reconciliation). Prior verification: July 21, 2026 — see git history of this file for what changed.
+> Current implementation map for `generate-nutrition-plan-v3`, verified against the source on August 10, 2026 (HEAD `a551d409`). This pass corrected the Before-phase section only (120-minute meal-slot threshold, drink/electrolyte pool split, `sub_phase` as the selection key, the inert Pass-3 electrolyte pool, the H2 fibre gate, and `food_group`); During/After/brick sections were re-checked by a prior audit and found accurate, so they are unchanged here. Prior verification: July 29, 2026 (HEAD `f2652750`) — see git history of this file for what changed.
 
 ## What this function does
 
@@ -73,7 +73,7 @@ flowchart TD
     B -- "No" --> C{"macro-v4 supplied pre_run_selections?"}
 
     C -- "Yes" --> S["Reuse those selected templates"]
-    C -- "No" --> T["Load food, drink, and electrolyte templates"]
+    C -- "No" --> T["Load food templates (pre_workout_templates),<br/>drink pool (template_foods, is_drink_pool),<br/>and electrolyte pool (empty by ruling)"]
     T --> AC["Algorithm C splits targets across active slots"]
     AC --> PICK["For each slot: honor an in-scope template pin,<br/>or score, stack, and fill from eligible templates"]
     PICK --> S
@@ -92,21 +92,28 @@ flowchart TD
 
 [Full-size render: `diagrams/nutrition-plan-v3-before.svg`](diagrams/nutrition-plan-v3-before.svg) &middot; [PNG](diagrams/nutrition-plan-v3-before.png) — regenerate with the command in **Diagram renders** below.
 
-Active slots depend on `hours_before`:
+Active slots depend on `hours_before` (`getActiveSubPhases`, `TIER_MEAL_MIN` / `TIER_TOPOFF_MAX` in `generate-macros-v4/pre-workout.ts:137-139,688-699`):
 
 | Time available | Slots produced |
 |---|---|
-| `>= 1.5 hours` | meal, snack, top-up |
-| `>= 0.5 hours` | snack, top-up |
-| `< 0.5 hours` | top-up |
+| `>= 120 min` (2 hours) | meal, snack, top-up |
+| `>= 30 min` | snack, top-up |
+| `< 30 min` | top-up |
+
+The meal-slot threshold moved from 1.5 hours to 120 minutes under the 2026-08-06 "120-minute ruling" (D-017); it is intentionally identical to `calculatePreWorkoutTargets`'s tier boundary so `meal_type` and the active sub-phases can never disagree.
 
 Important details:
 
 - The live app normally sends `pre_run_selections` already chosen by `generate-macros-v4`. V3's own Algorithm C call is the fallback for a direct call or regeneration without those selections.
 - Diet and allergies are hard filters for normal selection. User likes, willingness, and dislikes influence free-form selection. An explicit in-scope pin wins over those filters by design.
 - A pinned personal formula overlays only its matching active slot; the other slots stay algorithmic.
+- **Food templates vs. drink/electrolyte pools are two different tables.** Food templates (meal/snack/top-up formulas) come from `pre_workout_templates` via `fetchPreWorkoutTemplates`. The drink pool comes from `template_foods` rows flagged `is_drink_pool` with `top_up` in `drink_pool_phases` and a positive before-phase serving cap (`loadPreWorkoutDrinkPool`, `generate-macros-v4/ingredient-pools.ts`), adapted to the template shape via `ingredientRowToTemplate`. The electrolyte pool is a hardcoded empty array (`loadPreWorkoutElectrolytePool`) — see the Pass 3 note below.
+- **`sub_phase` is the selection key, `time_window` is display-only.** `pre_workout_templates.sub_phase` (`full_meal` / `snack` / `top_up`) is the authoritative classification, read via `templatePhase()` (`pre-workout.ts:747`) — the *only* sanctioned place a template is classified to a phase. `templatePhase` falls back to `timeWindowToPhase(time_window)` only for catalogs that predate the 2026-08-06 `sub_phase` migration (prod, as of this writing). `time_window` itself is a pure display label and may carry any future string without touching selection — never string-match it directly (this caused the 2026-08-05 flat-50g outage, where dev's and prod's `time_window` strings diverged and a direct string comparison matched zero templates on dev).
 - **Post-pin reconciliation** (`reconcileBeforePhaseAfterPins`, `before-phase-reconcile.ts`, wired at `before-phase.ts:414`): Algorithm C sizes the top-up's drink/electrolyte against its own meal + snack. When a personal-formula pin replaces one of those slots, the stale gap-fill can push the whole phase outside every range at once (bug `3abe3fdb754c818c93e8fbbd801dae8e`). This pass trims non-pinned excess toward targets and fills any resulting carb-floor gap from the universal add-on pool. It only runs when at least one slot was pinned.
 - **Electrolyte-water pairing** (`electrolyte-water-pairing.ts`, applied per slot at `before-phase.ts:434`): Algorithm C's `pickDrink` and `pickElectrolyte` run independently, so a dry electrolyte item can land in a slot with no drink. This pass guarantees any electrolyte item with negligible fluid of its own (`fluids_ml <= 15ml`) gets paired with a drinkable water item, charged against the phase-level `water_high_ml` ceiling less whatever the other slots already deliver. It never overshoots the ceiling to satisfy the pairing — it fills from headroom, then tries trimming a zero-carb fluid carrier, then reports an honest conflict (`fluid_ceiling` / `no_water_source`) rather than overshooting.
+- **Pass 3 (`pickElectrolyte`) is inert in production.** `loadPreWorkoutElectrolytePool()` (`generate-macros-v4/ingredient-pools.ts:142-144`) always returns an empty array, by a 2026-08-06 ruling (Lee) plus the pre-workout sodium SSOT v3: "the BEFORE algorithm should consider fluids but not electrolytes," and `pre-workout-sodium.md` v3 sets no pre-workout sodium target at all ("null, not 0") with a `none` per-tier engine action. `pickElectrolyte` itself is still exported and unit-tested (it may be reused where sodium delivery is spec'd), but with an empty pool Pass 3 never selects anything in a live plan. Any electrolyte item that does reach a Before slot arrives through a personal-formula pin, not through Algorithm C's own selection.
+- **H2 fibre gate.** `pre_workout_templates.fiber_per_serving` (added by the 2026-08-05 food-composition-v3 migration, summed from `component_quantities` × `template_foods.fiber_g`) backs a per-feeding fibre limit checked at catalog-curation time, at the 65 kg floor: meal ≤ max(8 g, 0.12 g/kg), snack ≤ max(4 g, 0.06 g/kg), top-off ≤ 2 g flat (no body-mass scaling). This is a **data-migration-time gate, not a live per-request check** — non-conforming rows (e.g. Fruit Bowl at 8.9 g fibre, Dates + Banana at 6.3 g, Coconut Water at 2.6 g) were deleted from the catalog by the migration rather than filtered at generation time; there is no `fiber_per_serving` comparison anywhere in `generate-macros-v4` or `generate-nutrition-plan-v3` source today. See `docs/pre_workout_food_composition_v3_migration_report.md` for the full pass/fail table and a documented exception (Banana at the top-off tier, 3.1 g, carries an explicit H4-based waiver).
+- **`template_foods.food_group`** (added by the same migration; `CHECK` constraint restricts it to `G1`–`G9`, e.g. `G1` refined starches, `G3` low-residue fruit, `G8` high-residue whole foods, `G9` high-FODMAP) records the §3.10 tier-eligibility matrix's food-group membership per ingredient. **As of this writing it is populated but not read by any runtime selector** — grep confirms no `food_group` reference in `supabase/functions`; the Dart side only maps it through as data (`template_foods_repository.dart`). It is migration/reference metadata, not (yet) a live filter. The migration report also flags an unresolved ambiguity: **G9 (high-FODMAP) deliberately overlaps G3 and G8 per §3.9, and the SSOT publishes no precedence rule** for a food that reads as more than one group (e.g. dates read as G9 = AVOID at snack, or as G3 = FREE) — the single-value `food_group` column forces one reading per food without resolving which reading is correct, and the migration report calls this "not settled," to be judged case-by-case rather than assumed.
 
 ## During-workout flow
 
@@ -196,7 +203,7 @@ The `protein_grams` values you'll see computed inside `before-phase-explosion.ts
 
 Decided 2026-07-29 (Lee): **aim at the target, pass iff inside the range** — not "reach 70-90% of target and stop." This standard now applies across the During/Before greedy fallback, the After greedy fallback, `pickElectrolyte` in Algorithm C, and the After-phase LP reconciliation pass:
 
-- `pickElectrolyte`'s old floor gate (`if (totalSodiumDelivered >= sodiumLow) return null`) is removed. It now scores every candidate against `sodiumTarget` (the midpoint), same as `pickDrink` always has, and only adds a candidate that strictly improves the distance-to-target score without crossing any band ceiling.
+- `pickElectrolyte`'s old floor gate (`if (totalSodiumDelivered >= sodiumLow) return null`) is removed. It now scores every candidate against `sodiumTarget` (the midpoint), same as `pickDrink` always has, and only adds a candidate that strictly improves the distance-to-target score without crossing any band ceiling. **This scoring fix predates the 2026-08-06 ruling that emptied the Before electrolyte pool** (see the Before-phase section above): the improved logic is real and still exercised by `pickElectrolyte`'s unit tests, but in a live Before phase it never runs against any candidates, because `loadPreWorkoutElectrolytePool()` supplies none.
 - Greedy-fallback and the client greedy solver replaced fixed-fraction stop conditions (90% carbs / 70% protein / 70-85% fluid) with a deficit cascade that keeps filling until each macro is at or past its target, capped by the phase's upper bands.
 - `phase-target-reconcile.ts` (After LP path) is a dedicated pass built on this same principle for post-LP results.
 
@@ -296,7 +303,7 @@ done
 rm docs/business_logic/diagrams/*.mmd
 ````
 
-Last regenerated 2026-07-29 with mermaid-cli 11.16.0. The old combined `nutrition-plan-v3-flowchart.png` /
+Last regenerated 2026-08-10 with mermaid-cli 11.16.0 (only the Before diagram's render actually changed this pass; main/during/after/brick mermaid source was unchanged, so their renders were regenerated identically). The old combined `nutrition-plan-v3-flowchart.png` /
 `.svg` (2026-07-21) were deleted: a single combined image is how the renders went stale unnoticed, so the
 diagrams are now split per phase. The `../../output/pdf/generate-nutrition-plan-v3-flowchart.pdf` link that
 used to sit here is also gone — that path never existed in the repo.
@@ -310,8 +317,10 @@ used to sit here is also gone — that path never existed in the repo.
 | Before post-pin reconciliation | [`before-phase-reconcile.ts`](../../supabase/functions/generate-nutrition-plan-v3/before-phase-reconcile.ts) |
 | Before component expansion + macro normalization | [`before-phase-explosion.ts`](../../supabase/functions/generate-nutrition-plan-v3/before-phase-explosion.ts) |
 | Before user-food substitution | [`before-phase-substitution.ts`](../../supabase/functions/generate-nutrition-plan-v3/before-phase-substitution.ts) |
-| Algorithm C selection and target splitting; active-slot thresholds | [`pre-workout.ts`](../../supabase/functions/generate-macros-v4/pre-workout.ts) |
-| Sub-phase timing labels (mirrors the above thresholds) | [`pre-workout-targets.ts`](../../supabase/functions/_shared/nutrition/templates/pre-workout-targets.ts) |
+| Algorithm C selection and target splitting; active-slot thresholds; `sub_phase`/`time_window` classification (`templatePhase`, `timeWindowToPhase`) | [`pre-workout.ts`](../../supabase/functions/generate-macros-v4/pre-workout.ts) |
+| Before drink pool (`template_foods`, `is_drink_pool`) and the empty-by-ruling electrolyte pool | [`ingredient-pools.ts`](../../supabase/functions/generate-macros-v4/ingredient-pools.ts) |
+| Sub-phase timing labels — current, live source | [`sub-phase-timing.ts`](../../supabase/functions/generate-nutrition-plan-v3/sub-phase-timing.ts) |
+| Sub-phase timing labels — **stale, scheduled for deletion**; still carries pre-v2 windows and is not consumed by `sub-phase-timing.ts`'s callers | [`pre-workout-targets.ts`](../../supabase/functions/_shared/nutrition/templates/pre-workout-targets.ts) |
 | During orchestration and closing-pass invariant | [`during-phase.ts`](../../supabase/functions/generate-nutrition-plan-v3/during-phase.ts) |
 | During template solver | [`during-template-solver.ts`](../../supabase/functions/_shared/nutrition/during-template-solver.ts) |
 | During rule fallback (whole-pool hydration fill) | [`during-rule-solver.ts`](../../supabase/functions/_shared/nutrition/during-rule-solver.ts) |

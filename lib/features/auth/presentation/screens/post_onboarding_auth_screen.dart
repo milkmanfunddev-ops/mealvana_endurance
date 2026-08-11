@@ -11,6 +11,8 @@ import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
+import '../../../daily_macros/data/daily_macro_targets_repository.dart';
+import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
@@ -198,11 +200,25 @@ class _PostOnboardingAuthScreenState
           ),
         ),
         content: Text(
-          contentService.getValue(
-            'auth.error.account_exists_message',
-            defaultValue:
-                'This $provider account ${email != null ? "($email) " : ""}is already linked to another user.',
-          ),
+          [
+            contentService.getValue(
+              'auth.error.account_exists_message',
+              defaultValue:
+                  'This $provider account ${email != null ? "($email) " : ""}is already linked to another user.',
+            ),
+            // Be honest about what "Log In" does to the just-finished
+            // onboarding: an already-set-up account keeps its own settings.
+            if (ref
+                .read(onboardingControllerProvider.notifier)
+                .hasCompletedProfileDraft)
+              contentService.getValue(
+                'auth.error.account_exists_draft_note',
+                defaultValue:
+                    'If you log in and that account is already set up, its '
+                    'saved settings will be used instead of the answers you '
+                    'just entered.',
+              ),
+          ].join('\n\n'),
         ),
         actions: [
           TextButton(
@@ -256,8 +272,7 @@ class _PostOnboardingAuthScreenState
     if (kIsWeb) return;
 
     if (success && mounted) {
-      // This is always a sign-in (orphaning anonymous user), so navigate directly
-      await _navigateToMain();
+      await _finishLoginPreservingDraft(authProvider: 'google');
     }
   }
 
@@ -269,9 +284,62 @@ class _PostOnboardingAuthScreenState
     if (kIsWeb) return;
 
     if (success && mounted) {
-      // This is always a sign-in (orphaning anonymous user), so navigate directly
-      await _navigateToMain();
+      await _finishLoginPreservingDraft(authProvider: 'apple');
     }
+  }
+
+  /// Complete a LOGIN (sign-in to an existing account) without discarding a
+  /// completed onboarding draft.
+  ///
+  /// The old behavior navigated straight to /main on every login — but a user
+  /// who walked all nine onboarding steps and then tapped "Log In" (or hit the
+  /// account-already-exists dialog) still had their entire draft in memory
+  /// only, and navigation silently threw it away.
+  ///
+  /// Policy:
+  ///  - If the signed-in account has NOT completed onboarding (no profile, or
+  ///    a stub), the draft the user just filled in is saved onto it.
+  ///  - If the account already has a completed profile, the account's saved
+  ///    settings win (they may be older but were deliberately configured on
+  ///    another device); the user is told their answers were not applied.
+  Future<void> _finishLoginPreservingDraft({
+    required String authProvider,
+  }) async {
+    final onboardingController = ref.read(
+      onboardingControllerProvider.notifier,
+    );
+
+    if (onboardingController.hasCompletedProfileDraft) {
+      final authService = ref.read(authServiceProvider);
+      final contentService = ref.read(contentServiceProvider);
+      final existingUser = await authService.getCurrentUser();
+      if (!mounted) return;
+
+      if (existingUser == null || !existingUser.onboardingCompleted) {
+        // Fresh or stub account: the just-completed onboarding is the best
+        // data we have — persist it under the signed-in uid.
+        await _saveOnboardingDataAndNavigate(
+          authProvider: authProvider,
+          isAnonymous: false,
+        );
+        return;
+      }
+
+      // Existing, fully-onboarded account: its settings win. Say so instead
+      // of silently dropping the user's answers.
+      MealvanaSnackbar.showInfo(
+        context,
+        contentService.getValue(
+          'auth.post_onboarding.existing_account_settings_used',
+          defaultValue:
+              "You're signed in to your existing account, so its saved "
+              'settings are being used instead of the answers you just '
+              'entered. You can adjust anything in Settings.',
+        ),
+      );
+    }
+
+    await _navigateToMain();
   }
 
   Future<void> _handleEmailSignUp() async {
@@ -310,9 +378,10 @@ class _PostOnboardingAuthScreenState
     // Navigate to email login screen
     final result = await context.push('/auth/email-login');
 
-    // If email login successful, navigate directly (no onboarding data to save)
+    // If email login successful, finish without discarding any onboarding
+    // draft still in memory (see _finishLoginPreservingDraft).
     if (result == true && mounted) {
-      await _navigateToMain();
+      await _finishLoginPreservingDraft(authProvider: 'email');
     }
   }
 
@@ -369,6 +438,12 @@ class _PostOnboardingAuthScreenState
     // `ref.read` after that point can throw on a disposed ConsumerState.
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
+    // For the post-sync macro-cache bust below. The container (not `ref`) is
+    // captured because the background upload outlives this screen, and the
+    // root container outlives every screen. The macro repository itself is
+    // read lazily off the container in there — constructing it eagerly here
+    // touches Supabase before some callers (and tests) have initialized it.
+    final container = ProviderScope.containerOf(context, listen: false);
 
     // This screen serves two arrivals:
     //
@@ -401,6 +476,7 @@ class _PostOnboardingAuthScreenState
             userId: existingUser.id,
             onboardingController: onboardingController,
             syncCoordinator: syncCoordinator,
+            container: container,
             logger: logger,
           ),
         );
@@ -463,6 +539,7 @@ class _PostOnboardingAuthScreenState
             userId: currentUser.id,
             onboardingController: onboardingController,
             syncCoordinator: syncCoordinator,
+            container: container,
             logger: logger,
           ),
         );
@@ -499,6 +576,7 @@ class _PostOnboardingAuthScreenState
     required String userId,
     required OnboardingController onboardingController,
     required SyncCoordinator syncCoordinator,
+    required ProviderContainer container,
     required AppLogger logger,
   }) async {
     try {
@@ -528,6 +606,20 @@ class _PostOnboardingAuthScreenState
           data: {'userId': userId},
         );
       }
+
+      // Bust the daily-macro cache now that the full activity picture is in
+      // Drift. The dashboard mounts (and fires its one edge-function calc)
+      // BEFORE this background sync lands the user's workouts, so the first
+      // cached row is computed session-less — a rest-day TDEE (e.g. 0/2380)
+      // that sticks until a manual refresh, because `daily_macro_targets`
+      // rows have no TTL and nothing in the sync path invalidates them. The
+      // user has at most days of cache at this point, so the blanket wipe
+      // costs one recompute. Invalidating the controller through the root
+      // container (this screen is disposed by now) triggers that recompute.
+      await container
+          .read(dailyMacroTargetsRepositoryProvider)
+          .invalidateAllForUser(userId);
+      container.invalidate(dailyMacrosControllerProvider);
     } catch (e, stackTrace) {
       logger.error(
         'Post-onboarding upload failed',
@@ -794,19 +886,22 @@ class _PostOnboardingAuthScreenState
                       // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
                       // reached via context.go() (post-onboarding flow) as
                       // well as push(), so guard against GoError "There is
-                      // nothing to pop".
+                      // nothing to pop". The go() arrival replaces the stack,
+                      // so in the redesigned flow canPop() is false for EVERY
+                      // new user landing here — the fallback must return to
+                      // the flow they came from, not /main: going to /main
+                      // would silently abandon all nine onboarding steps
+                      // before saveAllOnboardingData ever runs.
                       if (context.canPop()) {
                         context.pop();
-                        return;
+                      } else {
+                        // Nothing to pop. LOGIN mode: the person is not
+                        // signed in and just asked to go back, so /main
+                        // would strand an unauthenticated user in the app.
+                        // SIGNUP mode: return to the flow rather than
+                        // abandoning nine unsaved steps.
+                        context.go(isLogin ? '/welcome' : '/onboarding');
                       }
-                      // Nothing to pop. In LOGIN mode the person is not
-                      // signed in and just asked to go back — dropping them
-                      // into /main is the opposite of that, and lands an
-                      // unauthenticated user in the app. Send them to the
-                      // welcome screen they came from. Signup mode keeps
-                      // /main: it is only reachable there once onboarding
-                      // has been saved.
-                      context.go(isLogin ? '/welcome' : '/main');
                     },
               child: Container(
                 width: 32,
@@ -827,7 +922,6 @@ class _PostOnboardingAuthScreenState
       ),
     );
   }
-
 }
 
 /// Spec testimonial card: cream-5% fill, 1px teal-28% border, radius 15,
@@ -900,7 +994,9 @@ class _OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final line = Expanded(child: Container(height: 1, color: OnbTokens.creamA(0.15)));
+    final line = Expanded(
+      child: Container(height: 1, color: OnbTokens.creamA(0.15)),
+    );
     return Row(
       children: [
         line,

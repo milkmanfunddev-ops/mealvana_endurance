@@ -50,23 +50,11 @@ first, LP vs greedy, etc.). The point: Lee can refactor the "spaghetti" freely �
 - **H4 — Fallback filtering.** When no suitable pin exists, the library fallback considers all
   formulas **except** diet/allergy violators.
 - **H5 — Pre-workout stacking.** Pre-workout eating occasions by the pre-workout window, and they
-  **stack** (larger ⊇ smaller): **t < 30 min → {top-up}** · **30 ≤ t < 120 min → {snack, top-up}** ·
-  **t ≥ 120 min → {meal, snack, top-up}**. Boundaries are **inclusive at the bottom**, matching the
-  pre-workout bundle's convention — `t == 30` and `t == 120` take the upper band.
-  **Amended 2026-08-05 (ruling: Lee).** These bands were `≤30 / 30–90 / ≥90` until
-  `pre-workout-macros@v1` landed, which set the meal boundary at `TIER_MEAL_MIN = 120`. The two
-  ratified documents disagreed for one day; the bundle wins, because its conformance vectors pin
-  `meal iff t >= 120` (carbs inv 6) and the engine now derives `sub_phase_type` from that tier
-  result. **This changed athlete-visible behaviour**: a 90–119 minute window no longer yields a
-  Full Meal. Registered and resolved as **D-017**; it also settles D-015, which asked only whether
-  90 sat in the upper band — there is no longer a band edge at 90.
-  ✅ *Code MATCHES* — `calculatePreWorkoutCarbs` / `calculatePreWorkoutHydration`
-  (`generate-macros-v4/pre-workout.ts`). Note `BeforeSubPhase.fromTimeWindow`
-  (`formula_kit/domain/before_sub_phase.dart`) is a **different** thing: it buckets
-  `pre_workout_templates.time_window` strings for the Before-tab **filter chips**, and still reads
-  `<30 / 30–90 / 1.5–3h`. It does not drive plan occasions.
-  (Also not to be confused with `calculatePreWorkoutTargets.meal_type` at 60/150, a *separate*
-  label for protein/fat magnitude — see D4.)
+  **stack** (larger ⊇ smaller): **≤30 min → {top-up}** · **30–90 min → {snack, top-up}** ·
+  **≥90 min → {meal, snack, top-up}**. ✅ *Code MATCHES* — `BeforeSubPhase.fromTimeWindow`
+  (`formula_kit/domain/before_sub_phase.dart`) maps `<30 / 30–90 / 1.5–3h` → top-up/snack/meal.
+  (Not to be confused with `calculatePreWorkoutTargets.meal_type` at 60/150, a *separate* label
+  for protein/fat magnitude — see D4.)
 - **H6 — In-range adherence (scaling + gap-fill).** **Every macro at every phase lands within its
   [low, high] range.** When formula-scaling alone can't reach it, the algorithm **gap-fills**
   (hydration / sodium / electrolyte) to bring it in. **A plan is never returned that misses a range**

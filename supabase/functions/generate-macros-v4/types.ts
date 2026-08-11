@@ -30,11 +30,26 @@ export type TimeWindow =
   | '2-4 hours';
 export type SubPhaseType = 'meal' | 'snack' | 'top_up';
 
+/**
+ * `pre_workout_templates.sub_phase` values — explicit tier membership
+ * (Lee ruling 2026-08-06: select by CATEGORY, not by time period). Mirrors
+ * the client's `BeforeSubPhase.storageValue`. Optional because the prod
+ * catalog predates the column until its migration replays there; code must
+ * fall back to `timeWindowToPhase` when it is null/absent.
+ */
+export type TemplateSubPhase = 'full_meal' | 'snack' | 'top_up';
+
 export interface PreWorkoutTemplate {
   id: string;
   name: string;
   base_category: string;
+  /** DISPLAY label only. Tier membership comes from `sub_phase` (with
+   * `timeWindowToPhase(time_window)` as the pre-migration fallback) — see
+   * `templatePhase` in pre-workout.ts. Never compare these strings. */
   time_window: TimeWindow;
+  /** Explicit tier membership. Null/absent on catalogs that predate the
+   * 2026-08-06 `sub_phase` migration (prod until it replays). */
+  sub_phase?: TemplateSubPhase | null;
   digestion_speed: string;
   allergens: string[];
   excluded_diets?: string[];

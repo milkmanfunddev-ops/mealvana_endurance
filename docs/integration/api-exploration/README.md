@@ -16,7 +16,9 @@ If you read nothing else, read these:
 3. Each provider's **field reference** - the complete endpoint-by-endpoint data dictionary with
    field names, types, units, descriptions, and examples.
 
-Then go to whichever provider you care about.
+Then go to whichever provider you care about. For the non-workout side — athlete name, email,
+height, weight, race calendar — [athlete-profile-fields.md](./athlete-profile-fields.md) is the
+cross-provider routing table.
 
 | Provider | Folder | Model | Docs |
 |---|---|---|---|

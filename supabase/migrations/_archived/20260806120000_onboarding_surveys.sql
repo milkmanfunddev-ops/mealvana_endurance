@@ -1,18 +1,18 @@
 -- Archived copy of the onboarding_surveys migration authored 2026-08-06.
--- Canonical application path: docs/database/apply_all.sql section 6,
--- applied by hand via DataGrip (dev first; prod at schema-16 release).
+-- Canonical application path: docs/database/apply_all.sql section 7,
+-- applied by hand via DataGrip (dev first; prod at schema-17 release).
 
 
--- ── 6. onboarding_surveys — onboarding redesign survey answers ──────────────
--- ⏳ NOT YET APPLIED. Apply to DEV now; apply to PROD only when the schema-16
--- app build ships (bumping app_config.current_schema_version to 16 triggers
+-- ── 7. onboarding_surveys — onboarding redesign survey answers ──────────────
+-- ⏳ NOT YET APPLIED. Apply to DEV now; apply to PROD only when the schema-17
+-- app build ships (bumping app_config.current_schema_version to 17 triggers
 -- client delete-and-resync — see docs/features/onboarding-redesign/README.md §3).
 --
 -- One row per user: sports/goals/pitfalls multi-selects from the new
 -- onboarding flow, plus survey_payload jsonb for small flags (tridot_notify,
 -- sweat_test_interest, declined_training_apps, connected_provider). Future
 -- survey questions extend survey_payload — no new columns.
--- Mirrored locally as Drift v16 onboarding_surveys.
+-- Mirrored locally as Drift v17 onboarding_surveys.
 
 CREATE TABLE IF NOT EXISTS public.onboarding_surveys (
   user_id     uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
@@ -48,9 +48,9 @@ CREATE POLICY "Users update own onboarding survey"
   USING (user_id = (select auth.uid()))
   WITH CHECK (user_id = (select auth.uid()));
 
--- app_config.current_schema_version → 16: DO NOT run until the schema-16
+-- app_config.current_schema_version → 16: DO NOT run until the schema-17
 -- build is released (it force-resyncs every client).
---   UPDATE public.app_config SET value = '16' WHERE key = 'current_schema_version';
+--   UPDATE public.app_config SET value = '17' WHERE key = 'current_schema_version';
 -- If a latest_schema_version row exists it takes precedence in
 -- VersionCheckService — bump it too:
---   UPDATE public.app_config SET value = '16' WHERE key = 'latest_schema_version';
+--   UPDATE public.app_config SET value = '17' WHERE key = 'latest_schema_version';

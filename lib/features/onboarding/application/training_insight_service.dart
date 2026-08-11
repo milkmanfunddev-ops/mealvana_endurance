@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../../../shared/domain/activity_type.dart';
 import '../../activities/domain/activity.dart';
+import '../../integrations/domain/final_surge_defaults.dart';
 import '../domain/training_insights.dart';
 
 /// Digests the workouts imported during onboarding into [TrainingInsights]
@@ -38,7 +39,7 @@ class TrainingInsightService {
   /// (e.g. one Tuesday) looks arbitrary rather than a real pattern.
   static const int minWeekdaysForPattern = 4;
 
-  // Assumed paces for sessions a provider scheduled by DISTANCE alone.
+  // Fallback paces for sessions a provider scheduled by DISTANCE alone.
   //
   // Final Surge deliberately writes `durationMinutes: null` whenever the
   // workout carries distance or pace (see
@@ -48,12 +49,22 @@ class TrainingInsightService {
   // discarded entire imports: 21 synced workouts digested to nothing, and
   // the reveal claimed no sessions were found.
   //
-  // These are coarse on purpose — they only need to rank days against each
-  // other and clear the long-session bar, and the reveal's own copy quotes
-  // distance ("your 15-mile long run"), never these minutes.
-  static const double _runMinutesPerMile = 9.5;
-  static const double _rideMinutesPerMile = 3.75; // ≈16 mph
-  static const double _swimMinutesPerMile = 32.0; // ≈2:00 / 100 m
+  // The estimate prefers the session's OWN prescribed pace fields
+  // (pace_target/cycling_speed/swim_pace — the same derivation
+  // `daily_macro_service._sessionFromActivityRow` uses for real macro
+  // calculation, since these minutes flow into weekly-hours/NEAT and the
+  // long-session durations). Only when the row carries no pace at all do
+  // these constants apply — pinned to the `FinalSurgeDefaults` the
+  // transformers themselves assume, so a distance-only import estimates the
+  // same minutes here as it does in the macro engine.
+  static const double _runMinutesPerMile =
+      FinalSurgeDefaults.runningPaceMinPerMile;
+  static const double _rideMinutesPerMile =
+      60.0 / FinalSurgeDefaults.cyclingSpeedMph; // ≈4.5 min/mi @ 13.3 mph
+  static const double _swimMinutesPerMile =
+      (1609.34 / 100.0) *
+      FinalSurgeDefaults.swimmingPacePer100mSeconds /
+      60.0; // ≈48 min/mi @ 3:00 / 100 m
 
   /// Digest [activities] (typically everything the onboarding auto-import
   /// wrote) into insights. Soft-deleted, skipped, and import-only "other"
@@ -226,12 +237,22 @@ class TrainingInsightService {
     final miles = a.distanceMiles ?? a.actualDistanceMiles;
     if (miles == null || miles <= 0) return 0;
 
-    final double minutesPerMile;
+    // Prescribed pace on the session itself beats any assumed constant —
+    // identical derivation to daily_macro_service._sessionFromActivityRow.
     switch (a.activityType) {
       case ActivityType.cycling:
-        minutesPerMile = _rideMinutesPerMile;
+        final speed = a.cyclingSpeedMph;
+        if (speed != null && speed > 0) {
+          return ((miles / speed) * 60).round();
+        }
+        return (miles * _rideMinutesPerMile).round();
       case ActivityType.swimming:
-        minutesPerMile = _swimMinutesPerMile;
+        final swimPace = a.swimmingPacePer100mSeconds;
+        if (swimPace != null && swimPace > 0) {
+          final distanceMeters = miles * 1609.34;
+          return ((distanceMeters / 100) * swimPace / 60).round();
+        }
+        return (miles * _swimMinutesPerMile).round();
       case ActivityType.running:
       case ActivityType.triathlon:
       case ActivityType.duathlon:
@@ -240,10 +261,13 @@ class TrainingInsightService {
       case ActivityType.other:
         // Mixed-discipline distances are dominated by their run/ride legs;
         // the run pace is the safer of the two (it never over-counts a
-        // day's load the way a 16 mph assumption would).
-        minutesPerMile = _runMinutesPerMile;
+        // day's load the way a bike-speed assumption would).
+        final pace = a.paceTargetMinutesPerMile;
+        if (pace != null && pace > 0) {
+          return (miles * pace).round();
+        }
+        return (miles * _runMinutesPerMile).round();
     }
-    return (miles * minutesPerMile).round();
   }
 
   static bool _beats(Activity candidate, Activity? incumbent) =>

@@ -400,9 +400,7 @@ class _MacrosCard extends StatelessWidget {
       decoration: isLast
           ? null
           : BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: OnbTokens.creamA(0.08)),
-              ),
+              border: Border(bottom: BorderSide(color: OnbTokens.creamA(0.08))),
             ),
       child: Row(
         children: [

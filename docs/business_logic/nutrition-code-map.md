@@ -120,27 +120,22 @@ Legacy test files moved to `supabase/functions/_archived_tests/`:
 
 ## Deployment Flow
 
-### Automated (CI/CD)
-```
-GitHub push to develop → .github/workflows/deploy-dev.yml
-  → supabase db push (migrations)
-  → supabase functions deploy (all functions)
+**Manual only.** The CI deploy workflows (`deploy-dev.yml` / `deploy-prod.yml`) were deleted in
+`b2f86b4f` (2026-05-22); no workflow runs `supabase functions deploy`. Merging a change to
+`develop` or `main` does NOT ship it — someone must deploy by hand. See
+`/docs/deployment/README.md` for the runbook.
 
-GitHub push to main/release/* → .github/workflows/deploy-prod.yml
-  → supabase db push
-  → supabase functions deploy
-```
-
-### Manual Deploy
 ```bash
 # Dev
-supabase functions deploy generate-nutrition-plan-v3 --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt
-supabase functions deploy generate-macros-v4 --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt
+./scripts/deploy_dev.sh generate-nutrition-plan-v3 generate-macros-v4
 
-# Prod
-supabase functions deploy generate-nutrition-plan-v3 --project-ref wvmvsodrvbkxfydabqed --no-verify-jwt
-supabase functions deploy generate-macros-v4 --project-ref wvmvsodrvbkxfydabqed --no-verify-jwt
+# Prod (asks for interactive 'yes')
+./scripts/deploy_prod.sh generate-nutrition-plan-v3 generate-macros-v4
 ```
+
+Or use the `/deploy-edge` Claude skill (same command plus pre/post checks). Note:
+`generate-nutrition-plan-v3` imports from `generate-macros-v4/` — any Algorithm C change
+requires deploying BOTH functions.
 
 **Important:** If `_shared/` code changes, redeploy ALL importing functions.
 

@@ -848,6 +848,14 @@ class MacroTargetsController extends _$MacroTargetsController {
           eventName: eventName,
         );
 
+        // Persist the estimated duration alongside distance/speed — the
+        // running branch does the same via estimatedDurationMinutes. Detail
+        // renders activity.durationMinutes, so omitting it here left edited
+        // rides showing their old (e.g. imported) duration forever.
+        final estimatedCyclingDurationMin = speedMph > 0
+            ? (distanceMiles / speedMph) * 60.0
+            : 0.0;
+
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
             deviceId: deviceId,
@@ -857,6 +865,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
+            durationMinutes: estimatedCyclingDurationMin > 0
+                ? estimatedCyclingDurationMin.round()
+                : null,
             cyclingSpeedMph: speedMph,
             cyclingTerrain: terrain,
             cyclingIndoorOutdoor: indoorOutdoor,
@@ -889,6 +900,9 @@ class MacroTargetsController extends _$MacroTargetsController {
                 activityType: ActivityType.cycling,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
+                durationMinutes: estimatedCyclingDurationMin > 0
+                    ? estimatedCyclingDurationMin.round()
+                    : existingActivity.durationMinutes,
                 cyclingSpeedMph: speedMph,
                 cyclingTerrain: terrain,
                 cyclingIndoorOutdoor: indoorOutdoor,
@@ -913,9 +927,6 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         // Load sport-specific overrides with 90-min gate
-        final estimatedCyclingDurationMin = speedMph > 0
-            ? (distanceMiles / speedMph) * 60.0
-            : 0.0;
         final overrides = await _loadOverridesForEdgeFunction(
           ActivityType.cycling,
           estimatedCyclingDurationMin,
@@ -1135,6 +1146,11 @@ class MacroTargetsController extends _$MacroTargetsController {
             title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
+            // Same as the cycling/running branches: persist the estimated
+            // duration so Detail shows the edited swim length.
+            durationMinutes: durationMinutes > 0
+                ? durationMinutes.round()
+                : null,
             swimmingPacePer100mSeconds: paceSecondsper100m,
             swimmingPoolOrOpenWater: poolOrOpenWater,
             swimmingWaterTempC: waterTempC,
@@ -1164,6 +1180,9 @@ class MacroTargetsController extends _$MacroTargetsController {
                 activityType: ActivityType.swimming,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
+                durationMinutes: durationMinutes > 0
+                    ? durationMinutes.round()
+                    : existingActivity.durationMinutes,
                 swimmingPacePer100mSeconds: paceSecondsper100m,
                 swimmingPoolOrOpenWater: poolOrOpenWater,
                 swimmingWaterTempC: waterTempC,

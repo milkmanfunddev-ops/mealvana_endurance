@@ -21,7 +21,14 @@ class PreWorkoutTemplatesTable extends Table {
 
   /// Timing label, e.g. '< 30 min', '30-120 min', '2-4 hours' (older
   /// catalogs: '30-90 min', '1.5-3 hours' — see BeforeSubPhase.fromTimeWindow).
+  /// DISPLAY ONLY since 2026-08-06 — tier membership comes from [subPhase].
   TextColumn get timeWindow => text().named('time_window')();
+
+  /// Explicit tier membership: 'full_meal' | 'snack' | 'top_up' (mirrors
+  /// BeforeSubPhase.storageValue). Authoritative when present; nullable
+  /// because prod's catalog predates the column until its migration replays
+  /// there — fall back to BeforeSubPhase.fromTimeWindow(timeWindow).
+  TextColumn get subPhase => text().nullable().named('sub_phase')();
 
   /// Digestion speed bucket as stored in Supabase, e.g. 'Fast', 'Medium'.
   TextColumn get digestionSpeed => text().named('digestion_speed')();
@@ -45,6 +52,11 @@ class PreWorkoutTemplatesTable extends Table {
       boolean().withDefault(const Constant(true)).named('is_active')();
 
   RealColumn get carbsPerServing => real().named('carbs_per_serving')();
+
+  /// Fibre in grams per 1x serving. Required by food-composition v3's H2
+  /// per-feeding fibre gate (see the 2026-08-05 v3 structure migration).
+  RealColumn get fiberPerServing =>
+      real().withDefault(const Constant(0)).named('fiber_per_serving')();
   RealColumn get proteinPerServing => real().named('protein_per_serving')();
   RealColumn get fatPerServing => real().named('fat_per_serving')();
   RealColumn get sodiumMg => real().named('sodium_mg')();

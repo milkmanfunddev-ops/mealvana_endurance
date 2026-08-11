@@ -304,8 +304,111 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
         'DELETE FROM onboarding_surveys WHERE user_id = ?',
         [toUserId],
       );
+      // Re-dirty the moved row: if it was already uploaded under the anon
+      // uid, the remote copy is stranded behind RLS under that uid — the
+      // survey must be re-uploaded under the new uid or it never reaches
+      // the account's other devices.
       await db.customStatement(
-        'UPDATE onboarding_surveys SET user_id = ? WHERE user_id = ?',
+        'UPDATE onboarding_surveys SET user_id = ?, needs_upload = 1 '
+        'WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ MEAL LOGS / SAVED MEALS ============
+      // Same delete-then-update shape as above. Re-dirty the moved rows for
+      // the same reason as the survey: anything already uploaded under the
+      // anon uid is stranded behind RLS there and must re-upload under the
+      // new uid. (These tables were missing from this migration entirely
+      // until 2026-08-07 — anon meal logs were orphaned under the dead uid,
+      // while version_check_service's anon-data guard COULD still see them
+      // and defer schema resyncs forever.)
+      await db.customStatement('DELETE FROM meal_logs WHERE user_id = ?', [
+        toUserId,
+      ]);
+      await db.customStatement(
+        'UPDATE meal_logs SET user_id = ?, needs_upload = 1 WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      await db.customStatement('DELETE FROM saved_meals WHERE user_id = ?', [
+        toUserId,
+      ]);
+      await db.customStatement(
+        'UPDATE saved_meals SET user_id = ?, needs_upload = 1 '
+        'WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ FORMULA KIT (pins, personal formulas, templates) ============
+      await db.customStatement('DELETE FROM formula_pins WHERE user_id = ?', [
+        toUserId,
+      ]);
+      await db.customStatement(
+        'UPDATE formula_pins SET user_id = ?, needs_upload = 1 '
+        'WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      await db.customStatement(
+        'DELETE FROM personal_formulas WHERE user_id = ?',
+        [toUserId],
+      );
+      await db.customStatement(
+        'UPDATE personal_formulas SET user_id = ?, needs_upload = 1 '
+        'WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      await db.customStatement(
+        'DELETE FROM personal_templates WHERE user_id = ?',
+        [toUserId],
+      );
+      await db.customStatement(
+        'UPDATE personal_templates SET user_id = ?, needs_upload = 1 '
+        'WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ RACE CHECKLISTS ============
+      // No needs_upload column — LOCAL-ONLY feature with no Supabase
+      // hydration, so a deleted destination row is gone forever. Unlike the
+      // synced tables above, the destination's rows are therefore KEPT and
+      // the source rows simply re-keyed (no unique constraint to collide).
+      await db.customStatement(
+        'UPDATE race_checklist_items SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ DAILY MACRO TARGETS ============
+      // Recomputable cache (calculate-daily-macros repopulates). Keep the
+      // destination's rows (at least as valid as the anon's) and move only
+      // the source days the destination doesn't already have —
+      // UNIQUE(user_id, target_date) forbids a blind re-key.
+      // Deliberately NOT re-dirtied: this repository writes needs_upload=0 by
+      // design and the server recomputes rather than accepting uploads.
+      await db.customStatement(
+        'DELETE FROM daily_macro_targets WHERE user_id = ?1 AND target_date '
+        'IN (SELECT target_date FROM daily_macro_targets WHERE user_id = ?2)',
+        [fromUserId, toUserId],
+      );
+      await db.customStatement(
+        'UPDATE daily_macro_targets SET user_id = ? WHERE user_id = ?',
+        [toUserId, fromUserId],
+      );
+
+      // ============ TRAININGPEAKS WRITEBACK LOG ============
+      // LOCAL-ONLY dedup ledger (no Supabase copy): wiping the destination's
+      // rows would re-push already-completed workouts to TrainingPeaks as
+      // duplicates. Keep the destination ledger; merge in only the source
+      // entries it lacks — UNIQUE(user_id, tp_workout_id) forbids a blind
+      // re-key.
+      await db.customStatement(
+        'DELETE FROM tp_writeback_log WHERE user_id = ?1 AND tp_workout_id '
+        'IN (SELECT tp_workout_id FROM tp_writeback_log WHERE user_id = ?2)',
+        [fromUserId, toUserId],
+      );
+      await db.customStatement(
+        'UPDATE tp_writeback_log SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 

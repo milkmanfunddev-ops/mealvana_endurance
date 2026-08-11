@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -15,6 +14,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../navigation/open_activity_fuel.dart';
 import '../providers/activities_controller.dart';
 
 /// Reusable activity card widget matching Kyle's design.
@@ -309,38 +309,9 @@ class ActivityCard extends ConsumerWidget {
       return;
     }
 
-    // Check if activity has a nutrition plan
-    if (activity.nutritionPlanData == null) {
-      // No nutrition plan - open New Activity screen with pre-populated data
-      context.push(
-        '/distancepacegut',
-        extra: {
-          'activityId': activity.id,
-          'initialDate': activity.scheduledDateTime,
-          'distance': activity.distanceMiles,
-          'initialDurationMinutes': activity.durationMinutes,
-          'goalPace': activity.paceTargetMinutesPerMile,
-          'initialTitle': activity.title,
-          'activityType': activity.activityType.name,
-          // Cycling-specific parameters
-          'cyclingSpeedMph': activity.cyclingSpeedMph,
-          'cyclingTerrain': activity.cyclingTerrain,
-          'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
-          'cyclingElevationGainFt': activity.cyclingElevationGainFt,
-          'cyclingSessionGoal': activity.cyclingSessionGoal,
-          // Swimming-specific parameters
-          'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
-          'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
-          'swimmingWaterTempC': activity.swimmingWaterTempC,
-          // Shared parameters
-          'intensityTarget': activity.intensityTarget,
-          'timeBeforeMinutes': activity.timeBeforeMinutes,
-        },
-      );
-    } else {
-      // Has nutrition plan - open Activity Detail screen (current behavior)
-      context.push('/plan', extra: {'mode': 'view', 'activityId': activity.id});
-    }
+    // Plan-less → New Activity pre-filled, else Detail. Shared with the
+    // fuel timeline via openActivityFuel.
+    openActivityFuel(context, activity);
   }
 
   /// Minimal read-only detail sheet for import-only activities.

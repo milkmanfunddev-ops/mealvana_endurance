@@ -33,6 +33,12 @@ import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 import { generateDuringPhase } from "./during-phase.ts";
 import { fakeSupabase } from "../_shared/nutrition/test-fake-supabase.ts";
 import { calculateTotals } from "../_shared/nutrition/food-utils.ts";
+import { categorizeFood } from "../_shared/nutrition/during-utils.ts";
+import {
+  maxAllowedServingsForDuration,
+  normalizeGutTrainingLevel,
+} from "../_shared/nutrition/during-template-solver.ts";
+import { getTemplateFoodsForDuringWithConstraints } from "../_shared/nutrition/template-food-queries.ts";
 import type { ActivityType, MacroTargets } from "../_shared/nutrition/types.ts";
 import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
 
@@ -163,6 +169,83 @@ function assertThreeMacroInvariant(
 }
 
 // ============================================================================
+// Strict carb targeting (Lee, 2026-08-06): the engine must SHOOT FOR THE
+// TARGET, not merely land in the reporting band. A shortfall report is only
+// an acceptable outcome when the gut-capped catalog genuinely cannot reach
+// 90% of target — reported-but-avoidable shortfalls are the bug this guards
+// against ("in range" plans that are systematically ~10% under-fueled).
+// ============================================================================
+
+/** Upper bound on carbs the gap-fill could deliver from the unconstrained
+ * catalog pool: every carb-contributing non-electrolyte/non-hydration food at
+ * its gut-capped serving ceiling. Mirrors the candidate filter in
+ * `gapFillDuringCarbs`. */
+async function poolCarbStats(
+  activity: ActivityType,
+  durationMinutes: number,
+  gut: string | undefined,
+): Promise<{ achievable: number; smallestStepG: number }> {
+  const pool = await getTemplateFoodsForDuringWithConstraints(
+    // deno-lint-ignore no-explicit-any
+    catalogClient() as any,
+    activity,
+  );
+  const hours = durationMinutes / 60;
+  const gutLevel = normalizeGutTrainingLevel(gut);
+  let achievable = 0;
+  let smallestStepG = Number.POSITIVE_INFINITY;
+  for (const f of pool) {
+    if (f.per_serving.carbs_g <= 0) continue;
+    const category = categorizeFood(f);
+    if (category === "electrolyte" || category === "hydration") continue;
+    const cap = Math.min(
+      f.max_servings,
+      maxAllowedServingsForDuration(f, hours, gutLevel),
+    );
+    achievable += f.per_serving.carbs_g * cap;
+    if (cap > 0) {
+      const increment = f.min_increment ?? (f.is_indivisible ? 1 : 0.5);
+      smallestStepG = Math.min(
+        smallestStepG,
+        f.per_serving.carbs_g * increment,
+      );
+    }
+  }
+  if (!Number.isFinite(smallestStepG)) smallestStepG = 0;
+  return { achievable, smallestStepG };
+}
+
+/** Free-selection scenarios must land within 10% of the carb target whenever
+ * the capped pool allows it; when it doesn't, delivery must still be at the
+ * achievable ceiling (the engine maxed out, honestly). */
+function assertStrictCarbTargeting(
+  // deno-lint-ignore no-explicit-any
+  result: any,
+  targets: MacroTargets,
+  stats: { achievable: number; smallestStepG: number },
+  label: string,
+) {
+  if (!targets.carbs_g || targets.carbs_g <= 0) return;
+  const totals = calculateTotals(result.foods);
+  // One smallest-pool-increment of slack: with discrete servings the ±10%
+  // band around a small target can contain no reachable total (e.g. a 30g
+  // target's [27,33]g band when the finest step is half a chew = 12.5g).
+  // That slack is granularity, not permission to coast — anything beyond it
+  // is an avoidable miss.
+  const floor = Math.min(targets.carbs_g * 0.9, stats.achievable) -
+    stats.smallestStepG;
+  assert(
+    totals.carbs_g >= floor - 1e-6,
+    `${label}: UNDER-TARGET carbs — delivered ${totals.carbs_g.toFixed(1)}g ` +
+      `of ${targets.carbs_g}g target (pool could deliver up to ` +
+      `${stats.achievable.toFixed(1)}g; finest step ` +
+      `${stats.smallestStepG.toFixed(1)}g). A reported shortfall does NOT ` +
+      `excuse an avoidable miss: the engine must land within 10% of target ` +
+      `whenever the gut-capped catalog allows it.`,
+  );
+}
+
+// ============================================================================
 // Suite A — free selection across the whole space
 // ============================================================================
 
@@ -199,6 +282,13 @@ describe("Real catalog — free selection matrix", () => {
             assertThreeMacroInvariant(
               result,
               targets,
+              `${activity}/${duration}min/gut=${gut ?? "null"}/${scale.key}`,
+            );
+            const stats = await poolCarbStats(activity, duration, gut);
+            assertStrictCarbTargeting(
+              result,
+              targets,
+              stats,
               `${activity}/${duration}min/gut=${gut ?? "null"}/${scale.key}`,
             );
             // A positive-duration workout must NEVER produce a zero-carb plan

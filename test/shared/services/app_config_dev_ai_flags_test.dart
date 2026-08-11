@@ -100,8 +100,17 @@ void main() {
 
       final config = AppConfig.fromEnv();
       expect(config.aiCreditsEnabled, isFalse);
-      expect(config.describeMealEnabled, isFalse);
       expect(config.coachInsightsEnabled, isFalse);
+    });
+
+    test('describeMealEnabled is pinned open even on prod (2026-08-10)', () {
+      // The Describe tab ships everywhere: prod TestFlight testers need the
+      // metered AI entry points visible to exercise real purchase flows, and
+      // no env value may hide them.
+      dotenv.testLoad(
+        fileInput: 'APP_ENVIRONMENT=prod\nDESCRIBE_MEAL_ENABLED=false\n',
+      );
+      expect(AppConfig.fromEnv().describeMealEnabled, isTrue);
     });
   });
 }

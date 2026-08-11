@@ -67,7 +67,7 @@ When a platform is connected during onboarding, the plan reveal must be personal
 ### 3. Persistence (the one Drift change)
 - NEW table `onboarding_surveys` (user_id PK→user_profiles, sports/goals/pitfalls JSON text, `survey_payload` JSON escape hatch for tridot_notify/sweat_test_interest/future questions, completed_at, needs_upload, timestamps) — copy conventions from an existing simple table. `schemaVersion => 16`, idempotent `ensureTable` in onUpgrade, add to `diagnosticDao.migrateUserData` user-scoped tables.
 - NEW `lib/features/onboarding/data/onboarding_survey_repository.dart` + registration in the sync coordinator's upload graph (locate registration mechanism in `lib/shared/services/sync/sync_coordinator.dart`), ordered after user profile (FK). Check `uploadDirtyRecords` result — no swallowed failures.
-- Supabase: idempotent SQL (CREATE TABLE + RLS `user_id = auth.uid()` policies, mirroring the rls_baseline style) into `docs/database/apply_all.sql`, applied by hand (DataGrip) to **dev now, prod at release**, archived dated copy in `supabase/migrations/_archived/`. Load `supabase:supabase-postgres-best-practices` skill when authoring. `app_config.current_schema_version` → 16 **only when the schema-16 build ships** (it triggers client drop-and-resync).
+- Supabase: idempotent SQL (CREATE TABLE + RLS `user_id = auth.uid()` policies, mirroring the rls_baseline style) into `docs/database/apply_all.sql`, applied by hand (DataGrip) to **dev now, prod at release**, archived dated copy in `supabase/migrations/_archived/`. Load `supabase:supabase-postgres-best-practices` skill when authoring. `app_config.current_schema_version``app_config.current_schema_version` → 17 **only when the schema-17 build ships** (it triggers client drop-and-resync).
 - Gut/sweat, names, gender, birthday, height/weight, units, overrides, diet/allergy defaults: all existing columns — no changes.
 
 ### 4. Integrations step
@@ -106,10 +106,10 @@ Delete: `welcome_screen_controller.dart`(+.g), `food_preferences_v2_screen.dart`
 ### 10. Phasing (commit-sized chunks)
 
 > **Status (2026-08-06): phases 0–7 all landed — implementation complete.**
-> Remaining release-time steps: apply `docs/database/apply_all.sql` §6 to
+> Remaining release-time steps: apply `docs/database/apply_all.sql` §7 to
 > Supabase DEV now and PROD at release; bump `app_config`
-> `current_schema_version` (and `latest_schema_version` if present) to 16
-> only when the schema-16 build ships; rebuild the Mixpanel funnel on the
+> `current_schema_version` (and `latest_schema_version` if present) to 17
+> only when the schema-17 build ships; rebuild the Mixpanel funnel on the
 > new `kOnboardingStepNames`. Phase 7 removed: the old user-profile /
 > food-preferences screens+providers, the legacy controller cache API, the
 > old db_flows onboarding test, and the stale onboarding-revamp +
@@ -139,7 +139,7 @@ Delete: `welcome_screen_controller.dart`(+.g), `food_preferences_v2_screen.dart`
 
 0. **Plan doc** — commit this plan into the repo as `docs/features/onboarding-redesign/README.md` (first commit on the branch; it doubles as the feature doc that replaces the stale `onboarding-revamp` docs, updated as phases land).
 1. **Engine + domain** — draft, calculator, preview service, insight engine (`training_insight_service.dart` + workout fixtures), parity fixtures + unit tests (pure Dart, no codegen).
-2. **Persistence** — Drift v16 + repository + sync registration + migrateUserData; dev SQL applied + archived; Drift tests. `dart run build_runner build --delete-conflicting-outputs`.
+2. **Persistence** — Drift v17 (v16 pre-merge) + repository + sync registration + migrateUserData; dev SQL applied + archived; Drift tests. `dart run build_runner build --delete-conflicting-outputs`.
 3. **Controller rewrite** — draft-based controller, saveAll rework, service signature, Sentry, unit tests. Codegen.
 4. **Screens A** — splash, sports/goals/pitfalls, PageView rewrite (later steps stubbed), `kOnboardingStepNames`, widget tests.
 5. **Screens B** — personal info, body comp, nutrition settings, plan reveal (incl. insight-driven personalization + loader await/timeout), daily preview; connect restyle + import-window verification; widget tests.

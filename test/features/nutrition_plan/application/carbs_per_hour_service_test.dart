@@ -200,6 +200,31 @@ void main() {
       expect(summary.baselineCount, 2);
     });
 
+    // Regression: Bug Reports 3b4e3fdb… — "Your carb trend is ready." with no
+    // chart. The unlock gate counted only *prior* efforts while the card's
+    // progress row counts the current session too, so at exactly 3 priors the
+    // card rendered "4 / 4 Runs" + "Your carb trend is ready." while still in
+    // buildingBaseline. The gate must count this session, like the card does.
+    test('inBaseline at the unlock boundary — 3 priors plus this session', () {
+      final summary = _service.buildSummary(
+        activity: _activity(durationMinutes: 120),
+        fuelLog: _fuelLog(duringCarbs: 100), // 50 g/hr
+        baseline: const CarbsPerHourBaseline(history: [50, 55, 60], count: 3),
+      );
+      expect(summary.state, CarbsHrState.inBaseline);
+      expect(summary.trend, [50, 55, 60, closeTo(50, 0.001)]);
+    });
+
+    test('still buildingBaseline one effort below the boundary', () {
+      final summary = _service.buildSummary(
+        activity: _activity(durationMinutes: 120),
+        fuelLog: _fuelLog(duringCarbs: 100),
+        baseline: const CarbsPerHourBaseline(history: [50, 55], count: 2),
+      );
+      expect(summary.state, CarbsHrState.buildingBaseline);
+      expect(summary.trend, isEmpty);
+    });
+
     test('inBaseline with trend, delta, and highest-yet flag', () {
       final summary = _service.buildSummary(
         activity: _activity(durationMinutes: 120, actualDurationMinutes: 100),

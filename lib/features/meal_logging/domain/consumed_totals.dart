@@ -59,6 +59,14 @@ class ConsumedTotals {
   /// explicit intent at call sites).
   static const ConsumedTotals zero = ConsumedTotals();
 
+  /// True when every field is zero (i.e. nothing was consumed).
+  bool get isZero =>
+      calories == 0 &&
+      carbsG == 0 &&
+      proteinG == 0 &&
+      fatG == 0 &&
+      sodiumMg == 0;
+
   @override
   String toString() =>
       'ConsumedTotals(calories: $calories, carbs: ${carbsG}g, '

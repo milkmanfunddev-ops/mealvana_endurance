@@ -83,14 +83,18 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   bool _minDelayElapsed = false;
   bool _revealTracked = false;
 
-  /// Slider bounds for the carb-target cards — deliberately not the shared
-  /// `NutritionTargetGuardrails` during-workout constants (those also gate
-  /// the unrelated activity-detail carb-rate editor); the onboarding
-  /// reveal slider gets its own editable range.
+  /// Slider bounds for the carb-target cards. The minima are the reveal's
+  /// own editable floor, but the maxima MUST NOT exceed
+  /// [NutritionTargetGuardrails.duringMaxCarbRateGPerH]: the committed edit
+  /// runs through `NutritionTargetGuardrails.clampAll` on save, so a slider
+  /// ceiling above the guardrail (the previous ride max of 130) let the card
+  /// show a number the profile silently stored as 120.
   static const double _runCarbMin = 30;
-  static const double _runCarbMax = 120;
+  static const double _runCarbMax =
+      NutritionTargetGuardrails.duringMaxCarbRateGPerH;
   static const double _rideCarbMin = 30;
-  static const double _rideCarbMax = 130;
+  static const double _rideCarbMax =
+      NutritionTargetGuardrails.duringMaxCarbRateGPerH;
 
   /// Which carb-target card has its slider open — spec `editingHero`
   /// ('run' | 'ride' | null). Single field so opening one closes the other.
@@ -112,6 +116,15 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
   @override
   void initState() {
     super.initState();
+
+    // One fresh digest per reveal entry: the insights provider no longer
+    // re-runs on every draft notify (see onboardingConnectedProviderName),
+    // so imports that finished landing after the connect step are picked up
+    // here instead — behind the loader, where the latency belongs.
+    // Microtask: ref can't reach the container synchronously in initState.
+    Future.microtask(() {
+      if (mounted) ref.invalidate(onboardingTrainingInsightsProvider);
+    });
 
     _minDelayTimer = Timer(_minLoaderDuration, () {
       if (mounted) setState(() => _minDelayElapsed = true);
@@ -270,9 +283,8 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
               max: _runCarbMax,
               apply: (v) => edits.copyWith(longRunCarbGph: () => v),
             ),
-            onReset: () => _resetEdit(
-              edits.copyWith(longRunCarbGph: () => null),
-            ),
+            onReset: () =>
+                _resetEdit(edits.copyWith(longRunCarbGph: () => null)),
           ),
           const SizedBox(height: 14),
         ],
@@ -301,9 +313,8 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
               max: _rideCarbMax,
               apply: (v) => edits.copyWith(longRideCarbGph: () => v),
             ),
-            onReset: () => _resetEdit(
-              edits.copyWith(longRideCarbGph: () => null),
-            ),
+            onReset: () =>
+                _resetEdit(edits.copyWith(longRideCarbGph: () => null)),
           ),
           const SizedBox(height: 12),
         ],
@@ -699,10 +710,7 @@ class _ImportedPlanDebugSheet extends StatelessWidget {
                   // "nothing imported / wrong user id" from "imported but
                   // the digest discarded it".
                   _DebugRow('Rows read', '${insights.rawActivityCount}'),
-                  _DebugRow(
-                    'Read as',
-                    insights.dataUserId ?? '— (no user id)',
-                  ),
+                  _DebugRow('Read as', insights.dataUserId ?? '— (no user id)'),
                   _DebugRow('Window', insights.windowRangeLabel ?? '—'),
                   _DebugRow('Window days', '${insights.windowDays}'),
                   _DebugRow('Sessions kept', '${insights.sessionCount}'),
@@ -1226,9 +1234,8 @@ class _CompactTargetRowState extends State<_CompactTargetRow> {
               min: widget.min,
               max: widget.max,
               onChanged: (v) => setState(() => _dragValue = v),
-              onChangeEnd: (v) => widget.onCommit(
-                (v / widget.step).round() * widget.step,
-              ),
+              onChangeEnd: (v) =>
+                  widget.onCommit((v / widget.step).round() * widget.step),
             ),
             const SizedBox(height: 6),
             Row(
@@ -1360,7 +1367,11 @@ class _SpecThumbShape extends SliderComponentShape {
         ..color = Colors.black.withValues(alpha: 0.35)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
     );
-    canvas.drawCircle(center, _outerRadius, Paint()..color = OnbTokens.cardSubtle);
+    canvas.drawCircle(
+      center,
+      _outerRadius,
+      Paint()..color = OnbTokens.cardSubtle,
+    );
     canvas.drawCircle(center, _innerRadius, Paint()..color = OnbTokens.orange);
   }
 }

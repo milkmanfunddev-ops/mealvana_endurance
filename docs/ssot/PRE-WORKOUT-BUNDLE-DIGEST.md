@@ -16,8 +16,11 @@ disagree, **the spec wins**. Regenerate this digest rather than editing it in pl
 | pre-workout-carbs | v2 | `OfflineMacroCalculator.calculatePreWorkoutCarbs` (see deviation below) |
 | pre-workout-sodium | v3 | `calculatePreWorkoutHydration`, sodium fields |
 
-Excluded from the bundle: `pre-workout-food-composition` (food selection/composition — a
-separate bundle; the spec file does not exist yet).
+Excluded from the bundle: `pre-workout-food-composition` (food selection/composition —
+now its own bundle, `pre-workout-food-composition@v1`, synced 2026-08-06: spec at
+`spec/fueling/pre-workout-food-composition.md` (v3), manifest at
+`bundles/pre-workout-food-composition.yaml`, 87 expected-red vectors at
+`vectors/fueling/pre-workout-food-composition.json`; no engine entry point exists yet).
 
 `done_when`: all three conformance slices green via `conformance/run_dart.sh`.
 

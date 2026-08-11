@@ -15,6 +15,8 @@ import 'sync/sync_dependency_graph.dart';
 
 // Repository imports for uploadDirtyRecords
 import '../../features/activities/data/activities_repository.dart';
+import '../../features/auth/data/user_repository.dart';
+import '../../features/onboarding/data/onboarding_survey_repository.dart';
 import '../../features/events/data/events_repository.dart';
 import '../../features/food_preferences/data/food_preferences_repository.dart';
 import '../../features/carb_loading/data/carb_loading_repository.dart';
@@ -253,12 +255,14 @@ class VersionCheckService {
         );
       }
 
-      // Step 3.5: Anonymous data-protection guard. If dirty rows could not
-      // be uploaded (offline, or no auth session at all) and the local user
-      // is anonymous — meaning Supabase may hold no copy of this data —
-      // deleting now would be unrecoverable. Defer instead.
-      final shouldGuard = userId == null || uploadErrors.isNotEmpty;
-      if (shouldGuard && await _hasUnprotectedAnonymousData(userId)) {
+      // Step 3.5: Anonymous data-protection guard. If an anonymous user
+      // still has dirty local rows at this point — offline, no session, or
+      // rows in tables the upload pass doesn't cover — Supabase may hold no
+      // copy of that data and deleting now would be unrecoverable. Defer
+      // instead. Run unconditionally: a successful upload pass proves
+      // nothing about tables outside _getUploadableRepositories, and the
+      // check is a handful of indexed local SELECTs.
+      if (await _hasUnprotectedAnonymousData(userId)) {
         wasDeferredForDataProtection = true;
         _logger.warning(
           'Deferring schema resync: anonymous user has dirty local rows '
@@ -376,6 +380,11 @@ class VersionCheckService {
       ),
       'integrations': _ref.read(integrationsRepositoryProvider),
       'user_foods': await _ref.read(userFoodsRepositoryProvider.future),
+      // Both write locally-first during onboarding and are exactly what the
+      // anonymous-data guard checks for — without them here a dirty survey
+      // or profile row can neither upload nor ever clear the deferral.
+      'users': await _ref.read(userRepositoryProvider.future),
+      'onboarding_surveys': _ref.read(onboardingSurveyRepositoryProvider),
     };
   }
 

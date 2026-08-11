@@ -185,22 +185,123 @@ final class MealLogsForDateFamily extends $Family
   String toString() => r'mealLogsForDateProvider';
 }
 
-/// Derived provider: [ConsumedTotals] for [date], recomputed whenever the
-/// underlying [mealLogsForDateProvider] stream emits.
+/// Streams the day's completed activities (local calendar day of
+/// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
 ///
-/// This is the single value the Daily Macros progress bars should watch.
-/// Derives directly from the same repository stream so it shares the same
-/// Drift subscription lifecycle.
+/// Empty when there is no authenticated user.
+
+@ProviderFor(completedActivitiesForDate)
+const completedActivitiesForDateProvider = CompletedActivitiesForDateFamily._();
+
+/// Streams the day's completed activities (local calendar day of
+/// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
+///
+/// Empty when there is no authenticated user.
+
+final class CompletedActivitiesForDateProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Activity>>,
+          List<Activity>,
+          Stream<List<Activity>>
+        >
+    with $FutureModifier<List<Activity>>, $StreamProvider<List<Activity>> {
+  /// Streams the day's completed activities (local calendar day of
+  /// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
+  ///
+  /// Empty when there is no authenticated user.
+  const CompletedActivitiesForDateProvider._({
+    required CompletedActivitiesForDateFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'completedActivitiesForDateProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$completedActivitiesForDateHash();
+
+  @override
+  String toString() {
+    return r'completedActivitiesForDateProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Activity>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Activity>> create(Ref ref) {
+    final argument = this.argument as String;
+    return completedActivitiesForDate(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CompletedActivitiesForDateProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$completedActivitiesForDateHash() =>
+    r'bc73e1fd4914ee2143f0fe88bccf5759481d0be7';
+
+/// Streams the day's completed activities (local calendar day of
+/// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
+///
+/// Empty when there is no authenticated user.
+
+final class CompletedActivitiesForDateFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Activity>>, String> {
+  const CompletedActivitiesForDateFamily._()
+    : super(
+        retry: null,
+        name: r'completedActivitiesForDateProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Streams the day's completed activities (local calendar day of
+  /// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
+  ///
+  /// Empty when there is no authenticated user.
+
+  CompletedActivitiesForDateProvider call(String date) =>
+      CompletedActivitiesForDateProvider._(argument: date, from: this);
+
+  @override
+  String toString() => r'completedActivitiesForDateProvider';
+}
+
+/// Derived provider: [ConsumedTotals] for [date] — meal logs PLUS the
+/// during-workout fuel logged on the day's completed activities.
+///
+/// This is the single value the Daily Macros progress bars (and the fuel
+/// timeline's energy balance) should watch. Re-emits whenever either
+/// underlying Drift stream changes.
 
 @ProviderFor(consumedTotalsForDate)
 const consumedTotalsForDateProvider = ConsumedTotalsForDateFamily._();
 
-/// Derived provider: [ConsumedTotals] for [date], recomputed whenever the
-/// underlying [mealLogsForDateProvider] stream emits.
+/// Derived provider: [ConsumedTotals] for [date] — meal logs PLUS the
+/// during-workout fuel logged on the day's completed activities.
 ///
-/// This is the single value the Daily Macros progress bars should watch.
-/// Derives directly from the same repository stream so it shares the same
-/// Drift subscription lifecycle.
+/// This is the single value the Daily Macros progress bars (and the fuel
+/// timeline's energy balance) should watch. Re-emits whenever either
+/// underlying Drift stream changes.
 
 final class ConsumedTotalsForDateProvider
     extends
@@ -210,12 +311,12 @@ final class ConsumedTotalsForDateProvider
           Stream<ConsumedTotals>
         >
     with $FutureModifier<ConsumedTotals>, $StreamProvider<ConsumedTotals> {
-  /// Derived provider: [ConsumedTotals] for [date], recomputed whenever the
-  /// underlying [mealLogsForDateProvider] stream emits.
+  /// Derived provider: [ConsumedTotals] for [date] — meal logs PLUS the
+  /// during-workout fuel logged on the day's completed activities.
   ///
-  /// This is the single value the Daily Macros progress bars should watch.
-  /// Derives directly from the same repository stream so it shares the same
-  /// Drift subscription lifecycle.
+  /// This is the single value the Daily Macros progress bars (and the fuel
+  /// timeline's energy balance) should watch. Re-emits whenever either
+  /// underlying Drift stream changes.
   const ConsumedTotalsForDateProvider._({
     required ConsumedTotalsForDateFamily super.from,
     required String super.argument,
@@ -261,14 +362,14 @@ final class ConsumedTotalsForDateProvider
 }
 
 String _$consumedTotalsForDateHash() =>
-    r'49a315c0a9d6d158609d6ffb0e2979e397d950e7';
+    r'b2f53f9e3948fbc1843299a529af17da5324c636';
 
-/// Derived provider: [ConsumedTotals] for [date], recomputed whenever the
-/// underlying [mealLogsForDateProvider] stream emits.
+/// Derived provider: [ConsumedTotals] for [date] — meal logs PLUS the
+/// during-workout fuel logged on the day's completed activities.
 ///
-/// This is the single value the Daily Macros progress bars should watch.
-/// Derives directly from the same repository stream so it shares the same
-/// Drift subscription lifecycle.
+/// This is the single value the Daily Macros progress bars (and the fuel
+/// timeline's energy balance) should watch. Re-emits whenever either
+/// underlying Drift stream changes.
 
 final class ConsumedTotalsForDateFamily extends $Family
     with $FunctionalFamilyOverride<Stream<ConsumedTotals>, String> {
@@ -281,12 +382,12 @@ final class ConsumedTotalsForDateFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Derived provider: [ConsumedTotals] for [date], recomputed whenever the
-  /// underlying [mealLogsForDateProvider] stream emits.
+  /// Derived provider: [ConsumedTotals] for [date] — meal logs PLUS the
+  /// during-workout fuel logged on the day's completed activities.
   ///
-  /// This is the single value the Daily Macros progress bars should watch.
-  /// Derives directly from the same repository stream so it shares the same
-  /// Drift subscription lifecycle.
+  /// This is the single value the Daily Macros progress bars (and the fuel
+  /// timeline's energy balance) should watch. Re-emits whenever either
+  /// underlying Drift stream changes.
 
   ConsumedTotalsForDateProvider call(String date) =>
       ConsumedTotalsForDateProvider._(argument: date, from: this);

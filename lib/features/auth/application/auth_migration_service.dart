@@ -56,9 +56,33 @@ class AuthMigrationService {
       // because the auth trigger might have created an empty profile.
       bool oauthUserHasData = false;
       try {
-        oauthUserHasData = await userRepository.checkUserHasData(toOAuthUserId);
+        // A completed profile counts as data even with no activities yet:
+        // checkUserHasData probes only 3 tables, and an activity-less but
+        // configured account routed to Scenario B used to have its server
+        // rows deleted and its profile overwritten by the anon draft.
+        oauthUserHasData =
+            await userRepository.checkUserHasData(toOAuthUserId) ||
+            await userRepository.remoteAccountIsOnboarded(toOAuthUserId);
       } catch (e) {
-        // FAIL SAFE: Assume data exists to prevent data loss on network error
+        // The probes failed, so we cannot know which side should win.
+        // If the anon side holds local rows that never reached Supabase,
+        // guessing EITHER way can destroy data (Scenario A hard-deletes the
+        // local rows; Scenario B deletes the account's server rows) — fail
+        // loudly and let the caller surface a retryable sign-in error.
+        if (await userRepository.hasLocalDataWorthMigrating(
+          fromAnonymousUserId,
+        )) {
+          sentry.addBreadcrumb(
+            message:
+                'OAuth data probe failed with un-uploaded anon data present '
+                '- aborting migration rather than guessing',
+            category: 'auth',
+            data: {'error': e.toString()},
+          );
+          rethrow;
+        }
+        // Nothing local to lose: assume the account has data (Scenario A),
+        // which then merely clears empty anon tables.
         sentry.addBreadcrumb(
           message:
               'Error checking OAuth user data - assuming exists to prevent data loss',
@@ -487,6 +511,28 @@ class AuthMigrationService {
         [anonymousUserId],
       );
 
+      // 2026-08-07: the remaining user-scoped tables (same roster as
+      // DiagnosticDao.migrateUserData). Leaving these behind orphaned them
+      // under the dead anon uid — and an orphaned DIRTY meal_log row would
+      // make version_check_service's unprotected-anon-data guard defer schema
+      // resyncs forever, since nothing could ever upload or re-key it.
+      for (final table in [
+        'integrations',
+        'onboarding_surveys',
+        'meal_logs',
+        'saved_meals',
+        'formula_pins',
+        'personal_formulas',
+        'personal_templates',
+        'race_checklist_items',
+        'daily_macro_targets',
+        'tp_writeback_log',
+      ]) {
+        await database.customStatement('DELETE FROM $table WHERE user_id = ?', [
+          anonymousUserId,
+        ]);
+      }
+
       // Delete anonymous user profile
       await database.customStatement('DELETE FROM users WHERE id = ?', [
         anonymousUserId,
@@ -545,9 +591,13 @@ class AuthMigrationService {
           },
         );
 
-        final hasDataToMigrate = await userRepository.checkUserHasData(
-          previousUserId,
-        );
+        // Local check FIRST: an anon who onboarded or logged data offline has
+        // rows only in Drift, and the remote-only check used to return false
+        // here — skipping migration and orphaning everything they entered
+        // under the dead anon uid. The local probe is also free (no network).
+        final hasDataToMigrate =
+            await userRepository.hasLocalDataWorthMigrating(previousUserId) ||
+            await userRepository.checkUserHasData(previousUserId);
         if (hasDataToMigrate) {
           await migrateAnonymousUserData(
             fromAnonymousUserId: previousUserId,
@@ -624,10 +674,12 @@ class AuthMigrationService {
           previousUserId != null && previousUserId != newUserId && wasAnonymous;
 
       if (needsMigration) {
-        // Check if the anonymous user actually has data worth migrating
-        final hasDataToMigrate = await userRepository.checkUserHasData(
-          previousUserId,
-        );
+        // Check if the anonymous user actually has data worth migrating —
+        // locally first (offline-created data is invisible to the remote
+        // check), then on the server.
+        final hasDataToMigrate =
+            await userRepository.hasLocalDataWorthMigrating(previousUserId) ||
+            await userRepository.checkUserHasData(previousUserId);
 
         if (hasDataToMigrate) {
           sentry.addBreadcrumb(

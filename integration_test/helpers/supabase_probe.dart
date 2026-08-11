@@ -57,6 +57,21 @@ class SupabaseProbe {
     if (TestConfig.loginEmail.isEmpty || TestConfig.loginPassword.isEmpty) {
       return null;
     }
+    final probe = await signInAs(
+      email: TestConfig.loginEmail,
+      password: TestConfig.loginPassword,
+    );
+    return probe == null ? null : _cached = probe;
+  }
+
+  /// Sign in as an arbitrary account — used by the onboarding-signup flow to
+  /// probe the account it JUST registered, which the shared tester session
+  /// cannot see under RLS. Not cached: each flow's throwaway account is its
+  /// own session. Same never-throws contract as [signIn].
+  static Future<SupabaseProbe?> signInAs({
+    required String email,
+    required String password,
+  }) async {
     try {
       final res = await http
           .post(
@@ -67,10 +82,7 @@ class SupabaseProbe {
               'apikey': TestConfig.supabaseAnonKey,
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({
-              'email': TestConfig.loginEmail,
-              'password': TestConfig.loginPassword,
-            }),
+            body: jsonEncode({'email': email, 'password': password}),
           )
           .timeout(const Duration(seconds: 20));
 
@@ -79,7 +91,7 @@ class SupabaseProbe {
       final token = body['access_token'] as String?;
       final id = (body['user'] as Map<String, dynamic>?)?['id'] as String?;
       if (token == null || id == null) return null;
-      return _cached = SupabaseProbe._(token, id);
+      return SupabaseProbe._(token, id);
     } on Exception {
       return null;
     }
@@ -156,6 +168,25 @@ class SupabaseProbe {
           'user_id=eq.$userId'
           '&event_name=eq.${Uri.encodeQueryComponent(name)}'
           '&select=*',
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// This athlete's `users` profile row, or null.
+  ///
+  /// The row every onboarding answer ends up in: gender, birthday,
+  /// height/weight, unit_system, gut_training_level, sweat_rate, and the
+  /// plan-reveal edits in nutrition_target_overrides.
+  Future<Map<String, dynamic>?> userRow() async {
+    final rows = await select('users', query: 'id=eq.$userId&select=*');
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// This athlete's `onboarding_surveys` row (sports/goals/pitfalls), or null.
+  Future<Map<String, dynamic>?> onboardingSurvey() async {
+    final rows = await select(
+      'onboarding_surveys',
+      query: 'user_id=eq.$userId&select=*',
     );
     return rows.isEmpty ? null : rows.first;
   }

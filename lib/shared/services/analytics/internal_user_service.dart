@@ -63,9 +63,25 @@ class InternalUserService {
   bool _isInternal = false;
   bool _isInitialized = false;
 
+  /// Explicit choice made via the 7-tap "Mark this device as internal" switch:
+  /// `true`/`false` once the user has toggled it, `null` if they never have.
+  bool? _testerOverride;
+
   /// Whether this install belongs to the team. Safe to read synchronously once
   /// [initialize] has completed; returns `false` before that.
+  ///
+  /// This drives ANALYTICS tagging only — [isForced] wins here on purpose, so
+  /// a dev build's events are always tagged internal. Tester-facing features
+  /// (the $0.99 tester SKU) must use [testerModeEnabled] instead, which the
+  /// switch genuinely controls.
   bool get isInternal => _isInternal;
+
+  /// Whether tester-only surfaces (the $0.99 tester SKU) should show.
+  ///
+  /// The user's explicit switch choice always wins; with no explicit choice it
+  /// defaults to [isForced]. Unlike [isInternal], toggling the switch OFF
+  /// really hides tester surfaces — even on IS_INTERNAL / debug builds.
+  bool get testerModeEnabled => _testerOverride ?? isForced;
 
   bool get isInitialized => _isInitialized;
 
@@ -94,17 +110,13 @@ class InternalUserService {
 
     if (prefs != null) await _migrateLegacyExclusion(prefs);
 
-    // Compile-time signals (1 + 2) and the device allowlist (4) are all
-    // authoritative — short-circuit before touching storage.
-    if (isForced) {
-      _isInternal = true;
-      _isInitialized = true;
-      return;
-    }
+    // The persisted tri-state is read even on forced builds so that
+    // [testerModeEnabled] honours an explicit toggle-off there too.
+    _testerOverride = await _readPersistedFlag();
 
-    // 3: persisted flag. On iOS this lives in the Keychain and survives an
-    // uninstall, so a phone only ever needs the 7-tap toggle once.
-    _isInternal = await _readPersistedFlag();
+    // Compile-time signals (1 + 2) and the device allowlist (4) stay
+    // authoritative for the analytics flag.
+    _isInternal = isForced || (_testerOverride ?? false);
 
     _isInitialized = true;
   }
@@ -147,16 +159,17 @@ class InternalUserService {
     // the service initialized and skip the Keychain/allowlist chain entirely.
     await initialize();
 
-    // [isForced] wins over `value` — an allowlisted device or an IS_INTERNAL
-    // build cannot be un-flagged from the UI.
+    // The explicit choice is stored verbatim ('false', not a key delete) so
+    // [testerModeEnabled] can distinguish "toggled off" from "never toggled".
+    _testerOverride = value;
+
+    // [isForced] still wins for the ANALYTICS flag — an allowlisted device or
+    // an IS_INTERNAL build keeps tagging its events internal even when the
+    // tester surfaces are toggled off.
     _isInternal = value || isForced;
 
     try {
-      if (value) {
-        await _storage.write(key: _internalFlagKey, value: 'true');
-      } else {
-        await _storage.delete(key: _internalFlagKey);
-      }
+      await _storage.write(key: _internalFlagKey, value: value.toString());
     } catch (_) {
       // Secure storage is unavailable (e.g. web without a crypto context).
       // The in-memory value still applies for this session; we simply cannot
@@ -164,15 +177,19 @@ class InternalUserService {
     }
   }
 
-  Future<bool> _readPersistedFlag() async {
+  Future<bool?> _readPersistedFlag() async {
     // flutter_secure_storage has no desktop/web Keychain equivalent worth
     // relying on here, and web builds already carry their flag via dart-define.
-    if (kIsWeb || !(PlatformInfo.isIOS || PlatformInfo.isAndroid)) return false;
+    if (kIsWeb || !(PlatformInfo.isIOS || PlatformInfo.isAndroid)) return null;
 
     try {
-      return await _storage.read(key: _internalFlagKey) == 'true';
+      return switch (await _storage.read(key: _internalFlagKey)) {
+        'true' => true,
+        'false' => false,
+        _ => null,
+      };
     } catch (_) {
-      return false;
+      return null;
     }
   }
 }
@@ -182,7 +199,10 @@ final internalUserServiceProvider = Provider<InternalUserService>((ref) {
   return InternalUserService.instance;
 });
 
-/// Reactive view of the internal-device flag, for the Developer / Tester card.
+/// Reactive view of the tester-mode switch, for the Developer / Tester card
+/// and the tester-SKU filter. Follows [InternalUserService.testerModeEnabled]
+/// — i.e. the user's explicit toggle wins, so turning it OFF genuinely hides
+/// tester surfaces even on forced-internal builds.
 final internalDeviceFlagProvider =
     NotifierProvider<InternalDeviceFlagNotifier, bool>(
       InternalDeviceFlagNotifier.new,
@@ -190,15 +210,16 @@ final internalDeviceFlagProvider =
 
 class InternalDeviceFlagNotifier extends Notifier<bool> {
   @override
-  bool build() => InternalUserService.instance.isInternal;
+  bool build() => InternalUserService.instance.testerModeEnabled;
 
   Future<void> setInternal(bool value) async {
     await InternalUserService.instance.setInternal(value);
-    state = InternalUserService.instance.isInternal;
+    state = InternalUserService.instance.testerModeEnabled;
   }
 
-  /// True when the flag is forced on — an `--dart-define=IS_INTERNAL` build, a
-  /// debug/profile build, or a device in [kInternalDeviceIds] — so the switch
-  /// cannot be turned off.
+  /// True when the device is internal by construction — an
+  /// `--dart-define=IS_INTERNAL` build, a debug/profile build, or a device in
+  /// [kInternalDeviceIds]. Analytics stays tagged internal on these builds
+  /// regardless of the switch; the switch itself remains usable.
   bool get isForced => InternalUserService.instance.isForced;
 }

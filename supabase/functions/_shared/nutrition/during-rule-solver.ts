@@ -21,6 +21,11 @@ import {
   shouldPrioritizeMacroTarget,
 } from './types.ts';
 import { calculateTotals } from './food-utils.ts';
+import {
+  type FoodWithConstraints,
+  type GutTrainingLevel,
+  maxAllowedServingsForDuration,
+} from './during-template-solver.ts';
 import { MACRO_CONSTRAINT_RANGES } from './constants.ts';
 import {
   categorizeFoods,
@@ -65,6 +70,15 @@ export function generateDuringPhaseRuleBased(
   foods: Food[],
   targets: MacroTargets,
   activityType: ActivityType,
+  /** When provided (with gutTrainingLevel), food picks and serving sizes are
+   * clamped to the athlete's per-hour gut-training caps — the same
+   * `maxAllowedServingsForDuration` the template solver and gap-fill apply.
+   * Without it the solver could pick a food the athlete's gut level rules out
+   * entirely (e.g. high_carb_drink_mix at max_per_hr_moderate = 0), whose
+   * forced minimum serving then poisons the sodium/carb headroom for the
+   * whole plan (2026-08-06, the 45-min ultra stall). */
+  durationMinutes?: number,
+  gutTrainingLevel?: GutTrainingLevel,
 ): RuleSolverResult {
   if (foods.length === 0) {
     // Emit a structured signal so the caller can distinguish "no foods" from a
@@ -131,6 +145,20 @@ export function generateDuringPhaseRuleBased(
     );
   }
 
+  const durationHours = durationMinutes && durationMinutes > 0
+    ? durationMinutes / 60
+    : null;
+  const gutCap = (food: Food): number =>
+    durationHours !== null && gutTrainingLevel
+      ? maxAllowedServingsForDuration(
+        food as FoodWithConstraints,
+        durationHours,
+        gutTrainingLevel,
+      )
+      : Number.POSITIVE_INFINITY;
+  const gutEligible = (pool: Food[]): Food[] =>
+    pool.filter((f) => gutCap(f) > 0);
+
   const categorized = categorizeFoods(foods);
   console.log(
     `[DURING-RULES] Pool: ${categorized.primary_carb.length} primary_carb, ` +
@@ -156,7 +184,7 @@ export function generateDuringPhaseRuleBased(
   }
 
   const primaryCarb = carbTarget >= 15
-    ? pickWeighted(categorized.primary_carb, 'Primary carb selection')
+    ? pickWeighted(gutEligible(categorized.primary_carb), 'Primary carb selection')
     : null;
 
   if (primaryCarb && carbTarget > 0) {
@@ -168,6 +196,7 @@ export function generateDuringPhaseRuleBased(
 
     const primaryCarbTarget = carbTarget * primaryShare;
     let primaryServings = primaryCarbTarget / primaryCarb.per_serving.carbs_g;
+    primaryServings = Math.min(primaryServings, gutCap(primaryCarb));
     primaryServings = capServingsByUpperBounds(
       primaryCarb,
       primaryServings,
@@ -195,12 +224,13 @@ export function generateDuringPhaseRuleBased(
   }
 
   // ---- STEP 2: Sports drink (remaining carb share + fluid) ----
-  const sportsDrink = pickWeighted(categorized.sports_drink, 'Sports drink selection');
+  const sportsDrink = pickWeighted(gutEligible(categorized.sports_drink), 'Sports drink selection');
   if (sportsDrink && carbTarget > 0) {
     const remainingCarbs = Math.max(0, carbTarget - carbsAssigned);
 
     if (remainingCarbs > 0 && sportsDrink.per_serving.carbs_g > 0) {
       let sdServings = remainingCarbs / sportsDrink.per_serving.carbs_g;
+      sdServings = Math.min(sdServings, gutCap(sportsDrink));
 
       // When carbTarget < 15g the primary carb step was already skipped. For this
       // degenerate low-target case, relax the carb upper bound so sports drink can
@@ -255,7 +285,10 @@ export function generateDuringPhaseRuleBased(
         const inPrimaryOnlyLow = primaryCarbContribution < carbLower;
         if (inPrimaryOnlyLow && sportsDrink.per_serving.carbs_g > 0) {
           // Try sports drink targeting the full carbTarget (ignoring prior primary allocation)
-          let sdFullServings = carbTarget / sportsDrink.per_serving.carbs_g;
+          let sdFullServings = Math.min(
+            carbTarget / sportsDrink.per_serving.carbs_g,
+            gutCap(sportsDrink),
+          );
           sdFullServings = capServingsByUpperBounds(
             sportsDrink,
             sdFullServings,
@@ -292,17 +325,35 @@ export function generateDuringPhaseRuleBased(
   }
 
   // ---- STEP 2.5: Carb deficit recovery ----
-  // If still significantly under carb target after primary + sports drink,
-  // try a SECOND primary carb source (different from what was picked)
+  // If still under carb target after primary + sports drink, try a SECOND
+  // primary carb source (different from what was picked). The trigger fires
+  // on any deficit beyond rounding noise — it used to wait for a 20% miss,
+  // which let an 18% deficit stand while the electrolyte step then consumed
+  // the sodium headroom the closing gap-fill needed (the 45-min ultra stall,
+  // 2026-08-06). Shoot for the target; the overshoot guards below keep the
+  // recovery serving inside the carb upper band.
   {
     const carbDeficit = carbTarget - carbsAssigned;
-    if (carbDeficit > carbTarget * 0.2 && categorized.primary_carb.length > 1) {
-      const alternates = categorized.primary_carb.filter(f =>
+    const deficitTrigger = Math.max(2, carbTarget * 0.05);
+    if (carbDeficit > deficitTrigger && categorized.primary_carb.length > 1) {
+      // Try every eligible alternate (weighted order, without replacement)
+      // until one fits: a single weighted pick could land on a food whose
+      // minimum serving overshoots the carb upper band and give up, leaving
+      // an avoidable deficit for the electrolyte step to entrench.
+      const alternates = gutEligible(categorized.primary_carb).filter(f =>
         !primaryCarb || f.id !== primaryCarb.id
       );
-      const secondaryCarb = pickWeighted(alternates, 'Secondary carb (deficit recovery)');
-      if (secondaryCarb) {
-        let secServings = carbDeficit / secondaryCarb.per_serving.carbs_g;
+      const remaining = [...alternates];
+      while (remaining.length > 0) {
+        const deficitNow = carbTarget - carbsAssigned;
+        if (deficitNow <= deficitTrigger) break;
+        const secondaryCarb = pickWeighted(remaining, 'Secondary carb (deficit recovery)');
+        if (!secondaryCarb) break;
+        remaining.splice(remaining.findIndex(f => f.id === secondaryCarb.id), 1);
+        let secServings = Math.min(
+          deficitNow / secondaryCarb.per_serving.carbs_g,
+          gutCap(secondaryCarb),
+        );
         secServings = capServingsByUpperBounds(
           secondaryCarb,
           secServings,
@@ -327,20 +378,22 @@ export function generateDuringPhaseRuleBased(
           );
         } else if (secServings > 0) {
           console.log(
-            `[DURING-RULES] Secondary carb skipped — min serving would overshoot carb upper bound ` +
-            `(current=${carbsAssigned.toFixed(0)}g, upper=${carbUpper.toFixed(0)}g)`
+            `[DURING-RULES] Secondary carb ${secondaryCarb.name} skipped — min serving would overshoot carb upper bound ` +
+            `(current=${carbsAssigned.toFixed(0)}g, upper=${carbUpper.toFixed(0)}g); trying next alternate`
           );
         }
       }
     }
     // If STILL in deficit (>30%) and sports drink was skipped, try adding one now
     if (carbTarget > 0 && carbTarget - carbsAssigned > carbTarget * 0.3) {
-      const anySportsDrink = categorized.sports_drink.length > 0
-        ? categorized.sports_drink[0]
-        : null;
+      const sdPool = gutEligible(categorized.sports_drink);
+      const anySportsDrink = sdPool.length > 0 ? sdPool[0] : null;
       if (anySportsDrink && !sportsDrink && anySportsDrink.per_serving.carbs_g > 0) {
         const deficit = carbTarget - carbsAssigned;
-        let recoveryServings = deficit / anySportsDrink.per_serving.carbs_g;
+        let recoveryServings = Math.min(
+          deficit / anySportsDrink.per_serving.carbs_g,
+          gutCap(anySportsDrink),
+        );
         recoveryServings = capServingsByUpperBounds(
           anySportsDrink,
           recoveryServings,
@@ -373,9 +426,12 @@ export function generateDuringPhaseRuleBased(
     // Add bike solids for sustained energy; use remaining carb gap
     const remainingCarbs = Math.max(0, carbTarget - carbsAssigned);
     if (remainingCarbs > 10) {
-      const bikeSolid = pickWeighted(categorized.bike_solid, 'Bike solid selection');
+      const bikeSolid = pickWeighted(gutEligible(categorized.bike_solid), 'Bike solid selection');
       if (bikeSolid && bikeSolid.per_serving.carbs_g > 0) {
-        let bsServings = remainingCarbs / bikeSolid.per_serving.carbs_g;
+        let bsServings = Math.min(
+          remainingCarbs / bikeSolid.per_serving.carbs_g,
+          gutCap(bikeSolid),
+        );
         bsServings = capServingsByUpperBounds(
           bikeSolid,
           bsServings,

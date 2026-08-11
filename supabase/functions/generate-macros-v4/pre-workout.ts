@@ -20,7 +20,6 @@ import {
   type TemplateSelection,
   type PreWorkoutPhaseResult,
   type PreWorkoutShortfall,
-  type AddOn,
   BUDGET_SPLITS,
   BANANA_CARBS,
   BANANA_SODIUM,
@@ -29,15 +28,6 @@ import {
   SPORTS_DRINK_SODIUM,
   SPORTS_DRINK_FLUID,
   MIN_TOP_UP_FLUID_ML,
-  DATES_CARBS,
-  DATES_SODIUM,
-  DATES_FLUID,
-  APPLESAUCE_CARBS,
-  APPLESAUCE_SODIUM,
-  APPLESAUCE_FLUID,
-  RAISINS_CARBS,
-  RAISINS_SODIUM,
-  RAISINS_FLUID,
 } from './types.ts';
 
 import {
@@ -124,35 +114,6 @@ function makeSelection(t: PreWorkoutTemplate, servings: number): TemplateSelecti
 function makeBananaAddOn() {
   return { type: 'banana' as const, carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
 }
-
-// Pass 1.5 universal fallback add-ons (#15). All three are vegan, gluten-free,
-// and free of the common allergens we filter on, so the only gating needed in
-// Pass 1.5 is dislikes + macro headroom.
-function makeDatesAddOn() {
-  return { type: 'dates' as const, carbs_g: DATES_CARBS, sodium_mg: DATES_SODIUM, fluid_ml: DATES_FLUID, servings: 1 };
-}
-
-function makeApplesauceAddOn() {
-  return { type: 'applesauce' as const, carbs_g: APPLESAUCE_CARBS, sodium_mg: APPLESAUCE_SODIUM, fluid_ml: APPLESAUCE_FLUID, servings: 1 };
-}
-
-function makeRaisinsAddOn() {
-  return { type: 'raisins' as const, carbs_g: RAISINS_CARBS, sodium_mg: RAISINS_SODIUM, fluid_ml: RAISINS_FLUID, servings: 1 };
-}
-
-interface FallbackFoodSpec {
-  name: 'dates' | 'applesauce' | 'raisins';
-  carbs: number;
-  sodium: number;
-  fluid: number;
-  make: () => AddOn;
-}
-
-const PASS_1_5_FALLBACK_FOODS: FallbackFoodSpec[] = [
-  { name: 'dates', carbs: DATES_CARBS, sodium: DATES_SODIUM, fluid: DATES_FLUID, make: makeDatesAddOn },
-  { name: 'applesauce', carbs: APPLESAUCE_CARBS, sodium: APPLESAUCE_SODIUM, fluid: APPLESAUCE_FLUID, make: makeApplesauceAddOn },
-  { name: 'raisins', carbs: RAISINS_CARBS, sodium: RAISINS_SODIUM, fluid: RAISINS_FLUID, make: makeRaisinsAddOn },
-];
 
 function makeSportsDrinkAddOn(servings: number = 1) {
   return {
@@ -768,6 +729,33 @@ export function timeWindowToPhase(timeWindow: string): SubPhaseType | null {
   }
 }
 
+/**
+ * A template's sub-phase — CATEGORY-FIRST (Lee ruling 2026-08-06: "look at
+ * the CATEGORY of the meal, not the time period, so we can change times
+ * freely without changing the algorithm").
+ *
+ * The `sub_phase` column is authoritative when present; `time_window` is a
+ * pure display label from here on and may carry ANY future string without
+ * touching selection. `timeWindowToPhase` remains only as the fallback for
+ * catalogs that predate the 2026-08-06 `sub_phase` migration (prod, until it
+ * replays there).
+ *
+ * This is the ONLY place a template is classified to a phase. Every filter
+ * must call this — never `timeWindowToPhase(t.time_window)` directly, and
+ * never a string comparison (the flat-50 g outage, 2026-08-05).
+ */
+export function templatePhase(t: PreWorkoutTemplate): SubPhaseType | null {
+  switch (t.sub_phase) {
+    case 'full_meal':
+      return 'meal';
+    case 'snack':
+      return 'snack';
+    case 'top_up':
+      return 'top_up';
+  }
+  return timeWindowToPhase(t.time_window);
+}
+
 export function splitTargets(
   targets: PreWorkoutTargets,
   hoursBefore: number,
@@ -825,9 +813,10 @@ export function getEligibleTemplates(
   dislikedFoods: string[] = [],
   allergies: string[] = [],
 ): PreWorkoutTemplate[] {
-  // Phase comparison, not string comparison — the catalog's window labels
-  // differ between projects (see timeWindowToPhase).
-  let filtered = templates.filter((t) => timeWindowToPhase(t.time_window) === phase);
+  // Phase comparison, not string comparison — category-first via `sub_phase`,
+  // falling back to the window mapping on pre-migration catalogs (see
+  // templatePhase).
+  let filtered = templates.filter((t) => templatePhase(t) === phase);
   const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
 
   // Diet filtering (dietary preference like 'vegan', 'keto', etc.)
@@ -1314,7 +1303,7 @@ export function selectPreWorkoutFoods(
     foodTemplates.some(
       (t) =>
         pinnedTemplateIds.has(t.id) &&
-        timeWindowToPhase(t.time_window) === p,
+        templatePhase(t) === p,
     );
   const emptyPhases = phases.filter(
     (p) =>
@@ -1383,7 +1372,7 @@ export function selectPreWorkoutFoods(
       ? foodTemplates.filter(
           (t) =>
             pinnedTemplateIds!.has(t.id) &&
-            timeWindowToPhase(t.time_window) === phase,
+            templatePhase(t) === phase,
         )
       : [];
     const pinOverrideActive = pinnedForPhase.length > 0;
@@ -1725,36 +1714,92 @@ export function selectPreWorkoutFoods(
       }
     }
 
-    // #15: Try universal fallback foods (dates, applesauce, raisins) if the
-    // banana branch didn't fire or didn't close the gap. These are all vegan,
-    // gluten-free, and allergen-clean, so they only need dislikes + headroom
-    // checks. We loop until we've closed the gap or exhausted the catalog —
-    // this matters most in the top-up-only window where a single phase exists
-    // and the banana may have been disliked.
-    for (const food of PASS_1_5_FALLBACK_FOODS) {
-      const currentTotal = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
-      if (currentTotal >= solverCarbsLowG) break;
-      if (state.used_foods.has(food.name)) continue;
-      if (dislikedSet.has(food.name)) continue;
-      if (wouldExceedHighs(state, food.carbs, 0, food.sodium, food.fluid)) continue;
-
-      // Prefer top_up phase for fast-digesting fallbacks; fall back to snack/meal.
+    // #15 → v3 rework (bug 3b4e3fdb, 2026-08-06): fallback foods are drawn
+    // from the ACTUAL template catalog, never from a hardcoded list. The old
+    // dates/applesauce/raisins constants emitted foods that exist in NO
+    // pinnable template — the athlete saw "Medjool Dates" in the Top-Off with
+    // no matching formula to pin ("No pin found") — and Medjool Dates fail
+    // food-composition v3's H2 fibre gate at the top-off tier anyway. Deriving
+    // from the pool means every fallback IS a real formula: it renders as a
+    // primary/stack selection with a template id, so pinning works, and the
+    // catalog's own gates decide what is offerable.
+    //
+    // Preference filters still apply (getEligibleTemplates), servings scale
+    // within the template's own [min, max], and every addition is
+    // headroom-guarded. Prefer top_up (fast-digesting) then snack then meal,
+    // filling the phase's empty primary slot first, else its empty stack slot.
+    {
       const phaseOrder: SubPhaseType[] = ['top_up', 'snack', 'meal'];
+      const usedTemplateIds = new Set<string>();
+      for (const p of results) {
+        if (p.primary) usedTemplateIds.add(p.primary.id);
+        if (p.stack) usedTemplateIds.add(p.stack.id);
+      }
+
       for (const targetPhase of phaseOrder) {
+        const currentTotal = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+        if (currentTotal >= solverCarbsLowG) break;
+        const remainingGap = targets.carbs_g - currentTotal;
+
         const phaseIdx = results.findIndex((p) => p.phase === targetPhase);
         if (phaseIdx < 0) continue;
         const phase = results[phaseIdx];
-        phase.add_ons.push(food.make());
-        phase.total_carbs_g = Math.round((phase.total_carbs_g + food.carbs) * 10) / 10;
-        phase.total_sodium_mg = Math.round((phase.total_sodium_mg + food.sodium) * 10) / 10;
-        phase.total_fluid_ml = Math.round((phase.total_fluid_ml + food.fluid) * 10) / 10;
-        state.used_foods.add(food.name);
-        state.carbs_delivered += food.carbs;
-        state.sodium_delivered += food.sodium;
-        state.fluid_delivered += food.fluid;
-        console.log(`[ALGO-C] Added ${food.name} to ${targetPhase} phase (+${food.carbs}g carbs). ` +
-          `New total: ${(currentTotal + food.carbs).toFixed(1)}g`);
-        break;
+        // A phase carrying both a primary and a stack has no slot left.
+        if (phase.primary !== null && phase.stack) continue;
+
+        const candidates = getEligibleTemplates(
+          foodTemplates, targetPhase, diet, dislikedFoods, allergies,
+        ).filter((t) => {
+          if (usedTemplateIds.has(t.id)) return false;
+          const components = t.component_food_names ?? [];
+          return !components.some((name) =>
+            state.used_foods.has(name) && !CROSS_PHASE_EXEMPT_FOODS.has(name)
+          );
+        });
+
+        let best:
+          | { template: PreWorkoutTemplate; servings: number; gap: number }
+          | null = null;
+        for (const template of candidates) {
+          const ideal = remainingGap / template.carbs_per_serving;
+          const servings = snapToHalf(
+            Math.max(template.min_servings, Math.min(template.max_servings, ideal)),
+          );
+          const carbs = templateCarbs(template, servings);
+          const protein = template.protein_per_serving * servings;
+          const sodium = template.sodium_mg * servings;
+          const fluid = template.fluid_ml * servings;
+          if (wouldExceedHighs(state, carbs, protein, sodium, fluid)) continue;
+          const gap = Math.abs(remainingGap - carbs);
+          if (!best || gap < best.gap) best = { template, servings, gap };
+        }
+        if (!best) continue;
+
+        const sel = makeSelection(best.template, best.servings);
+        if (phase.primary === null) {
+          phase.primary = sel;
+        } else {
+          phase.stack = sel;
+        }
+        phase.total_carbs_g = Math.round((phase.total_carbs_g + sel.carbs_g) * 10) / 10;
+        phase.total_protein_g = Math.round((phase.total_protein_g + sel.protein_g) * 10) / 10;
+        phase.total_fat_g = Math.round((phase.total_fat_g + sel.fat_g) * 10) / 10;
+        phase.total_sodium_mg = Math.round((phase.total_sodium_mg + sel.sodium_mg) * 10) / 10;
+        phase.total_fluid_ml = Math.round((phase.total_fluid_ml + sel.fluid_ml) * 10) / 10;
+        usedTemplateIds.add(best.template.id);
+        state.used_categories.add(best.template.base_category);
+        for (const name of (sel.component_food_names ?? [])) state.used_foods.add(name);
+        state.carbs_delivered += sel.carbs_g;
+        state.protein_delivered += sel.protein_g;
+        state.sodium_delivered += sel.sodium_mg;
+        state.fluid_delivered += sel.fluid_ml;
+        // The gap-fill delivered a REAL formula into this slot — clear the
+        // phase's carb shortfall if it now carries food.
+        console.log(
+          `[ALGO-C] Pool fallback: added ${sel.servings} x ${sel.name} to ` +
+            `${targetPhase} (+${sel.carbs_g}g carbs). New total: ` +
+            `${(currentTotal + sel.carbs_g).toFixed(1)}g`,
+        );
       }
     }
 

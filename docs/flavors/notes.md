@@ -600,7 +600,11 @@ workflows:
 
 #### 2. GitHub Actions
 
-**Files:**
+> **Stale (2026-05-22):** `deploy-dev.yml` / `deploy-prod.yml` were deleted in `b2f86b4f`;
+> backend deploys are manual now (see `/docs/deployment/README.md`). Current test workflow
+> is `tests-selfhosted.yml`.
+
+**Files (historical):**
 - `.github/workflows/deploy-dev.yml`
 - `.github/workflows/deploy-prod.yml`
 - `.github/workflows/test.yml`
@@ -1180,8 +1184,8 @@ dart run flutter_flavorizr -p <custom_processor_list>
 
 **CI/CD: ~2-3 files**
 - `codemagic.yaml`
-- `.github/workflows/deploy-dev.yml`
-- `.github/workflows/deploy-prod.yml` (if exists)
+- `.github/workflows/tests-selfhosted.yml` (the deploy-dev/deploy-prod workflows were
+  deleted 2026-05-22 — backend deploys are manual)
 
 **No Changes Needed:**
 - `.env.dev.local` and `.env.prod.local` files

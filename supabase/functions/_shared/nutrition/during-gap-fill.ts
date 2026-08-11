@@ -29,9 +29,16 @@ import {
   maxAllowedServingsForDuration,
 } from "./during-template-solver.ts";
 
-/** Fill triggers when delivered carbs are below this fraction of target —
- * the same 90% threshold the validators and shortfall reporter use. */
-const GAP_FILL_TRIGGER = 0.9;
+/** Carb slack (grams) below the point target that the fill tolerates.
+ *
+ * The fill used to anchor on the 90% shortfall line: it only fired below
+ * 90% of target and stopped filling once delivery crossed back over that
+ * line, so every gap-filled plan settled ~10% short — "in range", but
+ * systematically under-fueled (Lee, 2026-08-06: shoot for the TARGET, the
+ * range is a reporting band, not the goal). The fill now aims at the point
+ * target itself; this slack only absorbs increment-rounding noise, so a
+ * plan 2g under target doesn't grow a whole extra gel. */
+const GAP_FILL_SLACK_G = 2;
 
 /** Cap on distinct NEW food items the fill may introduce, so a large deficit
  * can't turn a tidy 3-item formula into a grab bag. Top-ups of items already
@@ -70,7 +77,7 @@ export function gapFillDuringCarbs(
   }
 
   let totals = calculateTotals(currentFoods);
-  if (totals.carbs_g >= carbTarget * GAP_FILL_TRIGGER) {
+  if (totals.carbs_g >= carbTarget - GAP_FILL_SLACK_G) {
     return { foods: currentFoods, addedCarbs: 0, applied: false };
   }
 
@@ -120,7 +127,7 @@ export function gapFillDuringCarbs(
 
   for (const food of carbSources) {
     totals = calculateTotals(foods);
-    const deficit = carbTarget * GAP_FILL_TRIGGER - totals.carbs_g;
+    const deficit = carbTarget - GAP_FILL_SLACK_G - totals.carbs_g;
     if (deficit <= 1e-6) break;
 
     const existing = foods.find((r) => r.food_id === food.id);

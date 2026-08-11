@@ -106,11 +106,20 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     bool needsUpload = false,
   }) async {
     // Delete any existing user with this device_id that has a DIFFERENT id
-    // This handles the case where a new user is created on a device that already has a user
+    // This handles the case where a new user is created on a device that already has a user.
+    //
+    // needs_upload rows are EXEMPT: a dirty row is data that has not reached
+    // Supabase yet (e.g. a freshly-onboarded anonymous profile), and caching a
+    // remote profile after sign-in shares the same device_id — deleting the
+    // dirty row here silently destroyed the onboarding answers before
+    // migration or upload could run. Dirty rows are cleaned up by
+    // migrateUserData (which deletes the anon row after moving its data) or
+    // become clean once uploaded, at which point this sweep can collect them.
     await (delete(userProfilesTable)..where(
           (u) =>
               u.deviceId.equals(profile.deviceId) &
-              u.id.equals(profile.id).not(),
+              u.id.equals(profile.id).not() &
+              u.needsUpload.equals(false),
         ))
         .go();
 
@@ -327,6 +336,17 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       );
     }
   }
+
+  /// Public entry-to-domain conversion.
+  ///
+  /// This is the ONE complete mapping from a Drift `user_profiles` row to the
+  /// domain model. Callers that need to serialize a local row for Supabase
+  /// (`profile.toJson()`) must convert through here — the old pattern of each
+  /// call site keeping its own partial copy of this mapping is how
+  /// unit_system/sweat_rate/nutrition_target_overrides silently fell out of
+  /// upload payloads.
+  domain.UserProfile toDomainProfile(UserProfileEntry dbUser) =>
+      _convertToDomainUserProfile(dbUser);
 
   /// Convert database entry to domain model
   domain.UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) {

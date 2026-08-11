@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
@@ -103,28 +104,28 @@ class UserRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      // Delegate to the DAO's conversion — the single source of truth for
-      // every UserProfile field. A hand-duplicated copy used to live here
-      // and silently dropped sweatRate/unitSystem/nutritionTargetOverrides/
-      // etc. on every background upload (MEALVANA-ENDURANCE onboarding
-      // redesign: sweat rate and edited carb targets not surviving
-      // "Continue without an account").
-      final userProfile = await database.userDao.getUserProfileById(userId);
-      if (userProfile == null) {
-        return UploadResult.failed(
-          'Dirty user row disappeared before upload',
-        );
-      }
+      // Serialize the dirty SNAPSHOT via the DAO's canonical mapping — the
+      // single source of truth for every UserProfile field (a hand-duplicated
+      // copy used to live here and silently dropped sweatRate/unitSystem/
+      // nutritionTargetOverrides on every background upload).
+      final userProfile = database.userDao.toDomainProfile(dirtyUser);
 
       // Upload to Supabase
       await supabase
           .from('users')
           .upsert(userProfile.toJson(), onConflict: 'id');
 
-      // Clear dirty flag in local database
-      await database
-          .update(database.userProfilesTable)
-          .replace(dirtyUser.copyWith(needsUpload: false));
+      // Clear the dirty flag with a TARGETED column write, not a full-row
+      // .replace of the earlier snapshot: a concurrent local edit landing
+      // between the read and this write would otherwise be reverted wholesale
+      // AND un-dirtied — local and server permanently diverged. The
+      // updatedAt guard narrows it further: an edit that landed mid-upload
+      // bumps updatedAt, the guard misses, the row stays dirty, and the NEW
+      // value uploads on the next pass instead of being silently dropped.
+      await (database.update(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId))
+            ..where((t) => t.updatedAt.equals(dirtyUser.updatedAt)))
+          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
 
       sentry.addBreadcrumb(
         message: 'Uploaded dirty user profile to Supabase',
@@ -842,42 +843,79 @@ class UserRepository with SyncableRepository {
 
   /// Parse user data from Supabase response.
   ///
-  /// Delegates to [UserProfile.fromJson] — the single source of truth for
-  /// every column — instead of a hand-duplicated field list. That duplicate
-  /// (removed 2026-08) never mapped `sweat_rate`/`unit_system`/several other
-  /// columns, so every profile pulled through this path silently reverted
-  /// those fields to their class defaults. The defensive fallbacks below
-  /// (missing id/device_id/timestamps/biometrics) reproduce this function's
-  /// previous null-safety behavior; `fromJson` itself expects those columns
-  /// present.
+  /// Delegates to [UserProfile.fromSupabaseRow], the one complete DEFENSIVE
+  /// parser (per-field defaults for missing/null columns — `fromJson` throws
+  /// on sparse legacy rows). The old inline field list here omitted
+  /// unit_system and sweat_rate, so every remote hydration through this path
+  /// reset a metric athlete to imperial and their sweat profile to medium.
   UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
     // Handle both single object and array responses.
     final userData =
-        (response is List ? response.first : response)
-            as Map<String, dynamic>;
-    final nowIso = DateTime.now().toIso8601String();
+        (response is List ? response.first : response) as Map<String, dynamic>;
 
-    return UserProfile.fromJson({
-      ...userData,
-      'id': userData['id'] ?? deviceId,
-      'device_id': userData['device_id'] ?? deviceId,
-      'birthday': userData['birthday'] ?? nowIso,
-      'height_feet': userData['height_feet'] ?? 5,
-      'height_inches': userData['height_inches'] ?? 8,
-      'weight_pounds': userData['weight_pounds'] ?? 150.0,
-      'runs_with_water_bottle': userData['runs_with_water_bottle'] ?? false,
-      'created_at': userData['created_at'] ?? nowIso,
-      'updated_at': userData['updated_at'] ?? nowIso,
-    });
+    return UserProfile.fromSupabaseRow(userData, fallbackId: deviceId);
   }
 
   Future<void> _upsertUserProfileToSupabase(UserProfile profile) async {
     await supabase.from('users').upsert(profile.toJson());
   }
 
+  /// Whether [userId] has data in LOCAL Drift worth migrating to a new uid.
+  ///
+  /// Complements [checkUserHasData] (which asks Supabase): an anonymous user
+  /// who onboarded or logged data OFFLINE has rows only in Drift, so the
+  /// remote check alone returned false, `migrateAnonymousUserData` never ran,
+  /// and everything they entered was orphaned under the dead anon uid.
+  ///
+  /// A freshly-reset post-sign-out anonymous user has none of these rows
+  /// (their old data stays under the OLD uid), so this correctly stays false
+  /// for the "empty anon signs back in" case the remote check was built for.
+  ///
+  /// Checked tables mirror what `migrateUserData` can move: the onboarding
+  /// survey (written by every completed onboarding), plus the user-created
+  /// data types (activities, events, meal logs, personal formulas).
+  Future<bool> hasLocalDataWorthMigrating(String userId) async {
+    final row = await database
+        .customSelect(
+          'SELECT ('
+          'EXISTS(SELECT 1 FROM onboarding_surveys WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM activities WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM events WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM meal_logs WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM personal_formulas WHERE user_id = ?1)'
+          ') AS has_data',
+          variables: [Variable.withString(userId)],
+        )
+        .getSingle();
+    return row.read<bool>('has_data');
+  }
+
+  /// Whether [userId]'s server profile exists and has completed onboarding.
+  ///
+  /// Used by `migrateAnonymousUserData` alongside [checkUserHasData]: that
+  /// check probes only activities/events/food_preferences, so an account that
+  /// was set up but hasn't logged workouts yet read as "no data" — and the
+  /// destructive Scenario B migration then deleted its server rows (including
+  /// un-probed user_foods and carb plans) and overwrote its profile with the
+  /// anon draft. A completed profile IS data: it must route to Scenario A
+  /// (account wins).
+  Future<bool> remoteAccountIsOnboarded(String userId) async {
+    final row = await supabase
+        .from('users')
+        .select('onboarding_completed')
+        .eq('id', userId)
+        .maybeSingle();
+    return row != null && (row['onboarding_completed'] as bool? ?? false);
+  }
+
   /// Check if a user has any data worth migrating (activities, events, etc.)
   /// This is used to prevent unnecessary migration when signing back into an existing account
   /// after sign-out (where a new empty anonymous user is created)
+  ///
+  /// REMOTE-ONLY by design at the `migrateAnonymousUserData` call site (it
+  /// decides whether the OAUTH account's server data wins). For the "does the
+  /// ANON user have anything to migrate" question, pair it with
+  /// [hasLocalDataWorthMigrating] — offline data never shows up here.
   Future<bool> checkUserHasData(String userId) async {
     try {
       // Check Supabase for any user data
