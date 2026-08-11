@@ -142,6 +142,9 @@ async function handleWebhook(
       if (error.code === '23505') {
         return json({ ok: true, idempotent: true });
       }
+      if (error.code === '23503') {
+        return json({ ok: true, ignored: 'user_not_in_project' });
+      }
       return json({ error: 'grant failed' }, 500);
     }
     return json({ ok: true, granted: credits, balance: data });
@@ -385,6 +388,23 @@ describe('E. grant outcomes', () => {
     assertEquals(client.calls[0].args.p_ref, 'evt-001');
   });
 
+  it('FK violation 23503 (user not in this project) → 200 acked, no retry storm', async () => {
+    // Dev + prod share one RC project and TestFlight is always sandbox, so each
+    // Supabase project receives events for users that only exist in the other.
+    const client = new FakeSupabaseClient({
+      error: {
+        code: '23503',
+        message: 'insert or update on table "token_wallets" violates foreign key constraint',
+      },
+    });
+    const res = await handleWebhook(rcRequest(rcEvent()), envWith(), client);
+    assertEquals(res.status, 200);
+    const body = await res.json();
+    assertEquals(body.ok, true);
+    assertEquals(body.ignored, 'user_not_in_project');
+    assertEquals(client.calls.length, 1);
+  });
+
   it('non-unique-violation RPC error → 500 grant failed (RC will retry)', async () => {
     const client = new FakeSupabaseClient({
       error: { code: 'P0001', message: 'wallet missing' },
@@ -459,5 +479,6 @@ Deno.test('mirror fidelity — constants match revenuecat-webhook/index.ts', asy
     );
   }
   assert(src.includes("'23505'"), 'index.ts no longer special-cases unique violations');
+  assert(src.includes("'23503'"), 'index.ts no longer acks cross-project user misses');
   assert(src.includes("p_reason: 'grant_purchase'"), 'grant reason drifted');
 });
