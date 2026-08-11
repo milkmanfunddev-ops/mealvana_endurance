@@ -251,19 +251,34 @@ class EventsRepository with SyncableRepository {
         await _uploadEventToSupabase(createdEvent, 'create');
         uploaded = true;
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'EVENTS_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'create', 'recordId': createdEvent.id},
-        );
-        _sentry.reportNetworkError(
-          e,
-          url: 'supabase:events:create',
-          method: 'INSERT',
-          stackTrace: stackTrace,
-        );
+        if (_isMissingUserRowFk(e)) {
+          // Expected during onboarding: the (anonymous or just-created) auth
+          // user has no public.users row yet — it's created later by the
+          // create-user path — so events.user_id FK-violates (23503). The
+          // record already stays dirty and uploads via ensureSynced once the
+          // users row lands. Queue-and-retry, not an error worth Sentry
+          // (was MEALVANA-ENDURANCE-3W: 350+ noise events).
+          _logger.info(
+            'Deferred event upload: users row not created yet; '
+            'record stays dirty for retry',
+            context: 'EVENTS_REPOSITORY',
+            data: {'operation': 'create', 'recordId': createdEvent.id},
+          );
+        } else {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'EVENTS_REPOSITORY',
+            error: e,
+            stackTrace: stackTrace,
+            data: {'operation': 'create', 'recordId': createdEvent.id},
+          );
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:events:create',
+            method: 'INSERT',
+            stackTrace: stackTrace,
+          );
+        }
         if (requireRemoteAck) {
           rethrow;
         }
@@ -646,6 +661,16 @@ class EventsRepository with SyncableRepository {
 
       return event.id;
     }
+  }
+
+  /// True when an upload failed on the `events_user_id_fkey` FK (Postgres
+  /// 23503): the auth user's `public.users` row doesn't exist yet, so any
+  /// event insert before onboarding creates it FK-violates. Matched narrowly
+  /// (code + user_id constraint text) so other FK/errors still surface.
+  bool _isMissingUserRowFk(Object error) {
+    if (error is! PostgrestException || error.code != '23503') return false;
+    final text = '${error.message} ${error.details ?? ''}';
+    return text.contains('events_user_id_fkey') || text.contains('user_id');
   }
 
   /// Upload event to Supabase directly
