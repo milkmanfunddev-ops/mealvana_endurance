@@ -109,6 +109,11 @@ class ActivitiesController extends _$ActivitiesController {
   /// Background sync: ensures data is fresh, then refreshes state in place
   /// only when data was stale AND the sync actually produced different data.
   Future<void> _backgroundSync(String userId) async {
+    // build() fires this after several awaits; onboarding syncs can invalidate
+    // this provider mid-flight, leaving us holding a stale ref — reading it
+    // throws UnmountedRefException (Sentry MEALVANA-ENDURANCE-AS). Nothing to
+    // do for a dead provider: the fresh build() kicks its own sync.
+    if (!ref.mounted) return;
     final repo = ref.read(activitiesRepositoryProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final logger = ref.read(appLoggerProvider);

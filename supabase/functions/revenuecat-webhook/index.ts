@@ -10,6 +10,13 @@
  *   • URL:  https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook
  *   • Authorization header: set to the SAME value as the REVENUECAT_WEBHOOK_SECRET
  *     secret below (RC sends it verbatim in the Authorization header).
+ *   • Environment filter: the PROD webhook must receive BOTH sandbox and
+ *     production events — TestFlight purchases are always sandbox, so a
+ *     production-only filter silently routes every TestFlight purchase to the
+ *     dev project and the prod wallet never increments (2026-08-11 incident).
+ *     Cross-project deliveries are safe: an app_user_id that doesn't exist in
+ *     this project's auth.users FK-fails in grant_credits and is acked as a
+ *     no-op below.
  * Deploy with JWT verification OFF (RC is not a Supabase-authed caller):
  *   supabase functions deploy revenuecat-webhook --no-verify-jwt --project-ref <ref>
  * Secrets:
@@ -130,6 +137,16 @@ serve(async (req: Request) => {
       if (error.code === '23505') {
         console.log(`[rc-webhook] event ${eventId} already processed (idempotent)`);
         return json({ ok: true, idempotent: true });
+      }
+      // FK violation == the app_user_id has no auth.users row in THIS project.
+      // Dev and prod share one RevenueCat project, and TestFlight purchases are
+      // always sandbox, so both Supabase projects can receive events for users
+      // that only exist in the other one. Acknowledge so RC doesn't retry.
+      if (error.code === '23503') {
+        console.log(
+          `[rc-webhook] user ${appUserId} not in this project, ignoring event ${eventId}`,
+        );
+        return json({ ok: true, ignored: 'user_not_in_project' });
       }
       console.error('[rc-webhook] grant_credits error:', error.message);
       return json({ error: 'grant failed' }, 500);

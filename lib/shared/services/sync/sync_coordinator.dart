@@ -80,6 +80,12 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// Sync lock to prevent concurrent syncs
   bool _syncInProgress = false;
 
+  /// Completion of the sync currently in flight, so concurrent callers can
+  /// await the real result instead of an instant `true`. Callers like the
+  /// post-onboarding path act on "sync finished" (cache busts, recomputes);
+  /// an instant `true` made them fire before the download half had run.
+  Completer<bool>? _activeSync;
+
   /// Last successful sync time (for debugging)
   DateTime? _lastSyncTime;
 
@@ -417,9 +423,15 @@ class SyncCoordinator extends _$SyncCoordinator {
     SyncTrigger trigger = SyncTrigger.manual,
     bool skipInvalidation = false,
   }) async {
-    // Prevent concurrent syncs
-    if (_syncInProgress) {
-      return true; // Return true since a sync is happening
+    // Prevent concurrent syncs — join the in-flight one instead of returning
+    // an instant `true`. Sign-in always kicks a full sync, so the instant
+    // `true` meant the post-onboarding path invalidated the daily-macro cache
+    // BEFORE that sync landed the user's workouts, re-caching a session-less
+    // rest-day TDEE with no TTL (the "2637 kcal until you leave and come
+    // back" dashboard bug).
+    final active = _activeSync;
+    if (active != null) {
+      return active.future;
     }
 
     // Check network connectivity before attempting sync
@@ -428,9 +440,12 @@ class SyncCoordinator extends _$SyncCoordinator {
       return false; // Return false since sync was skipped (offline-first: user can continue)
     }
 
+    final completer = Completer<bool>();
+    _activeSync = completer;
     _syncInProgress = true;
     state = SyncState.syncing;
 
+    var result = false;
     try {
       // Step 1: Upload dirty records per-repository
       await _uploadAllDirtyRecords(userId);
@@ -448,6 +463,7 @@ class SyncCoordinator extends _$SyncCoordinator {
         }
       }
 
+      result = success;
       return success;
     } catch (e, stackTrace) {
       _logger.error(
@@ -467,6 +483,10 @@ class SyncCoordinator extends _$SyncCoordinator {
       return false;
     } finally {
       _syncInProgress = false;
+      _activeSync = null;
+      if (!completer.isCompleted) {
+        completer.complete(result);
+      }
       state = SyncState.idle;
     }
   }
@@ -636,6 +656,11 @@ class SyncCoordinator extends _$SyncCoordinator {
     _failureCount.clear();
     _lastSyncTime = null;
     _syncInProgress = false;
+    final abandoned = _activeSync;
+    _activeSync = null;
+    if (abandoned != null && !abandoned.isCompleted) {
+      abandoned.complete(false); // release any joined waiters on sign-out
+    }
     state = SyncState.idle;
 
     final prefs = ref.read(sharedPreferencesProvider);

@@ -11,6 +11,7 @@ import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
+import '../../../daily_macros/application/daily_macro_service.dart';
 import '../../../daily_macros/data/daily_macro_targets_repository.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
@@ -616,6 +617,16 @@ class _PostOnboardingAuthScreenState
       // user has at most days of cache at this point, so the blanket wipe
       // costs one recompute. Invalidating the controller through the root
       // container (this screen is disposed by now) triggers that recompute.
+      //
+      // Bump the week revisions FIRST: the dashboard's mount-time calc may
+      // still be in flight, and without a revision bump the recreated
+      // controller would JOIN that session-less pass (single-flight) and its
+      // late save would re-cache the exact stale rows this wipe removes.
+      final now = DateTime.now();
+      container.read(dailyMacroServiceProvider).markMacroInputsChanged(
+        userId,
+        List.generate(14, (i) => now.add(Duration(days: i - 7))),
+      );
       await container
           .read(dailyMacroTargetsRepositoryProvider)
           .invalidateAllForUser(userId);
