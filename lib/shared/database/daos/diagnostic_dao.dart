@@ -127,16 +127,31 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
         userFoodsTable,
       )..where((t) => t.userId.equals(userId))).go();
 
-      // feedback uses device_id, need to join with users table
-      await db.customStatement(
-        '''
-        DELETE FROM feedback_table
-        WHERE device_id IN (
-          SELECT device_id FROM users WHERE id = ?
-        )
-      ''',
-        [userId],
-      );
+      // feedback uses device_id, need to join with users table.
+      // The SQL table is `feedback` (FeedbackTable overrides tableName), NOT
+      // the class-derived `feedback_table` — the old hardcoded name threw
+      // "no such table: feedback_table" during account deletion (Sentry
+      // MEALVANA-ENDURANCE-B1). Use the Drift-generated name, and skip the
+      // delete entirely if the table is absent (older upgrade ladders / web
+      // DBs whose user_version didn't persist may never have created it).
+      final feedbackName = feedbackTable.actualTableName;
+      final feedbackExists = await db
+          .customSelect(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            variables: [Variable<String>(feedbackName)],
+          )
+          .get();
+      if (feedbackExists.isNotEmpty) {
+        await db.customStatement(
+          '''
+          DELETE FROM $feedbackName
+          WHERE device_id IN (
+            SELECT device_id FROM users WHERE id = ?
+          )
+        ''',
+          [userId],
+        );
+      }
 
       // food_preferences uses user_id
       await (delete(
