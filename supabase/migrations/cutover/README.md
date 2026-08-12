@@ -1,6 +1,12 @@
 # PROD cutover — pre-workout food-composition v3
 
-**Status: NOT YET RUN.** Verified against live dev + prod on 2026-08-11.
+**Status: ✅ RUN ON PROD 2026-08-11.** Steps 1–5 executed ~16:20 UTC (verify
+passed: 14/10/5, v3 time windows, food_group 79/93, dangling pin cleared).
+Step 7 (force-update flip) executed 2026-08-12 03:13 UTC after 1.23.1 went
+live on the App Store (released 19:38 UTC): min_app_version → 1.23.1,
+current/latest_schema_version → 17, floor kept at 11. The five applied
+pre_workout migrations moved to `../_archived/`. Originally verified against
+live dev + prod on 2026-08-11.
 
 Prod ref `wvmvsodrvbkxfydabqed` · dev ref `vlmtsdzpnjnavdgytcmi`.
 
