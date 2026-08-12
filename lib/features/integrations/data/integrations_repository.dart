@@ -575,7 +575,7 @@ class IntegrationsRepository with SyncableRepository {
       'provider': entity.provider,
       'access_token': entity.accessToken,
       'refresh_token': entity.refreshToken,
-      'token_expires_at': entity.tokenExpiresAt?.toIso8601String(),
+      'token_expires_at': entity.tokenExpiresAt?.toUtc().toIso8601String(),
       'provider_athlete_id': entity.providerAthleteId,
       'provider_athlete_name': entity.providerAthleteName,
       'provider_athlete_email': entity.providerAthleteEmail,
@@ -585,11 +585,11 @@ class IntegrationsRepository with SyncableRepository {
       'provider_athlete_body_fat_pct': entity.providerAthleteBodyFatPct,
       'athlete_zones_json': _decodeZonesForJsonb(entity.athleteZonesJson),
       'is_active': entity.isActive,
-      'last_sync_at': entity.lastSyncAt?.toIso8601String(),
+      'last_sync_at': entity.lastSyncAt?.toUtc().toIso8601String(),
       'last_sync_status': entity.lastSyncStatus,
       'last_sync_error': entity.lastSyncError,
-      'created_at': entity.createdAt.toIso8601String(),
-      'updated_at': entity.updatedAt.toIso8601String(),
+      'created_at': entity.createdAt.toUtc().toIso8601String(),
+      'updated_at': entity.updatedAt.toUtc().toIso8601String(),
     };
   }
 
@@ -601,7 +601,7 @@ class IntegrationsRepository with SyncableRepository {
       'provider': model.provider,
       'access_token': model.accessToken,
       'refresh_token': model.refreshToken,
-      'token_expires_at': model.tokenExpiresAt?.toIso8601String(),
+      'token_expires_at': model.tokenExpiresAt?.toUtc().toIso8601String(),
       'provider_athlete_id': model.providerAthleteId,
       'provider_athlete_name': model.providerAthleteName,
       'provider_athlete_email': model.providerAthleteEmail,
@@ -611,11 +611,11 @@ class IntegrationsRepository with SyncableRepository {
       'provider_athlete_body_fat_pct': model.providerAthleteBodyFatPct,
       'athlete_zones_json': _decodeZonesForJsonb(model.athleteZonesJson),
       'is_active': model.isActive,
-      'last_sync_at': model.lastSyncAt?.toIso8601String(),
+      'last_sync_at': model.lastSyncAt?.toUtc().toIso8601String(),
       'last_sync_status': model.lastSyncStatus,
       'last_sync_error': model.lastSyncError,
-      'created_at': (model.createdAt ?? now).toIso8601String(),
-      'updated_at': (model.updatedAt ?? now).toIso8601String(),
+      'created_at': (model.createdAt ?? now).toUtc().toIso8601String(),
+      'updated_at': (model.updatedAt ?? now).toUtc().toIso8601String(),
     };
   }
 

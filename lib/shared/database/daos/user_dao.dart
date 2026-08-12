@@ -167,6 +167,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         lastName: Value(profile.lastName),
         // Contact information
         email: Value(profile.email),
+        // Display name used when sharing plans
+        senderName: Value(profile.senderName),
         // Nutrition target overrides (JSON string)
         nutritionTargetOverrides: Value(
           profile.nutritionTargetOverrides?.toJsonString(),
@@ -246,6 +248,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         lastName: Value(profile.lastName),
         // Contact information
         email: Value(profile.email),
+        // Display name used when sharing plans
+        senderName: Value(profile.senderName),
         // Nutrition target overrides (JSON string)
         nutritionTargetOverrides: Value(
           profile.nutritionTargetOverrides?.toJsonString(),

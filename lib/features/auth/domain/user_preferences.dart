@@ -501,8 +501,8 @@ class UserProfile {
       'sweat_rate': sweatRate.name,
       'onboarding_completed': onboardingCompleted,
       'app_version': appVersion,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
       'unit_system': unitSystem.name,
       // Sport preferences (only include fields that exist in production Supabase)
       'cycling_ftp_watts': ftpWatts,
@@ -535,7 +535,7 @@ class UserProfile {
       'known_sweat_rate_ml_per_hour': knownSweatRateMlPerHour,
       'known_sodium_concentration_mg_per_liter':
           knownSodiumConcentrationMgPerLiter,
-      'sweat_test_date': sweatTestDate?.toIso8601String(),
+      'sweat_test_date': sweatTestDate?.toUtc().toIso8601String(),
       'sweat_test_source': sweatTestSource,
       'weight_pounds_updated_at': weightPoundsUpdatedAt
           ?.toUtc()
