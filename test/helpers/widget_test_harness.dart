@@ -44,7 +44,7 @@ class MockSentryReporter extends Mock implements SentryReporter {}
 /// A [SentryReporter] mock whose Future-returning reporting methods are stubbed
 /// as no-ops. Error paths in repositories/controllers report to Sentry inside
 /// their catch blocks; an unstubbed mock throws there ("type 'Null' is not a
-/// subtype of type 'Future<void>'"), turning an expected best-effort failure
+/// subtype of type Future-of-void"), turning an expected best-effort failure
 /// (e.g. the fake network refusing a push) into a test crash.
 MockSentryReporter mockSentryReporter() {
   final sentry = MockSentryReporter();

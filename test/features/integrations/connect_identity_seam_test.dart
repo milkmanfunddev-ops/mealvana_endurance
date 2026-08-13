@@ -35,7 +35,6 @@ import 'package:mealvana_endurance/features/integrations/presentation/providers/
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 
 import '../../helpers/widget_test_harness.dart';
