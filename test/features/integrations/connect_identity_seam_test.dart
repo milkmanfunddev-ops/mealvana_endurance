@@ -22,17 +22,21 @@
 //  - the fake writes under the id it is HANDED — hard-coding one would
 //    delete the very value under test.
 
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
+import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/integrations/application/final_surge_oauth_service.dart';
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
@@ -98,12 +102,25 @@ void main() {
 
     oauth = _MockFinalSurgeOAuth();
 
+    // Same explicit construction as the integrations repository, for the
+    // same reason: activitiesRepositoryProvider builds from Supabase.instance.
+    final activitiesRepository = ActivitiesRepository(
+      supabase: supabase,
+      database: db,
+      logger: MockAppLogger(),
+      sentry: mockSentryReporter(),
+      deduplicationService: ActivityDeduplicationService(
+        logger: MockAppLogger(),
+      ),
+    );
+
     container = ProviderContainer(
       overrides: [
         mockAppExternalDeps(supabaseClient: supabase),
         mockSharedPreferences(),
         inMemoryDatabaseOverride(db),
         integrationsRepositoryProvider.overrideWithValue(repository),
+        activitiesRepositoryProvider.overrideWithValue(activitiesRepository),
         userIdProvider.overrideWith((ref) async => _authUid),
         // THE SEAM. The only faked link in the chain: the browser handshake.
         finalSurgeOAuthServiceProvider.overrideWithValue(oauth),
@@ -180,6 +197,142 @@ void main() {
       expect(autofill.lastName, 'Huang');
       expect(autofill.email, 'xuan@example.com');
       expect(autofill.detailsSource, 'Final Surge');
+    },
+  );
+
+  test(
+    'disconnecting wipes what the platform gave us — autofill and workouts',
+    () async {
+      // The disconnect side of the seam, mirroring the real service's tail
+      // exactly like authenticate() above: deactivate through the REAL
+      // repository, under the id the controller hands it.
+      when(() => oauth.disconnect(any())).thenAnswer((invocation) async {
+        await repository.deactivateIntegration(
+          invocation.positionalArguments.first as String,
+          'final_surge',
+        );
+      });
+
+      // Real activities repository over the same fake network — overridden
+      // for the same reason as the integrations one (Supabase.instance).
+      final activitiesRepo = container.read(activitiesRepositoryProvider);
+
+      // Connect, then set the stage the way onboarding actually leaves it:
+      // the platform's workouts imported, plus one the athlete logged
+      // manually (which a disconnect must NOT touch)...
+      await container.read(connectTrainingControllerProvider.future);
+      await container
+          .read(connectTrainingControllerProvider.notifier)
+          .connectFinalSurge();
+
+      // Distinct titles/times per seed — identical rows get collapsed by the
+      // deduplication pass inside the provider-activity load, which would
+      // quietly turn "removed both workouts" into "removed the one keeper".
+      Future<void> seedActivity(
+        String id, {
+        String? provider,
+        required String title,
+        required DateTime at,
+      }) => db
+          .into(db.activitiesTable)
+          .insert(
+            ActivitiesTableCompanion.insert(
+              id: Value(id),
+              userId: _localProfileId,
+              activityType: 'running',
+              title: title,
+              scheduledDateTime: at,
+              createdAt: DateTime(2026, 8, 13),
+              updatedAt: DateTime(2026, 8, 13),
+              syncedFromProvider: provider == null
+                  ? const Value.absent()
+                  : Value(provider),
+            ),
+          );
+      await seedActivity(
+        'aaaaaaaa-0000-0000-0000-000000000001',
+        provider: 'final_surge',
+        title: 'Imported easy run',
+        at: DateTime(2026, 8, 20, 7),
+      );
+      await seedActivity(
+        'aaaaaaaa-0000-0000-0000-000000000002',
+        provider: 'final_surge',
+        title: 'Imported long run',
+        at: DateTime(2026, 8, 22, 8),
+      );
+      await seedActivity(
+        'aaaaaaaa-0000-0000-0000-000000000003',
+        title: 'Manual run',
+        at: DateTime(2026, 8, 21, 6),
+      );
+
+      // ...and the personal-info screen having applied the autofill: values
+      // written into the draft and RECORDED as platform-supplied, except the
+      // last name, which the athlete edited and now owns.
+      final onboarding = container.read(onboardingControllerProvider.notifier);
+      onboarding.updatePersonalInfo(
+        firstName: 'Xuan',
+        lastName: 'Huang',
+        email: 'xuan@example.com',
+      );
+      onboarding.recordIntegrationAutofill({'firstName', 'lastName', 'email'});
+      onboarding.releaseIntegrationAutofill('lastName');
+
+      // The act under test — the REAL disconnect path, not a direct call to
+      // clearIntegrationAutofill(): the widget tests already prove the
+      // clearing mechanism; this proves disconnect actually invokes it.
+      await container
+          .read(connectTrainingControllerProvider.notifier)
+          .disconnectFinalSurge();
+
+      // 1. The platform's workouts are gone; the manual one survives.
+      final remaining = await activitiesRepo.getActivitiesByUserAndProvider(
+        _localProfileId,
+        'final_surge',
+      );
+      expect(
+        remaining,
+        isEmpty,
+        reason: 'disconnect must delete every workout the provider imported',
+      );
+      // Quantified at the table level too, so the assertion cannot be
+      // satisfied by dedup hiding rows from the repository query: no
+      // provider-sourced row may remain alive.
+      final aliveProviderRows =
+          await (db.select(db.activitiesTable)..where(
+                (t) =>
+                    t.syncedFromProvider.equals('final_surge') &
+                    t.deletedAt.isNull(),
+              ))
+              .get();
+      expect(aliveProviderRows, isEmpty);
+      final manualRow = await (db.select(db.activitiesTable)
+            ..where((t) => t.id.equals('aaaaaaaa-0000-0000-0000-000000000003')))
+          .getSingle();
+      expect(
+        manualRow.deletedAt,
+        isNull,
+        reason: 'a manually logged workout is the athlete\'s, not the '
+            'provider\'s — disconnect must leave it alone',
+      );
+
+      // 2. The autofilled draft fields are cleared; the athlete-owned edit
+      // survives.
+      expect(onboarding.draft.firstName, isNull);
+      expect(onboarding.draft.email, isNull);
+      expect(
+        onboarding.draft.lastName,
+        'Huang',
+        reason: 'a field the athlete edited is theirs and must survive',
+      );
+
+      // 3. The integration row is inactive, so the autofill provider now
+      // yields nothing for any later screen.
+      final autofill = await container.read(
+        onboardingIntegrationProfileProvider.future,
+      );
+      expect(autofill.hasAnything, isFalse);
     },
   );
 
