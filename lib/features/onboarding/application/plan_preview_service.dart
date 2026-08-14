@@ -166,6 +166,7 @@ class PlanPreviewService {
       weightKg: weightKg,
     );
     final sessionCarb = DailyBaselineCalculator.carbDemand(
+      sport: sessionSport,
       intensityFactor: intensityFactor,
       durationHr: sessionHr,
       weightKg: weightKg,
@@ -277,10 +278,18 @@ class PlanPreviewService {
       protG: clamped.protG,
       weightKg: weightKg,
     );
+    // Step 10b: fat capped at 30 %E, excess redistributed to carb (Q-014) —
+    // same as the server pipeline, so the preview matches post-sync numbers.
+    final capped = DailyBaselineCalculator.applyFatCap(
+      carbG: clamped.carbG,
+      fatG: tdee.fatG,
+      tdee: tdee.tdee,
+      weightKg: weightKg,
+    );
 
-    final carbsG = clamped.carbG.round();
+    final carbsG = capped.carbG.round();
     final proteinG = clamped.protG.round();
-    final fatG = tdee.fatG;
+    final fatG = capped.fatG.round();
     final calories = carbsG * 4 + proteinG * 4 + fatG * 9;
 
     return DayPreview(
@@ -289,9 +298,9 @@ class PlanPreviewService {
       proteinG: proteinG,
       fatG: fatG,
       calories: calories,
-      carbGPerKg: _round1(clamped.carbG / weightKg),
+      carbGPerKg: _round1(capped.carbG / weightKg),
       proteinGPerKg: _round1(clamped.protG / weightKg),
-      fatGPerKg: _round1(fatG / weightKg),
+      fatGPerKg: _round1(capped.fatG / weightKg),
     );
   }
 

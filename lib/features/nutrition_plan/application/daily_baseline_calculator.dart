@@ -134,17 +134,19 @@ class DailyBaselineCalculator {
   };
 
   /// Session calorie cost. Endurance sports scale quadratically with IF.
+  /// Weight multiplies LAST, mirroring session.ts, so cost is exactly linear
+  /// in body weight (invariant I6).
   static double sessionCost({
     required String sport,
     required double durationHr,
     required double intensityFactor,
     required double weightKg,
   }) {
-    final base = (_sessionBaseRateKcalPerKg[sport] ?? 11) * weightKg;
+    final rate = _sessionBaseRateKcalPerKg[sport] ?? 11;
     if (sport == 'strength') {
-      return base * (intensityFactor / 0.75) * durationHr;
+      return rate * (intensityFactor / 0.75) * durationHr * weightKg;
     }
-    return base * math.pow(intensityFactor / 0.75, 2) * durationHr;
+    return rate * math.pow(intensityFactor / 0.75, 2) * durationHr * weightKg;
   }
 
   /// Carb oxidation anchors: [IF, g/hr at 75 kg reference] (session.ts).
@@ -175,13 +177,21 @@ class DailyBaselineCalculator {
     return 60;
   }
 
+  /// Strength carb demand is a flat rate — intensity-independent (Q-003).
+  static const double strengthCarbGPerHr = 27.0;
+
   /// Session carb demand: oxidation rate × duration × (kg/75), ×1.15 when
-  /// long (>1.5 h) or intense (IF>0.85).
+  /// long (>1.5 h) or intense (IF>0.85). Strength ignores IF entirely and
+  /// uses the flat 27 g/hr rate with no multiplier (Q-003).
   static double carbDemand({
+    required String sport,
     required double intensityFactor,
     required double durationHr,
     required double weightKg,
   }) {
+    if (sport == 'strength') {
+      return strengthCarbGPerHr * durationHr * (weightKg / 75);
+    }
     final rateGPerHr = carbOxidationRate(intensityFactor);
     final raw = rateGPerHr * durationHr * (weightKg / 75);
     if (durationHr > 1.5 || intensityFactor > 0.85) {
@@ -220,17 +230,17 @@ class DailyBaselineCalculator {
   }
 
   static const double fatFloorGPerKg = 0.8;
-  static const double fatCeilingGPerKg = 1.5;
 
-  static double _clampFat(double fatFromTdee, double weightKg) {
-    final floor = fatFloorGPerKg * weightKg;
-    final ceiling = fatCeilingGPerKg * weightKg;
-    return math.max(floor, math.min(ceiling, fatFromTdee));
+  static double _flooredFat(double fatFromTdee, double weightKg) {
+    return math.max(fatFloorGPerKg * weightKg, fatFromTdee);
   }
 
   /// TDEE with iterative TEF convergence (neat-tef.ts calculateTDEE).
-  /// Fat comes out of residual TDEE, clamped to [0.8, 1.5] g/kg.
-  static ({int tdee, int fatG, int tef}) calculateTdee({
+  /// Returns UNROUNDED values (R1) and the PRE-CAP fat residual floored at
+  /// 0.8 g/kg — the fat ceiling lives in [applyFatCap] (assembly step 10b),
+  /// not here (Q-014).
+  static ({double tdee, double fatG, double tef, bool fatAtFloor})
+  calculateTdee({
     required double rmr,
     required double neat,
     required double sessionKcal,
@@ -244,7 +254,7 @@ class DailyBaselineCalculator {
     for (var pass = 1; pass <= maxPasses; pass++) {
       final prevTef = tef;
       final tdee = rmr + neat + tef + sessionKcal;
-      final fat = _clampFat((tdee - carbG * 4 - protG * 4) / 9, weightKg);
+      final fat = _flooredFat((tdee - carbG * 4 - protG * 4) / 9, weightKg);
       final intake = carbG * 4 + protG * 4 + fat * 9;
       final newTef = intake * 0.10;
       final delta = (newTef - prevTef).abs();
@@ -254,10 +264,34 @@ class DailyBaselineCalculator {
     }
 
     final finalTdee = rmr + neat + tef + sessionKcal;
-    final finalFat = _clampFat(
-      (finalTdee - carbG * 4 - protG * 4) / 9,
-      weightKg,
+    final rawFat = (finalTdee - carbG * 4 - protG * 4) / 9;
+    final finalFat = _flooredFat(rawFat, weightKg);
+    return (
+      tdee: finalTdee,
+      fatG: finalFat,
+      tef: tef,
+      fatAtFloor: finalFat > rawFat,
     );
-    return (tdee: finalTdee.round(), fatG: finalFat.round(), tef: tef.round());
+  }
+
+  /// Assembly step 10b (pipeline.ts applyFatCap): cap fat at 30 %E of TDEE,
+  /// redistributing excess energy to carbohydrate up to the 12 g/kg clamp
+  /// (Q-014). Conserves energy exactly; in the corner case where the carb
+  /// clamp saturates, fat keeps the remainder rather than energy dropping.
+  static ({double carbG, double fatG}) applyFatCap({
+    required double carbG,
+    required double fatG,
+    required double tdee,
+    required double weightKg,
+  }) {
+    final fatCap = 0.30 * tdee / 9;
+    if (fatG <= fatCap) return (carbG: carbG, fatG: fatG);
+
+    final excessKcal = (fatG - fatCap) * 9;
+    final headroom = carbClampMaxGPerKg * weightKg - carbG;
+    return (
+      carbG: carbG + math.min(excessKcal / 4, headroom),
+      fatG: fatCap + math.max(0, excessKcal - headroom * 4) / 9,
+    );
   }
 }

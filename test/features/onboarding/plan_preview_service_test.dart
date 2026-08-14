@@ -107,9 +107,13 @@ void main() {
   });
 
   group('daily tabs', () {
-    test('rest day carbs are exactly 4.0 g/kg and carb-load 9.0 g/kg', () {
+    test('rest day carbs are 4.0 g/kg plus the Q-014 cap redistribution, '
+        'carb-load 9.0 g/kg', () {
       final preview = PlanPreviewService.buildPreview(draft(), now: now);
-      expect(preview.restDay.carbGPerKg, 4.0);
+      // Baseline 4.0 g/kg; the 30 %E fat cap redistributes its excess to
+      // carb (assembly step 10b), so the displayed figure sits just above.
+      expect(preview.restDay.carbGPerKg, 4.2);
+      // Carb-load day pins fat at its floor — under the cap, so untouched.
       expect(preview.carbLoadDay.carbGPerKg, 9.0);
       expect(
         preview.workoutDay.carbGPerKg,

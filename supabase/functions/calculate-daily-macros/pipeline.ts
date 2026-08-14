@@ -208,6 +208,31 @@ export interface CorePlan {
 }
 
 /**
+ * Assembly step 10b — fat ceiling at 30 %E of TDEE (Q-014, ruled 2026-08-13).
+ * Excess energy redistributes to carbohydrate up to the 12 g/kg clamp;
+ * in the corner case where the clamp saturates, fat keeps the remainder
+ * rather than energy being dropped. Conserves energy exactly (I10), so
+ * TDEE/TEF/EA are unchanged across this step. Mirrored client-side by
+ * DailyBaselineCalculator.applyFatCap.
+ */
+export function applyFatCap(
+  carb_g: number,
+  fat_g: number,
+  tdee: number,
+  weight_kg: number,
+): { carb_g: number; fat_g: number } {
+  const fat_cap = 0.30 * tdee / 9;
+  if (fat_g <= fat_cap) return { carb_g, fat_g };
+
+  const excess_kcal = (fat_g - fat_cap) * 9;
+  const headroom = 12.0 * weight_kg - carb_g; // step-9 clamp's remaining room
+  return {
+    carb_g: carb_g + Math.min(excess_kcal / 4, headroom),
+    fat_g: fat_cap + Math.max(0, excess_kcal - headroom * 4) / 9,
+  };
+}
+
+/**
  * Steps 3–11 of the v5 pipeline over resolved inputs. UNROUNDED (R1):
  * rounding happens once, in the returning wrapper (step 12). The one
  * exception is F18's own return, rounded by spec.
@@ -358,19 +383,11 @@ export function calculateDailyMacrosCore(input: CoreInput): CorePlan {
 
   // ====================================================================
   // STEP 10b: Fat ceiling — 30 %E of TDEE, excess → carb (Q-014)
-  // Redistribution conserves energy exactly: intake, TEF, TDEE and EA are
-  // unchanged across this step (invariant I10).
   // ====================================================================
 
-  const fat_cap = 0.30 * tdee / 9;
-  if (fat > fat_cap) {
-    const excess_kcal = (fat - fat_cap) * 9;
-    const headroom = 12.0 * weight_kg - carb; // step-9 clamp's remaining room
-    carb += Math.min(excess_kcal / 4, headroom);
-    // Corner case: when the carb clamp saturates, fat keeps the remainder
-    // rather than energy being dropped.
-    fat = fat_cap + Math.max(0, excess_kcal - headroom * 4) / 9;
-  }
+  const capped = applyFatCap(carb, fat, tdee, weight_kg);
+  carb = capped.carb_g;
+  fat = capped.fat_g;
 
   // ====================================================================
   // STEP 11: EA safety gate (last)

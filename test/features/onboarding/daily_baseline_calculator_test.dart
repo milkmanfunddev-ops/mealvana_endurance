@@ -108,6 +108,7 @@ void main() {
         );
 
         final carb = DailyBaselineCalculator.carbDemand(
+          sport: c['sport'] as String,
           intensityFactor: intensityFactor,
           durationHr: (c['duration_hr'] as num).toDouble(),
           weightKg: (c['weight_kg'] as num).toDouble(),
@@ -135,8 +136,50 @@ void main() {
           protG: (c['prot_g'] as num).toDouble(),
           weightKg: (c['weight_kg'] as num).toDouble(),
         );
-        expect(result.tdee, c['expected_tdee'] as int);
-        expect(result.fatG, c['expected_fat_g'] as int);
+        final tol = (c['tolerance'] as num).toDouble();
+        expect(result.tdee, closeTo((c['expected_tdee'] as num).toDouble(), tol));
+        expect(result.fatG, closeTo((c['expected_fat_g'] as num).toDouble(), tol));
+        expect(result.tef, closeTo((c['expected_tef'] as num).toDouble(), tol));
+        expect(result.fatAtFloor, c['expected_fat_at_floor'] as bool);
+      });
+    }
+  });
+
+  group('fat cap parity (pipeline.ts applyFatCap, Q-014)', () {
+    for (final raw in fixtures['fat_cap'] as List) {
+      final c = raw as Map<String, dynamic>;
+      test(c['name'] as String, () {
+        final tdee = DailyBaselineCalculator.calculateTdee(
+          rmr: (c['rmr'] as num).toDouble(),
+          neat: (c['neat'] as num).toDouble(),
+          sessionKcal: (c['session_kcal'] as num).toDouble(),
+          carbG: (c['carb_g'] as num).toDouble(),
+          protG: (c['prot_g'] as num).toDouble(),
+          weightKg: (c['weight_kg'] as num).toDouble(),
+        );
+        final capped = DailyBaselineCalculator.applyFatCap(
+          carbG: (c['carb_g'] as num).toDouble(),
+          fatG: tdee.fatG,
+          tdee: tdee.tdee,
+          weightKg: (c['weight_kg'] as num).toDouble(),
+        );
+        final tol = (c['tolerance'] as num).toDouble();
+        expect(
+          capped.carbG,
+          closeTo((c['expected_carb_g'] as num).toDouble(), tol),
+        );
+        expect(
+          capped.fatG,
+          closeTo((c['expected_fat_g'] as num).toDouble(), tol),
+        );
+        // Energy conservation (I10): intake identical across the cap.
+        final before = (c['carb_g'] as num) * 4 +
+            (c['prot_g'] as num) * 4 +
+            tdee.fatG * 9;
+        final after = capped.carbG * 4 +
+            (c['prot_g'] as num) * 4 +
+            capped.fatG * 9;
+        expect(after, closeTo(before, 1e-6));
       });
     }
   });

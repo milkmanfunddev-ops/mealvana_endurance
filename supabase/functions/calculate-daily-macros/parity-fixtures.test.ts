@@ -25,7 +25,8 @@ import {
   zoneDistributionToIF,
 } from "./formulas/session.ts";
 import { calculateTDEE } from "./formulas/neat-tef.ts";
-import type { Sex } from "./types.ts";
+import { applyFatCap } from "./pipeline.ts";
+import type { Sex, Sport } from "./types.ts";
 
 const fixturePath = new URL(
   "../../../test/features/onboarding/fixtures/plan_preview_parity.json",
@@ -86,7 +87,12 @@ describe("session parity", () => {
       );
       assertAlmostEquals(kcal, c.expected_kcal, c.kcal_tolerance);
 
-      const carb = carbDemand(intensityFactor, c.duration_hr, c.weight_kg);
+      const carb = carbDemand(
+        c.sport as Sport,
+        intensityFactor,
+        c.duration_hr,
+        c.weight_kg,
+      );
       assertAlmostEquals(carb, c.expected_carb_g, c.carb_tolerance);
     });
   }
@@ -103,8 +109,28 @@ describe("TDEE convergence parity", () => {
         c.prot_g,
         c.weight_kg,
       );
-      assertEquals(result.tdee, c.expected_tdee);
-      assertEquals(result.fat_g, c.expected_fat_g);
+      assertAlmostEquals(result.tdee, c.expected_tdee, c.tolerance);
+      assertAlmostEquals(result.fat_g, c.expected_fat_g, c.tolerance);
+      assertAlmostEquals(result.tef, c.expected_tef, c.tolerance);
+      assertEquals(result.fat_at_floor, c.expected_fat_at_floor);
+    });
+  }
+});
+
+describe("fat cap parity (assembly 10b, Q-014)", () => {
+  for (const c of fixtures.fat_cap) {
+    it(c.name, () => {
+      const tdee = calculateTDEE(
+        c.rmr,
+        c.neat,
+        c.session_kcal,
+        c.carb_g,
+        c.prot_g,
+        c.weight_kg,
+      );
+      const capped = applyFatCap(c.carb_g, tdee.fat_g, tdee.tdee, c.weight_kg);
+      assertAlmostEquals(capped.carb_g, c.expected_carb_g, c.tolerance);
+      assertAlmostEquals(capped.fat_g, c.expected_fat_g, c.tolerance);
     });
   }
 });
