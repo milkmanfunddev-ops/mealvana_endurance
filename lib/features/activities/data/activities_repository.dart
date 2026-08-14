@@ -750,6 +750,53 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// G1 (two-time model): mark-done writes actual_time = now (the workout
+  /// really happened now, or the athlete says it did); planned_time is
+  /// NEVER touched by any gesture. A later Garmin sync overwrites the
+  /// mark-done actual_time with the measured start (MANUAL → GARMIN).
+  Future<void> markWorkoutDone({
+    required String activityId,
+    DateTime? at,
+  }) async {
+    final now = DateTime.now();
+    final actualAt = at ?? now;
+    await (_database.update(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        status: const Value('completed'),
+        actualTime: Value(actualAt),
+        completedAt: Value(actualAt),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+    await _queueImmediateActivityUpsertById(activityId, operation: 'mark_done');
+  }
+
+  /// G2: mark-undone CLEARS actual_time — back to null, not zero — so the
+  /// card returns to planned_time.
+  Future<void> markWorkoutUndone({required String activityId}) async {
+    final now = DateTime.now();
+    await (_database.update(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        status: const Value('planned'),
+        actualTime: const Value(null),
+        completedAt: const Value(null),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+    await _queueImmediateActivityUpsertById(
+      activityId,
+      operation: 'mark_undone',
+    );
+  }
+
   /// HARD delete, remote then local — for provider-wipe cleanup only
   /// (disconnecting an integration), never for a user deleting a workout.
   /// A disconnect wipe must NOT leave tombstones: those rows would suppress

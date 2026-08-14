@@ -1,0 +1,197 @@
+/// Presentation models for the macro dashboard surface.
+///
+/// Design SSOT: docs/ssot/spec/design/ (tokens.md, components/workout-card.md,
+/// components/energy-card.md, surfaces/macro-dashboard.md). Numbers authority:
+/// docs/ssot/spec/daily-macros/intraday-display.md — these models carry
+/// already-derived quantities; they invent no arithmetic (P-3/S-3).
+library;
+
+/// The workout card's state machine — exactly one state at a time
+/// (workout-card.md, states table).
+enum WorkoutCardState {
+  /// Dashed outline, dimmed fill, no solid border. Chip: `Planned`.
+  planned,
+
+  /// Solid fill, solid border. Chip: `self-reported`.
+  doneConfirmed,
+
+  /// Solid fill, solid border, icon disc in electrolyte.
+  /// Chip: `✓ verified · <platform>`. The done gesture is SUPPRESSED (G3).
+  doneVerified,
+
+  /// Planned treatment + skipped prompt (end of day, neither sync nor
+  /// confirmation).
+  skippedPrompt,
+}
+
+/// One workout card's render data.
+class WorkoutCardData {
+  const WorkoutCardData({
+    required this.activityId,
+    required this.name,
+    required this.timeLabel,
+    required this.metaLabel,
+    required this.kcal,
+    required this.state,
+    required this.sport,
+    this.verifiedSourceName = 'Garmin',
+  });
+
+  final String activityId;
+  final String name;
+
+  /// Displayed time — `actual_time ?? planned_time` (two-time model).
+  final String timeLabel;
+
+  /// e.g. "2,000 yd · 40 min" or "90 min".
+  final String metaLabel;
+  final double kcal;
+  final WorkoutCardState state;
+
+  /// 'running' | 'cycling' | 'swimming' | 'strength' — picks the icon.
+  final String sport;
+
+  /// Platform that verified the workout ("Garmin", "TrainingPeaks").
+  final String verifiedSourceName;
+
+  bool get isVerified => state == WorkoutCardState.doneVerified;
+  bool get isDone =>
+      state == WorkoutCardState.doneConfirmed ||
+      state == WorkoutCardState.doneVerified;
+
+  String get chipLabel => switch (state) {
+        WorkoutCardState.doneVerified => 'verified · $verifiedSourceName',
+        WorkoutCardState.doneConfirmed => 'self-reported',
+        WorkoutCardState.planned || WorkoutCardState.skippedPrompt => 'Planned',
+      };
+}
+
+/// One logged (or suggested) meal item.
+class MealItemData {
+  const MealItemData({
+    required this.id,
+    required this.name,
+    required this.kcal,
+    required this.carbsG,
+    required this.proteinG,
+    required this.fatG,
+    this.suggested = false,
+  });
+
+  final String id;
+  final String name;
+  final double kcal;
+  final double carbsG;
+  final double proteinG;
+  final double fatG;
+  final bool suggested;
+}
+
+/// The filter lens driving the energy card's face and the timeline filter.
+enum DashboardFilter { all, workout, meals }
+
+/// One timeline row: a time label + rail dot + either a workout card or a
+/// meal group.
+class DashboardNode {
+  const DashboardNode.workout({
+    required this.timeLabel,
+    required WorkoutCardData this.workout,
+  }) : mealGroupLabel = null,
+       meals = const [];
+
+  const DashboardNode.meals({
+    required this.timeLabel,
+    required String this.mealGroupLabel,
+    required this.meals,
+  }) : workout = null;
+
+  final String timeLabel;
+  final WorkoutCardData? workout;
+  final String? mealGroupLabel;
+  final List<MealItemData> meals;
+
+  bool get isWorkout => workout != null;
+
+  /// Rail treatment: solid dot for logged/done, dashed/dotted for planned.
+  bool get railDashed =>
+      isWorkout && !(workout!.isDone) ||
+      (!isWorkout && meals.isNotEmpty && meals.every((m) => m.suggested));
+}
+
+/// The energy summary card's numbers — one component, three faces
+/// (energy-card.md). Collapsed and expanded may show DIFFERENT quantities by
+/// design (P-2): collapsed is the single most decision-relevant number for
+/// the lens, expanded is the progress detail. All values arrive pre-derived
+/// per intraday-display.md §§1–3 (P-3).
+class EnergyCardData {
+  const EnergyCardData({
+    required this.netKcal,
+    required this.bandCopy,
+    required this.eatenKcal,
+    required this.burnedKcal,
+    required this.targetKcal,
+    required this.remainingKcal,
+    required this.workoutDoneKcal,
+    required this.workoutPlannedKcal,
+    required this.workoutProjectedKcal,
+    required this.workoutRows,
+    required this.carbTargetG,
+    required this.proteinTargetG,
+    required this.fatTargetG,
+    required this.carbEatenG,
+    required this.proteinEatenG,
+    required this.fatEatenG,
+  });
+
+  final double netKcal;
+
+  /// Band copy string from the §2 register, or null when suppressed
+  /// (surplus under pre_override).
+  final String? bandCopy;
+  final double eatenKcal;
+  final double burnedKcal;
+  final double targetKcal;
+  final double remainingKcal;
+  final double workoutDoneKcal;
+  final double workoutPlannedKcal;
+  final double workoutProjectedKcal;
+  final List<EnergyWorkoutRow> workoutRows;
+  final double carbTargetG;
+  final double proteinTargetG;
+  final double fatTargetG;
+  final double carbEatenG;
+  final double proteinEatenG;
+  final double fatEatenG;
+}
+
+/// One per-session row in the WORKOUT face's expanded detail.
+class EnergyWorkoutRow {
+  const EnergyWorkoutRow({
+    required this.name,
+    required this.note,
+    required this.kcal,
+    required this.planned,
+  });
+
+  final String name;
+
+  /// "8:00 AM · 2,000 yd · 40 min", prefixed "planned · " when planned.
+  final String note;
+  final double kcal;
+  final bool planned;
+}
+
+/// Locale-stable thousands formatting matching the reference rendering
+/// (1,205 / 4,152).
+String kcalStr(num v) {
+  final s = v.round().abs().toString();
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+    b.write(s[i]);
+  }
+  return b.toString();
+}
+
+/// Signed net string: "−133" / "+220" (U+2212 minus, per the reference).
+String netStr(double net) => (net < 0 ? '−' : '+') + kcalStr(net.abs());

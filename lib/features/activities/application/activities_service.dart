@@ -981,4 +981,16 @@ class ActivitiesService {
       rethrow;
     }
   }
+
+  /// Mark a workout done (dashboard G1): actual_time = now, status
+  /// completed. planned_time is never touched by any gesture.
+  Future<void> markWorkoutDone({required String activityId}) async {
+    await _activitiesRepository.markWorkoutDone(activityId: activityId);
+  }
+
+  /// Mark a workout not-done (dashboard G2): actual_time cleared to null,
+  /// status back to planned.
+  Future<void> markWorkoutUndone({required String activityId}) async {
+    await _activitiesRepository.markWorkoutUndone(activityId: activityId);
+  }
 }

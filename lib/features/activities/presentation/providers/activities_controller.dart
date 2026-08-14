@@ -297,6 +297,52 @@ class ActivitiesController extends _$ActivitiesController {
     }
   }
 
+  /// Mark a workout done (macro-dashboard G1): actual_time = now,
+  /// planned_time untouched. Optimistic in-place update — same
+  /// no-loading-flash reasoning as [deleteActivity].
+  Future<void> markWorkoutDone(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    final now = DateTime.now();
+    state = AsyncData([
+      for (final a in previous)
+        if (a.id == activityId)
+          a.copyWith(
+            status: ActivityStatus.completed,
+            actualTime: now,
+            completedAt: now,
+          )
+        else
+          a,
+    ]);
+    try {
+      await _service.markWorkoutDone(activityId: activityId);
+    } catch (e) {
+      _logger.error('Error marking workout done', error: e);
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
+  /// Mark a workout not-done (macro-dashboard G2): actual_time CLEARED to
+  /// null so the card returns to planned_time.
+  Future<void> markWorkoutUndone(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    state = AsyncData([
+      for (final a in previous)
+        if (a.id == activityId)
+          a.copyWith(status: ActivityStatus.planned, clearActualTime: true)
+        else
+          a,
+    ]);
+    try {
+      await _service.markWorkoutUndone(activityId: activityId);
+    } catch (e) {
+      _logger.error('Error marking workout undone', error: e);
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
   /// Restore a just-deleted activity — the "Undo" affordance on the fuel
   /// timeline's swipe-delete.
   ///
