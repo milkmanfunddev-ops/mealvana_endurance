@@ -27,9 +27,6 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     consumedTotalsForDateProvider(dateStr).future,
   );
   final allActivities = await ref.watch(activitiesControllerProvider.future);
-  final trackingOn = ref.watch(
-    macroDashboardViewProvider.select((s) => s.trackingOn),
-  );
 
   bool onSelectedDay(DateTime d) =>
       d.year == selectedDate.year &&
@@ -48,7 +45,9 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     meals: meals,
     targets: macrosState.dailyMacros,
     consumed: consumed,
-    trackingOn: trackingOn,
+    // Tracking is a DISPLAY mode gated by the screen from the view state —
+    // toggling it must not recompute the day (intraday-display §5).
+    trackingOn: true,
   );
 }
 

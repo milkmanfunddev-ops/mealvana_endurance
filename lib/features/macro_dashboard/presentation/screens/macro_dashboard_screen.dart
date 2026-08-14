@@ -40,6 +40,12 @@ class MacroDashboardScreen extends ConsumerWidget {
             const FuelTimelineDayHeader(),
             Expanded(
               child: dayAsync.when(
+                // A recompute (activities swipe, macro refresh) must repaint
+                // in place, never strobe through a spinner — the previous
+                // frame stays up until the new data lands (S-1's "same
+                // pump", and flicker-proofing against invalidation cascades).
+                skipLoadingOnReload: true,
+                skipLoadingOnRefresh: true,
                 loading: () => const Center(
                   child: CircularProgressIndicator(
                     color: MeTokens.electrolyte,

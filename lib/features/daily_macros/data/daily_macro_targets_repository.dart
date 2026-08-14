@@ -36,10 +36,15 @@ class DailyMacroTargetsRepository {
 
   /// Algorithm version this client expects. Cached rows from older versions
   /// are treated as misses so the next read recalculates with the current
-  /// pipeline. v6.0.0 is the ratified daily-macros-dashboard@v1 engine
-  /// (30 %E fat cap, strength flat carb rate, manual-wins tomorrow) — the
-  /// numbers move a lot, so stale v5 plans must not linger in cache.
-  static const String _expectedAlgorithmVersion = 'v6.0.0';
+  /// pipeline.
+  ///
+  /// DEPLOY-COUPLED — flip to 'v6.0.0' IN THE SAME RELEASE that deploys the
+  /// ratified daily-macros-dashboard@v1 engine, never before. Expecting a
+  /// version the deployed edge function doesn't emit yet makes every cache
+  /// read a miss: drop row → recalc → server returns the old version → row
+  /// judged stale again → an invalidation loop that strobes every consumer
+  /// of dailyMacrosControllerProvider (the dashboard flicker of 2026-08-14).
+  static const String _expectedAlgorithmVersion = 'v5.0.0';
 
   /// Get cached macro targets for a specific date
   Future<DailyMacroTargets?> getCachedForDate(
