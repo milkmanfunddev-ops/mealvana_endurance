@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../fuel_timeline/presentation/widgets/fuel_timeline_day_header.dart';
+import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
 import '../../application/dashboard_assembler.dart';
 import '../../domain/dashboard_models.dart';
 import '../me_tokens.dart';
@@ -108,6 +111,7 @@ class MacroDashboardScreen extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 90),
             children: [
+              _addRow(context, ref, view),
               for (final node in nodes)
                 _railRow(
                   context,
@@ -122,73 +126,208 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
+  /// The Add Food / Add Activity row, with the rail running up to a hollow
+  /// "now" marker (reference rendering's top-of-timeline treatment).
+  Widget _addRow(
+    BuildContext context,
+    WidgetRef ref,
+    MacroDashboardViewState view,
+  ) {
+    final selectedDate = ref.watch(calendarSelectedDateProvider);
+    final buttons = Row(
+      children: [
+        if (view.filter != DashboardFilter.workout)
+          Expanded(
+            child: _dashedPill(
+              label: '+ Add Food',
+              color: MeTokens.creamAlpha(0.8),
+              borderColor: MeTokens.creamAlpha(0.25),
+              onTap: () => openLogMealScreen(
+                context,
+                logDate: _ymd(selectedDate),
+                source: 'macro_dashboard',
+              ),
+            ),
+          ),
+        if (view.filter == DashboardFilter.all) const SizedBox(width: 8),
+        if (view.filter != DashboardFilter.meals)
+          Expanded(
+            child: _dashedPill(
+              label: '+ Add Activity',
+              color: MeTokens.orange,
+              borderColor: MeTokens.orangeAlpha(0.45),
+              onTap: () => context.pushNamedOnce(
+                'distancepacegut',
+                extra: {'initialDate': selectedDate},
+              ),
+            ),
+          ),
+      ],
+    );
+    if (!view.timelineOpen) {
+      return Padding(padding: const EdgeInsets.only(bottom: 16), child: buttons);
+    }
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(width: 54),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 16,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              children: [
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 2,
+                    color: MeTokens.creamAlpha(0.12),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 11),
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: MeTokens.blackberry,
+                      border: Border.all(
+                        color: MeTokens.creamAlpha(0.35),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: buttons,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dashedPill({
+    required String label,
+    required Color color,
+    required Color borderColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: CustomPaint(
+        foregroundPainter: _DashedPillPainter(color: borderColor),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Apercu',
+              fontWeight: FontWeight.w500,
+              fontSize: 12.5,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _ymd(DateTime d) {
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
+  }
+
   Widget _railRow(
     BuildContext context,
     WidgetRef ref,
     MacroDashboardViewState view,
     DashboardNode node,
   ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (view.timelineOpen) ...[
-          SizedBox(
-            width: 54,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: Text(
-                node.timeLabel,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 10.5,
-                  color: MeTokens.creamAlpha(0.5),
-                  fontFeatures: const [FontFeature.tabularFigures()],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (view.timelineOpen) ...[
+            SizedBox(
+              width: 54,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Text(
+                  node.timeLabel,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 10.5,
+                    color: MeTokens.creamAlpha(0.5),
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 16,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: _railDot(node),
-                ),
-              ],
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 16,
+              child: Stack(
+                alignment: Alignment.topCenter,
+                children: [
+                  // One continuous rail: the line stretches the full row so
+                  // it meets the neighbouring rows' segments.
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 2,
+                      color: MeTokens.creamAlpha(0.12),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: _railDot(node),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: node.isWorkout
+                  ? _workout(context, ref, node.workout!)
+                  : _meals(ref, view, node),
             ),
           ),
-          const SizedBox(width: 10),
         ],
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: node.isWorkout
-                ? _workout(context, ref, node.workout!)
-                : _meals(ref, view, node),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _railDot(DashboardNode node) {
-    // Workouts are always teal on the rail — orange belongs to meals.
+    // Workouts are always teal on the rail; meals are orange. (The reference
+    // rendering tints some meal dots electrolyte — that predates the tokens
+    // ruling that electrolyte may only signify the burn/verified domain, so
+    // the token contract wins here.)
     final color = node.isWorkout ? MeTokens.electrolyte : MeTokens.orange;
     if (node.railDashed) {
-      return Container(
-        width: 11,
-        height: 11,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: node.isWorkout
-                ? MeTokens.electrolyteAlpha(0.65)
-                : MeTokens.orange,
-            width: 2,
-          ),
+      // Planned entries get a hollow DOTTED ring (the "not yet" edge).
+      return CustomPaint(
+        size: const Size(11, 11),
+        painter: _DottedRingPainter(
+          color: node.isWorkout
+              ? MeTokens.electrolyteAlpha(0.65)
+              : MeTokens.orange,
         ),
       );
     }
@@ -261,4 +400,70 @@ class MacroDashboardScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// Hollow dotted ring — the planned entry's rail marker.
+class _DottedRingPainter extends CustomPainter {
+  const _DottedRingPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..addOval(Rect.fromLTWH(1, 1, size.width - 2, size.height - 2));
+    const dash = 1.5;
+    const gap = 3.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DottedRingPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+/// Dashed rounded-pill outline (the Add buttons' border).
+class _DashedPillPainter extends CustomPainter {
+  const _DashedPillPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Offset.zero & size,
+          Radius.circular(size.height / 2),
+        ),
+      );
+    const dash = 4.0;
+    const gap = 4.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedPillPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

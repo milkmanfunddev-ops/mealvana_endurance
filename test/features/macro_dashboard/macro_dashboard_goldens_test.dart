@@ -124,6 +124,14 @@ void main() {
     await _loadFont('Compadre', [
       'assets/fonts/Compadre/Compadre-Demo-Regular.otf',
     ]);
+    // Icons render as placeholder boxes unless MaterialIcons is loaded.
+    final flutterRoot = Platform.environment['FLUTTER_ROOT'] ??
+        '/opt/homebrew/share/flutter';
+    final materialIcons =
+        '$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf';
+    if (File(materialIcons).existsSync()) {
+      await _loadFont('MaterialIcons', [materialIcons]);
+    }
   });
 
   Future<void> golden(

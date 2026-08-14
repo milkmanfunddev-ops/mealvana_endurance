@@ -264,24 +264,33 @@ class _WorkoutCardState extends State<WorkoutCard> {
   }
 
   Widget _iconDisc(bool done) {
-    return Container(
+    final icon = Icon(
+      _sportIcon(widget.data.sport),
+      size: 19,
+      color: done ? MeTokens.blackberry : MeTokens.electrolyteAlpha(0.85),
+    );
+    if (done) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: MeTokens.electrolyte,
+        ),
+        alignment: Alignment.center,
+        child: icon,
+      );
+    }
+    // Planned: hollow disc with the same dotted "not yet" edge as the card.
+    return SizedBox(
       width: 40,
       height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: done ? MeTokens.electrolyte : Colors.transparent,
-        border: done
-            ? null
-            : Border.all(
-                color: MeTokens.electrolyteAlpha(0.6),
-                width: 1.5,
-              ),
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        _sportIcon(widget.data.sport),
-        size: 19,
-        color: done ? MeTokens.blackberry : MeTokens.electrolyteAlpha(0.85),
+      child: CustomPaint(
+        painter: _DottedCirclePainter(
+          color: MeTokens.electrolyteAlpha(0.6),
+          strokeWidth: 1.5,
+        ),
+        child: Center(child: icon),
       ),
     );
   }
@@ -297,6 +306,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
     final data = widget.data;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
@@ -411,6 +421,45 @@ class _WorkoutCardState extends State<WorkoutCard> {
       ),
     );
   }
+}
+
+/// Dotted circle (the planned card's hollow icon disc).
+class _DottedCirclePainter extends CustomPainter {
+  const _DottedCirclePainter({required this.color, required this.strokeWidth});
+
+  final Color color;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..addOval(
+        Rect.fromLTWH(
+          strokeWidth / 2,
+          strokeWidth / 2,
+          size.width - strokeWidth,
+          size.height - strokeWidth,
+        ),
+      );
+    const dash = 2.0;
+    const gap = 4.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DottedCirclePainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }
 
 /// Dotted rounded-rect border (the planned card's "not yet" edge — Flutter
