@@ -3,7 +3,7 @@
  * Covers all iterations 1-4 with test cases from spec files
  */
 
-import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { assertEquals, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { calculateRMR } from './formulas/rmr.ts';
 import { zoneDistributionToIF, sessionCost, carbDemand } from './formulas/session.ts';
 import { baselineMacros, clampMacros } from './formulas/baseline.ts';
@@ -132,6 +132,11 @@ Deno.test('Iter1: Zone Distribution to IF - Mixed zones', () => {
   assertWithinPercent(zoneDistributionToIF(0.50, 0, 0.50), 0.902, 1);
 });
 
+Deno.test('Iter1: Zone Distribution to IF - Rejects bad sum (never normalizes)', () => {
+  assertThrows(() => zoneDistributionToIF(0.70, 0.20, 0.20), RangeError);
+  assertThrows(() => zoneDistributionToIF(0, 0, 0), RangeError);
+});
+
 Deno.test('Iter1: Session Cost - Running', () => {
   assertWithinPercent(sessionCost('running', 1.5, 0.74, 75), 1205, 5);
 });
@@ -167,23 +172,31 @@ Deno.test('Iter1: Session Cost - Weight scaling', () => {
 });
 
 Deno.test('Iter1: Carb Demand - No multiplier', () => {
-  assertWithinPercent(carbDemand(0.65, 0.75, 75), 26, 5);
-  assertWithinPercent(carbDemand(0.74, 1.5, 75), 69, 5);
+  assertWithinPercent(carbDemand('running', 0.65, 0.75, 75), 26, 5);
+  assertWithinPercent(carbDemand('running', 0.74, 1.5, 75), 69, 5);
 });
 
 Deno.test('Iter1: Carb Demand - With 1.15x multiplier', () => {
-  assertWithinPercent(carbDemand(0.88, 2.0, 75), 163, 5);
-  assertWithinPercent(carbDemand(0.93, 1.25, 75), 116, 5);
-  assertWithinPercent(carbDemand(0.72, 4.0, 75), 198, 5);
+  assertWithinPercent(carbDemand('running', 0.88, 2.0, 75), 163, 5);
+  assertWithinPercent(carbDemand('cycling', 0.93, 1.25, 75), 116, 5);
+  assertWithinPercent(carbDemand('cycling', 0.72, 4.0, 75), 198, 5);
 });
 
 Deno.test('Iter1: Carb Demand - Weight scaling', () => {
-  assertWithinPercent(carbDemand(0.74, 1.5, 60), 55, 5);
-  assertWithinPercent(carbDemand(0.74, 1.5, 75), 69, 5);
-  assertWithinPercent(carbDemand(0.74, 1.5, 90), 83, 5);
+  assertWithinPercent(carbDemand('running', 0.74, 1.5, 60), 55, 5);
+  assertWithinPercent(carbDemand('running', 0.74, 1.5, 75), 69, 5);
+  assertWithinPercent(carbDemand('running', 0.74, 1.5, 90), 83, 5);
 
-  assertWithinPercent(carbDemand(0.88, 2.0, 60), 131, 5);
-  assertWithinPercent(carbDemand(0.88, 2.0, 90), 196, 5);
+  assertWithinPercent(carbDemand('running', 0.88, 2.0, 60), 131, 5);
+  assertWithinPercent(carbDemand('running', 0.88, 2.0, 90), 196, 5);
+});
+
+Deno.test('Iter1: Carb Demand - Strength flat rate (Q-003)', () => {
+  // 27 g/hr × (weight/75); IF ignored, no long/intense multiplier
+  assertEquals(carbDemand('strength', 0.9, 1.0, 75), 27);
+  assertEquals(carbDemand('strength', 0.6, 1.0, 75), 27);
+  assertEquals(carbDemand('strength', 0.9, 2.0, 75), 54);
+  assertWithinPercent(carbDemand('strength', 0.9, 1.0, 90), 32.4, 1);
 });
 
 Deno.test('Iter1: Baseline Macros - With LBM', () => {
@@ -525,15 +538,18 @@ Deno.test('Iter3: TDEE - Rest day convergence', () => {
 Deno.test('Iter3: TDEE - Fat at floor (pre-race)', () => {
   const result = calculateTDEE(1908, 378, 1050, 798, 159, 75);
   assertEquals(result.fat_g, 60); // 0.8 * 75 floor
+  assertEquals(result.fat_at_floor, true);
   assertWithinPercent(result.tdee, 3773, 5);
 });
 
-Deno.test('Iter3: TDEE - Fat ceiling clamps high-session days', () => {
-  // 90min run, 1205 kcal session — residual fat-from-TDEE would push fat to
-  // ~209g (≈2.8 g/kg). Ceiling caps at 1.5 g/kg = 112.5g for a 75kg athlete.
+Deno.test('Iter3: TDEE - Returns uncapped fat residual', () => {
+  // 90min run, 1205 kcal session — F15 returns the raw residual (~209g,
+  // ≈2.8 g/kg), UNROUNDED. The fat cap is not F15's job: assembly step 10b
+  // caps at 30 %E of TDEE and reroutes the excess to carbohydrate (Q-014).
   const result = calculateTDEE(1908, 378, 1205, 369, 130, 75);
   assertWithinPercent(result.tdee, 3879, 10);
-  assertEquals(result.fat_g, 113); // 1.5 * 75 ceiling, rounded
+  assertWithinPercent(result.fat_g, 209.2, 1);
+  assertEquals(result.fat_at_floor, false);
 });
 
 // ============================================================================
@@ -641,35 +657,45 @@ Deno.test('Iter4: EA Override - No change when EA 30-45 (soft warning)', () => {
 // ITERATION 4: MULTI-SESSION CARB COMPOUNDING
 // ============================================================================
 
+/** Helper: build an F22-resolved session for multiSessionCarbCompound */
+function resolved(
+  sport: Sport,
+  intensity_factor: number,
+  duration_hr: number,
+  start_time?: string,
+) {
+  return { sport, intensity_factor, duration_hr, start_time: start_time ?? null };
+}
+
 Deno.test('Iter4: Multi-Session - Bike + Run compounding', () => {
   // Use pre-computed IFs to match spec values
   // bike IF=0.80, run IF=0.78 per spec
-  // bike carb: carbDemand(0.80, 2.0, 75) = 55 * 2.0 * 1.0 * 1.15 = 126.5
-  // run carb: carbDemand(0.78, 0.75, 75) = 52.0 * 0.75 * 1.0 = 39.0
-  // bike x1.0 + run x1.1 = 126.5 + 39.0*1.1 = 169.4
-  const bikeCarb = carbDemand(0.80, 2.0, 75);
-  const runCarb = carbDemand(0.78, 0.75, 75);
-  const expected = Math.round(bikeCarb * 1.0 + runCarb * 1.1);
+  // bike x1.0 + run x1.1, UNROUNDED (Q-002)
+  const bikeCarb = carbDemand('cycling', 0.80, 2.0, 75);
+  const runCarb = carbDemand('running', 0.78, 0.75, 75);
 
-  const sessions: SessionInput[] = [
-    session('cycling', 2.0, 0.30, 0.40, 0.30),
-    session('running', 0.75, 0.60, 0.30, 0.10),
-  ];
-  const result = multiSessionCarbCompound(sessions, 75, carbDemand, zoneDistributionToIF);
+  const result = multiSessionCarbCompound(
+    [resolved('cycling', 0.80, 2.0), resolved('running', 0.78, 0.75)],
+    75,
+    carbDemand,
+  );
 
+  assertWithinAbsolute(result.session_carb, bikeCarb * 1.0 + runCarb * 1.1, 1e-9);
   // Verify compounding happens: result > naive sum
-  const naiveSum = Math.round(bikeCarb + runCarb);
-  assertEquals(result.session_carb > naiveSum, true, 'Compounding should increase total');
+  assertEquals(result.session_carb > bikeCarb + runCarb, true, 'Compounding should increase total');
   assertWithinAbsolute(result.prot_bump, 15, 1); // bike dur > 1hr: 0.2 * 75
 });
 
 Deno.test('Iter4: Multi-Session - Swim + Bike + Run triple', () => {
-  const sessions: SessionInput[] = [
-    session('swimming', 0.5, 0.70, 0.20, 0.10),
-    session('cycling', 2.0, 0.30, 0.40, 0.30),
-    session('running', 1.0, 0.60, 0.30, 0.10),
-  ];
-  const result = multiSessionCarbCompound(sessions, 75, carbDemand, zoneDistributionToIF);
+  const result = multiSessionCarbCompound(
+    [
+      resolved('swimming', zoneDistributionToIF(0.70, 0.20, 0.10), 0.5),
+      resolved('cycling', zoneDistributionToIF(0.30, 0.40, 0.30), 2.0),
+      resolved('running', zoneDistributionToIF(0.60, 0.30, 0.10), 1.0),
+    ],
+    75,
+    carbDemand,
+  );
 
   // Triple: swim x1.0 + bike x1.1 + run x1.21
   // Verify compounding: result > session_carb without any compounding
@@ -678,11 +704,12 @@ Deno.test('Iter4: Multi-Session - Swim + Bike + Run triple', () => {
 });
 
 Deno.test('Iter4: Multi-Session - Strength + Run (strength not compounded)', () => {
-  const sessions: SessionInput[] = [
-    session('strength', 1.0, 0.70, 0.20, 0.10),
-    session('running', 1.5, 0.70, 0.20, 0.10),
-  ];
-  const result = multiSessionCarbCompound(sessions, 75, carbDemand, zoneDistributionToIF);
+  const if_ = zoneDistributionToIF(0.70, 0.20, 0.10);
+  const result = multiSessionCarbCompound(
+    [resolved('strength', if_, 1.0), resolved('running', if_, 1.5)],
+    75,
+    carbDemand,
+  );
 
   // strength x1.0 (no compound), run x1.0 (1st endurance)
   // No compounding factor applied since run is first endurance session
@@ -690,16 +717,30 @@ Deno.test('Iter4: Multi-Session - Strength + Run (strength not compounded)', () 
   assertWithinAbsolute(result.prot_bump, 22.5, 1); // strength: 0.3 * 75
 });
 
+Deno.test('Iter4: Multi-Session - Sorted by start_time before compounding', () => {
+  // Run listed first but starts in the evening — the morning bike must take
+  // the x1.0 slot and the run the x1.1 slot (Q-002).
+  const bike = resolved('cycling', 0.80, 2.0, '2026-08-14T06:00:00Z');
+  const run = resolved('running', 0.78, 0.75, '2026-08-14T17:00:00Z');
+  const listedLate = multiSessionCarbCompound([run, bike], 75, carbDemand);
+  const listedEarly = multiSessionCarbCompound([bike, run], 75, carbDemand);
+  assertEquals(listedLate.session_carb, listedEarly.session_carb);
+});
+
 Deno.test('Iter4: Multi-Session - Cap at 12g/kg', () => {
   // 5 endurance sessions: factors 1.0, 1.1, 1.21, 1.331, 1.464
-  const sessions: SessionInput[] = [
-    session('running', 3.0, 0.20, 0.40, 0.40),
-    session('cycling', 3.0, 0.20, 0.40, 0.40),
-    session('running', 3.0, 0.20, 0.40, 0.40),
-    session('cycling', 3.0, 0.20, 0.40, 0.40),
-    session('running', 3.0, 0.20, 0.40, 0.40),
-  ];
-  const result = multiSessionCarbCompound(sessions, 75, carbDemand, zoneDistributionToIF);
+  const hardIF = zoneDistributionToIF(0.20, 0.40, 0.40);
+  const result = multiSessionCarbCompound(
+    [
+      resolved('running', hardIF, 3.0),
+      resolved('cycling', hardIF, 3.0),
+      resolved('running', hardIF, 3.0),
+      resolved('cycling', hardIF, 3.0),
+      resolved('running', hardIF, 3.0),
+    ],
+    75,
+    carbDemand,
+  );
 
   // Should be capped at 12 * 75 = 900
   assertEquals(result.session_carb <= 900, true);
@@ -766,48 +807,50 @@ Deno.test('Iter4: Carb Cycle - Duration boundary 1.267 fails', () => {
 // ============================================================================
 
 Deno.test('Pipeline Iter1: Rest day (no sessions)', () => {
+  // Baseline carb 300; step 10b caps fat at 30 %E (83g) and reroutes the
+  // excess kcal to carbohydrate → 322g. Energy is conserved (I10).
   const result = calculateDailyMacros(refInput());
-  assertWithinPercent(result.carb_g, 300, 5);
+  assertWithinPercent(result.carb_g, 322, 2);
   assertWithinPercent(result.prot_g, 115, 5);
-  assertWithinPercent(result.fat_g, 93, 15);
+  assertWithinPercent(result.fat_g, 83, 5);
   assertWithinPercent(result.tdee, 2501, 5);
   assertEquals(result.mode, 'prospective');
-  assertEquals(result.algorithm_version, 'v5.0.0');
+  assertEquals(result.algorithm_version, 'v6.0.0');
 });
 
 Deno.test('Pipeline Iter1: 90-min run', () => {
   // Zones 0.70/0.20/0.10 → IF ≈ 0.771 (spec assumed IF=0.74)
-  // Fat starts clamped to 1.5 g/kg ceiling (≈113g for 75kg). Pre-clamp residual
-  // would be ~219g, which is implausibly high for a 90-min run day. eaOverride
-  // may relax fat slightly to keep EA ≥ 30; final fat sits near 113-130g.
+  // Pre-cap carb 376; the raw fat residual (~219g) is capped at 30 %E of
+  // TDEE (133g) and the excess kcal reroutes to carbohydrate → 569g.
   const result = calculateDailyMacros(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
   }));
-  assertWithinPercent(result.carb_g, 376, 10);
+  assertWithinPercent(result.carb_g, 569, 2);
   assertWithinPercent(result.prot_g, 130, 5);
-  // Fat must respect the realistic-intake ceiling, not balloon to 200+g.
-  assertEquals(result.fat_g >= 113, true, `fat_g=${result.fat_g} below floor`);
-  assertEquals(result.fat_g <= 135, true, `fat_g=${result.fat_g} above ceiling+relax`);
+  assertWithinPercent(result.fat_g, 133, 5);
   assertWithinPercent(result.session_kcal, 1309, 5);
   assertEquals(result.ea_status !== null, true);
 });
 
 Deno.test('Pipeline Iter1: 4hr bike ride', () => {
   // Zones 0.60/0.30/0.10 → IF ≈ 0.791 (spec assumed IF=0.72)
+  // Fat-cap redistribution pushes carb up to the 12 g/kg clamp (~899g).
   const result = calculateDailyMacros(refInput({
     sessions: [session('cycling', 4.0, 0.60, 0.30, 0.10)],
   }));
-  assertWithinPercent(result.carb_g, 547, 5);
+  assertWithinPercent(result.carb_g, 899, 2);
   assertWithinPercent(result.prot_g, 130, 5);
+  assertWithinPercent(result.fat_g, 196, 5);
   assertWithinPercent(result.session_kcal, 3007, 5);
 });
 
 Deno.test('Pipeline Iter1: Strength session', () => {
-  // Zones 0.70/0.20/0.10 → IF ≈ 0.771 (spec assumed IF=0.70)
+  // Strength carb demand is a flat 27 g/hr (Q-003): baseline 300 + 27 = 327
+  // pre-cap; step 10b redistribution lands carb at 382.
   const result = calculateDailyMacros(refInput({
     sessions: [session('strength', 1.0, 0.70, 0.20, 0.10)],
   }));
-  assertWithinPercent(result.carb_g, 351, 5);
+  assertWithinPercent(result.carb_g, 382, 2);
   assertWithinPercent(result.prot_g, 138, 5);
   assertWithinPercent(result.session_kcal, 386, 5);
 });
@@ -816,7 +859,7 @@ Deno.test('Pipeline Iter1: Bike 1.25hr high IF', () => {
   const result = calculateDailyMacros(refInput({
     sessions: [session('cycling', 1.25, 0.20, 0.30, 0.50)],
   }));
-  assertWithinPercent(result.carb_g, 416, 5);
+  assertWithinPercent(result.carb_g, 579, 2);
   assertWithinPercent(result.prot_g, 130, 5);
 });
 
@@ -838,7 +881,7 @@ Deno.test('Pipeline Iter1: Two sessions - protein bump override', () => {
 
 Deno.test('Pipeline Iter2: Rest, no context (baseline)', () => {
   const result = calculateDailyMacros(refInput());
-  assertWithinPercent(result.carb_g, 300, 5);
+  assertWithinPercent(result.carb_g, 322, 2);
   assertWithinPercent(result.prot_g, 115, 5);
 });
 
@@ -848,8 +891,8 @@ Deno.test('Pipeline Iter2: Hard intervals + build + overreach', () => {
     training_phase: 'build',
     weekly_hours_ratio: 1.15,
   }));
-  assertWithinPercent(result.carb_g, 488, 10);
-  assertWithinPercent(result.prot_g, 144, 10);
+  assertWithinPercent(result.carb_g, 565, 2);
+  assertWithinPercent(result.prot_g, 145, 5);
 });
 
 Deno.test('Pipeline Iter2: Rest after long ride', () => {
@@ -878,12 +921,14 @@ Deno.test('Pipeline Iter2: Pre-race all layers', () => {
 });
 
 Deno.test('Pipeline Iter2: Taper rest + de-load', () => {
+  // Taper + de-load lands carb at 231 pre-cap, but step 10b lifts it back to
+  // the energy-conserving 322 once fat hits the 30 %E ceiling.
   const result = calculateDailyMacros(refInput({
     sessions: [],
     training_phase: 'taper',
     weekly_hours_ratio: 0.75,
   }));
-  assertWithinPercent(result.carb_g, 231, 10);
+  assertWithinPercent(result.carb_g, 322, 2);
   assertWithinPercent(result.prot_g, 115, 5);
 });
 
@@ -897,10 +942,9 @@ Deno.test('Pipeline Iter4: Normal day has EA status', () => {
   }));
   assertEquals(result.ea !== null, true);
   assertEquals(result.ea_status !== null, true);
-  // With the fat ceiling at 1.5 g/kg, intake on a 90-min run day can fall
-  // below TDEE (which is physiologically expected). eaOverride brings EA to
-  // ≈30; status should be OK or SOFT_WARNING — never BLOCK.
-  assertEquals(result.ea! >= 29, true, `EA was ${result.ea}`);
+  // Step 10b conserves energy, so intake ≈ TDEE and EA sits comfortably in
+  // the 30-45 band on a normal training day — never BLOCK.
+  assertEquals(result.ea! >= 30, true, `EA was ${result.ea}`);
   assertEquals(result.ea_status !== 'BLOCK', true);
 });
 
@@ -911,11 +955,11 @@ Deno.test('Pipeline Iter4: Carb cycling easy day', () => {
     training_phase: 'base',
   }));
   // Carb baseline reduced to 225g (3.0 * 75) + session carb ~26g = ~251
-  // After clamp: min 3.0 * 75 = 225
-  assertWithinPercent(result.carb_g, 251, 10);
+  // pre-cap. Step 10b then lifts carb to the energy-conserving 428.
+  assertWithinPercent(result.carb_g, 428, 2);
 });
 
-Deno.test('Pipeline Iter4: Carb cycling disabled without opt-in', () => {
+Deno.test('Pipeline Iter4: Carb cycling converges under the fat cap', () => {
   const resultOptIn = calculateDailyMacros(refInput({
     sessions: [session('running', 0.75, 1.0, 0, 0)],
     carb_cycle_opt_in: true,
@@ -926,8 +970,11 @@ Deno.test('Pipeline Iter4: Carb cycling disabled without opt-in', () => {
     carb_cycle_opt_in: false,
     training_phase: 'base',
   }));
-  // Without opt-in, baseline is 300 (not 225), so carbs should be higher
-  assertEquals(resultNoOptIn.carb_g > resultOptIn.carb_g, true);
+  // When the 30 %E fat cap binds, step 10b reroutes the excess to carb, so
+  // both plans land on the same energy-conserving carb figure (I10). The
+  // opt-in distinction itself is pinned by the carbCycleAdjust unit tests.
+  assertEquals(resultNoOptIn.carb_g, resultOptIn.carb_g);
+  assertEquals(resultNoOptIn.tdee, resultOptIn.tdee);
 });
 
 Deno.test('Pipeline Iter4: No sessions + carb_cycle_opt_in = no cycling', () => {
@@ -935,8 +982,8 @@ Deno.test('Pipeline Iter4: No sessions + carb_cycle_opt_in = no cycling', () => 
     sessions: [],
     carb_cycle_opt_in: true,
   }));
-  // No session to evaluate -> cycling does not fire. Baseline = 300g
-  assertWithinPercent(result.carb_g, 300, 5);
+  // No session to evaluate -> cycling does not fire. Same as plain rest day.
+  assertWithinPercent(result.carb_g, 322, 2);
 });
 
 Deno.test('Pipeline Iter4: Brick with compounding', () => {
@@ -1020,7 +1067,7 @@ Deno.test('Edge: All Iter 2-4 inputs null/default = same as Iter 1 rest day', ()
     typical_weekly_hours: 10,
   });
   // Should produce rest day macros
-  assertWithinPercent(result.carb_g, 300, 5);
+  assertWithinPercent(result.carb_g, 322, 2);
   assertWithinPercent(result.prot_g, 115, 5);
 });
 
@@ -1042,7 +1089,11 @@ Deno.test('Edge: Output includes all required fields', () => {
   assertEquals(typeof result.mode, 'string');
   assertEquals(typeof result.ea, 'number');
   assertEquals(typeof result.ea_status, 'string');
-  assertEquals(result.algorithm_version, 'v5.0.0');
+  assertEquals(result.energy_basis, 'as_computed');
+  // Delta is always present: null on every path except a retrospective
+  // recalculation with a prior prospective plan.
+  assertEquals(result.delta, null);
+  assertEquals(result.algorithm_version, 'v6.0.0');
 });
 
 Deno.test('Edge: Clamp ceiling - carb capped at 12g/kg', () => {
@@ -1077,6 +1128,37 @@ Deno.test('Edge: Fat floor at 0.8 * weight', () => {
     training_phase: 'peak',
   }));
   assertEquals(result.fat_g >= 60, true); // 0.8 * 75 = 60
+});
+
+Deno.test('Edge: HARD_WARNING override keeps pre-override energy figures', () => {
+  // Measured Garmin data (low BMR, NEAT 0) drives EA into the 20-30 band.
+  // The override raises the macros to EA=30, but ea/tdee/tef stay the gate's
+  // PRE-override decision values and energy_basis says so (Q-009).
+  const result = calculateDailyMacros(refInput({
+    sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
+    mode: 'retrospective',
+    garmin_daily: { bmrKilocalories: 1000, activeKilocalories: 800 },
+    garmin_activities: [{ activeKilocalories: 800, durationInSeconds: 5400 }],
+  }));
+  assertEquals(result.ea_status, 'HARD_WARNING');
+  assertEquals(result.energy_basis, 'pre_override');
+  assertEquals(result.ea! < 30, true, `EA was ${result.ea}`);
+});
+
+Deno.test('Edge: BLOCK-level EA throws (no fat-relax escape hatch)', () => {
+  // EA < 20 refuses to produce a plan — the retired v4/v5 "relax fat" branch
+  // is gone; the gate now throws.
+  assertThrows(
+    () =>
+      calculateDailyMacros(refInput({
+        sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
+        mode: 'retrospective',
+        garmin_daily: { bmrKilocalories: 1000, activeKilocalories: 1050 },
+        garmin_activities: [{ activeKilocalories: 1050, durationInSeconds: 1800 }],
+      })),
+    Error,
+    'Energy Availability too low',
+  );
 });
 
 Deno.test('Edge: Retrospective mode with different inputs', () => {

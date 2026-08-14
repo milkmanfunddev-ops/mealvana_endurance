@@ -101,18 +101,19 @@ Deno.test('Iter5: session kcal — RETROSPECTIVE + Garmin wins', () => {
   assertEquals(out.sources.sessions[0].session_kcal, 'GARMIN');
 });
 
-Deno.test('Iter5: session kcal — auto-detect promotes prospective→retrospective when Garmin data present', () => {
+Deno.test('Iter5: session kcal — prospective declaration ignores Garmin data', () => {
   const out = calculateDailyMacros(
     refInput({
       sessions: [session('running', 1.5, 0.7, 0.2, 0.1)],
-      mode: 'prospective', // explicit prospective is overridden by auto-detect
+      mode: 'prospective',
       garmin_activities: [{ activeKilocalories: 892, durationInSeconds: null }],
     }),
   );
-  // Per server-side auto-detect: any Garmin activity data → retrospective.
-  assertEquals(out.mode, 'retrospective');
-  assertEquals(out.sources.sessions[0].session_kcal, 'GARMIN');
-  assertEquals(out.session_kcal, 892);
+  // Mode is the caller's declaration — prospective NEVER reads measured
+  // activity data, so the formula estimate wins even with Garmin present.
+  assertEquals(out.mode, 'prospective');
+  assertEquals(out.sources.sessions[0].session_kcal, 'FORMULA');
+  assertEquals(out.session_kcal, 1309);
 });
 
 Deno.test('Iter5: session kcal — falls back to FORMULA when Garmin missing', () => {
@@ -303,10 +304,22 @@ Deno.test('Iter5: RMR — falls back to FORMULA when Garmin missing', () => {
 // Data Source Priority — Tomorrow + Weekly ratio (Notion §25, §26)
 // ============================================================================
 
-Deno.test('Iter5: tomorrow — TP_CALENDAR wins over manual', () => {
+Deno.test('Iter5: tomorrow — manual declaration wins over TP_CALENDAR', () => {
+  // Ruled 2026-08-13: `tomorrow` is a declaration, not a measurement — an
+  // explicit manual entry must not lose to a calendar sync.
   const r = resolveTomorrow(
     { tomorrow_planned: { tss: 120, duration_hr: 2, is_race: false } },
     { tomorrow_tss: 80, tomorrow_duration_hr: 1.5, tomorrow_is_race: false },
+  );
+  assertEquals(r.source, 'MANUAL');
+  assertEquals(r.tomorrow_tss, 80);
+  assertEquals(r.tomorrow_duration_hr, 1.5);
+});
+
+Deno.test('Iter5: tomorrow — TP_CALENDAR when no manual declaration', () => {
+  const r = resolveTomorrow(
+    { tomorrow_planned: { tss: 120, duration_hr: 2, is_race: false } },
+    {},
   );
   assertEquals(r.source, 'TP_CALENDAR');
   assertEquals(r.tomorrow_tss, 120);
@@ -323,15 +336,15 @@ Deno.test('Iter5: tomorrow — manual when no TP', () => {
   assertEquals(r.tomorrow_is_race, true);
 });
 
-Deno.test('Iter5: tomorrow — NONE when neither', () => {
+Deno.test('Iter5: tomorrow — defaults tag MANUAL when neither', () => {
   const r = resolveTomorrow(null, {});
-  assertEquals(r.source, 'NONE');
+  assertEquals(r.source, 'MANUAL');
   assertEquals(r.tomorrow_tss, null);
 });
 
-Deno.test('Iter5: weekly ratio — TP wins (ATL/CTL)', () => {
+Deno.test('Iter5: weekly ratio — TP wins (ATL/CTL), tagged TP_PLANNED', () => {
   const r = resolveWeeklyRatio({ ATL: 80, CTL: 100 }, 1.2);
-  assertEquals(r.source, 'TP');
+  assertEquals(r.source, 'TP_PLANNED');
   assertEquals(r.ratio, 0.8);
 });
 
@@ -525,15 +538,15 @@ Deno.test('Iter5: pipeline survives missing weekly_hours (TP CTL input not yet w
 // Regression — No platforms connected
 // ============================================================================
 
-Deno.test('Iter5 regression: no platforms → identical to v4 numerics', () => {
-  // Same input as classic Iter1 90-min run test. Numbers should match v4.
+Deno.test('Iter5 regression: no platforms → all-formula sources', () => {
+  // Same input as classic Iter1 90-min run test. Numbers should match the
+  // ruled v6 pipeline (carb 569 / prot 130 / tdee 3994).
   const out = calculateDailyMacros(
     refInput({
       sessions: [session('running', 1.5, 0.7, 0.2, 0.1)],
     }),
   );
-  // Carb/prot/fat/tdee anchors from existing v4 test suite (90-min run).
-  assert(out.carb_g >= 300 && out.carb_g <= 500);
+  assert(out.carb_g >= 400 && out.carb_g <= 700);
   assert(out.prot_g >= 90 && out.prot_g <= 200);
   assert(out.tdee > 2500 && out.tdee < 4500);
 
@@ -545,7 +558,7 @@ Deno.test('Iter5 regression: no platforms → identical to v4 numerics', () => {
   assertEquals(out.sources.sessions[0].session_kcal, 'FORMULA');
   assertEquals(out.sources.sessions[0].intensity_factor, 'ZONE_DIST');
   assertEquals(out.mode, 'prospective');
-  assertEquals(out.delta, undefined);
+  assertEquals(out.delta, null);
 });
 
 Deno.test('Iter5 regression: empty garmin/tp objects → still formula path', () => {
@@ -562,19 +575,24 @@ Deno.test('Iter5 regression: empty garmin/tp objects → still formula path', ()
 });
 
 // ============================================================================
-// Mode auto-detection
+// Mode declaration (auto-promotion removed)
 // ============================================================================
 
-Deno.test('Iter5: mode auto-detects retrospective from Garmin activity', () => {
+Deno.test('Iter5: prospective declaration is never promoted by Garmin data', () => {
   const out = calculateDailyMacros(
     refInput({
       sessions: [session('running', 1.5, 0.7, 0.2, 0.1)],
       mode: 'prospective', // explicit prospective
+      garmin_daily: { bmrKilocalories: null, activeKilocalories: 1200 },
       garmin_activities: [{ activeKilocalories: 800, durationInSeconds: 5400 }],
     }),
   );
-  // Garmin activity present → mode flips to retrospective per spec
-  assertEquals(out.mode, 'retrospective');
+  // Mode is the caller's declaration: Garmin presence must not flip it, and
+  // no measured value may leak into a prospective plan.
+  assertEquals(out.mode, 'prospective');
+  assertEquals(out.sources.neat, 'FORMULA');
+  assertEquals(out.sources.sessions[0].session_kcal, 'FORMULA');
+  assertEquals(out.sources.sessions[0].duration, 'FORMULA');
 });
 
 Deno.test('Iter5: explicit retrospective stays retrospective', () => {
@@ -621,8 +639,8 @@ Deno.test('Iter5 e2e: 90-min run with Garmin ActiveKcal=1200, BASE phase', () =>
   // Session kcal matches Garmin
   assertEquals(retrospective.session_kcal, 892);
 
-  // Delta exists
-  assert(retrospective.delta !== undefined);
+  // Delta exists (retrospective + prior prospective plan → non-null)
+  assert(retrospective.delta !== null);
 
   // TDEE should be lower (Garmin measured less burn) — within Notion expected
   // direction. Tolerance is wide because per-formula variance.
@@ -683,8 +701,8 @@ Deno.test('Iter5: prospective never emits delta even with prior plan', () => {
   });
   const prior = calculateDailyMacros(baseInput);
   const next = calculateDailyMacros({ ...baseInput, prospective_plan: prior });
-  // Prospective + prior plan but no Garmin activity → mode stays prospective →
-  // no delta is emitted.
+  // Prospective mode never emits a delta, even with a prior plan attached.
+  // Delta is null (not absent): only retrospective recalculation fills it.
   assertEquals(next.mode, 'prospective');
-  assertEquals(next.delta, undefined);
+  assertEquals(next.delta, null);
 });

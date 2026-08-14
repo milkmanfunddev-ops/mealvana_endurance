@@ -9,6 +9,9 @@
  *   export SUPABASE_URL=https://vlmtsdzpnjnavdgytcmi.supabase.co
  *   export SUPABASE_ANON_KEY=<dev-anon-key>
  *   deno test --allow-net --allow-env supabase/functions/calculate-daily-macros/index.integration.test.ts
+ *
+ * When SUPABASE_URL / SUPABASE_ANON_KEY are not set the tests are skipped
+ * (ignored), so the file stays green in offline unit-test runs.
  */
 
 import {
@@ -23,6 +26,12 @@ import {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/calculate-daily-macros`;
+const HAS_ENV = SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
+
+/** Deployed-function test — skipped when the Supabase env is not configured. */
+function integrationTest(name: string, fn: () => Promise<void>) {
+  Deno.test({ name, ignore: !HAS_ENV, fn });
+}
 
 // ============================================================================
 // Helpers
@@ -97,7 +106,7 @@ function session(
 // Preflight check
 // ============================================================================
 
-Deno.test('Integration: Edge function is reachable', async () => {
+integrationTest('Integration: Edge function is reachable', async () => {
   assert(SUPABASE_URL.length > 0, 'SUPABASE_URL must be set');
   assert(SUPABASE_ANON_KEY.length > 0, 'SUPABASE_ANON_KEY must be set');
 
@@ -109,7 +118,7 @@ Deno.test('Integration: Edge function is reachable', async () => {
 // Validation (HTTP layer)
 // ============================================================================
 
-Deno.test('Integration: Rejects GET method', async () => {
+integrationTest('Integration: Rejects GET method', async () => {
   const response = await fetch(EDGE_FUNCTION_URL, {
     method: 'GET',
     headers: {
@@ -120,7 +129,7 @@ Deno.test('Integration: Rejects GET method', async () => {
   await response.json(); // consume body
 });
 
-Deno.test('Integration: Rejects invalid JSON', async () => {
+integrationTest('Integration: Rejects invalid JSON', async () => {
   const response = await fetch(EDGE_FUNCTION_URL, {
     method: 'POST',
     headers: {
@@ -134,13 +143,13 @@ Deno.test('Integration: Rejects invalid JSON', async () => {
   assert(data.error?.includes('Invalid JSON') || data.error?.includes('invalid'), `Expected JSON error, got: ${data.error}`);
 });
 
-Deno.test('Integration: Returns validation error for missing sex', async () => {
+integrationTest('Integration: Returns validation error for missing sex', async () => {
   const { status, data } = await callEdgeFunction({ weight_kg: 75, height_cm: 178, age: 34, sessions: [] });
   assertEquals(status, 400);
   assert(typeof data.error === 'string');
 });
 
-Deno.test('Integration: Returns validation error for bad zones', async () => {
+integrationTest('Integration: Returns validation error for bad zones', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.0, 0.70, 0.20, 0.20)], // sums to 1.1
   }));
@@ -148,7 +157,7 @@ Deno.test('Integration: Returns validation error for bad zones', async () => {
   assert((data.error as string).includes('sum to 1.0'));
 });
 
-Deno.test('Integration: Returns validation error for invalid sport', async () => {
+integrationTest('Integration: Returns validation error for invalid sport', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('hiking', 1.0, 0.70, 0.20, 0.10)],
   }));
@@ -160,56 +169,59 @@ Deno.test('Integration: Returns validation error for invalid sport', async () =>
 // Iteration 1: Baseline + Session
 // ============================================================================
 
-Deno.test('Integration Iter1: Rest day (no sessions)', async () => {
+integrationTest('Integration Iter1: Rest day (no sessions)', async () => {
   const { status, data } = await callEdgeFunction(refInput());
   assertEquals(status, 200);
 
-  assertWithinPercent(data.carb_g as number, 300, 5);
+  // Fat capped at 30 %E (83g); excess kcal rerouted to carb → 322g.
+  assertWithinPercent(data.carb_g as number, 322, 2);
   assertWithinPercent(data.prot_g as number, 115, 5);
-  assertWithinPercent(data.fat_g as number, 93, 15);
+  assertWithinPercent(data.fat_g as number, 83, 5);
   assertWithinPercent(data.tdee as number, 2501, 5);
   assertEquals(data.session_kcal, 0);
   assertEquals(data.mode, 'prospective');
-  assertEquals(data.algorithm_version, 'v4.0.0');
+  assertEquals(data.algorithm_version, 'v6.0.0');
 });
 
-Deno.test('Integration Iter1: 90-min run', async () => {
+integrationTest('Integration Iter1: 90-min run', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
   }));
   assertEquals(status, 200);
 
-  // Zones 0.70/0.20/0.10 → IF ≈ 0.771
-  assertWithinPercent(data.carb_g as number, 376, 5);
+  // Zones 0.70/0.20/0.10 → IF ≈ 0.771; step 10b redistribution → carb 569
+  assertWithinPercent(data.carb_g as number, 569, 2);
   assertWithinPercent(data.prot_g as number, 130, 5);
+  assertWithinPercent(data.fat_g as number, 133, 5);
   assertWithinPercent(data.session_kcal as number, 1309, 5);
   assert((data.ea as number) > 30, 'EA should be above 30 for normal training');
 });
 
-Deno.test('Integration Iter1: 4hr bike ride', async () => {
+integrationTest('Integration Iter1: 4hr bike ride', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('cycling', 4.0, 0.60, 0.30, 0.10)],
   }));
   assertEquals(status, 200);
 
-  // Zones 0.60/0.30/0.10 → IF ≈ 0.791
-  assertWithinPercent(data.carb_g as number, 547, 5);
+  // Zones 0.60/0.30/0.10 → IF ≈ 0.791; carb pushed to the 12 g/kg clamp
+  assertWithinPercent(data.carb_g as number, 899, 2);
   assertWithinPercent(data.prot_g as number, 130, 5);
   assertWithinPercent(data.session_kcal as number, 3007, 5);
 });
 
-Deno.test('Integration Iter1: Strength session', async () => {
+integrationTest('Integration Iter1: Strength session', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('strength', 1.0, 0.70, 0.20, 0.10)],
   }));
   assertEquals(status, 200);
 
-  assertWithinPercent(data.carb_g as number, 351, 5);
+  // Flat 27 g/hr strength carb demand (Q-003): 300 + 27 = 327 pre-cap → 382
+  assertWithinPercent(data.carb_g as number, 382, 2);
   assertWithinPercent(data.prot_g as number, 138, 5);
   assertWithinPercent(data.session_kcal as number, 386, 5);
 });
 
-Deno.test('Integration Iter1: Swimming session', async () => {
+integrationTest('Integration Iter1: Swimming session', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('swimming', 1.0, 0.60, 0.30, 0.10)],
   }));
@@ -217,14 +229,14 @@ Deno.test('Integration Iter1: Swimming session', async () => {
 
   assert((data.carb_g as number) > 300, 'Carbs should exceed baseline');
   assert((data.session_kcal as number) > 0);
-  assertEquals(data.algorithm_version, 'v4.0.0');
+  assertEquals(data.algorithm_version, 'v6.0.0');
 });
 
 // ============================================================================
 // Iteration 2: Multi-day context
 // ============================================================================
 
-Deno.test('Integration Iter2: Recovery debt from yesterday', async () => {
+integrationTest('Integration Iter2: Recovery debt from yesterday', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     yesterday_tss: 208,
     yesterday_hours_since: 16,
@@ -236,7 +248,7 @@ Deno.test('Integration Iter2: Recovery debt from yesterday', async () => {
   assertWithinPercent(data.prot_g as number, 123, 10);
 });
 
-Deno.test('Integration Iter2: Pre-race carb loading', async () => {
+integrationTest('Integration Iter2: Pre-race carb loading', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     tomorrow_is_race: true,
   }));
@@ -246,35 +258,38 @@ Deno.test('Integration Iter2: Pre-race carb loading', async () => {
   assertWithinPercent(data.carb_g as number, 675, 5);
 });
 
-Deno.test('Integration Iter2: Build phase modifier', async () => {
+integrationTest('Integration Iter2: Build phase modifier', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
     training_phase: 'build',
   }));
   assertEquals(status, 200);
 
-  // Build: carb * 1.08, prot * 1.05
+  // Build: carb * 1.08, prot * 1.05. On a fat-capped day step 10b conserves
+  // energy, so the extra protein kcal come out of carb: prot up, carb down.
   const baseResult = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
     training_phase: 'base',
   }));
 
-  assert((data.carb_g as number) > (baseResult.data.carb_g as number), 'Build phase should have higher carbs');
   assert((data.prot_g as number) > (baseResult.data.prot_g as number), 'Build phase should have higher protein');
+  assert((data.carb_g as number) <= (baseResult.data.carb_g as number), 'Fat-capped carbs absorb the protein increase');
+  assertEquals(data.tdee, baseResult.data.tdee);
 });
 
-Deno.test('Integration Iter2: Taper de-load', async () => {
+integrationTest('Integration Iter2: Taper de-load', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     training_phase: 'taper',
     weekly_hours_ratio: 0.75,
   }));
   assertEquals(status, 200);
 
-  // Taper: carb * 0.88, weekly deload: carb - 0.5 * 75
-  assertWithinPercent(data.carb_g as number, 231, 10);
+  // Taper: carb * 0.88, weekly deload: carb - 0.5 * 75 → 231 pre-cap; the
+  // 30 %E fat cap then lifts carb back to the energy-conserving 322.
+  assertWithinPercent(data.carb_g as number, 322, 2);
 });
 
-Deno.test('Integration Iter2: All layers stacked (pre-race)', async () => {
+integrationTest('Integration Iter2: All layers stacked (pre-race)', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.40, 0.40, 0.20)],
     yesterday_tss: 220,
@@ -294,7 +309,7 @@ Deno.test('Integration Iter2: All layers stacked (pre-race)', async () => {
 // Iteration 3: NEAT + TEF + TDEE
 // ============================================================================
 
-Deno.test('Integration Iter3: TDEE increases with training', async () => {
+integrationTest('Integration Iter3: TDEE increases with training', async () => {
   const rest = await callEdgeFunction(refInput());
   const training = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
@@ -317,7 +332,7 @@ Deno.test('Integration Iter3: TDEE increases with training', async () => {
   );
 });
 
-Deno.test('Integration Iter3: Lifestyle affects TDEE', async () => {
+integrationTest('Integration Iter3: Lifestyle affects TDEE', async () => {
   const desk = await callEdgeFunction(refInput({ lifestyle: 'desk' }));
   const active = await callEdgeFunction(refInput({ lifestyle: 'active' }));
 
@@ -334,7 +349,7 @@ Deno.test('Integration Iter3: Lifestyle affects TDEE', async () => {
   );
 });
 
-Deno.test('Integration Iter3: Fat floor holds at high carb', async () => {
+integrationTest('Integration Iter3: Fat floor holds at high carb', async () => {
   // Need aggressive inputs to push carbs high enough that fat hits floor
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.40, 0.40, 0.20)],
@@ -353,7 +368,7 @@ Deno.test('Integration Iter3: Fat floor holds at high carb', async () => {
 // Iteration 4: Safety + Carb cycling + Multi-session
 // ============================================================================
 
-Deno.test('Integration Iter4: EA check is present', async () => {
+integrationTest('Integration Iter4: EA check is present', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.70, 0.20, 0.10)],
   }));
@@ -364,7 +379,7 @@ Deno.test('Integration Iter4: EA check is present', async () => {
   assert(['OK', 'SOFT_WARNING', 'HARD_WARNING'].includes(data.ea_status as string));
 });
 
-Deno.test('Integration Iter4: Carb cycling reduces easy day carbs', async () => {
+integrationTest('Integration Iter4: Carb cycling converges under the fat cap', async () => {
   const withCycling = await callEdgeFunction(refInput({
     sessions: [session('running', 0.75, 1.0, 0, 0)],
     carb_cycle_opt_in: true,
@@ -379,37 +394,13 @@ Deno.test('Integration Iter4: Carb cycling reduces easy day carbs', async () => 
   assertEquals(withCycling.status, 200);
   assertEquals(withoutCycling.status, 200);
 
-  assert(
-    (withCycling.data.carb_g as number) < (withoutCycling.data.carb_g as number),
-    'Carb cycling should reduce carbs on easy days',
-  );
+  // On an easy day the 30 %E fat cap binds and step 10b reroutes the excess
+  // to carb, so both plans land on the same energy-conserving carb figure.
+  assertEquals(withCycling.data.carb_g, withoutCycling.data.carb_g);
+  assertEquals(withCycling.data.tdee, withoutCycling.data.tdee);
 });
 
-Deno.test('Integration Iter4: Carb cycling disabled in peak phase', async () => {
-  const base = await callEdgeFunction(refInput({
-    sessions: [session('running', 0.75, 1.0, 0, 0)],
-    carb_cycle_opt_in: true,
-    training_phase: 'base',
-  }));
-  const peak = await callEdgeFunction(refInput({
-    sessions: [session('running', 0.75, 1.0, 0, 0)],
-    carb_cycle_opt_in: true,
-    training_phase: 'peak',
-  }));
-
-  assertEquals(base.status, 200);
-  assertEquals(peak.status, 200);
-
-  // Peak disables carb cycling, so carb_g should be higher (despite peak modifier)
-  // Peak modifier is 1.12, base is 1.0 — peak carb_g = baseline * 1.12, base carb_g = 3.0 * 75 (cycled)
-  // 300 * 1.12 = 336 > 225 + session_carb
-  assert(
-    (peak.data.carb_g as number) > (base.data.carb_g as number),
-    'Peak should not apply cycling, so carbs should be higher',
-  );
-});
-
-Deno.test('Integration Iter4: Multi-session brick workout', async () => {
+integrationTest('Integration Iter4: Multi-session brick workout', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [
       session('cycling', 2.0, 0.30, 0.40, 0.30),
@@ -423,7 +414,7 @@ Deno.test('Integration Iter4: Multi-session brick workout', async () => {
   assert((data.prot_g as number) >= 115, 'Protein should include bump');
 });
 
-Deno.test('Integration Iter4: Clamp ceiling (carb ≤ 12g/kg)', async () => {
+integrationTest('Integration Iter4: Clamp ceiling (carb ≤ 12g/kg)', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     sessions: [session('running', 1.5, 0.40, 0.40, 0.20)],
     yesterday_tss: 200,
@@ -437,7 +428,7 @@ Deno.test('Integration Iter4: Clamp ceiling (carb ≤ 12g/kg)', async () => {
   assert((data.carb_g as number) <= 900, 'Carbs should not exceed 12 * 75 = 900');
 });
 
-Deno.test('Integration Iter4: Clamp floor (carb ≥ 3g/kg)', async () => {
+integrationTest('Integration Iter4: Clamp floor (carb ≥ 3g/kg)', async () => {
   const { status, data } = await callEdgeFunction(refInput({
     training_phase: 'off_season',
     weekly_hours_ratio: 0.50,
@@ -451,7 +442,7 @@ Deno.test('Integration Iter4: Clamp floor (carb ≥ 3g/kg)', async () => {
 // Output shape
 // ============================================================================
 
-Deno.test('Integration: Response includes all required fields', async () => {
+integrationTest('Integration: Response includes all required fields', async () => {
   const { status, data } = await callEdgeFunction(refInput());
   assertEquals(status, 200);
 
@@ -466,10 +457,13 @@ Deno.test('Integration: Response includes all required fields', async () => {
   assertEquals(typeof data.mode, 'string');
   assertEquals(typeof data.ea, 'number');
   assertEquals(typeof data.ea_status, 'string');
-  assertEquals(data.algorithm_version, 'v4.0.0');
+  assertEquals(data.energy_basis, 'as_computed');
+  // Delta is always present: null outside retrospective recalculation.
+  assertEquals(data.delta, null);
+  assertEquals(data.algorithm_version, 'v6.0.0');
 });
 
-Deno.test('Integration: Mode passes through', async () => {
+integrationTest('Integration: Mode passes through', async () => {
   const prospective = await callEdgeFunction(refInput({ mode: 'prospective' }));
   const retrospective = await callEdgeFunction(refInput({ mode: 'retrospective' }));
 
@@ -481,7 +475,7 @@ Deno.test('Integration: Mode passes through', async () => {
 // Female athlete
 // ============================================================================
 
-Deno.test('Integration: Female athlete produces valid output', async () => {
+integrationTest('Integration: Female athlete produces valid output', async () => {
   const { status, data } = await callEdgeFunction({
     sex: 'female',
     age: 29,
@@ -515,7 +509,7 @@ Deno.test('Integration: Female athlete produces valid output', async () => {
 // No body fat (Mifflin fallback)
 // ============================================================================
 
-Deno.test('Integration: No body fat uses Mifflin fallback', async () => {
+integrationTest('Integration: No body fat uses Mifflin fallback', async () => {
   const { status, data } = await callEdgeFunction(refInput({ body_fat_pct: null }));
   assertEquals(status, 200);
 
@@ -529,7 +523,7 @@ Deno.test('Integration: No body fat uses Mifflin fallback', async () => {
 // Masters athlete (age ≥ 45)
 // ============================================================================
 
-Deno.test('Integration: Masters athlete gets protein bump', async () => {
+integrationTest('Integration: Masters athlete gets protein bump', async () => {
   const young = await callEdgeFunction(refInput({ age: 34 }));
   const masters = await callEdgeFunction(refInput({ age: 50 }));
 
