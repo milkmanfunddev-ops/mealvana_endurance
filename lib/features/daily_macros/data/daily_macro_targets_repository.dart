@@ -36,8 +36,10 @@ class DailyMacroTargetsRepository {
 
   /// Algorithm version this client expects. Cached rows from older versions
   /// are treated as misses so the next read recalculates with the current
-  /// pipeline (e.g., picks up Garmin source attribution introduced in v5).
-  static const String _expectedAlgorithmVersion = 'v5.0.0';
+  /// pipeline. v6.0.0 is the ratified daily-macros-dashboard@v1 engine
+  /// (30 %E fat cap, strength flat carb rate, manual-wins tomorrow) — the
+  /// numbers move a lot, so stale v5 plans must not linger in cache.
+  static const String _expectedAlgorithmVersion = 'v6.0.0';
 
   /// Get cached macro targets for a specific date
   Future<DailyMacroTargets?> getCachedForDate(
