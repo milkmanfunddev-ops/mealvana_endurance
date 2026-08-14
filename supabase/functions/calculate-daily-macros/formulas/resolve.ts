@@ -230,7 +230,12 @@ export function resolveSessionData(
   }
 
   // Carb demand always uses resolved IF + duration (no platform source for this).
-  const session_carb = carbDemand(intensity_factor, duration_hr, weight_kg);
+  const session_carb = carbDemand(
+    session.sport,
+    intensity_factor,
+    duration_hr,
+    weight_kg,
+  );
 
   return {
     session_kcal,
@@ -316,7 +321,15 @@ export function resolveRMR(
 
 /**
  * §25 — Resolve tomorrow's planned session for pre-load logic.
- * TP_CALENDAR > MANUAL > NONE.
+ *
+ * MANUAL wins over TP_CALENDAR — RULED (Xuan, 2026-08-13), reversing the
+ * recorded order: `tomorrow` is a declaration, not a measurement; an athlete
+ * who explicitly marks tomorrow a race must not lose to a calendar sync
+ * missing the flag. TP is used only when no manual declaration exists.
+ *
+ * When neither source is present, the resolved value is the manual default
+ * (null → no pre-load) and tags MANUAL, matching resolveWeeklyRatio's
+ * default-tags-MANUAL convention (the pinned enum has no NONE tag).
  */
 export function resolveTomorrow(
   tp: TPGlobalData | null | undefined,
@@ -326,16 +339,6 @@ export function resolveTomorrow(
     tomorrow_is_race?: boolean;
   },
 ): ResolvedTomorrow {
-  const planned = tp?.tomorrow_planned;
-  if (planned && (planned.tss != null || planned.duration_hr != null)) {
-    return {
-      tomorrow_tss: planned.tss ?? null,
-      tomorrow_duration_hr: planned.duration_hr ?? null,
-      tomorrow_is_race: planned.is_race === true,
-      source: 'TP_CALENDAR',
-    };
-  }
-
   if (
     manual.tomorrow_tss != null ||
     manual.tomorrow_duration_hr != null ||
@@ -349,17 +352,33 @@ export function resolveTomorrow(
     };
   }
 
+  const planned = tp?.tomorrow_planned;
+  if (
+    planned &&
+    (planned.tss != null || planned.duration_hr != null ||
+      planned.is_race === true)
+  ) {
+    return {
+      tomorrow_tss: planned.tss ?? null,
+      tomorrow_duration_hr: planned.duration_hr ?? null,
+      tomorrow_is_race: planned.is_race === true,
+      source: 'TP_CALENDAR',
+    };
+  }
+
   return {
     tomorrow_tss: null,
     tomorrow_duration_hr: null,
     tomorrow_is_race: false,
-    source: 'NONE',
+    source: 'MANUAL',
   };
 }
 
 /**
  * §26 — Resolve weekly load ratio (yesterday's load vs typical).
  * TP if both ATL and CTL>0; else manual; else default 1.0.
+ * The bare `TP` tag normalises to `TP_PLANNED` (Q-012: the enum is pinned to
+ * exactly seven values; `TP` was inconsistent naming, not an eighth source).
  */
 export function resolveWeeklyRatio(
   tp: TPGlobalData | null | undefined,
@@ -370,7 +389,7 @@ export function resolveWeeklyRatio(
     tp.CTL != null &&
     tp.CTL > 0
   ) {
-    return { ratio: tp.ATL / tp.CTL, source: 'TP' };
+    return { ratio: tp.ATL / tp.CTL, source: 'TP_PLANNED' };
   }
 
   if (manual_ratio != null) {

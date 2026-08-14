@@ -118,29 +118,31 @@ export function weeklyLoadAdjust(
 }
 
 /**
- * Training phase modifiers (multiplicative)
+ * Training phase modifiers (F10, multiplicative on carb and protein).
+ *
+ * fat_mod is returned as documentation of intent and is NEVER applied
+ * anywhere in the pipeline (Q-004, ruled 2026-08-13): fat is a pure
+ * residual, and every published number was produced without it. Do not
+ * apply it without a new ruling.
  */
 export function phaseModifier(
   phase: TrainingPhase | undefined,
 ): {
   carb_mod: number;
   prot_mod: number;
+  fat_mod: number;
 } {
-  if (!phase || phase === 'base') {
-    return { carb_mod: 1.0, prot_mod: 1.0 };
-  }
-
   const modifiers: Record<
     TrainingPhase,
-    { carb_mod: number; prot_mod: number }
+    { carb_mod: number; prot_mod: number; fat_mod: number }
   > = {
-    base: { carb_mod: 1.0, prot_mod: 1.0 },
-    build: { carb_mod: 1.08, prot_mod: 1.05 },
-    peak: { carb_mod: 1.12, prot_mod: 1.10 },
-    taper: { carb_mod: 0.88, prot_mod: 1.0 },
-    race_week: { carb_mod: 1.0, prot_mod: 1.0 },
-    off_season: { carb_mod: 0.80, prot_mod: 1.0 },
+    base: { carb_mod: 1.0, prot_mod: 1.0, fat_mod: 1.0 },
+    build: { carb_mod: 1.08, prot_mod: 1.05, fat_mod: 1.0 },
+    peak: { carb_mod: 1.12, prot_mod: 1.10, fat_mod: 0.95 },
+    taper: { carb_mod: 0.88, prot_mod: 1.0, fat_mod: 1.05 },
+    race_week: { carb_mod: 1.0, prot_mod: 1.0, fat_mod: 0.85 },
+    off_season: { carb_mod: 0.80, prot_mod: 1.0, fat_mod: 1.10 },
   };
 
-  return modifiers[phase];
+  return modifiers[phase ?? 'base'];
 }

@@ -2,7 +2,7 @@
  * Safety checks and overrides (Iteration 4)
  */
 
-import type { Sex, SessionInput, TrainingPhase } from '../types.ts';
+import type { Sex, TrainingPhase } from '../types.ts';
 
 export type EAStatus = 'OK' | 'SOFT_WARNING' | 'HARD_WARNING' | 'BLOCK';
 
@@ -80,65 +80,82 @@ export function eaOverride(
     return { block: true };
   }
 
-  // EA 20-30: force to EA = 30
+  // EA 20-30: force to EA = 30, split 60% carb / 40% fat. Protein never moves.
   const min_intake = 30 * ffm_kg + session_kcal;
   const deficit = min_intake - intake;
 
-  // Split deficit 60% carb / 40% fat
-  const new_carb = carb + (deficit * 0.6) / 4;
-  const new_fat = fat + (deficit * 0.4) / 9;
+  const ceiling = 12.0 * weight_kg; // the same clamp assembly step 9 applied
+  const carb_add = (deficit * 0.6) / 4;
 
-  // Respect carb ceiling
-  const carb_ceiling = 12.0 * weight_kg;
-  if (new_carb > carb_ceiling) {
-    // Can't add more carb, add all deficit to fat
-    const final_carb = carb_ceiling;
-    const remaining_deficit = min_intake - (final_carb * 4 + prot * 4 + fat * 9);
-    const final_fat = fat + remaining_deficit / 9;
-
-    return {
-      carb: Math.round(final_carb),
-      prot: Math.round(prot),
-      fat: Math.round(final_fat),
-      adjusted: true,
-    };
+  let new_carb: number;
+  let new_fat: number;
+  if (carb + carb_add > ceiling) {
+    // Q-006 (ruled 2026-08-13): overflow kcal reroute to fat; EA still lands
+    // exactly 30 — energy is conserved on both paths.
+    const overflow_kcal = (carb + carb_add - ceiling) * 4;
+    new_carb = ceiling;
+    new_fat = fat + (deficit * 0.4 + overflow_kcal) / 9;
+  } else {
+    new_carb = carb + carb_add;
+    new_fat = fat + (deficit * 0.4) / 9;
   }
 
+  // F18 rounds its own return by spec (the one mid-pipeline round R1 keeps,
+  // pinned by the worked vectors: 269.2 → 269, 65.69 → 66).
   return {
     carb: Math.round(new_carb),
-    prot: Math.round(prot),
+    prot: prot,
     fat: Math.round(new_fat),
     adjusted: true,
   };
 }
 
+import type { Sport } from '../types.ts';
+
+/** A session whose IF and duration have already been resolved (F22). */
+export interface CompoundSession {
+  sport: Sport;
+  intensity_factor: number;
+  duration_hr: number;
+  /** Sort key for compounding order; sessions without one keep input order. */
+  start_time?: string | null;
+}
+
 /**
- * Multi-session carb compounding
- * Each subsequent endurance session gets 1.1^n multiplier
- * Strength sessions not compounded
+ * Multi-session carb compounding (F19)
+ * Sessions are ordered by start_time; each subsequent ENDURANCE session's
+ * carb demand is scaled ×1.1 per endurance position. Strength never
+ * compounds and never advances the counter.
+ *
+ * Returns UNROUNDED values (Q-002, ruled 2026-08-13: F19's round() deleted;
+ * rounding happens once, at assembly step 12).
  */
 export function multiSessionCarbCompound(
-  sessions: SessionInput[],
+  sessions: CompoundSession[],
   weight_kg: number,
-  carbDemandFn: (if_: number, duration: number, weight: number) => number,
-  zoneToIFFn: (conv: number, tempo: number, allout: number) => number,
+  carbDemandFn: (
+    sport: Sport,
+    if_: number,
+    duration: number,
+    weight: number,
+  ) => number,
 ): {
   session_carb: number;
   prot_bump: number;
 } {
+  const sorted = [...sessions].sort((a, b) => {
+    if (a.start_time == null || b.start_time == null) return 0;
+    return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0;
+  });
+
   let total_carb = 0;
   let endurance_index = 0;
   let max_prot_bump = 0;
 
-  for (const session of sessions) {
-    const intensity_factor = zoneToIFFn(
-      session.pct_conversational,
-      session.pct_tempo,
-      session.pct_allout,
-    );
-
+  for (const session of sorted) {
     const base_carb = carbDemandFn(
-      intensity_factor,
+      session.sport,
+      session.intensity_factor,
       session.duration_hr,
       weight_kg,
     );
@@ -165,13 +182,14 @@ export function multiSessionCarbCompound(
     }
   }
 
-  // Respect carb ceiling
+  // Local cap on the session contribution alone (recorded as-is in the SSOT;
+  // the assembly clamp applies the same ceiling again to the total).
   const carb_ceiling = 12.0 * weight_kg;
   total_carb = Math.min(total_carb, carb_ceiling);
 
   return {
-    session_carb: Math.round(total_carb),
-    prot_bump: Math.round(max_prot_bump),
+    session_carb: total_carb,
+    prot_bump: max_prot_bump,
   };
 }
 
