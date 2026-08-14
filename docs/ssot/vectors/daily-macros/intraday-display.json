@@ -1,0 +1,483 @@
+{
+  "section": "intraday-display",
+  "engine": null,
+  "specVersion": "v1 (2026-08-13, ratified; incl. 4b addition 2026-08-14)",
+  "note": "Pins RATIFIED v1 of spec/daily-macros/intraday-display.md. Display-layer arithmetic, engine-independent (engine null): a consumer computes these from the returned plan + the day's log. EXPECTED-RED until such a consumer exists. kind field routes assertion style: so_far (numeric, abs tol 1e-3 kcal, UNROUNDED \u2014 display rounding is presentation), net_band (exact string or null), intake (numeric), flags (booleans). Oracle verified against BOTH documented snapshots (design-brief canonical 3PM day and the reference-rendering two-workout day) plus midnight convergence before emission. CONVENTIONS the spec does not state, adopted here: band bounds are inclusive at +-200/+-500 ('<=', sibling convention); connected-path NEAT model rate = neatKcal/960 waking minutes. 4b tombstone: deleted sessions carry status='deleted' in inputs; the row-persistence and sync-matcher halves of that ruling are app/db-side and are covered by the test plan, not these vectors.",
+  "toleranceKcal": 0.001,
+  "vectors": [
+    {
+      "id": "accrual-canonical-3pm",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 900,
+        "rmr": 1908,
+        "neatKcal": 378,
+        "eatenKcal": 1650,
+        "sessions": [
+          {
+            "kcal": 1205,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "resting": 1192.5,
+        "movement": 189.0,
+        "workout": 0,
+        "digestion": 165.0,
+        "burned": 1546.5
+      },
+      "why": "The design-brief canonical snapshot: resting 1908*900/1440=1192.5; movement fallback 378*(480/960)=189; run planned (actualTime null) contributes ZERO despite the day being 62% elapsed (sessions atomic); digestion 10% of eaten."
+    },
+    {
+      "id": "accrual-two-workout-3pm",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 900,
+        "rmr": 1908,
+        "neatKcal": 394.9,
+        "eatenKcal": 1650,
+        "sessions": [
+          {
+            "kcal": 228.7,
+            "actualTimeMin": 480
+          },
+          {
+            "kcal": 1205.3,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "resting": 1192.5,
+        "movement": 197.45,
+        "workout": 228.7,
+        "digestion": 165.0,
+        "burned": 1783.65
+      },
+      "why": "The reference-rendering day: done swim counts in full (228.7), planned run zero. Burned 1783.7 -> displays 1,783."
+    },
+    {
+      "id": "midnight-convergence",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 1440,
+        "rmr": 1908,
+        "neatKcal": 394.9,
+        "eatenKcal": 4152,
+        "sessions": [
+          {
+            "kcal": 228.7,
+            "actualTimeMin": 480
+          },
+          {
+            "kcal": 1205.3,
+            "actualTimeMin": 1050
+          }
+        ]
+      },
+      "expected": {
+        "burned": 4152.1
+      },
+      "why": "Check 1: at 1440 min, all sessions done, eaten=target, fallback-path burned == engine TDEE exactly (1908+394.9+1434+415.2=4152.1). Proration converges to the plan at midnight."
+    },
+    {
+      "id": "waking-window-300min",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 300,
+        "rmr": 1908,
+        "neatKcal": 378,
+        "eatenKcal": 1650,
+        "sessions": [
+          {
+            "kcal": 1205,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "movement": 0.0
+      },
+      "why": "05:00 \u2014 before the waking window opens: movement exactly 0 (no phantom 3am NEAT)"
+    },
+    {
+      "id": "waking-window-420min",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 420,
+        "rmr": 1908,
+        "neatKcal": 378,
+        "eatenKcal": 1650,
+        "sessions": [
+          {
+            "kcal": 1205,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "movement": 0.0
+      },
+      "why": "07:00 exactly \u2014 window opens, nothing elapsed yet"
+    },
+    {
+      "id": "waking-window-1440min",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 1440,
+        "rmr": 1908,
+        "neatKcal": 378,
+        "eatenKcal": 1650,
+        "sessions": [
+          {
+            "kcal": 1205,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "movement": 378.0
+      },
+      "why": "midnight \u2014 full waking window elapsed: movement = full neatKcal"
+    },
+    {
+      "id": "tef-zero-before-first-meal",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 900,
+        "rmr": 1908,
+        "neatKcal": 378,
+        "eatenKcal": 0,
+        "sessions": [
+          {
+            "kcal": 1205,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "digestion": 0.0
+      },
+      "why": "Check 1b: digestion is exactly 0 before any intake \u2014 TEF is meal-driven, never clock-prorated."
+    },
+    {
+      "id": "deleted-activity-contributes-zero",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 900,
+        "rmr": 1908,
+        "neatKcal": 394.9,
+        "eatenKcal": 1650,
+        "sessions": [
+          {
+            "kcal": 228.7,
+            "actualTimeMin": 480,
+            "status": "deleted"
+          },
+          {
+            "kcal": 1205.3,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "workout": 0.0,
+        "burned": 1554.95,
+        "rendered": false
+      },
+      "why": "4b: a status=deleted activity contributes ZERO to every derived quantity and never renders \u2014 identical in effect to nonexistence. The row itself persists in Supabase (tombstone; sync matcher must still see it)."
+    },
+    {
+      "id": "neat-connected-staleness-bridge",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 900,
+        "rmr": 1908,
+        "neatKcal": 394.9,
+        "eatenKcal": 1650,
+        "wearableConnected": true,
+        "syncedToday": true,
+        "lastSyncMin": 780,
+        "activeEnergyThroughSync": 520,
+        "sessions": [
+          {
+            "kcal": 228.7,
+            "actualTimeMin": 480,
+            "wearableRecorded": true
+          },
+          {
+            "kcal": 1205.3,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "movement": 340.663
+      },
+      "why": "Connected path: measured-through-sync (520-228.7=291.3) + model rate for waking minutes since 13:00 (394.9/960 * 120 = 49.4) = 340.7. Freeze would under-count; re-smearing would discard the measurement."
+    },
+    {
+      "id": "neat-subtraction-wearable-only",
+      "status": "ratified",
+      "kind": "so_far",
+      "inputs": {
+        "minutesSinceMidnight": 900,
+        "rmr": 1908,
+        "neatKcal": 394.9,
+        "eatenKcal": 1650,
+        "wearableConnected": true,
+        "syncedToday": true,
+        "lastSyncMin": 780,
+        "activeEnergyThroughSync": 520,
+        "sessions": [
+          {
+            "kcal": 228.7,
+            "actualTimeMin": 480,
+            "wearableRecorded": false
+          },
+          {
+            "kcal": 1205.3,
+            "actualTimeMin": null
+          }
+        ]
+      },
+      "expected": {
+        "movement": 569.362
+      },
+      "why": "The double-count guard is asymmetric: a session the wearable did NOT record is not subtracted from wearable active energy (movement 520+49.4=569.4, not 340.7). Subtracting it would delete real NEAT."
+    },
+    {
+      "id": "band-0",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": 0,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "on track"
+      },
+      "why": "Band boundary: net 0 -> 'on track'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-200",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": 200,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "on track"
+      },
+      "why": "Band boundary: net 200 -> 'on track'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-200p001",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": 200.001,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "slight surplus"
+      },
+      "why": "Band boundary: net 200.001 -> 'slight surplus'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-500",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": 500,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "slight surplus"
+      },
+      "why": "Band boundary: net 500 -> 'slight surplus'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-500p001",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": 500.001,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "surplus"
+      },
+      "why": "Band boundary: net 500.001 -> 'surplus'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-neg200",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": -200,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "on track"
+      },
+      "why": "Band boundary: net -200 -> 'on track'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-neg200p001",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": -200.001,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "slight deficit"
+      },
+      "why": "Band boundary: net -200.001 -> 'slight deficit'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-neg500",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": -500,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "slight deficit"
+      },
+      "why": "Band boundary: net -500 -> 'slight deficit'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-neg500p001",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": -500.001,
+        "energyBasis": "as_computed"
+      },
+      "expected": {
+        "copy": "deficit \u2014 time to eat"
+      },
+      "why": "Band boundary: net -500.001 -> 'deficit \u2014 time to eat'. ORACLE CONVENTION: bounds inclusive (<=) at both edges."
+    },
+    {
+      "id": "band-suppressed-pre-override",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": 350,
+        "energyBasis": "pre_override"
+      },
+      "expected": {
+        "copy": null
+      },
+      "why": "Check 5: under energy_basis=pre_override NO surplus string renders \u2014 the EA gate raised intake deliberately; calling a safety floor a surplus tells an under-fueled athlete to eat less."
+    },
+    {
+      "id": "band-deficit-not-suppressed-pre-override",
+      "status": "ratified",
+      "kind": "net_band",
+      "inputs": {
+        "netKcal": -350,
+        "energyBasis": "pre_override"
+      },
+      "expected": {
+        "copy": "slight deficit"
+      },
+      "why": "Suppression is surplus-side only: deficit copy still renders under pre_override (it points toward eating)."
+    },
+    {
+      "id": "intake-remaining-logged-only",
+      "status": "ratified",
+      "kind": "intake",
+      "inputs": {
+        "targetKcal": 4152,
+        "entries": [
+          {
+            "kcal": 640,
+            "consumed": true
+          },
+          {
+            "kcal": 330,
+            "consumed": true
+          },
+          {
+            "kcal": 680,
+            "consumed": true
+          },
+          {
+            "kcal": 470,
+            "consumed": false
+          },
+          {
+            "kcal": 600,
+            "consumed": false
+          }
+        ]
+      },
+      "expected": {
+        "logged": 1650,
+        "planned": 1070,
+        "remaining": 2502,
+        "projected": 2720
+      },
+      "why": "Check 3: remaining = target - LOGGED (2502) \u2014 planned food reduces nothing until eaten. projected = logged+planned is copy-only."
+    },
+    {
+      "id": "intake-planned-edits-dont-move-remaining",
+      "status": "ratified",
+      "kind": "intake",
+      "inputs": {
+        "targetKcal": 4152,
+        "entries": [
+          {
+            "kcal": 640,
+            "consumed": true
+          },
+          {
+            "kcal": 330,
+            "consumed": true
+          },
+          {
+            "kcal": 680,
+            "consumed": true
+          }
+        ]
+      },
+      "expected": {
+        "logged": 1650,
+        "planned": 0,
+        "remaining": 2502,
+        "projected": 1650
+      },
+      "why": "Check 3: deleting every planned entry changes remaining not at all (2502 == 2502). EA and net are actuals-only, so they are byte-identical across the two vectors above."
+    },
+    {
+      "id": "tracking-off-hides-not-disables",
+      "status": "ratified",
+      "kind": "flags",
+      "inputs": {
+        "trackingOff": true,
+        "eaStatus": "BLOCK"
+      },
+      "expected": {
+        "quantitiesRendered": false,
+        "blockRendered": true
+      },
+      "why": "Check 7 / 5: tracking-off is a display mode. Every 1-3 quantity hidden; the engine and EA gate still run and a BLOCK still surfaces. The athlete who hides numbers is the one the gate protects."
+    }
+  ]
+}

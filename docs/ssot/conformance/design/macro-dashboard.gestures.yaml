@@ -1,0 +1,82 @@
+# Design conformance manifest — GESTURE / BEHAVIOR TESTS for the macro-dashboard.
+# Names every widget/Patrol test that MUST exist, with its required assertions.
+# Test code lives in the app repo; qa audits this manifest against the real test
+# tree (qa-test-plan audit verb). A test pins its contract only if it executes
+# the REAL code path (no false pins).
+
+manifest: macro-dashboard-gestures
+version: v1
+status: ratified
+spec_family: spec/design/
+
+tests:
+  # workout-card gestures (components/workout-card.md G1-G5, G7)
+  - id: g1_swipe_right_marks_done
+    contract: workout-card G1
+    assert:
+      - full right-swipe on PLANNED -> state DONE_CONFIRMED
+      - actual_time written = now; planned_time UNCHANGED
+      - card moves to current time on the timeline
+  - id: g2_swipe_right_again_undoes
+    contract: workout-card G2
+    assert:
+      - full right-swipe on DONE_CONFIRMED -> state PLANNED
+      - actual_time CLEARED (null, not zero); card returns to planned_time
+  - id: g3_verified_suppressed   # NEGATIVE TEST — required
+    contract: workout-card G3 (Q-D1 ruling)
+    assert:
+      - right-swipe on DONE_VERIFIED -> zero translation after release
+      - no reveal renders; no "Mark undone" node in the tree; no state change
+  - id: g4_swipe_left_reveals_delete
+    contract: workout-card G4
+    assert:
+      - partial left-swipe reveals labeled Delete button (dragonfruit token)
+      - the swipe itself NEVER deletes
+  - id: g5_delete_removes_everywhere
+    contract: workout-card G5 + surface S-2
+    assert:
+      - Delete press removes the workout's kcal, fuel windows and timeline entry
+        from EVERY surface figure in the same frame
+      - upstream write is a SOFT delete (status='deleted', row persists)
+  - id: g7_emission_propagates
+    contract: workout-card G7 + surface S-1
+    assert:
+      - one swipe updates net balance text, band copy, and the Active Energy
+        sheet in the same pump (verified example -133 <-> -1,338)
+
+  # energy-card behavior (components/energy-card.md E1-E3, P-1)
+  - id: e1_toggle_expansion
+    contract: energy-card E1
+    assert: [tap chevron toggles expanded in place, never navigates]
+  - id: p1_expansion_persists_across_faces
+    contract: energy-card P-1
+    assert: [expand in MEALS, switch to WORKOUT -> still expanded]
+  - id: p1_expansion_survives_swipe   # W-8 regression guard
+    contract: energy-card P-1 + surface S-4
+    assert: [expand card, swipe a workout card -> energy card still expanded]
+
+  # surface string-level checks
+  - id: s6_no_unconditional_deadlines
+    contract: surface S-6
+    assert:
+      - "no rendered copy in ANY surface state matches /within \\d+ min/i or /within the hour/i"
+  - id: band_copy_matches_register
+    contract: intraday-display SS2 via energy-card P-3
+    assert:
+      - band string for the mock net (-133) is exactly "on track"
+      - vectors/daily-macros/intraday-display.json band-* rows are the oracle
+
+  # data-model behaviors surfaced through the card (platform-resolution rulings)
+  - id: sync_upgrades_confirmed_to_verified
+    contract: platform-resolution two-time model
+    assert:
+      - later Garmin sync on a DONE_CONFIRMED card -> chip flips to verified,
+        actual_time overwritten with measured start (MANUAL -> GARMIN)
+  - id: tombstone_prevents_reimport
+    contract: platform-resolution soft-delete ruling / intraday-display 4b
+    assert:
+      - delete a synced workout, run sync with the same platform activity ->
+        no card reappears; local row still exists with status='deleted'
+
+done_when: every test above exists in the app repo, executes the real code path,
+  and runs in automatic CI (exclusions must be recorded in the feature test plan)

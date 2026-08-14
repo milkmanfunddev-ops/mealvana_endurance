@@ -1,0 +1,65 @@
+# Release bundle manifest — a pinned set of ratified SSOTs for one app release.
+# A code agent checks out the tag `daily-macros-dashboard@v1` and implements exactly
+# these slices to green conformance. Third entry of the spec registry (the first two
+# live on qa/pre-workout-drawers: pre-workout-macros@v1, pre-workout-food-composition@v1).
+
+bundle: daily-macros-dashboard
+version: v1
+status: ratified
+ratified: 2026-08-14            # Xuan
+ships: daily macro calculation (engine) + the macro dashboard with workout cards (display/design)
+
+specs:
+  # --- calculation (engine: calculate-daily-macros, Deno edge function) ---
+  - { slice: rmr,                 version: v1, spec: spec/daily-macros/rmr.md,                 vectors: vectors/daily-macros/rmr.json,                 engine: calculate-daily-macros/formulas/rmr.ts }
+  - { slice: baseline-macros,     version: v1, spec: spec/daily-macros/baseline-macros.md,     vectors: vectors/daily-macros/baseline-macros.json,     engine: calculate-daily-macros/formulas/baseline.ts }
+  - { slice: session-demand,      version: v1, spec: spec/daily-macros/session-demand.md,      vectors: vectors/daily-macros/session-demand.json,      engine: calculate-daily-macros/formulas/session.ts }
+  - { slice: multi-day-context,   version: v1, spec: spec/daily-macros/multi-day-context.md,   vectors: vectors/daily-macros/multi-day-context.json,   engine: calculate-daily-macros/formulas/multi-day.ts }
+  - { slice: neat-tef,            version: v1, spec: spec/daily-macros/neat-tef.md,            vectors: vectors/daily-macros/neat-tef.json,            engine: calculate-daily-macros/formulas/neat-tef.ts }
+  - { slice: energy-availability, version: v1, spec: spec/daily-macros/energy-availability.md, vectors: vectors/daily-macros/energy-availability.json, engine: calculate-daily-macros/formulas/safety.ts }
+  - { slice: assembly,            version: v1, spec: spec/daily-macros/assembly.md,            vectors: vectors/daily-macros/assembly.json,            engine: calculate-daily-macros/pipeline.ts }
+  - { slice: platform-resolution, version: v1, spec: spec/daily-macros/platform-resolution.md, vectors: vectors/daily-macros/platform-resolution.json, engine: calculate-daily-macros/formulas/resolve.ts }
+  # --- display arithmetic (consumer to be built) ---
+  - { slice: intraday-display,    version: v1, spec: spec/daily-macros/intraday-display.md,    vectors: vectors/daily-macros/intraday-display.json,    engine: "none yet — display-layer consumer; building it is part of this bundle" }
+  # --- design (conformance = manifests, not vectors) ---
+  - { slice: design-tokens,       version: v1, spec: spec/design/tokens.md,                    vectors: conformance/design/macro-dashboard.goldens.yaml,  engine: app widget layer }
+  - { slice: workout-card,        version: v1, spec: spec/design/components/workout-card.md,   vectors: conformance/design/macro-dashboard.gestures.yaml, engine: app widget layer }
+  - { slice: energy-card,         version: v1, spec: spec/design/components/energy-card.md,    vectors: conformance/design/macro-dashboard.goldens.yaml,  engine: app widget layer }
+  - { slice: macro-dashboard,     version: v1, spec: spec/design/surfaces/macro-dashboard.md,  vectors: conformance/design/macro-dashboard.gestures.yaml, engine: app widget layer }
+
+excludes:
+  - { slice: post-workout,          reason: "RATIFIED spec, deliberately unshipped this bundle (Xuan) — recovery windows come later" }
+  - { slice: daily-insight-ai-card, reason: "not in this iteration; copy contracts (S-6) still bind whenever it renders" }
+  - { slice: safety-state-ui,       reason: "SOFT/HARD/BLOCK surfaces deferred (surface S-5); the EA gate itself SHIPS — it is engine, not UI" }
+  - { slice: phase-chip-and-sodium, reason: "deferred to settings / later iteration (surface S-5)" }
+  - { slice: pre-workout-and-food-composition, reason: "own bundles (pre-workout-macros@v1, pre-workout-food-composition@v1, on qa/pre-workout-drawers)" }
+
+conformance:
+  runner: "none exists for this engine yet — calculate-daily-macros is Deno; building the runner is part of the task"
+  invoke:
+    - "(to build) deno test runner feeding vectors/daily-macros/*.json to the formulas"
+    - "(to build) display-consumer tests feeding intraday-display.json"
+    - "(to build) goldens + gesture tests per conformance/design/*.yaml"
+  done_when: >
+    all 9 vector files green against the real engine; every artifact in both design manifests
+    exists and passes in CI; the two schema tasks below are landed; feature test plan rows flip.
+  note: >
+    EXPECTED-RED throughout: the existing engine implements PRE-RULING behavior and its four test
+    files (index/integration/iteration5/parity-fixtures .test.ts) pin the superseded engine --
+    they go red against these specs CORRECTLY and must be moved to the vectors, never the vectors
+    to them. Vector expecteds are the UNROUNDED chain (R1); display rounding is half-up.
+
+    TWO EXPLICIT SCHEMA TASKS (owned by this bundle, currently in no migration):
+    1. workout rows gain planned_time, actual_time (nullable), status ('deleted' tombstone);
+    2. public.plan_recalc_log (plan_generation_log pattern) written by every recalculateAfterSync.
+
+    Feature test plan: docs/feature-test-plans/macro-dashboard.md (DRAFT) enumerates the chains
+    and pins; the match-key ruling (platform id, fallback platform+sport+start +-15min) is folded.
+
+deviations:
+  - slice: calculate-daily-macros (existing implementation)
+    status: superseded-not-deviant
+    note: >
+      Shipped code predates all fifteen register rulings + Q-014. Divergences are the EXPECTED-RED
+      surface, not deviations to log individually; DEVIATIONS.md entries arise only if the team
+      rules to keep any legacy behavior over a ratified spec.

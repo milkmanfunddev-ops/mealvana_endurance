@@ -5,29 +5,39 @@ Contradictions, gaps and unstated rules found while distilling the Notion pages 
 nothing here has been checked against the implementation yet. Code-vs-SSOT findings belong in
 [`DEVIATIONS.md`](../../DEVIATIONS.md); these belong to Xuan as the SSOT author.
 
-Each one blocks or shapes vectoring, so they should be ruled on before
-[PLAN.md](../../PLAN.md) step 4.
+**ALL THIRTEEN ARE NOW RULED (Xuan: Q-013 on 2026-07-29; Q-001–Q-012 on 2026-08-13).** Nothing in
+this register blocks vectoring any longer. Each ruling is folded into its spec file; the entries
+below keep the full original analysis plus the ruling, so the reasoning survives. The specs remain
+`RECORDED — awaiting ratification` as documents — ruling the register was the prerequisite, not the
+ratification itself.
 
-| ID | Subject | Severity | Blocks vectors? |
-|---|---|---|---|
-| [Q-001](#q-001) | Rounding of intermediates | **high** | yes — every fat value |
-| [Q-002](#q-002) | Multi-session path rounds, single-session path doesn't | medium | yes |
-| [Q-003](#q-003) | Strength carb demand: 27 g vs 40 g | **high** | yes |
-| [Q-004](#q-004) | `fat_mod` is specified but never applied | medium | no |
-| [Q-005](#q-005) | Is `RACE_WEEK` forced when tomorrow is a race? | medium | yes |
-| [Q-006](#q-006) | EA override can breach the carb ceiling | **high** (safety) | yes |
-| [Q-007](#q-007) | Pre-race session kcal: 1050 vs 1479 | medium | yes |
-| [Q-008](#q-008) | Two EA test rows don't reconcile | low | no |
-| [Q-009](#q-009) | No recompute after the EA override | **high** (safety) | yes |
-| [Q-010](#q-010) | HR-derived IF referenced but unspecified | low | no |
-| [Q-011](#q-011) | `resolveRMR` is not mode-gated | low | no |
-| [Q-012](#q-012) | `sources` / `delta` object shape underspecified | low | no |
-| [Q-013](#q-013) | `yesterday_tss` when yesterday was a double | **RULED 2026-07-29** — sum | no |
+| ID | Subject | Ruling |
+|---|---|---|
+| [Q-001](#q-001) | Rounding of intermediates | **RULED** — R1: unrounded through, round once at return |
+| [Q-002](#q-002) | Multi-session path rounds mid-pipeline | **RULED** — F19 `round()` deleted; step 12 rounds |
+| [Q-003](#q-003) | Strength carb demand: 27 g vs 40 g | **RULED** — strength = flat 27 g/hr, IF ignored (literature-backed) |
+| [Q-004](#q-004) | `fat_mod` never applied | **RULED** — vestigial; retained as documentation, do not implement |
+| [Q-005](#q-005) | `RACE_WEEK` forced when tomorrow is a race? | **RULED** — guidance only; no computed override |
+| [Q-006](#q-006) | EA override can breach the carb ceiling | **RULED** — ceiling branch added to F18 |
+| [Q-007](#q-007) | Pre-race session kcal: 1050 vs 1479 | **RULED** — 1479; TDEE 4202; stale cell corrected |
+| [Q-008](#q-008) | Two EA test rows don't reconcile | **RULED** — cells recomputed (52.2, 42.7) |
+| [Q-009](#q-009) | No recompute after the EA override | **RULED** — no recompute; `energy_basis` flags it |
+| [Q-010](#q-010) | HR-derived IF unspecified | **RULED** — deferred; ladder has no Garmin rung |
+| [Q-011](#q-011) | `resolveRMR` not mode-gated | **RULED** — intentionally source-first, documented |
+| [Q-012](#q-012) | `sources` / `delta` underspecified | **RULED** — 7-tag enum pinned; `delta = null` outside retro |
+| [Q-013](#q-013) | `yesterday_tss` for a double | **RULED 2026-07-29** — sum; last session's end time |
+| [Q-014](#q-014) | Does fat have a ceiling? | **RULED 2026-08-13** — 30 %E cap, excess → carb |
+| [Q-015](#q-015) | NEAT model rigor (tier × day × lifestyle) | **DEFERRED 2026-08-13** — future work, by ruling |
 
 ---
 
 ## Q-001
 ### Are intermediate carb/protein values rounded before the fat residual?
+> **RULED — Xuan, 2026-08-13: R1 stands.** Intermediates carried unrounded; one rounding at
+> return. The strength-day evidence was decisive (only the unrounded reading reproduces the
+> published fat), independently re-verified before ruling. The Iteration 3 rest-day "81" is a stale
+> cell. Fat is vectored exact-match, not ±15 %. Folded into [README.md R1](README.md#cross-cutting-rules)
+> and [assembly.md](assembly.md). **Notion not updated** — push-back needed.
 **Where:** Iteration 1 assembly step 9 ("all rounded") vs the Iteration 1 and Iteration 3 test
 tables. **Severity: high — it changes almost every fat number.**
 
@@ -55,6 +65,9 @@ fat exact-match rather than ±15 %.
 
 ## Q-002
 ### The multi-session path rounds its outputs; the single-session path does not
+> **RULED — Xuan, 2026-08-13: drop the rounding.** Formula 19 returns unrounded; assembly step 12
+> is the only rounding site, consistent with R1. `prot_bump = 22.5` now survives to the total.
+> Folded into [session-demand.md](session-demand.md). **Notion not updated** — push-back needed.
 **Where:** Formula 19 returns `{ session_carb: round(total_carb), prot_bump: round(max_prot_bump) }`;
 the Iteration 1 single-session path adds unrounded values. **Severity: medium.**
 
@@ -70,6 +83,17 @@ with R1. Needs a ruling because it changes published multi-session expectations 
 
 ## Q-003
 ### Strength session carb demand: the test table says 27 g, the formula says 40 g
+> **RULED — Xuan, 2026-08-13: resolution (2) — strength has a reduced, intensity-independent
+> rate: `27 g/hr × duration_hr × (weight/75)`, IF ignored, no ×1.15.** Research (2026-08-13)
+> vindicated the 27 g cell: RT glycogen depletion tracks duration and set count, not load (Robergs
+> 1991 PMID 2055849; Hamidvand 2025 meta-analysis PMC12717450 — 20 studies, ~21 % worked-muscle
+> depletion, ≈25–45 g whole-body per hard hour), and IF is an endurance construct with no gym
+> meaning (TrainingPeaks scores strength flat). Structure: research-derived, confidence B−. The
+> number 27: design choice inside the 15–40 g/hr defensible band, confidence C. **This inverts the
+> register's original recommendation** (which favoured "27 is wrong → 109"): the Iteration 4 row was
+> right, and Iteration 1's full-day strength carb 340 was the stale cell (now 327, fat 97). Folded
+> into [session-demand.md](session-demand.md) and [assembly.md](assembly.md). **Notion not
+> updated** — both source pages need the rule pushed back.
 **Where:** Iteration 4 multi-session test table, row "strength 1 hr IF 0.70, run 1.5 hr IF 0.74".
 **Severity: high — it implies an unstated rule.**
 
@@ -94,6 +118,11 @@ conformance run should discover.
 
 ## Q-004
 ### `phaseModifiers` returns `fat_mod`, and nothing ever uses it
+> **RULED — Xuan, 2026-08-13: vestigial — not applied, retained as documentation of intent.**
+> The residual already delivers the column's direction (carb up → fat down), so `RACE_WEEK`'s 0.85
+> intent is achieved by other means. Annotated so no implementer activates it; doing so would need
+> a new ruling on floor interaction and would change every published fat number. Folded into
+> [multi-day-context.md](multi-day-context.md#formula-10--phasemodifiersphase).
 **Where:** Formula 10 vs every assembly version. **Severity: medium.**
 
 `fat_mod` ranges 0.85–1.10 across phases, so it *looks* meaningful — but fat is a pure residual
@@ -112,6 +141,12 @@ applies.
 
 ## Q-005
 ### Is `training_phase` forced to `RACE_WEEK` when tomorrow is a race?
+> **RULED — Xuan, 2026-08-13: guidance only — no computed override.** `training_phase` stays a
+> pure athlete setting; the conflict-table line is athlete-facing advice. Only this reading
+> reproduces the published 798; an override would silently rewrite an athlete's setting; and
+> `tomorrow_is_race` already drives the 9 g/kg pre-load regardless of phase, so a TAPER racer loses
+> only the carb_mod delta. If that matters, the fix is a visible UI nudge, never a silent override.
+> Folded into [multi-day-context.md](multi-day-context.md).
 **Where:** Iteration 2 conflict-resolution table ("Phase = TAPER but tomorrow = race → Phase must
 be `RACE_WEEK`, not `TAPER`") vs the absence of any such rule in the formulas, and vs the
 Iteration 2 integration test which runs `PEAK` with `tomorrow_is_race = true`. **Severity: medium.**
@@ -131,6 +166,12 @@ lose 12 % of its carb load — that is the substantive question underneath.
 
 ## Q-006
 ### The EA override can push carb past the 12 g/kg ceiling
+> **RULED — Xuan, 2026-08-13: the ceiling branch is added to Formula 18.** If the 60 % carb share
+> would push carb past `12.0 × weight`, carb caps at the ceiling and the overflow kcal reroute to
+> fat; EA still lands at exactly 30 (energy conserved at 9 kcal/g). Protein untouched — its ceiling
+> cannot bind. The source's edge-case table asserted exactly this; the formula body now matches it.
+> Folded into [energy-availability.md](energy-availability.md#formula-18--eaoverridecarb-prot-fat-session_kcal-ffm_kg-weight_kg).
+> **Notion not updated** — push-back needed.
 **Where:** Formula 18 vs the clamp in pipeline step 9, and vs Iteration 4's own edge-case row.
 **Severity: high — safety-relevant.**
 
@@ -151,6 +192,11 @@ whether the protein ceiling can ever bind here (it cannot — protein is untouch
 
 ## Q-007
 ### Pre-race session kcal: 1050 (Iteration 3) vs 1479 (Iteration 4)
+> **RULED — Xuan, 2026-08-13: 1479 kcal is correct; the Iteration 3 row is corrected to
+> session 1479 / TDEE 4202.** Independently recomputed: `11 × 75 × (0.82/0.75)² × 1.5 = 1479.3`;
+> Iteration 4's intake 4368 → EA 45.1 only reconciles with 1479. Fat and TEF unaffected (fat at
+> floor pins intake). Folded into [neat-tef.md](neat-tef.md). **Notion not updated** — the
+> Iteration 3 page carries the stale 1050/3773.
 **Where:** Iteration 3 TDEE table, row "Pre-race all layers" (`session_kcal = 1050`) vs Iteration 4
 EA table row 1 (`session 1479`, `intake 4368`). **Severity: medium.**
 
@@ -169,6 +215,9 @@ vector.
 
 ## Q-008
 ### Two EA-override test rows don't reconcile with the formula
+> **RULED — Xuan, 2026-08-13: cells recomputed — 52.2 and 42.7** (from intakes 3640 and 2930 at
+> FFM 64; independently re-verified). Outcomes unchanged. Folded into
+> [energy-availability.md](energy-availability.md). **Notion not updated.**
 **Where:** Iteration 4 EA override table, rows 3 and 4. **Severity: low — outcomes unaffected.**
 
 | Row | intake | EA at FFM 64 | page says |
@@ -186,6 +235,14 @@ downstream breaks — but the numbers should not be vectored as published.
 
 ## Q-009
 ### Are TDEE, TEF and fat recomputed after the EA override?
+> **RULED — Xuan, 2026-08-13: no recompute.** TDEE/TEF/fat-residual are not re-run after the EA
+> override. The override enforces a floor; it is not an energy estimate, and recomputing opens a
+> fat→intake→TEF→TDEE→fat loop with no stopping rule. The returned energy figures describe the
+> pre-override macros, and the output gains **`energy_basis: "pre_override" | "as_computed"`** so
+> the explanation layer can never present `tdee` as describing the delivered plan — intake above
+> stated TDEE on a gated day is correct, not a bug. Folded into
+> [energy-availability.md](energy-availability.md), [assembly.md](assembly.md) step 11–12, and the
+> [README output shape](README.md).
 **Where:** pipeline step 11. **Severity: high — safety-relevant.**
 
 `eaOverride` raises carb and fat. TDEE and TEF were computed in step 10 from the *pre-override*
@@ -207,6 +264,10 @@ safety gate fires.
 
 ## Q-010
 ### HR-derived IF is referenced but never specified
+> **RULED — Xuan, 2026-08-13: deferred**, exactly like CTL staleness. `garmin_avg_hr` is collected
+> and unused; the ladder has no Garmin rung; the priority edge-case is vacuously satisfied. If ever
+> added, the rung slots between `TP_PLANNED` and `ZONE_DIST` and requires a derivation spec first.
+> Folded into [platform-resolution.md](platform-resolution.md).
 **Where:** Iteration 5 input table (`garmin_avg_hr` — "can derive IF if TP unavailable") and the
 edge case "TP planned IF exists but Garmin also has HR data → TP IF takes priority over Garmin
 HR-derived IF", vs Formula 22's IF ladder, which has no Garmin rung at all. **Severity: low.**
@@ -220,6 +281,10 @@ derivation and add the rung between `TP_PLANNED` and `ZONE_DIST`.
 
 ## Q-011
 ### `resolveRMR` is not gated on `mode`
+> **RULED — Xuan, 2026-08-13: intentionally source-first regardless of mode**, now documented. BMR
+> describes the athlete, not the day, so the mode gate has nothing to gate; prospective runs fall
+> back to the formula through data availability, which is now the stated contract rather than an
+> accident. Folded into [rmr.md](rmr.md).
 **Where:** Formula 24. **Severity: low.**
 
 Every other resolver checks `mode == RETROSPECTIVE` before preferring platform data; `resolveRMR`
@@ -234,6 +299,11 @@ intentionally source-first regardless of mode (defensible — BMR is not a same-
 
 ## Q-012
 ### `sources` and `delta` object shapes are underspecified
+> **RULED — Xuan, 2026-08-13: enum pinned to seven tags** (`GARMIN`, `TP_ACTUAL`, `TP_PLANNED`,
+> `TP_CALENDAR`, `ZONE_DIST`, `FORMULA`, `MANUAL`); the bare `TP` normalises to `TP_PLANNED`.
+> **`delta = null`** on every path except retrospective recalculation — null, not absent, not
+> zeros. A tag outside the enum is a conformance failure. Folded into
+> [platform-resolution.md](platform-resolution.md#sources-object--ruled-xuan-2026-08-13-q-012).
 **Where:** Iteration 5 output. **Severity: low.**
 
 `sources` is required to contain `rmr`, `neat`, `session_kcal` (array), `IF` (array), `tomorrow`,
@@ -312,3 +382,120 @@ existence of the `DOUBLE` day-type modifier suggests the team already believes.
   earliest end time (most conservative).
 - No existing worked example in `spec/daily-macros/` changes: every published scenario has a
   single yesterday session, so sum and max coincide.
+
+---
+
+## Q-014
+### Does fat have a ceiling, or only a floor?
+
+> **RULED — Xuan, 2026-08-13: fat is capped at 30 %E of the day's target energy; excess energy
+> redistributes to carbohydrate up to the 12 g/kg clamp; in the corner case where both caps
+> saturate, fat exceeds its cap rather than energy being dropped.** Implemented as assembly step
+> **10b** (after `calculateTDEE`, before the EA gate), mirroring the EA override's position as a
+> documented post-clamp adjustment. Redistribution conserves energy, so intake, TEF, TDEE and the
+> EA result are unchanged and **target ≡ TDEE is preserved** — F-03's display contract needs no new
+> divergence state. The 30 %E figure is ISSN's recommendation and sits inside the AMDR band; at
+> this cap fat binds on all five worked-example days, so in practice **fat is a ~30 %E fraction and
+> carbohydrate carries all day-to-day variation** — which is exactly the model the periodization
+> literature prescribes. Chosen over 35 %E with that consequence explicit. Folded into
+> [assembly.md](assembly.md) (step 10b, invariants, worked examples), [neat-tef.md](neat-tef.md)
+> (cap subsection + literature), and [README.md R3](README.md#cross-cutting-rules).
+> **Notion not updated** — this rule does not exist there at all; push-back needed.
+**Where:** raised 2026-08-13 during design reconciliation (macro-dashboard F-03), by Xuan's
+observation that "fat should have a floor and a ceiling; between them target = TDEE, outside they
+diverge." **Status: OPEN — the first register entry raised from design work rather than from the
+Notion distillation.**
+
+**What the SSOT says today (verified):**
+- **Floor: yes.** `fat_floor = 0.8 × weight_kg` (F15, R3, invariant I8). 60 g at 75 kg.
+- **Ceiling: none.** `fat = max(residual, fat_floor)` — unbounded above. No formula, invariant or
+  worked example caps it.
+- **Divergence states as written:** fat above floor → intake ≡ TDEE (I9, F15 closed form). Fat
+  pinned AT the floor → intake = carb×4 + prot×4 + floor×9 **exceeds** TDEE, "which the SSOT calls
+  correct" (assembly, pre-race 798 example). EA override → intake > TDEE with
+  `energy_basis = "pre_override"` (Q-009). Both existing divergences point the same direction:
+  **target > TDEE**. A ceiling would create the first target-below-TDEE state.
+
+**Why the question has teeth:** the ratified worked examples produce **fat 177 g** (90-min run day)
+and **fat 262 g** (4-hr bike day) at 75 kg — 45–55 % of energy from fat on the heaviest training
+days, an artifact of fat absorbing the entire energy residual. A ceiling has real work to do.
+
+**What a ruling must decide (they are not one decision):**
+1. The ceiling value — g/kg, % of energy, or % of TDEE. (No position-stand number exists for an
+   athlete daily-fat *maximum*; any figure will be a `[design]` constant.)
+2. **Where the excess energy goes.** (a) Dropped → intake < TDEE, a deliberate deficit on big days;
+   (b) redistributed to carbohydrate → interacts with the 12 g/kg carb clamp, and on a 262 g-fat
+   day would add ~180 g carb; (c) redistributed pro-rata. Option (b) is closest to sports-nutrition
+   practice (big training days are carb days) but must specify the order vs step 9's clamp.
+3. **EA interaction.** A ceiling that lowers intake lowers EA. It must run BEFORE the EA gate so
+   the gate still catches the result — the one ordering that cannot ship is a cap that silently
+   pushes an athlete into the HARD_WARNING band after the gate has already passed them.
+4. Display contract (F-03): with a ceiling, "target = TDEE" holds only between the bounds, exactly
+   as Xuan stated; the dashboard needs a third divergent state.
+
+**Research pass (2026-08-13) — the literature answers decisions 1 and 2; QA recommendation
+follows. Still OPEN pending Xuan's ruling.**
+
+- **No source scales fat with training load; chronic high fat actively harms.** Thomas 2016:
+  fat "in accordance with public health guidelines" (AMDR 20–35 %E), discourage < 20 %E; no upper
+  number of its own. ISSN 2018 recommends ~30 %E (its "up to 50 %E safely" line is a tolerance
+  statement, not a recommendation). Burke's Supernova studies (PMID 28012184; replicated 2020):
+  high-fat adaptation worsens exercise economy and negates training gains. Nothing anywhere
+  recommends the 45–55 %E days the residual currently produces.
+- **Carbohydrate is what carries high-expenditure days.** Thomas bands verified verbatim (3–5 /
+  5–7 / 6–10 / 8–12 g/kg by volume; 12 g/kg the framework's top). Impey 2018 "fuel for the work
+  required": the day-to-day dial is CHO only — fat is absent from the periodization framework.
+  Observed elite practice agrees: Tour de France riders at ~6,000 kcal/day held fat near 23 %E
+  with the surplus in CHO (Saris 1989); elite microperiodization moves CHO, not fat, on hard days
+  (Heikura 2017, PMID 28387576).
+- **Dropping the excess is anti-supported.** Deleting energy on the heaviest day is
+  single-day/within-day low energy availability by construction — the exact pattern the RED-S
+  (Mountjoy 2018) and within-day-deficiency literature (Fahrenholtz 2018, PMID 29205517: hours
+  below −300 kcal ↔ elevated cortisol, menstrual dysfunction) warns against.
+- **Spec-internal check.** The 4-hr bike worked example currently sits at 6.64 g/kg CHO — *below*
+  the 8–12 band its own load implies — with 48 %E fat. Capping fat at 35 %E and redistributing
+  lands it at 8.8 g/kg (mid-band, no clamp collision); a 30 %E cap gives 9.6 g/kg. Tight g/kg
+  ceilings (1.0 g/kg) overshoot the 12 g/kg clamp — the %E parameterization is also the one the
+  literature uses.
+
+**QA recommendation:** `FAT_CEILING = 0.35 × target kcal` (top of AMDR; `[design]` within a
+research-derived band — 30 %E is the defensible alternative). Excess energy **redistributes to
+carbohydrate up to remaining headroom under the 12 g/kg clamp**; in the corner case where both
+caps saturate, **let fat exceed the ceiling rather than drop energy** — energy adequacy (RED-S)
+outranks macronutrient distribution. Ordering: cap and redistribute inside the energy-accounting
+step, before the EA gate. Keep the existing 0.8 g/kg floor; note Thomas's 20 %E floor guidance as
+the floor's citation opportunity. Redistribution **preserves target ≡ TDEE** — no third display
+state needed except in the corner case.
+
+---
+
+## Q-015
+### The NEAT model's rigor — flagged as future work
+**Where:** raised 2026-08-13 by Xuan while reviewing pipeline runs across personas.
+**Status: DEFERRED by ruling (Xuan, 2026-08-13) — not blocking; revisit when the model earns
+attention.**
+
+**The concern.** `NEAT = rmr × base_neat[tier] × day_modifier × lifestyle_mod` (F12–F14) is three
+multiplicative constant tables, every constant uncited. The factors compound: a
+recreational-tier athlete with an `ACTIVE` lifestyle reaches `0.30 × 1.10 × 1.15 = 0.38 × RMR`,
+which in the persona runs produced ~2,600 kcal maintenance for a 60 kg recreational woman with a
+45-minute jog — plausible for a genuinely active person, likely 200–300 kcal generous for a
+sedentary-plus-jogging one. No leg of the model has a source; the whole thing is `[design]`.
+
+**Fact check recorded with the flag (2026-08-13):** the app **does** currently collect and use
+lifestyle — `nutrition_profile_screen.dart` offers the selector (default `mixed`) and
+`calculate-daily-macros/pipeline.ts` threads it into NEAT, with lifestyle-variation tests in the
+edge function. So this entry flags *model rigor*, not a missing or unused input. Many comparable
+products treat activity level as a secondary parameter on a validated TDEE equation rather than a
+multiplicative NEAT factor of their own design; ours is home-grown.
+
+**Paths when revisited (recorded now, not chosen):**
+1. Validate the constants against weight-stability data from real users (the honest empirical fix).
+2. Lean on measured NEAT — retrospective mode already replaces the model with the Garmin daily
+   summary (F23); the model only governs prospective days. Narrowing its job narrows the risk.
+3. Replace with a published activity-factor scheme (e.g. PAL-based) so the constants are at least
+   citable.
+4. Damp the tier × lifestyle compounding (the corner that produced the generous number).
+
+Nothing here blocks vectoring: the model is deterministic and vectorable as-is; the question is
+whether its outputs are *calibrated*, which no vector can answer.

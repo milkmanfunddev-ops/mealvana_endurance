@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: Baseline Macros & Carb Cycling
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration1_spec` (Formula 2) and `daily_macro_calc_iteration4_spec`
 (Formula 20). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/baseline.ts` (name match only — not yet diffed).

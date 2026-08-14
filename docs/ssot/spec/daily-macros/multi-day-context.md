@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: Multi-Day Context (Recovery, Pre-Load, Weekly, Phase)
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration2_spec` (Formulas 7–10). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/multi-day.ts` (name match only — not yet diffed).
 
@@ -145,8 +145,13 @@ Multiplicative scaling, applied **after all additive steps and before clamping**
 `RACE_WEEK`'s carb modifier is deliberately forced to 1.00 — the SSOT states this explicitly, so a
 taper-style reduction cannot undermine the pre-load carb protocol.
 
-**`fat_mod` is never applied anywhere in the pipeline.** Fat is a pure residual
-([R3](README.md#cross-cutting-rules)), so the column has no effect on output. Registered as
+**`fat_mod` is not applied anywhere in the pipeline — RULED (Xuan, 2026-08-13): not applied,
+retained as documentation of intent.** Fat is a pure residual ([R3](README.md#cross-cutting-rules)),
+and every published number in this SSOT was produced without `fat_mod`. The residual already
+delivers the column's *direction* implicitly — when a phase raises carb, fat falls — so `RACE_WEEK`'s
+0.85 records a real intent (carb-loading squeezes fat) that the pipeline achieves by other means.
+**Do not implement `fat_mod` without a new ruling** covering its interaction with the fat floor and
+the residual; activating it silently would change every published fat value.
 [Q-004](OPEN-QUESTIONS.md#q-004).
 
 At carb 400 / prot 130: BUILD → 432 / 137, PEAK → 448 / 143, TAPER → 352 / 130,
@@ -171,9 +176,16 @@ baseline carb                      300
 Protein, same case: `115.2 + 15 (dur > 1 hr) + 6.67 (debt) + 7.5 (weekly) = 144.4 × 1.10 = 158.8
 → 159` ✓.
 
-Note this example uses phase `PEAK` while tomorrow is a race, whereas the source's conflict table
-asserts the phase "must be `RACE_WEEK`" in that situation. The spec contains no rule forcing the
-phase — see [Q-005](OPEN-QUESTIONS.md#q-005).
+Note this example uses phase `PEAK` while tomorrow is a race. **RULED (Xuan, 2026-08-13,
+[Q-005](OPEN-QUESTIONS.md#q-005)): there is no computed phase override.** `training_phase` is a pure
+athlete setting; the source conflict-table line ("must be `RACE_WEEK`") is **athlete-facing
+guidance**, not an engine rule. Three reasons: this is the only reading that reproduces the
+published 798; an override would make `training_phase` the one athlete setting the engine silently
+rewrites; and the substantive worry is already half-covered — `tomorrow_is_race` drives the
+pre-load carb floor (Formula 8) regardless of phase, so a TAPER athlete racing tomorrow still gets
+the 9 g/kg pre-load, losing only the `carb_mod` difference (0.88 vs 1.00). If that gap proves to
+matter, the fix is a visible UI nudge ("racing tomorrow — consider RACE_WEEK"), never a silent
+override.
 
 ## Constants — provenance
 

@@ -1,6 +1,6 @@
 # SSOT — Daily Macro Calculation (Engine B)
 
-**Status: RECORDED — awaiting ratification.** Distilled 2026-07-28 from the Notion page
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Distilled 2026-07-28 from the Notion page
 [Daily Macro Calculation](https://app.notion.com/p/326e3fdb754c80199486c17ecf9947cd) and its ten
 child pages (five iterations × spec + tests). Nothing here has been ruled on by Xuan yet; this is
 PLAN.md Phase 1 **step 2 (record)**. Step 3 (ratify) and step 4 (vector) come next.
@@ -101,27 +101,33 @@ Platform payload fields are enumerated in [`platform-resolution.md`](platform-re
 { carb_g, prot_g, fat_g, tdee, rmr, session_kcal,   // v1
   neat_kcal, tef_kcal, mode,                        // + v3
   ea, ea_status,                                    // + v4
-  sources, delta }                                  // + v5
+  sources, delta,                                   // + v5
+  energy_basis }                                    // + Q-009 ruling, 2026-08-13
 ```
 
-All macro/energy values **rounded at return**. `delta` is populated only in retrospective
-recalculation. `sources` tags the origin of each resolved variable.
+All macro/energy values **rounded at return**. `delta` is `null` except in retrospective
+recalculation (Q-012 ruling). `sources` tags the origin of each resolved variable.
+`energy_basis` is `"pre_override"` when the EA override adjusted the plan — meaning `tdee` and
+`tef_kcal` describe the pre-override macros — else `"as_computed"` (Q-009 ruling).
 
 ## Cross-cutting rules
 
-**R1 — Round only at the boundary.** Intermediate carb/protein values are carried **unrounded**
-through the whole pipeline; rounding happens once, on the returned object. The Iteration 1 spec
-does not state this, but the integration test values only reconcile under it — e.g. the
-strength-day fat of 92 g requires unrounded protein 137.7 (rounded 138 yields 91), and the
-rest-day fat of 80 g requires unrounded 115.2 (rounded 115 yields 81). This rule is **derived, not
-quoted**; it is the single most consequential inference in this distillation. See
-[Q-001](OPEN-QUESTIONS.md#q-001).
+**R1 — Round only at the boundary. RATIFIED as a ruling (Xuan, 2026-08-13,
+[Q-001](OPEN-QUESTIONS.md#q-001)).** Intermediate carb/protein values are carried **unrounded**
+through the whole pipeline; rounding happens once, on the returned object. Originally derived, not
+quoted — the integration tests only reconcile under it (rest-day fat 80 requires unrounded protein
+115.2; the old strength-day case was equally decisive) — and now explicit. Consequences of the
+ruling: Formula 19's mid-pipeline `round()` is deleted (Q-002); the Iteration 3 rest-day "81" is a
+stale cell; fat is vectored **exact-match**, not ±15 %.
 
 **R2 — Energy conversion.** Carbohydrate and protein at 4 kcal/g, fat at 9 kcal/g throughout.
 
-**R3 — Fat is the residual.** Fat is never targeted directly; it absorbs whatever energy is left
-after carb and protein, floored at `0.8 × weight_kg`. Every phase/context modifier therefore
-moves fat indirectly.
+**R3 — Fat is the bounded residual.** Fat is never targeted directly; it absorbs whatever energy
+is left after carb and protein, floored at `0.8 × weight_kg` and **capped at 30 %E of target
+energy (Q-014, ruled 2026-08-13)** — excess above the cap redistributes to carbohydrate up to the
+12 g/kg clamp, and is never dropped. In practice the cap binds on most training days, so fat sits
+near 30 %E and carbohydrate carries the day-to-day variation. Every phase/context modifier
+therefore moves carbohydrate, directly or via redistribution.
 
 **R4 — Clamps are the last word on carb and protein**, applied after all additive and
 multiplicative adjustments: carb ∈ `[3.0, 12.0] × weight_kg`, protein ∈ `[1.2, 2.5] × weight_kg`.
