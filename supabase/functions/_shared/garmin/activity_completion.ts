@@ -241,6 +241,11 @@ export function buildGarminCompletionUpdate(
       activity.startTimeInSeconds,
       activity.startTimeOffsetInSeconds,
     ),
+    // Two-time model (ruled 2026-08-14): actual_time carries the measured
+    // start — this also upgrades a mark-done (MANUAL) actual_time to the
+    // GARMIN one. planned_time is deliberately untouched, so the athlete's
+    // scheduled time survives completion (unlike scheduled_date_time above).
+    actual_time: garminTimestampToISO(activity.startTimeInSeconds),
     completed_at: completionTimestamp,
     updated_at: syncedAt,
     last_synced_at: syncedAt,

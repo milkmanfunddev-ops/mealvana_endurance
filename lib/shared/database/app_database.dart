@@ -532,11 +532,14 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('template_foods', 'food_group', 'TEXT');
         }
 
-        // v18: the two-time model on activities (macro-dashboard bundle).
-        // Both nullable; addColumn is idempotent for web user_version replays.
+        // v18: the two-time model on activities (macro-dashboard bundle),
+        // plus a local mirror of the measured Garmin session energy (the
+        // Supabase column predates this; Drift never carried it). All
+        // nullable; addColumn is idempotent for web user_version replays.
         if (from < 18) {
           await addColumn('activities', 'planned_time', 'INTEGER');
           await addColumn('activities', 'actual_time', 'INTEGER');
+          await addColumn('activities', 'calories_burned', 'REAL');
         }
       },
 

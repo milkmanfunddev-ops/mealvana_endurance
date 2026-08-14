@@ -10389,6 +10389,17 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _caloriesBurnedMeta = const VerificationMeta(
+    'caloriesBurned',
+  );
+  @override
+  late final GeneratedColumn<double> caloriesBurned = GeneratedColumn<double>(
+    'calories_burned',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _distanceMilesMeta = const VerificationMeta(
     'distanceMiles',
   );
@@ -10989,6 +11000,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     status,
     plannedTime,
     actualTime,
+    caloriesBurned,
     distanceMiles,
     durationMinutes,
     paceTargetMinutesPerMile,
@@ -11114,6 +11126,15 @@ class $ActivitiesTableTable extends ActivitiesTable
       context.handle(
         _actualTimeMeta,
         actualTime.isAcceptableOrUnknown(data['actual_time']!, _actualTimeMeta),
+      );
+    }
+    if (data.containsKey('calories_burned')) {
+      context.handle(
+        _caloriesBurnedMeta,
+        caloriesBurned.isAcceptableOrUnknown(
+          data['calories_burned']!,
+          _caloriesBurnedMeta,
+        ),
       );
     }
     if (data.containsKey('distance_miles')) {
@@ -11608,6 +11629,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}actual_time'],
       ),
+      caloriesBurned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calories_burned'],
+      ),
       distanceMiles: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}distance_miles'],
@@ -11834,6 +11859,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String status;
   final DateTime? plannedTime;
   final DateTime? actualTime;
+  final double? caloriesBurned;
   final double? distanceMiles;
   final int? durationMinutes;
   final double? paceTargetMinutesPerMile;
@@ -11895,6 +11921,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     required this.status,
     this.plannedTime,
     this.actualTime,
+    this.caloriesBurned,
     this.distanceMiles,
     this.durationMinutes,
     this.paceTargetMinutesPerMile,
@@ -11962,6 +11989,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || actualTime != null) {
       map['actual_time'] = Variable<DateTime>(actualTime);
+    }
+    if (!nullToAbsent || caloriesBurned != null) {
+      map['calories_burned'] = Variable<double>(caloriesBurned);
     }
     if (!nullToAbsent || distanceMiles != null) {
       map['distance_miles'] = Variable<double>(distanceMiles);
@@ -12134,6 +12164,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualTime: actualTime == null && nullToAbsent
           ? const Value.absent()
           : Value(actualTime),
+      caloriesBurned: caloriesBurned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caloriesBurned),
       distanceMiles: distanceMiles == null && nullToAbsent
           ? const Value.absent()
           : Value(distanceMiles),
@@ -12296,6 +12329,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       status: serializer.fromJson<String>(json['status']),
       plannedTime: serializer.fromJson<DateTime?>(json['plannedTime']),
       actualTime: serializer.fromJson<DateTime?>(json['actualTime']),
+      caloriesBurned: serializer.fromJson<double?>(json['caloriesBurned']),
       distanceMiles: serializer.fromJson<double?>(json['distanceMiles']),
       durationMinutes: serializer.fromJson<int?>(json['durationMinutes']),
       paceTargetMinutesPerMile: serializer.fromJson<double?>(
@@ -12402,6 +12436,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'status': serializer.toJson<String>(status),
       'plannedTime': serializer.toJson<DateTime?>(plannedTime),
       'actualTime': serializer.toJson<DateTime?>(actualTime),
+      'caloriesBurned': serializer.toJson<double?>(caloriesBurned),
       'distanceMiles': serializer.toJson<double?>(distanceMiles),
       'durationMinutes': serializer.toJson<int?>(durationMinutes),
       'paceTargetMinutesPerMile': serializer.toJson<double?>(
@@ -12476,6 +12511,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     String? status,
     Value<DateTime?> plannedTime = const Value.absent(),
     Value<DateTime?> actualTime = const Value.absent(),
+    Value<double?> caloriesBurned = const Value.absent(),
     Value<double?> distanceMiles = const Value.absent(),
     Value<int?> durationMinutes = const Value.absent(),
     Value<double?> paceTargetMinutesPerMile = const Value.absent(),
@@ -12537,6 +12573,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     status: status ?? this.status,
     plannedTime: plannedTime.present ? plannedTime.value : this.plannedTime,
     actualTime: actualTime.present ? actualTime.value : this.actualTime,
+    caloriesBurned: caloriesBurned.present
+        ? caloriesBurned.value
+        : this.caloriesBurned,
     distanceMiles: distanceMiles.present
         ? distanceMiles.value
         : this.distanceMiles,
@@ -12684,6 +12723,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualTime: data.actualTime.present
           ? data.actualTime.value
           : this.actualTime,
+      caloriesBurned: data.caloriesBurned.present
+          ? data.caloriesBurned.value
+          : this.caloriesBurned,
       distanceMiles: data.distanceMiles.present
           ? data.distanceMiles.value
           : this.distanceMiles,
@@ -12840,6 +12882,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('status: $status, ')
           ..write('plannedTime: $plannedTime, ')
           ..write('actualTime: $actualTime, ')
+          ..write('caloriesBurned: $caloriesBurned, ')
           ..write('distanceMiles: $distanceMiles, ')
           ..write('durationMinutes: $durationMinutes, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
@@ -12906,6 +12949,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     status,
     plannedTime,
     actualTime,
+    caloriesBurned,
     distanceMiles,
     durationMinutes,
     paceTargetMinutesPerMile,
@@ -12971,6 +13015,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.status == this.status &&
           other.plannedTime == this.plannedTime &&
           other.actualTime == this.actualTime &&
+          other.caloriesBurned == this.caloriesBurned &&
           other.distanceMiles == this.distanceMiles &&
           other.durationMinutes == this.durationMinutes &&
           other.paceTargetMinutesPerMile == this.paceTargetMinutesPerMile &&
@@ -13034,6 +13079,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String> status;
   final Value<DateTime?> plannedTime;
   final Value<DateTime?> actualTime;
+  final Value<double?> caloriesBurned;
   final Value<double?> distanceMiles;
   final Value<int?> durationMinutes;
   final Value<double?> paceTargetMinutesPerMile;
@@ -13096,6 +13142,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.status = const Value.absent(),
     this.plannedTime = const Value.absent(),
     this.actualTime = const Value.absent(),
+    this.caloriesBurned = const Value.absent(),
     this.distanceMiles = const Value.absent(),
     this.durationMinutes = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
@@ -13159,6 +13206,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.status = const Value.absent(),
     this.plannedTime = const Value.absent(),
     this.actualTime = const Value.absent(),
+    this.caloriesBurned = const Value.absent(),
     this.distanceMiles = const Value.absent(),
     this.durationMinutes = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
@@ -13227,6 +13275,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? status,
     Expression<DateTime>? plannedTime,
     Expression<DateTime>? actualTime,
+    Expression<double>? caloriesBurned,
     Expression<double>? distanceMiles,
     Expression<int>? durationMinutes,
     Expression<double>? paceTargetMinutesPerMile,
@@ -13290,6 +13339,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (status != null) 'status': status,
       if (plannedTime != null) 'planned_time': plannedTime,
       if (actualTime != null) 'actual_time': actualTime,
+      if (caloriesBurned != null) 'calories_burned': caloriesBurned,
       if (distanceMiles != null) 'distance_miles': distanceMiles,
       if (durationMinutes != null) 'duration_minutes': durationMinutes,
       if (paceTargetMinutesPerMile != null)
@@ -13371,6 +13421,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String>? status,
     Value<DateTime?>? plannedTime,
     Value<DateTime?>? actualTime,
+    Value<double?>? caloriesBurned,
     Value<double?>? distanceMiles,
     Value<int?>? durationMinutes,
     Value<double?>? paceTargetMinutesPerMile,
@@ -13434,6 +13485,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       status: status ?? this.status,
       plannedTime: plannedTime ?? this.plannedTime,
       actualTime: actualTime ?? this.actualTime,
+      caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       distanceMiles: distanceMiles ?? this.distanceMiles,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       paceTargetMinutesPerMile:
@@ -13524,6 +13576,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (actualTime.present) {
       map['actual_time'] = Variable<DateTime>(actualTime.value);
+    }
+    if (caloriesBurned.present) {
+      map['calories_burned'] = Variable<double>(caloriesBurned.value);
     }
     if (distanceMiles.present) {
       map['distance_miles'] = Variable<double>(distanceMiles.value);
@@ -13720,6 +13775,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('status: $status, ')
           ..write('plannedTime: $plannedTime, ')
           ..write('actualTime: $actualTime, ')
+          ..write('caloriesBurned: $caloriesBurned, ')
           ..write('distanceMiles: $distanceMiles, ')
           ..write('durationMinutes: $durationMinutes, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
@@ -46142,6 +46198,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String> status,
       Value<DateTime?> plannedTime,
       Value<DateTime?> actualTime,
+      Value<double?> caloriesBurned,
       Value<double?> distanceMiles,
       Value<int?> durationMinutes,
       Value<double?> paceTargetMinutesPerMile,
@@ -46206,6 +46263,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String> status,
       Value<DateTime?> plannedTime,
       Value<DateTime?> actualTime,
+      Value<double?> caloriesBurned,
       Value<double?> distanceMiles,
       Value<int?> durationMinutes,
       Value<double?> paceTargetMinutesPerMile,
@@ -46307,6 +46365,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<DateTime> get actualTime => $composableBuilder(
     column: $table.actualTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -46620,6 +46683,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get distanceMiles => $composableBuilder(
     column: $table.distanceMiles,
     builder: (column) => ColumnOrderings(column),
@@ -46922,6 +46990,11 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get distanceMiles => $composableBuilder(
     column: $table.distanceMiles,
     builder: (column) => column,
@@ -47210,6 +47283,7 @@ class $$ActivitiesTableTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<DateTime?> plannedTime = const Value.absent(),
                 Value<DateTime?> actualTime = const Value.absent(),
+                Value<double?> caloriesBurned = const Value.absent(),
                 Value<double?> distanceMiles = const Value.absent(),
                 Value<int?> durationMinutes = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
@@ -47272,6 +47346,7 @@ class $$ActivitiesTableTableTableManager
                 status: status,
                 plannedTime: plannedTime,
                 actualTime: actualTime,
+                caloriesBurned: caloriesBurned,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
@@ -47336,6 +47411,7 @@ class $$ActivitiesTableTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<DateTime?> plannedTime = const Value.absent(),
                 Value<DateTime?> actualTime = const Value.absent(),
+                Value<double?> caloriesBurned = const Value.absent(),
                 Value<double?> distanceMiles = const Value.absent(),
                 Value<int?> durationMinutes = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
@@ -47398,6 +47474,7 @@ class $$ActivitiesTableTableTableManager
                 status: status,
                 plannedTime: plannedTime,
                 actualTime: actualTime,
+                caloriesBurned: caloriesBurned,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,

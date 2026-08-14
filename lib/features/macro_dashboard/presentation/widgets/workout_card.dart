@@ -121,7 +121,10 @@ class _WorkoutCardState extends State<WorkoutCard> {
               child: _deleteReveal(),
             ),
           GestureDetector(
-            behavior: HitTestBehavior.opaque,
+            // deferToChild: the hit area must follow the translated card —
+            // an opaque full-width listener would swallow taps meant for
+            // the revealed Delete button.
+            behavior: HitTestBehavior.deferToChild,
             onHorizontalDragStart: _onDragStart,
             onHorizontalDragUpdate: _onDragUpdate,
             onHorizontalDragEnd: _onDragEnd,
@@ -334,6 +337,34 @@ class _WorkoutCardState extends State<WorkoutCard> {
             ),
           ),
         ),
+        // End-of-day skipped prompt: planned treatment + a nudge to settle
+        // "no sync" vs "didn't happen" — the athlete is the tiebreaker
+        // (platform-resolution confirmation rung). Styling reuses the
+        // reference rendering's swipe-hint row; exact copy pending design.
+        if (data.state == WorkoutCardState.skippedPrompt) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(
+                Icons.help_outline,
+                size: 12,
+                color: MeTokens.creamAlpha(0.4),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  'Did this happen? Swipe right to mark done',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 10,
+                    color: MeTokens.creamAlpha(0.4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

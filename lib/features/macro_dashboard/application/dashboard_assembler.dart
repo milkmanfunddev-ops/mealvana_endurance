@@ -116,8 +116,12 @@ class MacroDashboardAssembler {
     );
   }
 
-  /// F22 kcal ladder, formula rung: F4 at the session's IF and duration.
+  /// F22 kcal ladder: measured (Garmin ActiveKilocalories, mirrored into
+  /// calories_burned) beats the formula; the formula rung is F4 at the
+  /// session's IF and duration.
   double _sessionKcal(Activity a, double weightKg) {
+    final measured = a.caloriesBurned;
+    if (measured != null && measured > 0) return measured;
     final durationHr =
         (a.actualDurationMinutes ?? a.durationMinutes ?? 60) / 60.0;
     final dist = a.intensityDistribution;
@@ -201,19 +205,40 @@ class MacroDashboardAssembler {
       sessions: sessions,
     );
 
-    final net = consumed.calories - accrual.burned;
+    // Display convention (pinned by the canonical mock day: burned 1783.65
+    // "displays 1,783", net −133, done-swipe example −1,338): clock-prorated
+    // accrual terms TRUNCATE — burn that hasn't happened yet is never
+    // credited — while session kcal are engine boundary values rounded
+    // half-up PER SESSION before summing (229 + 1,205, not round(1,433.4)).
+    // The displayed net is eaten − displayed burned so the equation row
+    // always reconciles.
+    var displayedWorkout = 0.0;
+    for (final s in sessions) {
+      if (s.actualTimeMin != null && s.renders) {
+        displayedWorkout += s.kcal.roundToDouble();
+      }
+    }
+    final displayedBurned = accrual.resting.floorToDouble() +
+        accrual.movement.floorToDouble() +
+        displayedWorkout +
+        accrual.digestion.floorToDouble();
+
+    final net = consumed.calories - displayedBurned;
+    // Band copy keys off the UNROUNDED net (intraday-display §2).
     final bandCopy = IntradayDisplay.netBandCopy(
-      netKcal: net,
+      netKcal: consumed.calories - accrual.burned,
       energyBasis: targets.energyBasis,
     );
 
+    // Same per-session rounding as the burn display, so 229 + 1,205
+    // projects 1,434 exactly as the reference rendering shows.
     var doneKcal = 0.0;
     var plannedKcal = 0.0;
     for (final c in cards) {
       if (c.data.isDone) {
-        doneKcal += c.data.kcal;
+        doneKcal += c.data.kcal.roundToDouble();
       } else {
-        plannedKcal += c.data.kcal;
+        plannedKcal += c.data.kcal.roundToDouble();
       }
     }
 
@@ -221,7 +246,7 @@ class MacroDashboardAssembler {
       netKcal: net,
       bandCopy: bandCopy,
       eatenKcal: consumed.calories.toDouble(),
-      burnedKcal: accrual.burned,
+      burnedKcal: displayedBurned,
       targetKcal: targets.totalCalories,
       remainingKcal: targets.totalCalories - consumed.calories,
       workoutDoneKcal: doneKcal,

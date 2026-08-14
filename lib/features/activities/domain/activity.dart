@@ -47,6 +47,7 @@ class Activity {
     this.isFasted = false,
 
     // Completion data
+    this.caloriesBurned,
     this.completedAt,
     this.completionRating,
     this.nutritionRating,
@@ -110,6 +111,10 @@ class Activity {
   // Two-time model (never conflated; see constructor doc)
   final DateTime? plannedTime;
   final DateTime? actualTime;
+
+  /// Measured session energy (Garmin ActiveKilocalories); null when no
+  /// wearable recorded the session. F22 ladder: measured beats formula.
+  final double? caloriesBurned;
 
   /// The time a card displays: `actualTime ?? plannedTime`, falling back to
   /// the legacy scheduledDateTime for rows predating the two-time columns.
@@ -227,6 +232,7 @@ class Activity {
       'status': status.name,
       'plannedTime': plannedTime?.toIso8601String(),
       'actualTime': actualTime?.toIso8601String(),
+      'caloriesBurned': caloriesBurned,
       'distanceMiles': distanceMiles,
       'durationMinutes': durationMinutes,
       'paceTargetMinutesPerMile': paceTargetMinutesPerMile,
@@ -300,6 +306,7 @@ class Activity {
     IntensityDistribution? intensityDistribution,
     int? timeBeforeMinutes,
     bool? isFasted,
+    double? caloriesBurned,
     DateTime? plannedTime,
     DateTime? actualTime,
     // actualTime is legitimately cleared (mark-undone); a null argument
@@ -367,6 +374,7 @@ class Activity {
           intensityDistribution ?? this.intensityDistribution,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
       isFasted: isFasted ?? this.isFasted,
+      caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       plannedTime: plannedTime ?? this.plannedTime,
       actualTime: clearActualTime ? null : (actualTime ?? this.actualTime),
       completedAt: completedAt ?? this.completedAt,
@@ -437,6 +445,7 @@ class Activity {
         other.isFasted == isFasted &&
         other.plannedTime == plannedTime &&
         other.actualTime == actualTime &&
+        other.caloriesBurned == caloriesBurned &&
         other.completedAt == completedAt &&
         other.completionRating == completionRating &&
         other.nutritionRating == nutritionRating &&
@@ -513,6 +522,7 @@ class Activity {
           reminderRecurring,
         ) ^
         Object.hash(
+          caloriesBurned,
           syncedFromProvider,
           providerWorkoutId,
           providerWorkoutUrl,
