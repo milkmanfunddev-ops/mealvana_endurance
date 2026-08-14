@@ -45,6 +45,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     meals: meals,
     targets: macrosState.dailyMacros,
     consumed: consumed,
+    weeklyTargets: macrosState.weeklyMacros,
     // Tracking is a DISPLAY mode gated by the screen from the view state —
     // toggling it must not recompute the day (intraday-display §5).
     trackingOn: true,

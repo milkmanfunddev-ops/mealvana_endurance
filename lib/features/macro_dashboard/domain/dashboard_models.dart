@@ -76,6 +76,7 @@ class MealItemData {
     required this.proteinG,
     required this.fatG,
     this.suggested = false,
+    this.planned = false,
   });
 
   final String id;
@@ -85,6 +86,99 @@ class MealItemData {
   final double proteinG;
   final double fatG;
   final bool suggested;
+
+  /// Scheduled but not yet eaten (§3: reduces nothing until eaten; feeds
+  /// only the "+ planned" arc and copy).
+  final bool planned;
+}
+
+/// Provenance mark for a burn-side receipt row (Today's Energy sheet legend:
+/// solid = verified by device, half = self-reported, hollow = estimated).
+enum BurnMark { verified, selfReported, estimated }
+
+/// Everything the Breakdown Pager's three pages need beyond [EnergyCardData]
+/// — all derived per intraday-display.md §§1–3 (S-3: no invented arithmetic).
+class BreakdownData {
+  const BreakdownData({
+    required this.minutesSinceMidnight,
+    required this.restingSoFar,
+    required this.movementSoFar,
+    required this.workoutSoFar,
+    required this.digestionSoFar,
+    required this.restingByEnd,
+    required this.movementByEnd,
+    required this.workoutByEnd,
+    required this.digestionByEnd,
+    required this.workoutMark,
+    required this.movementMark,
+    required this.mealRows,
+    required this.plannedCarbsG,
+    required this.plannedProteinG,
+    required this.plannedFatG,
+    required this.weeklyCarbTargets,
+    required this.weeklyLoad,
+  });
+
+  final int minutesSinceMidnight;
+
+  // §1 accrual components (unrounded; display truncates accruals and
+  // rounds session values — see the assembler's display convention).
+  final double restingSoFar;
+  final double movementSoFar;
+  final double workoutSoFar;
+  final double digestionSoFar;
+
+  /// By-day's-end values: the engine's returned plan, verbatim (rmr, neat,
+  /// projected workouts, 10% of target intake).
+  final double restingByEnd;
+  final double movementByEnd;
+  final double workoutByEnd;
+  final double digestionByEnd;
+
+  final BurnMark workoutMark;
+  final BurnMark movementMark;
+
+  /// Per-meal rows for "Where it came from" (logged first, planned dimmed).
+  final List<BreakdownMealRow> mealRows;
+
+  /// Planned-but-uneaten macro contribution (drives the "+ planned" ring
+  /// arcs and copy ONLY — never remaining/EA/net, §3).
+  final double plannedCarbsG;
+  final double plannedProteinG;
+  final double plannedFatG;
+
+  /// This week's carb targets (g) by day (Sun..Sat), null where uncached —
+  /// the Weekly carb-periodization chart.
+  final List<double?> weeklyCarbTargets;
+
+  /// This week's session kcal by day normalized 0..1 — the training-load
+  /// bars behind the carb line.
+  final List<double> weeklyLoad;
+
+  double get burnedSoFar =>
+      restingSoFar + movementSoFar + workoutSoFar + digestionSoFar;
+  double get burnedByEnd =>
+      restingByEnd + movementByEnd + workoutByEnd + digestionByEnd;
+}
+
+class BreakdownMealRow {
+  const BreakdownMealRow({
+    required this.name,
+    required this.timeLabel,
+    required this.kcal,
+    required this.carbsG,
+    required this.proteinG,
+    required this.fatG,
+    required this.planned,
+  });
+
+  final String name;
+  final String timeLabel;
+  final double kcal;
+  final double carbsG;
+  final double proteinG;
+  final double fatG;
+  final bool planned;
 }
 
 /// The filter lens driving the energy card's face and the timeline filter.
@@ -171,9 +265,19 @@ class EnergyWorkoutRow {
     required this.note,
     required this.kcal,
     required this.planned,
+    this.activityId = '',
+    this.sport = 'running',
+    this.verified = false,
+    this.timeLabel = '',
+    this.metaLabel = '',
   });
 
   final String name;
+  final String activityId;
+  final String sport;
+  final bool verified;
+  final String timeLabel;
+  final String metaLabel;
 
   /// "8:00 AM · 2,000 yd · 40 min", prefixed "planned · " when planned.
   final String note;

@@ -12,6 +12,7 @@ class DashboardData {
     required this.nodes,
     required this.energy,
     required this.trackingOn,
+    this.breakdown,
   });
 
   final List<DashboardNode> nodes;
@@ -19,6 +20,9 @@ class DashboardData {
   /// Null when no targets exist yet for the day.
   final EnergyCardData? energy;
   final bool trackingOn;
+
+  /// Extra quantities for the Breakdown Pager; null when no targets exist.
+  final BreakdownData? breakdown;
 }
 
 /// Pure builder for the macro dashboard (surfaces/macro-dashboard.md).
@@ -39,6 +43,7 @@ class MacroDashboardAssembler {
     required DailyMacroTargets? targets,
     required ConsumedTotals consumed,
     required bool trackingOn,
+    List<DailyMacroTargets?> weeklyTargets = const [],
   }) {
     // §4b: a status='deleted' tombstone never renders and contributes zero
     // to every derived quantity — identical in effect to nonexistence.
@@ -65,14 +70,24 @@ class MacroDashboardAssembler {
       ...mealNodes,
     ]..sort((a, b) => a.time.compareTo(b.time));
 
-    final energy = targets == null
+    final built = targets == null
         ? null
-        : _energy(targets, consumed, cards, selectedDate, now);
+        : _energy(
+            targets,
+            consumed,
+            cards,
+            selectedDate,
+            now,
+            live,
+            meals,
+            weeklyTargets,
+          );
 
     return DashboardData(
       nodes: nodes.map((n) => n.node).toList(growable: false),
-      energy: energy,
+      energy: built?.energy,
       trackingOn: trackingOn,
+      breakdown: built?.breakdown,
     );
   }
 
@@ -167,6 +182,7 @@ class MacroDashboardAssembler {
                   carbsG: m.carbsG ?? 0,
                   proteinG: m.proteinG ?? 0,
                   fatG: m.fatG ?? 0,
+                  planned: m.eatenAt == null,
                 ),
             ],
           ),
@@ -176,12 +192,15 @@ class MacroDashboardAssembler {
     return nodes;
   }
 
-  EnergyCardData _energy(
+  _BuiltEnergy _energy(
     DailyMacroTargets targets,
     ConsumedTotals consumed,
     List<_TimedCard> cards,
     DateTime selectedDate,
     DateTime now,
+    List<Activity> liveActivities,
+    List<MealLog> meals,
+    List<DailyMacroTargets?> weeklyTargets,
   ) {
     final isToday = _sameDay(selectedDate, now);
     final minutesSinceMidnight =
@@ -242,7 +261,7 @@ class MacroDashboardAssembler {
       }
     }
 
-    return EnergyCardData(
+    final energy = EnergyCardData(
       netKcal: net,
       bandCopy: bandCopy,
       eatenKcal: consumed.calories.toDouble(),
@@ -261,6 +280,11 @@ class MacroDashboardAssembler {
                 : 'planned · ${c.data.timeLabel} · ${c.data.metaLabel}',
             kcal: c.data.kcal,
             planned: !c.data.isDone,
+            activityId: c.data.activityId,
+            sport: c.data.sport,
+            verified: c.data.isVerified,
+            timeLabel: c.data.timeLabel,
+            metaLabel: c.data.metaLabel,
           ),
       ],
       carbTargetG: targets.carbG,
@@ -270,6 +294,94 @@ class MacroDashboardAssembler {
       proteinEatenG: consumed.proteinG,
       fatEatenG: consumed.fatG,
     );
+
+    // ---- Breakdown Pager quantities ----
+
+    // Provenance marks for the burn receipt. Resting & digestion are always
+    // estimated; the workout row is verified when every done session was
+    // device-recorded, self-reported when any mark-done session exists,
+    // estimated with nothing done yet; daily movement is verified only when
+    // a wearable recorded today (approximated by any Garmin-linked session).
+    final doneActs = liveActivities
+        .where(
+          (a) =>
+              a.status == ActivityStatus.completed || a.actualTime != null,
+        )
+        .toList(growable: false);
+    final BurnMark workoutMark;
+    if (doneActs.isEmpty) {
+      workoutMark = BurnMark.estimated;
+    } else if (doneActs.every((a) => a.garminSummaryId != null)) {
+      workoutMark = BurnMark.verified;
+    } else {
+      workoutMark = BurnMark.selfReported;
+    }
+    final movementMark = liveActivities.any((a) => a.garminSummaryId != null)
+        ? BurnMark.verified
+        : BurnMark.estimated;
+
+    // Per-meal rows: logged first (chronological), then planned dimmed.
+    final activeMeals = meals.where((m) => !m.isDeleted).toList(growable: false)
+      ..sort(
+        (a, b) =>
+            (a.eatenAt ?? a.createdAt).compareTo(b.eatenAt ?? b.createdAt),
+      );
+    final mealRows = <BreakdownMealRow>[
+      for (final m in activeMeals)
+        BreakdownMealRow(
+          name: m.slot?.label ?? m.name,
+          timeLabel: m.eatenAt == null
+              ? '~${_timeLabel(m.createdAt)}'
+              : _timeLabel(m.eatenAt!),
+          kcal: m.calories?.toDouble() ?? 0,
+          carbsG: m.carbsG ?? 0,
+          proteinG: m.proteinG ?? 0,
+          fatG: m.fatG ?? 0,
+          planned: m.eatenAt == null,
+        ),
+    ]..sort((a, b) => (a.planned ? 1 : 0).compareTo(b.planned ? 1 : 0));
+
+    var plannedC = 0.0, plannedP = 0.0, plannedF = 0.0;
+    for (final r in mealRows.where((r) => r.planned)) {
+      plannedC += r.carbsG;
+      plannedP += r.proteinG;
+      plannedF += r.fatG;
+    }
+
+    // Weekly carb periodization: this week's cached targets + training load
+    // (session kcal normalized against the week's hardest day).
+    final weeklyCarbs = [
+      for (final t in weeklyTargets) t?.carbG,
+    ];
+    final weeklyKcal = [
+      for (final t in weeklyTargets) t?.sessionKcal ?? 0.0,
+    ];
+    final maxKcal = weeklyKcal.fold<double>(0, (m, v) => v > m ? v : m);
+    final weeklyLoad = [
+      for (final v in weeklyKcal) maxKcal > 0 ? v / maxKcal : 0.0,
+    ];
+
+    final breakdown = BreakdownData(
+      minutesSinceMidnight: minutesSinceMidnight,
+      restingSoFar: accrual.resting,
+      movementSoFar: accrual.movement,
+      workoutSoFar: displayedWorkout,
+      digestionSoFar: accrual.digestion,
+      restingByEnd: targets.rmr,
+      movementByEnd: targets.neatKcal ?? 0,
+      workoutByEnd: doneKcal + plannedKcal,
+      digestionByEnd: 0.10 * targets.totalCalories,
+      workoutMark: workoutMark,
+      movementMark: movementMark,
+      mealRows: mealRows,
+      plannedCarbsG: plannedC,
+      plannedProteinG: plannedP,
+      plannedFatG: plannedF,
+      weeklyCarbTargets: weeklyCarbs,
+      weeklyLoad: weeklyLoad,
+    );
+
+    return _BuiltEnergy(energy, breakdown);
   }
 
   String _meta(Activity a) {
@@ -305,4 +417,10 @@ class _TimedCard {
   const _TimedCard(this.time, this.data);
   final DateTime time;
   final WorkoutCardData data;
+}
+
+class _BuiltEnergy {
+  const _BuiltEnergy(this.energy, this.breakdown);
+  final EnergyCardData energy;
+  final BreakdownData breakdown;
 }
