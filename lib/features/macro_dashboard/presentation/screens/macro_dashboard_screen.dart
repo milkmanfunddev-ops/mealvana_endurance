@@ -5,6 +5,7 @@ import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../fuel_timeline/presentation/widgets/energy_breakdown_sheet.dart';
 import '../../../fuel_timeline/presentation/widgets/fuel_timeline_day_header.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
 import '../../application/dashboard_assembler.dart';
@@ -100,6 +101,11 @@ class MacroDashboardScreen extends ConsumerWidget {
                   expanded: view.dashOpen,
                   data: data.energy!,
                   onToggleExpanded: notifier.toggleDash,
+                  // E2: opens the face's sheet. The existing Today's Energy
+                  // modal already implements the decomposed breakdown
+                  // (intraday-display §1, TRACED A1/A4); the sheets are
+                  // outside the energy-card contract and stay untouched.
+                  onFullBreakdown: () => showEnergyBreakdownSheet(context),
                 ),
               const SizedBox(height: 16),
               DashboardFilterRow(
