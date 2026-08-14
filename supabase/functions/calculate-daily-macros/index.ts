@@ -27,6 +27,7 @@ import type {
   WeekDayInput,
 } from './types.ts';
 import { validateInput, calculateDailyMacros, calculateWeekMacros } from './pipeline.ts';
+import { insertPlanRecalcLog, recalculateAfterSync } from './recalculate.ts';
 
 // ---------------------------------------------------------------------------
 // Supabase service-role client (server-side only)
@@ -432,6 +433,22 @@ serve(withSentry(async (req) => {
 
     // Attach Garmin context (tolerant — failure falls back to raw input)
     input = await attachGarminContext(supabase, input);
+
+    // Retrospective mode IS recalculateAfterSync (F27): the retro plan
+    // replaces today's plan, and every run writes exactly one calibration
+    // row to plan_recalc_log (fire-and-forget — a lost ledger row must not
+    // fail the recalculation).
+    if (input.mode === 'retrospective') {
+      const { plan, logRow } = recalculateAfterSync(input, {
+        device_id: typeof body.device_id === 'string' ? body.device_id : null,
+        local_sync_time: typeof body.local_sync_time === 'string'
+          ? body.local_sync_time
+          : null,
+      });
+      const ledgerWrite = insertPlanRecalcLog(supabase, logRow);
+      void ledgerWrite;
+      return jsonResponse(plan);
+    }
 
     // Calculate macros
     const result = calculateDailyMacros(input);
