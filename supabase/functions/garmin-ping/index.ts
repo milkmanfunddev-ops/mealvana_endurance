@@ -30,6 +30,7 @@ import {
   buildGarminCompletionUpdate,
   enrichCompletedGarminActivity,
   findMatchingPlannedActivity,
+  findMatchingTombstone,
   getGarminScheduledDate,
   insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
@@ -150,6 +151,23 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             );
             const sportType = activityRow.activity_type?.toString() ?? "other";
             const scheduledDate = getGarminScheduledDate(activity);
+
+            // Tombstone gate BEFORE any match or insert (soft-delete ruling).
+            const tombstone = await findMatchingTombstone(
+              supabase,
+              mapping.user_id,
+              sportType,
+              activity,
+              activity.summaryId != null ? String(activity.summaryId) : null,
+            );
+            if (tombstone) {
+              console.log(
+                `[garmin-ping] Dropping activity — ${tombstone.reason} (${tombstone.id})`,
+              );
+              stats.skipped++;
+              continue;
+            }
+
             const matchedActivity = await findMatchingPlannedActivity(
               supabase,
               mapping.user_id,
@@ -344,6 +362,23 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             );
             const sportType = activityRow.activity_type?.toString() ?? "other";
             const scheduledDate = getGarminScheduledDate(summary);
+
+            // Tombstone gate BEFORE any match or insert (soft-delete ruling).
+            const tombstone = await findMatchingTombstone(
+              supabase,
+              mapping.user_id,
+              sportType,
+              summary,
+              summary.summaryId != null ? String(summary.summaryId) : null,
+            );
+            if (tombstone) {
+              console.log(
+                `[garmin-ping] Dropping detail summary — ${tombstone.reason} (${tombstone.id})`,
+              );
+              stats.skipped++;
+              continue;
+            }
+
             const matchedActivity = await findMatchingPlannedActivity(
               supabase,
               mapping.user_id,

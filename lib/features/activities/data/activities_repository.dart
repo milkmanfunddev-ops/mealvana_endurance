@@ -87,12 +87,14 @@ class ActivitiesRepository with SyncableRepository {
         data: {'userId': userId},
       );
 
-      // Direct Supabase query (no edge function)
+      // Direct Supabase query (no edge function). Tombstones
+      // (status='deleted') come down too — every device needs them locally
+      // or its sync matcher re-imports deleted workouts.
       final response = await _supabase
           .from('activities')
           .select('*')
           .eq('user_id', userId)
-          .isFilter('deleted_at', null)
+          .or('deleted_at.is.null,status.eq.deleted')
           .order('created_at', ascending: false);
 
       final syncedCount = await _upsertRemoteActivitiesPreservingDirty(
@@ -748,7 +750,43 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
-  /// Delete an activity (offline-first: mark deleted in Drift first, background upload)
+  /// HARD delete, remote then local — for provider-wipe cleanup only
+  /// (disconnecting an integration), never for a user deleting a workout.
+  /// A disconnect wipe must NOT leave tombstones: those rows would suppress
+  /// re-import if the athlete reconnects the platform later. User-intent
+  /// deletion goes through [deleteActivity], which tombstones.
+  Future<void> hardDeleteActivityForProviderPurge({
+    required String userId,
+    required String activityId,
+  }) async {
+    // Local first — the wipe must succeed offline; remote cleanup is a
+    // best-effort follow-up (the integration is already gone, and stale
+    // remote rows are the accepted cost — see the disconnect flow's docs).
+    await (_database.delete(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).go();
+
+    try {
+      await _supabase
+          .from('activities')
+          .delete()
+          .eq('id', activityId)
+          .eq('user_id', userId);
+    } catch (e) {
+      _logger.warning(
+        'Remote purge delete failed — local row already removed',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        data: {'activityId': activityId},
+      );
+    }
+  }
+
+  /// Delete an activity — a SOFT delete on both sides (tombstone ruling,
+  /// docs/ssot/spec/daily-macros/platform-resolution.md): the row persists
+  /// with status='deleted' so the sync import matcher can recognize it and
+  /// drop a re-synced platform activity instead of re-importing it. A hard
+  /// DELETE here is what caused deleted workouts to reappear after sync.
   Future<void> deleteActivity({
     required String deviceId,
     required String activityId,
@@ -759,11 +797,14 @@ class ActivitiesRepository with SyncableRepository {
       final now = DateTime.now();
       final userIdForRemoteDelete = remoteUserId ?? deviceId;
 
-      // OFFLINE-FIRST: Mark as deleted in Drift IMMEDIATELY with dirty flag
+      // OFFLINE-FIRST: tombstone in Drift IMMEDIATELY with dirty flag.
+      // deleted_at keeps every existing "not deleted" query filtering the
+      // row out; status='deleted' is what the sync matcher looks for.
       await (_database.update(
         _database.activitiesTable,
       )..where((tbl) => tbl.id.equals(activityId))).write(
         ActivitiesTableCompanion(
+          status: const Value('deleted'),
           deletedAt: Value(now),
           needsUpload: const Value(true),
           localUpdatedAt: Value(now),
@@ -1507,18 +1548,33 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
-  /// Upload activity deletion to Supabase in background (non-blocking)
+  /// Upload the deletion tombstone to Supabase. The remote row is UPDATED to
+  /// status='deleted' (upserted if it never made it up), never DELETEd —
+  /// both rows persist so the sync matcher can hit them. Throws when the
+  /// remote write is not acknowledged, leaving the record dirty for retry
+  /// (this is also what makes coach-on-athlete deletes honest: the old hard
+  /// DELETE was owner-only under RLS and silently affected 0 rows).
   Future<void> _uploadActivityDeletion(String userId, String activityId) async {
-    await _supabase
-        .from('activities')
-        .delete()
-        .eq('id', activityId)
-        .eq('user_id', userId);
-
-    // Upload successful - hard delete from local database
-    await (_database.delete(
+    final row = await (_database.select(
       _database.activitiesTable,
-    )..where((tbl) => tbl.id.equals(activityId))).go();
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+    if (row == null) return;
+
+    final payload = _mapper.buildUploadPayloadFromRow(row);
+    final response = await _supabase
+        .from('activities')
+        .upsert(payload, onConflict: 'id')
+        .select('id');
+
+    if (response.isEmpty) {
+      throw StateError(
+        'Tombstone upload for activity $activityId returned no row '
+        '(RLS denied or row vanished) — record stays dirty for retry',
+      );
+    }
+
+    // Acknowledged — the local tombstone row persists; just clear the flag.
+    await _clearDirtyFlag(activityId);
   }
 
   Future<void> _queueImmediateActivityUpsertById(
@@ -1744,12 +1800,15 @@ class ActivitiesRepository with SyncableRepository {
     final byId = <String, Activity>{};
 
     for (final providerVariant in providerVariants) {
+      // status='deleted' tombstones ARE included: the change-detection
+      // matcher must match against them (soft-delete ruling) — filtering
+      // them out here is what made deleted workouts reappear after sync.
       final query = _database.select(_database.activitiesTable)
         ..where(
           (tbl) =>
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.syncedFromProvider.lower().equals(providerVariant) &
-              tbl.deletedAt.isNull(),
+              (tbl.deletedAt.isNull() | tbl.status.equals('deleted')),
         );
 
       final rows = await query.get();
@@ -1772,12 +1831,14 @@ class ActivitiesRepository with SyncableRepository {
     final remoteById = <String, Map<String, dynamic>>{};
 
     for (final providerVariant in providerVariants) {
+      // Tombstones included: the change-detection matcher must see
+      // status='deleted' rows or it re-imports deleted provider workouts.
       final response = await _supabase
           .from('activities')
           .select('*')
           .eq('user_id', userId)
           .eq('synced_from_provider', providerVariant)
-          .isFilter('deleted_at', null)
+          .or('deleted_at.is.null,status.eq.deleted')
           .order('updated_at', ascending: false);
 
       for (final item in response as List) {

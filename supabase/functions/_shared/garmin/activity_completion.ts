@@ -66,13 +66,87 @@ export function getGarminLocalDayBounds(activity: GarminActivityTiming): {
 }
 
 /**
+ * Tombstone check — MUST run before any completion match or insert.
+ *
+ * Soft-delete ruling (Xuan 2026-08-14, docs/ssot/spec/daily-macros/
+ * platform-resolution.md): a deleted activity keeps its row with
+ * status='deleted', and the sync import matcher must match against those
+ * rows too — an incoming platform activity that hits a tombstone is
+ * DROPPED, not re-imported. Filtering deleted rows out before matching is
+ * exactly the bug the tombstone exists to prevent (deleted workouts
+ * reappearing after every sync).
+ *
+ * Match key (ruled): platform activity id (garmin_summary_id) first; else
+ * same sport with start time within ±15 minutes. The window is deliberately
+ * NARROW — a genuine second session 30 minutes away must import normally —
+ * unlike the day-wide window findMatchingPlannedActivity uses for
+ * completion matching (a 5:30 PM plan done at 3 PM should still complete).
+ */
+export async function findMatchingTombstone(
+  supabase: any,
+  userId: string,
+  sportType: string,
+  activity: GarminActivityTiming,
+  summaryId: string | null | undefined,
+): Promise<{ id: string; reason: string } | null> {
+  try {
+    // Tier 1: platform activity id.
+    if (summaryId) {
+      const { data } = await supabase
+        .from("activities")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "deleted")
+        .eq("garmin_summary_id", summaryId)
+        .limit(1);
+      if (data && data.length > 0) {
+        return { id: String(data[0].id), reason: "matched tombstone (summary id)" };
+      }
+    }
+
+    // Tier 2: same sport, start within ±15 minutes (naive local time,
+    // matching how scheduled_date_time is stored).
+    if (!sportType || sportType === "other") return null;
+    const startNaive = garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    );
+    const startMs = new Date(startNaive.replace(" ", "T") + "Z").getTime();
+    const windowMs = 15 * 60 * 1000;
+    const toNaive = (ms: number) =>
+      new Date(ms).toISOString().slice(0, 19).replace("T", " ");
+
+    const { data } = await supabase
+      .from("activities")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "deleted")
+      .eq("activity_type", sportType)
+      .gte("scheduled_date_time", toNaive(startMs - windowMs))
+      .lte("scheduled_date_time", toNaive(startMs + windowMs))
+      .limit(1);
+    if (data && data.length > 0) {
+      return {
+        id: String(data[0].id),
+        reason: "matched tombstone (sport + start ±15 min)",
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error("[garmin] Tombstone lookup error:", err);
+    return null;
+  }
+}
+
+/**
  * Find an existing planned/draft activity that matches the Garmin upload.
  *
  * Matching is based on:
  * - same user
  * - same sport type
  * - same local Garmin calendar date
- * - activity not deleted
+ * - activity not deleted (tombstones are handled FIRST, by
+ *   findMatchingTombstone — never skip that call)
  * - activity not already completed
  */
 export async function findMatchingPlannedActivity(

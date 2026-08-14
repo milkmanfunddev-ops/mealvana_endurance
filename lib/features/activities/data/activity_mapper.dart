@@ -482,6 +482,9 @@ class ActivityMapper {
       'brick_id': activity.brickId,
       'garmin_summary_id': activity.garminSummaryId,
       'garmin_device_name': activity.garminDeviceName,
+      // Tombstones must round-trip: without deleted_at in the payload a
+      // status='deleted' row would arrive live-looking on other devices.
+      'deleted_at': activity.deletedAt?.toIso8601String(),
       if (includeCreatedAt) 'created_at': activity.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     };
@@ -556,6 +559,8 @@ class ActivityMapper {
       'brick_id': record.brickId,
       'garmin_summary_id': record.garminSummaryId,
       'garmin_device_name': record.garminDeviceName,
+      // Tombstones must round-trip (see buildSupabasePayload).
+      'deleted_at': record.deletedAt?.toIso8601String(),
       'created_at': record.createdAt.toIso8601String(),
       'updated_at': record.updatedAt.toIso8601String(),
     };

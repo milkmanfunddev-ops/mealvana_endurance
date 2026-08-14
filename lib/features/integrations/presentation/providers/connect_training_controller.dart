@@ -678,8 +678,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         providerId,
       );
       for (final activity in activities) {
-        await _activitiesRepo.deleteActivity(
-          deviceId: userId,
+        // Hard delete, deliberately NOT the tombstone path: a disconnect
+        // wipe must not leave status='deleted' rows around, or the matcher
+        // would suppress re-import when the athlete reconnects later.
+        await _activitiesRepo.hardDeleteActivityForProviderPurge(
+          userId: userId,
           activityId: activity.id,
         );
         removed++;

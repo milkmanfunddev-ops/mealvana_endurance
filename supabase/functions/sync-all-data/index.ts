@@ -68,11 +68,16 @@ serve(withSentry(async (req) => {
       // Bug: Was using addFilter() which caused empty results for incremental syncs
       // since the 27 default foods haven't been updated since 2025-12-04
       supabaseClient.from('carb_loading_foods').select('*'),
-      // 3. Activities (exclude soft-deleted, explicitly include nutrition_plan_data)
+      // 3. Activities — INCLUDING status='deleted' tombstones. Every device
+      // needs the tombstone rows locally or its sync matcher cannot
+      // recognize a deleted workout and re-imports it (soft-delete ruling,
+      // docs/ssot/spec/daily-macros/platform-resolution.md). Legacy
+      // hard-delete-marked rows (deleted_at set, status != 'deleted')
+      // stay excluded.
       addFilter(supabaseClient.from('activities').select(`
           *,
           nutrition_plan_data
-        `).eq('user_id', user_id).is('deleted_at', null).order('scheduled_date_time', {
+        `).eq('user_id', user_id).or('deleted_at.is.null,status.eq.deleted').order('scheduled_date_time', {
         ascending: false
       })),
       // 4. Events
