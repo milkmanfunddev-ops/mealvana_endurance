@@ -49,6 +49,8 @@ class ActivityMapper {
       intensityTarget: row.intensityTarget,
       timeBeforeMinutes: row.timeBeforeMinutes,
       isFasted: row.isFasted,
+      plannedTime: row.plannedTime,
+      actualTime: row.actualTime,
       completedAt: row.completedAt,
       completionRating: row.completionRating,
       nutritionRating: null, // local drift table has no nutrition_rating column
@@ -116,6 +118,8 @@ class ActivityMapper {
       timeBeforeMinutes: (json['time_before_minutes'] as num?)?.toInt(),
       // Tolerate old remote rows without the column (null → false).
       isFasted: (json['is_fasted'] as bool?) ?? false,
+      plannedTime: parseDateTime(json['planned_time']),
+      actualTime: parseDateTime(json['actual_time']),
       completedAt: parseDateTime(json['completed_at']),
       completionRating: (json['completion_rating'] as num?)?.toInt(),
       nutritionRating: (json['nutrition_rating'] as num?)?.toInt(),
@@ -181,6 +185,8 @@ class ActivityMapper {
     required String? intensityTarget,
     required int? timeBeforeMinutes,
     required bool isFasted,
+    DateTime? plannedTime,
+    DateTime? actualTime,
     required DateTime? completedAt,
     required int? completionRating,
     required int? nutritionRating,
@@ -283,6 +289,8 @@ class ActivityMapper {
       intensityTarget: intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes,
       isFasted: isFasted,
+      plannedTime: plannedTime,
+      actualTime: actualTime,
       completedAt: completedAt,
       completionRating: completionRating,
       nutritionRating: resolvedNutritionRating,
@@ -355,6 +363,8 @@ class ActivityMapper {
       intensityZ5Pct: Value(activity.intensityDistribution?.allOutPct),
       timeBeforeMinutes: Value(activity.timeBeforeMinutes),
       isFasted: Value(activity.isFasted),
+      plannedTime: Value(activity.plannedTime),
+      actualTime: Value(activity.actualTime),
       notes: Value(activity.notes),
       cyclingSpeedMph: Value(activity.cyclingSpeedMph),
       cyclingTerrain: Value(activity.cyclingTerrain),
@@ -439,6 +449,8 @@ class ActivityMapper {
       'intensity_z5_pct': activity.intensityDistribution?.allOutPct,
       'time_before_minutes': activity.timeBeforeMinutes,
       'is_fasted': activity.isFasted,
+      'planned_time': activity.plannedTime?.toIso8601String(),
+      'actual_time': activity.actualTime?.toIso8601String(),
       'notes': activity.notes,
       'cycling_speed_mph': activity.cyclingSpeedMph,
       'cycling_terrain': activity.cyclingTerrain,
@@ -503,6 +515,8 @@ class ActivityMapper {
       'intensity_z5_pct': record.intensityZ5Pct,
       'time_before_minutes': record.timeBeforeMinutes,
       'is_fasted': record.isFasted,
+      'planned_time': record.plannedTime?.toIso8601String(),
+      'actual_time': record.actualTime?.toIso8601String(),
       'notes': record.notes,
       'cycling_speed_mph': record.cyclingSpeedMph,
       'cycling_terrain': record.cyclingTerrain,
@@ -570,6 +584,10 @@ class ActivityMapper {
       case 'archived_for_brick':
       case 'archivedForBrick':
         return domain.ActivityStatus.archivedForBrick;
+      case 'deleted':
+        // Tombstone MUST round-trip: falling through to 'planned' here would
+        // resurrect deleted workouts on every read.
+        return domain.ActivityStatus.deleted;
       default:
         return domain.ActivityStatus.planned;
     }
