@@ -23,6 +23,7 @@ class WorkoutCard extends StatefulWidget {
   const WorkoutCard({
     super.key,
     required this.data,
+    this.onTap,
     this.onMarkDone,
     this.onMarkUndone,
     this.onDelete,
@@ -30,6 +31,11 @@ class WorkoutCard extends StatefulWidget {
   });
 
   final WorkoutCardData data;
+
+  /// Tap into the card → the existing workout detail surface (the tapped-into
+  /// view is deliberately untouched by this redesign — scope ruling). When
+  /// the delete reveal is open, a tap closes the reveal instead.
+  final VoidCallback? onTap;
   final VoidCallback? onMarkDone;
   final VoidCallback? onMarkUndone;
   final VoidCallback? onDelete;
@@ -125,6 +131,13 @@ class _WorkoutCardState extends State<WorkoutCard> {
             // an opaque full-width listener would swallow taps meant for
             // the revealed Delete button.
             behavior: HitTestBehavior.deferToChild,
+            onTap: () {
+              if (_revealOpen) {
+                _closeReveal();
+              } else {
+                widget.onTap?.call();
+              }
+            },
             onHorizontalDragStart: _onDragStart,
             onHorizontalDragUpdate: _onDragUpdate,
             onHorizontalDragEnd: _onDragEnd,

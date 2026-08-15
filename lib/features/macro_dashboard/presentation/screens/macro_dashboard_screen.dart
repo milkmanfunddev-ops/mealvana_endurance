@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../activities/presentation/navigation/open_activity_fuel.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../fuel_timeline/presentation/widgets/fuel_timeline_day_header.dart';
@@ -364,10 +365,26 @@ class MacroDashboardScreen extends ConsumerWidget {
     final activities = ref.read(activitiesControllerProvider.notifier);
     return WorkoutCard(
       data: data,
+      // Tap into the card → the EXISTING detail surface, unchanged (scope
+      // ruling): has-plan/import → Activity Detail, plan-less → the
+      // pre-filled New Activity flow (openActivityFuel, Lee 2026-08-10).
+      onTap: () => _openDetail(context, ref, data.activityId),
+      onFuelTap: () => _openDetail(context, ref, data.activityId),
       onMarkDone: () => activities.markWorkoutDone(data.activityId),
       onMarkUndone: () => activities.markWorkoutUndone(data.activityId),
       onDelete: () => _deleteWithUndo(context, ref, data),
     );
+  }
+
+  void _openDetail(BuildContext context, WidgetRef ref, String activityId) {
+    final activities =
+        ref.read(activitiesControllerProvider).value ?? const [];
+    for (final a in activities) {
+      if (a.id == activityId) {
+        openActivityFuel(context, a);
+        return;
+      }
+    }
   }
 
   /// G5 + S-2: the delete press removes the workout's contributions from

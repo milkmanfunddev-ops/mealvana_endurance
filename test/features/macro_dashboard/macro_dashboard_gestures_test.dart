@@ -179,6 +179,32 @@ void main() {
     expect(find.text('Mark done'), findsNothing);
   });
 
+  // Card tap → the existing detail surface (scope ruling: the tapped-into
+  // view is untouched; the card only routes to it). A tap while the delete
+  // reveal is open closes the reveal instead of navigating.
+  testWidgets('tap: card tap emits onTap; reveal-open tap only closes reveal',
+      (tester) async {
+    var tapped = 0;
+    await tester.pumpWidget(
+      _host(
+        WorkoutCard(
+          data: _card(WorkoutCardState.planned),
+          onTap: () => tapped++,
+        ),
+      ),
+    );
+    await tester.tap(find.text('Run'));
+    await tester.pumpAndSettle();
+    expect(tapped, 1);
+
+    // Open the delete reveal, then tap the card: reveal closes, no navigate.
+    await _drag(tester, find.byType(WorkoutCard), -90);
+    expect(find.text('Delete'), findsOneWidget);
+    await tester.tap(find.text('Run'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(tapped, 1, reason: 'a reveal-closing tap must not navigate');
+  });
+
   // g4_swipe_left_reveals_delete (workout-card G4)
   testWidgets('g4: partial left-swipe reveals labeled Delete; swipe never deletes',
       (tester) async {
