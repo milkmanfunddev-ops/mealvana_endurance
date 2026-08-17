@@ -172,10 +172,15 @@ void main() {
       );
     });
 
+    // Regenerated 2026-08-17 (spec change: Q-D5 ruling + Q-D6/D-2 v2
+    // clarification — SKIPPED = planned treatment DRAINED TO NEUTRAL, chip
+    // "Skipped"), blessed from the reference rendering's previous-day view
+    // (prototype @ 5a22ca8, day-16 run). Passive and active SKIPPED share
+    // this one golden — the card is identical; only the trigger differs.
     testWidgets('workout_card_skipped', (tester) async {
       await golden(
         tester,
-        WorkoutCard(data: _run(WorkoutCardState.skippedPrompt)),
+        WorkoutCard(data: _run(WorkoutCardState.skipped)),
         'workout_card_skipped',
       );
     });
