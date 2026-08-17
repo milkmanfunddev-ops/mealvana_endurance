@@ -5,9 +5,13 @@
 # the REAL code path (no false pins).
 
 manifest: macro-dashboard-gestures
-version: v1
-status: ratified
+version: v2                 # RATIFIED (Xuan, 2026-08-17) — workout-card v2 skip contract (Q-D6)
+status: ratified            # v1 (ratified 2026-08-14) is what daily-macros-dashboard@v1 pins
 spec_family: spec/design/
+# Changes from v1: g4/g5 delete tests -> skip tests; tombstone_prevents_reimport RETIRED (no
+# delete affordance in v2 — the tombstone stays in the schema, untested from the surface until the
+# delete bundle); g3 widened to both swipe directions; g6 sync-beats-skip added; skipped_* tests
+# split into passive/active triggers; s7 timeline tuck added.
 
 tests:
   # workout-card gestures (components/workout-card.md G1-G5, G7)
@@ -20,24 +24,43 @@ tests:
   - id: g2_swipe_right_again_undoes
     contract: workout-card G2
     assert:
-      - full right-swipe on DONE_CONFIRMED -> state PLANNED
-      - actual_time CLEARED (null, not zero); card returns to planned_time
+      - full right-swipe on DONE_CONFIRMED -> the day's unresolved state (PLANNED on the
+        current day; derived SKIPPED on a past day — v2 G2)
+      - actual_time CLEARED (null, not zero); card returns to planned_time (or the S-7 tucked
+        position on a past day)
   - id: g3_verified_suppressed   # NEGATIVE TEST — required
-    contract: workout-card G3 (Q-D1 ruling)
+    contract: workout-card G3 (Q-D1 ruling; widened to both directions in v2)
     assert:
       - right-swipe on DONE_VERIFIED -> zero translation after release
-      - no reveal renders; no "Mark undone" node in the tree; no state change
-  - id: g4_swipe_left_reveals_delete
-    contract: workout-card G4
+      - LEFT-swipe on DONE_VERIFIED -> zero translation after release
+      - no reveal renders; no "Mark undone" and no "Skip"/"Unskip" node in the tree; no state change
+  - id: g4_swipe_left_reveals_skip
+    contract: workout-card G4 (v2)
     assert:
-      - partial left-swipe reveals labeled Delete button (dragonfruit token)
-      - the swipe itself NEVER deletes
-  - id: g5_delete_removes_everywhere
-    contract: workout-card G5 + surface S-2
+      - partial left-swipe on PLANNED or DONE_CONFIRMED reveals a labeled "Skip" button
+      - partial left-swipe on an ACTIVELY skipped SKIPPED card reveals "Unskip"
+      - the button uses NO dragonfruit token (skip is not destructive)
+      - the swipe itself NEVER changes state
+      - past-day passive SKIPPED -> reveal carries no button
+  - id: g5_skip_removes_everywhere
+    contract: workout-card G5 + surface S-2 + S-7
     assert:
-      - Delete press removes the workout's kcal, fuel windows and timeline entry
-        from EVERY surface figure in the same frame
-      - upstream write is a SOFT delete (status='deleted', row persists)
+      - Skip press -> state SKIPPED; status='skipped' written; if the card was DONE_CONFIRMED,
+        actual_time is CLEARED
+      - the workout's kcal, fuel windows and timeline entry leave EVERY surface figure in the
+        same frame (net balance, band copy, Active Energy sheet, by-end-of-day burn)
+      - card renders with no timestamp, tucked after every timed card of the day (S-7)
+      - Unskip press -> state PLANNED; status cleared; planned_time UNCHANGED; card back in its
+        time-ordered slot; kcal and fuel re-enter every figure
+      - both actions offer undo that restores the exact prior state
+  - id: g6_sync_beats_skip
+    contract: workout-card G6 + platform-resolution SKIPPED addition (2026-08-17)
+    assert:
+      - "skip a workout (active), then deliver a matching platform sync (match key = platform id,
+        else platform+sport+start ±15 min) -> state DONE_VERIFIED, actual_time = measured start,
+        source GARMIN; kcal and fuel back in every figure"
+      - same for a PASSIVELY skipped past-day workout
+      - after the sync, no gesture reverts it (G3)
   - id: g7_emission_propagates
     contract: workout-card G7 + surface S-1
     assert:
@@ -72,11 +95,34 @@ tests:
     assert:
       - later Garmin sync on a DONE_CONFIRMED card -> chip flips to verified,
         actual_time overwritten with measured start (MANUAL -> GARMIN)
-  - id: tombstone_prevents_reimport
-    contract: platform-resolution soft-delete ruling / intraday-display 4b
+  # RETIRED in v2 (delete deferred to a future bundle): tombstone_prevents_reimport — no surface
+  # affordance writes status='deleted'; the matcher rule stays ratified in platform-resolution.md
+  # and returns to this manifest with the delete bundle.
+
+  # SKIPPED state (Q-D5 ruling 2026-08-17 + Q-D6 v2 unified-skip model)
+  - id: skipped_passive_only_on_past_days
+    contract: workout-card Q-D6 (passive trigger) = Q-D5 trigger
     assert:
-      - delete a synced workout, run sync with the same platform activity ->
-        no card reappears; local row still exists with status='deleted'
+      - a past-day workout with neither sync nor confirmation renders SKIPPED
+        ("Skipped" chip, planned treatment drained to neutral — no electrolyte/orange on the card)
+      - the SAME untouched unresolved workout on the current day renders PLANNED — never
+        SKIPPED (negative half; the rejected same-day-22:00 trigger must not exist)
+  - id: skipped_active_on_current_day
+    contract: workout-card Q-D6 (active trigger) + G4/G5
+    assert:
+      - Skip press on TODAY's PLANNED workout -> renders SKIPPED today (chip, neutral drain, tucked)
+  - id: skipped_fuel_not_counted
+    contract: workout-card Q-D5/Q-D6 (fuel) + platform-resolution confirmation rung + S-2
+    assert:
+      - a SKIPPED workout's kcal and fuel appear in NO surface figure for that day
+        (passive and active alike)
+  - id: skipped_swipe_right_recovers
+    contract: workout-card G1/G2 on SKIPPED
+    assert:
+      - full right-swipe on SKIPPED -> DONE_CONFIRMED; status cleared; actual_time = now;
+        its kcal and fuel re-enter the day's figures; card returns to the time-ordered rail
+      - swipe right again -> the day's unresolved state — PLANNED on the current day, SKIPPED
+        (derived) on a past day; never a PLANNED card on a past day (W-10 guard)
 
 done_when: every test above exists in the app repo, executes the real code path,
   and runs in automatic CI (exclusions must be recorded in the feature test plan)

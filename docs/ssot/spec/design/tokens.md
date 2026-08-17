@@ -21,4 +21,6 @@ or `dragonfruit` for a non-destructive one, fails conformance even if it "looks 
 
 **Q-D2 — RULED (Xuan, 2026-08-14): the current `dragonfruit` delete treatment is the contract
 as-is.** Weight accepted at reference-rendering saturation and size; open to future iteration but
-not a defect. (Register finding W-9 closes with this.)
+not a defect. (Register finding W-9 closes with this.) *v2 note (2026-08-17, Q-D6): delete is
+deferred and skip replaces it — the workout card carries **no** `dragonfruit` element in v2; the
+Q-D2 treatment returns with the delete bundle.*

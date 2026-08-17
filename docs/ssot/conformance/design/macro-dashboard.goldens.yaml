@@ -15,8 +15,10 @@
 # cite the spec change.
 
 manifest: macro-dashboard-goldens
-version: v1
-status: ratified            # inherits the design family's ratification
+version: v2                 # RATIFIED (Xuan, 2026-08-17) — workout-card v2 (Q-D6)
+status: ratified            # v1 (ratified 2026-08-14) is what daily-macros-dashboard@v1 pins
+# Changes from v1: workout_card_skipped notes carry the neutral-drain signature (D-2) and cite
+# Q-D6; every other golden is unchanged in content — v1 blessings stand.
 spec_family: spec/design/   # tokens.md, components/*, surfaces/macro-dashboard.md
 
 mock_day:
@@ -37,15 +39,22 @@ goldens:
   - id: workout_card_done_confirmed
     component: workout-card
     state: DONE_CONFIRMED
-    notes: solid, "self-reported" chip, awaiting-sync glyph
+    notes: solid, "self-reported" chip — NO awaiting-sync glyph (Q-D4 ruling 2026-08-17;
+      the glyph mention here was the erratum, corrected per
+      intake/2026-08-17-awaiting-sync-glyph-conflict.md)
   - id: workout_card_done_verified
     component: workout-card
     state: DONE_VERIFIED
     notes: solid, electrolyte icon disc, "verified · Garmin" chip
   - id: workout_card_skipped
     component: workout-card
-    state: SKIPPED_PROMPT
-    notes: planned treatment + skipped prompt (end-of-day, no sync, no confirmation)
+    state: SKIPPED
+    notes: planned treatment DRAINED TO NEUTRAL — dotted outline, dimmed fill, icon/chip/kcal in
+      dimmed cream, no electrolyte and no orange anywhere on the card, "Skipped" chip
+      (Q-D5 ruling 2026-08-17 + Q-D6/D-2 v2 clarification). Bless from the reference
+      rendering's previous-day view (prototype @ 5a22ca8, day 16 run). Regeneration commit
+      cites Q-D5 + Q-D6. Passive (past day) and active (today) SKIPPED share this one golden —
+      the card is identical; only the trigger differs.
 
   # energy summary card — 3 faces x 2 expansion states (components/energy-card.md)
   - { id: energy_card_all_collapsed,     component: energy-card, face: ALL,     expanded: false,

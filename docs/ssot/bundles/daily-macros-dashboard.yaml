@@ -1,13 +1,20 @@
 # Release bundle manifest — a pinned set of ratified SSOTs for one app release.
-# A code agent checks out the tag `daily-macros-dashboard@v1` and implements exactly
+# A code agent checks out the tag `daily-macros-dashboard@v2` and implements exactly
 # these slices to green conformance. Third entry of the spec registry (the first two
 # live on qa/pre-workout-drawers: pre-workout-macros@v1, pre-workout-food-composition@v1).
+#
+# v2 SUPERSEDES v1 (tag daily-macros-dashboard@v1 @ e2c3fe0 stays immutable). What moved:
+# the six 2026-08-17 intake resolutions (Q-016, Q-017 interim, Q-D4, Q-D5, two errata) and
+# the RATIFIED unified-skip design contract (Q-D6) — a contract change on the workout card
+# (skip replaces delete), which is why this is @v2 and not a @v1.1 point tag (@v1.1 was
+# deliberately NOT cut; the app had already built delete, so v1.1 would have been throwaway).
 
 bundle: daily-macros-dashboard
-version: v1
+version: v2
 status: ratified
-ratified: 2026-08-14            # Xuan
-ships: daily macro calculation (engine) + the macro dashboard with workout cards (display/design)
+ratified: 2026-08-17            # Xuan — design v2 (Q-D6); engine specs unchanged at v1 + dated additions
+supersedes: v1                  # ratified 2026-08-14; tag daily-macros-dashboard@v1 @ e2c3fe0
+ships: daily macro calculation (engine) + the macro dashboard with workout cards (display/design), now with the unified-skip workout-card model
 
 specs:
   # --- calculation (engine: calculate-daily-macros, Deno edge function) ---
@@ -23,9 +30,9 @@ specs:
   - { slice: intraday-display,    version: v1, spec: spec/daily-macros/intraday-display.md,    vectors: vectors/daily-macros/intraday-display.json,    engine: "none yet — display-layer consumer; building it is part of this bundle" }
   # --- design (conformance = manifests, not vectors) ---
   - { slice: design-tokens,       version: v1, spec: spec/design/tokens.md,                    vectors: conformance/design/macro-dashboard.goldens.yaml,  engine: app widget layer }
-  - { slice: workout-card,        version: v1, spec: spec/design/components/workout-card.md,   vectors: conformance/design/macro-dashboard.gestures.yaml, engine: app widget layer }
+  - { slice: workout-card,        version: v2, spec: spec/design/components/workout-card.md,   vectors: conformance/design/macro-dashboard.gestures.yaml, engine: app widget layer }   # v2: Q-D6 unified skip
   - { slice: energy-card,         version: v1, spec: spec/design/components/energy-card.md,    vectors: conformance/design/macro-dashboard.goldens.yaml,  engine: app widget layer }
-  - { slice: macro-dashboard,     version: v1, spec: spec/design/surfaces/macro-dashboard.md,  vectors: conformance/design/macro-dashboard.gestures.yaml, engine: app widget layer }
+  - { slice: macro-dashboard,     version: v2, spec: spec/design/surfaces/macro-dashboard.md,  vectors: conformance/design/macro-dashboard.gestures.yaml, engine: app widget layer }   # v2: S-2 skip scope, S-7 tuck
 
 excludes:
   - { slice: post-workout,          reason: "RATIFIED spec, deliberately unshipped this bundle (Xuan) — recovery windows come later" }
@@ -33,28 +40,54 @@ excludes:
   - { slice: safety-state-ui,       reason: "SOFT/HARD/BLOCK surfaces deferred (surface S-5); the EA gate itself SHIPS — it is engine, not UI" }
   - { slice: phase-chip-and-sodium, reason: "deferred to settings / later iteration (surface S-5)" }
   - { slice: pre-workout-and-food-composition, reason: "own bundles (pre-workout-macros@v1, pre-workout-food-composition@v1, on qa/pre-workout-drawers)" }
+  - { slice: workout-delete-gesture,  reason: "DEFERRED to a future bundle (Xuan, 2026-08-17, Q-D6): skip replaces delete on the card; no delete affordance renders on the dashboard in v2. The soft-delete tombstone (status='deleted', migration 20260814120000) stays as landed groundwork; other surfaces' delete paths (calendar, coach mode) are untouched by this bundle" }
+  - { slice: q-017-step-10b-exemption, reason: "EXCLUDED from v2 (Xuan, 2026-08-17): the carb-cycling exemption from assembly step 10b is an engine contract change staged for a LATER version; v1's accepted no-op stands (baseline-macros.md dated addition)" }
 
 conformance:
-  runner: "none exists for this engine yet — calculate-daily-macros is Deno; building the runner is part of the task"
+  runner: "none exists for this engine yet — calculate-daily-macros is Deno; the runner is part of the task (app-side status at v2 cut: a Deno vectors runner exists and reported 167/168 against pre-erratum vectors)"
   invoke:
-    - "(to build) deno test runner feeding vectors/daily-macros/*.json to the formulas"
-    - "(to build) display-consumer tests feeding intraday-display.json"
-    - "(to build) goldens + gesture tests per conformance/design/*.yaml"
+    - "deno test runner feeding vectors/daily-macros/*.json to the formulas"
+    - "display-consumer tests feeding intraday-display.json"
+    - "goldens + gesture tests per conformance/design/*.yaml (v2: 10 goldens, 17 gesture tests)"
   done_when: >
-    all 9 vector files green against the real engine; every artifact in both design manifests
-    exists and passes in CI; the two schema tasks below are landed; feature test plan rows flip.
+    all 9 vector files green against the real engine (168/168); every artifact in both design
+    manifests (v2) exists and passes in CI — including the skip gestures g4/g5/g6 and the
+    regenerated workout_card_skipped golden; the schema tasks below are landed; the delete
+    affordance is gone from the dashboard card; feature test plan rows flip.
   note: >
-    EXPECTED-RED throughout: the existing engine implements PRE-RULING behavior and its four test
-    files (index/integration/iteration5/parity-fixtures .test.ts) pin the superseded engine --
-    they go red against these specs CORRECTLY and must be moved to the vectors, never the vectors
-    to them. Vector expecteds are the UNROUNDED chain (R1); display rounding is half-up.
+    Vector expecteds are the UNROUNDED chain (R1); display rounding is half-up. The four
+    legacy calculate-daily-macros test files pin the superseded engine and must be moved to
+    the vectors, never the reverse. energy-availability.json override-ceiling-branch was
+    regenerated 2026-08-17 (erratum) — expect 168/168, not 167/168.
 
-    TWO EXPLICIT SCHEMA TASKS (owned by this bundle, currently in no migration):
-    1. workout rows gain planned_time, actual_time (nullable), status ('deleted' tombstone);
+    WHAT v2 CHANGES vs v1 (everything else is byte-identical to the @v1 content):
+    - workout-card v2 / macro-dashboard v2 (Q-D6, RATIFIED 2026-08-17): left-swipe reveals
+      Skip/Unskip (neutral, never dragonfruit) — delete is gone from the card; SKIPPED has a
+      passive trigger (past day, unresolved — Q-D5) AND an active trigger (Skip press, allowed
+      on the current day); sync beats skip (G6); a skipped card loses its timeline slot (S-7);
+      unskip restores; G3 suppression covers both swipe directions; SKIPPED visual = planned
+      treatment drained to neutral. Gestures manifest: g4/g5 -> skip tests, g6 added,
+      tombstone_prevents_reimport RETIRED, skipped_* split passive/active. Goldens manifest:
+      only workout_card_skipped's notes change.
+    - platform-resolution.md dated addition: status='skipped' as the athlete's "didn't happen"
+      write (zero session demand even before planned_time; matcher must not filter skipped
+      rows; sync upgrades and clears it). Ladder unchanged.
+    - Q-016 (manual profile edits recalc today+future only) folded into platform-resolution.md;
+      Q-017 interim (cycling no-op accepted) folded into baseline-macros.md; Q-D4 (no
+      awaiting-sync glyph) + Q-D5 (SKIPPED state) folded into workout-card.md; README Engine
+      paragraph corrected (Dart mirror + release coupling).
+
+    SCHEMA TASKS (owned by this bundle):
+    1. workout rows: planned_time, actual_time (nullable), status — 'deleted' tombstone landed
+       in migration 20260814120000; 'skipped' ALREADY EXISTS in activity_status_enum and in
+       ActivityStatus (verified 2026-08-17) — v2 needs NO enum migration, only the write path
+       (Skip/Unskip/mark-done/sync clear) and the read path (zero contribution, derived passive
+       SKIPPED for past days);
     2. public.plan_recalc_log (plan_generation_log pattern) written by every recalculateAfterSync.
 
-    Feature test plan: docs/feature-test-plans/macro-dashboard.md (DRAFT) enumerates the chains
-    and pins; the match-key ruling (platform id, fallback platform+sport+start +-15min) is folded.
+    Feature test plan: docs/feature-test-plans/macro-dashboard.md enumerates the chains and
+    pins; the match-key ruling (platform id, fallback platform+sport+start +-15min) is folded.
+    Handoff for the coding agent: bundles/daily-macros-dashboard.handoff.md (v2).
 
 deviations:
   - slice: calculate-daily-macros (existing implementation)

@@ -28,6 +28,8 @@ ratification itself.
 | [Q-013](#q-013) | `yesterday_tss` for a double | **RULED 2026-07-29** — sum; last session's end time |
 | [Q-014](#q-014) | Does fat have a ceiling? | **RULED 2026-08-13** — 30 %E cap, excess → carb |
 | [Q-015](#q-015) | NEAT model rigor (tier × day × lifestyle) | **DEFERRED 2026-08-13** — future work, by ruling |
+| [Q-016](#q-016) | Manual profile edits: which cached days recalculate? | **RULED 2026-08-17** — today + future; past days are history |
+| [Q-017](#q-017) | Carb cycling is unobservable under the Q-014 fat cap | **RULED 2026-08-17** — no-op accepted for v1; 10b exemption staged for a LATER bundle version (**excluded from @v2**, Xuan 2026-08-17) |
 
 ---
 
@@ -499,3 +501,50 @@ multiplicative NEAT factor of their own design; ours is home-grown.
 
 Nothing here blocks vectoring: the model is deterministic and vectorable as-is; the question is
 whether its outputs are *calibrated*, which no vector can answer.
+---
+
+## Q-016
+### When an athlete manually edits an engine input in Settings, which cached daily plans recalculate?
+> **RULED — Xuan, 2026-08-17: today + future cached days only; past days are never recalculated.**
+> Source-independent (any MANUAL write to an engine input, Settings merely the surface). Past
+> plans are the historical record of what the athlete was told to eat. Folded into
+> [platform-resolution.md](platform-resolution.md) "Athlete profile auto-update" as a dated
+> post-ratification addition. Gates the app-side stale-targets fix + a behavioral chain test.
+**Where:** raised 2026-08-17 via intake —
+[`intake/2026-08-17-manual-input-change-invalidation.md`](../../intake/2026-08-17-manual-input-change-invalidation.md)
+(full options, trade-offs and gates live there; this entry is the register hook, not a restatement).
+
+The Garmin body-comp rung is ruled (raw propagation, `platform-resolution.md` "Athlete profile
+auto-update"); the MANUAL rung — weight/height/BF/lifestyle/weekly-hours/opt-in/phase edited in
+Settings — is specified nowhere. Options on file: today+future cached days (producer-recommended) /
+all cached days / today only. Suggested home: `platform-resolution.md`, extending the profile
+auto-update section to a source-independent policy. Gates the app-side fix for the stale-targets
+bug (`ops/data/bug-reports/2026-08-17-profile-save-macro-cache-stale.md`).
+
+---
+
+## Q-017
+### Carb cycling (F20) no longer changes the returned plan — the fat cap redistributes it away
+> **RULED — Xuan, 2026-08-17, two-part.** (1) **Interim, this bundle version:** the no-op is the
+> accepted v1 contract — F20 gates and pre-cap worked examples stand, implementations must not
+> compensate; documented as a dated post-ratification addition in
+> [baseline-macros.md](baseline-macros.md). (2) **Staged contract change, next bundle version:**
+> qualifying carb-cycled days become exempt from assembly step 10b redistribution — fat absorbs
+> the easy day (which is what "train low" physiologically means) — restoring the opt-in's
+> observable effect. This partially reverses Q-014's redistribute-to-carb rule for exactly the
+> cycled-day case; it alters the ratified pipeline, so it ships via `ship-bundle` as the next
+> bundle version, never folded into v1. Spec text for the exemption is written THEN, not now.
+> **2026-08-17, later the same day (Xuan): excluded from `daily-macros-dashboard@v2`** — v2 is the
+> design-side skip contract (Q-D6) only; the 10b exemption waits for a later engine-side version.
+**Where:** raised 2026-08-17 via intake —
+[`intake/2026-08-17-carb-cycling-unobservable-under-fat-cap.md`](../../intake/2026-08-17-carb-cycling-unobservable-under-fat-cap.md).
+
+QA reproduced the producer's finding independently: on any qualifying easy day the raw fat
+residual exceeds the 30 %E cap in both branches, and because TDEE is carb-independent when fat is
+above its floor, step 10b converges the post-cap carb to `(TDEE − prot×4 − fat_cap×9)/4` — the
+identical plan with or without the 3.0 g/kg cycled baseline (reference athlete easy day: ~420 g
+carb both ways in QA's rerun). F20's published gates and pre-cap worked examples stay true; only
+end-of-pipeline observability is lost. Question on file: accept as a no-op (keep the setting),
+exempt qualifying cycled days from 10b (fat absorbs the day), or retire/hide the opt-in. Note the
+impact split: accepting/documenting is a post-ratification addition; exempting cycled days from
+10b alters the ratified pipeline (contract change → next bundle version).

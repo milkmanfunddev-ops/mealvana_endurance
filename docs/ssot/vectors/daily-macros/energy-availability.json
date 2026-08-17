@@ -212,17 +212,19 @@
         "carbG": 890,
         "protG": 115,
         "fatG": 60,
-        "sessionKcal": 900,
+        "sessionKcal": 2770,
         "ffmKg": 64,
         "weightKg": 75
       },
       "expected": {
-        "carbG": 890,
-        "fatG": 60,
+        "carbG": 900,
+        "protG": 115,
+        "fatG": 70,
         "adjusted": true,
-        "carbAtCeiling": false
+        "carbAtCeiling": true,
+        "ea": 30.0
       },
-      "why": "Q-006 RULED branch: carb caps at 12 g/kg = 900; overflow kcal reroute to fat; EA still lands exactly 30"
+      "why": "Q-006 RULED branch. Pre-EA 27.97 (HARD_WARNING); deficit 130; carb 890+19.5 hits the 12 g/kg ceiling 900, overflow 38 kcal reroutes to fat (+10 g -> 70); post-override EA exactly 30.0. Regenerated 2026-08-17 (intake erratum: original inputs sat at EA 57.19, outside the band)."
     }
   ]
 }

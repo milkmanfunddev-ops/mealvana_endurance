@@ -149,6 +149,19 @@ cost, carb demand, LBM/FFM, the fat floor and both clamps. Example: weight 74.2 
 considered and deliberately not adopted for now; revisit only if scale-user targets visibly
 oscillate.
 
+**Manual profile edits — which cached days recalculate — RULED (Xuan, 2026-08-17,
+post-ratification addition; [Q-016](OPEN-QUESTIONS.md#q-016)).** The policy is
+**source-independent**: it covers any MANUAL write to an engine input (weight, height, body-fat
+percentage, lifestyle, typical weekly hours, carb-cycle opt-in, training phase — Settings is
+merely the surface). On such a write, **today's and future cached daily plans are invalidated and
+recalculated with the new values; past days are never touched** — a delivered plan is the
+historical record of what the athlete was told to eat, and recalculating it would retroactively
+flip "hit your target" verdicts. Consistent with the "today is for today" ruling (F27) and with
+the Garmin rung above, which likewise updates the profile *before* today's computation, never
+history. The spec owns this policy; the app owns the mechanism (cache invalidation — cf. the
+activity-change window in `macro_cache_invalidation.dart`). Raised via intake:
+`intake/2026-08-17-manual-input-change-invalidation.md`.
+
 ---
 
 ## Formula 27 — `recalculateAfterSync(...)`
@@ -229,6 +242,19 @@ The confirmation is a first-class input (home-page affordance — see the design
 reconciliation worklist), so a dead watch or delayed sync never silently strips a real workout's
 fuel from the plan. A later Garmin sync for a confirmed session upgrades `MANUAL → GARMIN` and
 re-runs the recalc.
+
+**`SKIPPED` — the athlete's "didn't happen" as a first-class write — ADDED (RATIFIED Xuan, 2026-08-17, post-ratification addition shipping in
+`daily-macros-dashboard@v2`; design contract `spec/design/components/workout-card.md` Q-D6).** The ladder above is unchanged; this names how a workout
+lands on its third rung *before* the day is over. The workout row's `status` gains `skipped`
+(alongside the `deleted` tombstone): written by the athlete's Skip on the card — allowed on the
+current day — cleared by Unskip or by mark-done. A `status = 'skipped'` session contributes
+**zero** to the day's session demand and fuel windows exactly as the else-rung does, even while
+`planned_time` is still in the future. Passive skip (day past, `actual_time` null, not
+`skipped`) is **derived**, never written. **Sync beats skip:** the Garmin rung sits above both — a
+platform activity matching a skipped row (same match key as above) upgrades it to measured values
+and clears `skipped`; the matcher MUST NOT filter `status = 'skipped'` rows out before matching,
+for the same reason it must not filter tombstones. Delete (`status = 'deleted'`) is deferred to a
+future bundle; the tombstone rule stays as written.
 
 ---
 
