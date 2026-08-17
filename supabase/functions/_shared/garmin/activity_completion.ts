@@ -139,6 +139,79 @@ export async function findMatchingTombstone(
 }
 
 /**
+ * Statuses a Garmin completion may land on. `skipped` is the athlete's
+ * "didn't happen" write (workout-card v2, Q-D6 — platform-resolution.md
+ * SKIPPED addition, 2026-08-17): SYNC BEATS SKIP, so a skipped row is a
+ * legitimate completion target and the matcher MUST NOT filter it out —
+ * for the same reason it must not filter tombstones. Every atomic
+ * "win-the-race" completion update uses this same list, so the match and
+ * the write cannot drift.
+ */
+export const GARMIN_COMPLETABLE_STATUSES = ["planned", "draft", "skipped"];
+
+/**
+ * Sync beats skip (G6): a platform activity matching a `status = 'skipped'`
+ * row upgrades it to DONE_VERIFIED. The match key is the RULED one
+ * (platform-resolution.md, 2026-08-14 — the same key the tombstone matcher
+ * uses): platform activity id first, else same sport with start within
+ * ±15 minutes. Deliberately narrower than the day-wide planned window
+ * below: a skipped 5:30 PM run and a genuine 3:00 PM session are two
+ * different facts, and the athlete's skip stands unless the measured
+ * session is the one they skipped.
+ */
+export async function findMatchingSkippedActivity(
+  supabase: any,
+  userId: string,
+  sportType: string,
+  activity: GarminActivityTiming,
+  summaryId: string | null | undefined,
+): Promise<MatchingPlannedActivity> {
+  try {
+    if (summaryId) {
+      const { data } = await supabase
+        .from("activities")
+        .select("id, title")
+        .eq("user_id", userId)
+        .eq("status", "skipped")
+        .eq("garmin_summary_id", summaryId)
+        .limit(1);
+      if (data && data.length > 0) {
+        return { id: String(data[0].id), title: data[0].title?.toString() };
+      }
+    }
+
+    if (!sportType || sportType === "other") return null;
+    const startNaive = garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    );
+    const startMs = new Date(startNaive.replace(" ", "T") + "Z").getTime();
+    const windowMs = 15 * 60 * 1000;
+    const toNaive = (ms: number) =>
+      new Date(ms).toISOString().slice(0, 19).replace("T", " ");
+
+    const { data } = await supabase
+      .from("activities")
+      .select("id, title")
+      .eq("user_id", userId)
+      .eq("status", "skipped")
+      .eq("activity_type", sportType)
+      .is("deleted_at", null)
+      .gte("scheduled_date_time", toNaive(startMs - windowMs))
+      .lte("scheduled_date_time", toNaive(startMs + windowMs))
+      .order("scheduled_date_time", { ascending: true })
+      .limit(1);
+    if (data && data.length > 0) {
+      return { id: String(data[0].id), title: data[0].title?.toString() };
+    }
+    return null;
+  } catch (err) {
+    console.error("[garmin] Skipped-row lookup error:", err);
+    return null;
+  }
+}
+
+/**
  * Find an existing planned/draft activity that matches the Garmin upload.
  *
  * Matching is based on:
@@ -148,12 +221,16 @@ export async function findMatchingTombstone(
  * - activity not deleted (tombstones are handled FIRST, by
  *   findMatchingTombstone — never skip that call)
  * - activity not already completed
+ *
+ * Runs the SKIPPED tier first (findMatchingSkippedActivity — the ruled
+ * ±15 min key), then the day-wide planned/draft window.
  */
 export async function findMatchingPlannedActivity(
   supabase: any,
   userId: string,
   sportType: string,
   activity: GarminActivityTiming,
+  summaryId?: string | null,
 ): Promise<MatchingPlannedActivity> {
   // Refuse to match unknown/unmapped sport types. Falling back to "other"
   // would let any generic planned activity get silently completed by an
@@ -164,6 +241,17 @@ export async function findMatchingPlannedActivity(
     );
     return null;
   }
+
+  // Sync beats skip: a skipped row that this activity matches under the
+  // ruled key is completed (and un-skipped) before any planned match.
+  const skipped = await findMatchingSkippedActivity(
+    supabase,
+    userId,
+    sportType,
+    activity,
+    summaryId,
+  );
+  if (skipped) return skipped;
 
   try {
     const { startOfDayNaive, endOfDayNaiveExclusive } =

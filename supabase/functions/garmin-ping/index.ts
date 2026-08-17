@@ -30,6 +30,7 @@ import {
   buildGarminCompletionUpdate,
   enrichCompletedGarminActivity,
   findMatchingPlannedActivity,
+  GARMIN_COMPLETABLE_STATUSES,
   findMatchingTombstone,
   getGarminScheduledDate,
   insertGarminActivityIfMissing,
@@ -173,6 +174,7 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               mapping.user_id,
               sportType,
               activity,
+              activity.summaryId != null ? String(activity.summaryId) : null,
             );
 
             if (!matchedActivity) {
@@ -261,7 +263,7 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               .from("activities")
               .update(updateFields)
               .eq("id", matchedActivity.id)
-              .in("status", ["planned", "draft"])
+              .in("status", GARMIN_COMPLETABLE_STATUSES)
               .select("id");
 
             if (error) {
@@ -384,6 +386,7 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               mapping.user_id,
               sportType,
               summary,
+              summary.summaryId != null ? String(summary.summaryId) : null,
             );
 
             if (!matchedActivity) {
@@ -459,7 +462,7 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               .from("activities")
               .update(updateFields)
               .eq("id", matchedActivity.id)
-              .in("status", ["planned", "draft"])
+              .in("status", GARMIN_COMPLETABLE_STATUSES)
               .select("id");
 
             if (error) {
