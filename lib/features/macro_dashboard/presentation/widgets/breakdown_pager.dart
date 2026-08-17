@@ -102,6 +102,7 @@ class _BreakdownPagerState extends ConsumerState<BreakdownPager> {
                           ),
                         )
                       : PageView(
+                          key: const ValueKey('macro_dashboard.pager'),
                           controller: _controller,
                           onPageChanged: (i) => setState(() => _index = i),
                           children: [
@@ -196,6 +197,7 @@ class _CloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: const ValueKey('macro_dashboard.pager_close'),
       onTap: onTap,
       child: Container(
         width: 32,

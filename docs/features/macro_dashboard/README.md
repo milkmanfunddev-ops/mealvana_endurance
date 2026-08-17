@@ -51,17 +51,44 @@ v18 ships (triggers client delete-and-resync).
 
 ## Remaining plan
 
-### Phase A — tests (no external dependencies; do in order)
-1. **Serialization round-trip test**: domain `Activity` → companion → Drift
-   row → upload payload → JSON → domain; assert the three new columns +
-   tombstone status survive every `ActivityMapper` seam.
-2. **Screen-level widget test**: pump `MacroDashboardScreen` with providers
-   overridden on the canonical mock day.
-3. **Patrol flow** `integration_test/flows/macro_dashboard_flow_test.dart`
-   (+ `ValueKey`s on the new screen's controls): G1 swipe → same-pump
-   net/copy change; two-time DB writes; S-4 expansion survival; delete →
-   tombstone row persists; pager walk. Remote-half assertions (Supabase row,
-   `needs_upload` cleared) self-skip until Phase C's migrations land.
+### Phase A — tests ✅ DONE (2026-08-17)
+1. **Serialization round-trip test** ✅
+   `test/features/activities/data/activity_two_time_roundtrip_test.dart`
+   (9 tests): full chain domain → companion → real in-memory Drift row →
+   upload payload → JSON wire → domain, plus every `ActivityMapper` seam
+   individually; pins the three new columns, the tombstone + `deleted_at`,
+   and the forInsert `planned_time` stamping on both insert seams.
+2. **Screen-level widget test** ✅
+   `test/features/macro_dashboard/macro_dashboard_screen_test.dart`
+   (5 tests): the real screen + real `macroDashboardDay` provider/assembler
+   with the six upstream sources overridden on the canonical mock day —
+   filter lens, tracking-off §5, rail toggle, E1/P-1 expansion. Exact energy
+   numbers stay pinned by the gestures suite (the screen path uses the wall
+   clock).
+3. **Patrol flow** ✅ `integration_test/flows/macro_dashboard_flow_test.dart`
+   — PASSED on-simulator 2026-08-17. `macro_dashboard.*` ValueKeys added
+   across the feature (filter pills, toggles, energy card/expand/breakdown,
+   add pills, per-card keys, delete button, pager). The flow seeds its own
+   workout via the real controller, then: G1 swipe → net-figure move +
+   self-reported chip; two-time asserts against the app's live Drift DB
+   in-process (actual_time set / planned_time untouched; G2 clears to null);
+   S-4 expansion survival; pager walk; delete → local tombstone row
+   persists. Remote-half assertions (Supabase row, `needs_upload` cleared)
+   self-skip while `activities.planned_time` is un-migrated and arm
+   automatically after Phase C.
+
+   Fallout fixed along the way: `MacroDashboardScreen` discarded the
+   futures of `markWorkoutDone`/`markWorkoutUndone`/`deleteActivity` — all
+   three rethrow after rolling back, so a failed write became an uncaught
+   zone error with no user feedback; the screen now awaits them guarded and
+   surfaces failures via `MealvanaSnackbar`.
+
+   **Patrol triage note**: the app bootstrap replaces `FlutterError.onError`
+   (Sentry), so ANY failed `expect` in a flow dies as a generic
+   "test overrode FlutterError.onError" assert and then wedges xcodebuild
+   indefinitely. The flow chains a debugPrint tap in front of the app
+   handler so the device log names the real failure — copy that pattern
+   into new flows.
 
 ### Phase B — QA ruling loop (parallel; QA repo)
 Six items sit in the QA repo's `intake/` (2 spec-errata incl. the broken

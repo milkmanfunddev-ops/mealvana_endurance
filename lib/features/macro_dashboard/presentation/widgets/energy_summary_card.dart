@@ -53,6 +53,7 @@ class EnergySummaryCard extends StatelessWidget {
             button: true,
             label: expanded ? 'Collapse details' : 'Expand details',
             child: GestureDetector(
+              key: const ValueKey('macro_dashboard.energy_expand'),
               behavior: HitTestBehavior.opaque,
               onTap: onToggleExpanded,
               child: Padding(
@@ -575,6 +576,7 @@ class EnergySummaryCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 13),
       child: GestureDetector(
+        key: const ValueKey('macro_dashboard.full_breakdown'),
         onTap: onFullBreakdown,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),

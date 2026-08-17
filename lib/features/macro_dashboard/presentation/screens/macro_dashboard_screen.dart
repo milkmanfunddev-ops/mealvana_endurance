@@ -98,6 +98,7 @@ class MacroDashboardScreen extends ConsumerWidget {
               // one of them. (The EA gate itself still ran server-side.)
               if (view.trackingOn && data.energy != null)
                 EnergySummaryCard(
+                  key: const ValueKey('macro_dashboard.energy_card'),
                   face: view.filter,
                   expanded: view.dashOpen,
                   data: data.energy!,
@@ -158,6 +159,7 @@ class MacroDashboardScreen extends ConsumerWidget {
         if (view.filter != DashboardFilter.workout)
           Expanded(
             child: _dashedPill(
+              key: const ValueKey('macro_dashboard.add_food'),
               label: '+ Add Food',
               color: MeTokens.creamAlpha(0.8),
               borderColor: MeTokens.creamAlpha(0.25),
@@ -172,6 +174,7 @@ class MacroDashboardScreen extends ConsumerWidget {
         if (view.filter != DashboardFilter.meals)
           Expanded(
             child: _dashedPill(
+              key: const ValueKey('macro_dashboard.add_activity'),
               label: '+ Add Activity',
               color: MeTokens.orange,
               borderColor: MeTokens.orangeAlpha(0.45),
@@ -236,12 +239,14 @@ class MacroDashboardScreen extends ConsumerWidget {
   }
 
   Widget _dashedPill({
+    Key? key,
     required String label,
     required Color color,
     required Color borderColor,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: CustomPaint(
         foregroundPainter: _DashedPillPainter(color: borderColor),
@@ -364,16 +369,41 @@ class MacroDashboardScreen extends ConsumerWidget {
   Widget _workout(BuildContext context, WidgetRef ref, WorkoutCardData data) {
     final activities = ref.read(activitiesControllerProvider.notifier);
     return WorkoutCard(
+      key: ValueKey('macro_dashboard.workout_${data.activityId}'),
       data: data,
       // Tap into the card → the EXISTING detail surface, unchanged (scope
       // ruling): has-plan/import → Activity Detail, plan-less → the
       // pre-filled New Activity flow (openActivityFuel, Lee 2026-08-10).
       onTap: () => _openDetail(context, ref, data.activityId),
       onFuelTap: () => _openDetail(context, ref, data.activityId),
-      onMarkDone: () => activities.markWorkoutDone(data.activityId),
-      onMarkUndone: () => activities.markWorkoutUndone(data.activityId),
+      // The controller rolls back its optimistic update and RETHROWS on
+      // failure; discarding that future would turn a failed write into an
+      // uncaught zone error, so surface it instead.
+      onMarkDone: () => _guardWrite(
+        context,
+        () => activities.markWorkoutDone(data.activityId),
+        'Could not mark workout done',
+      ),
+      onMarkUndone: () => _guardWrite(
+        context,
+        () => activities.markWorkoutUndone(data.activityId),
+        'Could not undo — try again',
+      ),
       onDelete: () => _deleteWithUndo(context, ref, data),
     );
+  }
+
+  Future<void> _guardWrite(
+    BuildContext context,
+    Future<void> Function() write,
+    String failureCopy,
+  ) async {
+    try {
+      await write();
+    } catch (_) {
+      // The optimistic state is already rolled back by the controller.
+      if (context.mounted) MealvanaSnackbar.showError(context, failureCopy);
+    }
   }
 
   void _openDetail(BuildContext context, WidgetRef ref, String activityId) {
@@ -399,7 +429,16 @@ class MacroDashboardScreen extends ConsumerWidget {
     final notifier = ref.read(activitiesControllerProvider.notifier);
     final previous = await notifier.getActivityById(data.activityId);
     if (!context.mounted) return;
-    notifier.deleteActivity(data.activityId);
+    try {
+      await notifier.deleteActivity(data.activityId);
+    } catch (_) {
+      // Rolled back by the controller — the card is already back.
+      if (context.mounted) {
+        MealvanaSnackbar.showError(context, 'Could not delete workout');
+      }
+      return;
+    }
+    if (!context.mounted) return;
     MealvanaSnackbar.showInfo(
       context,
       '${data.name} deleted',
@@ -427,6 +466,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       children: [
         for (final item in node.meals)
           MealCard(
+            key: ValueKey('macro_dashboard.meal_${item.id}'),
             item: item,
             expanded: view.expandedMealId == item.id,
             showMacros: view.trackingOn,

@@ -235,6 +235,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
         enabled: enabled,
         label: 'Delete',
         child: InkWell(
+          key: const ValueKey('macro_dashboard.delete_button'),
           onTap: enabled
               ? () {
                   _closeReveal();

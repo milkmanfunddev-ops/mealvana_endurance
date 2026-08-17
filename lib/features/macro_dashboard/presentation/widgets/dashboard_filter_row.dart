@@ -49,6 +49,7 @@ class DashboardFilterRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _roundButton(
+          key: const ValueKey('macro_dashboard.tracking_toggle'),
           tooltip: trackingOn ? 'Turn tracking off' : 'Turn tracking on',
           icon: Icons.show_chart,
           background: trackingOn
@@ -62,6 +63,7 @@ class DashboardFilterRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _roundButton(
+          key: const ValueKey('macro_dashboard.timeline_toggle'),
           tooltip: timelineOpen ? 'Hide times' : 'Show times',
           icon: timelineOpen ? Icons.schedule : Icons.history_toggle_off,
           background: timelineOpen
@@ -81,6 +83,7 @@ class DashboardFilterRow extends StatelessWidget {
     final active = filter == value;
     return Expanded(
       child: GestureDetector(
+        key: ValueKey('macro_dashboard.filter_${value.name}'),
         onTap: () => onFilter(value),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -104,6 +107,7 @@ class DashboardFilterRow extends StatelessWidget {
   }
 
   Widget _roundButton({
+    Key? key,
     required String tooltip,
     required IconData icon,
     required Color background,
@@ -114,6 +118,7 @@ class DashboardFilterRow extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
+        key: key,
         onTap: onTap,
         child: Container(
           width: 38,
