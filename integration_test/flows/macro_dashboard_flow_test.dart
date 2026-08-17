@@ -10,11 +10,14 @@
 ///     against the app's own LOCAL Drift database, in-process;
 ///   - S-4: the energy card's expansion survives the card-swipe recompute;
 ///   - Breakdown Pager walk (open from Full breakdown, page across, close);
-///   - delete → the local row PERSISTS as a status='deleted' tombstone.
+///   - G4/G5 (v2 unified-skip model): left-swipe reveals a labeled Skip;
+///     the press writes status='skipped' (actual_time null, planned_time
+///     untouched) and the card STAYS on the surface, tucked (S-7); left-swipe
+///     again reveals Unskip → status back to planned.
 ///
-/// Remote-half assertions (Supabase row carries the tombstone + two-time
-/// columns, needs_upload cleared) are written below but SELF-SKIP while the
-/// dev cloud is un-migrated (activities.planned_time still 42703) — they arm
+/// Remote-half assertions (Supabase row carries the skip + two-time columns,
+/// needs_upload cleared) are written below but SELF-SKIP while the dev cloud
+/// is un-migrated (activities.planned_time still 42703) — they arm
 /// automatically once Phase C's migrations land, detected by probing the
 /// column itself.
 ///
@@ -27,7 +30,8 @@
 /// controller path (`activitiesControllerProvider.createActivity` — the same
 /// local-first write the New Activity flow lands in), stamped with epoch
 /// millis so it only ever matches itself. The flow ends by soft-deleting the
-/// workout, so it cleans up after itself by design.
+/// workout THROUGH THE CONTROLLER (no delete affordance renders on the v2
+/// card — deferred bundle), so it cleans up after itself by design.
 ///
 /// Run:
 ///   patrol test --target integration_test/flows/macro_dashboard_flow_test.dart \
@@ -56,11 +60,12 @@ const _fullBreakdown = ValueKey('macro_dashboard.full_breakdown');
 const _pager = ValueKey('macro_dashboard.pager');
 const _pagerClose = ValueKey('macro_dashboard.pager_close');
 const _trackingToggle = ValueKey('macro_dashboard.tracking_toggle');
-const _deleteButton = ValueKey('macro_dashboard.delete_button');
+const _skipButton = ValueKey('macro_dashboard.skip_button');
+const _unskipButton = ValueKey('macro_dashboard.unskip_button');
 
 void main() {
   patrolTest('macro dashboard — G1/G2 swipes, two-time writes, S-4, pager, '
-      'tombstone delete', ($) async {
+      'skip / unskip', ($) async {
     await launchApp();
     await $.pump(const Duration(milliseconds: 500));
 
@@ -269,27 +274,87 @@ void main() {
     expect(undoneRow!.plannedTime, plannedTimeAtCreate,
         reason: 'planned_time survives the undo untouched');
 
-    // ---- 6. Delete → the row persists as a tombstone ----------------------
+    // ---- 6. G4/G5: left-swipe reveals Skip; the press writes 'skipped' -----
     await $.tester.ensureVisible(find.byKey(cardKey));
     await $.pump(const Duration(milliseconds: 300));
     await _swipe($, find.byKey(cardKey), -90);
-    await $(_deleteButton).waitUntilVisible(
+    await $(_skipButton).waitUntilVisible(
       timeout: const Duration(seconds: 5),
     );
-    await $(_deleteButton).tap(settlePolicy: SettlePolicy.noSettle);
+    // The swipe itself never changes state (G4).
+    final stillPlanned = await waitForLocalRow(
+      activityId,
+      (r) => r.status == 'planned',
+    );
+    expect(stillPlanned, isNotNull, reason: 'a left swipe must never skip');
+
+    await $(_skipButton).tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 800));
 
-    final tombstone = await waitForLocalRow(
+    final skippedRow = await waitForLocalRow(
       activityId,
-      (r) => r.status == 'deleted',
+      (r) => r.status == 'skipped',
     );
-    expect(tombstone, isNotNull,
-        reason: 'delete must SOFT-delete: the row persists as a tombstone '
-            "(status='deleted'), it is never hard-deleted locally");
-    expect(tombstone!.deletedAt, isNotNull);
+    expect(skippedRow, isNotNull,
+        reason: "Skip must write status='skipped' (never a delete)");
+    expect(skippedRow!.actualTime, isNull);
+    expect(skippedRow.deletedAt, isNull,
+        reason: 'skip is not a delete — no tombstone fields');
+    expect(skippedRow.plannedTime, plannedTimeAtCreate,
+        reason: 'planned_time survives the skip untouched');
 
-    // The card left the surface in the same recompute (G5/S-2).
-    expect(find.byKey(cardKey), findsNothing);
+    // S-7: the card stays on the surface (tucked, no timestamp) — it does
+    // NOT leave like a delete would.
+    await $.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(cardKey), findsOneWidget,
+        reason: 'a skipped card stays on the timeline, tucked');
+    expect(find.text('Skipped'), findsWidgets);
+
+    // ---- 6b. Left-swipe again → Unskip → status back to planned -----------
+    await $.tester.ensureVisible(find.byKey(cardKey));
+    await $.pump(const Duration(milliseconds: 300));
+    await _swipe($, find.byKey(cardKey), -90);
+    await $(_unskipButton).waitUntilVisible(
+      timeout: const Duration(seconds: 5),
+    );
+    await $(_unskipButton).tap(settlePolicy: SettlePolicy.noSettle);
+    await $.pump(const Duration(milliseconds: 800));
+    final unskippedRow = await waitForLocalRow(
+      activityId,
+      (r) => r.status == 'planned',
+    );
+    expect(unskippedRow, isNotNull, reason: 'Unskip must return to planned');
+    expect(unskippedRow!.plannedTime, plannedTimeAtCreate);
+
+    // Skip once more so the remote half can assert the skip write, then the
+    // flow tears its seed down through the controller at the very end.
+    await _swipe($, find.byKey(cardKey), -90);
+    await $(_skipButton).waitUntilVisible(
+      timeout: const Duration(seconds: 5),
+    );
+    await $(_skipButton).tap(settlePolicy: SettlePolicy.noSettle);
+    await $.pump(const Duration(milliseconds: 800));
+    expect(
+      await waitForLocalRow(activityId, (r) => r.status == 'skipped'),
+      isNotNull,
+    );
+
+    Future<void> cleanUp() async {
+      // No delete affordance on the v2 card (deferred bundle) — clean up the
+      // seeded workout through the controller's soft delete instead. The
+      // tombstone render rule (§4b) is still ratified: the card leaves.
+      await container
+          .read(activitiesControllerProvider.notifier)
+          .deleteActivity(activityId);
+      await $.pump(const Duration(milliseconds: 800));
+      final tombstone = await waitForLocalRow(
+        activityId,
+        (r) => r.status == 'deleted',
+      );
+      expect(tombstone, isNotNull,
+          reason: 'cleanup soft-deletes: the row persists as a tombstone');
+      expect(find.byKey(cardKey), findsNothing);
+    }
 
     // ---- 7. Remote half — SELF-SKIPS until Phase C's migrations land -----
     // Probing planned_time distinguishes "column missing" (42703 → the
@@ -299,6 +364,7 @@ void main() {
     if (probe == null) {
       debugPrint('[macro_dashboard_flow] no probe credentials — remote-half '
           'assertions skipped.');
+      await cleanUp();
       return;
     }
     final idSelect = await probe.select(
@@ -317,21 +383,24 @@ void main() {
             'planned_time not selectable (migrations not deployed yet)'}. '
         'These arm automatically after Phase C.',
       );
+      await cleanUp();
       return;
     }
 
-    // Migrations are live: the tombstone + two-time columns must have
+    // Migrations are live: the skip + two-time columns must have
     // round-tripped, and the dirty flag must eventually clear.
     final remoteRows = await probe.select(
       'activities',
-      query: 'id=eq.$activityId&select=status,deleted_at,planned_time',
+      query:
+          'id=eq.$activityId&select=status,deleted_at,planned_time,actual_time',
     );
     expect(remoteRows, isNotEmpty,
-        reason: 'migrated cloud: the tombstone row must upload');
+        reason: 'migrated cloud: the skipped row must upload');
     final remote = remoteRows.first;
-    expect(remote['status'], 'deleted',
-        reason: 'remote row must carry the tombstone status');
-    expect(remote['deleted_at'], isNotNull);
+    expect(remote['status'], 'skipped',
+        reason: "remote row must carry status='skipped'");
+    expect(remote['deleted_at'], isNull, reason: 'skip is not a delete');
+    expect(remote['actual_time'], isNull);
     expect(remote['planned_time'], isNotNull,
         reason: 'planned_time must round-trip to Supabase');
 
@@ -342,6 +411,8 @@ void main() {
     );
     expect(cleared, isNotNull,
         reason: 'needs_upload should clear once the upload succeeds');
+
+    await cleanUp();
   });
 }
 

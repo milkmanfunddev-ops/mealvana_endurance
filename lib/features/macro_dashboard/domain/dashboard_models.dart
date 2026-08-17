@@ -19,9 +19,13 @@ enum WorkoutCardState {
   /// Chip: `✓ verified · <platform>`. The done gesture is SUPPRESSED (G3).
   doneVerified,
 
-  /// Planned treatment + skipped prompt (end of day, neither sync nor
-  /// confirmation).
-  skippedPrompt,
+  /// Planned treatment DRAINED TO NEUTRAL (dotted outline, dimmed fill,
+  /// icon/chip/kcal in dimmed cream — no electrolyte, no orange anywhere).
+  /// Chip: `Skipped`. Two triggers (Q-D6): PASSIVE — the day is past and the
+  /// workout has neither sync nor confirmation (derived, never written);
+  /// ACTIVE — the athlete pressed Skip (status = 'skipped'). The card is
+  /// identical either way; only [WorkoutCardData.skipActive] differs.
+  skipped,
 }
 
 /// One workout card's render data.
@@ -35,6 +39,7 @@ class WorkoutCardData {
     required this.state,
     required this.sport,
     this.verifiedSourceName = 'Garmin',
+    this.skipActive = false,
   });
 
   final String activityId;
@@ -54,15 +59,27 @@ class WorkoutCardData {
   /// Platform that verified the workout ("Garmin", "TrainingPeaks").
   final String verifiedSourceName;
 
+  /// True when [state] is [WorkoutCardState.skipped] because the athlete
+  /// pressed Skip (`status = 'skipped'` on the row) — the left-swipe reveal
+  /// then offers Unskip. A PASSIVE skip (past day, unresolved) is derived and
+  /// has nothing to un-skip: its reveal carries no button (G4).
+  final bool skipActive;
+
   bool get isVerified => state == WorkoutCardState.doneVerified;
   bool get isDone =>
       state == WorkoutCardState.doneConfirmed ||
       state == WorkoutCardState.doneVerified;
+  bool get isSkipped => state == WorkoutCardState.skipped;
+
+  /// A SKIPPED workout's kcal and fuel appear in NO surface figure for its
+  /// day (Q-D5/Q-D6, surface S-2) — passive and active alike.
+  bool get counts => !isSkipped;
 
   String get chipLabel => switch (state) {
         WorkoutCardState.doneVerified => 'verified · $verifiedSourceName',
         WorkoutCardState.doneConfirmed => 'self-reported',
-        WorkoutCardState.planned || WorkoutCardState.skippedPrompt => 'Planned',
+        WorkoutCardState.planned => 'Planned',
+        WorkoutCardState.skipped => 'Skipped',
       };
 }
 
@@ -206,7 +223,13 @@ class DashboardNode {
 
   bool get isWorkout => workout != null;
 
-  /// Rail treatment: solid dot for logged/done, dashed/dotted for planned.
+  /// S-7: a SKIPPED card has lost its timeline slot — it renders with no
+  /// timestamp ([timeLabel] is empty), tucked after every timed card of its
+  /// day, and its rail ink is neutral (dimmed cream), not electrolyte.
+  bool get isSkippedWorkout => isWorkout && workout!.isSkipped;
+
+  /// Rail treatment: solid dot for logged/done, dashed/dotted for planned
+  /// and skipped.
   bool get railDashed =>
       isWorkout && !(workout!.isDone) ||
       (!isWorkout && meals.isNotEmpty && meals.every((m) => m.suggested));

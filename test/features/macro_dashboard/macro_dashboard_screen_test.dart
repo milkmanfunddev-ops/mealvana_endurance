@@ -33,7 +33,7 @@ import '../../helpers/widget_test_harness.dart';
 // ---------------------------------------------------------------------------
 // Canonical mock day (goldens manifest): verified 8:00 swim, planned 5:30 run,
 // breakfast bagel, eaten 1,650, targets 4,152. The date is fixed in the past,
-// so the planned run deterministically lands in the end-of-day SKIPPED? state.
+// so the planned run deterministically lands in the passive SKIPPED state.
 // ---------------------------------------------------------------------------
 
 final _day = DateTime(2026, 8, 14);
@@ -183,11 +183,13 @@ void main() {
     // The Garmin-completed swim wears the verified chip (Q-D1's subject).
     expect(find.text('verified · Garmin'), findsOneWidget);
 
-    // Fixed past day → the un-synced planned run gets the SKIPPED? nudge.
-    expect(
-      find.text('Did this happen? Swipe right to mark done'),
-      findsOneWidget,
-    );
+    // Fixed past day → the un-synced planned run is PASSIVELY skipped
+    // (Q-D6): "Skipped" chip, no timestamp on its rail row (S-7 tuck), and
+    // the rejected v1 prompt copy must not exist anywhere.
+    expect(find.text('Skipped'), findsOneWidget);
+    expect(find.text('5:30 PM'), findsNothing,
+        reason: 'a skipped card renders with no timestamp');
+    expect(find.textContaining('Did this happen?'), findsNothing);
 
     // Add row shows both pills on the All lens; rail times are visible.
     expect(

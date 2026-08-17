@@ -797,6 +797,48 @@ class ActivitiesRepository with SyncableRepository {
     );
   }
 
+  /// G5 Skip (workout-card v2, Q-D6): the athlete's "didn't happen" as a
+  /// first-class write — status = 'skipped'; actual_time CLEARED (skipping a
+  /// DONE_CONFIRMED card asserts it did not happen); planned_time untouched.
+  /// A status='skipped' row contributes zero to the day's session demand
+  /// and fuel windows (platform-resolution.md SKIPPED addition) and loses
+  /// its timeline slot (S-7). Sync beats skip: a later matching platform
+  /// sync overwrites this with completed + the measured actual_time.
+  Future<void> skipWorkout({required String activityId}) async {
+    final now = DateTime.now();
+    await (_database.update(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        status: const Value('skipped'),
+        actualTime: const Value(null),
+        completedAt: const Value(null),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+    await _queueImmediateActivityUpsertById(activityId, operation: 'skip');
+  }
+
+  /// G5 Unskip: status back to planned; planned_time untouched (the card
+  /// returns to its time-ordered slot). Reference rendering: unskip always
+  /// lands on planned, never on confirmed.
+  Future<void> unskipWorkout({required String activityId}) async {
+    final now = DateTime.now();
+    await (_database.update(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        status: const Value('planned'),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+    await _queueImmediateActivityUpsertById(activityId, operation: 'unskip');
+  }
+
   /// HARD delete, remote then local — for provider-wipe cleanup only
   /// (disconnecting an integration), never for a user deleting a workout.
   /// A disconnect wipe must NOT leave tombstones: those rows would suppress
@@ -1392,6 +1434,18 @@ class ActivitiesRepository with SyncableRepository {
       intensityDistribution: incoming.intensityDistribution,
       timeBeforeMinutes: incoming.timeBeforeMinutes,
       notes: incoming.notes,
+
+      // Two-time model + measured kcal (platform-resolution.md): a planned-
+      // workout provider update never carries these — preserving them keeps a
+      // mark-done / Garmin-verified row from silently reverting to PLANNED on
+      // the next TP/FS re-sync. planned_time follows a provider RESCHEDULE
+      // (that is scheduling, which owns planned_time); otherwise it stays.
+      plannedTime: incoming.plannedTime ??
+          (incoming.scheduledDateTime != existing.scheduledDateTime
+              ? incoming.scheduledDateTime
+              : existing.plannedTime),
+      actualTime: incoming.actualTime ?? existing.actualTime,
+      caloriesBurned: incoming.caloriesBurned ?? existing.caloriesBurned,
 
       // preserve local completion and nutrition data
       completedAt: existing.completedAt,

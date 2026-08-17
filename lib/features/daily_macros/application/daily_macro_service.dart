@@ -477,7 +477,7 @@ class DailyMacroService {
                 tss, intensity_level
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL
+         AND deleted_at IS NULL AND status != 'skipped'
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -496,7 +496,16 @@ class DailyMacroService {
     return _WeekActivityInputs(results);
   }
 
-  /// Load sessions for a date in the format expected by the edge function
+  /// Load sessions for a date in the format expected by the edge function.
+  ///
+  /// `status = 'skipped'` rows are excluded from EVERY activity-derived input
+  /// (sessions, adjacent-day context, weekly hours): the athlete's "didn't
+  /// happen" contributes zero to session demand and fuel windows exactly as
+  /// the confirmation ladder's else-rung does, even while planned_time is
+  /// still in the future (platform-resolution.md, SKIPPED addition
+  /// 2026-08-17). Tombstones (status='deleted') also carry deleted_at, so the
+  /// existing filter already drops them. A skip/unskip therefore invalidates
+  /// the cached window — see `macro_cache_invalidation.dart`.
   Future<List<Map<String, dynamic>>> _loadSessionsForDate(
     String userId,
     DateTime date,
@@ -513,7 +522,7 @@ class DailyMacroService {
                 tss, intensity_level
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL
+         AND deleted_at IS NULL AND status != 'skipped'
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -539,7 +548,7 @@ class DailyMacroService {
           '''SELECT tss, duration_minutes, intensity_level, scheduled_date_time
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL''',
+         AND deleted_at IS NULL AND status != 'skipped' ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfDay),
@@ -566,7 +575,7 @@ class DailyMacroService {
           '''SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL''',
+         AND deleted_at IS NULL AND status != 'skipped' ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfWeek),

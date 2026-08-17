@@ -993,4 +993,15 @@ class ActivitiesService {
   Future<void> markWorkoutUndone({required String activityId}) async {
     await _activitiesRepository.markWorkoutUndone(activityId: activityId);
   }
+
+  /// Skip a workout (dashboard G5, v2): status = 'skipped', actual_time
+  /// cleared, planned_time untouched. Never a delete.
+  Future<void> skipWorkout({required String activityId}) async {
+    await _activitiesRepository.skipWorkout(activityId: activityId);
+  }
+
+  /// Unskip a workout (dashboard G5, v2): status back to planned.
+  Future<void> unskipWorkout({required String activityId}) async {
+    await _activitiesRepository.unskipWorkout(activityId: activityId);
+  }
 }

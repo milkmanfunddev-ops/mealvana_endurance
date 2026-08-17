@@ -4,19 +4,25 @@ import '../../domain/dashboard_models.dart';
 import '../me_tokens.dart';
 
 /// Workout card — component contract: docs/ssot/spec/design/components/
-/// workout-card.md (RATIFIED v1). Reference rendering:
-/// prototypes/macro-dashboard/index.html @ aa81d21.
+/// workout-card.md (RATIFIED v2 — Q-D6 unified-skip model). Reference
+/// rendering: prototypes/macro-dashboard/index.html @ 5a22ca8.
 ///
-/// Gestures (G1–G5, G7):
-///  - Full right-swipe on PLANNED → [onMarkDone] (writes actual_time = now
-///    upstream; planned_time is NEVER touched).
+/// Gestures (G1–G7):
+///  - Full right-swipe on PLANNED / SKIPPED → [onMarkDone] (writes
+///    actual_time = now upstream; planned_time is NEVER touched; a skipped
+///    row's status returns to planned).
 ///  - Full right-swipe on DONE_CONFIRMED → [onMarkUndone] (clears
-///    actual_time upstream).
-///  - Right-swipe on DONE_VERIFIED is SUPPRESSED entirely (Q-D1): no reveal
-///    renders, no translation past a token nudge — a Garmin fact is not
+///    actual_time upstream → the day's unresolved state).
+///  - ANY swipe on DONE_VERIFIED is SUPPRESSED entirely (G3, both
+///    directions in v2): no reveal renders, no translation past a token
+///    nudge, no Skip/Unskip affordance — a Garmin fact is not
 ///    contradictable and no dead affordance is shown.
-///  - Partial left-swipe reveals a labeled Delete in dragonfruit; deletion
-///    happens only on the button press (two-step), never by the swipe.
+///  - Partial left-swipe reveals a labeled, NEUTRAL button (dimmed cream on
+///    a translucent field — never dragonfruit; skipping is not destructive):
+///    `Skip` on PLANNED / DONE_CONFIRMED, `Unskip` on an actively-skipped
+///    card. A passively skipped past-day card reveals no button (recovery
+///    there is G1 only). Skip/unskip happen only on the button press, never
+///    by the swipe itself.
 ///  - The card EMITS its state change via callbacks and never repaints only
 ///    itself (G7) — the surface owns whole-dashboard propagation (S-1).
 class WorkoutCard extends StatefulWidget {
@@ -26,7 +32,8 @@ class WorkoutCard extends StatefulWidget {
     this.onTap,
     this.onMarkDone,
     this.onMarkUndone,
-    this.onDelete,
+    this.onSkip,
+    this.onUnskip,
     this.onFuelTap,
   });
 
@@ -34,11 +41,17 @@ class WorkoutCard extends StatefulWidget {
 
   /// Tap into the card → the existing workout detail surface (the tapped-into
   /// view is deliberately untouched by this redesign — scope ruling). When
-  /// the delete reveal is open, a tap closes the reveal instead.
+  /// the skip reveal is open, a tap closes the reveal instead.
   final VoidCallback? onTap;
   final VoidCallback? onMarkDone;
   final VoidCallback? onMarkUndone;
-  final VoidCallback? onDelete;
+
+  /// G5 Skip press: upstream writes status = 'skipped' (and clears
+  /// actual_time if the card was DONE_CONFIRMED).
+  final VoidCallback? onSkip;
+
+  /// G5 Unskip press: upstream clears status; planned_time untouched.
+  final VoidCallback? onUnskip;
   final VoidCallback? onFuelTap;
 
   @override
@@ -50,12 +63,12 @@ class _WorkoutCardState extends State<WorkoutCard> {
   bool _dragging = false;
   bool _revealOpen = false;
 
-  static const double _deleteRevealWidth = 94;
+  static const double _skipRevealWidth = 94;
   static const double _revealSettle = -108;
   static const double _openThreshold = -46;
 
-  /// Q-D1: a verified card may translate at most this far — a token nudge —
-  /// and never shows the done reveal.
+  /// G3: a verified card may translate at most this far — a token nudge, in
+  /// either direction — and never shows a reveal.
   static const double _verifiedNudgeMax = 8;
 
   bool get _canToggle => !widget.data.isVerified;
@@ -67,9 +80,9 @@ class _WorkoutCardState extends State<WorkoutCard> {
   void _onDragUpdate(DragUpdateDetails details) {
     final width = context.size?.width ?? 300;
     var dx = _dx + details.delta.dx;
-    if (dx > 0 && !_canToggle) {
-      // G3 suppression: no reveal, token nudge only.
-      dx = dx.clamp(0, _verifiedNudgeMax);
+    if (!_canToggle) {
+      // G3 suppression (both directions): no reveal, token nudge only.
+      dx = dx.clamp(-_verifiedNudgeMax, _verifiedNudgeMax);
     }
     if (dx < _revealSettle) {
       dx = _revealSettle + (dx - _revealSettle) * 0.22; // rubber-band
@@ -81,16 +94,18 @@ class _WorkoutCardState extends State<WorkoutCard> {
   void _onDragEnd(DragEndDetails _) {
     final width = context.size?.width ?? 300;
     final committed = _canToggle && _dx > width * 0.42;
-    final openDelete = _dx < _openThreshold;
+    final openSkip = _canToggle && _dx < _openThreshold;
     setState(() {
       _dragging = false;
-      _revealOpen = openDelete && !committed;
+      _revealOpen = openSkip && !committed;
       _dx = _revealOpen ? _revealSettle : 0;
     });
     if (committed) {
       if (widget.data.isDone) {
         widget.onMarkUndone?.call();
       } else {
+        // PLANNED or SKIPPED → DONE_CONFIRMED (G1; a skipped row's status
+        // returns to planned upstream).
         widget.onMarkDone?.call();
       }
     }
@@ -107,8 +122,38 @@ class _WorkoutCardState extends State<WorkoutCard> {
   Widget build(BuildContext context) {
     final data = widget.data;
     final done = data.isDone;
+    final skipped = data.isSkipped;
     final width = MediaQuery.sizeOf(context).width;
     final commit = _canToggle && _dx > width * 0.42;
+
+    // Skins (reference rendering @ 5a22ca8, decorate()): done = solid fill +
+    // solid electrolyte border; planned = dotted electrolyte edge; skipped =
+    // the planned treatment DRAINED TO NEUTRAL (dotted cream edge, dimmed
+    // fill — no electrolyte, no orange anywhere on the card).
+    final Color fill;
+    final Border? border;
+    final Decoration? dottedEdge;
+    if (done) {
+      fill = const Color.fromRGBO(54, 38, 62, 1);
+      border = Border.all(color: MeTokens.electrolyteAlpha(0.3));
+      dottedEdge = null;
+    } else if (skipped) {
+      fill = const Color.fromRGBO(255, 255, 255, 0.03);
+      border = null;
+      dottedEdge = _DottedBorderDecoration(
+        color: MeTokens.creamAlpha(0.26),
+        strokeWidth: 1.5,
+        radius: 14,
+      );
+    } else {
+      fill = const Color.fromRGBO(55, 31, 57, 1);
+      border = null;
+      dottedEdge = _DottedBorderDecoration(
+        color: MeTokens.electrolyteAlpha(0.55),
+        strokeWidth: 1.5,
+        radius: 14,
+      );
+    }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
@@ -118,18 +163,18 @@ class _WorkoutCardState extends State<WorkoutCard> {
           // verified card — G3's "no reveal renders".
           if (_dx > 0 && _canToggle)
             Positioned.fill(child: _doneUnderlay(commit)),
-          // Left-swipe delete reveal.
-          if (_dx < 0)
+          // Left-swipe skip reveal — never for a verified card (G3).
+          if (_dx < 0 && _canToggle)
             Positioned(
               top: 0,
               right: 0,
               bottom: 0,
-              child: _deleteReveal(),
+              child: _skipReveal(),
             ),
           GestureDetector(
             // deferToChild: the hit area must follow the translated card —
             // an opaque full-width listener would swallow taps meant for
-            // the revealed Delete button.
+            // the revealed Skip button.
             behavior: HitTestBehavior.deferToChild,
             onTap: () {
               if (_revealOpen) {
@@ -148,28 +193,18 @@ class _WorkoutCardState extends State<WorkoutCard> {
               curve: Curves.easeOutCubic,
               transform: Matrix4.translationValues(_dx, 0, 0),
               decoration: BoxDecoration(
-                color: done
-                    ? const Color.fromRGBO(54, 38, 62, 1)
-                    : const Color.fromRGBO(55, 31, 57, 1),
+                color: fill,
                 borderRadius: BorderRadius.circular(14),
-                border: done
-                    ? Border.all(color: MeTokens.electrolyteAlpha(0.3))
-                    : null,
+                border: border,
               ),
-              foregroundDecoration: done
-                  ? null
-                  : _DottedBorderDecoration(
-                      color: MeTokens.electrolyteAlpha(0.55),
-                      strokeWidth: 1.5,
-                      radius: 14,
-                    ),
+              foregroundDecoration: dottedEdge,
               padding: const EdgeInsets.all(13),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _iconDisc(done),
+                  _iconDisc(done, skipped),
                   const SizedBox(width: 12),
-                  Expanded(child: _body(done)),
+                  Expanded(child: _body(done, skipped)),
                 ],
               ),
             ),
@@ -226,62 +261,74 @@ class _WorkoutCardState extends State<WorkoutCard> {
     );
   }
 
-  Widget _deleteReveal() {
-    final enabled = _canToggle;
+  /// G4: the left-swipe reveal. Neutral treatment — dimmed cream on a
+  /// translucent field (reference: rgba(cream,0.14) field, cream ink) —
+  /// NEVER dragonfruit: skipping is not destructive and the token contract
+  /// forbids it. `Skip` on PLANNED / DONE_CONFIRMED, `Unskip` on an actively
+  /// skipped card; a passively skipped past-day card has nothing to un-skip,
+  /// so the field carries no button (recovery there is G1 only).
+  Widget _skipReveal() {
+    final data = widget.data;
+    final unskip = data.isSkipped && data.skipActive;
+    final hasButton = !data.isSkipped || data.skipActive;
     return SizedBox(
-      width: _deleteRevealWidth,
-      child: Semantics(
-        button: true,
-        enabled: enabled,
-        label: 'Delete',
-        child: InkWell(
-          key: const ValueKey('macro_dashboard.delete_button'),
-          onTap: enabled
-              ? () {
-                  _closeReveal();
-                  widget.onDelete?.call();
-                }
-              : null,
-          child: Container(
-            // Destructive = dragonfruit, and nothing else (tokens.md).
-            color: enabled
-                ? MeTokens.dragonfruit
-                : MeTokens.creamAlpha(0.09),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.delete_outline,
-                  size: 16,
-                  color: enabled
-                      ? MeTokens.cream
-                      : MeTokens.creamAlpha(0.32),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Delete',
-                  style: TextStyle(
-                    fontFamily: 'Apercu',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    color: enabled
-                        ? MeTokens.cream
-                        : MeTokens.creamAlpha(0.32),
+      width: _skipRevealWidth,
+      child: Container(
+        color: MeTokens.creamAlpha(0.14),
+        child: hasButton
+            ? Semantics(
+                button: true,
+                label: unskip ? 'Unskip' : 'Skip',
+                child: InkWell(
+                  key: ValueKey(
+                    unskip
+                        ? 'macro_dashboard.unskip_button'
+                        : 'macro_dashboard.skip_button',
+                  ),
+                  onTap: () {
+                    _closeReveal();
+                    if (unskip) {
+                      widget.onUnskip?.call();
+                    } else {
+                      widget.onSkip?.call();
+                    }
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        unskip ? Icons.replay : Icons.block,
+                        size: 16,
+                        color: MeTokens.cream,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        unskip ? 'Unskip' : 'Skip',
+                        style: const TextStyle(
+                          fontFamily: 'Apercu',
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: MeTokens.cream,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              )
+            : null,
       ),
     );
   }
 
-  Widget _iconDisc(bool done) {
+  Widget _iconDisc(bool done, bool skipped) {
     final icon = Icon(
       _sportIcon(widget.data.sport),
       size: 19,
-      color: done ? MeTokens.blackberry : MeTokens.electrolyteAlpha(0.85),
+      color: done
+          ? MeTokens.blackberry
+          : skipped
+              ? MeTokens.creamAlpha(0.42)
+              : MeTokens.electrolyteAlpha(0.85),
     );
     if (done) {
       return Container(
@@ -295,13 +342,16 @@ class _WorkoutCardState extends State<WorkoutCard> {
         child: icon,
       );
     }
-    // Planned: hollow disc with the same dotted "not yet" edge as the card.
+    // Planned: hollow disc with the same dotted "not yet" edge as the card;
+    // skipped: the same disc drained to neutral.
     return SizedBox(
       width: 40,
       height: 40,
       child: CustomPaint(
         painter: _DottedCirclePainter(
-          color: MeTokens.electrolyteAlpha(0.6),
+          color: skipped
+              ? MeTokens.creamAlpha(0.3)
+              : MeTokens.electrolyteAlpha(0.6),
           strokeWidth: 1.5,
         ),
         child: Center(child: icon),
@@ -316,7 +366,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
         _ => Icons.directions_run,
       };
 
-  Widget _body(bool done) {
+  Widget _body(bool done, bool skipped) {
     final data = widget.data;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +386,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
               ),
             ),
             const SizedBox(width: 8),
-            _chip(done),
+            _chip(done, skipped),
           ],
         ),
         const SizedBox(height: 3),
@@ -349,74 +399,60 @@ class _WorkoutCardState extends State<WorkoutCard> {
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        const SizedBox(height: 5),
-        GestureDetector(
-          onTap: widget.onFuelTap,
-          child: const Text(
-            'Pre · During · Recovery fuel ›',
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 10.5,
-              color: MeTokens.orange,
+        // The fuel link is an orange (intake) element; a SKIPPED card carries
+        // no orange and its fuel windows have left the day (S-2), so the
+        // link is not rendered there.
+        if (!skipped) ...[
+          const SizedBox(height: 5),
+          GestureDetector(
+            onTap: widget.onFuelTap,
+            child: const Text(
+              'Pre · During · Recovery fuel ›',
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 10.5,
+                color: MeTokens.orange,
+              ),
             ),
-          ),
-        ),
-        // End-of-day skipped prompt: planned treatment + a nudge to settle
-        // "no sync" vs "didn't happen" — the athlete is the tiebreaker
-        // (platform-resolution confirmation rung). Styling reuses the
-        // reference rendering's swipe-hint row; exact copy pending design.
-        if (data.state == WorkoutCardState.skippedPrompt) ...[
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(
-                Icons.help_outline,
-                size: 12,
-                color: MeTokens.creamAlpha(0.4),
-              ),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  'Did this happen? Swipe right to mark done',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Apercu',
-                    fontSize: 10,
-                    color: MeTokens.creamAlpha(0.4),
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ],
     );
   }
 
-  Widget _chip(bool done) {
+  Widget _chip(bool done, bool skipped) {
     final data = widget.data;
+    // Chip skins: done = electrolyte on translucent electrolyte; planned =
+    // electrolyte outline; skipped = neutral (dimmed cream) — the chip is the
+    // whole signal of a skipped card.
+    final Color chipFill;
+    final Border? chipBorder;
+    final Color ink;
+    if (done) {
+      chipFill = MeTokens.electrolyteAlpha(0.16);
+      chipBorder = null;
+      ink = MeTokens.electrolyte;
+    } else if (skipped) {
+      chipFill = MeTokens.creamAlpha(0.07);
+      chipBorder = Border.all(color: MeTokens.creamAlpha(0.22));
+      ink = MeTokens.creamAlpha(0.6);
+    } else {
+      chipFill = MeTokens.electrolyteAlpha(0.1);
+      chipBorder = Border.all(color: MeTokens.electrolyteAlpha(0.35));
+      ink = MeTokens.electrolyteAlpha(0.9);
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: done
-            ? MeTokens.electrolyteAlpha(0.16)
-            : MeTokens.electrolyteAlpha(0.1),
+        color: chipFill,
         borderRadius: BorderRadius.circular(100),
-        border: done
-            ? null
-            : Border.all(color: MeTokens.electrolyteAlpha(0.35)),
+        border: chipBorder,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (done) ...[
-            Icon(
-              Icons.check,
-              size: 9,
-              color: done
-                  ? MeTokens.electrolyte
-                  : MeTokens.electrolyteAlpha(0.9),
-            ),
+            Icon(Icons.check, size: 9, color: ink),
             const SizedBox(width: 3),
           ],
           Text(
@@ -426,9 +462,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
               fontSize: 9.5,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.4,
-              color: done
-                  ? MeTokens.electrolyte
-                  : MeTokens.electrolyteAlpha(0.9),
+              color: ink,
             ),
           ),
         ],

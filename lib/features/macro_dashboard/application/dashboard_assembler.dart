@@ -29,9 +29,10 @@ class DashboardData {
 ///
 /// Every quantity maps to a documented spec field (S-3): so-far arithmetic
 /// comes from [IntradayDisplay] (intraday-display.md §§1–3), session energy
-/// from the F22 ladder's formula rung (measured Garmin kcal is not yet
-/// mirrored into the local row — follow-up), and card states from the
-/// two-time model + tombstone rulings (platform-resolution.md).
+/// from the F22 ladder (measured Garmin kcal when mirrored into the local
+/// row, else the formula rung), and card states from the two-time model,
+/// the tombstone ruling and the v2 unified-skip model (Q-D6:
+/// platform-resolution.md `SKIPPED` addition, workout-card.md v2).
 class MacroDashboardAssembler {
   const MacroDashboardAssembler();
 
@@ -57,18 +58,30 @@ class MacroDashboardAssembler {
         .map((a) => _workoutCard(a, selectedDate, now, weightKg))
         .toList(growable: false);
 
-    final workoutNodes = <DashboardNode>[
-      for (final c in cards)
-        DashboardNode.workout(timeLabel: c.data.timeLabel, workout: c.data),
-    ];
-
     final mealNodes = _mealNodes(meals);
 
-    final nodes = <_TimedNode>[
-      for (var i = 0; i < cards.length; i++)
-        _TimedNode(cards[i].time, workoutNodes[i]),
+    // S-7: a SKIPPED card loses its timeline slot — no timestamp, tucked
+    // after every timed card of the day (planned or done); several skipped
+    // cards order by planned_time ascending. Unskip / G1 recovery restores
+    // the time-ordered slot simply by the card no longer being skipped.
+    final timed = <_TimedNode>[
+      for (final c in cards)
+        if (c.data.counts)
+          _TimedNode(
+            c.time,
+            DashboardNode.workout(timeLabel: c.data.timeLabel, workout: c.data),
+          ),
       ...mealNodes,
     ]..sort((a, b) => a.time.compareTo(b.time));
+    final tucked = <_TimedNode>[
+      for (final c in cards)
+        if (c.data.isSkipped)
+          _TimedNode(
+            c.time,
+            DashboardNode.workout(timeLabel: '', workout: c.data),
+          ),
+    ]..sort((a, b) => a.time.compareTo(b.time));
+    final nodes = [...timed, ...tucked];
 
     final built = targets == null
         ? null
@@ -97,25 +110,40 @@ class MacroDashboardAssembler {
     DateTime now,
     double weightKg,
   ) {
-    final displayTime = a.displayTime;
+    // Two-time model: a card is done when the athlete confirmed it or a
+    // sync stamped actual_time; verified when a platform stamped it. Sync
+    // beats skip (G6): a matching sync writes actual_time + the summary id,
+    // so a skipped row that syncs reads as DONE_VERIFIED here regardless of
+    // what `status` says.
     final done = a.status == ActivityStatus.completed || a.actualTime != null;
     final verified = done && a.garminSummaryId != null;
 
-    // End-of-day skipped prompt: still planned with neither sync nor
-    // confirmation once the day is effectively over ([design]: a past day,
-    // or after 22:00 on the day itself).
-    final dayOver =
+    // SKIPPED — two triggers (Q-D6):
+    //  ACTIVE  — status = 'skipped', written by the Skip press (allowed on
+    //            the current day). Unskip / mark-done clear it.
+    //  PASSIVE — the workout's day is past and it has neither sync nor
+    //            confirmation. Derived, never written; the CURRENT day never
+    //            shows a passive SKIPPED (the rejected same-day-22:00
+    //            trigger must not exist — Q-D5).
+    final skipActive = !done && a.status == ActivityStatus.skipped;
+    final dayPast =
         DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
-                .isBefore(DateTime(now.year, now.month, now.day)) ||
-            (now.hour >= 22 && _sameDay(selectedDate, now));
+            .isBefore(DateTime(now.year, now.month, now.day));
+    final skipPassive = !done && !skipActive && dayPast;
 
     final state = verified
         ? WorkoutCardState.doneVerified
         : done
             ? WorkoutCardState.doneConfirmed
-            : dayOver
-                ? WorkoutCardState.skippedPrompt
+            : (skipActive || skipPassive)
+                ? WorkoutCardState.skipped
                 : WorkoutCardState.planned;
+
+    // A skipped card has no displayed time (S-7); its sort key for the tucked
+    // group is planned_time. Everything else displays actual ?? planned.
+    final displayTime = state == WorkoutCardState.skipped
+        ? (a.plannedTime ?? a.scheduledDateTime)
+        : a.displayTime;
 
     return _TimedCard(
       displayTime,
@@ -127,6 +155,7 @@ class MacroDashboardAssembler {
         kcal: _sessionKcal(a, weightKg),
         state: state,
         sport: a.activityType.name,
+        skipActive: skipActive,
       ),
     );
   }
@@ -206,8 +235,13 @@ class MacroDashboardAssembler {
     final minutesSinceMidnight =
         isToday ? now.hour * 60 + now.minute : 1440;
 
+    // S-2 (skip scope): a SKIPPED workout's kcal and fuel leave EVERY
+    // surface figure — net balance, band copy, Active Energy sheet,
+    // by-end-of-day burn — in the same frame; passive and active alike.
+    final counted = cards.where((c) => c.data.counts).toList(growable: false);
+
     final sessions = [
-      for (final c in cards)
+      for (final c in counted)
         IntradaySession(
           kcal: c.data.kcal,
           actualTimeMin: c.data.isDone
@@ -253,7 +287,7 @@ class MacroDashboardAssembler {
     // projects 1,434 exactly as the reference rendering shows.
     var doneKcal = 0.0;
     var plannedKcal = 0.0;
-    for (final c in cards) {
+    for (final c in counted) {
       if (c.data.isDone) {
         doneKcal += c.data.kcal.roundToDouble();
       } else {
@@ -272,7 +306,7 @@ class MacroDashboardAssembler {
       workoutPlannedKcal: plannedKcal,
       workoutProjectedKcal: doneKcal + plannedKcal,
       workoutRows: [
-        for (final c in cards)
+        for (final c in counted)
           EnergyWorkoutRow(
             name: c.data.name,
             note: c.data.isDone

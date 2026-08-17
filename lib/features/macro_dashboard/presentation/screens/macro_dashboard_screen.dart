@@ -19,8 +19,9 @@ import '../widgets/meal_card.dart';
 import '../widgets/workout_card.dart';
 
 /// The macro dashboard — surface contract:
-/// docs/ssot/spec/design/surfaces/macro-dashboard.md (RATIFIED v1).
-/// Reference rendering: prototypes/macro-dashboard/index.html @ aa81d21.
+/// docs/ssot/spec/design/surfaces/macro-dashboard.md (RATIFIED v2 — pins
+/// workout-card v2: skip replaces delete, S-2 skip scope, S-7 tuck).
+/// Reference rendering: prototypes/macro-dashboard/index.html @ 5a22ca8.
 ///
 /// Ships behind AppConfig.macroDashboardEnabled (fail-closed) as the
 /// flag-gated successor to FuelTimelineScreen; the fuel-detail sheets and the
@@ -342,16 +343,19 @@ class MacroDashboardScreen extends ConsumerWidget {
     // Workouts are always teal on the rail; meals are orange. (The reference
     // rendering tints some meal dots electrolyte — that predates the tokens
     // ruling that electrolyte may only signify the burn/verified domain, so
-    // the token contract wins here.)
+    // the token contract wins here.) A SKIPPED card's rail ink is neutral
+    // (S-7): dimmed cream, not electrolyte, not orange.
     final color = node.isWorkout ? MeTokens.electrolyte : MeTokens.orange;
     if (node.railDashed) {
       // Planned entries get a hollow DOTTED ring (the "not yet" edge).
       return CustomPaint(
         size: const Size(11, 11),
         painter: _DottedRingPainter(
-          color: node.isWorkout
-              ? MeTokens.electrolyteAlpha(0.65)
-              : MeTokens.orange,
+          color: node.isSkippedWorkout
+              ? MeTokens.creamAlpha(0.28)
+              : node.isWorkout
+                  ? MeTokens.electrolyteAlpha(0.65)
+                  : MeTokens.orange,
         ),
       );
     }
@@ -389,7 +393,8 @@ class MacroDashboardScreen extends ConsumerWidget {
         () => activities.markWorkoutUndone(data.activityId),
         'Could not undo — try again',
       ),
-      onDelete: () => _deleteWithUndo(context, ref, data),
+      onSkip: () => _skipWithUndo(context, ref, data, skipping: true),
+      onUnskip: () => _skipWithUndo(context, ref, data, skipping: false),
     );
   }
 
@@ -417,31 +422,45 @@ class MacroDashboardScreen extends ConsumerWidget {
     }
   }
 
-  /// G5 + S-2: the delete press removes the workout's contributions from
-  /// every surface figure in the same frame (the optimistic controller
-  /// update recomputes the whole day); upstream the write is a soft delete
-  /// (status='deleted', row persists).
-  void _deleteWithUndo(
+  /// G5 + S-2 + S-7: Skip writes status = 'skipped' (clearing actual_time if
+  /// the card was DONE_CONFIRMED); the workout's kcal, fuel windows and
+  /// timeline slot leave every surface figure in the same frame (the
+  /// optimistic controller update recomputes the whole day) and the card
+  /// tucks after every timed card. Unskip clears status and restores the
+  /// slot. Both offer undo that restores the EXACT prior row (a skip taken
+  /// on a confirmed card undoes back to confirmed, actual_time intact).
+  /// Nothing here is a delete — the tombstone path is deferred (Q-D6).
+  void _skipWithUndo(
     BuildContext context,
     WidgetRef ref,
-    WorkoutCardData data,
-  ) async {
+    WorkoutCardData data, {
+    required bool skipping,
+  }) async {
     final notifier = ref.read(activitiesControllerProvider.notifier);
     final previous = await notifier.getActivityById(data.activityId);
     if (!context.mounted) return;
     try {
-      await notifier.deleteActivity(data.activityId);
+      if (skipping) {
+        await notifier.skipWorkout(data.activityId);
+      } else {
+        await notifier.unskipWorkout(data.activityId);
+      }
     } catch (_) {
       // Rolled back by the controller — the card is already back.
       if (context.mounted) {
-        MealvanaSnackbar.showError(context, 'Could not delete workout');
+        MealvanaSnackbar.showError(
+          context,
+          skipping
+              ? 'Could not skip workout'
+              : 'Could not unskip workout',
+        );
       }
       return;
     }
     if (!context.mounted) return;
     MealvanaSnackbar.showInfo(
       context,
-      '${data.name} deleted',
+      '${data.name} ${skipping ? 'skipped' : 'unskipped'}',
       duration: const Duration(seconds: 5),
       actionLabel: 'Undo',
       onAction: () async {
@@ -452,7 +471,7 @@ class MacroDashboardScreen extends ConsumerWidget {
               .restoreActivity(previous);
         } catch (_) {
           if (context.mounted) {
-            MealvanaSnackbar.showError(context, 'Could not restore workout');
+            MealvanaSnackbar.showError(context, 'Could not undo — try again');
           }
         }
       },
