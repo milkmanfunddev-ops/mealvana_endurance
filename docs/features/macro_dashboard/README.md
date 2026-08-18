@@ -155,8 +155,31 @@ until Phase C). Still open from Phase B:
   `macro_dashboard_screen_test.dart` ("holds through a targets recompute").
 - **Q-017**: no-op accepted; the 10b exemption is EXCLUDED from v2 — nothing
   to implement.
+- **Two @v2 judgement calls raised as QA intake** (2026-08-18, on
+  `qa/daily-macros`, deferred to the integration-sync SSOT pass — status quo
+  meanwhile): `intake/2026-08-18-skipped-row-sync-match-window.md` (skipped
+  rows match under the ruled ±15 min key, so "skipped it, then ran at 3:00"
+  yields a second verified card) and
+  `intake/2026-08-18-platform-declared-skip-semantics.md` (a TP `skipped`
+  import renders as an athlete skip, Unskip available).
 - QA-repo side: `land-bundle` flips `docs/feature-test-plans/
-  macro-dashboard.md` rows (QA-owned; the mirror is verbatim).
+  macro-dashboard.md` rows (QA-owned; the mirror is verbatim). Suggest
+  widening the `profile → engine inputs` row to name the Q-016 manual rung
+  so the audit asks for `manual_input_invalidation_test.dart`.
+
+### Where v2 stands (2026-08-18) — `done_when` scorecard
+| Clause | Status |
+|---|---|
+| 9 vector files green vs the real engine (168/168) | ✅ |
+| every v2 manifest artifact exists + passes (10 goldens; 22 tests / 17 rows incl. g4/g5/g6, regenerated `workout_card_skipped`) | ✅ |
+| schema tasks landed | ✅ in-repo (migrations `20260814120000/121000`); **dev cloud un-migrated → Phase C** |
+| delete affordance gone from the card | ✅ |
+| feature-test-plan rows flip | ⬜ QA, at `land-bundle` |
+
+Verified: full Flutter suite green (only the two `test/manual_live` creds
+tests red), Deno 203 pass, on-sim walk of skip → tuck → unskip → restore,
+passive SKIPPED on a past day, S-1 propagation. Next: push → Patrol re-run
+of the re-pointed flow → Phase C → `land-bundle`.
 
 ### Phase C — deploy (after Phase A is green and Lee signs off)
 Strict order:
