@@ -173,8 +173,69 @@ void main() {
     );
     await _drag(tester, find.byType(WorkoutCard), 320);
     expect(markedDone, 1);
-    // The actual_time = now / planned_time-untouched half of G1 is pinned
-    // at the write seam below ('two-time writes').
+    // The actual_time / planned_time-untouched half of G1 is pinned at the
+    // write seam below ('two-time writes').
+  });
+
+  // G1 on a FUTURE day is suppressed (ruled by the spec owner 2026-08-18,
+  // app implemented ahead of the SSOT fold — qa intake
+  // 2026-08-18-mark-done-on-non-current-day.md): a workout that hasn't
+  // happened cannot be confirmed. Like G3: token nudge, no reveal, no emit.
+  // Skip (left) stays available; mark-UNDONE on a confirmed card stays
+  // available so a legacy future-day confirmation can be corrected.
+  testWidgets('g1: on a future day the right-swipe is suppressed; skip and undone still work',
+      (tester) async {
+    var skipped = 0;
+    await tester.pumpWidget(
+      _host(
+        WorkoutCard(
+          data: WorkoutCardData(
+            activityId: 'w9',
+            name: 'Tomorrow ride',
+            timeLabel: '7:00 AM',
+            metaLabel: '100 min',
+            kcal: 1022,
+            state: WorkoutCardState.planned,
+            sport: 'cycling',
+            markDoneAllowed: false,
+          ),
+          onMarkDone: () => fail('a future-day workout cannot be marked done'),
+          onSkip: () => skipped++,
+        ),
+      ),
+    );
+    final before = tester.getTopLeft(find.text('Tomorrow ride'));
+    await _drag(tester, find.byType(WorkoutCard), 320);
+    expect(tester.getTopLeft(find.text('Tomorrow ride')).dx - before.dx, 0);
+    expect(find.text('Mark done'), findsNothing);
+    // Skip is still offered.
+    await _drag(tester, find.byType(WorkoutCard), -90);
+    expect(find.text('Skip'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(skipped, 1);
+
+    // A (legacy) confirmed card on a future day can still be undone.
+    var undone = 0;
+    await tester.pumpWidget(
+      _host(
+        WorkoutCard(
+          data: WorkoutCardData(
+            activityId: 'w9',
+            name: 'Tomorrow ride',
+            timeLabel: '7:00 AM',
+            metaLabel: '100 min',
+            kcal: 1022,
+            state: WorkoutCardState.doneConfirmed,
+            sport: 'cycling',
+            markDoneAllowed: false,
+          ),
+          onMarkUndone: () => undone++,
+        ),
+      ),
+    );
+    await _drag(tester, find.byType(WorkoutCard), 320);
+    expect(undone, 1);
   });
 
   // G1 also recovers a SKIPPED card (passive or active) → DONE_CONFIRMED.
@@ -779,19 +840,27 @@ void main() {
   });
 
   // Two-time write seam (G1/G2 data contract, pinned at the mapper level —
-  // the repository methods write exactly these companions).
-  test('two-time writes: mark-done sets actual only; undone clears to null',
+  // the repository methods write exactly these companions; the persisted
+  // half is pinned in activities_repository_skip_test.dart).
+  //
+  // Mark-done writes actual_time = PLANNED_TIME (ruled by the spec owner
+  // 2026-08-18; the v2 manifest's literal "= now" was written for the
+  // current day and, applied to another day, moved yesterday's un-synced run
+  // onto today's timeline and today's burned-so-far). The card stays on its
+  // day and slot; a later Garmin sync still overwrites it with the measured
+  // start (MANUAL → GARMIN).
+  test('two-time writes: mark-done sets actual = planned; undone clears to null',
       () {
     final planned = _runPlanned();
     final done = planned.copyWith(
       status: ActivityStatus.completed,
-      actualTime: _now,
+      actualTime: planned.plannedTime,
     );
     expect(done.plannedTime, planned.plannedTime,
         reason: 'planned_time is never modified by any gesture');
-    expect(done.actualTime, _now);
-    expect(done.displayTime, _now,
-        reason: 'card moves to the current time on the timeline');
+    expect(done.actualTime, planned.plannedTime);
+    expect(done.displayTime, planned.plannedTime,
+        reason: 'the card stays at its planned slot on its own day');
 
     final undone = done.copyWith(
       status: ActivityStatus.planned,

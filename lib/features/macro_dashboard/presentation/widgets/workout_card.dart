@@ -9,8 +9,9 @@ import '../me_tokens.dart';
 ///
 /// Gestures (G1–G7):
 ///  - Full right-swipe on PLANNED / SKIPPED → [onMarkDone] (writes
-///    actual_time = now upstream; planned_time is NEVER touched; a skipped
-///    row's status returns to planned).
+///    actual_time = planned_time upstream — the card stays on its day and
+///    slot; planned_time is NEVER touched; a skipped row's status returns to
+///    planned). Suppressed on a FUTURE day's card (ruled 2026-08-18).
 ///  - Full right-swipe on DONE_CONFIRMED → [onMarkUndone] (clears
 ///    actual_time upstream → the day's unresolved state).
 ///  - ANY swipe on DONE_VERIFIED is SUPPRESSED entirely (G3, both
@@ -71,7 +72,15 @@ class _WorkoutCardState extends State<WorkoutCard> {
   /// either direction — and never shows a reveal.
   static const double _verifiedNudgeMax = 8;
 
+  /// Left-swipe (skip) and any translation at all: only a verified card is
+  /// fully inert (G3).
   bool get _canToggle => !widget.data.isVerified;
+
+  /// Right-swipe (mark done / undone): additionally suppressed on a
+  /// planned/skipped card whose day is in the future — a workout that hasn't
+  /// happened cannot be confirmed (ruled 2026-08-18). Undone stays available.
+  bool get _canRightSwipe =>
+      _canToggle && (widget.data.isDone || widget.data.markDoneAllowed);
 
   void _onDragStart(DragStartDetails _) {
     setState(() => _dragging = true);
@@ -83,6 +92,9 @@ class _WorkoutCardState extends State<WorkoutCard> {
     if (!_canToggle) {
       // G3 suppression (both directions): no reveal, token nudge only.
       dx = dx.clamp(-_verifiedNudgeMax, _verifiedNudgeMax);
+    } else if (!_canRightSwipe && dx > 0) {
+      // Future-day planned card: no done reveal, token nudge only.
+      dx = dx.clamp(0, _verifiedNudgeMax);
     }
     if (dx < _revealSettle) {
       dx = _revealSettle + (dx - _revealSettle) * 0.22; // rubber-band
@@ -93,7 +105,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
 
   void _onDragEnd(DragEndDetails _) {
     final width = context.size?.width ?? 300;
-    final committed = _canToggle && _dx > width * 0.42;
+    final committed = _canRightSwipe && _dx > width * 0.42;
     final openSkip = _canToggle && _dx < _openThreshold;
     setState(() {
       _dragging = false;
@@ -124,7 +136,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
     final done = data.isDone;
     final skipped = data.isSkipped;
     final width = MediaQuery.sizeOf(context).width;
-    final commit = _canToggle && _dx > width * 0.42;
+    final commit = _canRightSwipe && _dx > width * 0.42;
 
     // Skins (reference rendering @ 5a22ca8, decorate()): done = solid fill +
     // solid electrolyte border; planned = dotted electrolyte edge; skipped =
@@ -160,8 +172,8 @@ class _WorkoutCardState extends State<WorkoutCard> {
       child: Stack(
         children: [
           // Right-swipe underlay (mark done / undone). Never rendered for a
-          // verified card — G3's "no reveal renders".
-          if (_dx > 0 && _canToggle)
+          // verified card (G3) nor for a future-day planned card.
+          if (_dx > 0 && _canRightSwipe)
             Positioned.fill(child: _doneUnderlay(commit)),
           // Left-swipe skip reveal — never for a verified card (G3).
           if (_dx < 0 && _canToggle)

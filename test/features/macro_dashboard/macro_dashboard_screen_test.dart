@@ -117,9 +117,27 @@ class _FixedSelectedDate extends CalendarSelectedDate {
   DateTime build() => _day;
 }
 
+/// A run planned — and confirmed done — the day BEFORE the mock day, with
+/// actual_time = planned_time (the mark-done write). It must render on ITS
+/// day, never leak onto the selected one.
+Activity _yesterdayRunDone() => Activity(
+      id: 'w0',
+      userId: 'u1',
+      activityType: ActivityType.running,
+      title: 'Yesterday run',
+      scheduledDateTime: DateTime(2026, 8, 13, 7, 0),
+      plannedTime: DateTime(2026, 8, 13, 7, 0),
+      actualTime: DateTime(2026, 8, 13, 7, 0),
+      status: ActivityStatus.completed,
+      durationMinutes: 60,
+      createdAt: _day,
+      updatedAt: _day,
+    );
+
 class _SeededActivitiesController extends ActivitiesController {
   @override
-  FutureOr<List<Activity>> build() => [_swimVerified(), _runPlanned()];
+  FutureOr<List<Activity>> build() =>
+      [_yesterdayRunDone(), _swimVerified(), _runPlanned()];
 }
 
 class _SeededDailyMacrosController extends DailyMacrosController {
@@ -225,6 +243,31 @@ void main() {
       reason: 'nothing held for this user+day → no card, honestly',
     );
     _SwitchableDailyMacrosController.recomputing = false;
+  });
+
+  // The day view places a card on the day of actual_time ?? planned_time.
+  // Mark-done writes actual_time = planned_time (ruled 2026-08-18), so a
+  // workout confirmed on another day stays there — this pins that a done
+  // card from the day before does NOT appear on, or count toward, the
+  // selected day (the gap behind the 2026-08-18 "it disappeared" report:
+  // with actual_time = now, a future/past card jumped to today).
+  testWidgets('a workout confirmed on another day never leaks onto this day',
+      (tester) async {
+    await _pumpDashboard(tester);
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.workout_w0')),
+      findsNothing,
+    );
+    expect(find.text('Yesterday run'), findsNothing);
+    // Only the mock day's two workouts feed the surface.
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.workout_w1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.workout_w2')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('assembles the canonical mock day through the real providers',

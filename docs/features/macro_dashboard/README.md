@@ -153,6 +153,20 @@ until Phase C). Still open from Phase B:
   for the same user+day while a recompute is in flight (`HeldTargets`); a
   genuine no-targets state still renders none. Pinned in
   `macro_dashboard_screen_test.dart` ("holds through a targets recompute").
+- **G1 on a non-current day — RULED by the spec owner 2026-08-18, app
+  implemented AHEAD of the fold** (qa `intake/2026-08-18-mark-done-on-non-
+  current-day.md`). Found on-sim: marking tomorrow's ride done wrote
+  `actual_time = now` and the card jumped to today (and, on a past day,
+  into today's so-far). Now: mark-done writes `actual_time = planned_time`
+  (card keeps its day and slot; a later Garmin sync still overwrites with
+  the measured start); mark-done is not offered on a future day
+  (`WorkoutCardData.markDoneAllowed`, G3-style nudge; Skip and Undone still
+  work). Tests: gestures (future-day suppression; write = planned),
+  repository seam, screen "confirmed on another day never leaks", Patrol
+  flow asserts `actual_time == planned_time`. Until QA folds it, the v2
+  manifest row `g1` and vector `two-time-mark-done` still read "= now" —
+  the TS twin `_shared/workouts/workout-times.ts` is deliberately left
+  matching the vector; do NOT `land-bundle` before the fold.
 - **Q-017**: no-op accepted; the 10b exemption is EXCLUDED from v2 — nothing
   to implement.
 - **Two @v2 judgement calls raised as QA intake** (2026-08-18, on

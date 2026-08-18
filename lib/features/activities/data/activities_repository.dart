@@ -750,16 +750,28 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
-  /// G1 (two-time model): mark-done writes actual_time = now (the workout
-  /// really happened now, or the athlete says it did); planned_time is
-  /// NEVER touched by any gesture. A later Garmin sync overwrites the
-  /// mark-done actual_time with the measured start (MANUAL → GARMIN).
+  /// G1 (two-time model): mark-done writes actual_time = the row's
+  /// planned_time (falling back to scheduled_date_time), so the card stays on
+  /// its own day and at its planned slot; planned_time is NEVER touched by
+  /// any gesture. A later Garmin sync overwrites the mark-done actual_time
+  /// with the measured start (MANUAL → GARMIN).
+  ///
+  /// Ruled by the spec owner 2026-08-18 (app implemented ahead of the SSOT
+  /// fold — see qa `intake/2026-08-18-mark-done-on-non-current-day.md`):
+  /// the v2 wording "actual_time = now" was written for the current day; on
+  /// a past day it teleported yesterday's un-synced run onto today's timeline
+  /// and today's burned-so-far. Mark-done is a confirmation that the workout
+  /// happened as planned, not a timestamp of the confirmation. [at] remains
+  /// for callers that know the real start (tests, future measured paths).
   Future<void> markWorkoutDone({
     required String activityId,
     DateTime? at,
   }) async {
     final now = DateTime.now();
-    final actualAt = at ?? now;
+    final row = await (_database.select(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+    final actualAt = at ?? row?.plannedTime ?? row?.scheduledDateTime ?? now;
     await (_database.update(
       _database.activitiesTable,
     )..where((tbl) => tbl.id.equals(activityId))).write(

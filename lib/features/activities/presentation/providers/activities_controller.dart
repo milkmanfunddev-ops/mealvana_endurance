@@ -297,19 +297,20 @@ class ActivitiesController extends _$ActivitiesController {
     }
   }
 
-  /// Mark a workout done (macro-dashboard G1): actual_time = now,
-  /// planned_time untouched. Optimistic in-place update — same
-  /// no-loading-flash reasoning as [deleteActivity].
+  /// Mark a workout done (macro-dashboard G1): actual_time = planned_time
+  /// (the confirmation says "it happened as planned" — the card stays on
+  /// its day and slot; ruled 2026-08-18, see the repository), planned_time
+  /// untouched. Optimistic in-place update — same no-loading-flash
+  /// reasoning as [deleteActivity].
   Future<void> markWorkoutDone(String activityId) async {
     final previous = state.value ?? const <Activity>[];
-    final now = DateTime.now();
     state = AsyncData([
       for (final a in previous)
         if (a.id == activityId)
           a.copyWith(
             status: ActivityStatus.completed,
-            actualTime: now,
-            completedAt: now,
+            actualTime: a.plannedTime ?? a.scheduledDateTime,
+            completedAt: a.plannedTime ?? a.scheduledDateTime,
           )
         else
           a,

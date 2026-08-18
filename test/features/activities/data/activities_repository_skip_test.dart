@@ -146,6 +146,21 @@ void main() {
       expect(r.plannedTime, plannedAt);
     });
 
+    test('mark-done without an explicit time writes actual_time = planned_time',
+        () async {
+      // Ruled 2026-08-18 (spec owner; app ahead of the SSOT fold — qa intake
+      // 2026-08-18-mark-done-on-non-current-day.md): the confirmation says
+      // "it happened as planned", so the row keeps its day and slot — a
+      // past-day un-synced run confirmed today must NOT land on today.
+      final run = await seedPlannedRun();
+      await repository.markWorkoutDone(activityId: run.id);
+      final r = await row(run.id);
+      expect(r.status, 'completed');
+      expect(r.actualTime, plannedAt,
+          reason: 'actual_time = planned_time, never the wall clock');
+      expect(r.plannedTime, plannedAt);
+    });
+
     test('nothing in the skip path writes the delete tombstone', () async {
       final run = await seedPlannedRun();
       await repository.skipWorkout(activityId: run.id);

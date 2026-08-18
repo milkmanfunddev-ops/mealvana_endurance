@@ -5,8 +5,8 @@
 /// (docs/features/macro_dashboard/README.md):
 ///   - G1 swipe → the card flips to self-reported and the energy card's net
 ///     figure/copy change with it (S-1 propagation);
-///   - two-time DB writes: mark-done sets actual_time and never touches
-///     planned_time; mark-undone clears actual_time to null — asserted
+///   - two-time DB writes: mark-done sets actual_time = planned_time and
+///     never touches planned_time; mark-undone clears actual_time to null — asserted
 ///     against the app's own LOCAL Drift database, in-process;
 ///   - S-4: the energy card's expansion survives the card-swipe recompute;
 ///   - Breakdown Pager walk (open from Full breakdown, page across, close);
@@ -220,6 +220,9 @@ void main() {
         reason: 'G1 swipe never wrote actual_time/completed to Drift');
     expect(doneRow!.plannedTime, plannedTimeAtCreate,
         reason: 'planned_time is never modified by any gesture (G1)');
+    expect(doneRow.actualTime, plannedTimeAtCreate,
+        reason: 'mark-done writes actual_time = planned_time (ruled '
+            '2026-08-18) — the card keeps its day and slot');
 
     // The card wears the self-reported chip after the recompute.
     expect(

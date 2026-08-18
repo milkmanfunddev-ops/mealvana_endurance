@@ -126,9 +126,11 @@ class MacroDashboardAssembler {
     //            shows a passive SKIPPED (the rejected same-day-22:00
     //            trigger must not exist — Q-D5).
     final skipActive = !done && a.status == ActivityStatus.skipped;
-    final dayPast =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
-            .isBefore(DateTime(now.year, now.month, now.day));
+    final selectedDay =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final dayPast = selectedDay.isBefore(today);
+    final dayFuture = selectedDay.isAfter(today);
     final skipPassive = !done && !skipActive && dayPast;
 
     final state = verified
@@ -156,6 +158,10 @@ class MacroDashboardAssembler {
         state: state,
         sport: a.activityType.name,
         skipActive: skipActive,
+        // A future day's workout hasn't happened: no mark-done (ruled
+        // 2026-08-18). Mark-UNDONE on a (legacy) confirmed future card stays
+        // available so it can be corrected.
+        markDoneAllowed: !dayFuture,
       ),
     );
   }

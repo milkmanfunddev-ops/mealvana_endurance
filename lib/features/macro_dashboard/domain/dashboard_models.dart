@@ -40,6 +40,7 @@ class WorkoutCardData {
     required this.sport,
     this.verifiedSourceName = 'Garmin',
     this.skipActive = false,
+    this.markDoneAllowed = true,
   });
 
   final String activityId;
@@ -64,6 +65,13 @@ class WorkoutCardData {
   /// then offers Unskip. A PASSIVE skip (past day, unresolved) is derived and
   /// has nothing to un-skip: its reveal carries no button (G4).
   final bool skipActive;
+
+  /// False when the card's day is in the FUTURE: a workout that hasn't
+  /// happened yet cannot be confirmed done (ruled 2026-08-18 — the athlete
+  /// who does tomorrow's session today creates today's workout and skips
+  /// tomorrow's). G1 is suppressed like G3: no reveal, token nudge only.
+  /// Skip (G4/G5) stays available on any non-verified card.
+  final bool markDoneAllowed;
 
   bool get isVerified => state == WorkoutCardState.doneVerified;
   bool get isDone =>
