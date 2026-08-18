@@ -1,6 +1,10 @@
 # SSOT — Daily Macros: Platform Data Resolution (Garmin / TrainingPeaks / Final Surge)
 
-**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
+**Status: RATIFIED v2 (Xuan, 2026-08-18 — Q-D7 / Q-018: the two-time model's mark-done write
+becomes `actual_time = planned_time`, reversing the 2026-08-14 `= now`; a contract change — the
+ratified vector `two-time-mark-done` and a worked consequence change — so it ships in
+`daily-macros-dashboard@v3`, never folded into `@v2`. Supersedes v1, RATIFIED Xuan 2026-08-14,
+which `@v1`/`@v2` pin; every other paragraph of this file is byte-identical to v1.)** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration5_spec` (Formulas 22–27). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/resolve.ts` (name match only — not yet diffed).
 
@@ -222,21 +226,32 @@ consumers, so they cannot drift.
 
 
 
-**Two time fields per workout — RULED (Xuan, 2026-08-14).** Every session row carries
-`planned_time` and `actual_time` (nullable), and they are never conflated:
+**Two time fields per workout — RULED (Xuan, 2026-08-14); the mark-done write RE-RULED (Xuan,
+2026-08-18, Q-D7 / [Q-018](OPEN-QUESTIONS.md#q-018) — v2, contract change →
+`daily-macros-dashboard@v3`).** Every session row carries `planned_time` and `actual_time`
+(nullable), and they are never conflated:
 
 ```
 planned_time : set at scheduling; the swipe gesture NEVER writes it
-actual_time  : written by Garmin sync (activity start), OR by mark-done (= now);
+actual_time  : written by Garmin sync (activity start), OR by mark-done (= planned_time —
+               "it happened as planned"; the 2026-08-14 text said = now, reversed by Q-D7);
                CLEARED by mark-undone (back to null — the card shows planned_time again)
 ```
 
 Display rule: a card shows `actual_time` when present, else `planned_time`. Consequences the
-implementer must honour: marking a 5:30 PM workout done at 3:00 PM moves it to 3:00 PM on the
-timeline (it really happened now, or the athlete says it did); `workout_so_far` in the intraday
-display keys off `actual_time` presence, never off `planned_time` having passed; and a later
+implementer must honour: marking a 5:30 PM workout done at 3:00 PM (or at 8:00 PM) **leaves it at
+5:30 PM** on the timeline — the confirmation says it happened as planned; it is not a timestamp of
+the swipe (under the superseded 2026-08-14 text it moved to 3:00 PM); the same on a past day —
+yesterday's unsynced session confirmed as planned stays on yesterday, at its slot, and never lands
+on today's timeline or in today's `workout_so_far`; mark-done is **not offered on a future day**
+at all (design contract `spec/design/components/workout-card.md` G1, v3); `workout_so_far` in the
+intraday display keys off `actual_time` presence, never off `planned_time` having passed
+(unchanged by Q-D7 — a session marked done before its planned time counts in full); and a later
 Garmin sync overwrites a mark-done `actual_time` with the measured start (`MANUAL → GARMIN`
-upgrade, same as the kcal path). Supabase carries both columns on the workout row.
+upgrade, same as the kcal path — unchanged). Supabase carries both columns on the workout row.
+Vectors: `two-time-mark-done` (regenerated 2026-08-18), `two-time-mark-done-after-planned`,
+`two-time-sync-overwrites-mark-done`, `two-time-mark-undone`. Raised via
+`intake/2026-08-18-mark-done-on-non-current-day.md`.
 
 The confirmation is a first-class input (home-page affordance — see the design prompt in the
 reconciliation worklist), so a dead watch or delayed sync never silently strips a real workout's

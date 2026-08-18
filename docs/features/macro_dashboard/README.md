@@ -1,14 +1,15 @@
-# Macro Dashboard (bundle daily-macros-dashboard@v2)
+# Macro Dashboard (bundle daily-macros-dashboard@v3)
 
 Status ledger + remaining plan for the daily-macro dashboard redesign.
 Branch: `feature/daily-macro-dashboard-redesign` (based on
 `feature/onboarding-redesign`, NOT develop — the parity fixtures, Dart twin,
 and `docs/ssot` mirror exist only there).
 
-Contract: QA repo bundle tag `daily-macros-dashboard@v2` @ `cf69821`
-(supersedes `@v1`; mirrored verbatim at `/docs/ssot`, pin in
-`docs/ssot/SSOT_SOURCE.txt`; handoff at
-`docs/ssot/bundles/daily-macros-dashboard.handoff.md`). Governance: vectors are the
+Contract: QA repo bundle tag `daily-macros-dashboard@v3` @ `180658d`
+(supersedes `@v2` @ `cf69821` and `@v1`; mirrored verbatim at `/docs/ssot`,
+pin in `docs/ssot/SSOT_SOURCE.txt`; v3 handoff at
+`docs/ssot/bundles/daily-macros-dashboard.handoff.md`, handback checklist at
+`docs/ssot/intake/2026-08-18-handback.md`). Governance: vectors are the
 contract; a red means wrong code or a needed ruling — never edit a vector to
 pass (raise via the QA repo's `intake/` folder instead).
 
@@ -153,20 +154,23 @@ until Phase C). Still open from Phase B:
   for the same user+day while a recompute is in flight (`HeldTargets`); a
   genuine no-targets state still renders none. Pinned in
   `macro_dashboard_screen_test.dart` ("holds through a targets recompute").
-- **G1 on a non-current day — RULED by the spec owner 2026-08-18, app
-  implemented AHEAD of the fold** (qa `intake/2026-08-18-mark-done-on-non-
-  current-day.md`). Found on-sim: marking tomorrow's ride done wrote
-  `actual_time = now` and the card jumped to today (and, on a past day,
-  into today's so-far). Now: mark-done writes `actual_time = planned_time`
-  (card keeps its day and slot; a later Garmin sync still overwrites with
-  the measured start); mark-done is not offered on a future day
-  (`WorkoutCardData.markDoneAllowed`, G3-style nudge; Skip and Undone still
-  work). Tests: gestures (future-day suppression; write = planned),
-  repository seam, screen "confirmed on another day never leaks", Patrol
-  flow asserts `actual_time == planned_time`. Until QA folds it, the v2
-  manifest row `g1` and vector `two-time-mark-done` still read "= now" —
-  the TS twin `_shared/workouts/workout-times.ts` is deliberately left
-  matching the vector; do NOT `land-bundle` before the fold.
+- **G1 on a non-current day — Q-D7 / Q-018, RULED + RATIFIED as `@v3`
+  (Xuan, 2026-08-18; qa `180658d`; the app implemented it AHEAD of the fold
+  in `e9128cd0`, so the fold classified it a contract change → `@v3`, not
+  `@v2.1`).** Found on-sim: marking tomorrow's ride done wrote `actual_time =
+  now` and the card jumped to today (and, on a past day, into today's
+  so-far). Now: mark-done writes `actual_time = planned_time` (card keeps
+  its day and slot; a later Garmin sync still overwrites with the measured
+  start — vector `two-time-sync-overwrites-mark-done`); mark-done is not
+  offered on a future day (`WorkoutCardData.markDoneAllowed`, G3-style
+  nudge; Skip and Undone still work). Handback executed 2026-08-18: mirror
+  re-synced to `@v3` (172 raw vectors; runner 148 steps green, +2 vs `@v2`,
+  zero red), TS twin `_shared/workouts/workout-times.ts` flipped to
+  `= planned` + `sync` arm in the runner, gesture tests renamed to the v3
+  manifest ids (`g1_swipe_right_marks_done` asserts now-before/after +
+  current/past day; `g1_future_day_not_offered` new), test-plan rows I2 +
+  "gesture → state + write" flipped ✅ in the QA source. **`@v2` will not
+  land (RED by design); `land-bundle` targets `@v3`.**
 - **Q-017**: no-op accepted; the 10b exemption is EXCLUDED from v2 — nothing
   to implement.
 - **Two @v2 judgement calls raised as QA intake** (2026-08-18, on
@@ -181,14 +185,14 @@ until Phase C). Still open from Phase B:
   widening the `profile → engine inputs` row to name the Q-016 manual rung
   so the audit asks for `manual_input_invalidation_test.dart`.
 
-### Where v2 stands (2026-08-18) — `done_when` scorecard
+### Where v3 stands (2026-08-18) — `done_when` scorecard
 | Clause | Status |
 |---|---|
-| 9 vector files green vs the real engine (168/168) | ✅ |
-| every v2 manifest artifact exists + passes (10 goldens; 22 tests / 17 rows incl. g4/g5/g6, regenerated `workout_card_skipped`) | ✅ |
+| 9 vector files green vs the real engine (172 raw; runner 148 steps + intraday-display 24, zero red) | ✅ |
+| every v3 manifest artifact exists + passes (10 goldens; 23 tests / 18 rows incl. g4/g5/g6, `g1_future_day_not_offered`, regenerated `workout_card_skipped`) | ✅ |
 | schema tasks landed | ✅ in-repo (migrations `20260814120000/121000`); **dev cloud un-migrated → Phase C** |
 | delete affordance gone from the card | ✅ |
-| feature-test-plan rows flip | ⬜ QA, at `land-bundle` |
+| feature-test-plan rows flip | I2 + "gesture → state + write" ✅ (handback §4); the rest at `land-bundle` |
 
 Verified: full Flutter suite green (only the two `test/manual_live` creds
 tests red), Deno 203 pass, on-sim walk of skip → tuck → unskip → restore,

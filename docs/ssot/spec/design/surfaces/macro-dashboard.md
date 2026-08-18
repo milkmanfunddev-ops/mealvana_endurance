@@ -12,7 +12,7 @@ manifest pins slices.
 
 | Component | Contract | Pinned version |
 |---|---|---|
-| Workout card | [`../components/workout-card.md`](../components/workout-card.md) | v2 (ratified — skip replaces delete, Q-D6) |
+| Workout card | [`../components/workout-card.md`](../components/workout-card.md) | v2 (ratified — skip replaces delete, Q-D6) · **v3 (ratified 2026-08-18, Q-D7: mark-done writes `= planned_time`, not offered on a future day; a confirmed card keeps its planned slot — this surface's own contracts S-1–S-7 are unchanged; ships with `daily-macros-dashboard@v3`)** |
 | Energy summary card | [`../components/energy-card.md`](../components/energy-card.md) | v1 (ratified) |
 | Tokens | [`../tokens.md`](../tokens.md) | v1 (ratified) |
 | Meal card · filter row · AI card · timeline rail | **no component spec yet** — they earn one when their states/gestures get contracted; until then their truths live here or nowhere |

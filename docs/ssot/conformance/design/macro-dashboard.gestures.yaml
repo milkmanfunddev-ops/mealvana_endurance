@@ -5,9 +5,14 @@
 # the REAL code path (no false pins).
 
 manifest: macro-dashboard-gestures
-version: v2                 # RATIFIED (Xuan, 2026-08-17) — workout-card v2 skip contract (Q-D6)
-status: ratified            # v1 (ratified 2026-08-14) is what daily-macros-dashboard@v1 pins
+version: v3                 # RATIFIED (Xuan, 2026-08-18) — workout-card v3 (Q-D7 mark-done write);
+                            # ships in daily-macros-dashboard@v3
+status: ratified            # v2 (ratified 2026-08-17) is what daily-macros-dashboard@v2 pins;
+                            # v1 (ratified 2026-08-14) is what @v1 pins
 spec_family: spec/design/
+# Changes from v2 (Q-D7): g1 asserts actual_time = planned_time (NOT now) and the card KEEPS its slot;
+# g1_future_day_not_offered NEGATIVE test added (18 tests); skipped_swipe_right_recovers inherits the
+# write; sync_upgrades_confirmed_to_verified annotated (unchanged). Everything else identical to v2.
 # Changes from v1: g4/g5 delete tests -> skip tests; tombstone_prevents_reimport RETIRED (no
 # delete affordance in v2 — the tombstone stays in the schema, untested from the surface until the
 # delete bundle); g3 widened to both swipe directions; g6 sync-beats-skip added; skipped_* tests
@@ -16,11 +21,20 @@ spec_family: spec/design/
 tests:
   # workout-card gestures (components/workout-card.md G1-G5, G7)
   - id: g1_swipe_right_marks_done
-    contract: workout-card G1
+    contract: workout-card G1 (v3, Q-D7)
     assert:
-      - full right-swipe on PLANNED -> state DONE_CONFIRMED
-      - actual_time written = now; planned_time UNCHANGED
-      - card moves to current time on the timeline
+      - full right-swipe on PLANNED (current day AND past day) -> state DONE_CONFIRMED
+      - actual_time written = planned_time — NEVER the clock (assert with now != planned_time,
+        both before and after it); planned_time UNCHANGED
+      - card KEEPS its planned slot on the timeline; a past-day card stays on its own day — nothing
+        lands on today's timeline or in today's workout_so_far
+  - id: g1_future_day_not_offered   # NEGATIVE TEST — required (v3, Q-D7)
+    contract: workout-card G1 future-day clause (G3 treatment)
+    assert:
+      - right-swipe on a FUTURE-day PLANNED (or SKIPPED) card -> zero translation after release;
+        no reveal; no actual_time write; no state change
+      - left-swipe on the same card still reveals Skip/Unskip (G4) — the suppression is G1-only
+      - right-swipe on a (legacy) DONE_CONFIRMED future-day card still runs G2 (mark-undone remains)
   - id: g2_swipe_right_again_undoes
     contract: workout-card G2
     assert:
@@ -94,7 +108,8 @@ tests:
     contract: platform-resolution two-time model
     assert:
       - later Garmin sync on a DONE_CONFIRMED card -> chip flips to verified,
-        actual_time overwritten with measured start (MANUAL -> GARMIN)
+        actual_time overwritten with measured start (MANUAL -> GARMIN) — unchanged by Q-D7; the
+        mark-done value (= planned_time) is what gets overwritten (vector two-time-sync-overwrites-mark-done)
   # RETIRED in v2 (delete deferred to a future bundle): tombstone_prevents_reimport — no surface
   # affordance writes status='deleted'; the matcher rule stays ratified in platform-resolution.md
   # and returns to this manifest with the delete bundle.
@@ -119,8 +134,9 @@ tests:
   - id: skipped_swipe_right_recovers
     contract: workout-card G1/G2 on SKIPPED
     assert:
-      - full right-swipe on SKIPPED -> DONE_CONFIRMED; status cleared; actual_time = now;
-        its kcal and fuel re-enter the day's figures; card returns to the time-ordered rail
+      - full right-swipe on SKIPPED -> DONE_CONFIRMED; status cleared; actual_time = planned_time
+        (v3, Q-D7 — was now); its kcal and fuel re-enter the day's figures; card returns to the
+        time-ordered rail at its planned slot, on its own day (a past-day recovery never lands on today)
       - swipe right again -> the day's unresolved state — PLANNED on the current day, SKIPPED
         (derived) on a past day; never a PLANNED card on a past day (W-10 guard)
 

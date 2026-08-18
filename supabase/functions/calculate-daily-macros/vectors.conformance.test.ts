@@ -62,6 +62,7 @@ import {
   type CoreSession,
 } from './pipeline.ts';
 import {
+  applyGarminSyncStart,
   applyMarkDone,
   applyMarkUndone,
   displayTimeMin,
@@ -559,11 +560,19 @@ describe('vectors: platform-resolution', () => {
           planned_time_min: i.plannedTimeMin ?? null,
           actual_time_min: i.actualTimeMin ?? null,
         };
+        let source: string | undefined = i.source;
         if (i.gesture === 'mark_done') times = applyMarkDone(times, i.nowMin);
         if (i.gesture === 'mark_undone') times = applyMarkUndone(times);
+        if (i.gesture === 'sync') {
+          // A later Garmin sync overwrites a mark-done actual_time with the
+          // measured start — MANUAL → GARMIN, same as the kcal path.
+          times = applyGarminSyncStart(times, i.measuredStartMin);
+          source = 'GARMIN';
+        }
         if ('actualTimeMin' in e) {
           assertEquals(times.actual_time_min, e.actualTimeMin);
         }
+        if ('source' in e) assertEquals(source, e.source);
         if ('plannedTimeMin' in e) {
           assertEquals(times.planned_time_min, e.plannedTimeMin);
         }

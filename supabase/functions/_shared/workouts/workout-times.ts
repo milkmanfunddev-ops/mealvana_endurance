@@ -1,12 +1,14 @@
 /**
- * The two-time model for workout rows (RULED, Xuan 2026-08-14 — SSOT:
- * docs/ssot/spec/daily-macros/platform-resolution.md).
+ * The two-time model for workout rows (RULED, Xuan 2026-08-14; mark-done
+ * write revised by Q-D7 / Q-018, Xuan 2026-08-18 — SSOT:
+ * docs/ssot/spec/daily-macros/platform-resolution.md, two-time model v2).
  *
  * Every session row carries `planned_time` and `actual_time` (nullable),
  * never conflated:
  *   planned_time : set at scheduling; the swipe gesture NEVER writes it
- *   actual_time  : written by Garmin sync (activity start) or mark-done
- *                  (= now); CLEARED by mark-undone
+ *   actual_time  : written by Garmin sync (measured start) or mark-done
+ *                  (= planned_time — the confirmation says "it happened as
+ *                  planned", never the wall clock); CLEARED by mark-undone
  * Display shows `actual_time ?? planned_time`.
  *
  * Times are plain numbers (minutes) so the same logic serves vector
@@ -18,12 +20,20 @@ export interface WorkoutTimes {
   actual_time_min: number | null;
 }
 
-/** Mark-done writes actual_time = now; planned_time is immutable (G1/W-7). */
+/**
+ * Mark-done writes actual_time = planned_time; planned_time is immutable
+ * (G1, Q-D7 — reverses W-7's `= now`). `_now_min` is accepted so the vector
+ * harness can prove it is NOT an input to the write (`two-time-mark-done`,
+ * `two-time-mark-done-after-planned` sit on both sides of the boundary).
+ */
 export function applyMarkDone(
   times: WorkoutTimes,
-  now_min: number,
+  _now_min: number,
 ): WorkoutTimes {
-  return { planned_time_min: times.planned_time_min, actual_time_min: now_min };
+  return {
+    planned_time_min: times.planned_time_min,
+    actual_time_min: times.planned_time_min,
+  };
 }
 
 /** Mark-undone clears actual_time — back to null, not zero (G2). */

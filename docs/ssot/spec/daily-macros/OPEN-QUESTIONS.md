@@ -30,6 +30,7 @@ ratification itself.
 | [Q-015](#q-015) | NEAT model rigor (tier × day × lifestyle) | **DEFERRED 2026-08-13** — future work, by ruling |
 | [Q-016](#q-016) | Manual profile edits: which cached days recalculate? | **RULED 2026-08-17** — today + future; past days are history |
 | [Q-017](#q-017) | Carb cycling is unobservable under the Q-014 fat cap | **RULED 2026-08-17** — no-op accepted for v1; 10b exemption staged for a LATER bundle version (**excluded from @v2**, Xuan 2026-08-17) |
+| [Q-018](#q-018) | Mark-done: what `actual_time` gets, and on which days it is offered (= design Q-D7) | **RULED 2026-08-18** — `= planned_time` on past AND current days (reverses W-7 `= now`); not offered on a future day. **CONTRACT CHANGE → `@v3`** (ratified + shipped 2026-08-18) |
 
 ---
 
@@ -548,3 +549,31 @@ end-of-pipeline observability is lost. Question on file: accept as a no-op (keep
 exempt qualifying cycled days from 10b (fat absorbs the day), or retire/hide the opt-in. Note the
 impact split: accepting/documenting is a post-ratification addition; exempting cycled days from
 10b alters the ratified pipeline (contract change → next bundle version).
+
+---
+
+## Q-018
+### What does mark-done write for `actual_time`, and is it offered at all, when the card's day is not the current day?
+> **RULED — Xuan, 2026-08-18 (design register Q-D7 — the same ruling, hooked here because an
+> engine vector and a ratified `platform-resolution.md` sentence change). CONTRACT CHANGE, class
+> (c) by this register's own test — a ratified vector expected (`two-time-mark-done`), a manifest
+> assertion (`g1`) and a published worked consequence (5:30 PM → 3:00 PM) all change — so it is
+> shipped as `daily-macros-dashboard@v3` (written text RATIFIED Xuan 2026-08-18), never folded into
+> `@v2`.** (1) Past day:
+> mark-done does not move the workout — `actual_time = planned_time` (yesterday's unsynced session,
+> confirmed as planned); same for G1 recovery of a passive-`SKIPPED` card. (2) Future day: mark-done
+> is **not offered** (G3 treatment on the right-swipe; Skip and mark-undone remain). (3) Current
+> day — the deliberate contradiction with W-7 (2026-08-14): `actual_time = planned_time` here too;
+> the confirmation is "it happened as planned", not a timestamp of the swipe; a later sync still
+> overwrites `MANUAL → GARMIN`; `workout_so_far` keys off `actual_time` presence — unchanged. Homes:
+> [platform-resolution.md](platform-resolution.md) two-time model (v2) and
+> `spec/design/components/workout-card.md` G1 (v3); gestures manifest v3 (g1 rewritten,
+> `g1_future_day_not_offered` added, `skipped_swipe_right_recovers` inherits the write); vectors
+> `two-time-mark-done` regenerated (expected actual/display 900 → 1050) plus
+> `two-time-mark-done-after-planned` and `two-time-sync-overwrites-mark-done` added (family raw
+> count 170 → 172 — the "168" the v1/v2 manifests quoted was stale since the match-key commit
+> `239507b` added two tombstone vectors before `@v1`). App implemented ahead of the fold (see the intake file); the ruled behaviour is the
+> spec, not the code — nothing here is authorization by implementation.
+**Where:** raised 2026-08-18 via intake —
+[`intake/2026-08-18-mark-done-on-non-current-day.md`](../../intake/2026-08-18-mark-done-on-non-current-day.md)
+(full decision text, gates and app-side state live there; this entry is the register hook).

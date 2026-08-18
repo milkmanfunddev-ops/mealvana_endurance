@@ -1,5 +1,6 @@
 // GESTURE / BEHAVIOR tests for the macro dashboard — one per row of
-// docs/ssot/conformance/design/macro-dashboard.gestures.yaml. A test pins
+// docs/ssot/conformance/design/macro-dashboard.gestures.yaml (v3, 18 rows;
+// each test name starts with the manifest id it pins). A test pins
 // its contract only if it executes the REAL code path (no false pins):
 // gesture rows drive the real WorkoutCard/EnergySummaryCard widgets;
 // data-model rows run the real assembler/domain code on the canonical
@@ -160,7 +161,8 @@ bool _paintsDragonfruit(WidgetTester tester) {
 
 void main() {
   // g1_swipe_right_marks_done (workout-card G1)
-  testWidgets('g1: full right-swipe on PLANNED marks done', (tester) async {
+  testWidgets('g1_swipe_right_marks_done: full right-swipe on PLANNED emits mark-done',
+      (tester) async {
     var markedDone = 0;
     await tester.pumpWidget(
       _host(
@@ -183,7 +185,7 @@ void main() {
   // happened cannot be confirmed. Like G3: token nudge, no reveal, no emit.
   // Skip (left) stays available; mark-UNDONE on a confirmed card stays
   // available so a legacy future-day confirmation can be corrected.
-  testWidgets('g1: on a future day the right-swipe is suppressed; skip and undone still work',
+  testWidgets('g1_future_day_not_offered: future-day right-swipe suppressed; skip and undone still work',
       (tester) async {
     var skipped = 0;
     await tester.pumpWidget(
@@ -239,7 +241,7 @@ void main() {
   });
 
   // G1 also recovers a SKIPPED card (passive or active) → DONE_CONFIRMED.
-  testWidgets('g1: full right-swipe on SKIPPED emits mark-done (recovery)',
+  testWidgets('skipped_swipe_right_recovers: full right-swipe on SKIPPED emits mark-done',
       (tester) async {
     for (final active in [false, true]) {
       var markedDone = 0;
@@ -258,7 +260,8 @@ void main() {
   });
 
   // g2_swipe_right_again_undoes (workout-card G2)
-  testWidgets('g2: full right-swipe on DONE_CONFIRMED undoes', (tester) async {
+  testWidgets('g2_swipe_right_again_undoes: full right-swipe on DONE_CONFIRMED undoes',
+      (tester) async {
     var undone = 0;
     await tester.pumpWidget(
       _host(
@@ -275,7 +278,7 @@ void main() {
 
   // g3_verified_suppressed — NEGATIVE TEST (Q-D1 ruling; widened to BOTH
   // swipe directions in v2)
-  testWidgets('g3: any swipe on DONE_VERIFIED is suppressed entirely',
+  testWidgets('g3_verified_suppressed: any swipe on DONE_VERIFIED is suppressed entirely',
       (tester) async {
     await tester.pumpWidget(
       _host(
@@ -334,7 +337,7 @@ void main() {
   });
 
   // g4_swipe_left_reveals_skip (workout-card G4, v2)
-  testWidgets('g4: partial left-swipe reveals a labeled Skip / Unskip; the swipe never changes state',
+  testWidgets('g4_swipe_left_reveals_skip: partial left-swipe reveals a labeled Skip / Unskip; the swipe never changes state',
       (tester) async {
     // PLANNED and DONE_CONFIRMED reveal "Skip".
     for (final state in [
@@ -411,7 +414,7 @@ void main() {
   // DONE_CONFIRMED); the workout's kcal leaves EVERY surface figure in the
   // same recompute; the card renders with no timestamp, tucked after every
   // timed card; Unskip restores state, slot and figures.
-  test('g5: skip removes the workout from every surface figure and tucks it; unskip restores',
+  test('g5_skip_removes_everywhere: skip removes the workout from every surface figure and tucks it; unskip restores',
       () {
     final before = _assemble([_swimVerified(), _runPlanned()]);
     // -- the write seam: Skip on a DONE_CONFIRMED card clears actual_time.
@@ -480,7 +483,7 @@ void main() {
 
   // s7 tuck ordering: several skipped cards order by planned_time ascending,
   // after every timed card (planned or done) — meals included.
-  test('s7: skipped cards tuck after every timed card, ordered by planned_time',
+  test('s7 (g5_skip_removes_everywhere): skipped cards tuck after every timed card, ordered by planned_time',
       () {
     final earlySkipped = _runPlanned().copyWith(
       id: 'w3',
@@ -504,7 +507,7 @@ void main() {
   // key: platform id, else platform+sport+start ±15 min; skipped rows are
   // never filtered before matching) is pinned server-side in
   // supabase/functions/_shared/garmin/activity_completion.test.ts.
-  test('g6: sync beats skip — active and passive', () {
+  test('g6_sync_beats_skip: sync beats skip — active and passive', () {
     // The completion write the Garmin matcher performs
     // (buildGarminCompletionUpdate): status completed, actual_time =
     // measured start, summary id linked, kcal mirrored.
@@ -549,7 +552,7 @@ void main() {
   });
 
   // skipped_passive_only_on_past_days (Q-D6 passive trigger = Q-D5)
-  test('skipped: passive SKIPPED renders on a past day only — never today',
+  test('skipped_passive_only_on_past_days: passive SKIPPED renders on a past day only — never today',
       () {
     // Past day: the unresolved run renders SKIPPED, neutral drain, chip.
     final past = _assemble([_swimVerified(), _runPlanned()], now: _nextMorning);
@@ -573,7 +576,7 @@ void main() {
   });
 
   // skipped_active_on_current_day (Q-D6 active trigger + G4/G5)
-  test('skipped: Skip on TODAY\'s planned workout renders SKIPPED today', () {
+  test('skipped_active_on_current_day: Skip on TODAY\'s planned workout renders SKIPPED today', () {
     final data = _assemble([_swimVerified(), _runSkippedActively()]);
     final card = _workoutCardOf(data, 'Run');
     expect(card.state, WorkoutCardState.skipped);
@@ -585,7 +588,7 @@ void main() {
   });
 
   // skipped_fuel_not_counted (Q-D5/Q-D6 fuel + confirmation rung + S-2)
-  test('skipped: a SKIPPED workout appears in NO surface figure — passive and active alike',
+  test('skipped_fuel_not_counted: a SKIPPED workout appears in NO surface figure — passive and active alike',
       () {
     void expectNotCounted(DashboardData d) {
       expect(d.energy!.workoutPlannedKcal, 0);
@@ -602,21 +605,27 @@ void main() {
   });
 
   // skipped_swipe_right_recovers (G1/G2 on SKIPPED)
-  test('skipped: right-swipe recovers to DONE_CONFIRMED; again → the day\'s unresolved state',
+  test('skipped_swipe_right_recovers: right-swipe recovers to DONE_CONFIRMED at its planned slot on its own day; again → the day\'s unresolved state',
       () {
     // G1 on an actively skipped card: mark-done → status leaves skipped,
-    // actual_time = now, fuel re-enters, card back on the time-ordered rail.
+    // actual_time = planned_time (Q-D7), fuel re-enters, card back on the
+    // time-ordered rail at its planned slot.
     final recovered = _runSkippedActively().copyWith(
       status: ActivityStatus.completed,
-      actualTime: _now,
+      actualTime: _runPlanned().plannedTime,
     );
     final today = _assemble([_swimVerified(), recovered]);
     final todayCard = _workoutCardOf(today, 'Run');
     expect(todayCard.state, WorkoutCardState.doneConfirmed);
-    expect(todayCard.timeLabel, '3:00 PM');
+    expect(todayCard.timeLabel, '5:30 PM', reason: 'its planned slot');
     expect(today.energy!.workoutDoneKcal, closeTo(1434, 1));
     expect(today.nodes.last.timeLabel, isNot(''),
         reason: 'back on the time-ordered rail');
+    // A PAST-day recovery lands on its own day, at its slot — never today.
+    final pastRecovered = _assemble([_swimVerified(), recovered], now: _nextMorning);
+    expect(_workoutCardOf(pastRecovered, 'Run').state,
+        WorkoutCardState.doneConfirmed);
+    expect(_workoutCardOf(pastRecovered, 'Run').timeLabel, '5:30 PM');
 
     // G2 again → the day's unresolved state: PLANNED on the current day...
     final undone = recovered.copyWith(
@@ -639,7 +648,7 @@ void main() {
   // g7_emission_propagates (G7 + surface S-1): one state change moves net
   // balance, band copy, and the Active Energy numbers together — the
   // verified example −133 ⇄ −1,338.
-  test('g7: marking the run done flips net −133 → −1,338 with copy following',
+  test('g7_emission_propagates: marking the run done flips net −133 → −1,338 with copy following',
       () {
     final rest = _assemble([_swimVerified(), _runPlanned()]);
     expect(rest.energy!.netKcal, -133);
@@ -659,7 +668,7 @@ void main() {
   });
 
   // e1_toggle_expansion (energy-card E1)
-  testWidgets('e1: chevron toggles expansion in place, never navigates',
+  testWidgets('e1_toggle_expansion: chevron toggles expansion in place, never navigates',
       (tester) async {
     var expanded = false;
     late StateSetter setOuterState;
@@ -696,7 +705,8 @@ void main() {
   });
 
   // p1_expansion_persists_across_faces (energy-card P-1)
-  testWidgets('p1: expansion persists across a face switch', (tester) async {
+  testWidgets('p1_expansion_persists_across_faces: expansion persists across a face switch',
+      (tester) async {
     var face = DashboardFilter.meals;
     await tester.pumpWidget(
       MaterialApp(
@@ -734,7 +744,7 @@ void main() {
   // p1_expansion_survives_swipe (P-1 + S-4, the W-8 regression guard):
   // expansion lives in the surface view-state, so a workout-card state
   // change (a data recompute) cannot collapse it.
-  test('p1: expansion state is independent of the day recompute', () {
+  test('p1_expansion_survives_swipe: expansion state is independent of the day recompute', () {
     // The view-state object carries dashOpen; assembling a new day (the
     // effect of any card swipe) produces data only — nothing in
     // DashboardData can reset dashOpen by construction.
@@ -760,7 +770,7 @@ void main() {
 
   // s6_no_unconditional_deadlines (surface S-6) — string-level check over
   // every copy string the surface can render.
-  test('s6: no rendered copy states an unconditional refueling deadline', () {
+  test('s6_no_unconditional_deadlines: no rendered copy states an unconditional refueling deadline', () {
     final sources = Directory('lib/features/macro_dashboard')
         .listSync(recursive: true)
         .whereType<File>()
@@ -777,7 +787,7 @@ void main() {
   });
 
   // band_copy_matches_register (intraday-display §2 via energy-card P-3)
-  test('band copy for the mock net (−133) is exactly "on track"', () {
+  test('band_copy_matches_register: band copy for the mock net (−133) is exactly "on track"', () {
     expect(
       IntradayDisplay.netBandCopy(netKcal: -133, energyBasis: 'as_computed'),
       'on track',
@@ -789,23 +799,25 @@ void main() {
   });
 
   // sync_upgrades_confirmed_to_verified (platform-resolution two-time model)
-  test('sync upgrade: DONE_CONFIRMED flips to verified with measured start',
+  test('sync_upgrades_confirmed_to_verified: DONE_CONFIRMED flips to verified with measured start',
       () {
-    final confirmedAt = DateTime(2026, 8, 14, 15, 0); // mark-done at 3 PM
+    // Mark-done wrote actual_time = planned_time (Q-D7): the card sits at
+    // its 5:30 PM slot, self-reported.
     final confirmed = _runPlanned().copyWith(
       status: ActivityStatus.completed,
-      actualTime: confirmedAt,
+      actualTime: _runPlanned().plannedTime,
     );
     final beforeSync = _assemble([confirmed]);
     final confirmedCard =
         beforeSync.nodes.firstWhere((n) => n.isWorkout).workout!;
     expect(confirmedCard.state, WorkoutCardState.doneConfirmed);
     expect(confirmedCard.chipLabel, 'self-reported');
-    expect(confirmedCard.timeLabel, '3:00 PM',
-        reason: 'mark-done moves the card to now (W-7)');
+    expect(confirmedCard.timeLabel, '5:30 PM',
+        reason: 'mark-done keeps the planned slot (Q-D7)');
 
-    // A later Garmin sync overwrites the mark-done actual_time with the
-    // measured start (MANUAL → GARMIN) and links the summary id.
+    // A later Garmin sync overwrites the mark-done actual_time (= planned)
+    // with the measured start (MANUAL → GARMIN) and links the summary id —
+    // unchanged by Q-D7 (vector two-time-sync-overwrites-mark-done).
     final synced = confirmed.copyWith(
       garminSummaryId: 'g-run-99',
       actualTime: DateTime(2026, 8, 14, 14, 42),
@@ -849,9 +861,13 @@ void main() {
   // onto today's timeline and today's burned-so-far). The card stays on its
   // day and slot; a later Garmin sync still overwrites it with the measured
   // start (MANUAL → GARMIN).
-  test('two-time writes: mark-done sets actual = planned; undone clears to null',
+  test('g1_swipe_right_marks_done: mark-done writes actual = planned (now before AND after it, current AND past day); card keeps its slot; undone clears to null',
       () {
-    final planned = _runPlanned();
+    final planned = _runPlanned(); // planned 5:30 PM on the mock day
+    // The write (mirrors ActivitiesRepository.markWorkoutDone / the
+    // controller's optimistic update — the persisted seam is pinned in
+    // activities_repository_skip_test.dart): actual_time = planned_time,
+    // regardless of the clock.
     final done = planned.copyWith(
       status: ActivityStatus.completed,
       actualTime: planned.plannedTime,
@@ -861,6 +877,27 @@ void main() {
     expect(done.actualTime, planned.plannedTime);
     expect(done.displayTime, planned.plannedTime,
         reason: 'the card stays at its planned slot on its own day');
+
+    // now BEFORE planned (3:00 PM), now AFTER planned (9:00 PM), and the
+    // NEXT DAY (past-day confirmation): the card renders DONE_CONFIRMED at
+    // 5:30 PM on the mock day every time, and its kcal count on THAT day.
+    for (final now in [
+      DateTime(2026, 8, 14, 15, 0),
+      DateTime(2026, 8, 14, 21, 0),
+      _nextMorning,
+    ]) {
+      final d = _assemble([_swimVerified(), done], now: now);
+      final card = _workoutCardOf(d, 'Run');
+      expect(card.state, WorkoutCardState.doneConfirmed, reason: 'now=$now');
+      expect(card.timeLabel, '5:30 PM',
+          reason: 'keeps its planned slot (now=$now)');
+      expect(d.energy!.workoutDoneKcal, closeTo(1434, 1),
+          reason: 'counts on its own day (now=$now)');
+    }
+    // Nothing of it lands on the following day: the day provider places a
+    // card by actual ?? planned (pinned at the provider seam in
+    // macro_dashboard_screen_test.dart, "confirmed on another day never
+    // leaks onto this day").
 
     final undone = done.copyWith(
       status: ActivityStatus.planned,

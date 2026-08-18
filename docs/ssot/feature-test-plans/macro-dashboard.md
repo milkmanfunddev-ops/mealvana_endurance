@@ -15,7 +15,7 @@
 | # | Invariant (testable) | Owning document | Pinned by |
 |---|---|---|---|
 | I1 | Fat is 0.8 g/kg ≤ fat ≤ 30 %E except the both-caps corner; step 10b conserves energy exactly | assembly.md I8/I10 | ⬜ (vectors `assembly.json` exist; engine runner ⬜) |
-| I2 | A workout row's `planned_time` is never mutated by any gesture; `actual_time` is null unless Garmin or mark-done wrote it | platform-resolution.md | ⬜ |
+| I2 | A workout row's `planned_time` is never mutated by any gesture; `actual_time` is null unless Garmin or mark-done wrote it — and mark-done writes it **`= planned_time`** (Q-D7, 2026-08-18; was `= now` in `@v1`/`@v2`), so a confirmed workout never leaves its day | platform-resolution.md (two-time model, v2) | ✅ app: `test/features/macro_dashboard/macro_dashboard_gestures_test.dart` (`g1_swipe_right_marks_done` — now before/after planned, current + past day; `g1_future_day_not_offered`; `skipped_swipe_right_recovers`), `test/features/activities/data/activities_repository_skip_test.dart` (persisted seam: `actual_time = planned_time` on real Drift), `test/features/macro_dashboard/macro_dashboard_screen_test.dart` ("a workout confirmed on another day never leaks onto this day"), Patrol `integration_test/flows/macro_dashboard_flow_test.dart` (asserts `actual_time == planned_time`); vectors `two-time-*` (4) via `vectors.conformance.test.ts` — all in automatic CI (Patrol on-sim) |
 | I3 | A `status='deleted'` row survives every sync and never renders anywhere | platform-resolution.md + intraday-display §4b | ⬜ (vector `tombstone-matcher`; db path ⬜) |
 | I4 | Every number on the dashboard maps to a spec field; no surface disagrees with another on the same quantity | intraday-display P-3 / surface S-3 | ⬜ |
 | I5 | No rendered copy states an unconditional refueling deadline, in any state | surface S-6 | ⬜ (manifest `s6_no_unconditional_deadlines`) |
@@ -48,11 +48,11 @@
 
 ### Chain: workout card lifecycle (the bundle's second half)
 
-`scheduled → PLANNED card → swipe-done (actual_time=now) → burned updates → Garmin sync → MANUAL→GARMIN upgrade → F27 recalc → plan replaced → plan_recalc_log row`
+`scheduled → PLANNED card → swipe-done (actual_time = planned_time — Q-D7 2026-08-18; was =now) → burned updates → Garmin sync → MANUAL→GARMIN upgrade → F27 recalc → plan replaced → plan_recalc_log row`
 
 | Link | Failure mode it can hide | Owning doc | Cheapest layer | Pinned by |
 |---|---|---|---|---|
-| gesture → state + write | wrong column written; planned_time clobbered | design G1/G2 + platform two-time | widget + db-flow | ⬜ manifest g1/g2 |
+| gesture → state + write | wrong column written; planned_time clobbered; **actual_time stamped with the clock instead of planned_time; mark-done offered on a future day; a past-day confirmation leaking onto today (Q-D7)** | design G1/G2 (v3) + platform two-time (v2) | widget + db-flow | ✅ app: `macro_dashboard_gestures_test.dart` (`g1_swipe_right_marks_done`, `g1_future_day_not_offered`, `g2_swipe_right_again_undoes`), `activities_repository_skip_test.dart` (db seam), `macro_dashboard_screen_test.dart` (cross-day leak), Patrol `macro_dashboard_flow_test.dart` (G1/G2 writes on the live local Drift) |
 | verified suppression | Garmin fact contradicted by swipe | design G3 | widget (negative) | ⬜ manifest g3 |
 | write → Supabase schema | **columns don't exist** | **NONE** (see invariants) | migration + db-flow | ⬜ **blocked on schema** |
 | state → whole-dashboard update | local repaint only; sheets stale | design G7 + surface S-1 | widget | ⬜ manifest g7 |
