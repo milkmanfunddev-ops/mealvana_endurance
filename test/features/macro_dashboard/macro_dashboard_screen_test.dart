@@ -13,6 +13,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
@@ -20,6 +21,7 @@ import 'package:mealvana_endurance/features/activities/presentation/providers/ac
 import 'package:mealvana_endurance/features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
+import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
@@ -27,6 +29,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 
 import '../../helpers/widget_test_harness.dart';
 
@@ -128,13 +131,37 @@ class _SeededDailyMacrosController extends DailyMacrosController {
       );
 }
 
-List<Override> _dayOverrides() => [
+/// A daily-macros controller the test can flip into "recomputing" (targets
+/// null, isCalculating true) — what the real controller reports while an
+/// invalidated day is being rebuilt by the edge function.
+class _SwitchableDailyMacrosController extends DailyMacrosController {
+  static bool recomputing = false;
+
+  @override
+  Future<DailyMacrosState> build() async => recomputing
+      ? DailyMacrosState(
+          selectedDate: _day,
+          dailyMacros: null,
+          weeklyMacros: List<DailyMacroTargets?>.filled(7, null),
+          isCalculating: true,
+        )
+      : DailyMacrosState(
+          selectedDate: _day,
+          dailyMacros: _targets(),
+          weeklyMacros: List<DailyMacroTargets?>.filled(7, _targets()),
+        );
+}
+
+List<Override> _dayOverrides({bool switchableMacros = false}) => [
+      userIdProvider.overrideWith((ref) async => 'u1'),
       calendarSelectedDateProvider.overrideWith(_FixedSelectedDate.new),
       activitiesControllerProvider.overrideWith(
         _SeededActivitiesController.new,
       ),
       dailyMacrosControllerProvider.overrideWith(
-        _SeededDailyMacrosController.new,
+        switchableMacros
+            ? _SwitchableDailyMacrosController.new
+            : _SeededDailyMacrosController.new,
       ),
       mealLogsForDateProvider.overrideWith(
         (ref, date) => Stream.value([_bagel()]),
@@ -144,16 +171,62 @@ List<Override> _dayOverrides() => [
       ),
     ];
 
-Future<void> _pumpDashboard(WidgetTester tester) async {
+Future<void> _pumpDashboard(
+  WidgetTester tester, {
+  bool switchableMacros = false,
+}) async {
   await pumpSeeded(
     tester,
     const Scaffold(body: MacroDashboardScreen()),
-    overrides: _dayOverrides(),
+    overrides: _dayOverrides(switchableMacros: switchableMacros),
     settle: true,
   );
 }
 
 void main() {
+  setUp(HeldTargets.clear);
+
+  // S-1 "same pump" across a targets recompute: when a skip / unskip /
+  // profile edit invalidates the day's cached targets, the daily-macros
+  // controller reports (null, isCalculating) until the engine answers. The
+  // surface must keep showing the last targets it rendered for this
+  // user+day rather than blank the energy card for the round trip.
+  testWidgets('energy card holds through a targets recompute (no blink)',
+      (tester) async {
+    _SwitchableDailyMacrosController.recomputing = false;
+    await _pumpDashboard(tester, switchableMacros: true);
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.energy_card')),
+      findsOneWidget,
+    );
+
+    // The recompute begins: targets vanish upstream…
+    _SwitchableDailyMacrosController.recomputing = true;
+    final el = tester.element(find.byType(MacroDashboardScreen));
+    ProviderScope.containerOf(el, listen: false)
+        .invalidate(dailyMacrosControllerProvider);
+    await tester.pumpAndSettle();
+
+    // …but the surface holds the last-known targets, energy card intact.
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.energy_card')),
+      findsOneWidget,
+      reason: 'the energy card must not blink out during a recompute',
+    );
+
+    // A genuine no-targets state (not recomputing) still renders no card.
+    HeldTargets.clear();
+    ProviderScope.containerOf(el, listen: false)
+        .invalidate(dailyMacrosControllerProvider);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.energy_card')),
+      findsNothing,
+      reason: 'nothing held for this user+day → no card, honestly',
+    );
+    _SwitchableDailyMacrosController.recomputing = false;
+  });
+
   testWidgets('assembles the canonical mock day through the real providers',
       (tester) async {
     await _pumpDashboard(tester);

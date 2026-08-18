@@ -134,11 +134,25 @@ QA ruled all six intake items and ratified design v2 (Q-D6 unified skip):
 delta implemented + tested (see above), `workout_card_skipped` regenerated,
 Patrol flow re-pointed from delete → skip/unskip (self-skips its remote half
 until Phase C). Still open from Phase B:
-- **Q-016 mechanism** — the settings-save invalidation in
-  `nutrition_profile_screen.dart` (invalidate today + future cached days on
-  any MANUAL engine-input write, never past; refresh the controller) — ops
-  bug `2026-08-17-profile-save-macro-cache-stale.md`. Not part of the v2
-  card delta; do it with a behavioural test.
+- ~~**Q-016 mechanism**~~ ✅ DONE 2026-08-18:
+  `DailyMacroTargetsRepository.invalidateFromDate` (today + future, never
+  past) + `DailyMacroService.invalidateForManualInputChange` +
+  `engineInputsDiffer` (sex/age/height/weight/BF/lifestyle/hours/opt-in/
+  phase); called from both manual write sites — `nutrition_profile_screen`
+  save and `SettingsController._saveProfile` (weight/height/sex/birthday)
+  — followed by `ref.invalidate(dailyMacrosControllerProvider)`. Tests:
+  `test/features/daily_macros/manual_input_invalidation_test.dart` (window
+  on real Drift + diff) and
+  `test/features/settings/nutrition_profile_save_invalidation_test.dart`
+  (screen chain, positive + negative). Closes ops bug
+  `2026-08-17-profile-save-macro-cache-stale.md`.
+- **Energy-card blink fixed** (2026-08-18): a targets recompute (skip /
+  unskip / profile edit invalidates the day) made the controller report
+  `dailyMacros: null, isCalculating` for the round trip, blanking the energy
+  card for ~1 s. `macroDashboardDay` now holds the last targets it rendered
+  for the same user+day while a recompute is in flight (`HeldTargets`); a
+  genuine no-targets state still renders none. Pinned in
+  `macro_dashboard_screen_test.dart` ("holds through a targets recompute").
 - **Q-017**: no-op accepted; the 10b exemption is EXCLUDED from v2 — nothing
   to implement.
 - QA-repo side: `land-bundle` flips `docs/feature-test-plans/

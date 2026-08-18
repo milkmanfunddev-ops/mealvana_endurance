@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../daily_macros/domain/daily_macro_targets.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../application/dashboard_assembler.dart';
@@ -28,6 +30,23 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   );
   final allActivities = await ref.watch(activitiesControllerProvider.future);
 
+  // S-1 "same pump" across a targets recompute: a skip / unskip / manual
+  // profile edit invalidates the day's cached targets by design, and the
+  // daily-macros controller then reports `dailyMacros: null, isCalculating:
+  // true` until the edge function answers. Rendering that null would blank
+  // the energy card for the round trip and repaint it a second later — the
+  // flicker class fixed in 3ca2ee27. Hold the last targets this surface
+  // showed for the SAME user+day while (and only while) a recompute is in
+  // flight; a genuine "no targets" (error, never computed) still renders none.
+  final userId = await ref.watch(userIdProvider.future);
+  final targets = HeldTargets.resolve(
+    userId,
+    dateStr,
+    current: macrosState.dailyMacros,
+    weekly: macrosState.weeklyMacros,
+    calculating: macrosState.isCalculating,
+  );
+
   bool onSelectedDay(DateTime d) =>
       d.year == selectedDate.year &&
       d.month == selectedDate.month &&
@@ -43,13 +62,51 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     now: DateTime.now(),
     activities: dayActivities,
     meals: meals,
-    targets: macrosState.dailyMacros,
+    targets: targets.daily,
     consumed: consumed,
-    weeklyTargets: macrosState.weeklyMacros,
+    weeklyTargets: targets.weekly,
     // Tracking is a DISPLAY mode gated by the screen from the view state —
     // toggling it must not recompute the day (intraday-display §5).
     trackingOn: true,
   );
+}
+
+/// The last targets the dashboard rendered, per user+day — see the note in
+/// [macroDashboardDay]. Module-level on purpose: the value must outlive the
+/// auto-dispose day provider's rebuilds. Keyed by the signed-in user id, so
+/// an account switch can never surface another account's plan.
+class HeldTargets {
+  HeldTargets._();
+
+  static final Map<String, _Held> _held = {};
+
+  static ({DailyMacroTargets? daily, List<DailyMacroTargets?> weekly}) resolve(
+    String userId,
+    String dateKey, {
+    required DailyMacroTargets? current,
+    required List<DailyMacroTargets?> weekly,
+    required bool calculating,
+  }) {
+    final key = '$userId:$dateKey';
+    if (current != null) {
+      _held[key] = _Held(current, weekly);
+      return (daily: current, weekly: weekly);
+    }
+    if (calculating) {
+      final held = _held[key];
+      if (held != null) return (daily: held.daily, weekly: held.weekly);
+    }
+    return (daily: null, weekly: weekly);
+  }
+
+  /// Drop everything (tests; account switch).
+  static void clear() => _held.clear();
+}
+
+class _Held {
+  const _Held(this.daily, this.weekly);
+  final DailyMacroTargets daily;
+  final List<DailyMacroTargets?> weekly;
 }
 
 String _ymd(DateTime d) {
