@@ -274,6 +274,24 @@ class DailyMacroTargetsRepository {
     }
   }
 
+  /// Invalidate every cached day from [fromDate] (inclusive) forward — today
+  /// and all future cached days — leaving earlier days untouched.
+  ///
+  /// This is the Q-016 window (platform-resolution.md, "Manual profile
+  /// edits — which cached days recalculate", RULED 2026-08-17): a MANUAL
+  /// write to an engine input recalculates today + future; past days are
+  /// the historical record of what the athlete was told to eat and are
+  /// never touched. Prefer this over [invalidateAllForUser] for any
+  /// profile-driven invalidation.
+  Future<void> invalidateFromDate(String userId, DateTime fromDate) async {
+    final from = DateTime(fromDate.year, fromDate.month, fromDate.day);
+    await _database.customStatement(
+      'DELETE FROM daily_macro_targets '
+      'WHERE user_id = ? AND target_date >= ?',
+      [userId, from.millisecondsSinceEpoch],
+    );
+  }
+
   /// Invalidate ALL cached records for a user — every date, for all time.
   ///
   /// Blunt instrument, kept as an escape hatch (e.g. an algorithm-version bump
