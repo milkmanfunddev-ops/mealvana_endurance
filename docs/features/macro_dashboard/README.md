@@ -199,7 +199,37 @@ tests red), Deno 203 pass, on-sim walk of skip → tuck → unskip → restore,
 passive SKIPPED on a past day, S-1 propagation. Next: push → Patrol re-run
 of the re-pointed flow → Phase C → `land-bundle`.
 
-### Phase C — deploy (after Phase A is green and Lee signs off)
+### Phase C — DEV HALF DONE (2026-08-19, with Xuan; Lee's rulings in
+ops/docs/supabase-deploy-playbook.md + the brief docs/ssot/intake/
+2026-08-19-phase-c-deploy-brief.md)
+- Schema applied to dev via `supabase db query --linked` (columns + enum +
+  plan_recalc_log, RLS on/0 policies). **Live round-trip caught a TZ bug**:
+  the migration's timestamptz columns shifted naive-local uploads by the UTC
+  offset (16:31 → 11:31) — columns ALTERed to `timestamp without time zone`
+  (values recovered via AT TIME ZONE 'UTC'), migration file corrected in
+  place before prod, `buildGarminCompletionUpdate` writes `actual_time`
+  naive-local (was UTC ISO). This is the class of defect only dev
+  verification can catch — the in-process round-trip test cannot see
+  Postgres's interpretation.
+- Engine deployed as **`calculate-daily-macros-v6`** (v1; frozen legacy v5
+  keeps the old name at v33 for pre-v6 installs — folder FROZEN, deploy
+  wrappers refuse it without --force-legacy). garmin-push v57 / garmin-ping
+  v48 / sync-all-data v54. Deployed -v6 source diffed byte-identical.
+- Client: `daily_macro_service` calls `-v6`; the algorithm-version gate is
+  now an older-than floor (`_minAlgorithmVersion`), decoupling engine
+  deploys from app releases.
+- dev `app_config`: current/latest_schema_version → 18; min_* untouched.
+- Verified: 29/29 env-gated integration tests vs the deployed -v6
+  (`algorithm_version: v6.0.0`); Patrol flow PASSED **with the remote half
+  EXECUTING** (Supabase row: status='skipped', planned_time round-tripped
+  intact, actual_time null, needs_upload cleared) after two flow fixes:
+  settle+retry on the post-unskip reveal (races the upload-drain and
+  cache-invalidation recomputes) and remote asserts through the APP'S own
+  session (a second probe account couldn't see the rows under RLS).
+- Remaining: land-bundle (@v3, attestation now satisfiable) → prod steps
+  7–11 (separate hand-off; nothing prod was touched).
+
+### Phase C — original plan (kept for the record; superseded by the playbook §7)
 Strict order:
 1. `supabase db push` to dev **before any function deploy** — the updated
    garmin functions write `actual_time`; against the un-migrated schema every

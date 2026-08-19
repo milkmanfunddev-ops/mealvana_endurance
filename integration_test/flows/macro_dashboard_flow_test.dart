@@ -51,7 +51,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart' as db;
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 
 import '../helpers/flow_launcher.dart';
-import '../helpers/supabase_probe.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 
 const _filterAll = ValueKey('macro_dashboard.filter_all');
 const _energyCard = ValueKey('macro_dashboard.energy_card');
@@ -331,10 +331,29 @@ void main() {
 
     // Skip once more so the remote half can assert the skip write, then the
     // flow tears its seed down through the controller at the very end.
-    await _swipe($, find.byKey(cardKey), -90);
-    await $(_skipButton).waitUntilVisible(
-      timeout: const Duration(seconds: 5),
-    );
+    //
+    // Unlike the first two reveals, this one races two recomputes the unskip
+    // just triggered: the upload's dirty-flag clear (dev is migrated now, so
+    // uploads SUCCEED and refresh the controller) and the skip-toggle macro
+    // cache invalidation (edge-function round trip). A drag injected into a
+    // rebuilding list can be swallowed, so settle first and retry the reveal.
+    await $.pump(const Duration(milliseconds: 1500));
+    await $.tester.ensureVisible(find.byKey(cardKey));
+    await $.pump(const Duration(milliseconds: 300));
+    var revealed = false;
+    for (var attempt = 0; attempt < 3 && !revealed; attempt++) {
+      await _swipe($, find.byKey(cardKey), -90);
+      try {
+        await $(_skipButton).waitUntilVisible(
+          timeout: const Duration(seconds: 3),
+        );
+        revealed = true;
+      } on Exception {
+        await $.pump(const Duration(milliseconds: 700));
+      }
+    }
+    expect(revealed, isTrue,
+        reason: 'the skip reveal never opened after 3 swipes');
     await $(_skipButton).tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 800));
     expect(
@@ -363,26 +382,44 @@ void main() {
     // Probing planned_time distinguishes "column missing" (42703 → the
     // probe's error path returns []) from "no rows" by comparing against an
     // id-only select of the same tombstoned row.
-    final probe = await SupabaseProbe.signIn();
-    if (probe == null) {
-      debugPrint('[macro_dashboard_flow] no probe credentials — remote-half '
+    // Remote asserts run through the APP'S OWN Supabase session — the same
+    // user that wrote the row. A second sign-in (the old SupabaseProbe path)
+    // authenticated as the configured integration-test account, which under
+    // RLS cannot see another account's rows: on a sim already signed in as a
+    // different test user every select returned [] and the remote half
+    // self-skipped a fully migrated cloud (2026-08-19).
+    final client = Supabase.instance.client;
+    if (client.auth.currentSession == null) {
+      debugPrint('[macro_dashboard_flow] no app session — remote-half '
           'assertions skipped.');
       await cleanUp();
       return;
     }
-    final idSelect = await probe.select(
-      'activities',
-      query: 'id=eq.$activityId&select=id',
+    // The skip's upload is fire-and-forget; let it drain before judging.
+    await waitForLocalRow(
+      activityId,
+      (r) => r.needsUpload != true,
+      timeout: const Duration(seconds: 20),
     );
-    final columnSelect = await probe.select(
-      'activities',
-      query: 'id=eq.$activityId&select=id,planned_time',
-    );
+    Future<List<Map<String, dynamic>>> remoteSelect(String columns) async {
+      try {
+        final rows = await client
+            .from('activities')
+            .select(columns)
+            .eq('id', activityId);
+        return List<Map<String, dynamic>>.from(rows);
+      } catch (_) {
+        return const [];
+      }
+    }
+
+    final idSelect = await remoteSelect('id');
+    final columnSelect = await remoteSelect('id,planned_time');
     if (columnSelect.isEmpty) {
       debugPrint(
         '[macro_dashboard_flow] remote-half assertions SKIPPED: '
-        '${idSelect.isEmpty ? 'the row never uploaded (expected while the '
-            'dev cloud is un-migrated — it sits dirty locally)' : 'activities.'
+        '${idSelect.isEmpty ? 'the row is not on the remote (un-migrated '
+            'cloud, or the upload did not drain in time)' : 'activities.'
             'planned_time not selectable (migrations not deployed yet)'}. '
         'These arm automatically after Phase C.',
       );
@@ -392,11 +429,8 @@ void main() {
 
     // Migrations are live: the skip + two-time columns must have
     // round-tripped, and the dirty flag must eventually clear.
-    final remoteRows = await probe.select(
-      'activities',
-      query:
-          'id=eq.$activityId&select=status,deleted_at,planned_time,actual_time',
-    );
+    final remoteRows =
+        await remoteSelect('status,deleted_at,planned_time,actual_time');
     expect(remoteRows, isNotEmpty,
         reason: 'migrated cloud: the skipped row must upload');
     final remote = remoteRows.first;
