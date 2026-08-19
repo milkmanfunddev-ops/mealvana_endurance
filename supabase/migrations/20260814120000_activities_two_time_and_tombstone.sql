@@ -13,9 +13,36 @@
 --                (match key: platform id, else platform+sport+start ±15 min).
 
 -- Nullable, no default: no table rewrite, no lock pain on a large table.
+--
+-- TYPE: timestamp WITHOUT time zone, deliberately — the table's convention is
+-- NAIVE LOCAL (scheduled_date_time is naive; the Garmin matcher's ±15 min
+-- window and garminTimestampToLocalNaiveISO are built on it; the Dart client
+-- uploads toIso8601String(), a naive local string). The first cut of this
+-- file said `timestamptz`; on 2026-08-19 the dev deploy's live round-trip
+-- shifted every value by the UTC offset (naive local string → read as UTC →
+-- handed back +00:00 → parsed 5 h earlier), caught by the Patrol flow's
+-- planned_time-immutability assert. Corrected in place before prod ever ran
+-- it; dev was ALTERed with `USING (col AT TIME ZONE 'UTC')`, which exactly
+-- recovers the stored naive-local values.
 alter table public.activities
-  add column if not exists planned_time timestamptz,
-  add column if not exists actual_time timestamptz;
+  add column if not exists planned_time timestamp without time zone,
+  add column if not exists actual_time timestamp without time zone;
+
+-- Correction for any environment that ran the first (timestamptz) cut of
+-- this file — no-op where the columns are already naive:
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema='public' and table_name='activities'
+               and column_name='planned_time'
+               and data_type='timestamp with time zone') then
+    alter table public.activities
+      alter column planned_time type timestamp without time zone
+        using (planned_time at time zone 'UTC'),
+      alter column actual_time type timestamp without time zone
+        using (actual_time at time zone 'UTC');
+  end if;
+end $$;
 
 comment on column public.activities.planned_time is
   'Scheduled start (two-time model). Immutable by gestures; null for unscheduled imports.';

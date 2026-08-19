@@ -333,7 +333,14 @@ export function buildGarminCompletionUpdate(
     // start — this also upgrades a mark-done (MANUAL) actual_time to the
     // GARMIN one. planned_time is deliberately untouched, so the athlete's
     // scheduled time survives completion (unlike scheduled_date_time above).
-    actual_time: garminTimestampToISO(activity.startTimeInSeconds),
+    // NAIVE LOCAL, like scheduled_date_time above — the activities table's
+    // time convention (the column is timestamp WITHOUT time zone; a UTC ISO
+    // here would store the UTC clock as local and shift the card by the
+    // athlete's offset — caught on dev 2026-08-19).
+    actual_time: garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    ),
     completed_at: completionTimestamp,
     updated_at: syncedAt,
     last_synced_at: syncedAt,

@@ -390,5 +390,11 @@ describe("sync beats skip — findMatchingSkippedActivity", () => {
     const update = buildGarminCompletionUpdate(run, {});
     assertEquals(update.status, "completed");
     assertExists(update.actual_time);
+    // actual_time is NAIVE LOCAL, matching scheduled_date_time and the
+    // column type (timestamp without time zone): 22:30 UTC at −05:00 is
+    // 17:30 local, no zone suffix (the timestamptz round-trip shift caught
+    // on dev 2026-08-19).
+    assertEquals(update.actual_time, "2026-08-14T17:30:00");
+    assertEquals(update.scheduled_date_time, update.actual_time);
   });
 });
