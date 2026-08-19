@@ -197,7 +197,7 @@ class DailyMacroService {
     // 6. Call edge function
     try {
       final response = await _supabase.functions.invoke(
-        'calculate-daily-macros',
+        'calculate-daily-macros-v6',
         body: input,
       );
 
@@ -441,7 +441,7 @@ class DailyMacroService {
 
     try {
       final response = await _supabase.functions.invoke(
-        'calculate-daily-macros',
+        'calculate-daily-macros-v6',
         body: payload,
       );
 

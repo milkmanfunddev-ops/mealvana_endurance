@@ -14,6 +14,11 @@ export interface SessionInput {
   pct_conversational: number;
   pct_tempo: number;
   pct_allout: number;
+  /**
+   * ISO start time — sort key for multi-session carb compounding (F19).
+   * Sessions without one keep input order.
+   */
+  start_time?: string | null;
   tss?: number | null;
   /**
    * Activity row id used by the server to look up per-session Garmin
@@ -79,8 +84,37 @@ export interface DailyMacroInput {
   garmin_activities?: (GarminActivityForSession | null)[] | null;
 
   /**
+   * TrainingPeaks / Final Surge date-level data (ATL/CTL, tomorrow's
+   * calendar). Populated server-side when a TP-family integration is
+   * connected; absent otherwise (I4: no TP source tags may then appear).
+   */
+  tp_data?: {
+    ATL?: number | null;
+    CTL?: number | null;
+    tomorrow_planned?: {
+      tss?: number | null;
+      duration_hr?: number | null;
+      is_race?: boolean | null;
+    } | null;
+  } | null;
+
+  /**
+   * TrainingPeaks / Final Surge per-session data, aligned to sessions[] by
+   * index (same convention as garmin_activities).
+   */
+  tp_sessions?:
+    | ({
+        actual_IF?: number | null;
+        planned_IF?: number | null;
+        actual_TSS?: number | null;
+        planned_TSS?: number | null;
+        planned_duration_hr?: number | null;
+      } | null)[]
+    | null;
+
+  /**
    * Previously generated prospective plan for the same day. When provided
-   * AND the resolved mode is 'retrospective', the pipeline emits a `delta`
+   * AND the mode is 'retrospective', the pipeline emits a `delta`
    * showing how the retrospective recalculation differs from the original
    * forecast. Used by the UI to surface "Garmin showed less burn — fat
    * dropped 48g" style explanations.
@@ -145,6 +179,8 @@ export interface MacroSources {
   neat: string; // 'GARMIN' | 'FORMULA'
   weight: string; // 'GARMIN' | 'MANUAL'
   body_fat: string; // 'GARMIN' | 'MANUAL' | 'NONE'
+  tomorrow: string; // 'MANUAL' | 'TP_CALENDAR'
+  weekly_ratio: string; // 'TP_PLANNED' | 'MANUAL'
   sessions: SessionSources[];
 }
 
@@ -160,6 +196,13 @@ export interface DailyMacroOutput {
   mode: string;
   ea: number | null;
   ea_status: string | null;
+  /**
+   * "pre_override" when the step-11 EA override raised the plan — tdee and
+   * tef_kcal then describe the PRE-override macros (Q-009). Else
+   * "as_computed". Consumers MUST NOT present tdee/tef as describing the
+   * delivered macros when this is "pre_override".
+   */
+  energy_basis: 'as_computed' | 'pre_override';
   algorithm_version: string;
   /**
    * Resolved athlete weight & body-fat % actually used in this calculation.
@@ -171,14 +214,15 @@ export interface DailyMacroOutput {
 
   /**
    * Retrospective-only diff vs the prior prospective plan for this day.
-   * Present when input.prospective_plan was provided AND mode resolved to
-   * 'retrospective'. Otherwise omitted.
+   * NULL on every other path — null, not absent, so a consumer can
+   * distinguish "no recalculation happened" from "recalculation happened
+   * and nothing moved" (Q-012 ruling).
    */
-  delta?: {
+  delta: {
     carb_g: number;
     prot_g: number;
     fat_g: number;
     tdee: number;
     session_kcal: number;
-  };
+  } | null;
 }

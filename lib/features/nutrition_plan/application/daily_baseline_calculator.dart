@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 /// Client-side mirror of the daily-macro formula cores in
-/// `supabase/functions/calculate-daily-macros/formulas/` (rmr.ts, baseline.ts,
+/// `supabase/functions/calculate-daily-macros-v6/formulas/` (rmr.ts, baseline.ts,
 /// session.ts, neat-tef.ts, multi-day.ts).
 ///
 /// Every constant lives in this file so that when the daily-macro SSOT

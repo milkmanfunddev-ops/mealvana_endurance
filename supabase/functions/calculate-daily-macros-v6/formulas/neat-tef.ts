@@ -2,7 +2,7 @@
  * Dynamic NEAT and iterative TEF calculations (Iteration 3)
  */
 
-import type { Lifestyle, SessionInput } from '../types.ts';
+import type { Lifestyle } from '../types.ts';
 
 export type VolumeTier =
   | 'recreational'
@@ -43,9 +43,10 @@ export function inferVolumeTier(
 /**
  * Get day modifier based on today's sessions and yesterday's TSS
  * Evaluation order: DOUBLE → TRAINING → REST_AFTER_HARD → REST
+ * Only session count and duration matter, so any session shape qualifies.
  */
 export function getDayModifier(
-  sessions: SessionInput[],
+  sessions: Array<{ duration_hr: number }>,
   yesterday_tss: number | null | undefined,
 ): { day_type: DayType; modifier: number } {
   // 2+ sessions
@@ -94,28 +95,25 @@ export function calculateNEAT(
   return rmr * neat_factor;
 }
 
-// Fat intake bounds per kg bodyweight. The floor protects essential-fat needs
-// and hormone health; the ceiling prevents the residual fat-from-TDEE formula
-// from producing absurd values on high-session days where most session energy
-// is supplied by stored glycogen and fat oxidation, not food eaten that day.
-// Athletes don't replace race-day expenditure in real-time, so intake < TDEE
-// is expected and physiologically normal.
+// Fat floor per kg bodyweight — protects essential-fat needs and hormone
+// health. The fat CEILING does not live here: F15 returns the uncapped
+// residual, and assembly step 10b caps it at 30 %E of TDEE, redistributing
+// the excess to carbohydrate (Q-014, ruled 2026-08-13).
 const FAT_FLOOR_G_PER_KG = 0.8;
-const FAT_CEILING_G_PER_KG = 1.5;
 
-function clampFat(fat_from_tdee: number, weight_kg: number): number {
-  const floor = FAT_FLOOR_G_PER_KG * weight_kg;
-  const ceiling = FAT_CEILING_G_PER_KG * weight_kg;
-  return Math.max(floor, Math.min(ceiling, fat_from_tdee));
+function flooredFat(fat_from_tdee: number, weight_kg: number): number {
+  return Math.max(FAT_FLOOR_G_PER_KG * weight_kg, fat_from_tdee);
 }
 
 /**
- * Calculate TDEE with iterative TEF convergence
+ * Calculate TDEE with iterative TEF convergence (F15)
  * Solves circular dependency: TDEE → fat → intake → TEF → TDEE
  *
- * Fat is bounded by [0.8, 1.5] g/kg. When session expenditure is high enough
- * that residual fat would exceed the ceiling, the ceiling is applied and the
- * resulting intake will be less than TDEE — informational TDEE stays accurate.
+ * Returns UNROUNDED values (R1: rounding happens once, at assembly step 12)
+ * and the PRE-CAP fat residual, floored at 0.8 g/kg. The delta < 10 early
+ * exit is observable behavior: TDEE lands a few kcal short of the closed
+ * form, approached from below (invariant I9) — the loop must not be replaced
+ * with the closed form.
  */
 export function calculateTDEE(
   rmr: number,
@@ -128,6 +126,7 @@ export function calculateTDEE(
   tdee: number;
   fat_g: number;
   tef: number;
+  fat_at_floor: boolean;
 } {
   let tef = 0;
   const max_passes = 5;
@@ -135,47 +134,27 @@ export function calculateTDEE(
   for (let pass = 1; pass <= max_passes; pass++) {
     const prev_tef = tef;
 
-    // Calculate TDEE with current TEF
     const tdee = rmr + neat + tef + session_kcal;
+    const fat = flooredFat((tdee - carb_g * 4 - prot_g * 4) / 9, weight_kg);
 
-    // Calculate fat from TDEE, clamped to physiological intake bounds
-    const fat_from_tdee = (tdee - carb_g * 4 - prot_g * 4) / 9;
-    const fat = clampFat(fat_from_tdee, weight_kg);
-
-    // Calculate intake and new TEF
     const intake = carb_g * 4 + prot_g * 4 + fat * 9;
     const new_tef = intake * 0.10;
 
-    // Check convergence
     const delta = Math.abs(new_tef - prev_tef);
     tef = new_tef;
 
-    if (delta < 10) {
-      // Converged - calculate final values
-      const final_tdee = rmr + neat + tef + session_kcal;
-      const final_fat = clampFat(
-        (final_tdee - carb_g * 4 - prot_g * 4) / 9,
-        weight_kg,
-      );
-
-      return {
-        tdee: Math.round(final_tdee),
-        fat_g: Math.round(final_fat),
-        tef: Math.round(tef),
-      };
-    }
+    if (delta < 10) break;
   }
 
-  // Should converge before max_passes, but return final result anyway
+  // Recompute with the converged TEF
   const final_tdee = rmr + neat + tef + session_kcal;
-  const final_fat = clampFat(
-    (final_tdee - carb_g * 4 - prot_g * 4) / 9,
-    weight_kg,
-  );
+  const raw_fat = (final_tdee - carb_g * 4 - prot_g * 4) / 9;
+  const final_fat = flooredFat(raw_fat, weight_kg);
 
   return {
-    tdee: Math.round(final_tdee),
-    fat_g: Math.round(final_fat),
-    tef: Math.round(tef),
+    tdee: final_tdee,
+    fat_g: final_fat,
+    tef: tef,
+    fat_at_floor: final_fat > raw_fat,
   };
 }

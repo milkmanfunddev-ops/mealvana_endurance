@@ -7,7 +7,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/application/daily_bas
 /// Parity tests pinning DailyBaselineCalculator against the
 /// calculate-daily-macros TS formulas via the shared fixture file. The same
 /// JSON is run through the TS side by
-/// `supabase/functions/calculate-daily-macros/parity-fixtures.test.ts` —
+/// `supabase/functions/calculate-daily-macros-v6/parity-fixtures.test.ts` —
 /// a drift on either side breaks its test.
 void main() {
   final fixtures =
