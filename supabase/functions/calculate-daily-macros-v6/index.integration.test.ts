@@ -1,5 +1,5 @@
 /**
- * Integration tests for calculate-daily-macros Edge Function
+ * Integration tests for the calculate-daily-macros-v6 Edge Function (the live engine; calculate-daily-macros is the frozen v5)
  *
  * Calls the deployed edge function via HTTP to verify end-to-end behavior.
  * Mirrors the unit/pipeline tests in index.test.ts but exercises the full
@@ -8,7 +8,7 @@
  * Run with:
  *   export SUPABASE_URL=https://vlmtsdzpnjnavdgytcmi.supabase.co
  *   export SUPABASE_ANON_KEY=<dev-anon-key>
- *   deno test --allow-net --allow-env supabase/functions/calculate-daily-macros/index.integration.test.ts
+ *   deno test --allow-net --allow-env supabase/functions/calculate-daily-macros-v6/index.integration.test.ts
  *
  * When SUPABASE_URL / SUPABASE_ANON_KEY are not set the tests are skipped
  * (ignored), so the file stays green in offline unit-test runs.
@@ -25,7 +25,7 @@ import {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/calculate-daily-macros`;
+const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/calculate-daily-macros-v6`;
 const HAS_ENV = SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
 
 /** Deployed-function test — skipped when the Supabase env is not configured. */
