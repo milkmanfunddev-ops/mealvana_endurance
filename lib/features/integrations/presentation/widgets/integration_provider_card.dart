@@ -110,8 +110,11 @@ class IntegrationProviderCard extends StatelessWidget {
     final secondaryText = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Container(
-      // Uniform 70px spec rows; rows carrying extra lines (connected info,
-      // retry status) fall back to a minimum so they never overflow.
+      // Uniform 70px spec rows. With the athlete-name line now Settings-
+      // only, a connected row holds the same content as any other and
+      // settles at 70 — but its Sync pill is intrinsically taller than the
+      // Connect pill, so it keeps a minimum rather than a hard height and
+      // can never clip.
       height: specStyle && !isConnected && statusText == null ? 70 : null,
       constraints: specStyle && (isConnected || statusText != null)
           ? const BoxConstraints(minHeight: 70)
@@ -207,8 +210,14 @@ class IntegrationProviderCard extends StatelessWidget {
             ),
           ],
 
-          // Bottom row: Athlete name and last sync timestamp (when connected)
-          if (isConnected && (athleteName != null || lastSyncAt != null)) ...[
+          // Bottom row: Athlete name and last sync timestamp (when
+          // connected). Settings only — in the spec rows a third line
+          // pushes the logo off centre and breaks the uniform 70px height,
+          // and the connected state is already unmistakable from the
+          // border and the Sync/Synced action.
+          if (!specStyle &&
+              isConnected &&
+              (athleteName != null || lastSyncAt != null)) ...[
             const SizedBox(height: AppSpacing.sm),
             _buildConnectionInfo(context),
           ],
@@ -443,15 +452,24 @@ class _SyncButton extends StatelessWidget {
           children: [
             Icon(
               hasSynced ? Icons.check_circle : Icons.sync,
-              size: 16,
+              size: specStyle ? 14 : 16,
               color: AppColors.textDark,
             ),
             const SizedBox(width: 4),
             Text(
               hasSynced ? 'Synced!' : 'Sync Now',
-              style: AppTextStyles.buttonPrimary.copyWith(
-                color: AppColors.textDark,
-              ),
+              // Spec rows: same type as the Connect pill this replaces
+              // (Sansita 700 14). Settings keeps buttonPrimary.
+              style: specStyle
+                  ? const TextStyle(
+                      fontFamily: OnbTokens.fontDisplay,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppColors.textDark,
+                    )
+                  : AppTextStyles.buttonPrimary.copyWith(
+                      color: AppColors.textDark,
+                    ),
             ),
           ],
         ),
@@ -469,7 +487,9 @@ class _SyncButton extends StatelessWidget {
           style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
         ),
         content: Text(
-          'Your imported workouts will remain, but no new workouts will be synced.\n\nTip: Long-press Sync Now to disconnect.',
+          'This removes the workouts imported from this platform, along with '
+          'any profile details it filled in for you. Anything you entered '
+          'yourself is kept.\n\nTip: Long-press Sync Now to disconnect.',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textDarkSecondary,
           ),

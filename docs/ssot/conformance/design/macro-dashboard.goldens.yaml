@@ -1,0 +1,73 @@
+# Design conformance manifest — GOLDENS for the macro-dashboard surface.
+# The design analogue of a vectors file: it names every golden that MUST exist,
+# with the state and canonical-mock inputs it is rendered from. The golden PNGs
+# themselves are implementation-side artifacts (blessed from the first correct
+# rendering); THIS file is what qa audits against (qa-test-plan audit verb).
+#
+# Contract source: spec/design/ (RATIFIED v1, 2026-08-14). Colors resolve from
+# spec/design/tokens.md. Numbers in every golden come from the canonical mock
+# day (two-workout persona; see vectors/daily-macros/assembly.json
+# pipeline-double-plus-debt is NOT this day — the canonical day is the swim+run
+# day pinned in vectors/daily-macros/intraday-display.json accrual-two-workout-3pm).
+#
+# RULE (from the component specs): a golden may only be regenerated AFTER the
+# design spec changes — never to make a red test pass. Regeneration commits
+# cite the spec change.
+
+manifest: macro-dashboard-goldens
+version: v2                 # RATIFIED (Xuan, 2026-08-17) — workout-card v2 (Q-D6)
+status: ratified            # v1 (ratified 2026-08-14) is what daily-macros-dashboard@v1 pins
+# Changes from v1: workout_card_skipped notes carry the neutral-drain signature (D-2) and cite
+# Q-D6; every other golden is unchanged in content — v1 blessings stand.
+spec_family: spec/design/   # tokens.md, components/*, surfaces/macro-dashboard.md
+
+mock_day:
+  athlete: 75 kg / LBM 64 / RMR 1908, serious tier, desk
+  workouts:
+    - { name: Swim, time: "08:00", detail: "2,000 yd - 40 min", kcal: 229, state: DONE_VERIFIED }
+    - { name: Run,  time: "17:30", detail: "90 min",            kcal: 1205, state: PLANNED }
+  snapshot_time: "15:00"
+  eaten_kcal: 1650
+  targets: { kcal: 4152, carb_g: 596, prot_g: 130, fat_g: 138 }   # fat = 30.0 %E (Q-014)
+
+goldens:
+  # workout-card component — one per state row (spec/design/components/workout-card.md)
+  - id: workout_card_planned
+    component: workout-card
+    state: PLANNED
+    notes: dashed outline, dimmed fill, "Planned" chip
+  - id: workout_card_done_confirmed
+    component: workout-card
+    state: DONE_CONFIRMED
+    notes: solid, "self-reported" chip — NO awaiting-sync glyph (Q-D4 ruling 2026-08-17;
+      the glyph mention here was the erratum, corrected per
+      intake/2026-08-17-awaiting-sync-glyph-conflict.md)
+  - id: workout_card_done_verified
+    component: workout-card
+    state: DONE_VERIFIED
+    notes: solid, electrolyte icon disc, "verified · Garmin" chip
+  - id: workout_card_skipped
+    component: workout-card
+    state: SKIPPED
+    notes: planned treatment DRAINED TO NEUTRAL — dotted outline, dimmed fill, icon/chip/kcal in
+      dimmed cream, no electrolyte and no orange anywhere on the card, "Skipped" chip
+      (Q-D5 ruling 2026-08-17 + Q-D6/D-2 v2 clarification). Bless from the reference
+      rendering's previous-day view (prototype @ 5a22ca8, day 16 run). Regeneration commit
+      cites Q-D5 + Q-D6. Passive (past day) and active (today) SKIPPED share this one golden —
+      the card is identical; only the trigger differs.
+
+  # energy summary card — 3 faces x 2 expansion states (components/energy-card.md)
+  - { id: energy_card_all_collapsed,     component: energy-card, face: ALL,     expanded: false,
+      notes: "NET BALANCE -133 + band copy 'on track'" }
+  - { id: energy_card_all_expanded,      component: energy-card, face: ALL,     expanded: true,
+      notes: "equation 1,650 - 1,783 = -133; burn-side figures electrolyte, intake orange (Q-D3)" }
+  - { id: energy_card_workout_collapsed, component: energy-card, face: WORKOUT, expanded: false,
+      notes: "TODAY'S WORKOUT 229 done - 1,205 planned" }
+  - { id: energy_card_workout_expanded,  component: energy-card, face: WORKOUT, expanded: true,
+      notes: "ACTIVE ENERGY + per-session rows + projected 1,434" }
+  - { id: energy_card_meals_collapsed,   component: energy-card, face: MEALS,   expanded: false,
+      notes: "DAILY BUDGET 4,152 - 596C - 130P - 138F (P-2: budget, not intake)" }
+  - { id: energy_card_meals_expanded,    component: energy-card, face: MEALS,   expanded: true,
+      notes: "INTAKE TODAY 1,650/4,152 + three macro bars" }
+
+done_when: every golden above exists, renders from the mock day, and passes in CI

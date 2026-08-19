@@ -81,6 +81,48 @@ class DailyMacroService {
     }
   }
 
+  /// Q-016 — a MANUAL write to an engine input (weight, height, body-fat %,
+  /// sex, age, lifestyle, typical weekly hours, carb-cycle opt-in, training
+  /// phase — Settings is merely the surface) invalidates TODAY and every
+  /// FUTURE cached day, never past days: a delivered plan is the historical
+  /// record of what the athlete was told to eat, and recalculating it would
+  /// retroactively flip "hit your target" verdicts (platform-resolution.md,
+  /// RULED Xuan 2026-08-17). The spec owns the policy; this is the mechanism.
+  /// Callers also invalidate `dailyMacrosControllerProvider` so the visible
+  /// day recomputes with the new values.
+  Future<void> invalidateForManualInputChange(
+    String userId, {
+    DateTime? now,
+  }) async {
+    final today = now ?? DateTime.now();
+    await _repository.invalidateFromDate(userId, today);
+    // Any in-flight week calculation for the current or next week must
+    // rerun with the new inputs rather than land stale results.
+    markMacroInputsChanged(userId, [
+      today,
+      today.add(const Duration(days: 7)),
+    ]);
+  }
+
+  /// Whether two revisions of a profile differ in an ENGINE input — the
+  /// fields the daily-macro calculation actually reads (rmr.md F1 sex/age/
+  /// height/weight; baseline-macros.md lifestyle/weekly hours/cycling opt-in/
+  /// phase; energy-availability.md body-fat → FFM). Everything else on the
+  /// profile (units, gear, sweat, dietary preferences…) never reaches the
+  /// engine and must not cost the user a recompute.
+  static bool engineInputsDiffer(UserProfile a, UserProfile b) {
+    return a.gender != b.gender ||
+        a.birthday != b.birthday ||
+        a.heightFeet != b.heightFeet ||
+        a.heightInches != b.heightInches ||
+        a.weightPounds != b.weightPounds ||
+        a.bodyFatPct != b.bodyFatPct ||
+        a.lifestyle != b.lifestyle ||
+        a.typicalWeeklyHours != b.typicalWeeklyHours ||
+        a.carbCycleOptIn != b.carbCycleOptIn ||
+        a.trainingPhase != b.trainingPhase;
+  }
+
   /// Calculate daily macros for a specific date.
   /// Uses cache when available, otherwise calls the edge function.
   Future<DailyMacroTargets?> calculateForDate(
@@ -155,7 +197,7 @@ class DailyMacroService {
     // 6. Call edge function
     try {
       final response = await _supabase.functions.invoke(
-        'calculate-daily-macros',
+        'calculate-daily-macros-v6',
         body: input,
       );
 
@@ -399,7 +441,7 @@ class DailyMacroService {
 
     try {
       final response = await _supabase.functions.invoke(
-        'calculate-daily-macros',
+        'calculate-daily-macros-v6',
         body: payload,
       );
 
@@ -477,7 +519,7 @@ class DailyMacroService {
                 tss, intensity_level
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL
+         AND deleted_at IS NULL AND status != 'skipped'
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -496,7 +538,16 @@ class DailyMacroService {
     return _WeekActivityInputs(results);
   }
 
-  /// Load sessions for a date in the format expected by the edge function
+  /// Load sessions for a date in the format expected by the edge function.
+  ///
+  /// `status = 'skipped'` rows are excluded from EVERY activity-derived input
+  /// (sessions, adjacent-day context, weekly hours): the athlete's "didn't
+  /// happen" contributes zero to session demand and fuel windows exactly as
+  /// the confirmation ladder's else-rung does, even while planned_time is
+  /// still in the future (platform-resolution.md, SKIPPED addition
+  /// 2026-08-17). Tombstones (status='deleted') also carry deleted_at, so the
+  /// existing filter already drops them. A skip/unskip therefore invalidates
+  /// the cached window — see `macro_cache_invalidation.dart`.
   Future<List<Map<String, dynamic>>> _loadSessionsForDate(
     String userId,
     DateTime date,
@@ -513,7 +564,7 @@ class DailyMacroService {
                 tss, intensity_level
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL
+         AND deleted_at IS NULL AND status != 'skipped'
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -539,7 +590,7 @@ class DailyMacroService {
           '''SELECT tss, duration_minutes, intensity_level, scheduled_date_time
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL''',
+         AND deleted_at IS NULL AND status != 'skipped' ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfDay),
@@ -566,7 +617,7 @@ class DailyMacroService {
           '''SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL''',
+         AND deleted_at IS NULL AND status != 'skipped' ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfWeek),

@@ -35,6 +35,9 @@
 ./scripts/deploy_dev.sh <function-name> [<function-name> ...]
 ./scripts/deploy_prod.sh <function-name> [<function-name> ...]   # asks for interactive 'yes'
 ```
+- A function folder carrying an empty **`FROZEN`** marker file is a legacy version kept deployed for
+  old installs (today: `calculate-daily-macros` = engine v5). The wrappers refuse to deploy it unless
+  `--force-legacy` is passed — rollback only, never routine.
 - Or the `/deploy-edge` Claude skill, which runs the same deploy plus schema/secret/cross-import
   pre-checks and post-deploy verification.
 - Raw CLI equivalent (what the scripts/skill run under the hood):
@@ -57,6 +60,14 @@ supabase functions list --project-ref wvmvsodrvbkxfydabqed
 ### Edge-Function Truth Model
 #### App-invoked functions (derived from `lib/** functions.invoke(...)`)
 - `analyze-meal-photo` (Mealvana AI AI — photo → meal analysis, via `meal_ai_service.dart`)
+- `calculate-daily-macros-v6` (daily-macro engine, `algorithm_version` v6.0.0 — ratified
+  `daily-macros-dashboard@v3`; via `daily_macro_service.dart`, schema-18 builds). **`_shared`**
+  consumers: `garmin-push`, `garmin-ping` (Garmin completion matcher) — redeploy them with it.
+- `calculate-daily-macros` — **LEGACY v5, FROZEN.** Still deployed for installs whose client pins
+  `algorithm_version` v5.0.0 (pre-schema-18 builds, equality gate). Folder carries a `FROZEN` marker;
+  `scripts/deploy_dev.sh` / `deploy_prod.sh` refuse it unless `--force-legacy` (rollback only).
+  Delete folder + deployed function together once `min_supported_schema_version ≥ 18`.
+  (`supabase/functions/calculate-daily-macros/README.md`; ruling Lee/Xuan 2026-08-19.)
 - `create-user`
 - `delete-user`
 - `describe-meal` (Mealvana AI AI — text description → meal analysis, via `meal_ai_service.dart`)

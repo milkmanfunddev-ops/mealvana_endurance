@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/fuel_timeline/presentation/screens/fuel_timeline_screen.dart';
+import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
+import '../services/app_config.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -59,9 +61,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     }
 
     // Build the list of screens dynamically. Activities + Nutrition are merged
-    // into the single Fuel Timeline tab.
+    // into the single Fuel Timeline tab. The redesigned macro dashboard
+    // (bundle daily-macros-dashboard@v1) coexists behind a fail-closed flag
+    // until product flips it.
+    final macroDashboardOn = ref.watch(
+      appConfigProvider.select((config) => config.macroDashboardEnabled),
+    );
     final screens = [
-      const FuelTimelineScreen(), // 0: Fuel Timeline (day + food + workouts)
+      if (macroDashboardOn)
+        const MacroDashboardScreen() // 0: redesigned macro dashboard
+      else
+        const FuelTimelineScreen(), // 0: Fuel Timeline (day + food + workouts)
       if (showCoachTab)
         const SizedBox.shrink(), // 1: placeholder (coach portal rendered above)
       const EventsListScreen(), // 1 or 2: Events

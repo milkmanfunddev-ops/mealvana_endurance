@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mealvana_endurance/features/onboarding/domain/onboarding_integration_profile.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/body_composition_screen.dart';
@@ -21,6 +22,7 @@ void main() {
     WidgetTester tester, {
     VoidCallback? onContinue,
     double? integrationWeightLbs,
+    String integrationWeightSource = 'Garmin Connect',
   }) async {
     tester.view.physicalSize = standardPhoneSize;
     tester.view.devicePixelRatio = 1.0;
@@ -33,8 +35,13 @@ void main() {
           mockAppExternalDeps(),
           mockSharedPreferences(),
           // Screens must never hit the integrations repository in tests.
-          onboardingIntegrationWeightLbsProvider.overrideWith(
-            (ref) async => integrationWeightLbs,
+          onboardingIntegrationProfileProvider.overrideWith(
+            (ref) async => integrationWeightLbs == null
+                ? OnboardingIntegrationProfile.empty
+                : OnboardingIntegrationProfile(
+                    weightLbs: integrationWeightLbs,
+                    weightSource: integrationWeightSource,
+                  ),
           ),
         ],
         child: wrapForTest(

@@ -478,6 +478,53 @@ class OnboardingController extends _$OnboardingController {
   void recordConnectedProvider(String? provider) =>
       _updateDraft(_draft.copyWith(connectedProvider: () => provider));
 
+  /// Fields that were pre-filled from a connected platform and which the
+  /// athlete has not since edited. Recorded by the personal-info and
+  /// body-composition steps so [clearIntegrationAutofill] can undo exactly
+  /// what a disconnect should undo — never an answer the athlete typed.
+  final Set<String> _integrationAutofilledFields = {};
+
+  void recordIntegrationAutofill(Set<String> fields) =>
+      _integrationAutofilledFields.addAll(fields);
+
+  /// The athlete took ownership of a field; a later disconnect must leave
+  /// it alone.
+  void releaseIntegrationAutofill(String field) =>
+      _integrationAutofilledFields.remove(field);
+
+  bool isIntegrationAutofilled(String field) =>
+      _integrationAutofilledFields.contains(field);
+
+  /// Bumped every time [clearIntegrationAutofill] runs. Screens watch this
+  /// rather than inferring a disconnect from a field going null: draft
+  /// writes are interleaved (the birth-year wheel notifies mid-autofill,
+  /// before the names have been written), so "null" cannot distinguish
+  /// "cleared" from "not written yet".
+  int get autofillClearedTick => _autofillClearedTick;
+  int _autofillClearedTick = 0;
+
+  /// Clears the answers a connected platform supplied, on disconnect.
+  ///
+  /// Only touches fields still recorded as autofilled — anything the
+  /// athlete typed or picked over the top is theirs and survives.
+  void clearIntegrationAutofill() {
+    if (_integrationAutofilledFields.isEmpty) return;
+    final fields = Set<String>.from(_integrationAutofilledFields);
+    _integrationAutofilledFields.clear();
+    _autofillClearedTick++;
+
+    _updateDraft(
+      _draft.copyWith(
+        firstName: fields.contains('firstName') ? () => null : null,
+        lastName: fields.contains('lastName') ? () => null : null,
+        email: fields.contains('email') ? () => null : null,
+        gender: fields.contains('gender') ? () => null : null,
+        birthYear: fields.contains('birthYear') ? () => null : null,
+        weightPounds: fields.contains('weightPounds') ? () => null : null,
+      ),
+    );
+  }
+
   void recordDeclinedTrainingApps() =>
       _updateDraft(_draft.copyWith(declinedTrainingApps: true));
 

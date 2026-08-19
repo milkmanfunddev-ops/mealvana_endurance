@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -34,10 +35,48 @@ class DailyMacroTargetsRepository {
   final SentryReporter _sentry;
   bool _reportedRemoteSaveFailureThisSession = false;
 
-  /// Algorithm version this client expects. Cached rows from older versions
-  /// are treated as misses so the next read recalculates with the current
-  /// pipeline (e.g., picks up Garmin source attribution introduced in v5).
-  static const String _expectedAlgorithmVersion = 'v5.0.0';
+  /// The engine version a cached day must carry to be served. Rows with an
+  /// OLDER `algorithm_version` are treated as misses so the next read
+  /// recalculates with the current pipeline; rows with a NEWER one are
+  /// accepted as-is.
+  ///
+  /// Why "older", not "different" (2026-08-19, Phase C of
+  /// daily-macros-dashboard@v3 — Lee/Xuan ruling): an equality gate made the
+  /// engine deploy and the app release inseparable. Deploy a newer engine
+  /// first and every installed build read a day → judged it stale (v6 ≠ v5)
+  /// → recalculated → got v6 again → still stale — an invalidation loop that
+  /// strobed every consumer of dailyMacrosControllerProvider (the
+  /// 2026-08-14 dashboard flicker). Accepting newer rows lets the engine move
+  /// ahead of the client; raising this floor later invalidates the leftover
+  /// old rows exactly once. The schema-change resync (app_config
+  /// current_schema_version / VersionCheckService) stays the only forced
+  /// wipe. Today's pre-v6 installs are served by the frozen legacy function
+  /// `calculate-daily-macros`; this build calls `calculate-daily-macros-v6`.
+  static const String _minAlgorithmVersion = 'v6.0.0';
+
+  /// Semantic-ish compare of `vN.N.N` strings; anything unparsable is treated
+  /// as older than everything (→ recalculated once).
+  static bool _isOlderThan(String cached, String floor) {
+    List<int> parse(String v) => v
+        .replaceFirst(RegExp(r'^[vV]'), '')
+        .split('.')
+        .map((p) => int.tryParse(p) ?? -1)
+        .toList();
+    final a = parse(cached);
+    final b = parse(floor);
+    for (var i = 0; i < 3; i++) {
+      final x = i < a.length ? a[i] : 0;
+      final y = i < b.length ? b[i] : 0;
+      if (x < 0) return true;
+      if (x != y) return x < y;
+    }
+    return false;
+  }
+
+  /// Whether a cached row's engine version is stale (older than the floor).
+  @visibleForTesting
+  static bool isStaleAlgorithmVersion(String cachedVersion) =>
+      _isOlderThan(cachedVersion, _minAlgorithmVersion);
 
   /// Get cached macro targets for a specific date
   Future<DailyMacroTargets?> getCachedForDate(
@@ -60,7 +99,7 @@ class DailyMacroTargetsRepository {
 
     final row = results.first;
     final cachedVersion = row.read<String>('algorithm_version');
-    if (cachedVersion != _expectedAlgorithmVersion) {
+    if (isStaleAlgorithmVersion(cachedVersion)) {
       // Stale cache — drop it so the caller recalculates fresh.
       await invalidateForDate(userId, normalizedDate);
       return null;
@@ -106,7 +145,7 @@ class DailyMacroTargetsRepository {
     for (final row in results) {
       final targetMillis = row.read<int>('target_date');
       final cachedVersion = row.read<String>('algorithm_version');
-      if (cachedVersion != _expectedAlgorithmVersion) {
+      if (isStaleAlgorithmVersion(cachedVersion)) {
         staleDates.add(DateTime.fromMillisecondsSinceEpoch(targetMillis));
         continue;
       }
@@ -265,6 +304,24 @@ class DailyMacroTargetsRepository {
         [userId, ...chunk],
       );
     }
+  }
+
+  /// Invalidate every cached day from [fromDate] (inclusive) forward — today
+  /// and all future cached days — leaving earlier days untouched.
+  ///
+  /// This is the Q-016 window (platform-resolution.md, "Manual profile
+  /// edits — which cached days recalculate", RULED 2026-08-17): a MANUAL
+  /// write to an engine input recalculates today + future; past days are
+  /// the historical record of what the athlete was told to eat and are
+  /// never touched. Prefer this over [invalidateAllForUser] for any
+  /// profile-driven invalidation.
+  Future<void> invalidateFromDate(String userId, DateTime fromDate) async {
+    final from = DateTime(fromDate.year, fromDate.month, fromDate.day);
+    await _database.customStatement(
+      'DELETE FROM daily_macro_targets '
+      'WHERE user_id = ? AND target_date >= ?',
+      [userId, from.millisecondsSinceEpoch],
+    );
   }
 
   /// Invalidate ALL cached records for a user — every date, for all time.

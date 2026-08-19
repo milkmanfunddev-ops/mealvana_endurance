@@ -1,0 +1,211 @@
+{
+  "section": "baseline-macros",
+  "engine": "calculate-daily-macros (baseline-macros)",
+  "specVersion": "v1 (2026-08-14, ratified)",
+  "note": "Pins RATIFIED v1 (Xuan, 2026-08-14). EXPECTED-RED until calculate-daily-macros implements the ruled specs. Expected values follow R1: the UNROUNDED chain, abs tol 1e-3 (display rounding is half-up, pinned by F10's 136.5->137). Source tables that used rounded intermediates (NEAT 378 vs 377.784) drift <=1.5 kcal from these vectors; R1 governs, the vectors are the truth. F2 baseline + F20 carb cycling, all gates and boundaries.",
+  "toleranceG": 0.001,
+  "vectors": [
+    {
+      "id": "baseline-ref",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "lbmKg": 64,
+        "age": 34
+      },
+      "expected": {
+        "carbG": 300.0,
+        "protG": 115.2
+      },
+      "why": "F2: carb 4.0*75; prot 1.8*LBM"
+    },
+    {
+      "id": "baseline-masters-45",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "lbmKg": 64,
+        "age": 45
+      },
+      "expected": {
+        "carbG": 300.0,
+        "protG": 132.48
+      },
+      "why": "F2: carb 4.0*75; prot 1.8*LBM *1.15 masters (>=45 strict)"
+    },
+    {
+      "id": "baseline-no-lbm",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "lbmKg": null,
+        "age": 34
+      },
+      "expected": {
+        "carbG": 300.0,
+        "protG": 105.0
+      },
+      "why": "F2: carb 4.0*75; prot 1.4*W"
+    },
+    {
+      "id": "baseline-masters-no-lbm",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "lbmKg": null,
+        "age": 45
+      },
+      "expected": {
+        "carbG": 300.0,
+        "protG": 120.75
+      },
+      "why": "F2: carb 4.0*75; prot 1.4*W *1.15 masters (>=45 strict)"
+    },
+    {
+      "id": "baseline-masters-boundary-44",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "lbmKg": 64,
+        "age": 44
+      },
+      "expected": {
+        "carbG": 300.0,
+        "protG": 115.2
+      },
+      "why": "F2: carb 4.0*75; prot 1.8*LBM"
+    },
+    {
+      "id": "carbcycle-qualifies",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "BASE",
+        "sessions": [
+          {
+            "IF": 0.65,
+            "durationHr": 0.75
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 225.0
+      },
+      "why": "F20: all four gates; boundaries inclusive on the qualifying side (IF=0.80, dur=1.25 qualify)"
+    },
+    {
+      "id": "carbcycle-if-blocked",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "BASE",
+        "sessions": [
+          {
+            "IF": 0.85,
+            "durationHr": 0.75
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 300.0
+      },
+      "why": "F20: all four gates; boundaries inclusive on the qualifying side (IF=0.80, dur=1.25 qualify)"
+    },
+    {
+      "id": "carbcycle-dur-blocked",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "BASE",
+        "sessions": [
+          {
+            "IF": 0.7,
+            "durationHr": 1.5
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 300.0
+      },
+      "why": "F20: all four gates; boundaries inclusive on the qualifying side (IF=0.80, dur=1.25 qualify)"
+    },
+    {
+      "id": "carbcycle-phase-blocked",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "PEAK",
+        "sessions": [
+          {
+            "IF": 0.65,
+            "durationHr": 0.75
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 300.0
+      },
+      "why": "F20: all four gates; boundaries inclusive on the qualifying side (IF=0.80, dur=1.25 qualify)"
+    },
+    {
+      "id": "carbcycle-boundary-inclusive",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "BASE",
+        "sessions": [
+          {
+            "IF": 0.8,
+            "durationHr": 1.25
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 225.0
+      },
+      "why": "F20: all four gates; boundaries inclusive on the qualifying side (IF=0.80, dur=1.25 qualify)"
+    },
+    {
+      "id": "carbcycle-two-sessions",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "BASE",
+        "sessions": [
+          {
+            "IF": 0.6,
+            "dur": 0.5
+          },
+          {
+            "IF": 0.6,
+            "dur": 0.5
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 300.0
+      },
+      "why": "Single-session days only \u2014 a double never qualifies"
+    },
+    {
+      "id": "carbcycle-zero-sessions",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "optIn": true,
+        "phase": "BASE",
+        "sessions": []
+      },
+      "expected": {
+        "carbG": 300.0
+      },
+      "why": "Zero sessions never qualify"
+    }
+  ]
+}

@@ -40,6 +40,8 @@ import {
   buildGarminCompletionUpdate,
   enrichCompletedGarminActivity,
   findMatchingPlannedActivity,
+  GARMIN_COMPLETABLE_STATUSES,
+  findMatchingTombstone,
   insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
 import {
@@ -290,12 +292,30 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             activity.startTimeOffsetInSeconds,
           );
 
+          // Tombstone gate BEFORE any match or insert: a deleted workout's
+          // row persists precisely so this push cannot resurrect it.
+          const tombstone = await findMatchingTombstone(
+            supabase,
+            mapping.user_id,
+            sportType,
+            activity,
+            activity.summaryId != null ? String(activity.summaryId) : null,
+          );
+          if (tombstone) {
+            console.log(
+              `[garmin-push] Dropping activity — ${tombstone.reason} (${tombstone.id})`,
+            );
+            stats.skipped++;
+            continue;
+          }
+
           // Try to match an existing planned activity from TP/FS
           const matchedActivity = await findMatchingPlannedActivity(
             supabase,
             mapping.user_id,
             sportType,
             activity,
+            activity.summaryId != null ? String(activity.summaryId) : null,
           );
 
           if (matchedActivity) {
@@ -325,7 +345,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               .from("activities")
               .update(updateFields)
               .eq("id", matchedActivity.id)
-              .in("status", ["planned", "draft"])
+              .in("status", GARMIN_COMPLETABLE_STATUSES)
               .select("id");
 
             if (error) {
@@ -812,11 +832,27 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             summary.startTimeOffsetInSeconds,
           );
 
+          const tombstone = await findMatchingTombstone(
+            supabase,
+            mapping.user_id,
+            sportType,
+            summary,
+            String(detailSummaryId),
+          );
+          if (tombstone) {
+            console.log(
+              `[garmin-push] Dropping detail push — ${tombstone.reason} (${tombstone.id})`,
+            );
+            stats.skipped++;
+            continue;
+          }
+
           const matchedActivity = await findMatchingPlannedActivity(
             supabase,
             mapping.user_id,
             sportType,
             summary,
+            String(detailSummaryId),
           );
 
           if (matchedActivity) {
@@ -830,7 +866,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               .from("activities")
               .update(updateFields)
               .eq("id", matchedActivity.id)
-              .in("status", ["planned", "draft"])
+              .in("status", GARMIN_COMPLETABLE_STATUSES)
               .select("id");
 
             if (error) {

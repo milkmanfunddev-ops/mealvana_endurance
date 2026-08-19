@@ -1,8 +1,8 @@
-tag: pre-workout-food-composition@v1
-commit: fe31443b0edef302267bdc1fa661c7e3bf4b5b9b
-branch: qa/pre-workout-drawers (contains all of QA main)
+tag: daily-macros-dashboard@v3
+commit: 180658d (tag content; supersedes @v2 @ cf69821, @v1 @ e2c3fe0c). The v3 handoff + handback docs (bundles/daily-macros-dashboard.handoff.md, intake/2026-08-18-handback.md) are mirrored from qa af05f6e (which only adds those two documents), and feature-test-plans/macro-dashboard.md from qa 53c3fcb (the §4 row flips recorded per the handback).
+branch: qa/daily-macros (third bundle; pre-workout bundles remain from tag pre-workout-food-composition@v1 @ fe31443b, branch qa/pre-workout-drawers)
 source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
-synced: 2026-08-07
+synced: 2026-08-18
 policy: VERBATIM MIRROR of the QA repo (Lee, 2026-08-07) — no app-side edits to QA-tracked files, ever.
   The QA repo is authoritative; conflicts between its documents are resolved by ITS
   spec/source-authority.md precedence rules, and recorded in ITS DEVIATIONS.md — never by

@@ -36,6 +36,7 @@ class AppConfig {
     this.revenueCatApiKeyTest = '',
     this.describeMealEnabled = true,
     this.coachInsightsEnabled = false,
+    this.macroDashboardEnabled = false,
     this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
@@ -155,6 +156,11 @@ class AppConfig {
   /// Defaults off for the same fail-closed cost protection as
   /// [describeMealEnabled].
   final bool coachInsightsEnabled;
+
+  /// Release gate for the redesigned macro dashboard
+  /// (bundle daily-macros-dashboard@v1). Fail-closed: the Fuel Timeline
+  /// stays the default surface until product flips this on.
+  final bool macroDashboardEnabled;
 
   /// Platform-appropriate RevenueCat public API key.
   ///
@@ -335,6 +341,8 @@ class AppConfig {
             fallback: isDevMode ? 'true' : 'false',
           ) ==
           'true',
+      macroDashboardEnabled:
+          dotenv.get('MACRO_DASHBOARD_ENABLED', fallback: 'false') == 'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -376,6 +384,7 @@ class AppConfig {
     bool aiCreditsEnabled = false,
     bool describeMealEnabled = true,
     bool coachInsightsEnabled = true,
+    bool macroDashboardEnabled = false,
     bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
@@ -414,6 +423,7 @@ class AppConfig {
       aiCreditsEnabled: aiCreditsEnabled,
       describeMealEnabled: describeMealEnabled,
       coachInsightsEnabled: coachInsightsEnabled,
+      macroDashboardEnabled: macroDashboardEnabled,
       analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
@@ -606,6 +616,8 @@ class AppConfig {
           const String.fromEnvironment('COACH_INSIGHTS_ENABLED') != ''
           ? const String.fromEnvironment('COACH_INSIGHTS_ENABLED') == 'true'
           : isDevMode,
+      macroDashboardEnabled:
+          const String.fromEnvironment('MACRO_DASHBOARD_ENABLED') == 'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,

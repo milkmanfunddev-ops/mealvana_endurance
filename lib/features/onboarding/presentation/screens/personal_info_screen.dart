@@ -4,7 +4,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../domain/onboarding_integration_profile.dart';
 import '../providers/onboarding_controller.dart';
+import '../providers/onboarding_preview_providers.dart';
 import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
@@ -56,6 +58,32 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   Gender? _gender;
   late int _birthYear;
 
+  /// Fields the athlete has touched themselves. Integration autofill only
+  /// ever writes into what is still untouched — it must never overwrite an
+  /// answer someone gave us.
+  bool _userEditedFirstName = false;
+  bool _userEditedLastName = false;
+  bool _userEditedEmail = false;
+  bool _userPickedGender = false;
+  bool _userPickedYear = false;
+
+  /// Provider whose profile filled fields in, and which fields those were
+  /// — the notice names them so it's obvious what synced and what didn't.
+  String? _autofillSource;
+  List<String> _autofilledFields = const [];
+
+  /// Last observed value of the controller's disconnect counter.
+  int _lastClearedTick = 0;
+
+  /// True only while integration autofill is driving the widgets, so the
+  /// wheel's change callback can tell that apart from a human scroll.
+  bool _applyingAutofill = false;
+
+  /// Autofill is a one-shot. Applying it writes back into the draft, and
+  /// re-applying on a later emission would re-notify and could feed a
+  /// provider/listener cycle.
+  bool _autofillApplied = false;
+
   OnboardingController get _controller =>
       ref.read(onboardingControllerProvider.notifier);
 
@@ -73,6 +101,15 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     _yearController = FixedExtentScrollController(
       initialItem: _birthYear - _minYear,
     );
+
+    // Anything already in the draft came from this athlete on a previous
+    // visit to the step, so autofill leaves it alone.
+    _userEditedFirstName = draft.firstName?.isNotEmpty == true;
+    _userEditedLastName = draft.lastName?.isNotEmpty == true;
+    _userEditedEmail = draft.email?.isNotEmpty == true;
+    _userPickedGender = draft.gender != null;
+    _userPickedYear = draft.birthYear != null;
+
     // The wheel always shows a year, so the draft carries it from first
     // render (spec behavior: only gender gates Continue).
     if (draft.birthYear == null) {
@@ -80,6 +117,37 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
         if (mounted) _controller.updatePersonalInfo(birthYear: _birthYear);
       });
     }
+
+    // Pre-fill from a connected platform's athlete profile — fireImmediately
+    // so an already-resolved (keepAlive) value still lands.
+    ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
+      final profile = next.value;
+      if (profile == null ||
+          !profile.hasAnything ||
+          !mounted ||
+          _autofillApplied) {
+        return;
+      }
+      _autofillApplied = true;
+      _applyIntegrationProfile(profile);
+    }, fireImmediately: true);
+
+    // Disconnecting a platform clears the answers it supplied from the
+    // draft. This screen stays alive in the PageView with its text
+    // controllers seeded once in initState, so without this the fields
+    // would keep displaying values that no longer exist — reading, quite
+    // reasonably, as "disconnect didn't wipe anything".
+    //
+    // Only ever CLEARS local widget state; never writes back to the draft,
+    // which would re-close the feedback loop this screen already had once.
+    _lastClearedTick = _controller.autofillClearedTick;
+    ref.listenManual(onboardingControllerProvider, (previous, next) {
+      if (!mounted) return;
+      final tick = _controller.autofillClearedTick;
+      if (tick == _lastClearedTick) return;
+      _lastClearedTick = tick;
+      _syncClearedFieldsFromDraft();
+    });
 
     ref
         .read(appExternalDepsProvider)
@@ -104,8 +172,135 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
 
   bool get _canContinue => _gender != null;
 
+  /// Writes a connected platform's athlete details into the fields the
+  /// athlete hasn't filled in themselves, and mirrors them into the draft.
+  void _applyIntegrationProfile(OnboardingIntegrationProfile profile) {
+    // Named in screen order so the notice reads top-to-bottom.
+    final filled = <String>[];
+    var filledName = false;
+
+    if (!_userEditedFirstName && profile.firstName != null) {
+      _firstNameController.text = profile.firstName!;
+      filledName = true;
+    }
+    if (!_userEditedLastName && profile.lastName != null) {
+      _lastNameController.text = profile.lastName!;
+      filledName = true;
+    }
+    if (filledName) filled.add('Name');
+
+    if (!_userEditedEmail && profile.email != null) {
+      _emailController.text = profile.email!;
+      filled.add('Email');
+    }
+    if (!_userPickedGender && profile.gender != null) {
+      _gender = profile.gender;
+      filled.add('Gender');
+    }
+    // Only accept a birth year the wheel can actually show.
+    final year = profile.birthYear;
+    var scrollYearTo = -1;
+    if (!_userPickedYear &&
+        year != null &&
+        year >= _minYear &&
+        year <= _maxYear) {
+      _birthYear = year;
+      scrollYearTo = year - _minYear;
+      filled.add('Birth year');
+    }
+
+    if (filled.isEmpty) return;
+
+    setState(() {
+      _autofillSource = profile.detailsSource;
+      _autofilledFields = filled;
+    });
+    // Tell the controller which fields the platform owns, so disconnecting
+    // clears exactly these and nothing the athlete typed.
+    _controller.recordIntegrationAutofill({
+      if (filledName && profile.firstName != null) 'firstName',
+      if (filledName && profile.lastName != null) 'lastName',
+      if (filled.contains('Email')) 'email',
+      if (filled.contains('Gender')) 'gender',
+      if (filled.contains('Birth year')) 'birthYear',
+    });
+    if (scrollYearTo >= 0 && _yearController.hasClients) {
+      _applyingAutofill = true;
+      _yearController.jumpToItem(scrollYearTo);
+      _applyingAutofill = false;
+    }
+    _controller.updatePersonalInfo(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      gender: _gender,
+      birthYear: _birthYear,
+    );
+  }
+
+  /// Mirrors draft fields that have been cleared (by a disconnect) back
+  /// into the widgets. Deliberately one-directional: clears only, and only
+  /// when the draft says the value is gone.
+  void _syncClearedFieldsFromDraft() {
+    final draft = _controller.draft;
+    var changed = false;
+
+    if (draft.firstName == null && _firstNameController.text.isNotEmpty) {
+      _firstNameController.clear();
+      _userEditedFirstName = false;
+      changed = true;
+    }
+    if (draft.lastName == null && _lastNameController.text.isNotEmpty) {
+      _lastNameController.clear();
+      _userEditedLastName = false;
+      changed = true;
+    }
+    if (draft.email == null && _emailController.text.isNotEmpty) {
+      _emailController.clear();
+      _userEditedEmail = false;
+      changed = true;
+    }
+    if (draft.gender == null && _gender != null) {
+      _gender = null;
+      _userPickedGender = false;
+      changed = true;
+    }
+
+    // The wheel always carries a year (spec contract), so a cleared birth
+    // year returns to the default rather than to nothing.
+    if (draft.birthYear == null && _birthYear != _defaultYear) {
+      _birthYear = _defaultYear;
+      _userPickedYear = false;
+      changed = true;
+      if (_yearController.hasClients) {
+        _applyingAutofill = true;
+        _yearController.jumpToItem(_defaultYear - _minYear);
+        _applyingAutofill = false;
+      }
+      // Re-seed the draft with the default. One bounded write: the next
+      // notification sees a non-null year and stops here.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.updatePersonalInfo(birthYear: _defaultYear);
+      });
+    }
+
+    if (!changed) return;
+
+    setState(() {
+      // The notice described a fill that has just been undone.
+      _autofillSource = null;
+      _autofilledFields = const [];
+      // A later reconnect should be able to fill these again.
+      _autofillApplied = false;
+    });
+  }
+
   void _selectGender(Gender gender) {
-    setState(() => _gender = gender);
+    setState(() {
+      _gender = gender;
+      _userPickedGender = true;
+    });
+    _controller.releaseIntegrationAutofill('gender');
     _controller.updatePersonalInfo(gender: gender);
   }
 
@@ -125,6 +320,13 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       continueButtonKey: const ValueKey('personal_info.continue_button'),
       backButtonKey: const ValueKey('personal_info.back_button'),
       children: [
+        if (_autofillSource != null) ...[
+          _AutofillNotice(
+            source: _autofillSource!,
+            fields: _autofilledFields,
+          ),
+          const SizedBox(height: 12),
+        ],
         _buildOptionalInfoCard(),
         const SizedBox(height: 20),
         _buildGenderSelector(),
@@ -184,8 +386,11 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                   icon: Icons.person_outline,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
-                  onChanged: (value) =>
-                      _controller.updatePersonalInfo(firstName: value),
+                  onChanged: (value) {
+                    _userEditedFirstName = true;
+                    _controller.releaseIntegrationAutofill('firstName');
+                    _controller.updatePersonalInfo(firstName: value);
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -197,8 +402,11 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                   hint: 'Last name',
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
-                  onChanged: (value) =>
-                      _controller.updatePersonalInfo(lastName: value),
+                  onChanged: (value) {
+                    _userEditedLastName = true;
+                    _controller.releaseIntegrationAutofill('lastName');
+                    _controller.updatePersonalInfo(lastName: value);
+                  },
                 ),
               ),
             ],
@@ -212,7 +420,11 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             autofillHints: const [AutofillHints.email],
-            onChanged: (value) => _controller.updatePersonalInfo(email: value),
+            onChanged: (value) {
+              _userEditedEmail = true;
+              _controller.releaseIntegrationAutofill('email');
+              _controller.updatePersonalInfo(email: value);
+            },
           ),
         ],
       ),
@@ -360,7 +572,16 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                 physics: const FixedExtentScrollPhysics(),
                 diameterRatio: 8,
                 onSelectedItemChanged: (index) {
-                  setState(() => _birthYear = _minYear + index);
+                  setState(() {
+                    _birthYear = _minYear + index;
+                    // Autofill drives the wheel through the controller,
+                    // which lands here too — don't mistake that for the
+                    // athlete choosing a year.
+                    if (!_applyingAutofill) {
+                      _userPickedYear = true;
+                      _controller.releaseIntegrationAutofill('birthYear');
+                    }
+                  });
                   _controller.updatePersonalInfo(birthYear: _birthYear);
                 },
                 childDelegate: ListWheelChildBuilderDelegate(
@@ -471,6 +692,68 @@ class _GenderCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "Filled in from TrainingPeaks — check and adjust" — the spec's
+/// `prefillNote`. Says which platform the values came from, because
+/// silently pre-filled personal details are worse than none: the athlete
+/// needs to know these are claims to check, not answers they gave.
+class _AutofillNotice extends StatelessWidget {
+  const _AutofillNotice({required this.source, required this.fields});
+
+  final String source;
+
+  /// The fields that were actually filled, in screen order. Naming them
+  /// makes the gaps legible too — Final Surge sends a name and email but
+  /// no gender or birth year, and the athlete should be able to see that
+  /// rather than wonder whether those were filled and wrong.
+  final List<String> fields;
+
+  /// 'Name', 'Name and email', 'Name, email and birth year' — subsequent
+  /// items lowercased so the sentence reads naturally.
+  String get _fieldList {
+    final items = [
+      fields.first,
+      ...fields.skip(1).map((f) => f.toLowerCase()),
+    ];
+    if (items.length == 1) return items.single;
+    return '${items.sublist(0, items.length - 1).join(', ')} '
+        'and ${items.last}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('personal_info.autofill_notice'),
+      decoration: BoxDecoration(
+        color: OnbTokens.teal.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(OnbTokens.rCard),
+        border: Border.all(color: OnbTokens.teal30),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.check, size: 15, color: OnbTokens.teal),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$_fieldList filled in from $source — check and adjust.',
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 12.5,
+                height: 1.45,
+                color: OnbTokens.creamA(0.82),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

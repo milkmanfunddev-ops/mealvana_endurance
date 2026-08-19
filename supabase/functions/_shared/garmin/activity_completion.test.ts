@@ -272,3 +272,129 @@ describe("enrichCompletedGarminActivity", () => {
     assertEquals(stub.capturedUpdate(), null);
   });
 });
+
+// ============================================================================
+// Sync beats skip (workout-card v2 G6, platform-resolution SKIPPED addition
+// 2026-08-17): the matcher MUST consider status='skipped' rows, under the
+// RULED key (platform id, else same sport + start ±15 min), before the
+// day-wide planned window — and the atomic completion write must be able to
+// land on them.
+// ============================================================================
+
+import {
+  findMatchingPlannedActivity,
+  findMatchingSkippedActivity,
+  GARMIN_COMPLETABLE_STATUSES,
+} from "./activity_completion.ts";
+
+/** Records every filter of every query so the test can assert the key. */
+function buildRecordingStub(
+  // deno-lint-ignore no-explicit-any
+  answer: (filters: Record<string, unknown>[]) => any[],
+) {
+  const queries: Record<string, unknown>[][] = [];
+  const client = {
+    from: (_table: string) => ({
+      select: (_cols: string) => {
+        const filters: Record<string, unknown>[] = [];
+        queries.push(filters);
+        // deno-lint-ignore no-explicit-any
+        const chain: any = {
+          eq: (col: string, v: unknown) => (filters.push({ eq: [col, v] }), chain),
+          in: (col: string, v: unknown) => (filters.push({ in: [col, v] }), chain),
+          is: (col: string, v: unknown) => (filters.push({ is: [col, v] }), chain),
+          gte: (col: string, v: unknown) => (filters.push({ gte: [col, v] }), chain),
+          lte: (col: string, v: unknown) => (filters.push({ lte: [col, v] }), chain),
+          lt: (col: string, v: unknown) => (filters.push({ lt: [col, v] }), chain),
+          order: () => chain,
+          limit: () => Promise.resolve({ data: answer(filters), error: null }),
+        };
+        return chain;
+      },
+    }),
+  };
+  return { client, queries };
+}
+
+const has = (filters: Record<string, unknown>[], op: string, col: string) =>
+  filters.find((f) => Array.isArray(f[op]) && (f[op] as unknown[])[0] === col);
+
+describe("sync beats skip — findMatchingSkippedActivity", () => {
+  const USER = "550e8400-e29b-41d4-a716-446655440000";
+  // 2026-08-14 17:30 local (UTC-5) — the canonical mock day's planned run.
+  const run = {
+    startTimeInSeconds: Date.UTC(2026, 7, 14, 22, 30) / 1000,
+    startTimeOffsetInSeconds: -18000,
+    durationInSeconds: 5400,
+  };
+
+  it("matches a status='skipped' row by summary id first", async () => {
+    const stub = buildRecordingStub((filters) =>
+      has(filters, "eq", "garmin_summary_id") ? [{ id: "w2", title: "Run" }] : []
+    );
+    const match = await findMatchingSkippedActivity(
+      stub.client, USER, "running", run, "g-run-99",
+    );
+    assertEquals(match?.id, "w2");
+    const q = stub.queries[0];
+    assertEquals(has(q, "eq", "status")?.eq, ["status", "skipped"]);
+    assertEquals(has(q, "eq", "garmin_summary_id")?.eq, ["garmin_summary_id", "g-run-99"]);
+  });
+
+  it("falls back to same sport + start within ±15 min (the ruled key)", async () => {
+    const stub = buildRecordingStub((filters) =>
+      has(filters, "gte", "scheduled_date_time") ? [{ id: "w2", title: "Run" }] : []
+    );
+    const match = await findMatchingSkippedActivity(
+      stub.client, USER, "running", run, null,
+    );
+    assertEquals(match?.id, "w2");
+    const q = stub.queries[stub.queries.length - 1];
+    assertEquals(has(q, "eq", "status")?.eq, ["status", "skipped"]);
+    assertEquals(has(q, "eq", "activity_type")?.eq, ["activity_type", "running"]);
+    // 17:30 local ± 15 min, naive local form.
+    assertEquals(has(q, "gte", "scheduled_date_time")?.gte, ["scheduled_date_time", "2026-08-14 17:15:00"]);
+    assertEquals(has(q, "lte", "scheduled_date_time")?.lte, ["scheduled_date_time", "2026-08-14 17:45:00"]);
+  });
+
+  it("findMatchingPlannedActivity tries the skipped tier before the planned window", async () => {
+    const stub = buildRecordingStub((filters) =>
+      has(filters, "eq", "status") && has(filters, "eq", "status")?.eq?.toString().includes("skipped") &&
+        has(filters, "gte", "scheduled_date_time")
+        ? [{ id: "w2", title: "Run" }]
+        : []
+    );
+    const match = await findMatchingPlannedActivity(
+      stub.client, USER, "running", run, null,
+    );
+    assertEquals(match?.id, "w2");
+    // No day-wide planned query was needed once the skipped tier matched.
+    assertEquals(stub.queries.some((q) => has(q, "in", "status")), false);
+  });
+
+  it("with no skipped match, the day-wide planned/draft window still runs", async () => {
+    const stub = buildRecordingStub((filters) =>
+      has(filters, "in", "status") ? [{ id: "w9", title: "Planned run" }] : []
+    );
+    const match = await findMatchingPlannedActivity(
+      stub.client, USER, "running", run, null,
+    );
+    assertEquals(match?.id, "w9");
+  });
+
+  it("the atomic completion write can land on a skipped row", () => {
+    assertEquals(GARMIN_COMPLETABLE_STATUSES.includes("skipped"), true);
+    assertEquals(GARMIN_COMPLETABLE_STATUSES.includes("planned"), true);
+    assertEquals(GARMIN_COMPLETABLE_STATUSES.includes("deleted"), false);
+    // ...and it clears the skip: completion status is 'completed'.
+    const update = buildGarminCompletionUpdate(run, {});
+    assertEquals(update.status, "completed");
+    assertExists(update.actual_time);
+    // actual_time is NAIVE LOCAL, matching scheduled_date_time and the
+    // column type (timestamp without time zone): 22:30 UTC at −05:00 is
+    // 17:30 local, no zone suffix (the timestamptz round-trip shift caught
+    // on dev 2026-08-19).
+    assertEquals(update.actual_time, "2026-08-14T17:30:00");
+    assertEquals(update.scheduled_date_time, update.actual_time);
+  });
+});

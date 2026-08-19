@@ -906,7 +906,16 @@ class _PostOnboardingAuthScreenState
                       if (context.canPop()) {
                         context.pop();
                       } else {
-                        context.go(isLogin ? '/welcome' : '/onboarding');
+                        // Nothing to pop. LOGIN mode: the person is not
+                        // signed in and just asked to go back, so /main
+                        // would strand an unauthenticated user in the app.
+                        // SIGNUP mode: return to the flow AT ITS LAST PAGE
+                        // (?page=last) — a bare /onboarding builds a fresh
+                        // PageView at page 0, rewinding the athlete nine
+                        // answered steps when they were one tap from saving.
+                        context.go(
+                          isLogin ? '/welcome' : '/onboarding?page=last',
+                        );
                       }
                     },
               child: Container(

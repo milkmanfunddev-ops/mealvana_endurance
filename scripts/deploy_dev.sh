@@ -41,13 +41,31 @@ elif [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   exit 1
 fi
 
+
+# Frozen legacy functions: a folder carrying a FROZEN marker is deployed only to
+# roll back (e.g. supabase/functions/calculate-daily-macros = the v5 engine kept
+# for installs pinned to algorithm_version v5.0.0). Overwriting it in place
+# would loop every such install. Require an explicit --force-legacy.
+FORCE_LEGACY=0
+ARGS=()
+for a in "$@"; do
+  if [[ "$a" == "--force-legacy" ]]; then FORCE_LEGACY=1; else ARGS+=("$a"); fi
+done
+set -- "${ARGS[@]}"
+
 if [[ $# -eq 0 ]]; then
-  echo "usage: $0 <function-name> [<function-name> ...]" >&2
+  echo "usage: $0 <function-name> [<function-name> ...] [--force-legacy]" >&2
   exit 2
 fi
 
 echo "→ Target: DEV ($PROJECT_REF)"
 for fn in "$@"; do
+  if [[ -e "supabase/functions/$fn/FROZEN" && $FORCE_LEGACY -ne 1 ]]; then
+    echo "✗ $fn is a FROZEN legacy function (see supabase/functions/$fn/README.md)." >&2
+    echo "  Redeploying it overwrites a version that installed clients depend on." >&2
+    echo "  Pass --force-legacy ONLY for a deliberate rollback." >&2
+    exit 3
+  fi
   echo "→ Deploying $fn..."
   supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
 done
