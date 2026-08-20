@@ -1,0 +1,246 @@
+<title>Test Topology</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sansita:wght@400;700&family=Karla:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#FAF8F0; --surface:#FFFFFF; --surface2:#F1EDE1; --ink:#2B1428; --muted:#6E5C6B;
+  --rule:#E3DDD0; --accent:#0E8F79; --accent-soft:#D9F3EC; --warn:#D2700D; --warn-soft:#FBEBD6;
+  --danger:#B8235F; --danger-soft:#F9E1EA; --code-bg:#F1EDE1; --code-ink:#3A2436;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#2E1229; --surface:#3B1B36; --surface2:#472542; --ink:#F8F6EB; --muted:#C9B9C4;
+    --rule:#5A3A54; --accent:#1CF9CF; --accent-soft:#1E4A45; --warn:#F7A24A; --warn-soft:#5A3A20;
+    --danger:#F06AA1; --danger-soft:#5A2440; --code-bg:#241020; --code-ink:#F1E9E4;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#2E1229; --surface:#3B1B36; --surface2:#472542; --ink:#F8F6EB; --muted:#C9B9C4;
+  --rule:#5A3A54; --accent:#1CF9CF; --accent-soft:#1E4A45; --warn:#F7A24A; --warn-soft:#5A3A20;
+  --danger:#F06AA1; --danger-soft:#5A2440; --code-bg:#241020; --code-ink:#F1E9E4;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Karla,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:40px 22px 96px}
+h1,h2,h3{font-family:Sansita,Georgia,serif;font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:2.3rem}
+h2{font-size:1.45rem;margin-top:52px;padding-top:20px;border-top:2px solid var(--rule)}
+p{margin:.7em 0;max-width:78ch}
+.eyebrow{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;background:var(--code-bg);color:var(--code-ink);padding:1px 5px;border-radius:4px;font-size:.86em}
+.tablewrap{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:940px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--rule)}
+th{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;position:sticky;top:0;background:var(--bg)}
+td:first-child{font-family:"IBM Plex Mono",monospace;font-size:.8rem;white-space:nowrap;color:var(--accent);font-weight:500}
+.type{display:inline-block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap}
+.type.unit{background:var(--accent-soft);color:var(--accent)}
+.type.widget{background:var(--surface2);color:var(--muted)}
+.type.integ{background:var(--warn-soft);color:var(--warn)}
+.type.manual{background:var(--danger-soft);color:var(--danger)}
+.mock{color:var(--muted)}
+.real{font-weight:700}
+figure{margin:22px 0 8px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px}
+figure svg{max-width:100%;height:auto;display:block}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:88ch}
+.callout{border-left:4px solid var(--danger);background:var(--danger-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0;max-width:84ch}
+.callout b:first-child{display:block;margin-bottom:4px}
+.legendrow{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.82rem;color:var(--muted);margin-top:6px}
+</style>
+
+<div class="wrap">
+<div class="eyebrow">daily-macros-dashboard · testing reference · 2026-08-20</div>
+<h1>Test Topology</h1>
+<p>Every test layer in the daily-macro-dashboard effort: what kind of test it is, which moving parts it exercises, where each part actually runs, whether the data is mock or real — and where each layer sits in the deploy pipeline. Companion to <code>ops/docs/supabase-deploy-playbook.md</code> and <code>docs/features/macro_dashboard/README.md</code>.</p>
+
+<h2>The moving parts, and who tests what</h2>
+<figure>
+<svg viewBox="0 0 960 430" role="img" aria-label="System topology: app widgets and local Drift on the device; engine source in the repo; deployed edge functions and Postgres on Supabase dev; the Garmin server outside, untested. Test layers T1–T14 attached to the parts they exercise.">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.3">
+    <!-- lanes -->
+    <rect x="10" y="30" width="290" height="380" rx="10" opacity=".25"/>
+    <rect x="330" y="30" width="290" height="380" rx="10" opacity=".25"/>
+    <rect x="650" y="30" width="190" height="380" rx="10" opacity=".25"/>
+    <rect x="866" y="30" width="84" height="380" rx="10" stroke-dasharray="5 4" opacity=".45"/>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="11" fill="currentColor" opacity=".65">
+    <text x="20" y="50" font-weight="700" letter-spacing="1">REPO / LOCAL MACHINE · CI ON EVERY PUSH</text>
+    <text x="340" y="50" font-weight="700" letter-spacing="1">DEVICE / SIMULATOR</text>
+    <text x="660" y="50" font-weight="700" letter-spacing="1">SUPABASE · DEV</text>
+    <text x="874" y="50" font-weight="700" letter-spacing="1">GARMIN</text>
+  </g>
+  <!-- repo lane boxes -->
+  <g fill="none" stroke="currentColor" stroke-width="1.4">
+    <rect x="26" y="70" width="256" height="52" rx="7"/>
+    <rect x="26" y="138" width="256" height="52" rx="7"/>
+    <rect x="26" y="206" width="256" height="52" rx="7"/>
+    <rect x="26" y="274" width="256" height="66" rx="7"/>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="12.5" fill="currentColor">
+    <text x="38" y="90" font-weight="700">Engine formulas (TS source)</text>
+    <text x="38" y="106" opacity=".7" font-size="11">imported directly by Deno tests — not deployed</text>
+    <text x="38" y="158" font-weight="700">Dart twin · DailyBaselineCalculator</text>
+    <text x="38" y="174" opacity=".7" font-size="11">offline onboarding preview</text>
+    <text x="38" y="226" font-weight="700">Garmin matcher · activity_completion.ts</text>
+    <text x="38" y="242" opacity=".7" font-size="11">tested with stub client + handcrafted payloads</text>
+    <text x="38" y="294" font-weight="700">Widgets · assembler · repositories</text>
+    <text x="38" y="310" opacity=".7" font-size="11">flutter_test binding; in-memory Drift for seams</text>
+    <text x="38" y="326" opacity=".7" font-size="11">goldens = pixel output, real fonts</text>
+  </g>
+  <!-- device lane -->
+  <g fill="none" stroke="currentColor" stroke-width="1.4">
+    <rect x="346" y="70" width="256" height="66" rx="7"/>
+    <rect x="346" y="156" width="256" height="52" rx="7"/>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="12.5" fill="currentColor">
+    <text x="358" y="90" font-weight="700">Real app binary (dev flavor)</text>
+    <text x="358" y="106" opacity=".7" font-size="11">gestures, providers, sync coordinator</text>
+    <text x="358" y="122" opacity=".7" font-size="11">driven by Patrol (XCUITest) or hands</text>
+    <text x="358" y="176" font-weight="700">Local Drift (SQLite on device)</text>
+    <text x="358" y="192" opacity=".7" font-size="11">offline-first writes · needs_upload queue</text>
+  </g>
+  <!-- supabase lane -->
+  <g fill="none" stroke="currentColor" stroke-width="1.4">
+    <rect x="662" y="70" width="166" height="66" rx="7"/>
+    <rect x="662" y="156" width="166" height="80" rx="7"/>
+    <rect x="662" y="256" width="166" height="66" rx="7"/>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="12.5" fill="currentColor">
+    <text x="672" y="90" font-weight="700">Postgres (dev)</text>
+    <text x="672" y="106" opacity=".7" font-size="11">real rows, test accounts</text>
+    <text x="672" y="122" opacity=".7" font-size="11">RLS on</text>
+    <text x="672" y="176" font-weight="700">Edge fns (deployed)</text>
+    <text x="672" y="192" opacity=".7" font-size="11">calculate-daily-macros-v6</text>
+    <text x="672" y="208" opacity=".7" font-size="11">garmin-push v57 / ping v48</text>
+    <text x="672" y="224" opacity=".7" font-size="11">sync-all-data v54</text>
+    <text x="672" y="276" font-weight="700">Frozen v5 engine</text>
+    <text x="672" y="292" opacity=".7" font-size="11">serves pre-v6 installs only</text>
+  </g>
+  <!-- garmin lane -->
+  <g font-family="Karla,sans-serif" font-size="12" fill="currentColor">
+    <text x="874" y="90" font-weight="700">Garmin</text>
+    <text x="874" y="106" font-weight="700">server</text>
+    <text x="874" y="130" opacity=".7" font-size="11">webhooks</text>
+  </g>
+  <!-- edges -->
+  <g fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)">
+    <path d="M602 190 H656"/>
+    <path d="M602 96 C630 96 640 96 656 96"/>
+    <path d="M866 150 C850 170 840 180 832 186" stroke-dasharray="5 4"/>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="10.5" fill="currentColor" opacity=".75">
+    <text x="606" y="182">uploads / invokes</text>
+    <text x="606" y="88">REST reads</text>
+    <text x="836" y="160" font-size="10">never fired</text>
+  </g>
+  <!-- test chips -->
+  <g font-family="IBM Plex Mono,monospace" font-size="10.5" font-weight="500">
+    <g fill="#0E8F79">
+      <text x="212" y="90">T1 T3</text>
+      <text x="212" y="158">T4</text>
+      <text x="230" y="226">T5</text>
+      <text x="176" y="294">T2 T6–T10 T13</text>
+    </g>
+    <g fill="#D2700D">
+      <text x="548" y="90">T11 T14</text>
+      <text x="548" y="176">T11</text>
+      <text x="778" y="90">T11 T14</text>
+      <text x="794" y="176">T12</text>
+    </g>
+    <text x="874" y="390" fill="#B8235F">no test</text>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="10.5" fill="currentColor" opacity=".6">
+    <text x="26" y="398">green chips = mock/synthetic, run on every push · orange = live dev, manual</text>
+  </g>
+</svg>
+<figcaption>Where each moving part actually runs, and which test layers touch it. Everything left of the device lane is source code executed in a local VM with synthetic data — no network. Only T11/T12/T14 cross into the live dev cloud. The Garmin server has never been on any test path: all Garmin behaviour is verified against handcrafted webhook-shaped payloads at the matcher seam (T5), and the <em>deployed</em> garmin functions have not yet received a live completion.</figcaption>
+</figure>
+
+<h2>The inventory, classified</h2>
+<p>Types: <span class="type unit">unit</span> pure functions, one runtime, no I/O · <span class="type widget">widget</span> real Flutter widgets in the test binding · <span class="type integ">integration</span> crosses a process or network boundary to something real · <span class="type manual">manual</span> a human or exploring agent with eyes.</p>
+<div class="tablewrap"><table>
+<tr><th>#</th><th>Suite</th><th>Type</th><th>Moving parts — and where each runs</th><th>Data</th><th>Garmin?</th></tr>
+<tr><td>T1</td><td>Ratified vectors (engine ⇄ spec), 172</td><td><span class="type unit">unit</span></td><td>Engine formula modules — <b>TS source in the repo, imported directly into a local Deno VM</b>. The deployed function is not involved.</td><td class="mock">Synthetic — the ratified worked examples</td><td class="mock">n/a</td></tr>
+<tr><td>T2</td><td>Intraday-display consumer vectors, 24</td><td><span class="type unit">unit</span></td><td><code>IntradayDisplay</code> — pure Dart in the app source, local Dart VM; same vector JSON files.</td><td class="mock">Synthetic</td><td class="mock">n/a</td></tr>
+<tr><td>T3</td><td>Engine unit suites (85 Deno files)</td><td><span class="type unit">unit</span></td><td>TS modules, local Deno; <code>fetch</code> and Supabase clients stubbed in-process.</td><td class="mock">Synthetic</td><td class="mock">Handcrafted payload objects</td></tr>
+<tr><td>T4</td><td>Cross-language parity (14 + 46)</td><td><span class="type unit">unit</span></td><td>TS formulas (local Deno) ⇄ generated fixture ⇄ <code>DailyBaselineCalculator</code> (local Dart VM). Two runtimes, one truth.</td><td class="mock">Synthetic input matrix, machine-generated fixture</td><td class="mock">n/a</td></tr>
+<tr><td>T5</td><td>Garmin matcher seam (14 steps)</td><td><span class="type unit">unit / seam</span></td><td><code>activity_completion.ts</code> — local Deno; Supabase = a recording stub that captures query filters.</td><td class="mock">Synthetic rows + handcrafted Garmin webhook-shaped structs</td><td class="mock"><b>Mock only</b> — no Garmin server, no real DB</td></tr>
+<tr><td>T6</td><td>Data seams on real Drift (~34)</td><td><span class="type unit">component</span></td><td>Real SQLite (<code>NativeDatabase.memory()</code>) + the real repository SQL, all local; Supabase client mocked.</td><td class="mock">Synthetic rows in a real local DB</td><td class="mock">n/a</td></tr>
+<tr><td>T7</td><td>Gesture suite (23, manifest ids)</td><td><span class="type widget">widget</span></td><td>Real <code>WorkoutCard</code>/assembler under the flutter_test binding, driven drags; local VM.</td><td class="mock">Canonical mock day</td><td class="mock">n/a</td></tr>
+<tr><td>T8</td><td>Goldens (10)</td><td><span class="type widget">widget</span></td><td>Same widgets, pixel output with the real app fonts; local.</td><td class="mock">Canonical mock day</td><td class="mock">n/a</td></tr>
+<tr><td>T9</td><td>Screen-level (6)</td><td><span class="type widget">widget</span></td><td>Real screen + real Riverpod provider graph; the data <em>sources</em> (repos, controllers) overridden with mocks.</td><td class="mock">Synthetic</td><td class="mock">n/a</td></tr>
+<tr><td>T10</td><td>Q-016 profile-save chain (2)</td><td><span class="type widget">widget</span></td><td>Real settings screen; recording-mock macro service; verified red-without-fix.</td><td class="mock">Synthetic</td><td class="mock">n/a</td></tr>
+<tr><td>T11</td><td>Patrol flow (12 steps + remote half)</td><td><span class="type integ">integration · E2E</span></td><td><b>Real app binary</b> (dev flavor) on the simulator → <b>real local Drift on-device</b> → <b>real Supabase DEV</b> (auth + REST rows, test account) → recomputes invoke the <b>deployed</b> <code>calculate-daily-macros-v6</code>.</td><td class="real">Real rows written to and read from <b>dev</b> (flow seeds and tombstones its own)</td><td class="mock">Not exercised — no webhook fires</td></tr>
+<tr><td>T12</td><td>Live engine integration (29)</td><td><span class="type integ">integration · API</span></td><td>HTTPS + anon key → the <b>deployed</b> <code>calculate-daily-macros-v6</code> on Supabase <b>dev</b>; the function's own DB reads hit real dev tables.</td><td class="real">Synthetic request payloads against the real deployed runtime; no athlete rows involved</td><td class="mock">Function reads dev <code>garmin_*</code> tables (empty for these payloads); no Garmin server</td></tr>
+<tr><td>T13</td><td>QA conformance gate (13 slices)</td><td><span class="type unit">meta</span></td><td>Dispatcher: byte-checks the <code>docs/ssot</code> mirror, then re-runs T1/T2/T7/T8 per slice. All local.</td><td class="mock">As dispatched</td><td class="mock">n/a</td></tr>
+<tr><td>T14</td><td>Human / agent smoke on-sim</td><td><span class="type manual">manual</span></td><td>Everything T11 touches, plus eyes: transient states, day navigation, “that looks wrong.”</td><td class="real">Real rows on <b>dev</b></td><td class="mock">Not exercised</td></tr>
+</table></div>
+<p><b>Prod appears nowhere in this table.</b> No test at any layer runs against prod — by policy for writes, but it also means the prod deploy (schema, functions, app_config) is verified only by the operator’s eyes and the idempotence of the SQL.</p>
+
+<h2>Where each test lands in the deploy pipeline</h2>
+<figure>
+<svg viewBox="0 0 960 300" role="img" aria-label="Deploy pipeline from branch to prod with test layers marked at each stage: T1–T10 and T13 gate every push; T12 after the dev function deploy; T11 and T14 during dev verification; the QA gate and attestation before landing; no tests on the prod stages.">
+  <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+  <!-- stage boxes -->
+  <g fill="none" stroke="currentColor" stroke-width="1.4">
+    <rect x="14"  y="60" width="118" height="64" rx="8"/>
+    <rect x="162" y="60" width="108" height="64" rx="8"/>
+    <rect x="300" y="60" width="112" height="64" rx="8"/>
+    <rect x="442" y="60" width="118" height="64" rx="8"/>
+    <rect x="590" y="60" width="112" height="64" rx="8"/>
+    <rect x="732" y="60" width="214" height="64" rx="8" stroke-dasharray="6 4"/>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="12.5" fill="currentColor">
+    <text x="26" y="84" font-weight="700">Branch code</text>
+    <text x="26" y="100" opacity=".7" font-size="11">every push (CI)</text>
+    <text x="174" y="84" font-weight="700">Schema → dev</text>
+    <text x="174" y="100" opacity=".7" font-size="11">SQL by hand / CLI</text>
+    <text x="312" y="84" font-weight="700">Functions → dev</text>
+    <text x="312" y="100" opacity=".7" font-size="11">deploy_dev.sh</text>
+    <text x="454" y="84" font-weight="700">Verify on dev</text>
+    <text x="454" y="100" opacity=".7" font-size="11">the live gate</text>
+    <text x="602" y="84" font-weight="700">land-bundle</text>
+    <text x="602" y="100" opacity=".7" font-size="11">both trunks</text>
+    <text x="744" y="84" font-weight="700">Prod</text>
+    <text x="744" y="100" opacity=".7" font-size="11">schema → fns → build → app_config → comms</text>
+  </g>
+  <g fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr2)">
+    <path d="M132 92 H156"/><path d="M270 92 H294"/><path d="M412 92 H436"/><path d="M560 92 H584"/><path d="M702 92 H726"/>
+  </g>
+  <!-- test markers under stages -->
+  <g font-family="IBM Plex Mono,monospace" font-size="11" font-weight="500">
+    <g fill="#0E8F79">
+      <text x="26" y="152">T1–T10</text>
+      <text x="26" y="168">(auto, every push)</text>
+      <text x="602" y="152">T13 gate 13/13</text>
+    </g>
+    <g fill="#D2700D">
+      <text x="312" y="152">T12 · 29/29</text>
+      <text x="312" y="168">+ source diff</text>
+      <text x="454" y="152">T11 remote half</text>
+      <text x="454" y="168">T14 eyes-on</text>
+      <text x="602" y="168">+ 2b attestation</text>
+    </g>
+    <g fill="#B8235F">
+      <text x="744" y="152">no tests</text>
+      <text x="744" y="168">(operator + idempotent SQL)</text>
+    </g>
+  </g>
+  <g font-family="Karla,sans-serif" font-size="10.5" fill="currentColor" opacity=".7">
+    <text x="26" y="212">Verification order is the design: the local gate proves the code conforms; the dev stages prove the wire; landing certifies both;</text>
+    <text x="26" y="228">prod repeats the dev recipe from the landed trunk. The timestamptz bug was invisible left of “Verify on dev” — by construction.</text>
+  </g>
+  <!-- caught markers -->
+  <g font-family="Karla,sans-serif" font-size="10.5">
+    <text x="454" y="252" fill="#B8235F" font-weight="700">caught here: timestamptz shift (T11) · mark-done teleport, energy blink (T14)</text>
+    <text x="26" y="252" fill="#0E8F79" font-weight="700">caught here: engine drift vs vectors, vector erratum</text>
+  </g>
+</svg>
+<figcaption>The playbook §7 pipeline with every test layer pinned to the stage where it runs. Green = synthetic/local, automatic on every push. Orange = live-dev, currently manual. Red = uncovered. The three most consequential catches of this bundle each happened at the earliest stage capable of seeing them — which is the argument for keeping all three bands.</figcaption>
+</figure>
+
+<h2>The uncovered edges (the actionable part)</h2>
+<div class="callout"><b>1 · The real Garmin wire — never exercised.</b> The deployed <code>garmin-push</code>/<code>garmin-ping</code> have never received a live completion; G6 (“sync beats skip”) is proven at the matcher seam only. Cheapest closure: POST a synthetic Garmin webhook payload at the deployed <code>garmin-push</code> on dev against a seeded skipped workout, and assert the row upgrades — a real test of the deployed function, no watch required. Candidate for the <code>probe.mjs</code> live-gate script.</div>
+<div class="callout"><b>2 · Prod has zero test stages.</b> Everything right of landing is operator care + idempotent SQL. Minimum viable: run the three verify queries + one read probe against prod after its schema step, and a single smoke session on the released build (T14-style) before comms go out.</div>
+<div class="callout"><b>3 · T11’s CI credential status is unverified.</b> The self-hosted workflow runs Patrol on every push, but whether that runner has <code>secrets/integration_test.env</code> — and therefore whether the remote half executes or silently self-skips in CI — is unknown. One question for Lee.</div>
+</div>
