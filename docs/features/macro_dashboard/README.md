@@ -226,8 +226,17 @@ ops/docs/supabase-deploy-playbook.md + the brief docs/ssot/intake/
   settle+retry on the post-unskip reveal (races the upload-drain and
   cache-invalidation recomputes) and remote asserts through the APP'S own
   session (a second probe account couldn't see the rows under RLS).
-- Remaining: land-bundle (@v3, attestation now satisfiable) → prod steps
-  7–11 (separate hand-off; nothing prod was touched).
+- **LANDED 2026-08-19**: qa `land-bundle` merged tag `@v3` into qa `main`
+  (`1789a30`) and the branch into app `develop` (`9407ef9b`), 13/13 slices
+  green, attestation per `qa/bundles/daily-macros-dashboard.landing.md`.
+- **Dev TestFlight carries the surface** (2026-08-19): the develop push
+  auto-cuts the Codemagic dev build, and `MACRO_DASHBOARD_ENABLED=true` is
+  now in the dev workflow's force-on flag list — dev TestFlight renders the
+  new dashboard; local builds still opt in via `.env.dev.local`, prod and
+  the code default stay OFF (the default-on flip remains its own decision,
+  see Epilogue).
+- Remaining: prod steps 7–11 of the playbook (separate hand-off; nothing
+  prod has been touched).
 
 ### Phase C — original plan (kept for the record; superseded by the playbook §7)
 Strict order:
