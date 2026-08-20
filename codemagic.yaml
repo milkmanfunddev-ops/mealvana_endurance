@@ -438,6 +438,15 @@ workflows:
         - pattern: 'develop'
           include: true
       cancel_previous_builds: true
+      # Skip when a push touches nothing the binary is made from — docs-only
+      # pushes were cutting full builds (2026-08-20; real Codemagic minutes).
+      # Semantics: skipped only when EVERY changed file matches an exclude.
+      when:
+        changeset:
+          excludes:
+            - 'docs/**'
+            - '**/*.md'
+            - '_archived/**'
 
     scripts:
       - *write_dotenv_files
@@ -655,6 +664,15 @@ workflows:
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
+      # Skip when a push touches nothing the binary is made from — docs-only
+      # pushes were cutting full builds (2026-08-20; real Codemagic minutes).
+      # Semantics: skipped only when EVERY changed file matches an exclude.
+      when:
+        changeset:
+          excludes:
+            - 'docs/**'
+            - '**/*.md'
+            - '_archived/**'
 
     scripts:
       - *write_dotenv_files
