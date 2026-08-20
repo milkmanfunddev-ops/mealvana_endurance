@@ -48,7 +48,7 @@ figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:88ch}
 </style>
 
 <div class="wrap">
-<div class="eyebrow">daily-macros-dashboard · testing reference · 2026-08-20</div>
+<div class="eyebrow">daily-macros-dashboard · testing reference · 2026-08-20 (rev: probe-live added, Garmin wire covered)</div>
 <h1>Test Topology</h1>
 <p>Every test layer in the daily-macro-dashboard effort: what kind of test it is, which moving parts it exercises, where each part actually runs, whether the data is mock or real — and where each layer sits in the deploy pipeline. Companion to <code>ops/docs/supabase-deploy-playbook.md</code> and <code>docs/features/macro_dashboard/README.md</code>.</p>
 
@@ -131,7 +131,7 @@ figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:88ch}
   <g font-family="Karla,sans-serif" font-size="10.5" fill="currentColor" opacity=".75">
     <text x="606" y="182">uploads / invokes</text>
     <text x="606" y="88">REST reads</text>
-    <text x="836" y="160" font-size="10">never fired</text>
+    <text x="836" y="160" font-size="10">T15 probe</text>
   </g>
   <!-- test chips -->
   <g font-family="IBM Plex Mono,monospace" font-size="10.5" font-weight="500">
@@ -147,7 +147,7 @@ figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:88ch}
       <text x="778" y="90">T11 T14</text>
       <text x="794" y="176">T12</text>
     </g>
-    <text x="874" y="390" fill="#B8235F">no test</text>
+    <text x="870" y="390" fill="#D2700D">T15 ✓</text>
   </g>
   <g font-family="Karla,sans-serif" font-size="10.5" fill="currentColor" opacity=".6">
     <text x="26" y="398">green chips = mock/synthetic, run on every push · orange = live dev, manual</text>
@@ -173,6 +173,7 @@ figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:88ch}
 <tr><td>T11</td><td>Patrol flow (12 steps + remote half)</td><td><span class="type integ">integration · E2E</span></td><td><b>Real app binary</b> (dev flavor) on the simulator → <b>real local Drift on-device</b> → <b>real Supabase DEV</b> (auth + REST rows, test account) → recomputes invoke the <b>deployed</b> <code>calculate-daily-macros-v6</code>.</td><td class="real">Real rows written to and read from <b>dev</b> (flow seeds and tombstones its own)</td><td class="mock">Not exercised — no webhook fires</td></tr>
 <tr><td>T12</td><td>Live engine integration (29)</td><td><span class="type integ">integration · API</span></td><td>HTTPS + anon key → the <b>deployed</b> <code>calculate-daily-macros-v6</code> on Supabase <b>dev</b>; the function's own DB reads hit real dev tables.</td><td class="real">Synthetic request payloads against the real deployed runtime; no athlete rows involved</td><td class="mock">Function reads dev <code>garmin_*</code> tables (empty for these payloads); no Garmin server</td></tr>
 <tr><td>T13</td><td>QA conformance gate (13 slices)</td><td><span class="type unit">meta</span></td><td>Dispatcher: byte-checks the <code>docs/ssot</code> mirror, then re-runs T1/T2/T7/T8 per slice. All local.</td><td class="mock">As dispatched</td><td class="mock">n/a</td></tr>
+<tr><td>T15</td><td>probe-live (5 checks) — <code>qa/scripts/probe-live.sh</code></td><td><span class="type integ">integration · live gate</span></td><td>Schema tripwires + <b>deployed</b> engine version over HTTPS + TZ round-trip as a real signed-in user + a synthetic Garmin webhook POSTed at the <b>deployed</b> <code>garmin-push</code>, asserting the G6 upgrade end-to-end. Self-cleaning.</td><td class="real">Real rows on <b>dev</b> (PROBE-*, tombstoned + banished)</td><td class="real"><b>Deployed garmin-push exercised</b> — synthetic webhook, real function, real DB (still no Garmin-side server)</td></tr>
 <tr><td>T14</td><td>Human / agent smoke on-sim</td><td><span class="type manual">manual</span></td><td>Everything T11 touches, plus eyes: transient states, day navigation, “that looks wrong.”</td><td class="real">Real rows on <b>dev</b></td><td class="mock">Not exercised</td></tr>
 </table></div>
 <p><b>Prod appears nowhere in this table.</b> No test at any layer runs against prod — by policy for writes, but it also means the prod deploy (schema, functions, app_config) is verified only by the operator’s eyes and the idempotence of the SQL.</p>
@@ -240,7 +241,7 @@ figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:88ch}
 </figure>
 
 <h2>The uncovered edges (the actionable part)</h2>
-<div class="callout"><b>1 · The real Garmin wire — never exercised.</b> The deployed <code>garmin-push</code>/<code>garmin-ping</code> have never received a live completion; G6 (“sync beats skip”) is proven at the matcher seam only. Cheapest closure: POST a synthetic Garmin webhook payload at the deployed <code>garmin-push</code> on dev against a seeded skipped workout, and assert the row upgrades — a real test of the deployed function, no watch required. Candidate for the <code>probe.mjs</code> live-gate script.</div>
-<div class="callout"><b>2 · Prod has zero test stages.</b> Everything right of landing is operator care + idempotent SQL. Minimum viable: run the three verify queries + one read probe against prod after its schema step, and a single smoke session on the released build (T14-style) before comms go out.</div>
+<div class="callout" style="border-color:var(--accent);background:var(--accent-soft)"><b>1 · The Garmin wire — CLOSED 2026-08-20.</b> <code>qa/scripts/probe-live.sh</code> (T15) POSTs a synthetic Garmin webhook at the <b>deployed</b> <code>garmin-push</code> against a seeded skipped workout and asserts the G6 upgrade (completed, summary linked, naive-local <code>actual_time</code>, <code>planned_time</code> untouched). First live run: 5/5 green. What remains genuinely untested is only Garmin’s own delivery (their servers calling ours) — outside our control, observable in function logs when a real watch syncs.</div>
+<div class="callout"><b>2 · Prod has zero test stages.</b> Everything right of landing is operator care + idempotent SQL. Now partially closeable: <code>probe-live.sh --read-only</code> runs checks 1–3 safely against prod after its schema/function steps (write checks refuse a prod URL by design); add one <code>/sim-explore</code> session on the released build before comms go out.</div>
 <div class="callout"><b>3 · T11’s CI credential status is unverified.</b> The self-hosted workflow runs Patrol on every push, but whether that runner has <code>secrets/integration_test.env</code> — and therefore whether the remote half executes or silently self-skips in CI — is unknown. One question for Lee.</div>
 </div>
