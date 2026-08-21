@@ -157,6 +157,95 @@ Deno.test('Iter1: Session Cost - Running short easy', () => {
   assertWithinPercent(sessionCost('running', 0.75, 0.65, 75), 465, 5);
 });
 
+// INTERIM behavior pending the SSOT ruling in
+// qa/intake/2026-08-20-session-cost-unknown-activity-types.md — see
+// ops/data/bug-reports/2026-08-20-session-cost-unknown-sport-priced-as-running.md.
+// Deliberately un-vectored: session-demand.json pins no unmapped-sport case.
+function captureWarn(body: () => void): string[] {
+  const warnings: string[] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args.map(String).join(' '));
+  };
+  try {
+    body();
+  } finally {
+    console.warn = original;
+  }
+  return warnings;
+}
+
+Deno.test('INTERIM bug 2026-08-20: unmapped sports use the conservative linear strength rate and are flagged by name', () => {
+  const unmapped = ['other', 'triathlon', 'duathlon', 'multisport', 'brick'];
+  const warnings = captureWarn(() => {
+    for (const sport of unmapped) {
+      const kcal = sessionCost(sport, 1.0, 0.75, 70);
+      // 5 kcal/kg/hr, linear, IF at reference 0.75: 5 × 1 × 1 × 70.
+      assertEquals(Math.abs(kcal - 350) < 0.001, true, sport);
+    }
+  });
+  assertEquals(warnings.length, unmapped.length);
+  for (const sport of unmapped) {
+    assertEquals(
+      warnings.some((w) => w.includes(`"${sport}"`)),
+      true,
+      sport,
+    );
+  }
+});
+
+Deno.test('INTERIM bug 2026-08-20: 60-min foam roll (other, IF 0.74, 70 kg) is no longer ~750 kcal (or NaN)', () => {
+  let kcal = NaN;
+  captureWarn(() => {
+    kcal = sessionCost('other', 1.0, 0.74, 70);
+  });
+  const expected = 5 * (0.74 / 0.75) * 1.0 * 70; // ≈345.3
+  assertEquals(Math.abs(kcal - expected) < 0.001, true);
+  assertEquals(kcal < 400, true);
+});
+
+Deno.test('INTERIM bug 2026-08-20: unmapped sport scales linearly with IF, not quadratically', () => {
+  let ratio = NaN;
+  captureWarn(() => {
+    ratio = sessionCost('other', 1.0, 0.90, 70) /
+      sessionCost('other', 1.0, 0.45, 70);
+  });
+  assertEquals(Math.abs(ratio - 2.0) < 1e-9, true); // quadratic would give 4.0
+});
+
+Deno.test('INTERIM bug 2026-08-20: mapped sports are unchanged and not flagged', () => {
+  const warnings = captureWarn(() => {
+    assertEquals(
+      Math.abs(
+        sessionCost('running', 1.5, 0.74, 75) -
+          11 * Math.pow(0.74 / 0.75, 2) * 1.5 * 75,
+      ) < 0.001,
+      true,
+    );
+    assertEquals(
+      Math.abs(
+        sessionCost('cycling', 1.25, 0.93, 75) -
+          9 * Math.pow(0.93 / 0.75, 2) * 1.25 * 75,
+      ) < 0.001,
+      true,
+    );
+    assertEquals(
+      Math.abs(
+        sessionCost('swimming', 1.0, 0.80, 75) -
+          7 * Math.pow(0.80 / 0.75, 2) * 1.0 * 75,
+      ) < 0.001,
+      true,
+    );
+    assertEquals(
+      Math.abs(
+        sessionCost('strength', 1.0, 0.70, 75) - 5 * (0.70 / 0.75) * 1.0 * 75,
+      ) < 0.001,
+      true,
+    );
+  });
+  assertEquals(warnings, []);
+});
+
 Deno.test('Iter1: Session Cost - Weight scaling', () => {
   const cost60 = sessionCost('running', 1.5, 0.74, 60);
   const cost75 = sessionCost('running', 1.5, 0.74, 75);

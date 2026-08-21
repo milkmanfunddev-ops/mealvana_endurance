@@ -37,9 +37,23 @@ export function zoneDistributionToIF(
  * Weight is multiplied LAST so cost is exactly linear in body weight
  * (invariant I6: the 60:75:90 kg ratio is 0.800:1.000:1.200 exactly,
  * not within tolerance — floating-point ordering matters here).
+ *
+ * INTERIM (bug: ops/data/bug-reports/
+ * 2026-08-20-session-cost-unknown-sport-priced-as-running.md): the Dart twin
+ * (DailyBaselineCalculator.sessionCost) used to price sports missing from
+ * BASE_RATE (other/triathlon/duathlon/multisport/brick) at the RUNNING rate
+ * on the quadratic curve (~750 kcal for a 60-min foam-roll); here an
+ * unmapped sport produced NaN. Until the spec owner rules on
+ * non-endurance/composite types
+ * (qa/intake/2026-08-20-session-cost-unknown-activity-types.md), unmapped
+ * sports take the already-ratified strength rate (5 kcal/kg/hr) on the
+ * LINEAR curve — a conservative floor, not an invented rate — and each
+ * occurrence is logged so unmapped sport names accrete. Deliberately
+ * un-vectored: docs/ssot/vectors/daily-macros/session-demand.json pins no
+ * unmapped-sport case. Mirrored in daily_baseline_calculator.dart.
  */
 export function sessionCost(
-  sport: Sport,
+  sport: Sport | string,
   duration_hr: number,
   intensity_factor: number,
   weight_kg: number,
@@ -51,14 +65,25 @@ export function sessionCost(
     strength: 5,
   };
 
+  const rate = (BASE_RATE as Record<string, number | undefined>)[sport];
+  if (rate === undefined) {
+    // INTERIM fallback — see the doc comment above; do not ratify this rate.
+    console.warn(
+      `sessionCost: unmapped sport "${sport}" — INTERIM conservative linear ` +
+        `rate ${BASE_RATE.strength} kcal/kg/hr pending SSOT ruling ` +
+        `(qa/intake/2026-08-20-session-cost-unknown-activity-types.md)`,
+    );
+    return BASE_RATE.strength * (intensity_factor / 0.75) * duration_hr *
+      weight_kg;
+  }
+
   if (sport === 'strength') {
     // Strength: linear with IF
-    return BASE_RATE[sport] * (intensity_factor / 0.75) * duration_hr *
-      weight_kg;
+    return rate * (intensity_factor / 0.75) * duration_hr * weight_kg;
   } else {
     // Endurance sports: quadratic with IF
-    return BASE_RATE[sport] * Math.pow(intensity_factor / 0.75, 2) *
-      duration_hr * weight_kg;
+    return rate * Math.pow(intensity_factor / 0.75, 2) * duration_hr *
+      weight_kg;
   }
 }
 
