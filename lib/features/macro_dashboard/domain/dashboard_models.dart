@@ -93,11 +93,11 @@ class WorkoutCardData {
   bool get counts => !isSkipped;
 
   String get chipLabel => switch (state) {
-        WorkoutCardState.doneVerified => 'verified · $verifiedSourceName',
-        WorkoutCardState.doneConfirmed => 'self-reported',
-        WorkoutCardState.planned => 'Planned',
-        WorkoutCardState.skipped => 'Skipped',
-      };
+    WorkoutCardState.doneVerified => 'verified · $verifiedSourceName',
+    WorkoutCardState.doneConfirmed => 'self-reported',
+    WorkoutCardState.planned => 'Planned',
+    WorkoutCardState.skipped => 'Skipped',
+  };
 }
 
 /// One logged (or suggested) meal item.

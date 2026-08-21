@@ -49,10 +49,13 @@ class MacroDashboardAssembler {
   }) {
     // §4b: a status='deleted' tombstone never renders and contributes zero
     // to every derived quantity — identical in effect to nonexistence.
-    final live = activities
-        .where((a) => a.status != ActivityStatus.deleted && a.deletedAt == null)
-        .toList(growable: false)
-      ..sort((a, b) => a.displayTime.compareTo(b.displayTime));
+    final live =
+        activities
+            .where(
+              (a) => a.status != ActivityStatus.deleted && a.deletedAt == null,
+            )
+            .toList(growable: false)
+          ..sort((a, b) => a.displayTime.compareTo(b.displayTime));
 
     // Bug 2026-08-20-dashboard-weight-fallback-70kg: F4 session cost is
     // exactly linear in body weight (invariant I6), so a silent stand-in
@@ -137,8 +140,11 @@ class MacroDashboardAssembler {
     //            shows a passive SKIPPED (the rejected same-day-22:00
     //            trigger must not exist — Q-D5).
     final skipActive = !done && a.status == ActivityStatus.skipped;
-    final selectedDay =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final selectedDay = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
     final today = DateTime(now.year, now.month, now.day);
     final dayPast = selectedDay.isBefore(today);
     final dayFuture = selectedDay.isAfter(today);
@@ -147,10 +153,10 @@ class MacroDashboardAssembler {
     final state = verified
         ? WorkoutCardState.doneVerified
         : done
-            ? WorkoutCardState.doneConfirmed
-            : (skipActive || skipPassive)
-                ? WorkoutCardState.skipped
-                : WorkoutCardState.planned;
+        ? WorkoutCardState.doneConfirmed
+        : (skipActive || skipPassive)
+        ? WorkoutCardState.skipped
+        : WorkoutCardState.planned;
 
     // A skipped card has no displayed time (S-7); its sort key for the tucked
     // group is planned_time. Everything else displays actual ?? planned.
@@ -230,7 +236,8 @@ class MacroDashboardAssembler {
     final nodes = <_TimedNode>[];
     groups.forEach((slot, entries) {
       entries.sort(
-        (a, b) => (a.eatenAt ?? a.createdAt).compareTo(b.eatenAt ?? b.createdAt),
+        (a, b) =>
+            (a.eatenAt ?? a.createdAt).compareTo(b.eatenAt ?? b.createdAt),
       );
       final time = entries.first.eatenAt ?? entries.first.createdAt;
       nodes.add(
@@ -269,8 +276,7 @@ class MacroDashboardAssembler {
     List<DailyMacroTargets?> weeklyTargets,
   ) {
     final isToday = _sameDay(selectedDate, now);
-    final minutesSinceMidnight =
-        isToday ? now.hour * 60 + now.minute : 1440;
+    final minutesSinceMidnight = isToday ? now.hour * 60 + now.minute : 1440;
 
     // S-2 (skip scope): a SKIPPED workout's kcal and fuel leave EVERY
     // surface figure — net balance, band copy, Active Energy sheet,
@@ -319,7 +325,8 @@ class MacroDashboardAssembler {
         displayedWorkout += s.kcal.roundToDouble();
       }
     }
-    final displayedBurned = accrual.resting.floorToDouble() +
+    final displayedBurned =
+        accrual.resting.floorToDouble() +
         accrual.movement.floorToDouble() +
         displayedWorkout +
         accrual.digestion.floorToDouble();
@@ -389,8 +396,7 @@ class MacroDashboardAssembler {
     // a wearable recorded today (approximated by any Garmin-linked session).
     final doneActs = liveActivities
         .where(
-          (a) =>
-              a.status == ActivityStatus.completed || a.actualTime != null,
+          (a) => a.status == ActivityStatus.completed || a.actualTime != null,
         )
         .toList(growable: false);
     final BurnMark workoutMark;
@@ -435,12 +441,8 @@ class MacroDashboardAssembler {
 
     // Weekly carb periodization: this week's cached targets + training load
     // (session kcal normalized against the week's hardest day).
-    final weeklyCarbs = [
-      for (final t in weeklyTargets) t?.carbG,
-    ];
-    final weeklyKcal = [
-      for (final t in weeklyTargets) t?.sessionKcal ?? 0.0,
-    ];
+    final weeklyCarbs = [for (final t in weeklyTargets) t?.carbG];
+    final weeklyKcal = [for (final t in weeklyTargets) t?.sessionKcal ?? 0.0];
     final maxKcal = weeklyKcal.fold<double>(0, (m, v) => v > m ? v : m);
     final weeklyLoad = [
       for (final v in weeklyKcal) maxKcal > 0 ? v / maxKcal : 0.0,

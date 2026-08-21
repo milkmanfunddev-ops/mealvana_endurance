@@ -48,30 +48,29 @@ void main() {
   /// case: a 110-lb (49.9-kg) athlete, the population the 70-kg fallback
   /// hurt most.
   DailyMacroTargets fullTargets() => DailyMacroTargets(
-        id: 'row-1',
-        userId: userId,
-        targetDate: targetDate,
-        carbG: 321.5,
-        protG: 101.25,
-        fatG: 77.75,
-        tdee: 2345.6,
-        rmr: 1234.5,
-        sessionKcal: 456.7,
-        neatKcal: 289.1,
-        tefKcal: 187.3,
-        mode: 'retrospective',
-        ea: 31.4,
-        eaStatus: EaStatus.softWarning,
-        algorithmVersion: 'v6.0.0',
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        weightKg: 49.9,
-        bodyFatPct: 21.5,
-        energyBasis: 'pre_override',
-      );
+    id: 'row-1',
+    userId: userId,
+    targetDate: targetDate,
+    carbG: 321.5,
+    protG: 101.25,
+    fatG: 77.75,
+    tdee: 2345.6,
+    rmr: 1234.5,
+    sessionKcal: 456.7,
+    neatKcal: 289.1,
+    tefKcal: 187.3,
+    mode: 'retrospective',
+    ea: 31.4,
+    eaStatus: EaStatus.softWarning,
+    algorithmVersion: 'v6.0.0',
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    weightKg: 49.9,
+    bodyFatPct: 21.5,
+    energyBasis: 'pre_override',
+  );
 
-  test(
-      'I7: every calculation_input field the domain models survives the '
+  test('I7: every calculation_input field the domain models survives the '
       'save → local read round trip (weight_kg above all)', () async {
     await repository.saveToLocal(fullTargets());
 
@@ -83,8 +82,11 @@ void main() {
     // Scalar columns.
     expect(r.id, 'row-1');
     expect(r.userId, userId);
-    expect(r.targetDate, DateTime(2026, 8, 20),
-        reason: 'target_date is normalized to midnight');
+    expect(
+      r.targetDate,
+      DateTime(2026, 8, 20),
+      reason: 'target_date is normalized to midnight',
+    );
     expect(r.carbG, 321.5);
     expect(r.protG, 101.25);
     expect(r.fatG, 77.75);
@@ -101,41 +103,57 @@ void main() {
     expect(r.updatedAt, updatedAt);
 
     // calculation_input fields — the seam the 70-kg bug fell through.
-    expect(r.weightKg, 49.9,
-        reason:
-            'weight_kg MUST survive the local cache: F4 session cost is '
-            'exactly linear in body weight (I6); losing it here is how every '
-            'athlete got priced at 70 kg '
-            '(2026-08-20-dashboard-weight-fallback-70kg)');
+    expect(
+      r.weightKg,
+      49.9,
+      reason:
+          'weight_kg MUST survive the local cache: F4 session cost is '
+          'exactly linear in body weight (I6); losing it here is how every '
+          'athlete got priced at 70 kg '
+          '(2026-08-20-dashboard-weight-fallback-70kg)',
+    );
     expect(r.bodyFatPct, 21.5);
-    expect(r.energyBasis, 'pre_override',
-        reason:
-            'Q-009: a pre_override day must keep suppressing surplus copy on '
-            'cached reads, not silently revert to as_computed');
+    expect(
+      r.energyBasis,
+      'pre_override',
+      reason:
+          'Q-009: a pre_override day must keep suppressing surplus copy on '
+          'cached reads, not silently revert to as_computed',
+    );
 
     // Documented fresh-calculation transients — intentionally NOT cached.
-    expect(r.sources, isNull,
-        reason: 'sources are documented as fresh-calc only (see domain doc)');
-    expect(r.delta, isNull,
-        reason: 'delta is documented as fresh-calc only (F27 recalc path)');
-  });
-
-  test('I7: the batched week read maps calculation_input identically',
-      () async {
-    await repository.saveToLocal(fullTargets());
-
-    // 2026-08-20 is a Thursday; the Sunday-start week is 2026-08-16.
-    final week = await repository.getCachedForWeek(userId, DateTime(2026, 8, 16));
-    final r = week[targetDate.millisecondsSinceEpoch];
-
-    expect(r, isNotNull);
-    expect(r!.weightKg, 49.9);
-    expect(r.bodyFatPct, 21.5);
-    expect(r.energyBasis, 'pre_override');
+    expect(
+      r.sources,
+      isNull,
+      reason: 'sources are documented as fresh-calc only (see domain doc)',
+    );
+    expect(
+      r.delta,
+      isNull,
+      reason: 'delta is documented as fresh-calc only (F27 recalc path)',
+    );
   });
 
   test(
-      'a legacy row with no calculation_input reads back with the fields '
+    'I7: the batched week read maps calculation_input identically',
+    () async {
+      await repository.saveToLocal(fullTargets());
+
+      // 2026-08-20 is a Thursday; the Sunday-start week is 2026-08-16.
+      final week = await repository.getCachedForWeek(
+        userId,
+        DateTime(2026, 8, 16),
+      );
+      final r = week[targetDate.millisecondsSinceEpoch];
+
+      expect(r, isNotNull);
+      expect(r!.weightKg, 49.9);
+      expect(r.bodyFatPct, 21.5);
+      expect(r.energyBasis, 'pre_override');
+    },
+  );
+
+  test('a legacy row with no calculation_input reads back with the fields '
       'ABSENT — never invented', () async {
     // Pre-fix rows were written without the column. Seed one directly.
     await database.customStatement(
@@ -165,8 +183,11 @@ void main() {
     final r = await repository.getCachedForDate(userId, targetDate);
 
     expect(r, isNotNull);
-    expect(r!.weightKg, isNull,
-        reason: 'an absent weight must surface as absent, not as a constant');
+    expect(
+      r!.weightKg,
+      isNull,
+      reason: 'an absent weight must surface as absent, not as a constant',
+    );
     expect(r.bodyFatPct, isNull);
     expect(r.energyBasis, 'as_computed');
   });
@@ -204,65 +225,79 @@ void main() {
     expect(r.energyBasis, 'as_computed');
   });
 
-  group('I7 remote leg — toJson→fromJson (ops 2026-08-20-…-tojson-drops-calculation-input)', () {
-    test('the calculation_input trio survives the Supabase payload round trip',
+  group(
+    'I7 remote leg — toJson→fromJson (ops 2026-08-20-…-tojson-drops-calculation-input)',
+    () {
+      test(
+        'the calculation_input trio survives the Supabase payload round trip',
         () {
-      final t = DailyMacroTargets(
-        id: 't1',
-        userId: 'u1',
-        targetDate: DateTime(2026, 8, 20),
-        carbG: 500,
-        protG: 120,
-        fatG: 100,
-        tdee: 3200,
-        rmr: 1500,
-        sessionKcal: 700,
-        mode: 'prospective',
-        algorithmVersion: 'v6.0.0',
-        createdAt: DateTime(2026, 8, 20),
-        updatedAt: DateTime(2026, 8, 20),
-        weightKg: 49.9,
-        bodyFatPct: 21.0,
-        energyBasis: 'pre_override',
-      );
-      final json = t.toJson();
-      expect(json['calculation_input'], isA<Map>(),
-          reason: 'the upsert payload must carry calculation_input '
-              '(the remote table has the jsonb column)');
-      final back = DailyMacroTargets.fromEdgeFunctionResponse(
-        id: 't1',
-        userId: 'u1',
-        targetDate: DateTime(2026, 8, 20),
-        json: json,
-      );
-      expect(back.weightKg, 49.9);
-      expect(back.bodyFatPct, 21.0);
-      expect(back.energyBasis, 'pre_override');
-    });
-
-    test('flat engine-response keys still win over nested calculation_input',
-        () {
-      final back = DailyMacroTargets.fromEdgeFunctionResponse(
-        id: 'x',
-        userId: 'u1',
-        targetDate: DateTime(2026, 8, 20),
-        json: {
-          'carb_g': 1,
-          'prot_g': 1,
-          'fat_g': 1,
-          'tdee': 1,
-          'rmr': 1,
-          'session_kcal': 0,
-          'weight_kg': 75.0,
-          'calculation_input': {
-            'weight_kg': 49.9,
-            'energy_basis': 'pre_override',
-          },
+          final t = DailyMacroTargets(
+            id: 't1',
+            userId: 'u1',
+            targetDate: DateTime(2026, 8, 20),
+            carbG: 500,
+            protG: 120,
+            fatG: 100,
+            tdee: 3200,
+            rmr: 1500,
+            sessionKcal: 700,
+            mode: 'prospective',
+            algorithmVersion: 'v6.0.0',
+            createdAt: DateTime(2026, 8, 20),
+            updatedAt: DateTime(2026, 8, 20),
+            weightKg: 49.9,
+            bodyFatPct: 21.0,
+            energyBasis: 'pre_override',
+          );
+          final json = t.toJson();
+          expect(
+            json['calculation_input'],
+            isA<Map>(),
+            reason:
+                'the upsert payload must carry calculation_input '
+                '(the remote table has the jsonb column)',
+          );
+          final back = DailyMacroTargets.fromEdgeFunctionResponse(
+            id: 't1',
+            userId: 'u1',
+            targetDate: DateTime(2026, 8, 20),
+            json: json,
+          );
+          expect(back.weightKg, 49.9);
+          expect(back.bodyFatPct, 21.0);
+          expect(back.energyBasis, 'pre_override');
         },
       );
-      expect(back.weightKg, 75.0, reason: 'flat (engine) key wins');
-      expect(back.energyBasis, 'pre_override',
-          reason: 'nested fills what flat omits');
-    });
-  });
+
+      test(
+        'flat engine-response keys still win over nested calculation_input',
+        () {
+          final back = DailyMacroTargets.fromEdgeFunctionResponse(
+            id: 'x',
+            userId: 'u1',
+            targetDate: DateTime(2026, 8, 20),
+            json: {
+              'carb_g': 1,
+              'prot_g': 1,
+              'fat_g': 1,
+              'tdee': 1,
+              'rmr': 1,
+              'session_kcal': 0,
+              'weight_kg': 75.0,
+              'calculation_input': {
+                'weight_kg': 49.9,
+                'energy_basis': 'pre_override',
+              },
+            },
+          );
+          expect(back.weightKg, 75.0, reason: 'flat (engine) key wins');
+          expect(
+            back.energyBasis,
+            'pre_override',
+            reason: 'nested fills what flat omits',
+          );
+        },
+      );
+    },
+  );
 }

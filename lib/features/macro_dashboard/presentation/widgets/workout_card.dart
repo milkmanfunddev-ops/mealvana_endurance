@@ -177,12 +177,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
             Positioned.fill(child: _doneUnderlay(commit)),
           // Left-swipe skip reveal — never for a verified card (G3).
           if (_dx < 0 && _canToggle)
-            Positioned(
-              top: 0,
-              right: 0,
-              bottom: 0,
-              child: _skipReveal(),
-            ),
+            Positioned(top: 0, right: 0, bottom: 0, child: _skipReveal()),
           GestureDetector(
             // deferToChild: the hit area must follow the translated card —
             // an opaque full-width listener would swallow taps meant for
@@ -243,15 +238,11 @@ class _WorkoutCardState extends State<WorkoutCard> {
     final Color fill;
     final Color ink;
     if (undoing) {
-      fill = commit
-          ? MeTokens.creamAlpha(0.9)
-          : MeTokens.creamAlpha(0.13);
+      fill = commit ? MeTokens.creamAlpha(0.9) : MeTokens.creamAlpha(0.13);
       ink = commit ? MeTokens.blackberry : MeTokens.creamAlpha(0.75);
     } else {
       // The done-swipe fill is electrolyte — the burn/verified domain.
-      fill = commit
-          ? MeTokens.electrolyte
-          : MeTokens.electrolyteAlpha(0.22);
+      fill = commit ? MeTokens.electrolyte : MeTokens.electrolyteAlpha(0.22);
       ink = commit ? MeTokens.blackberry : MeTokens.electrolyte;
     }
     final opacity = ((_dx - 6) / 44).clamp(0.0, 1.0);
@@ -264,11 +255,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              undoing ? Icons.replay : Icons.check,
-              size: 17,
-              color: ink,
-            ),
+            Icon(undoing ? Icons.replay : Icons.check, size: 17, color: ink),
             const SizedBox(width: 8),
             Text(
               undoing ? 'Mark undone' : 'Mark done',
@@ -351,8 +338,8 @@ class _WorkoutCardState extends State<WorkoutCard> {
       color: done
           ? MeTokens.blackberry
           : skipped
-              ? MeTokens.creamAlpha(0.42)
-              : MeTokens.electrolyteAlpha(0.85),
+          ? MeTokens.creamAlpha(0.42)
+          : MeTokens.electrolyteAlpha(0.85),
     );
     if (done) {
       return Container(
@@ -384,11 +371,11 @@ class _WorkoutCardState extends State<WorkoutCard> {
   }
 
   IconData _sportIcon(String sport) => switch (sport) {
-        'swimming' => Icons.pool,
-        'cycling' => Icons.directions_bike,
-        'strength' => Icons.fitness_center,
-        _ => Icons.directions_run,
-      };
+    'swimming' => Icons.pool,
+    'cycling' => Icons.directions_bike,
+    'strength' => Icons.fitness_center,
+    _ => Icons.directions_run,
+  };
 
   Widget _body(bool done, bool skipped) {
     final data = widget.data;
@@ -576,10 +563,7 @@ class _DottedBorderPainter extends BoxPainter {
     for (final metric in path.computeMetrics()) {
       var distance = 0.0;
       while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, distance + dash),
-          paint,
-        );
+        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
         distance += dash + gap;
       }
     }

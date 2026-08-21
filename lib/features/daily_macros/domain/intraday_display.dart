@@ -15,7 +15,8 @@ class IntradayDisplay {
   /// Assumed waking window when sleep data is absent: 07:00–23:00 `[design]`.
   static const int wakingWindowStartMin = 7 * 60;
   static const int wakingWindowEndMin = 23 * 60;
-  static const int totalWakingMinutes = wakingWindowEndMin - wakingWindowStartMin;
+  static const int totalWakingMinutes =
+      wakingWindowEndMin - wakingWindowStartMin;
 
   /// TEF fraction — mirrors the engine's rate so the two agree at day's end.
   static const double digestionFraction = 0.10;
@@ -89,8 +90,10 @@ class IntradayDisplay {
         wearableWorkoutKcal += s.kcal;
       }
 
-      final measured =
-          math.max(0.0, activeEnergyThroughSync - wearableWorkoutKcal);
+      final measured = math.max(
+        0.0,
+        activeEnergyThroughSync - wearableWorkoutKcal,
+      );
       final bridgeMinutes = _wakingMinutesBetween(
         lastSyncMin,
         minutesSinceMidnight,
@@ -229,8 +232,7 @@ class IntradayDisplay {
     required bool trackingOff,
     required String? eaStatus,
   }) {
-    final safetySurfaces =
-        eaStatus == 'BLOCK' || eaStatus == 'HARD_WARNING';
+    final safetySurfaces = eaStatus == 'BLOCK' || eaStatus == 'HARD_WARNING';
     return TrackingVisibility(
       quantitiesRendered: !trackingOff,
       blockRendered: safetySurfaces,

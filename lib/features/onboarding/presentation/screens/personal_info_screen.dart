@@ -321,10 +321,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       backButtonKey: const ValueKey('personal_info.back_button'),
       children: [
         if (_autofillSource != null) ...[
-          _AutofillNotice(
-            source: _autofillSource!,
-            fields: _autofilledFields,
-          ),
+          _AutofillNotice(source: _autofillSource!, fields: _autofilledFields),
           const SizedBox(height: 12),
         ],
         _buildOptionalInfoCard(),
@@ -715,10 +712,7 @@ class _AutofillNotice extends StatelessWidget {
   /// 'Name', 'Name and email', 'Name, email and birth year' — subsequent
   /// items lowercased so the sentence reads naturally.
   String get _fieldList {
-    final items = [
-      fields.first,
-      ...fields.skip(1).map((f) => f.toLowerCase()),
-    ];
+    final items = [fields.first, ...fields.skip(1).map((f) => f.toLowerCase())];
     if (items.length == 1) return items.single;
     return '${items.sublist(0, items.length - 1).join(', ')} '
         'and ${items.last}';

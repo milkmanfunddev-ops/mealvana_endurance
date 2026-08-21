@@ -38,8 +38,7 @@ class ActivitiesTable extends Table {
   // Measured session energy (Garmin ActiveKilocalories), mirrored from the
   // Supabase column so the dashboard's F22 kcal ladder can prefer the
   // measured value over the formula estimate offline.
-  RealColumn get caloriesBurned =>
-      real().nullable().named('calories_burned')();
+  RealColumn get caloriesBurned => real().nullable().named('calories_burned')();
 
   // Activity parameters (nullable)
   RealColumn get distanceMiles => real().nullable().named('distance_miles')();

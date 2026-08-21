@@ -98,10 +98,7 @@ class DailyMacroService {
     await _repository.invalidateFromDate(userId, today);
     // Any in-flight week calculation for the current or next week must
     // rerun with the new inputs rather than land stale results.
-    markMacroInputsChanged(userId, [
-      today,
-      today.add(const Duration(days: 7)),
-    ]);
+    markMacroInputsChanged(userId, [today, today.add(const Duration(days: 7))]);
   }
 
   /// Whether two revisions of a profile differ in an ENGINE input — the

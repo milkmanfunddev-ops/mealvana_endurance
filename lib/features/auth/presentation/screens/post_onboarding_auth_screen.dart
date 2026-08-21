@@ -623,10 +623,12 @@ class _PostOnboardingAuthScreenState
       // controller would JOIN that session-less pass (single-flight) and its
       // late save would re-cache the exact stale rows this wipe removes.
       final now = DateTime.now();
-      container.read(dailyMacroServiceProvider).markMacroInputsChanged(
-        userId,
-        List.generate(14, (i) => now.add(Duration(days: i - 7))),
-      );
+      container
+          .read(dailyMacroServiceProvider)
+          .markMacroInputsChanged(
+            userId,
+            List.generate(14, (i) => now.add(Duration(days: i - 7))),
+          );
       await container
           .read(dailyMacroTargetsRepositoryProvider)
           .invalidateAllForUser(userId);

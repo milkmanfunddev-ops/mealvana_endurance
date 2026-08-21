@@ -151,54 +151,51 @@ void main() {
     await db.userDao.saveUserProfile(_returningAthlete());
   });
 
-  test(
-    'a Final Surge connect is readable by the onboarding autofill '
-    'under the id it was written to',
-    () async {
-      // Let the controller finish its id resolution, then connect.
-      await container.read(connectTrainingControllerProvider.future);
-      final connected = await container
-          .read(connectTrainingControllerProvider.notifier)
-          .connectFinalSurge();
-      expect(connected, isTrue, reason: 'the faked handshake must succeed');
+  test('a Final Surge connect is readable by the onboarding autofill '
+      'under the id it was written to', () async {
+    // Let the controller finish its id resolution, then connect.
+    await container.read(connectTrainingControllerProvider.future);
+    final connected = await container
+        .read(connectTrainingControllerProvider.notifier)
+        .connectFinalSurge();
+    expect(connected, isTrue, reason: 'the faked handshake must succeed');
 
-      // Precondition proof — the bug condition genuinely holds: the row was
-      // written under the LOCAL PROFILE id, and nothing exists under the
-      // auth uid. If these two ever point at the same id, this test has
-      // stopped exercising the mismatch and must be re-seeded.
-      final underProfileId = await repository.getIntegration(
-        _localProfileId,
-        'final_surge',
-      );
-      final underAuthUid = await repository.getIntegration(
-        _authUid,
-        'final_surge',
-      );
-      expect(
-        underProfileId,
-        isNotNull,
-        reason: 'the connect must persist under the controller-resolved id',
-      );
-      expect(
-        underAuthUid,
-        isNull,
-        reason:
-            'seam integrity: if a row exists under the auth uid too, the '
-            'id-mismatch condition is gone and this test proves nothing',
-      );
+    // Precondition proof — the bug condition genuinely holds: the row was
+    // written under the LOCAL PROFILE id, and nothing exists under the
+    // auth uid. If these two ever point at the same id, this test has
+    // stopped exercising the mismatch and must be re-seeded.
+    final underProfileId = await repository.getIntegration(
+      _localProfileId,
+      'final_surge',
+    );
+    final underAuthUid = await repository.getIntegration(
+      _authUid,
+      'final_surge',
+    );
+    expect(
+      underProfileId,
+      isNotNull,
+      reason: 'the connect must persist under the controller-resolved id',
+    );
+    expect(
+      underAuthUid,
+      isNull,
+      reason:
+          'seam integrity: if a row exists under the auth uid too, the '
+          'id-mismatch condition is gone and this test proves nothing',
+    );
 
-      // The read under test: the autofill provider must find the profile by
-      // walking the candidate ids — this exact read returned empty before
-      // the fix, stranding "Synced 21 workouts" next to blank name fields.
-      final autofill = await container.read(
-        onboardingIntegrationProfileProvider.future,
-      );
-      expect(autofill.firstName, 'Xuan');
-      expect(autofill.lastName, 'Huang');
-      expect(autofill.email, 'xuan@example.com');
-      expect(autofill.detailsSource, 'Final Surge');
-    },
-  );
+    // The read under test: the autofill provider must find the profile by
+    // walking the candidate ids — this exact read returned empty before
+    // the fix, stranding "Synced 21 workouts" next to blank name fields.
+    final autofill = await container.read(
+      onboardingIntegrationProfileProvider.future,
+    );
+    expect(autofill.firstName, 'Xuan');
+    expect(autofill.lastName, 'Huang');
+    expect(autofill.email, 'xuan@example.com');
+    expect(autofill.detailsSource, 'Final Surge');
+  });
 
   test(
     'disconnecting wipes what the platform gave us — autofill and workouts',
@@ -307,13 +304,16 @@ void main() {
               ))
               .get();
       expect(aliveProviderRows, isEmpty);
-      final manualRow = await (db.select(db.activitiesTable)
-            ..where((t) => t.id.equals('aaaaaaaa-0000-0000-0000-000000000003')))
-          .getSingle();
+      final manualRow =
+          await (db.select(db.activitiesTable)..where(
+                (t) => t.id.equals('aaaaaaaa-0000-0000-0000-000000000003'),
+              ))
+              .getSingle();
       expect(
         manualRow.deletedAt,
         isNull,
-        reason: 'a manually logged workout is the athlete\'s, not the '
+        reason:
+            'a manually logged workout is the athlete\'s, not the '
             'provider\'s — disconnect must leave it alone',
       );
 

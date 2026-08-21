@@ -42,68 +42,68 @@ import '../../helpers/widget_test_harness.dart';
 final _day = DateTime(2026, 8, 14);
 
 Activity _swimVerified() => Activity(
-      id: 'w1',
-      userId: 'u1',
-      activityType: ActivityType.swimming,
-      title: 'Swim',
-      scheduledDateTime: DateTime(2026, 8, 14, 8, 0),
-      plannedTime: DateTime(2026, 8, 14, 8, 0),
-      actualTime: DateTime(2026, 8, 14, 8, 0),
-      status: ActivityStatus.completed,
-      garminSummaryId: 'g-swim-1',
-      caloriesBurned: 228.7,
-      durationMinutes: 40,
-      createdAt: _day,
-      updatedAt: _day,
-    );
+  id: 'w1',
+  userId: 'u1',
+  activityType: ActivityType.swimming,
+  title: 'Swim',
+  scheduledDateTime: DateTime(2026, 8, 14, 8, 0),
+  plannedTime: DateTime(2026, 8, 14, 8, 0),
+  actualTime: DateTime(2026, 8, 14, 8, 0),
+  status: ActivityStatus.completed,
+  garminSummaryId: 'g-swim-1',
+  caloriesBurned: 228.7,
+  durationMinutes: 40,
+  createdAt: _day,
+  updatedAt: _day,
+);
 
 Activity _runPlanned() => Activity(
-      id: 'w2',
-      userId: 'u1',
-      activityType: ActivityType.running,
-      title: 'Run',
-      scheduledDateTime: DateTime(2026, 8, 14, 17, 30),
-      plannedTime: DateTime(2026, 8, 14, 17, 30),
-      status: ActivityStatus.planned,
-      durationMinutes: 90,
-      createdAt: _day,
-      updatedAt: _day,
-    );
+  id: 'w2',
+  userId: 'u1',
+  activityType: ActivityType.running,
+  title: 'Run',
+  scheduledDateTime: DateTime(2026, 8, 14, 17, 30),
+  plannedTime: DateTime(2026, 8, 14, 17, 30),
+  status: ActivityStatus.planned,
+  durationMinutes: 90,
+  createdAt: _day,
+  updatedAt: _day,
+);
 
 MealLog _bagel() => MealLog(
-      id: 'm1',
-      userId: 'u1',
-      logDate: '2026-08-14',
-      slot: MealSlot.breakfast,
-      name: 'Everything Bagel',
-      source: MealLogSource.manual,
-      components: const [],
-      calories: 574,
-      carbsG: 58,
-      proteinG: 30,
-      fatG: 25,
-      eatenAt: DateTime(2026, 8, 14, 7, 30),
-      createdAt: _day,
-      updatedAt: _day,
-    );
+  id: 'm1',
+  userId: 'u1',
+  logDate: '2026-08-14',
+  slot: MealSlot.breakfast,
+  name: 'Everything Bagel',
+  source: MealLogSource.manual,
+  components: const [],
+  calories: 574,
+  carbsG: 58,
+  proteinG: 30,
+  fatG: 25,
+  eatenAt: DateTime(2026, 8, 14, 7, 30),
+  createdAt: _day,
+  updatedAt: _day,
+);
 
 DailyMacroTargets _targets() => DailyMacroTargets(
-      id: 't1',
-      userId: 'u1',
-      targetDate: _day,
-      carbG: 596,
-      protG: 130,
-      fatG: 138,
-      tdee: 4152,
-      rmr: 1908,
-      sessionKcal: 1434,
-      neatKcal: 394.9,
-      mode: 'prospective',
-      algorithmVersion: 'v6.0.0',
-      createdAt: _day,
-      updatedAt: _day,
-      weightKg: 75,
-    );
+  id: 't1',
+  userId: 'u1',
+  targetDate: _day,
+  carbG: 596,
+  protG: 130,
+  fatG: 138,
+  tdee: 4152,
+  rmr: 1908,
+  sessionKcal: 1434,
+  neatKcal: 394.9,
+  mode: 'prospective',
+  algorithmVersion: 'v6.0.0',
+  createdAt: _day,
+  updatedAt: _day,
+  weightKg: 75,
+);
 
 const _consumed = ConsumedTotals(
   calories: 1650,
@@ -121,32 +121,35 @@ class _FixedSelectedDate extends CalendarSelectedDate {
 /// actual_time = planned_time (the mark-done write). It must render on ITS
 /// day, never leak onto the selected one.
 Activity _yesterdayRunDone() => Activity(
-      id: 'w0',
-      userId: 'u1',
-      activityType: ActivityType.running,
-      title: 'Yesterday run',
-      scheduledDateTime: DateTime(2026, 8, 13, 7, 0),
-      plannedTime: DateTime(2026, 8, 13, 7, 0),
-      actualTime: DateTime(2026, 8, 13, 7, 0),
-      status: ActivityStatus.completed,
-      durationMinutes: 60,
-      createdAt: _day,
-      updatedAt: _day,
-    );
+  id: 'w0',
+  userId: 'u1',
+  activityType: ActivityType.running,
+  title: 'Yesterday run',
+  scheduledDateTime: DateTime(2026, 8, 13, 7, 0),
+  plannedTime: DateTime(2026, 8, 13, 7, 0),
+  actualTime: DateTime(2026, 8, 13, 7, 0),
+  status: ActivityStatus.completed,
+  durationMinutes: 60,
+  createdAt: _day,
+  updatedAt: _day,
+);
 
 class _SeededActivitiesController extends ActivitiesController {
   @override
-  FutureOr<List<Activity>> build() =>
-      [_yesterdayRunDone(), _swimVerified(), _runPlanned()];
+  FutureOr<List<Activity>> build() => [
+    _yesterdayRunDone(),
+    _swimVerified(),
+    _runPlanned(),
+  ];
 }
 
 class _SeededDailyMacrosController extends DailyMacrosController {
   @override
   Future<DailyMacrosState> build() async => DailyMacrosState(
-        selectedDate: _day,
-        dailyMacros: _targets(),
-        weeklyMacros: List<DailyMacroTargets?>.filled(7, _targets()),
-      );
+    selectedDate: _day,
+    dailyMacros: _targets(),
+    weeklyMacros: List<DailyMacroTargets?>.filled(7, _targets()),
+  );
 }
 
 /// A daily-macros controller the test can flip into "recomputing" (targets
@@ -171,23 +174,19 @@ class _SwitchableDailyMacrosController extends DailyMacrosController {
 }
 
 List<Override> _dayOverrides({bool switchableMacros = false}) => [
-      userIdProvider.overrideWith((ref) async => 'u1'),
-      calendarSelectedDateProvider.overrideWith(_FixedSelectedDate.new),
-      activitiesControllerProvider.overrideWith(
-        _SeededActivitiesController.new,
-      ),
-      dailyMacrosControllerProvider.overrideWith(
-        switchableMacros
-            ? _SwitchableDailyMacrosController.new
-            : _SeededDailyMacrosController.new,
-      ),
-      mealLogsForDateProvider.overrideWith(
-        (ref, date) => Stream.value([_bagel()]),
-      ),
-      consumedTotalsForDateProvider.overrideWith(
-        (ref, date) => Stream.value(_consumed),
-      ),
-    ];
+  userIdProvider.overrideWith((ref) async => 'u1'),
+  calendarSelectedDateProvider.overrideWith(_FixedSelectedDate.new),
+  activitiesControllerProvider.overrideWith(_SeededActivitiesController.new),
+  dailyMacrosControllerProvider.overrideWith(
+    switchableMacros
+        ? _SwitchableDailyMacrosController.new
+        : _SeededDailyMacrosController.new,
+  ),
+  mealLogsForDateProvider.overrideWith((ref, date) => Stream.value([_bagel()])),
+  consumedTotalsForDateProvider.overrideWith(
+    (ref, date) => Stream.value(_consumed),
+  ),
+];
 
 Future<void> _pumpDashboard(
   WidgetTester tester, {
@@ -209,8 +208,9 @@ void main() {
   // controller reports (null, isCalculating) until the engine answers. The
   // surface must keep showing the last targets it rendered for this
   // user+day rather than blank the energy card for the round trip.
-  testWidgets('energy card holds through a targets recompute (no blink)',
-      (tester) async {
+  testWidgets('energy card holds through a targets recompute (no blink)', (
+    tester,
+  ) async {
     _SwitchableDailyMacrosController.recomputing = false;
     await _pumpDashboard(tester, switchableMacros: true);
     expect(
@@ -221,8 +221,10 @@ void main() {
     // The recompute begins: targets vanish upstream…
     _SwitchableDailyMacrosController.recomputing = true;
     final el = tester.element(find.byType(MacroDashboardScreen));
-    ProviderScope.containerOf(el, listen: false)
-        .invalidate(dailyMacrosControllerProvider);
+    ProviderScope.containerOf(
+      el,
+      listen: false,
+    ).invalidate(dailyMacrosControllerProvider);
     await tester.pumpAndSettle();
 
     // …but the surface holds the last-known targets, energy card intact.
@@ -234,8 +236,10 @@ void main() {
 
     // A genuine no-targets state (not recomputing) still renders no card.
     HeldTargets.clear();
-    ProviderScope.containerOf(el, listen: false)
-        .invalidate(dailyMacrosControllerProvider);
+    ProviderScope.containerOf(
+      el,
+      listen: false,
+    ).invalidate(dailyMacrosControllerProvider);
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('macro_dashboard.energy_card')),
@@ -251,8 +255,9 @@ void main() {
   // card from the day before does NOT appear on, or count toward, the
   // selected day (the gap behind the 2026-08-18 "it disappeared" report:
   // with actual_time = now, a future/past card jumped to today).
-  testWidgets('a workout confirmed on another day never leaks onto this day',
-      (tester) async {
+  testWidgets('a workout confirmed on another day never leaks onto this day', (
+    tester,
+  ) async {
     await _pumpDashboard(tester);
     expect(
       find.byKey(const ValueKey('macro_dashboard.workout_w0')),
@@ -270,8 +275,9 @@ void main() {
     );
   });
 
-  testWidgets('assembles the canonical mock day through the real providers',
-      (tester) async {
+  testWidgets('assembles the canonical mock day through the real providers', (
+    tester,
+  ) async {
     await _pumpDashboard(tester);
 
     // Energy card (All face collapsed) + both workout cards + the meal card.
@@ -303,8 +309,11 @@ void main() {
     // (Q-D6): "Skipped" chip, no timestamp on its rail row (S-7 tuck), and
     // the rejected v1 prompt copy must not exist anywhere.
     expect(find.text('Skipped'), findsOneWidget);
-    expect(find.text('5:30 PM'), findsNothing,
-        reason: 'a skipped card renders with no timestamp');
+    expect(
+      find.text('5:30 PM'),
+      findsNothing,
+      reason: 'a skipped card renders with no timestamp',
+    );
     expect(find.textContaining('Did this happen?'), findsNothing);
 
     // Add row shows both pills on the All lens; rail times are visible.
@@ -319,8 +328,9 @@ void main() {
     expect(find.text('8:00 AM'), findsOneWidget);
   });
 
-  testWidgets('filter pills drive the lens: cards and add row follow',
-      (tester) async {
+  testWidgets('filter pills drive the lens: cards and add row follow', (
+    tester,
+  ) async {
     await _pumpDashboard(tester);
 
     await tester.tap(
@@ -363,8 +373,9 @@ void main() {
   // Bug report 2026-08-20-dashboard-papercuts, item 3 (a11y): the dashed
   // add pills reported as static text (AXStaticText) to assistive tech —
   // they must expose button semantics with a tap action.
-  testWidgets('add pills expose button semantics, not static text',
-      (tester) async {
+  testWidgets('add pills expose button semantics, not static text', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     await _pumpDashboard(tester);
 
@@ -381,8 +392,9 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('tracking toggle hides the energy card and meal macros (§5)',
-      (tester) async {
+  testWidgets('tracking toggle hides the energy card and meal macros (§5)', (
+    tester,
+  ) async {
     await _pumpDashboard(tester);
     expect(
       find.byKey(const ValueKey('macro_dashboard.energy_card')),
@@ -421,22 +433,23 @@ void main() {
   });
 
   testWidgets(
-      'energy expansion happens in place and survives a face switch (E1/P-1)',
-      (tester) async {
-    await _pumpDashboard(tester);
-    expect(find.text('NET ENERGY BALANCE'), findsNothing);
+    'energy expansion happens in place and survives a face switch (E1/P-1)',
+    (tester) async {
+      await _pumpDashboard(tester);
+      expect(find.text('NET ENERGY BALANCE'), findsNothing);
 
-    await tester.tap(
-      find.byKey(const ValueKey('macro_dashboard.energy_expand')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('NET ENERGY BALANCE'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('macro_dashboard.energy_expand')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('NET ENERGY BALANCE'), findsOneWidget);
 
-    // Face switch keeps the expansion (view-state owns it, not the card).
-    await tester.tap(
-      find.byKey(const ValueKey('macro_dashboard.filter_workout')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('ACTIVE ENERGY'), findsOneWidget);
-  });
+      // Face switch keeps the expansion (view-state owns it, not the card).
+      await tester.tap(
+        find.byKey(const ValueKey('macro_dashboard.filter_workout')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ACTIVE ENERGY'), findsOneWidget);
+    },
+  );
 }

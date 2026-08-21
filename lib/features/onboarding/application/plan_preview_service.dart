@@ -105,9 +105,8 @@ class PlanPreviewService {
       final hydration = OfflineMacroCalculator.calculateDuringWorkoutHydration(
         // Also a per-hour rate for a long session — same reasoning as the
         // carb cards, so also the representative duration.
-        durationMin:
-            (wantsRun ? defaultLongRunMinutes : defaultLongRideMinutes)
-                .toDouble(),
+        durationMin: (wantsRun ? defaultLongRunMinutes : defaultLongRideMinutes)
+            .toDouble(),
         weightKg: weightKg,
         sweatRateCategory: draft.sweatRate.name,
         sweatSodiumCat: 'average',

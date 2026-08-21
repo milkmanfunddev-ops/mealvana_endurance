@@ -156,7 +156,6 @@ class AppConfig {
   /// [describeMealEnabled].
   final bool coachInsightsEnabled;
 
-
   /// Platform-appropriate RevenueCat public API key.
   ///
   /// Returns the Apple key on iOS/macOS and the Google key on Android.

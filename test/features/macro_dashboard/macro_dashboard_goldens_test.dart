@@ -38,24 +38,24 @@ Future<void> _loadFont(String family, List<String> paths) async {
 // ---------------------------------------------------------------------------
 
 WorkoutCardData _swim(WorkoutCardState state) => WorkoutCardData(
-      activityId: 'w1',
-      name: 'Swim',
-      timeLabel: '8:00 AM',
-      metaLabel: '2,000 yd · 40 min',
-      kcal: 229,
-      state: state,
-      sport: 'swimming',
-    );
+  activityId: 'w1',
+  name: 'Swim',
+  timeLabel: '8:00 AM',
+  metaLabel: '2,000 yd · 40 min',
+  kcal: 229,
+  state: state,
+  sport: 'swimming',
+);
 
 WorkoutCardData _run(WorkoutCardState state) => WorkoutCardData(
-      activityId: 'w2',
-      name: 'Run',
-      timeLabel: '5:30 PM',
-      metaLabel: '90 min',
-      kcal: 1205,
-      state: state,
-      sport: 'running',
-    );
+  activityId: 'w2',
+  name: 'Run',
+  timeLabel: '5:30 PM',
+  metaLabel: '90 min',
+  kcal: 1205,
+  state: state,
+  sport: 'running',
+);
 
 /// Mock-day energy numbers: burned 1,783 (resting 1,192 + movement 197 +
 /// swim 229 + digestion 165), net −133 → "on track", projected 1,434.
@@ -92,20 +92,17 @@ const _energy = EnergyCardData(
 );
 
 Widget _frame(Widget child) => MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: MeTokens.blackberry,
-        body: Center(
-          child: SizedBox(
-            width: 380,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: child,
-            ),
-          ),
-        ),
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: MeTokens.blackberry,
+    body: Center(
+      child: SizedBox(
+        width: 380,
+        child: Padding(padding: const EdgeInsets.all(16), child: child),
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   setUpAll(() async {
@@ -118,15 +115,13 @@ void main() {
       'assets/fonts/Apercu/Apercu Pro Medium.otf',
       'assets/fonts/Apercu/Apercu Pro Bold.otf',
     ]);
-    await _loadFont('Apercu Mono', [
-      'assets/fonts/Apercu/Apercu Pro Mono.otf',
-    ]);
+    await _loadFont('Apercu Mono', ['assets/fonts/Apercu/Apercu Pro Mono.otf']);
     await _loadFont('Compadre', [
       'assets/fonts/Compadre/Compadre-Demo-Regular.otf',
     ]);
     // Icons render as placeholder boxes unless MaterialIcons is loaded.
-    final flutterRoot = Platform.environment['FLUTTER_ROOT'] ??
-        '/opt/homebrew/share/flutter';
+    final flutterRoot =
+        Platform.environment['FLUTTER_ROOT'] ?? '/opt/homebrew/share/flutter';
     final materialIcons =
         '$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf';
     if (File(materialIcons).existsSync()) {
@@ -134,11 +129,7 @@ void main() {
     }
   });
 
-  Future<void> golden(
-    WidgetTester tester,
-    Widget child,
-    String name,
-  ) async {
+  Future<void> golden(WidgetTester tester, Widget child, String name) async {
     await tester.pumpWidget(_frame(child));
     await tester.pump();
     await expectLater(

@@ -1203,9 +1203,7 @@ class ActivitiesRepository with SyncableRepository {
             tbl.scheduledDateTime.isBiggerOrEqualValue(dayStart) &
             tbl.scheduledDateTime.isSmallerThanValue(dayEnd),
       );
-    return query.watch().map(
-      (rows) => rows.map(_mapper.fromDriftRow).toList(),
-    );
+    return query.watch().map((rows) => rows.map(_mapper.fromDriftRow).toList());
   }
 
   /// Insert a new activity directly (used by sync services)
@@ -1452,7 +1450,8 @@ class ActivitiesRepository with SyncableRepository {
       // mark-done / Garmin-verified row from silently reverting to PLANNED on
       // the next TP/FS re-sync. planned_time follows a provider RESCHEDULE
       // (that is scheduling, which owns planned_time); otherwise it stays.
-      plannedTime: incoming.plannedTime ??
+      plannedTime:
+          incoming.plannedTime ??
           (incoming.scheduledDateTime != existing.scheduledDateTime
               ? incoming.scheduledDateTime
               : existing.plannedTime),

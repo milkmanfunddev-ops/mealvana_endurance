@@ -208,18 +208,33 @@ void main() {
 void _versionGateTests() {
   group('algorithm-version gate — older-than floor, never equality', () {
     test('rows at or above the floor are served; older rows are stale', () {
-      expect(DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.0.0'),
-          isFalse);
-      expect(DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.1.0'),
-          isFalse, reason: 'newer than the floor is accepted as-is');
-      expect(DailyMacroTargetsRepository.isStaleAlgorithmVersion('v7.0.0'),
-          isFalse);
-      expect(DailyMacroTargetsRepository.isStaleAlgorithmVersion('v5.0.0'),
-          isTrue, reason: 'older → recalculated once');
-      expect(DailyMacroTargetsRepository.isStaleAlgorithmVersion('v5.9.9'),
-          isTrue);
-      expect(DailyMacroTargetsRepository.isStaleAlgorithmVersion('garbage'),
-          isTrue, reason: 'unparsable → treated as older');
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.0.0'),
+        isFalse,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.1.0'),
+        isFalse,
+        reason: 'newer than the floor is accepted as-is',
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v7.0.0'),
+        isFalse,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v5.0.0'),
+        isTrue,
+        reason: 'older → recalculated once',
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v5.9.9'),
+        isTrue,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('garbage'),
+        isTrue,
+        reason: 'unparsable → treated as older',
+      );
     });
   });
 }

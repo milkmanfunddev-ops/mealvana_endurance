@@ -54,9 +54,24 @@ void main() {
           algorithm_version, needs_upload, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
-        '$uid-${day.millisecondsSinceEpoch}', uid, day.millisecondsSinceEpoch,
-        300.0, 150.0, 70.0, 2600.0, 1600.0, 600.0, 300.0, 100.0,
-        'prospective', 40.0, null, 'v6.0.0', 0, 0, 0,
+        '$uid-${day.millisecondsSinceEpoch}',
+        uid,
+        day.millisecondsSinceEpoch,
+        300.0,
+        150.0,
+        70.0,
+        2600.0,
+        1600.0,
+        600.0,
+        300.0,
+        100.0,
+        'prospective',
+        40.0,
+        null,
+        'v6.0.0',
+        0,
+        0,
+        0,
       ],
     );
   }
@@ -69,8 +84,10 @@ void main() {
         )
         .get();
     return rows
-        .map((r) =>
-            DateTime.fromMillisecondsSinceEpoch(r.read<int>('target_date')))
+        .map(
+          (r) =>
+              DateTime.fromMillisecondsSinceEpoch(r.read<int>('target_date')),
+        )
         .toSet();
   }
 
@@ -91,7 +108,13 @@ void main() {
 
   group('repository window — invalidateFromDate', () {
     test('drops today and every future day; leaves the past intact', () async {
-      for (final d in [lastWeek, yesterday, todayMidnight, tomorrow, nextMonth]) {
+      for (final d in [
+        lastWeek,
+        yesterday,
+        todayMidnight,
+        tomorrow,
+        nextMonth,
+      ]) {
         await seedCachedDay(userId, d);
       }
       await repository.invalidateFromDate(userId, today);
@@ -104,7 +127,10 @@ void main() {
 
     test('is inclusive of today even when called mid-day', () async {
       await seedCachedDay(userId, todayMidnight);
-      await repository.invalidateFromDate(userId, DateTime(2026, 8, 19, 23, 59));
+      await repository.invalidateFromDate(
+        userId,
+        DateTime(2026, 8, 19, 23, 59),
+      );
       expect(await cachedDaysFor(userId), isEmpty);
     });
 
@@ -118,7 +144,13 @@ void main() {
 
   group('service entry point — invalidateForManualInputChange (Q-016)', () {
     test('today + future gone, past kept — the ruled window', () async {
-      for (final d in [lastWeek, yesterday, todayMidnight, tomorrow, nextMonth]) {
+      for (final d in [
+        lastWeek,
+        yesterday,
+        todayMidnight,
+        tomorrow,
+        nextMonth,
+      ]) {
         await seedCachedDay(userId, d);
       }
       await service.invalidateForManualInputChange(userId, now: today);
@@ -159,8 +191,11 @@ void main() {
         'training phase': base.copyWith(trainingPhase: TrainingPhase.build),
       };
       cases.forEach((field, changed) {
-        expect(DailyMacroService.engineInputsDiffer(base, changed), isTrue,
-            reason: '$field feeds the engine and must invalidate');
+        expect(
+          DailyMacroService.engineInputsDiffer(base, changed),
+          isTrue,
+          reason: '$field feeds the engine and must invalidate',
+        );
       });
     });
 
@@ -171,8 +206,11 @@ void main() {
         firstName: 'Ravi',
         sweatRate: SweatRateCat.heavy,
       );
-      expect(DailyMacroService.engineInputsDiffer(base, gear), isFalse,
-          reason: 'units / gear / sweat / name never reach the engine');
+      expect(
+        DailyMacroService.engineInputsDiffer(base, gear),
+        isFalse,
+        reason: 'units / gear / sweat / name never reach the engine',
+      );
       expect(DailyMacroService.engineInputsDiffer(base, base), isFalse);
     });
   });
