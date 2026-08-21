@@ -183,11 +183,7 @@ class MealCard extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontFamily: 'Apercu',
-            fontSize: 12,
-            color: ink,
-          ),
+          style: TextStyle(fontFamily: 'Apercu', fontSize: 12, color: ink),
         ),
       ),
     );

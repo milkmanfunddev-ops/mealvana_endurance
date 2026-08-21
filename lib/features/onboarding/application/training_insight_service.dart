@@ -148,11 +148,7 @@ class TrainingInsightService {
       !day.isAfter(DateTime(latest.year, latest.month, latest.day));
       day = day.add(const Duration(days: 1))
     ) {
-      weekdayOccurrences.update(
-        day.weekday,
-        (n) => n + 1,
-        ifAbsent: () => 1,
-      );
+      weekdayOccurrences.update(day.weekday, (n) => n + 1, ifAbsent: () => 1);
     }
 
     final pattern = _weekdayPattern(minutesByWeekday, weekdayOccurrences);

@@ -147,7 +147,13 @@ void main() {
 
     test('unmapped sports use the conservative linear strength rate (5) '
         'and are flagged by name', () {
-      const unmapped = ['other', 'triathlon', 'duathlon', 'multisport', 'brick'];
+      const unmapped = [
+        'other',
+        'triathlon',
+        'duathlon',
+        'multisport',
+        'brick',
+      ];
       final logs = captureDebugPrint(() {
         for (final sport in unmapped) {
           final kcal = DailyBaselineCalculator.sessionCost(
@@ -257,8 +263,14 @@ void main() {
           weightKg: (c['weight_kg'] as num).toDouble(),
         );
         final tol = (c['tolerance'] as num).toDouble();
-        expect(result.tdee, closeTo((c['expected_tdee'] as num).toDouble(), tol));
-        expect(result.fatG, closeTo((c['expected_fat_g'] as num).toDouble(), tol));
+        expect(
+          result.tdee,
+          closeTo((c['expected_tdee'] as num).toDouble(), tol),
+        );
+        expect(
+          result.fatG,
+          closeTo((c['expected_fat_g'] as num).toDouble(), tol),
+        );
         expect(result.tef, closeTo((c['expected_tef'] as num).toDouble(), tol));
         expect(result.fatAtFloor, c['expected_fat_at_floor'] as bool);
       });
@@ -293,12 +305,10 @@ void main() {
           closeTo((c['expected_fat_g'] as num).toDouble(), tol),
         );
         // Energy conservation (I10): intake identical across the cap.
-        final before = (c['carb_g'] as num) * 4 +
-            (c['prot_g'] as num) * 4 +
-            tdee.fatG * 9;
-        final after = capped.carbG * 4 +
-            (c['prot_g'] as num) * 4 +
-            capped.fatG * 9;
+        final before =
+            (c['carb_g'] as num) * 4 + (c['prot_g'] as num) * 4 + tdee.fatG * 9;
+        final after =
+            capped.carbG * 4 + (c['prot_g'] as num) * 4 + capped.fatG * 9;
         expect(after, closeTo(before, 1e-6));
       });
     }

@@ -246,10 +246,7 @@ void main() {
       ]);
 
       // By SUM Friday (80) would top the list; by average it sits third.
-      expect(insights.heavyWeekdays, [
-        DateTime.wednesday,
-        DateTime.thursday,
-      ]);
+      expect(insights.heavyWeekdays, [DateTime.wednesday, DateTime.thursday]);
       expect(insights.lightWeekdays, [DateTime.monday, DateTime.friday]);
     });
 

@@ -50,9 +50,7 @@ class MacroDashboardScreen extends ConsumerWidget {
                 skipLoadingOnReload: true,
                 skipLoadingOnRefresh: true,
                 loading: () => const Center(
-                  child: CircularProgressIndicator(
-                    color: MeTokens.electrolyte,
-                  ),
+                  child: CircularProgressIndicator(color: MeTokens.electrolyte),
                 ),
                 error: (e, _) => Center(
                   child: Text(
@@ -133,13 +131,7 @@ class MacroDashboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 90),
             children: [
               _addRow(context, ref, view),
-              for (final node in nodes)
-                _railRow(
-                  context,
-                  ref,
-                  view,
-                  node,
-                ),
+              for (final node in nodes) _railRow(context, ref, view, node),
             ],
           ),
         ),
@@ -188,7 +180,10 @@ class MacroDashboardScreen extends ConsumerWidget {
       ],
     );
     if (!view.timelineOpen) {
-      return Padding(padding: const EdgeInsets.only(bottom: 16), child: buttons);
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: buttons,
+      );
     }
     return IntrinsicHeight(
       child: Row(
@@ -204,10 +199,7 @@ class MacroDashboardScreen extends ConsumerWidget {
                 Positioned(
                   top: 0,
                   bottom: 0,
-                  child: Container(
-                    width: 2,
-                    color: MeTokens.creamAlpha(0.12),
-                  ),
+                  child: Container(width: 2, color: MeTokens.creamAlpha(0.12)),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 11),
@@ -360,8 +352,8 @@ class MacroDashboardScreen extends ConsumerWidget {
           color: node.isSkippedWorkout
               ? MeTokens.creamAlpha(0.28)
               : node.isWorkout
-                  ? MeTokens.electrolyteAlpha(0.65)
-                  : MeTokens.orange,
+              ? MeTokens.electrolyteAlpha(0.65)
+              : MeTokens.orange,
         ),
       );
     }
@@ -418,8 +410,7 @@ class MacroDashboardScreen extends ConsumerWidget {
   }
 
   void _openDetail(BuildContext context, WidgetRef ref, String activityId) {
-    final activities =
-        ref.read(activitiesControllerProvider).value ?? const [];
+    final activities = ref.read(activitiesControllerProvider).value ?? const [];
     for (final a in activities) {
       if (a.id == activityId) {
         openActivityFuel(context, a);
@@ -456,9 +447,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       if (context.mounted) {
         MealvanaSnackbar.showError(
           context,
-          skipping
-              ? 'Could not skip workout'
-              : 'Could not unskip workout',
+          skipping ? 'Could not skip workout' : 'Could not unskip workout',
         );
       }
       return;
@@ -484,7 +473,11 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _meals(WidgetRef ref, MacroDashboardViewState view, DashboardNode node) {
+  Widget _meals(
+    WidgetRef ref,
+    MacroDashboardViewState view,
+    DashboardNode node,
+  ) {
     final notifier = ref.read(macroDashboardViewProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -78,39 +78,43 @@ void main() {
       expect(restored.status, domain.ActivityStatus.completed);
     });
 
-    test('tombstone (status=deleted + deleted_at) survives the whole chain',
-        () async {
-      final restored = await roundTrip(
-        buildActivity(
-          status: domain.ActivityStatus.deleted,
-          deletedAtValue: deletedAt,
-        ),
-      );
+    test(
+      'tombstone (status=deleted + deleted_at) survives the whole chain',
+      () async {
+        final restored = await roundTrip(
+          buildActivity(
+            status: domain.ActivityStatus.deleted,
+            deletedAtValue: deletedAt,
+          ),
+        );
 
-      expect(restored.status, domain.ActivityStatus.deleted);
-      expect(restored.deletedAt, deletedAt);
-      // The tombstone keeps its identity for sync matching.
-      expect(restored.plannedTime, plannedAt);
-      expect(restored.actualTime, actualAt);
-    });
+        expect(restored.status, domain.ActivityStatus.deleted);
+        expect(restored.deletedAt, deletedAt);
+        // The tombstone keeps its identity for sync matching.
+        expect(restored.plannedTime, plannedAt);
+        expect(restored.actualTime, actualAt);
+      },
+    );
   });
 
   group('individual seams', () {
-    test('domain -> companion carries the new columns and tombstone status',
-        () {
-      final companion = mapper.toCompanion(
-        buildActivity(
-          status: domain.ActivityStatus.deleted,
-          deletedAtValue: deletedAt,
-        ),
-      );
+    test(
+      'domain -> companion carries the new columns and tombstone status',
+      () {
+        final companion = mapper.toCompanion(
+          buildActivity(
+            status: domain.ActivityStatus.deleted,
+            deletedAtValue: deletedAt,
+          ),
+        );
 
-      expect(companion.plannedTime.value, plannedAt);
-      expect(companion.actualTime.value, actualAt);
-      expect(companion.caloriesBurned.value, 512.5);
-      expect(companion.status.value, 'deleted');
-      expect(companion.deletedAt.value, deletedAt);
-    });
+        expect(companion.plannedTime.value, plannedAt);
+        expect(companion.actualTime.value, actualAt);
+        expect(companion.caloriesBurned.value, 512.5);
+        expect(companion.status.value, 'deleted');
+        expect(companion.deletedAt.value, deletedAt);
+      },
+    );
 
     test('toCompanion forInsert stamps planned_time from the scheduled time '
         'when unset (two-time model)', () {
@@ -132,8 +136,7 @@ void main() {
       expect(mapper.toCompanion(noPlanned).plannedTime.value, isNull);
     });
 
-    test('domain -> Supabase payload emits the new columns and tombstone',
-        () {
+    test('domain -> Supabase payload emits the new columns and tombstone', () {
       final payload = mapper.buildSupabasePayload(
         buildActivity(
           status: domain.ActivityStatus.deleted,
@@ -161,14 +164,13 @@ void main() {
       );
 
       expect(
-        mapper.buildSupabasePayload(noPlanned, includeCreatedAt: true)
-            ['planned_time'],
+        mapper.buildSupabasePayload(
+          noPlanned,
+          includeCreatedAt: true,
+        )['planned_time'],
         scheduledAt.toIso8601String(),
       );
-      expect(
-        mapper.buildSupabasePayload(noPlanned)['planned_time'],
-        isNull,
-      );
+      expect(mapper.buildSupabasePayload(noPlanned)['planned_time'], isNull);
     });
 
     test('Drift row -> domain preserves the new columns and tombstone', () {

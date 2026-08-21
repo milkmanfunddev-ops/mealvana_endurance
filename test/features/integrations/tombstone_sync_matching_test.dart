@@ -35,67 +35,82 @@ void main() {
   }
 
   group('tombstone matching (soft-delete ruling)', () {
-    test('an incoming workout matching a tombstone is dropped, not re-imported',
-        () {
-      final tombstone = activity(
-        id: 'a1',
-        providerId: 'tp-100',
-        status: ActivityStatus.deleted,
-        deletedAt: DateTime(2026, 8, 14, 11),
-      );
-      final incoming = activity(id: 'remote-a1', providerId: 'tp-100');
+    test(
+      'an incoming workout matching a tombstone is dropped, not re-imported',
+      () {
+        final tombstone = activity(
+          id: 'a1',
+          providerId: 'tp-100',
+          status: ActivityStatus.deleted,
+          deletedAt: DateTime(2026, 8, 14, 11),
+        );
+        final incoming = activity(id: 'remote-a1', providerId: 'tp-100');
 
-      final result = service.detectChanges(
-        localActivities: [tombstone],
-        remoteWorkouts: [incoming],
-        provider: 'training_peaks',
-      );
+        final result = service.detectChanges(
+          localActivities: [tombstone],
+          remoteWorkouts: [incoming],
+          provider: 'training_peaks',
+        );
 
-      expect(result.newActivities, isEmpty,
-          reason: 'a tombstone hit must never re-import');
-      expect(result.updatedActivities, isEmpty,
-          reason: 'sync must not resurrect or edit a deleted workout');
-      expect(result.tombstoneDroppedCount, 1);
-    });
+        expect(
+          result.newActivities,
+          isEmpty,
+          reason: 'a tombstone hit must never re-import',
+        );
+        expect(
+          result.updatedActivities,
+          isEmpty,
+          reason: 'sync must not resurrect or edit a deleted workout',
+        );
+        expect(result.tombstoneDroppedCount, 1);
+      },
+    );
 
-    test('a tombstone is never re-flagged for deletion when absent remotely',
-        () {
-      final tombstone = activity(
-        id: 'a1',
-        providerId: 'tp-gone',
-        status: ActivityStatus.deleted,
-        deletedAt: DateTime(2026, 8, 14, 11),
-      );
+    test(
+      'a tombstone is never re-flagged for deletion when absent remotely',
+      () {
+        final tombstone = activity(
+          id: 'a1',
+          providerId: 'tp-gone',
+          status: ActivityStatus.deleted,
+          deletedAt: DateTime(2026, 8, 14, 11),
+        );
 
-      final result = service.detectChanges(
-        localActivities: [tombstone],
-        remoteWorkouts: const [],
-        provider: 'training_peaks',
-      );
+        final result = service.detectChanges(
+          localActivities: [tombstone],
+          remoteWorkouts: const [],
+          provider: 'training_peaks',
+        );
 
-      expect(result.deletedActivityIds, isEmpty);
-      expect(result.hasChanges, isFalse);
-    });
+        expect(result.deletedActivityIds, isEmpty);
+        expect(result.hasChanges, isFalse);
+      },
+    );
 
-    test('a live workout with a different provider id still imports normally',
-        () {
-      final tombstone = activity(
-        id: 'a1',
-        providerId: 'tp-100',
-        status: ActivityStatus.deleted,
-        deletedAt: DateTime(2026, 8, 14, 11),
-      );
-      final genuineNew = activity(id: 'remote-b2', providerId: 'tp-200');
+    test(
+      'a live workout with a different provider id still imports normally',
+      () {
+        final tombstone = activity(
+          id: 'a1',
+          providerId: 'tp-100',
+          status: ActivityStatus.deleted,
+          deletedAt: DateTime(2026, 8, 14, 11),
+        );
+        final genuineNew = activity(id: 'remote-b2', providerId: 'tp-200');
 
-      final result = service.detectChanges(
-        localActivities: [tombstone],
-        remoteWorkouts: [genuineNew],
-        provider: 'training_peaks',
-      );
+        final result = service.detectChanges(
+          localActivities: [tombstone],
+          remoteWorkouts: [genuineNew],
+          provider: 'training_peaks',
+        );
 
-      expect(result.newActivities, hasLength(1),
-          reason: 'the tombstone must not swallow unrelated workouts');
-      expect(result.tombstoneDroppedCount, 0);
-    });
+        expect(
+          result.newActivities,
+          hasLength(1),
+          reason: 'the tombstone must not swallow unrelated workouts',
+        );
+        expect(result.tombstoneDroppedCount, 0);
+      },
+    );
   });
 }

@@ -1739,11 +1739,10 @@ workflows:
 
     triggering:
       events:
+        # PR-only (Lee, 2026-08-21): the every-push run doubled build minutes
+        # and duplicated what the release build already gates on. Reverting the
+        # 2026-07-21 run-on-every-push ruling; add `- push` back here to restore.
         - pull_request
-        # Push runs the same quality gate on every develop push (Lee,
-        # 2026-07-21: tests must run on develop, not only at release time) and
-        # on pushes to release/* branches themselves.
-        - push
       branch_patterns:
         - pattern: 'release/*'
           include: true

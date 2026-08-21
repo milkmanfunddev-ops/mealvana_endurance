@@ -153,8 +153,11 @@ void main() {
         findsNothing,
         reason: 'back must not rewind the flow to the first question',
       );
-      expect(find.text('MAIN-MARKER'), findsNothing,
-          reason: 'back must never enter the app');
+      expect(
+        find.text('MAIN-MARKER'),
+        findsNothing,
+        reason: 'back must never enter the app',
+      );
     },
   );
 

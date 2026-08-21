@@ -331,8 +331,9 @@ class _InfoDot extends StatelessWidget {
     final color = accent
         ? MeTokens.electrolyteAlpha(0.8)
         : MeTokens.creamAlpha(0.5);
-    final border =
-        accent ? MeTokens.electrolyteAlpha(0.4) : MeTokens.creamAlpha(0.3);
+    final border = accent
+        ? MeTokens.electrolyteAlpha(0.4)
+        : MeTokens.creamAlpha(0.3);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -368,19 +369,19 @@ String _clockLabel(int minutesSinceMidnight) {
 }
 
 TextStyle _contextStyle() => TextStyle(
-      fontFamily: 'Apercu',
-      fontSize: 11.5,
-      letterSpacing: 0.4,
-      color: MeTokens.creamAlpha(0.42),
-    );
+  fontFamily: 'Apercu',
+  fontSize: 11.5,
+  letterSpacing: 0.4,
+  color: MeTokens.creamAlpha(0.42),
+);
 
 TextStyle _sectionLabelStyle({Color? color}) => TextStyle(
-      fontFamily: 'Apercu',
-      fontWeight: FontWeight.w500,
-      fontSize: 10.5,
-      letterSpacing: 1.4,
-      color: color ?? MeTokens.creamAlpha(0.45),
-    );
+  fontFamily: 'Apercu',
+  fontWeight: FontWeight.w500,
+  fontSize: 10.5,
+  letterSpacing: 1.4,
+  color: color ?? MeTokens.creamAlpha(0.45),
+);
 
 // ---------------------------------------------------------------------------
 // Page 1 — Today's Energy
@@ -619,10 +620,7 @@ class _TodaysEnergyPage extends StatelessWidget {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 3),
-          child: Text(
-            'WHERE THE BURN COMES FROM',
-            style: _sectionLabelStyle(),
-          ),
+          child: Text('WHERE THE BURN COMES FROM', style: _sectionLabelStyle()),
         ),
         const SizedBox(height: 8),
         // RECEIPT
@@ -733,10 +731,7 @@ class _TodaysEnergyPage extends StatelessWidget {
                       ),
                     ),
                     _totalValue(energy.burnedKcal, MeTokens.electrolyte),
-                    _totalValue(
-                      burnedByEnd,
-                      MeTokens.electrolyteAlpha(0.75),
-                    ),
+                    _totalValue(burnedByEnd, MeTokens.electrolyteAlpha(0.75)),
                   ],
                 ),
               ),
@@ -751,10 +746,14 @@ class _TodaysEnergyPage extends StatelessWidget {
           spacing: 13,
           runSpacing: 6,
           children: [
-            _legend(const _Mark(BurnMark.verified, size: 8),
-                'verified by Garmin'),
             _legend(
-                const _Mark(BurnMark.selfReported, size: 8), 'self-reported'),
+              const _Mark(BurnMark.verified, size: 8),
+              'verified by Garmin',
+            ),
+            _legend(
+              const _Mark(BurnMark.selfReported, size: 8),
+              'self-reported',
+            ),
             _legend(const _Mark(BurnMark.estimated, size: 8), 'estimated'),
             _InfoDot(onTap: () => onInfo(_info['source']!), size: 15),
           ],
@@ -764,104 +763,104 @@ class _TodaysEnergyPage extends StatelessWidget {
   }
 
   Widget _colHeader(String text) => SizedBox(
-        width: 64,
-        child: Text(
-          text,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            fontFamily: 'Apercu',
-            fontSize: 9.5,
-            letterSpacing: 0.4,
-            color: MeTokens.creamAlpha(0.4),
-          ),
-        ),
-      );
+    width: 64,
+    child: Text(
+      text,
+      textAlign: TextAlign.right,
+      style: TextStyle(
+        fontFamily: 'Apercu',
+        fontSize: 9.5,
+        letterSpacing: 0.4,
+        color: MeTokens.creamAlpha(0.4),
+      ),
+    ),
+  );
 
   Widget _receiptValue(double v, bool plus, Color color) => SizedBox(
-        width: 64,
-        child: Text.rich(
-          TextSpan(
-            children: [
-              if (plus)
-                TextSpan(
-                  text: '+',
-                  style: TextStyle(
-                    fontFamily: 'Apercu Mono',
-                    fontSize: 12,
-                    color: MeTokens.creamAlpha(0.32),
-                  ),
-                ),
-              TextSpan(
-                text: kcalStr(v),
-                style: TextStyle(
-                  fontFamily: 'Apercu Mono',
-                  fontSize: 14,
-                  color: color,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
-          ),
-          textAlign: TextAlign.right,
-        ),
-      );
-
-  Widget _totalValue(double v, Color color) => SizedBox(
-        width: 64,
-        child: Text(
-          kcalStr(v),
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            fontFamily: 'Apercu Mono',
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            color: color,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      );
-
-  Widget _legend(Widget mark, String label) => Row(
-        mainAxisSize: MainAxisSize.min,
+    width: 64,
+    child: Text.rich(
+      TextSpan(
         children: [
-          mark,
-          const SizedBox(width: 5),
-          Text(
-            label,
+          if (plus)
+            TextSpan(
+              text: '+',
+              style: TextStyle(
+                fontFamily: 'Apercu Mono',
+                fontSize: 12,
+                color: MeTokens.creamAlpha(0.32),
+              ),
+            ),
+          TextSpan(
+            text: kcalStr(v),
             style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 10.5,
-              color: MeTokens.creamAlpha(0.55),
+              fontFamily: 'Apercu Mono',
+              fontSize: 14,
+              color: color,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],
-      );
+      ),
+      textAlign: TextAlign.right,
+    ),
+  );
 
-  Widget _monoBig(String text, Color color) => Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Apercu Mono',
-          fontWeight: FontWeight.w700,
-          fontSize: 17,
-          color: color,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      );
+  Widget _totalValue(double v, Color color) => SizedBox(
+    width: 64,
+    child: Text(
+      kcalStr(v),
+      textAlign: TextAlign.right,
+      style: TextStyle(
+        fontFamily: 'Apercu Mono',
+        fontWeight: FontWeight.w700,
+        fontSize: 16,
+        color: color,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    ),
+  );
 
-  Widget _dim(String text) => Text(
-        text,
+  Widget _legend(Widget mark, String label) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      mark,
+      const SizedBox(width: 5),
+      Text(
+        label,
         style: TextStyle(
           fontFamily: 'Apercu',
-          fontSize: 12,
-          color: MeTokens.creamAlpha(0.5),
+          fontSize: 10.5,
+          color: MeTokens.creamAlpha(0.55),
         ),
-      );
+      ),
+    ],
+  );
+
+  Widget _monoBig(String text, Color color) => Text(
+    text,
+    style: TextStyle(
+      fontFamily: 'Apercu Mono',
+      fontWeight: FontWeight.w700,
+      fontSize: 17,
+      color: color,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    ),
+  );
+
+  Widget _dim(String text) => Text(
+    text,
+    style: TextStyle(
+      fontFamily: 'Apercu',
+      fontSize: 12,
+      color: MeTokens.creamAlpha(0.5),
+    ),
+  );
 
   TextStyle _supportStyle() => TextStyle(
-        fontFamily: 'Apercu',
-        fontSize: 11,
-        color: MeTokens.creamAlpha(0.42),
-      );
+    fontFamily: 'Apercu',
+    fontSize: 11,
+    color: MeTokens.creamAlpha(0.42),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -997,14 +996,15 @@ class _ActiveEnergyPage extends StatelessWidget {
                   Expanded(
                     flex: energy.workoutProjectedKcal > 0
                         ? ((r.kcal / energy.workoutProjectedKcal) * 1000)
-                            .round()
-                            .clamp(1, 1000)
+                              .round()
+                              .clamp(1, 1000)
                         : 1,
                     child: Container(
                       margin: const EdgeInsets.only(right: 3),
                       decoration: BoxDecoration(
-                        color:
-                            r.planned ? Colors.transparent : MeTokens.electrolyte,
+                        color: r.planned
+                            ? Colors.transparent
+                            : MeTokens.electrolyte,
                         border: r.planned
                             ? Border.all(
                                 color: MeTokens.electrolyteAlpha(0.5),
@@ -1045,10 +1045,7 @@ class _ActiveEnergyPage extends StatelessWidget {
         ],
         const SizedBox(height: 16),
         // RECEIPT of workouts
-        for (final r in rows) ...[
-          _workoutCard(r),
-          const SizedBox(height: 9),
-        ],
+        for (final r in rows) ...[_workoutCard(r), const SizedBox(height: 9)],
         const SizedBox(height: 5),
         // TOTAL
         Container(
@@ -1123,11 +1120,17 @@ class _ActiveEnergyPage extends StatelessWidget {
           runSpacing: 6,
           children: [
             _legendItem(
-                const _Mark(BurnMark.verified, size: 8), 'verified · Garmin'),
+              const _Mark(BurnMark.verified, size: 8),
+              'verified · Garmin',
+            ),
             _legendItem(
-                const _Mark(BurnMark.selfReported, size: 8), 'self-reported'),
-            _legendItem(const _Mark(BurnMark.estimated, size: 8),
-                'planned (estimate)'),
+              const _Mark(BurnMark.selfReported, size: 8),
+              'self-reported',
+            ),
+            _legendItem(
+              const _Mark(BurnMark.estimated, size: 8),
+              'planned (estimate)',
+            ),
             _InfoDot(onTap: () => onInfo(_sourceInfo), size: 15),
           ],
         ),
@@ -1140,16 +1143,16 @@ class _ActiveEnergyPage extends StatelessWidget {
     final mark = planned
         ? BurnMark.estimated
         : r.verified
-            ? BurnMark.verified
-            : BurnMark.selfReported;
+        ? BurnMark.verified
+        : BurnMark.selfReported;
     // Q-D4 (RULED 2026-08-17, workout-card.md): there is NO awaiting-sync
     // signal anywhere — "self-reported" IS the never-synced signal; the
     // reference rendering's awaitingSync flag is dead and stays dead.
     final status = planned
         ? 'planned (estimate)'
         : r.verified
-            ? 'verified · Garmin · as planned'
-            : 'self-reported';
+        ? 'verified · Garmin · as planned'
+        : 'self-reported';
     return Opacity(
       opacity: planned ? 0.72 : 1,
       child: Container(
@@ -1159,8 +1162,9 @@ class _ActiveEnergyPage extends StatelessWidget {
               ? MeTokens.creamAlpha(0.02)
               : MeTokens.creamAlpha(0.04),
           border: Border.all(
-            color:
-                planned ? MeTokens.creamAlpha(0.08) : MeTokens.creamAlpha(0.1),
+            color: planned
+                ? MeTokens.creamAlpha(0.08)
+                : MeTokens.creamAlpha(0.1),
           ),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -1332,27 +1336,27 @@ class _ActiveEnergyPage extends StatelessWidget {
   }
 
   IconData _sportIcon(String sport) => switch (sport) {
-        'swimming' => Icons.pool,
-        'cycling' => Icons.directions_bike,
-        'strength' => Icons.fitness_center,
-        _ => Icons.directions_run,
-      };
+    'swimming' => Icons.pool,
+    'cycling' => Icons.directions_bike,
+    'strength' => Icons.fitness_center,
+    _ => Icons.directions_run,
+  };
 
   Widget _legendItem(Widget mark, String label) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          mark,
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 10.5,
-              color: MeTokens.creamAlpha(0.55),
-            ),
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      mark,
+      const SizedBox(width: 5),
+      Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Apercu',
+          fontSize: 10.5,
+          color: MeTokens.creamAlpha(0.55),
+        ),
+      ),
+    ],
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1411,28 +1415,27 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
   }
 
   Widget _tab(String label, bool active, VoidCallback onTap) => Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: active ? MeTokens.cream : Colors.transparent,
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Apercu',
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-                color:
-                    active ? MeTokens.blackberry : MeTokens.creamAlpha(0.65),
-              ),
-            ),
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? MeTokens.cream : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Apercu',
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+            color: active ? MeTokens.blackberry : MeTokens.creamAlpha(0.65),
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   List<Widget> _daily(EnergyCardData energy) {
     final bd = widget.breakdown;
@@ -1491,12 +1494,27 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
       const SizedBox(height: 20),
       Row(
         children: [
-          _ring('Carbs', energy.carbEatenG, bd.plannedCarbsG,
-              energy.carbTargetG, MeTokens.electrolyte),
-          _ring('Protein', energy.proteinEatenG, bd.plannedProteinG,
-              energy.proteinTargetG, MeTokens.proteinAccent),
-          _ring('Fat', energy.fatEatenG, bd.plannedFatG, energy.fatTargetG,
-              MeTokens.fatAccent),
+          _ring(
+            'Carbs',
+            energy.carbEatenG,
+            bd.plannedCarbsG,
+            energy.carbTargetG,
+            MeTokens.electrolyte,
+          ),
+          _ring(
+            'Protein',
+            energy.proteinEatenG,
+            bd.plannedProteinG,
+            energy.proteinTargetG,
+            MeTokens.proteinAccent,
+          ),
+          _ring(
+            'Fat',
+            energy.fatEatenG,
+            bd.plannedFatG,
+            energy.fatTargetG,
+            MeTokens.fatAccent,
+          ),
         ],
       ),
       const SizedBox(height: 18),
@@ -1517,8 +1535,11 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.edit_outlined,
-                  size: 12, color: MeTokens.creamAlpha(0.45)),
+              Icon(
+                Icons.edit_outlined,
+                size: 12,
+                color: MeTokens.creamAlpha(0.45),
+              ),
               const SizedBox(width: 5),
               Text(
                 'All intake is self-reported — an estimate',
@@ -1620,8 +1641,9 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
             height: 98,
             child: CustomPaint(
               painter: _RingPainter(
-                loggedFraction:
-                    target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0,
+                loggedFraction: target > 0
+                    ? (consumed / target).clamp(0.0, 1.0)
+                    : 0,
                 plannedFraction: target > 0
                     ? ((consumed + planned) / target).clamp(0.0, 1.0)
                     : 0,
@@ -1677,8 +1699,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
               Container(
                 width: 8,
                 height: 8,
-                decoration:
-                    BoxDecoration(shape: BoxShape.circle, color: color),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: color),
               ),
               const SizedBox(width: 5),
               Text(
@@ -1707,27 +1728,27 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
   }
 
   Widget _arcLegend(Color color, String label) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 14,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 10.5,
-              color: MeTokens.creamAlpha(0.55),
-            ),
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 14,
+        height: 6,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+      const SizedBox(width: 5),
+      Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Apercu',
+          fontSize: 10.5,
+          color: MeTokens.creamAlpha(0.55),
+        ),
+      ),
+    ],
+  );
 
   Widget _mealRow(BreakdownMealRow m) {
     return Opacity(
@@ -1735,8 +1756,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          border:
-              Border(bottom: BorderSide(color: MeTokens.creamAlpha(0.06))),
+          border: Border(bottom: BorderSide(color: MeTokens.creamAlpha(0.06))),
         ),
         child: Row(
           children: [
@@ -1765,8 +1785,9 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            border:
-                                Border.all(color: MeTokens.creamAlpha(0.22)),
+                            border: Border.all(
+                              color: MeTokens.creamAlpha(0.22),
+                            ),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: Text(
@@ -1865,10 +1886,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
     final bd = widget.breakdown;
     return [
       const SizedBox(height: 18),
-      Text(
-        'CARB PERIODIZATION',
-        style: _sectionLabelStyle(),
-      ),
+      Text('CARB PERIODIZATION', style: _sectionLabelStyle()),
       const SizedBox(height: 4),
       Text(
         'Carbs track training load — up on hard days, down on easy ones.',
@@ -2066,12 +2084,7 @@ class _WeeklyChartPainter extends CustomPainter {
       if (h <= 0) continue;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            i * slot - barWidth / 2,
-            size.height - h,
-            barWidth,
-            h,
-          ),
+          Rect.fromLTWH(i * slot - barWidth / 2, size.height - h, barWidth, h),
           const Radius.circular(3),
         ),
         barPaint,
@@ -2092,8 +2105,7 @@ class _WeeklyChartPainter extends CustomPainter {
 
     // Carb line (smoothed) + dots
     final values = [for (final v in carbs) v ?? 0.0];
-    final maxV =
-        values.fold<double>(0, (m, v) => v > m ? v : m) * 1.1 + 0.001;
+    final maxV = values.fold<double>(0, (m, v) => v > m ? v : m) * 1.1 + 0.001;
     Offset pt(int i) =>
         Offset(i * slot, size.height - (values[i] / maxV) * size.height);
 
@@ -2211,8 +2223,9 @@ class _InfoPopover extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom:
-                                BorderSide(color: MeTokens.creamAlpha(0.08)),
+                            bottom: BorderSide(
+                              color: MeTokens.creamAlpha(0.08),
+                            ),
                           ),
                         ),
                         child: Row(

@@ -17,13 +17,16 @@ void main() {
       expect(name.last, 'Martin');
     });
 
-    test('keeps multi-word given names together, last token is the surname', () {
-      final name = OnboardingIntegrationProfile.splitFullName(
-        'Mary Anne Van Dyke',
-      );
-      expect(name.first, 'Mary Anne Van');
-      expect(name.last, 'Dyke');
-    });
+    test(
+      'keeps multi-word given names together, last token is the surname',
+      () {
+        final name = OnboardingIntegrationProfile.splitFullName(
+          'Mary Anne Van Dyke',
+        );
+        expect(name.first, 'Mary Anne Van');
+        expect(name.last, 'Dyke');
+      },
+    );
 
     test('a single-word name has no surname', () {
       final name = OnboardingIntegrationProfile.splitFullName('Xuan');
@@ -81,8 +84,9 @@ void main() {
     );
     // Source labels alone are not data worth pre-filling from.
     expect(
-      const OnboardingIntegrationProfile(detailsSource: 'Garmin Connect')
-          .hasAnything,
+      const OnboardingIntegrationProfile(
+        detailsSource: 'Garmin Connect',
+      ).hasAnything,
       isFalse,
     );
   });

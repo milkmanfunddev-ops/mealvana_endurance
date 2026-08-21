@@ -136,13 +136,8 @@ void main() {
     testWidgets('fills name, email, gender and birth year into the draft', (
       tester,
     ) async {
-      final container = await pumpScreen(
-        tester,
-        integrationProfile: tpProfile,
-      );
-      final draft = container
-          .read(onboardingControllerProvider.notifier)
-          .draft;
+      final container = await pumpScreen(tester, integrationProfile: tpProfile);
+      final draft = container.read(onboardingControllerProvider.notifier).draft;
 
       expect(draft.firstName, 'Lee');
       expect(draft.lastName, 'Martin');
@@ -348,10 +343,7 @@ void main() {
     testWidgets('disconnect clears autofilled fields but not typed ones', (
       tester,
     ) async {
-      final container = await pumpScreen(
-        tester,
-        integrationProfile: tpProfile,
-      );
+      final container = await pumpScreen(tester, integrationProfile: tpProfile);
       final controller = container.read(onboardingControllerProvider.notifier);
 
       // Everything arrived from the platform.

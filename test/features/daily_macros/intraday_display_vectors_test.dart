@@ -56,30 +56,44 @@ void main() {
                 ?.toDouble(),
           );
           if (expected.containsKey('resting')) {
-            expect(accrual.resting,
-                closeTo((expected['resting'] as num).toDouble(), tol));
+            expect(
+              accrual.resting,
+              closeTo((expected['resting'] as num).toDouble(), tol),
+            );
           }
           if (expected.containsKey('movement')) {
-            expect(accrual.movement,
-                closeTo((expected['movement'] as num).toDouble(), tol));
+            expect(
+              accrual.movement,
+              closeTo((expected['movement'] as num).toDouble(), tol),
+            );
           }
           if (expected.containsKey('workout')) {
-            expect(accrual.workout,
-                closeTo((expected['workout'] as num).toDouble(), tol));
+            expect(
+              accrual.workout,
+              closeTo((expected['workout'] as num).toDouble(), tol),
+            );
           }
           if (expected.containsKey('digestion')) {
-            expect(accrual.digestion,
-                closeTo((expected['digestion'] as num).toDouble(), tol));
+            expect(
+              accrual.digestion,
+              closeTo((expected['digestion'] as num).toDouble(), tol),
+            );
           }
           if (expected.containsKey('burned')) {
-            expect(accrual.burned,
-                closeTo((expected['burned'] as num).toDouble(), tol));
+            expect(
+              accrual.burned,
+              closeTo((expected['burned'] as num).toDouble(), tol),
+            );
           }
           if (expected.containsKey('rendered')) {
-            final deleted = sessions(inputs)
-                .where((s) => s.status == 'deleted');
-            expect(deleted, isNotEmpty,
-                reason: 'rendered expectation targets the deleted session');
+            final deleted = sessions(
+              inputs,
+            ).where((s) => s.status == 'deleted');
+            expect(
+              deleted,
+              isNotEmpty,
+              reason: 'rendered expectation targets the deleted session',
+            );
             expect(deleted.every((s) => s.renders), expected['rendered']);
           }
           break;
@@ -103,14 +117,22 @@ void main() {
                 ),
             ],
           );
-          expect(summary.logged,
-              closeTo((expected['logged'] as num).toDouble(), tol));
-          expect(summary.planned,
-              closeTo((expected['planned'] as num).toDouble(), tol));
-          expect(summary.remaining,
-              closeTo((expected['remaining'] as num).toDouble(), tol));
-          expect(summary.projected,
-              closeTo((expected['projected'] as num).toDouble(), tol));
+          expect(
+            summary.logged,
+            closeTo((expected['logged'] as num).toDouble(), tol),
+          );
+          expect(
+            summary.planned,
+            closeTo((expected['planned'] as num).toDouble(), tol),
+          );
+          expect(
+            summary.remaining,
+            closeTo((expected['remaining'] as num).toDouble(), tol),
+          );
+          expect(
+            summary.projected,
+            closeTo((expected['projected'] as num).toDouble(), tol),
+          );
           break;
 
         case 'flags':
@@ -118,10 +140,7 @@ void main() {
             trackingOff: inputs['trackingOff'] as bool,
             eaStatus: inputs['eaStatus'] as String?,
           );
-          expect(
-            visibility.quantitiesRendered,
-            expected['quantitiesRendered'],
-          );
+          expect(visibility.quantitiesRendered, expected['quantitiesRendered']);
           expect(visibility.blockRendered, expected['blockRendered']);
           break;
 
@@ -142,8 +161,11 @@ void main() {
       );
       expect(copy, isNotNull);
       for (final word in congratulatory) {
-        expect(copy!.toLowerCase().contains(word), isFalse,
-            reason: 'deficit copy "$copy" must not celebrate under-eating');
+        expect(
+          copy!.toLowerCase().contains(word),
+          isFalse,
+          reason: 'deficit copy "$copy" must not celebrate under-eating',
+        );
       }
     }
   });

@@ -45,8 +45,9 @@ class EnergySummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
-        crossAxisAlignment:
-            expanded ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        crossAxisAlignment: expanded
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           Expanded(child: _faceContent()),
           Semantics(
@@ -297,9 +298,7 @@ class EnergySummaryCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.only(top: 10),
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: MeTokens.creamAlpha(0.1)),
-            ),
+            border: Border(top: BorderSide(color: MeTokens.creamAlpha(0.1))),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -452,9 +451,7 @@ class EnergySummaryCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 9),
           margin: const EdgeInsets.only(top: 3),
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: MeTokens.creamAlpha(0.1)),
-            ),
+            border: Border(top: BorderSide(color: MeTokens.creamAlpha(0.1))),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -504,14 +501,26 @@ class EnergySummaryCard extends StatelessWidget {
         const SizedBox(height: 11),
         Row(
           children: [
-            _macroBar('Carbs', data.carbEatenG, data.carbTargetG,
-                MeTokens.electrolyte),
+            _macroBar(
+              'Carbs',
+              data.carbEatenG,
+              data.carbTargetG,
+              MeTokens.electrolyte,
+            ),
             const SizedBox(width: 12),
-            _macroBar('Protein', data.proteinEatenG, data.proteinTargetG,
-                MeTokens.proteinAccent),
+            _macroBar(
+              'Protein',
+              data.proteinEatenG,
+              data.proteinTargetG,
+              MeTokens.proteinAccent,
+            ),
             const SizedBox(width: 12),
-            _macroBar('Fat', data.fatEatenG, data.fatTargetG,
-                MeTokens.fatAccent),
+            _macroBar(
+              'Fat',
+              data.fatEatenG,
+              data.fatTargetG,
+              MeTokens.fatAccent,
+            ),
           ],
         ),
         _fullBreakdownButton(),
@@ -597,11 +606,7 @@ class EnergySummaryCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 5),
-              Icon(
-                Icons.chevron_right,
-                size: 13,
-                color: MeTokens.electrolyte,
-              ),
+              Icon(Icons.chevron_right, size: 13, color: MeTokens.electrolyte),
             ],
           ),
         ),
@@ -612,50 +617,50 @@ class EnergySummaryCard extends StatelessWidget {
   // -------------------------------------------------------------------
 
   Widget _label(String text) => Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          fontFamily: 'Apercu',
-          fontSize: 9.5,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.8,
-          color: MeTokens.creamAlpha(0.5),
-        ),
-      );
+    text.toUpperCase(),
+    style: TextStyle(
+      fontFamily: 'Apercu',
+      fontSize: 9.5,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.8,
+      color: MeTokens.creamAlpha(0.5),
+    ),
+  );
 
   Widget _unit(String text) => Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Apercu',
-          fontSize: 11,
-          color: MeTokens.creamAlpha(0.45),
-        ),
-      );
+    text,
+    style: TextStyle(
+      fontFamily: 'Apercu',
+      fontSize: 11,
+      color: MeTokens.creamAlpha(0.45),
+    ),
+  );
 
   Widget _dimLabel(String text) => Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Apercu',
-          fontSize: 11,
-          color: MeTokens.creamAlpha(0.5),
-        ),
-      );
+    text,
+    style: TextStyle(
+      fontFamily: 'Apercu',
+      fontSize: 11,
+      color: MeTokens.creamAlpha(0.5),
+    ),
+  );
 
   Widget _monoNumber(String text, Color color) => Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Apercu Mono',
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-          color: color,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      );
+    text,
+    style: TextStyle(
+      fontFamily: 'Apercu Mono',
+      fontWeight: FontWeight.w700,
+      fontSize: 14,
+      color: color,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    ),
+  );
 
   TextStyle get _footerStyle => TextStyle(
-        fontFamily: 'Apercu',
-        fontSize: 10.5,
-        color: MeTokens.creamAlpha(0.45),
-      );
+    fontFamily: 'Apercu',
+    fontSize: 10.5,
+    color: MeTokens.creamAlpha(0.45),
+  );
 
   Color _bandInk(double net) {
     final magnitude = net.abs();

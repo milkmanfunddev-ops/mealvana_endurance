@@ -140,8 +140,7 @@ class ActivityDetailAppBar extends ConsumerWidget
           String? activityTitle,
           int? leadMinutes,
           DateTime? plannedStart,
-        ) =
-            asyncState.whenOrNull(
+        ) = asyncState.whenOrNull(
               data: (data) {
                 if (data is ActivityDetailState) {
                   return (

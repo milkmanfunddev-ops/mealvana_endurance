@@ -249,16 +249,19 @@ class DailyMacroTargets {
       // calculation_input (jsonb) — accept either, flat winning (seam pinned
       // by daily_macro_targets_roundtrip_test; ops bug
       // 2026-08-20-daily-macro-targets-tojson-drops-calculation-input.md).
-      weightKg: (json['weight_kg'] as num?)?.toDouble() ??
+      weightKg:
+          (json['weight_kg'] as num?)?.toDouble() ??
           ((json['calculation_input'] as Map?)?['weight_kg'] as num?)
               ?.toDouble(),
-      bodyFatPct: (json['body_fat_pct'] as num?)?.toDouble() ??
+      bodyFatPct:
+          (json['body_fat_pct'] as num?)?.toDouble() ??
           ((json['calculation_input'] as Map?)?['body_fat_pct'] as num?)
               ?.toDouble(),
       sources: MacroSources.fromJson(
         (json['sources'] as Map?)?.cast<String, dynamic>(),
       ),
-      energyBasis: json['energy_basis'] as String? ??
+      energyBasis:
+          json['energy_basis'] as String? ??
           (json['calculation_input'] as Map?)?['energy_basis'] as String? ??
           'as_computed',
       delta: MacroDelta.fromJson(
