@@ -266,18 +266,9 @@ definitions:
           # APP_ENVIRONMENT is a string ('dev'), the rest are booleans — do not
           # fold it into the loop or it ends up as APP_ENVIRONMENT=true and the
           # `appEnv == 'dev'` check fails just as silently as an absent key.
-          # MACRO_DASHBOARD_ENABLED: the daily-macro-dashboard redesign
-          # (bundle daily-macros-dashboard@v3, landed 2026-08-19). Fail-closed
-          # in code and absent from most DOTENV_DEV_LOCAL snapshots, so dev
-          # TestFlight builds rendered the legacy Fuel Timeline while carrying
-          # the new surface dark. Forced ON here — dev is the proving ground —
-          # while prod and the code default stay off (the default-on flip is a
-          # separate decision with its own checklist; see
-          # docs/features/macro_dashboard/README.md, Epilogue).
           for entry in "APP_ENVIRONMENT=dev" "DEV_MODE_ENABLED=true" \
                        "AI_CREDITS_ENABLED=true" "DESCRIBE_MEAL_ENABLED=true" \
-                       "COACH_INSIGHTS_ENABLED=true" \
-                       "MACRO_DASHBOARD_ENABLED=true"; do
+                       "COACH_INSIGHTS_ENABLED=true"; do
             key="${entry%%=*}"
             # Strip any existing definition (commented or not), then set ours.
             sed -i '' "/^[[:space:]]*#*[[:space:]]*${key}=/d" .env.dev.local 2>/dev/null \
@@ -1496,7 +1487,6 @@ workflows:
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
-            --target integration_test/flows/fuel_timeline_flow_test.dart \
             --target integration_test/flows/meal_log_build_flow_test.dart \
             --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \
@@ -1598,7 +1588,7 @@ workflows:
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
-            --target integration_test/flows/fuel_timeline_flow_test.dart \
+            --target integration_test/flows/macro_dashboard_flow_test.dart \
             --target integration_test/flows/meal_log_build_flow_test.dart \
             --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \

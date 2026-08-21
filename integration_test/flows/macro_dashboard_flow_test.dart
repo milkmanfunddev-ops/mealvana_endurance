@@ -1,5 +1,5 @@
-/// Macro Dashboard walk under **Patrol** — the flag-gated redesigned surface
-/// (`MACRO_DASHBOARD_ENABLED`), driven by `macro_dashboard.*` ValueKeys.
+/// Macro Dashboard walk under **Patrol** — the dashboard surface (flag
+/// deleted 2026-08-21 per Lee's ruling), driven by `macro_dashboard.*` keys.
 ///
 /// Covers the Phase A flow contract
 /// (docs/features/macro_dashboard/README.md):
@@ -23,8 +23,7 @@
 ///
 /// Self-skips:
 ///   - no session and no credentials (standard noAuthSkipMessage);
-///   - `MACRO_DASHBOARD_ENABLED` off — the tab renders the legacy Fuel
-///     Timeline, so there is nothing to test.
+///   - the dashboard tab failing to render (build wiring broken).
 ///
 /// Seeding: the flow creates its own planned workout through the REAL
 /// controller path (`activitiesControllerProvider.createActivity` — the same
@@ -89,9 +88,9 @@ void main() {
       appOnError?.call(details);
     };
 
-    // ---- 0. Flag gate ----------------------------------------------------
-    // Tab 0 renders MacroDashboardScreen only when MACRO_DASHBOARD_ENABLED;
-    // otherwise the legacy Fuel Timeline owns the tab and this flow is moot.
+    // ---- 0. Surface present ----------------------------------------------
+    // Tab 0 always renders MacroDashboardScreen (flag deleted 2026-08-21);
+    // a missing filter row means the build is broken, not gated.
     await $(const ValueKey('bottom_nav.timeline_tab'))
         .tap(settlePolicy: SettlePolicy.noSettle);
     var dashboardFound = false;
@@ -103,13 +102,9 @@ void main() {
       }
       if ($(const ValueKey('fuel_timeline.filter_all')).exists) break;
     }
-    if (!dashboardFound) {
-      markTestSkipped(
-        'MACRO_DASHBOARD_ENABLED is off — the tab renders the legacy Fuel '
-        'Timeline. Enable the flag in .env.dev.local to run this flow.',
-      );
-      return;
-    }
+    expect(dashboardFound, isTrue,
+        reason: 'the dashboard tab must render — there is no flag and no '
+            'legacy fallback any more');
 
     // Reset to the All lens (the day was reset by ensureAuthenticated; the
     // filter is dashboard-local state a previous run may have narrowed).

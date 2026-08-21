@@ -254,7 +254,6 @@ jobs:
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
-            --target integration_test/flows/fuel_timeline_flow_test.dart \
             --target integration_test/flows/meal_log_build_flow_test.dart \
             --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \
