@@ -58,6 +58,28 @@ mealvana_endurance/
   Branch on the Feature Request / Bug Report boards — those belong to Xuan's worker. See
   `.claude/notion/boards.md`.
 
+## Backend Deploys & Codemagic Cost Discipline
+- Before ANY backend/deploy/schema/edge-function work, read
+  `../ops/docs/supabase-deploy-playbook.md` — **§0 first** (current state + standing orders), then
+  the agent brief `docs/ssot/intake/2026-08-19-phase-c-deploy-brief.md`. Ruling precedence there:
+  ▶ Lee 08-20 > ▶ Lee 08-19 > older text > the brief.
+- **Codemagic bills real minutes (free tier, ~9¢/min; no Pro plan). Pushing = spending.**
+  Per `codemagic.yaml` (read it for current truth): a push to `develop` auto-cuts the dev iOS
+  TestFlight build (docs-only changesets are skipped); a push to any `release/*` branch auto-cuts
+  the release builds. Batch work into few pushes; never push `release/*` until the playbook's
+  P1–P3 gates are green; never add or re-arm a Codemagic workflow without asking.
+- **Codemagic never runs integration/Patrol tests** (Lee, 2026-08-20 — one develop-push run billed
+  1h31m ≈ $9). The three `integration-tests*` workflows are trigger-disabled (`events: []`) in
+  `codemagic.yaml`; leave them disabled. Integration tests run locally
+  (`patrol test` / `run-algorithm-tests.sh --e2e`) or free on Lee's M1 mini — the self-hosted
+  GitHub Actions workflow `.github/workflows/tests-selfhosted.yml`, which fires on every push/PR
+  (`gh run list --workflow=tests-selfhosted.yml` to check; runner must be online).
+- If a change doesn't need a cloud build to verify, verify it locally (flutter test, simulator,
+  Deno/vector runners) instead of pushing to find out.
+- `MACRO_DASHBOARD_ENABLED` is pending full removal (Lee, 2026-08-20: delete the flag from app
+  code + the codemagic.yaml force-on). Don't add new hide-flags for dev features — dev is meant
+  to be shipped visible and broken freely.
+
 ## App Initialization Pattern (Explicit)
 - `main()` handles non-recoverable bootstrap (e.g., SDK initialization).
 - Startup flow is managed by app startup widgets/providers/services.

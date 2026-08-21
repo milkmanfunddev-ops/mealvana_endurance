@@ -1446,14 +1446,16 @@ workflows:
         FLUTTER_ENV: dev
 
     triggering:
-      events:
-        - pull_request
+      # DISABLED 2026-08-20 — Lee's ruling: "those integration tests cannot be
+      # run by Codemagic" (~9c/min; one run billed 1h31m ~= $9). Run the suite
+      # locally (patrol test / run-algorithm-tests.sh --e2e) or on Lee's M1 via
+      # .github/workflows/tests-selfhosted.yml. Re-enable by restoring
+      # `events: [pull_request]`.
+      # (Was: PR gate on release/* PRs; the push-to-develop run is the separate
+      # integration-tests-develop workflow because Codemagic applies
+      # branch_patterns to every event in the block.)
+      events: []
       branch_patterns:
-        # PR gate only. The push-to-develop run is a separate workflow
-        # (integration-tests-develop) because Codemagic applies branch_patterns
-        # to every event in the block — keeping both here would also fire the
-        # dev-backend suite on a release/* push, where integration-tests-prod
-        # is the one that should run.
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
@@ -1558,8 +1560,10 @@ workflows:
         FLUTTER_ENV: dev
 
     triggering:
-      events:
-        - push
+      # DISABLED 2026-08-20 — Lee's ruling (see integration-tests above): this
+      # exact workflow ran 1h31m on a develop push (~$9). Re-enable by
+      # restoring `events: [push]` only if the suite ever moves back off the M1.
+      events: []
       branch_patterns:
         - pattern: 'develop'
           include: true
@@ -1658,8 +1662,10 @@ workflows:
         FLUTTER_ENV: prod
 
     triggering:
-      events:
-        - push
+      # DISABLED 2026-08-20 — Lee's ruling (see integration-tests above).
+      # Re-enable by restoring `events: [push]` only if the suite moves back
+      # off the M1.
+      events: []
       branch_patterns:
         - pattern: 'release/*'
           include: true
