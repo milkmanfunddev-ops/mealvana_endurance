@@ -63,6 +63,8 @@ void main() {
     _prefs = await SharedPreferences.getInstance();
     repo = _MockCreditsRepository();
     when(() => repo.currentUserId).thenReturn(_testUserId);
+    when(() => repo.authUserIdChanges)
+        .thenAnswer((_) => const Stream<String?>.empty());
     // The controller now provisions before reading. Default to "provisioning
     // unavailable" so every existing test still exercises the fetchWallet path
     // it was written for; the provisioning tests stub this explicitly.
@@ -382,6 +384,90 @@ void main() {
           .read(creditsControllerProvider.notifier)
           .refresh(); // refresh → 150
       expect(container.read(creditsControllerProvider).value?.balance, 150);
+    });
+  });
+
+  group('auth-change rebuild (ops 2026-08-21-cookie-balance-stale-on-auth-change)',
+      () {
+    // Stream emission → provider update → async controller rebuild is a
+    // multi-hop async chain; poll briefly instead of trusting one microtask.
+    Future<int> balanceWhen(
+      ProviderContainer container,
+      bool Function(int) done,
+    ) async {
+      for (var i = 0; i < 40; i++) {
+        final w = await container.read(creditsControllerProvider.future);
+        if (done(w.balance)) return w.balance;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      return (await container.read(creditsControllerProvider.future)).balance;
+    }
+
+    test(
+        'a session APPEARING rebuilds the controller: zero before, granted after',
+        () async {
+      final authStream = StreamController<String?>.broadcast();
+      addTearDown(authStream.close);
+      when(() => repo.authUserIdChanges).thenAnswer((_) => authStream.stream);
+
+      // Phase 1: no session — the new-user-first-run state.
+      when(() => repo.currentUserId).thenReturn(null);
+      when(() => repo.hasAuthenticatedUser).thenReturn(false);
+      when(() => repo.fetchWallet()).thenAnswer((_) async => CreditWallet.zero);
+
+      final container = _container(repo);
+      addTearDown(container.dispose);
+      final sub = container.listen(creditsControllerProvider, (_, __) {});
+      addTearDown(sub.close);
+
+      var wallet = await container.read(creditsControllerProvider.future);
+      expect(wallet.balance, 0);
+      verifyNever(() => repo.ensureWallet());
+
+      // Phase 2: the anonymous sign-in completes (end of onboarding).
+      when(() => repo.currentUserId).thenReturn('anon-1');
+      when(() => repo.hasAuthenticatedUser).thenReturn(true);
+      when(() => repo.ensureWallet()).thenAnswer((_) async => 50);
+      authStream.add('anon-1');
+
+      final granted = await balanceWhen(container, (b) => b == 50);
+      expect(granted, 50,
+          reason: 'the grant must show WITHOUT a restart or a purchase');
+      verify(() => repo.ensureWallet()).called(1);
+    });
+
+    test('log out → log in as another user re-ensures for the new identity',
+        () async {
+      final authStream = StreamController<String?>.broadcast();
+      addTearDown(authStream.close);
+      when(() => repo.authUserIdChanges).thenAnswer((_) => authStream.stream);
+      when(() => repo.currentUserId).thenReturn('user-a');
+      when(() => repo.hasAuthenticatedUser).thenReturn(true);
+      when(() => repo.ensureWallet()).thenAnswer((_) async => 50);
+      when(() => repo.fetchWallet())
+          .thenAnswer((_) async => const CreditWallet(balance: 50));
+
+      final container = _container(repo);
+      addTearDown(container.dispose);
+      final sub = container.listen(creditsControllerProvider, (_, __) {});
+      addTearDown(sub.close);
+      await container.read(creditsControllerProvider.future);
+      verify(() => repo.ensureWallet()).called(1);
+
+      // Log out, then in as user-b: the pill must not keep user-a's number.
+      // fetchWallet is user-scoped on the server, so once the identity flips
+      // it answers with user-b's wallet — the stub must flip with it (the
+      // second rebuild takes the stamped fetchWallet path).
+      when(() => repo.currentUserId).thenReturn('user-b');
+      when(() => repo.ensureWallet()).thenAnswer((_) async => 12);
+      when(() => repo.fetchWallet())
+          .thenAnswer((_) async => const CreditWallet(balance: 12));
+      authStream.add(null);
+      authStream.add('user-b');
+
+      final switched = await balanceWhen(container, (b) => b == 12);
+      expect(switched, 12,
+          reason: "user-b's wallet, not user-a's stale pill");
     });
   });
 }
