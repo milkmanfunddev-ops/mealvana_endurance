@@ -438,15 +438,12 @@ workflows:
         - pattern: 'develop'
           include: true
       cancel_previous_builds: true
-      # Skip when a push touches nothing the binary is made from — docs-only
-      # pushes were cutting full builds (2026-08-20; real Codemagic minutes).
-      # Semantics: skipped only when EVERY changed file matches an exclude.
-      when:
-        changeset:
-          excludes:
-            - 'docs/**'
-            - '**/*.md'
-            - '_archived/**'
+      # Docs-only pushes: use [skip ci] in the commit title instead of a
+      # changeset filter — the `when: changeset` block previously here
+      # (nested under triggering:) is not where Codemagic accepts it and is
+      # suspected of invalidating the config (no builds fired from the
+      # 2026-08-20 bug-batch merge). [skip ci] is documented, proven in this
+      # repo, and costs nothing when forgotten except one build.
 
     scripts:
       - *write_dotenv_files
@@ -664,15 +661,12 @@ workflows:
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
-      # Skip when a push touches nothing the binary is made from — docs-only
-      # pushes were cutting full builds (2026-08-20; real Codemagic minutes).
-      # Semantics: skipped only when EVERY changed file matches an exclude.
-      when:
-        changeset:
-          excludes:
-            - 'docs/**'
-            - '**/*.md'
-            - '_archived/**'
+      # Docs-only pushes: use [skip ci] in the commit title instead of a
+      # changeset filter — the `when: changeset` block previously here
+      # (nested under triggering:) is not where Codemagic accepts it and is
+      # suspected of invalidating the config (no builds fired from the
+      # 2026-08-20 bug-batch merge). [skip ci] is documented, proven in this
+      # repo, and costs nothing when forgotten except one build.
 
     scripts:
       - *write_dotenv_files

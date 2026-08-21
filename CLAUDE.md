@@ -65,7 +65,7 @@ mealvana_endurance/
   ▶ Lee 08-20 > ▶ Lee 08-19 > older text > the brief.
 - **Codemagic bills real minutes (free tier, ~9¢/min; no Pro plan). Pushing = spending.**
   Per `codemagic.yaml` (read it for current truth): a push to `develop` auto-cuts the dev iOS
-  TestFlight build (docs-only changesets are skipped); a push to any `release/*` branch auto-cuts
+  TestFlight build (put `[skip ci]` in the commit title for docs-only pushes — there is no changeset filter); a push to any `release/*` branch auto-cuts
   the release builds. Batch work into few pushes; never push `release/*` until the playbook's
   P1–P3 gates are green; never add or re-arm a Codemagic workflow without asking.
 - **Codemagic never runs integration/Patrol tests** (Lee, 2026-08-20 — one develop-push run billed
