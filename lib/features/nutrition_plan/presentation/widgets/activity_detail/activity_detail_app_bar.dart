@@ -135,7 +135,12 @@ class ActivityDetailAppBar extends ConsumerWidget
                   isNewActivity: isNewActivity,
                 ),
               );
-        final (String? eventName, String? activityTitle, int? leadMinutes) =
+        final (
+          String? eventName,
+          String? activityTitle,
+          int? leadMinutes,
+          DateTime? plannedStart,
+        ) =
             asyncState.whenOrNull(
               data: (data) {
                 if (data is ActivityDetailState) {
@@ -143,12 +148,13 @@ class ActivityDetailAppBar extends ConsumerWidget
                     data.eventName,
                     data.activity?.title,
                     data.activity?.timeBeforeMinutes,
+                    data.activity?.displayTime,
                   );
                 }
-                return (null, null, null);
+                return (null, null, null, null);
               },
             ) ??
-            (null, null, null);
+            (null, null, null, null);
         final title =
             eventName ??
             activityTitle ??
@@ -161,16 +167,28 @@ class ActivityDetailAppBar extends ConsumerWidget
           ),
           overflow: TextOverflow.ellipsis,
         );
-        // Frozen lead time — the minutes-before-workout captured at plan
-        // generation, not the clock ("Planned 3 hours ahead", digest §5).
+        // Lead-time caption, derived from the CLOCK at build time (papercut
+        // fix 2026-08-20): the frozen minutes-before-workout captured at plan
+        // generation (`timeBeforeMinutes`) goes stale the moment time passes
+        // — "Planned 1h 30m ahead" was still shown when the workout was 40
+        // minutes away. The plan's INPUTS stay frozen (digest: no input
+        // change without regeneration); only this caption reads the clock.
+        // Shown only while a lead-planned workout is still ahead; once the
+        // start time passes the caption drops rather than counting negative.
         if (leadMinutes == null || leadMinutes <= 0) return titleText;
+        final clockLeadMinutes = plannedStart
+            ?.difference(DateTime.now())
+            .inMinutes;
+        if (clockLeadMinutes == null || clockLeadMinutes <= 0) {
+          return titleText;
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             titleText,
             Text(
-              'Planned ${ActivityDetailHelpers.formatLeadTime(leadMinutes)} ahead',
+              'Planned ${ActivityDetailHelpers.formatLeadTime(clockLeadMinutes)} ahead',
               style: AppTextStyles.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

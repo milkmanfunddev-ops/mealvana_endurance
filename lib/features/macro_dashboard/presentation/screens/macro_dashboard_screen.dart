@@ -246,21 +246,27 @@ class MacroDashboardScreen extends ConsumerWidget {
     required Color borderColor,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      key: key,
-      onTap: onTap,
-      child: CustomPaint(
-        foregroundPainter: _DashedPillPainter(color: borderColor),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontWeight: FontWeight.w500,
-              fontSize: 12.5,
-              color: color,
+    // Semantics(button:) — without it the pill reads to assistive tech as
+    // static text (AXStaticText on iOS) even though it is tappable.
+    return Semantics(
+      button: true,
+      container: true,
+      child: GestureDetector(
+        key: key,
+        onTap: onTap,
+        child: CustomPaint(
+          foregroundPainter: _DashedPillPainter(color: borderColor),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontWeight: FontWeight.w500,
+                fontSize: 12.5,
+                color: color,
+              ),
             ),
           ),
         ),

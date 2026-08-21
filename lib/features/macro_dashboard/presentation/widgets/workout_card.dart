@@ -167,7 +167,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
       );
     }
 
-    return ClipRRect(
+    final card = ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: Stack(
         children: [
@@ -223,6 +223,18 @@ class _WorkoutCardState extends State<WorkoutCard> {
           ),
         ],
       ),
+    );
+    // Outside-tap dismiss: the reference rendering's reveal never
+    // auto-dismisses — that is prototype defect W-6, which the SSOT lists as
+    // a known reference-rendering defect NOT to encode (workout-card.md,
+    // "Known reference-rendering defects"). A tap landing anywhere outside
+    // this card closes an open reveal; taps inside (card body, Skip/Unskip
+    // button) keep their existing behavior via the GestureDetector above.
+    return TapRegion(
+      onTapOutside: (_) {
+        if (_revealOpen) _closeReveal();
+      },
+      child: card,
     );
   }
 
