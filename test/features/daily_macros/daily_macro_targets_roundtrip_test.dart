@@ -203,4 +203,66 @@ void main() {
     expect(r!.weightKg, isNull);
     expect(r.energyBasis, 'as_computed');
   });
+
+  group('I7 remote leg — toJson→fromJson (ops 2026-08-20-…-tojson-drops-calculation-input)', () {
+    test('the calculation_input trio survives the Supabase payload round trip',
+        () {
+      final t = DailyMacroTargets(
+        id: 't1',
+        userId: 'u1',
+        targetDate: DateTime(2026, 8, 20),
+        carbG: 500,
+        protG: 120,
+        fatG: 100,
+        tdee: 3200,
+        rmr: 1500,
+        sessionKcal: 700,
+        mode: 'prospective',
+        algorithmVersion: 'v6.0.0',
+        createdAt: DateTime(2026, 8, 20),
+        updatedAt: DateTime(2026, 8, 20),
+        weightKg: 49.9,
+        bodyFatPct: 21.0,
+        energyBasis: 'pre_override',
+      );
+      final json = t.toJson();
+      expect(json['calculation_input'], isA<Map>(),
+          reason: 'the upsert payload must carry calculation_input '
+              '(the remote table has the jsonb column)');
+      final back = DailyMacroTargets.fromEdgeFunctionResponse(
+        id: 't1',
+        userId: 'u1',
+        targetDate: DateTime(2026, 8, 20),
+        json: json,
+      );
+      expect(back.weightKg, 49.9);
+      expect(back.bodyFatPct, 21.0);
+      expect(back.energyBasis, 'pre_override');
+    });
+
+    test('flat engine-response keys still win over nested calculation_input',
+        () {
+      final back = DailyMacroTargets.fromEdgeFunctionResponse(
+        id: 'x',
+        userId: 'u1',
+        targetDate: DateTime(2026, 8, 20),
+        json: {
+          'carb_g': 1,
+          'prot_g': 1,
+          'fat_g': 1,
+          'tdee': 1,
+          'rmr': 1,
+          'session_kcal': 0,
+          'weight_kg': 75.0,
+          'calculation_input': {
+            'weight_kg': 49.9,
+            'energy_basis': 'pre_override',
+          },
+        },
+      );
+      expect(back.weightKg, 75.0, reason: 'flat (engine) key wins');
+      expect(back.energyBasis, 'pre_override',
+          reason: 'nested fills what flat omits');
+    });
+  });
 }

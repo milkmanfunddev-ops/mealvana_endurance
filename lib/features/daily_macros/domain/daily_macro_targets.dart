@@ -245,12 +245,22 @@ class DailyMacroTargets {
       algorithmVersion: json['algorithm_version'] as String? ?? 'v4',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      weightKg: (json['weight_kg'] as num?)?.toDouble(),
-      bodyFatPct: (json['body_fat_pct'] as num?)?.toDouble(),
+      // Engine responses carry these flat; Supabase rows carry them nested in
+      // calculation_input (jsonb) — accept either, flat winning (seam pinned
+      // by daily_macro_targets_roundtrip_test; ops bug
+      // 2026-08-20-daily-macro-targets-tojson-drops-calculation-input.md).
+      weightKg: (json['weight_kg'] as num?)?.toDouble() ??
+          ((json['calculation_input'] as Map?)?['weight_kg'] as num?)
+              ?.toDouble(),
+      bodyFatPct: (json['body_fat_pct'] as num?)?.toDouble() ??
+          ((json['calculation_input'] as Map?)?['body_fat_pct'] as num?)
+              ?.toDouble(),
       sources: MacroSources.fromJson(
         (json['sources'] as Map?)?.cast<String, dynamic>(),
       ),
-      energyBasis: json['energy_basis'] as String? ?? 'as_computed',
+      energyBasis: json['energy_basis'] as String? ??
+          (json['calculation_input'] as Map?)?['energy_basis'] as String? ??
+          'as_computed',
       delta: MacroDelta.fromJson(
         (json['delta'] as Map?)?.cast<String, dynamic>(),
       ),
@@ -276,6 +286,14 @@ class DailyMacroTargets {
       'ea': ea,
       'ea_status': eaStatus?.dbValue,
       'algorithm_version': algorithmVersion,
+      // Mirror of the LOCAL save path's calculation_input (the remote table
+      // carries the same jsonb column): without it, a future remote→local
+      // hydration would reproduce the field-drop seam behind the 70-kg bug.
+      'calculation_input': {
+        if (weightKg != null) 'weight_kg': weightKg,
+        if (bodyFatPct != null) 'body_fat_pct': bodyFatPct,
+        'energy_basis': energyBasis,
+      },
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
