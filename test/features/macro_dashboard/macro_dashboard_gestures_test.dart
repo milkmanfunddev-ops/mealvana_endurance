@@ -19,6 +19,8 @@ import 'package:mealvana_endurance/features/macro_dashboard/presentation/me_toke
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/widgets/energy_summary_card.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/widgets/workout_card.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/application/daily_baseline_calculator.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/intensity_distribution.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 // ---------------------------------------------------------------------------
@@ -786,6 +788,70 @@ void main() {
     }
   });
 
+  // Q-D4 regression pin (bug report 2026-08-20-awaiting-sync-copy-on-active-
+  // energy-sheet): the awaiting-sync concept is RULED dead — "self-reported"
+  // IS the never-synced signal (workout-card.md); the reference rendering's
+  // awaitingSync flag stays dead. String-level check over every dashboard
+  // source (like s6 above) so sibling-surface copy — sheets included, which
+  // goldens/gesture manifests don't cover — cannot resurrect it.
+  test('q_d4_no_awaiting_sync_copy: "awaiting sync" appears nowhere in the macro_dashboard sources', () {
+    final sources = Directory('lib/features/macro_dashboard')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'));
+    final awaitingSync = RegExp(r'awaiting[ _-]?sync', caseSensitive: false);
+    for (final f in sources) {
+      // Comment lines may cite the ruling by name; only code (string
+      // literals, identifiers) can resurrect the concept.
+      final code = f
+          .readAsStringSync()
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('//'))
+          .join('\n');
+      expect(awaitingSync.hasMatch(code), isFalse,
+          reason:
+              '${f.path} resurrects the ruled-dead awaiting-sync concept (Q-D4)');
+    }
+  });
+
+  // W-6 outside-dismiss (bug report 2026-08-20-dashboard-papercuts, item 1):
+  // the reference rendering's reveal never auto-dismisses — a known
+  // prototype defect the SSOT lists as NOT to encode (workout-card.md,
+  // "Known reference-rendering defects"). A tap landing outside the card
+  // closes an open reveal without emitting skip or navigation; the reveal
+  // and its button keep working afterwards.
+  testWidgets('reveal_outside_tap_dismisses: a tap outside the card closes an open Skip reveal',
+      (tester) async {
+    var tapped = 0;
+    var skipped = 0;
+    await tester.pumpWidget(
+      _host(
+        WorkoutCard(
+          data: _card(WorkoutCardState.planned),
+          onTap: () => tapped++,
+          onSkip: () => skipped++,
+        ),
+      ),
+    );
+    await _drag(tester, find.byType(WorkoutCard), -90);
+    expect(find.text('Skip'), findsOneWidget);
+
+    // Tap the scaffold well outside the card: reveal closes, nothing emits.
+    await tester.tapAt(const Offset(4, 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Skip'), findsNothing,
+        reason: 'an outside tap must close the reveal (W-6 is not contract)');
+    expect(tapped, 0, reason: 'an outside tap must not navigate');
+    expect(skipped, 0, reason: 'an outside tap must not skip');
+
+    // The reveal still opens and its button still emits after a dismissal.
+    await _drag(tester, find.byType(WorkoutCard), -90);
+    expect(find.text('Skip'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(skipped, 1);
+  });
+
   // band_copy_matches_register (intraday-display §2 via energy-card P-3)
   test('band_copy_matches_register: band copy for the mock net (−133) is exactly "on track"', () {
     expect(
@@ -906,6 +972,193 @@ void main() {
     expect(undone.actualTime, isNull, reason: 'cleared — null, not zero');
     expect(undone.displayTime, planned.plannedTime,
         reason: 'card returns to planned_time');
+  });
+
+  // -------------------------------------------------------------------------
+  // Weight resolution & cross-surface session pricing
+  // (bugs 2026-08-20-dashboard-weight-fallback-70kg and
+  //  2026-08-20-session-kcal-three-surfaces-disagree; feature-test-plan
+  //  invariants I4, I6/I8 — F4 cost is exactly linear in body weight, so the
+  //  property is pinned at THREE weights, never only the 75-kg reference.)
+  // -------------------------------------------------------------------------
+  group('session kcal weight resolution (F4 linear in weight)', () {
+    DailyMacroTargets targetsWith({double? weightKg}) => DailyMacroTargets(
+          id: 't1',
+          userId: 'u1',
+          targetDate: _day,
+          carbG: 596,
+          protG: 130,
+          fatG: 138,
+          tdee: 4152,
+          rmr: 1908,
+          sessionKcal: 1434,
+          neatKcal: 394.9,
+          mode: 'prospective',
+          algorithmVersion: 'v6.0.0',
+          createdAt: _day,
+          updatedAt: _day,
+          weightKg: weightKg,
+        );
+
+    DashboardData assembleWith({
+      List<Activity>? activities,
+      DailyMacroTargets? targets,
+      double? profileWeightKg,
+    }) =>
+        const MacroDashboardAssembler().assemble(
+          selectedDate: _day,
+          now: _now,
+          activities: activities ?? [_runPlanned()],
+          meals: const [],
+          targets: targets,
+          consumed: const ConsumedTotals(
+            calories: 1650,
+            carbsG: 262,
+            proteinG: 68,
+            fatG: 36,
+          ),
+          trackingOn: true,
+          profileWeightKg: profileWeightKg,
+        );
+
+    // I8: the 90-min zone-less planned run priced at 50 / 75 / 95 kg. The
+    // expected value is computed from the SAME ratified formula the engine
+    // uses (DailyBaselineCalculator.sessionCost = F4), at the documented
+    // 0.74 zones-absent IF — so a reintroduced weight constant anywhere in
+    // the display path breaks at two of the three weights.
+    test('I8: card kcal is F4 at the athlete weight — 50 / 75 / 95 kg', () {
+      final kcalAt = <double, double>{};
+      for (final w in [50.0, 75.0, 95.0]) {
+        final d = assembleWith(targets: targetsWith(weightKg: w));
+        final run = _workoutCardOf(d, 'Run');
+        final expected = DailyBaselineCalculator.sessionCost(
+          sport: 'running',
+          durationHr: 1.5,
+          intensityFactor: 0.74,
+          weightKg: w,
+        );
+        expect(run.kcal, isNotNull, reason: 'weight resolved → priced');
+        expect(run.kcal, closeTo(expected, 1e-9), reason: 'weight $w kg');
+        kcalAt[w] = run.kcal!;
+      }
+      // The I6 property itself: cost is EXACTLY linear in body weight.
+      expect(kcalAt[50.0]! / 50.0, closeTo(kcalAt[75.0]! / 75.0, 1e-9));
+      expect(kcalAt[95.0]! / 95.0, closeTo(kcalAt[75.0]! / 75.0, 1e-9));
+      // And none of the three is the old silent-70 value (1,124 kcal).
+      final at70 = DailyBaselineCalculator.sessionCost(
+        sport: 'running',
+        durationHr: 1.5,
+        intensityFactor: 0.74,
+        weightKg: 70,
+      );
+      for (final v in kcalAt.values) {
+        expect((v - at70).abs(), greaterThan(1),
+            reason: 'no weight may silently price as 70 kg');
+      }
+    });
+
+    test('profile weight beats targets.weightKg (a Settings edit reprices '
+        'the display without waiting for the recalc)', () {
+      final d = assembleWith(
+        targets: targetsWith(weightKg: 73.0),
+        profileWeightKg: 49.9,
+      );
+      final expected = DailyBaselineCalculator.sessionCost(
+        sport: 'running',
+        durationHr: 1.5,
+        intensityFactor: 0.74,
+        weightKg: 49.9,
+      );
+      expect(_workoutCardOf(d, 'Run').kcal, closeTo(expected, 1e-9));
+    });
+
+    test('targets.weightKg is the fallback when no profile weight is passed',
+        () {
+      final d = assembleWith(targets: targetsWith(weightKg: 49.9));
+      final expected = DailyBaselineCalculator.sessionCost(
+        sport: 'running',
+        durationHr: 1.5,
+        intensityFactor: 0.74,
+        weightKg: 49.9,
+      );
+      expect(_workoutCardOf(d, 'Run').kcal, closeTo(expected, 1e-9));
+    });
+
+    // I4 concrete (2026-08-20-session-kcal-three-surfaces-disagree): for a
+    // seeded athlete, card kcal == Active-Energy sheet row kcal ==
+    // F4(profile weight, resolved IF), with IF resolved from the planned
+    // zones (ruling: zones when present, documented 0.74 fallback — on
+    // every surface; intraday-display §1 / F22 FORMULA rung).
+    test('I4: card kcal == sheet row kcal == F4(profile weight, zones IF)',
+        () {
+      const zones = IntensityDistribution(
+        conversationalPct: 60,
+        tempoPct: 25,
+        allOutPct: 15,
+      );
+      final run = _runPlanned().copyWith(
+        durationMinutes: 45,
+        intensityDistribution: zones,
+      );
+      const profileWeightKg = 49.9; // Xuan's real case: 110 lb
+      final resolvedIf = DailyBaselineCalculator.zoneDistributionToIf(
+        pctConversational: 0.60,
+        pctTempo: 0.25,
+        pctAllout: 0.15,
+      );
+      final f4 = DailyBaselineCalculator.sessionCost(
+        sport: 'running',
+        durationHr: 45 / 60.0,
+        intensityFactor: resolvedIf,
+        weightKg: profileWeightKg,
+      );
+
+      final d = assembleWith(
+        activities: [_swimVerified(), run],
+        targets: targetsWith(weightKg: 73.0),
+        profileWeightKg: profileWeightKg,
+      );
+
+      final card = _workoutCardOf(d, 'Run');
+      final sheetRow =
+          d.energy!.workoutRows.singleWhere((r) => r.name == 'Run');
+
+      expect(card.kcal, closeTo(f4, 1e-9),
+          reason: 'card = F4(profile weight, zones IF)');
+      expect(sheetRow.kcal, closeTo(f4, 1e-9),
+          reason: 'Active Energy sheet row = the same _sessionKcal result');
+      expect(sheetRow.kcal, card.kcal,
+          reason: 'I4: no surface disagrees with another on the same '
+              'quantity — one function prices both');
+      // The measured swim rides the GARMIN rung untouched by weight.
+      final swimRow =
+          d.energy!.workoutRows.singleWhere((r) => r.name == 'Swim');
+      expect(swimRow.kcal, 228.7);
+    });
+
+    test('BOTH weights absent → formula sessions surface as ABSENT, never '
+        'a stand-in number', () {
+      final d = assembleWith(
+        activities: [_swimVerified(), _runPlanned()],
+        targets: targetsWith(weightKg: null),
+        // no profileWeightKg
+      );
+
+      // The run still renders on the timeline…
+      final run = _workoutCardOf(d, 'Run');
+      // …but is unpriced: no invented kcal (the old code said 70 kg here).
+      expect(run.kcal, isNull);
+
+      // It enters NO energy figure and gets NO receipt row, so the rows
+      // shown still sum exactly to the totals shown (least-lying
+      // representation — a 0-kcal row would be a false statement).
+      expect(d.energy!.workoutPlannedKcal, 0);
+      expect(d.energy!.workoutRows.map((r) => r.name), ['Swim']);
+
+      // The measured swim is unaffected: the GARMIN rung needs no weight.
+      expect(d.energy!.workoutDoneKcal, closeTo(229, 0.5));
+      expect(_workoutCardOf(d, 'Swim').kcal, 228.7);
+    });
   });
 }
 

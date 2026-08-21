@@ -51,7 +51,16 @@ class WorkoutCardData {
 
   /// e.g. "2,000 yd · 40 min" or "90 min".
   final String metaLabel;
-  final double kcal;
+
+  /// Resolved session energy (F22 ladder: measured beats formula), or NULL
+  /// when the session is unpriceable — no measured kcal AND no resolvable
+  /// athlete weight (bug 2026-08-20-dashboard-weight-fallback-70kg). F4 cost
+  /// is exactly linear in body weight (invariant I6), so an invented stand-in
+  /// weight is a wrong number for every athlete; the assembler surfaces the
+  /// absence instead: a null-kcal session contributes to NO energy figure and
+  /// gets no receipt row, while the workout itself still renders on the
+  /// timeline (the card displays no kcal of its own).
+  final double? kcal;
   final WorkoutCardState state;
 
   /// 'running' | 'cycling' | 'swimming' | 'strength' — picks the icon.

@@ -45,6 +45,7 @@ class MacroDashboardAssembler {
     required ConsumedTotals consumed,
     required bool trackingOn,
     List<DailyMacroTargets?> weeklyTargets = const [],
+    double? profileWeightKg,
   }) {
     // §4b: a status='deleted' tombstone never renders and contributes zero
     // to every derived quantity — identical in effect to nonexistence.
@@ -53,7 +54,17 @@ class MacroDashboardAssembler {
         .toList(growable: false)
       ..sort((a, b) => a.displayTime.compareTo(b.displayTime));
 
-    final weightKg = targets?.weightKg ?? 70.0;
+    // Bug 2026-08-20-dashboard-weight-fallback-70kg: F4 session cost is
+    // exactly linear in body weight (invariant I6), so a silent stand-in
+    // weight is a wrong number for every athlete — the old `?? 70.0` priced
+    // a 49.9-kg athlete's runs ~40% high on every surface. Resolution:
+    // the caller's live profile weight first (a Settings weight edit reprices
+    // the display without waiting for a recalc), then the weight the engine
+    // calculated this day with (targets.weightKg, persisted in the row's
+    // calculation_input). If BOTH are absent we do NOT invent a number:
+    // formula-rung sessions stay unpriced (kcal null) and are surfaced as
+    // absent — see [WorkoutCardData.kcal].
+    final double? weightKg = profileWeightKg ?? targets?.weightKg;
     final cards = live
         .map((a) => _workoutCard(a, selectedDate, now, weightKg))
         .toList(growable: false);
@@ -108,7 +119,7 @@ class MacroDashboardAssembler {
     Activity a,
     DateTime selectedDate,
     DateTime now,
-    double weightKg,
+    double? weightKg,
   ) {
     // Two-time model: a card is done when the athlete confirmed it or a
     // sync stamped actual_time; verified when a platform stamped it. Sync
@@ -166,12 +177,32 @@ class MacroDashboardAssembler {
     );
   }
 
-  /// F22 kcal ladder: measured (Garmin ActiveKilocalories, mirrored into
-  /// calories_burned) beats the formula; the formula rung is F4 at the
-  /// session's IF and duration.
-  double _sessionKcal(Activity a, double weightKg) {
+  /// F22 kcal ladder (intraday-display.md §1): measured (Garmin
+  /// ActiveKilocalories, mirrored into calories_burned) beats the formula;
+  /// the formula rung is F4 at the session's IF and duration.
+  ///
+  /// This ONE function prices every display surface — the workout card, the
+  /// Active Energy face rows and the Full Breakdown sheet all read its
+  /// result, so they cannot disagree with each other by construction
+  /// (bug 2026-08-20-session-kcal-three-surfaces-disagree, invariant I4).
+  ///
+  /// Input conventions (each safe to combine, because none can silently
+  /// stack onto a wrong weight — an unresolvable weight aborts the formula
+  /// rung entirely instead of estimating):
+  ///  * IF — zones when present (RMS over the planned distribution, the same
+  ///    derivation the engine uses), else the documented flat 0.74
+  ///    representative endurance IF (ruling 2026-08-20: zones-when-present /
+  ///    0.74 fallback on every surface).
+  ///  * duration — actual beats planned; a session with neither is priced at
+  ///    the 60-minute planning convention (matches the engine's default for
+  ///    duration-less endurance sessions).
+  ///  * weight — required; null means the formula rung is unpriceable and
+  ///    this returns null (never a stand-in constant — see
+  ///    [WorkoutCardData.kcal]).
+  double? _sessionKcal(Activity a, double? weightKg) {
     final measured = a.caloriesBurned;
     if (measured != null && measured > 0) return measured;
+    if (weightKg == null) return null;
     final durationHr =
         (a.actualDurationMinutes ?? a.durationMinutes ?? 60) / 60.0;
     final dist = a.intensityDistribution;
@@ -181,7 +212,7 @@ class MacroDashboardAssembler {
             pctTempo: dist.tempoPct / 100,
             pctAllout: dist.allOutPct / 100,
           )
-        : 0.74; // representative endurance IF when zones are absent
+        : 0.74; // documented flat fallback when zones are absent
     return DailyBaselineCalculator.sessionCost(
       sport: a.activityType.name,
       durationHr: durationHr,
@@ -246,10 +277,21 @@ class MacroDashboardAssembler {
     // by-end-of-day burn — in the same frame; passive and active alike.
     final counted = cards.where((c) => c.data.counts).toList(growable: false);
 
+    // An unpriceable session (kcal null — no measured value, no resolvable
+    // weight) is surfaced as ABSENT: it enters no accrual, no done/planned
+    // sum and gets no receipt row, so every figure and every row the sheet
+    // shows still reconcile exactly. A fabricated 0-kcal row would be a
+    // false statement about the workout; omission states "not included",
+    // which is the least-lying representation available
+    // (bug 2026-08-20-dashboard-weight-fallback-70kg).
+    final priced = counted
+        .where((c) => c.data.kcal != null)
+        .toList(growable: false);
+
     final sessions = [
-      for (final c in counted)
+      for (final c in priced)
         IntradaySession(
-          kcal: c.data.kcal,
+          kcal: c.data.kcal!,
           actualTimeMin: c.data.isDone
               ? c.time.hour * 60 + c.time.minute
               : null,
@@ -293,11 +335,11 @@ class MacroDashboardAssembler {
     // projects 1,434 exactly as the reference rendering shows.
     var doneKcal = 0.0;
     var plannedKcal = 0.0;
-    for (final c in counted) {
+    for (final c in priced) {
       if (c.data.isDone) {
-        doneKcal += c.data.kcal.roundToDouble();
+        doneKcal += c.data.kcal!.roundToDouble();
       } else {
-        plannedKcal += c.data.kcal.roundToDouble();
+        plannedKcal += c.data.kcal!.roundToDouble();
       }
     }
 
@@ -312,13 +354,16 @@ class MacroDashboardAssembler {
       workoutPlannedKcal: plannedKcal,
       workoutProjectedKcal: doneKcal + plannedKcal,
       workoutRows: [
-        for (final c in counted)
+        // Same _sessionKcal result as the card (I4: one number per session
+        // across every surface); unpriced sessions are omitted so the rows
+        // shown always sum to the totals shown.
+        for (final c in priced)
           EnergyWorkoutRow(
             name: c.data.name,
             note: c.data.isDone
                 ? '${c.data.timeLabel} · ${c.data.metaLabel}'
                 : 'planned · ${c.data.timeLabel} · ${c.data.metaLabel}',
-            kcal: c.data.kcal,
+            kcal: c.data.kcal!,
             planned: !c.data.isDone,
             activityId: c.data.activityId,
             sport: c.data.sport,

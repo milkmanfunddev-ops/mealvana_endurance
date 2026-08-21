@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../auth/data/user_repository.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../daily_macros/domain/daily_macro_targets.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
@@ -47,6 +48,29 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     calculating: macrosState.isCalculating,
   );
 
+  // Bug 2026-08-20-dashboard-weight-fallback-70kg: hand the assembler the
+  // athlete's live profile weight so formula-rung session kcal are priced at
+  // the ATHLETE's body weight (F4 is exactly linear in weight — I6). The
+  // assembler prefers this value, falls back to the weight the engine
+  // calculated with (targets.weightKg), and with neither surfaces the
+  // absence instead of inventing a number. A weight edit reaches here
+  // because a manual engine-input change invalidates
+  // dailyMacrosControllerProvider (Q-016 path), which this provider watches.
+  double? profileWeightKg;
+  try {
+    final userRepository = await ref.watch(userRepositoryProvider.future);
+    final profile = await userRepository.getCurrentUser();
+    final weightPounds = profile?.weightPounds ?? 0;
+    if (weightPounds > 0) {
+      // Same lb→kg factor the engine payload uses (daily_macro_service).
+      profileWeightKg = weightPounds * 0.453592;
+    }
+  } catch (_) {
+    // Profile unreachable → leave null; the assembler's fallback chain
+    // (targets.weightKg → honest absence) keeps the surface truthful, and a
+    // profile read failure must not take the whole dashboard down.
+  }
+
   bool onSelectedDay(DateTime d) =>
       d.year == selectedDate.year &&
       d.month == selectedDate.month &&
@@ -65,6 +89,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     targets: targets.daily,
     consumed: consumed,
     weeklyTargets: targets.weekly,
+    profileWeightKg: profileWeightKg,
     // Tracking is a DISPLAY mode gated by the screen from the view state —
     // toggling it must not recompute the day (intraday-display §5).
     trackingOn: true,
