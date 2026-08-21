@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/daily_baseline_calculator.dart';
 
@@ -122,6 +124,124 @@ void main() {
         );
       });
     }
+  });
+
+  // INTERIM behavior pending the SSOT ruling in
+  // qa/intake/2026-08-20-session-cost-unknown-activity-types.md — see
+  // ops/data/bug-reports/2026-08-20-session-cost-unknown-sport-priced-as-running.md.
+  // Deliberately un-vectored: session-demand.json pins no unmapped-sport case.
+  group('sessionCost unmapped sports (INTERIM, bug 2026-08-20)', () {
+    List<String> captureDebugPrint(void Function() body) {
+      final logs = <String>[];
+      final previous = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        logs.add(message ?? '');
+      };
+      try {
+        body();
+      } finally {
+        debugPrint = previous;
+      }
+      return logs;
+    }
+
+    test('unmapped sports use the conservative linear strength rate (5) '
+        'and are flagged by name', () {
+      const unmapped = ['other', 'triathlon', 'duathlon', 'multisport', 'brick'];
+      final logs = captureDebugPrint(() {
+        for (final sport in unmapped) {
+          final kcal = DailyBaselineCalculator.sessionCost(
+            sport: sport,
+            durationHr: 1.0,
+            intensityFactor: 0.75,
+            weightKg: 70,
+          );
+          // 5 kcal/kg/hr, linear, IF at reference 0.75: 5 × 1 × 1 × 70.
+          expect(kcal, closeTo(350, 0.001), reason: sport);
+        }
+      });
+      expect(logs, hasLength(unmapped.length));
+      for (final sport in unmapped) {
+        expect(logs.any((l) => l.contains('"$sport"')), isTrue, reason: sport);
+      }
+    });
+
+    test('regression: 60-min foam roll (other, IF 0.74, 70 kg) is no longer '
+        '~750 kcal', () {
+      late final double kcal;
+      captureDebugPrint(() {
+        kcal = DailyBaselineCalculator.sessionCost(
+          sport: 'other',
+          durationHr: 1.0,
+          intensityFactor: 0.74,
+          weightKg: 70,
+        );
+      });
+      expect(kcal, closeTo(5 * (0.74 / 0.75) * 1.0 * 70, 0.001)); // ≈345.3
+      expect(kcal, lessThan(400));
+    });
+
+    test('unmapped sport scales linearly with IF, not quadratically', () {
+      late final double low;
+      late final double high;
+      captureDebugPrint(() {
+        low = DailyBaselineCalculator.sessionCost(
+          sport: 'other',
+          durationHr: 1.0,
+          intensityFactor: 0.45,
+          weightKg: 70,
+        );
+        high = DailyBaselineCalculator.sessionCost(
+          sport: 'other',
+          durationHr: 1.0,
+          intensityFactor: 0.90,
+          weightKg: 70,
+        );
+      });
+      expect(high / low, closeTo(2.0, 1e-9)); // quadratic would give 4.0
+    });
+
+    test('mapped sports are unchanged and not flagged', () {
+      final logs = captureDebugPrint(() {
+        expect(
+          DailyBaselineCalculator.sessionCost(
+            sport: 'running',
+            durationHr: 1.5,
+            intensityFactor: 0.74,
+            weightKg: 75,
+          ),
+          closeTo(11 * math.pow(0.74 / 0.75, 2) * 1.5 * 75, 0.001),
+        );
+        expect(
+          DailyBaselineCalculator.sessionCost(
+            sport: 'cycling',
+            durationHr: 1.25,
+            intensityFactor: 0.93,
+            weightKg: 75,
+          ),
+          closeTo(9 * math.pow(0.93 / 0.75, 2) * 1.25 * 75, 0.001),
+        );
+        expect(
+          DailyBaselineCalculator.sessionCost(
+            sport: 'swimming',
+            durationHr: 1.0,
+            intensityFactor: 0.80,
+            weightKg: 75,
+          ),
+          closeTo(7 * math.pow(0.80 / 0.75, 2) * 1.0 * 75, 0.001),
+        );
+        expect(
+          DailyBaselineCalculator.sessionCost(
+            sport: 'strength',
+            durationHr: 1.0,
+            intensityFactor: 0.70,
+            weightKg: 75,
+          ),
+          closeTo(5 * (0.70 / 0.75) * 1.0 * 75, 0.001),
+        );
+      });
+      expect(logs, isEmpty);
+    });
   });
 
   group('TDEE convergence parity (neat-tef.ts)', () {

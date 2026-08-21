@@ -1142,11 +1142,14 @@ class _ActiveEnergyPage extends StatelessWidget {
         : r.verified
             ? BurnMark.verified
             : BurnMark.selfReported;
+    // Q-D4 (RULED 2026-08-17, workout-card.md): there is NO awaiting-sync
+    // signal anywhere — "self-reported" IS the never-synced signal; the
+    // reference rendering's awaitingSync flag is dead and stays dead.
     final status = planned
         ? 'planned (estimate)'
         : r.verified
             ? 'verified · Garmin · as planned'
-            : 'self-reported · awaiting sync';
+            : 'self-reported';
     return Opacity(
       opacity: planned ? 0.72 : 1,
       child: Container(

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 /// Client-side mirror of the daily-macro formula cores in
 /// `supabase/functions/calculate-daily-macros-v6/formulas/` (rmr.ts, baseline.ts,
 /// session.ts, neat-tef.ts, multi-day.ts).
@@ -136,13 +138,36 @@ class DailyBaselineCalculator {
   /// Session calorie cost. Endurance sports scale quadratically with IF.
   /// Weight multiplies LAST, mirroring session.ts, so cost is exactly linear
   /// in body weight (invariant I6).
+  ///
+  /// INTERIM (bug: ops/data/bug-reports/
+  /// 2026-08-20-session-cost-unknown-sport-priced-as-running.md): sports
+  /// missing from [_sessionBaseRateKcalPerKg] (other/triathlon/duathlon/
+  /// multisport/brick) used to fall back to the RUNNING rate on the quadratic
+  /// curve — a 60-min foam-roll priced at ~750 kcal. Until the spec owner
+  /// rules on non-endurance/composite types
+  /// (qa/intake/2026-08-20-session-cost-unknown-activity-types.md), unmapped
+  /// sports take the already-ratified strength rate (5 kcal/kg/hr) on the
+  /// LINEAR curve — a conservative floor, not an invented rate — and each
+  /// occurrence is logged so unmapped sport names accrete. Deliberately
+  /// un-vectored: docs/ssot/vectors/daily-macros/session-demand.json pins no
+  /// unmapped-sport case. Mirrored in session.ts sessionCost.
   static double sessionCost({
     required String sport,
     required double durationHr,
     required double intensityFactor,
     required double weightKg,
   }) {
-    final rate = _sessionBaseRateKcalPerKg[sport] ?? 11;
+    final rate = _sessionBaseRateKcalPerKg[sport];
+    if (rate == null) {
+      final interimRate = _sessionBaseRateKcalPerKg['strength']!;
+      debugPrint(
+        'DailyBaselineCalculator.sessionCost: unmapped sport "$sport" — '
+        'INTERIM conservative linear rate $interimRate kcal/kg/hr pending '
+        'SSOT ruling '
+        '(qa/intake/2026-08-20-session-cost-unknown-activity-types.md)',
+      );
+      return interimRate * (intensityFactor / 0.75) * durationHr * weightKg;
+    }
     if (sport == 'strength') {
       return rate * (intensityFactor / 0.75) * durationHr * weightKg;
     }

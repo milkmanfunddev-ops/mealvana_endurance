@@ -28,6 +28,7 @@ import '../../../personal_templates/application/template_scaling_service.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../data/nutrition_plan_mapper.dart';
 import '../providers/macro_targets_controller.dart';
+import '../utils/post_create_navigation.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -809,15 +810,27 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
       // Navigate to activity detail screen (skip adjust-macros)
       final isCoachView = widget.forUserId != null;
-      context.push(
-        '/current-plan',
-        extra: {
-          'activityId': activityId,
-          'isNewActivity': true,
-          'fromTemplate': true,
-          if (isCoachView) 'isCoachView': true,
-        },
-      );
+      if (isCoachView) {
+        context.push(
+          '/current-plan',
+          extra: {
+            'activityId': activityId,
+            'isNewActivity': true,
+            'fromTemplate': true,
+            'isCoachView': true,
+          },
+        );
+      } else {
+        // Unwind the spent creation form instead of pushing on top of it:
+        // the activity already exists, so backing out of the plan must land
+        // on the dashboard, never on a still-armed form that can create a
+        // duplicate.
+        showPlanAfterSuccessfulCreate(
+          context,
+          activityId: activityId,
+          fromTemplate: true,
+        );
+      }
     } catch (e) {
       DebugLogger.error('Error applying template: $e');
       if (!mounted) return;

@@ -61,7 +61,7 @@ class ActivityDetailHelpers {
     return '$hour:$minute$period';
   }
 
-  /// Format a frozen plan lead time for prose, e.g. "Planned 3 hours ahead".
+  /// Format a plan lead time for prose, e.g. "Planned 3 hours ahead".
   /// "45 min" under an hour, "3 hours" on the whole hour, "2h 30m" otherwise
   /// (reusing [formatDuration] for the mixed case).
   static String formatLeadTime(int minutes) {

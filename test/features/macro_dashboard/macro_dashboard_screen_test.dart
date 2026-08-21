@@ -360,6 +360,27 @@ void main() {
     expect(find.text('Swim'), findsOneWidget);
   });
 
+  // Bug report 2026-08-20-dashboard-papercuts, item 3 (a11y): the dashed
+  // add pills reported as static text (AXStaticText) to assistive tech —
+  // they must expose button semantics with a tap action.
+  testWidgets('add pills expose button semantics, not static text',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    await _pumpDashboard(tester);
+
+    for (final key in const [
+      ValueKey('macro_dashboard.add_food'),
+      ValueKey('macro_dashboard.add_activity'),
+    ]) {
+      expect(
+        tester.getSemantics(find.byKey(key)),
+        isSemantics(isButton: true, hasTapAction: true),
+        reason: '$key must read as a button to assistive tech',
+      );
+    }
+    handle.dispose();
+  });
+
   testWidgets('tracking toggle hides the energy card and meal macros (§5)',
       (tester) async {
     await _pumpDashboard(tester);

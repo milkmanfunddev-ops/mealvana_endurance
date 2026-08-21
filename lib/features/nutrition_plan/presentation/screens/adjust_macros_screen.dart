@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
 import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
 import '../utils/macro_helpers.dart';
+import '../utils/post_create_navigation.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -648,10 +649,11 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           extra: {'activityId': activityId, 'isCoachView': true},
         );
       } else {
-        context.push(
-          '/current-plan',
-          extra: {'activityId': activityId, 'isNewActivity': true},
-        );
+        // Unwind the spent creation flow (new-activity form + this screen)
+        // instead of pushing on top of it: backing out of the plan must land
+        // on the dashboard, never on a still-armed Generate form that can
+        // insert a duplicate activity.
+        showPlanAfterSuccessfulCreate(context, activityId: activityId);
       }
     } else if (activityId == null) {
       DebugLogger.error(

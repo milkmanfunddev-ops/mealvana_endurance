@@ -235,8 +235,9 @@ ops/docs/supabase-deploy-playbook.md + the brief docs/ssot/intake/
   new dashboard; local builds still opt in via `.env.dev.local`, prod and
   the code default stay OFF (the default-on flip remains its own decision,
   see Epilogue).
-- Remaining: prod steps 7–11 of the playbook (separate hand-off; nothing
-  prod has been touched).
+- Remaining: the prod half — steps **P1–P7** of the playbook §7 (renumbered
+  2026-08-20; read the playbook's §0 standing orders first). Nothing prod
+  has been touched.
 
 ### Phase C — original plan (kept for the record; superseded by the playbook §7)
 Strict order:

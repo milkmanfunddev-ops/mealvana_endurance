@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -172,9 +174,9 @@ class DailyMacroTargetsRepository {
     await _database.customStatement(
       '''INSERT OR REPLACE INTO daily_macro_targets
          (id, user_id, target_date, carb_g, prot_g, fat_g, tdee, rmr, session_kcal,
-          neat_kcal, tef_kcal, mode, ea, ea_status, algorithm_version, needs_upload,
-          created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          neat_kcal, tef_kcal, mode, ea, ea_status, calculation_input,
+          algorithm_version, needs_upload, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
         targets.id,
         targets.userId,
@@ -190,12 +192,48 @@ class DailyMacroTargetsRepository {
         targets.mode,
         targets.ea,
         targets.eaStatus?.dbValue,
+        _encodeCalculationInput(targets),
         targets.algorithmVersion,
         0, // needs_upload = false (just calculated)
         targets.createdAt.millisecondsSinceEpoch,
         targets.updatedAt.millisecondsSinceEpoch,
       ],
     );
+  }
+
+  /// The engine inputs the domain model carries but the scalar columns don't.
+  ///
+  /// Bug 2026-08-20-dashboard-weight-fallback-70kg: this column was never
+  /// written by the local save path, so every cached read handed the display
+  /// layer `weightKg == null` and the assembler priced EVERY athlete's
+  /// formula-rung sessions at a silent 70 kg. F4 session cost is exactly
+  /// linear in body weight (docs/ssot — invariant I6), so a wrong weight is a
+  /// wrong number on every surface. Persist EVERY calculation_input field the
+  /// domain models (`sources` and `delta` are documented fresh-calculation
+  /// transients and intentionally not cached); the I7 seam round-trip test
+  /// (test/features/daily_macros/daily_macro_targets_roundtrip_test.dart)
+  /// fails if a field is added to the domain but dropped here or in
+  /// [_mapRowToDomain].
+  static String _encodeCalculationInput(DailyMacroTargets targets) {
+    return jsonEncode({
+      if (targets.weightKg != null) 'weight_kg': targets.weightKg,
+      if (targets.bodyFatPct != null) 'body_fat_pct': targets.bodyFatPct,
+      'energy_basis': targets.energyBasis,
+    });
+  }
+
+  /// Parse the `calculation_input` JSON of a cached row. Legacy rows (written
+  /// before the column was populated) and corrupt payloads read as absent —
+  /// the domain's own defaults then apply, and the display layer must treat a
+  /// missing weight as missing, never as a stand-in constant.
+  static Map<String, dynamic>? _decodeCalculationInput(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? decoded.cast<String, dynamic>() : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Save macro targets to Supabase
@@ -340,6 +378,14 @@ class DailyMacroTargetsRepository {
   }
 
   DailyMacroTargets _mapRowToDomain(QueryRow row) {
+    // Bug 2026-08-20-dashboard-weight-fallback-70kg: the read path must map
+    // every calculation_input field the domain carries (weight_kg,
+    // body_fat_pct, energy_basis) — this mapper previously dropped all of
+    // them, which is how the dashboard lost the athlete's weight on every
+    // locally-cached day.
+    final input = _decodeCalculationInput(
+      row.readNullable<String>('calculation_input'),
+    );
     return DailyMacroTargets(
       id: row.read<String>('id'),
       userId: row.read<String>('user_id'),
@@ -364,6 +410,11 @@ class DailyMacroTargetsRepository {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(
         row.read<int>('updated_at'),
       ),
+      weightKg: (input?['weight_kg'] as num?)?.toDouble(),
+      bodyFatPct: (input?['body_fat_pct'] as num?)?.toDouble(),
+      // Q-009: pre_override days suppress surplus copy; a cached read that
+      // forgot this basis would lie a day after the EA gate raised the plan.
+      energyBasis: input?['energy_basis'] as String? ?? 'as_computed',
     );
   }
 }
