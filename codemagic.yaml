@@ -870,12 +870,11 @@ workflows:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
         track: beta  # Open testing track (Play target-API notice asks for a testable release)
         submit_as_draft: false
-        # Play refuses automatic send-for-review while the console has pending
-        # items (App-access credentials). Without this the 1.23.0 publish
-        # failed AFTER a successful AAB upload: "Changes cannot be sent for
-        # review automatically. Please set changesNotSentForReview to true."
-        # Releases land in the console and must be sent for review manually.
-        changes_not_sent_for_review: true
+        # 2026-08-21: the console's pending items are resolved, and Play now
+        # REJECTS the old workaround ("changesNotSentForReview must not be
+        # set"). Releases send for review automatically again. If Play ever
+        # re-acquires pending items, flip changes_not_sent_for_review: true
+        # back on (1.23.0-era failure mode).
       slack:
         channel: '#builds'
         notify:
