@@ -68,7 +68,7 @@ const _energy = EnergyCardData(
   remainingKcal: 2502,
   workoutDoneKcal: 229,
   workoutPlannedKcal: 1205,
-  workoutProjectedKcal: 1434,
+  workoutProjectedKcal: 1538,
   workoutRows: [
     EnergyWorkoutRow(
       name: 'Swim',

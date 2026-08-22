@@ -210,3 +210,38 @@ Display-layer, engine-independent — checks are properties of any consumer:
    string-level check, not a sentiment guess).
 7. With tracking off: BLOCK and HARD_WARNING still render; every §1–§3 number is absent.
 8. Vectors: `qa/vectors/daily-macros/intraday-display.json` (after ratification).
+
+## §4c · A zoneless session takes the engine's default distribution — RULED (Xuan, 2026-08-22, post-ratification addition)
+
+**When a session carries no zone distribution, every surface — engine input and display alike —
+assumes 70 % conversational / 20 % tempo / 10 % all-out, and derives its intensity factor from
+that distribution through the F3 RMS derivation (IF ≈ 0.7715).** No surface substitutes a flat
+intensity factor of its own.
+
+The spec was previously silent here. `session-demand.md`'s worked examples use IF 0.74 as an
+INPUT to exercise F4; nothing ever ratified 0.74 as the value a zoneless session takes. In that
+silence the two sides diverged: the engine input builder defaulted the zone columns to 70/20/10,
+while display surfaces applied a flat 0.74 (an implementation decision of 2026-08-20, never
+ratified). Because session cost is quadratic in IF for endurance sports, an ~0.03 difference in
+assumption became ~8 % in kilocalories — on a real athlete's account, a projected burn of
+2,933 kcal against a 3,037 kcal fuel target **on the same card**, 104 kcal apart with no
+explanation available to the reader.
+
+**The constant is the DISTRIBUTION, not the intensity factor.** Both sides feed these three
+percentages through the single RMS derivation rather than storing a derived IF, so there remains
+exactly one place where zones become an intensity factor. Ratifying 0.7715 as a number would have
+re-created the same class of drift one level down.
+
+**Direction of the ruling — why display conformed to the engine, and not the reverse:** the
+engine's assumption is what actually produced the athlete's macro targets. A display that prices
+the same session differently is contradicting the numbers it sits beside; its job is to explain
+the targets, never to hold a second opinion about them.
+
+**Consequence for the canonical mock day** (design conformance): the 90-minute planned run at
+75 kg moves from 1,205 kcal to 1,309, and the day's workout total from 1,434 to 1,538. The
+`macro-dashboard.goldens.yaml` manifest and the app-side goldens move with it — a sanctioned
+regeneration, since it follows a ruled spec change rather than preceding one.
+
+**Conformance:** `zoneless-if-default` and `zoneless-cost-mockday-run` in
+`vectors/daily-macros/session-demand.json` — the F3/F4 family the arithmetic belongs to — pinning
+the distribution → IF derivation and the resulting cost for the mock-day session.

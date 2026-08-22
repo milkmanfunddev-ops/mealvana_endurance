@@ -30,6 +30,14 @@ import '../fixtures/final_surge_fixtures.dart';
 /// The rule these tests encode: **rows come from the real producer, never from
 /// a hand-authored literal.** That is what makes a deliberate NULL impossible
 /// to assume away.
+/// The ruled zones-absent IF — derived from the shared default distribution,
+/// never a literal, so this suite tracks the resolver instead of shadowing it.
+final double _zonelessIf = DailyBaselineCalculator.zoneDistributionToIf(
+  pctConversational: SessionInputResolver.defaultZ1Z2Pct / 100,
+  pctTempo: SessionInputResolver.defaultZ3Z4Pct / 100,
+  pctAllout: SessionInputResolver.defaultZ5Pct / 100,
+);
+
 void main() {
   const transformer = FinalSurgeTransformer();
   const assembler = MacroDashboardAssembler();
@@ -69,9 +77,8 @@ void main() {
       expect(a.paceTargetMinutesPerMile, isNotNull,
           reason: 'the pace it expects consumers to derive minutes from');
       // Precondition for the engine-agreement test below, which pins IF at the
-      // zoneless 0.74 fallback on BOTH sides (the engine-vs-display IF default
-      // is a separate open ruling:
-      // qa/intake/2026-08-20-zoneless-if-default-engine-vs-display.md). If a
+      // ruled zones-absent default on BOTH sides (RULED 2026-08-22: display
+      // adopts the engine's 70/20/10 through the one RMS derivation). If a
       // future fixture starts carrying zones, that test would compare two
       // different IFs and could pass for the wrong reason — so assert the
       // precondition here rather than let it drift silently.
@@ -111,7 +118,7 @@ void main() {
         return DailyBaselineCalculator.sessionCost(
           sport: SessionInputResolver.displaySport(a.activityType.name),
           durationHr: minutes / 60.0,
-          intensityFactor: 0.74,
+          intensityFactor: _zonelessIf,
           weightKg: weightKg,
         );
       }
@@ -142,7 +149,7 @@ void main() {
       final engineSessionKcal = DailyBaselineCalculator.sessionCost(
         sport: SessionInputResolver.engineSport(a.activityType.name),
         durationHr: engineMinutes / 60.0,
-        intensityFactor: 0.74,
+        intensityFactor: _zonelessIf,
         weightKg: weightKg,
       );
 

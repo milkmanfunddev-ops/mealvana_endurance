@@ -22,10 +22,20 @@ import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.
 import 'package:mealvana_endurance/features/nutrition_plan/application/daily_baseline_calculator.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/intensity_distribution.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+import 'package:mealvana_endurance/shared/domain/session_input_resolver.dart';
+
+/// The ruled zones-absent IF (2026-08-22): the engine's default distribution
+/// through the one RMS derivation — never a hardcoded constant here, so this
+/// suite cannot drift from the resolver the way the flat 0.74 did.
+final double _zonelessIf = DailyBaselineCalculator.zoneDistributionToIf(
+  pctConversational: SessionInputResolver.defaultZ1Z2Pct / 100,
+  pctTempo: SessionInputResolver.defaultZ3Z4Pct / 100,
+  pctAllout: SessionInputResolver.defaultZ5Pct / 100,
+);
 
 // ---------------------------------------------------------------------------
 // Canonical mock day (goldens manifest): verified 8:00 swim 229 kcal,
-// planned 5:30 run 1,205 kcal, snapshot 15:00, eaten 1,650, targets 4,152.
+// planned 5:30 run 1,309 kcal (was 1,205 at the retired flat-0.74 IF), snapshot 15:00, eaten 1,650, targets 4,152.
 // ---------------------------------------------------------------------------
 
 final _day = DateTime(2026, 8, 14);
@@ -69,7 +79,7 @@ DailyMacroTargets _targets() => DailyMacroTargets(
   fatG: 138,
   tdee: 4152,
   rmr: 1908,
-  sessionKcal: 1434,
+  sessionKcal: 1538,
   neatKcal: 394.9,
   mode: 'prospective',
   algorithmVersion: 'v6.0.0',
@@ -112,7 +122,7 @@ WorkoutCardData _card(
   name: 'Run',
   timeLabel: '5:30 PM',
   metaLabel: '90 min',
-  kcal: 1205,
+  kcal: 1309,
   state: state,
   sport: 'running',
   skipActive: skipActive,
@@ -700,7 +710,7 @@ void main() {
       final todayCard = _workoutCardOf(today, 'Run');
       expect(todayCard.state, WorkoutCardState.doneConfirmed);
       expect(todayCard.timeLabel, '5:30 PM', reason: 'its planned slot');
-      expect(today.energy!.workoutDoneKcal, closeTo(1434, 1));
+      expect(today.energy!.workoutDoneKcal, closeTo(1538, 1));
       expect(
         today.nodes.last.timeLabel,
         isNot(''),
@@ -760,9 +770,9 @@ void main() {
           actualTime: _now,
         ),
       ]);
-      expect(done.energy!.netKcal, -1338);
+      expect(done.energy!.netKcal, -1442);
       expect(done.energy!.bandCopy, 'deficit — time to eat');
-      expect(done.energy!.workoutDoneKcal, closeTo(1434, 1));
+      expect(done.energy!.workoutDoneKcal, closeTo(1538, 1));
       expect(done.energy!.workoutPlannedKcal, 0);
     },
   );
@@ -1108,7 +1118,7 @@ void main() {
         );
         expect(
           d.energy!.workoutDoneKcal,
-          closeTo(1434, 1),
+          closeTo(1538, 1),
           reason: 'counts on its own day (now=$now)',
         );
       }
@@ -1147,7 +1157,7 @@ void main() {
       fatG: 138,
       tdee: 4152,
       rmr: 1908,
-      sessionKcal: 1434,
+      sessionKcal: 1538,
       neatKcal: 394.9,
       mode: 'prospective',
       algorithmVersion: 'v6.0.0',
@@ -1179,7 +1189,7 @@ void main() {
     // I8: the 90-min zone-less planned run priced at 50 / 75 / 95 kg. The
     // expected value is computed from the SAME ratified formula the engine
     // uses (DailyBaselineCalculator.sessionCost = F4), at the documented
-    // 0.74 zones-absent IF — so a reintroduced weight constant anywhere in
+    // the ruled zones-absent IF — so a reintroduced weight constant anywhere in
     // the display path breaks at two of the three weights.
     test('I8: card kcal is F4 at the athlete weight — 50 / 75 / 95 kg', () {
       final kcalAt = <double, double>{};
@@ -1189,7 +1199,7 @@ void main() {
         final expected = DailyBaselineCalculator.sessionCost(
           sport: 'running',
           durationHr: 1.5,
-          intensityFactor: 0.74,
+          intensityFactor: _zonelessIf,
           weightKg: w,
         );
         expect(run.kcal, isNotNull, reason: 'weight resolved → priced');
@@ -1203,7 +1213,7 @@ void main() {
       final at70 = DailyBaselineCalculator.sessionCost(
         sport: 'running',
         durationHr: 1.5,
-        intensityFactor: 0.74,
+        intensityFactor: _zonelessIf,
         weightKg: 70,
       );
       for (final v in kcalAt.values) {
@@ -1224,7 +1234,7 @@ void main() {
       final expected = DailyBaselineCalculator.sessionCost(
         sport: 'running',
         durationHr: 1.5,
-        intensityFactor: 0.74,
+        intensityFactor: _zonelessIf,
         weightKg: 49.9,
       );
       expect(_workoutCardOf(d, 'Run').kcal, closeTo(expected, 1e-9));
@@ -1237,7 +1247,7 @@ void main() {
         final expected = DailyBaselineCalculator.sessionCost(
           sport: 'running',
           durationHr: 1.5,
-          intensityFactor: 0.74,
+          intensityFactor: _zonelessIf,
           weightKg: 49.9,
         );
         expect(_workoutCardOf(d, 'Run').kcal, closeTo(expected, 1e-9));
@@ -1247,7 +1257,8 @@ void main() {
     // I4 concrete (2026-08-20-session-kcal-three-surfaces-disagree): for a
     // seeded athlete, card kcal == Active-Energy sheet row kcal ==
     // F4(profile weight, resolved IF), with IF resolved from the planned
-    // zones (ruling: zones when present, documented 0.74 fallback — on
+    // zones (ruling 2026-08-22: zones when present, else the engine's
+    // 70/20/10 default through the same derivation — on
     // every surface; intraday-display §1 / F22 FORMULA rung).
     test('I4: card kcal == sheet row kcal == F4(profile weight, zones IF)', () {
       const zones = IntensityDistribution(
@@ -1341,8 +1352,8 @@ const _energyData = EnergyCardData(
   targetKcal: 4152,
   remainingKcal: 2502,
   workoutDoneKcal: 229,
-  workoutPlannedKcal: 1205,
-  workoutProjectedKcal: 1434,
+  workoutPlannedKcal: 1309,
+  workoutProjectedKcal: 1538,
   workoutRows: [],
   carbTargetG: 596,
   proteinTargetG: 130,

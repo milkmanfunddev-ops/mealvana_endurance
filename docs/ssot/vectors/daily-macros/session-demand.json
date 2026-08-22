@@ -1,406 +1,433 @@
 {
-  "section": "session-demand",
-  "engine": "calculate-daily-macros (session-demand)",
-  "specVersion": "v1 (2026-08-14, ratified)",
-  "note": "Pins RATIFIED v1 (Xuan, 2026-08-14). EXPECTED-RED until calculate-daily-macros implements the ruled specs. Expected values follow R1: the UNROUNDED chain, abs tol 1e-3 (display rounding is half-up, pinned by F10's 136.5->137). Source tables that used rounded intermediates (NEAT 378 vs 377.784) drift <=1.5 kcal from these vectors; R1 governs, the vectors are the truth. F3/F4/F5/F19 + protein bump; Q-002/Q-003 rulings pinned.",
-  "toleranceG": 0.001,
-  "vectors": [
-    {
-      "id": "if-0.68",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 1,
-        "pctTempo": 0,
-        "pctAllout": 0
-      },
-      "expected": {
-        "IF": 0.68
-      },
-      "why": "F3 RMS square-weighted; tol 0.005 per spec"
-    },
-    {
-      "id": "if-0.88",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0,
-        "pctTempo": 1,
-        "pctAllout": 0
-      },
-      "expected": {
-        "IF": 0.88
-      },
-      "why": "F3 RMS square-weighted; tol 0.005 per spec"
-    },
-    {
-      "id": "if-1.08",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0,
-        "pctTempo": 0,
-        "pctAllout": 1
-      },
-      "expected": {
-        "IF": 1.08
-      },
-      "why": "F3 RMS square-weighted; tol 0.005 per spec"
-    },
-    {
-      "id": "if-0.771",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0.7,
-        "pctTempo": 0.2,
-        "pctAllout": 0.1
-      },
-      "expected": {
-        "IF": 0.7715
-      },
-      "why": "F3 RMS square-weighted; tol 0.005 per spec"
-    },
-    {
-      "id": "if-0.894",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0.3,
-        "pctTempo": 0.4,
-        "pctAllout": 0.3
-      },
-      "expected": {
-        "IF": 0.8935
-      },
-      "why": "F3 RMS square-weighted; tol 0.005 per spec"
-    },
-    {
-      "id": "if-0.902",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0.5,
-        "pctTempo": 0,
-        "pctAllout": 0.5
-      },
-      "expected": {
-        "IF": 0.9024
-      },
-      "why": "F3 RMS square-weighted; tol 0.005 per spec"
-    },
-    {
-      "id": "if-reject-sum-1p1",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0.7,
-        "pctTempo": 0.2,
-        "pctAllout": 0.2
-      },
-      "expected": {
-        "reject": true
-      },
-      "why": "F3: sum!=1 -> REJECT, never normalize"
-    },
-    {
-      "id": "if-reject-zeros",
-      "status": "ratified",
-      "inputs": {
-        "pctConv": 0,
-        "pctTempo": 0,
-        "pctAllout": 0
-      },
-      "expected": {
-        "reject": true
-      },
-      "why": "F3: 0/0/0 rejected"
-    },
-    {
-      "id": "kcal-running-0.74-1.5-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.74,
-        "durationHr": 1.5,
-        "weightKg": 75
-      },
-      "expected": {
-        "kcal": 1204.72
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "kcal-cycling-0.93-1.25-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "cycling",
-        "IF": 0.93,
-        "durationHr": 1.25,
-        "weightKg": 75
-      },
-      "expected": {
-        "kcal": 1297.35
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "kcal-cycling-0.72-4-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "cycling",
-        "IF": 0.72,
-        "durationHr": 4,
-        "weightKg": 75
-      },
-      "expected": {
-        "kcal": 2488.32
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "kcal-strength-0.7-1-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "strength",
-        "IF": 0.7,
-        "durationHr": 1,
-        "weightKg": 75
-      },
-      "expected": {
-        "kcal": 350.0
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "kcal-running-0.65-0.75-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.65,
-        "durationHr": 0.75,
-        "weightKg": 75
-      },
-      "expected": {
-        "kcal": 464.75
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "kcal-running-0.74-1.5-60",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.74,
-        "durationHr": 1.5,
-        "weightKg": 60
-      },
-      "expected": {
-        "kcal": 963.776
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "kcal-running-0.74-1.5-90",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.74,
-        "durationHr": 1.5,
-        "weightKg": 90
-      },
-      "expected": {
-        "kcal": 1445.664
-      },
-      "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
-    },
-    {
-      "id": "carbdemand-0.65-0.75-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.65,
-        "durationHr": 0.75,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 26.25
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-0.74-1.5-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.74,
-        "durationHr": 1.5,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 69.0
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-0.88-2-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.88,
-        "durationHr": 2,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 163.3
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-0.93-1.25-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.93,
-        "durationHr": 1.25,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 116.437
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-0.72-4-75",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.72,
-        "durationHr": 4,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 197.8
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-0.74-1.5-60",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.74,
-        "durationHr": 1.5,
-        "weightKg": 60
-      },
-      "expected": {
-        "carbG": 55.2
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-0.88-2-90",
-      "status": "ratified",
-      "inputs": {
-        "sport": "running",
-        "IF": 0.88,
-        "durationHr": 2,
-        "weightKg": 90
-      },
-      "expected": {
-        "carbG": 195.96
-      },
-      "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
-    },
-    {
-      "id": "carbdemand-strength-flat",
-      "status": "ratified",
-      "inputs": {
-        "sport": "strength",
-        "IF": 0.7,
-        "durationHr": 1,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 27.0
-      },
-      "why": "Q-003 RULED: strength = 27 g/hr * dur * (W/75), IF ignored, no multiplier"
-    },
-    {
-      "id": "carbdemand-strength-if-ignored",
-      "status": "ratified",
-      "inputs": {
-        "sport": "strength",
-        "IF": 0.95,
-        "durationHr": 1,
-        "weightKg": 75
-      },
-      "expected": {
-        "carbG": 27.0
-      },
-      "why": "Strength at IF 0.95 = same 27 g \u2014 intensity-independent by ruling"
-    },
-    {
-      "id": "protbump-max-not-sum",
-      "status": "ratified",
-      "inputs": {
-        "weightKg": 75,
-        "sessions": [
-          {
-            "sport": "strength",
-            "IF": 0.7,
-            "durationHr": 1
-          },
-          {
-            "sport": "running",
-            "IF": 0.74,
-            "durationHr": 1.5
-          }
-        ]
-      },
-      "expected": {
-        "protBumpG": 22.5
-      },
-      "why": "Max-override across sessions, never a sum: max(22.5, 15) = 22.5"
-    },
-    {
-      "id": "f19-compound-two",
-      "status": "ratified",
-      "inputs": {
-        "weightKg": 75,
-        "sessions": [
-          {
-            "sport": "cycling",
-            "IF": 0.8,
-            "durationHr": 2
-          },
-          {
-            "sport": "running",
-            "IF": 0.78,
-            "durationHr": 0.75
-          }
-        ]
-      },
-      "expected": {
-        "sessionCarbG": 169.4
-      },
-      "why": "F19: 126.5 + 42.9*1.1 = 169.4 UNROUNDED (Q-002 ruled: F19 round() deleted; step 12 rounds)"
-    },
-    {
-      "id": "f19-strength-no-compound",
-      "status": "ratified",
-      "inputs": {
-        "weightKg": 75,
-        "sessions": [
-          {
-            "sport": "strength",
-            "IF": 0.7,
-            "durationHr": 1
-          },
-          {
-            "sport": "running",
-            "IF": 0.74,
-            "durationHr": 1.5
-          }
-        ]
-      },
-      "expected": {
-        "sessionCarbG": 96.0
-      },
-      "why": "Q-003's vindicated row: 27 + 69 = 96; strength neither compounds nor advances the endurance index"
-    }
-  ]
+ "section": "session-demand",
+ "engine": "calculate-daily-macros (session-demand)",
+ "specVersion": "v1 (2026-08-14, ratified)",
+ "note": "Pins RATIFIED v1 (Xuan, 2026-08-14). EXPECTED-RED until calculate-daily-macros implements the ruled specs. Expected values follow R1: the UNROUNDED chain, abs tol 1e-3 (display rounding is half-up, pinned by F10's 136.5->137). Source tables that used rounded intermediates (NEAT 378 vs 377.784) drift <=1.5 kcal from these vectors; R1 governs, the vectors are the truth. F3/F4/F5/F19 + protein bump; Q-002/Q-003 rulings pinned.",
+ "toleranceG": 0.001,
+ "vectors": [
+  {
+   "id": "if-0.68",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 1,
+    "pctTempo": 0,
+    "pctAllout": 0
+   },
+   "expected": {
+    "IF": 0.68
+   },
+   "why": "F3 RMS square-weighted; tol 0.005 per spec"
+  },
+  {
+   "id": "if-0.88",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0,
+    "pctTempo": 1,
+    "pctAllout": 0
+   },
+   "expected": {
+    "IF": 0.88
+   },
+   "why": "F3 RMS square-weighted; tol 0.005 per spec"
+  },
+  {
+   "id": "if-1.08",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0,
+    "pctTempo": 0,
+    "pctAllout": 1
+   },
+   "expected": {
+    "IF": 1.08
+   },
+   "why": "F3 RMS square-weighted; tol 0.005 per spec"
+  },
+  {
+   "id": "if-0.771",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0.7,
+    "pctTempo": 0.2,
+    "pctAllout": 0.1
+   },
+   "expected": {
+    "IF": 0.7715
+   },
+   "why": "F3 RMS square-weighted; tol 0.005 per spec"
+  },
+  {
+   "id": "if-0.894",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0.3,
+    "pctTempo": 0.4,
+    "pctAllout": 0.3
+   },
+   "expected": {
+    "IF": 0.8935
+   },
+   "why": "F3 RMS square-weighted; tol 0.005 per spec"
+  },
+  {
+   "id": "if-0.902",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0.5,
+    "pctTempo": 0,
+    "pctAllout": 0.5
+   },
+   "expected": {
+    "IF": 0.9024
+   },
+   "why": "F3 RMS square-weighted; tol 0.005 per spec"
+  },
+  {
+   "id": "if-reject-sum-1p1",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0.7,
+    "pctTempo": 0.2,
+    "pctAllout": 0.2
+   },
+   "expected": {
+    "reject": true
+   },
+   "why": "F3: sum!=1 -> REJECT, never normalize"
+  },
+  {
+   "id": "if-reject-zeros",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0,
+    "pctTempo": 0,
+    "pctAllout": 0
+   },
+   "expected": {
+    "reject": true
+   },
+   "why": "F3: 0/0/0 rejected"
+  },
+  {
+   "id": "kcal-running-0.74-1.5-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.74,
+    "durationHr": 1.5,
+    "weightKg": 75
+   },
+   "expected": {
+    "kcal": 1204.72
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "kcal-cycling-0.93-1.25-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "cycling",
+    "IF": 0.93,
+    "durationHr": 1.25,
+    "weightKg": 75
+   },
+   "expected": {
+    "kcal": 1297.35
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "kcal-cycling-0.72-4-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "cycling",
+    "IF": 0.72,
+    "durationHr": 4,
+    "weightKg": 75
+   },
+   "expected": {
+    "kcal": 2488.32
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "kcal-strength-0.7-1-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "strength",
+    "IF": 0.7,
+    "durationHr": 1,
+    "weightKg": 75
+   },
+   "expected": {
+    "kcal": 350.0
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "kcal-running-0.65-0.75-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.65,
+    "durationHr": 0.75,
+    "weightKg": 75
+   },
+   "expected": {
+    "kcal": 464.75
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "kcal-running-0.74-1.5-60",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.74,
+    "durationHr": 1.5,
+    "weightKg": 60
+   },
+   "expected": {
+    "kcal": 963.776
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "kcal-running-0.74-1.5-90",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.74,
+    "durationHr": 1.5,
+    "weightKg": 90
+   },
+   "expected": {
+    "kcal": 1445.664
+   },
+   "why": "F4: endurance quadratic (IF/0.75)^2, strength linear; exactly linear in weight (I6)"
+  },
+  {
+   "id": "carbdemand-0.65-0.75-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.65,
+    "durationHr": 0.75,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 26.25
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-0.74-1.5-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.74,
+    "durationHr": 1.5,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 69.0
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-0.88-2-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.88,
+    "durationHr": 2,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 163.3
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-0.93-1.25-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.93,
+    "durationHr": 1.25,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 116.437
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-0.72-4-75",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.72,
+    "durationHr": 4,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 197.8
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-0.74-1.5-60",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.74,
+    "durationHr": 1.5,
+    "weightKg": 60
+   },
+   "expected": {
+    "carbG": 55.2
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-0.88-2-90",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.88,
+    "durationHr": 2,
+    "weightKg": 90
+   },
+   "expected": {
+    "carbG": 195.96
+   },
+   "why": "F5 ladder interp; x1.15 iff dur>1.5 OR IF>0.85, both STRICT (1.5 and 0.85 exactly do not trigger)"
+  },
+  {
+   "id": "carbdemand-strength-flat",
+   "status": "ratified",
+   "inputs": {
+    "sport": "strength",
+    "IF": 0.7,
+    "durationHr": 1,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 27.0
+   },
+   "why": "Q-003 RULED: strength = 27 g/hr * dur * (W/75), IF ignored, no multiplier"
+  },
+  {
+   "id": "carbdemand-strength-if-ignored",
+   "status": "ratified",
+   "inputs": {
+    "sport": "strength",
+    "IF": 0.95,
+    "durationHr": 1,
+    "weightKg": 75
+   },
+   "expected": {
+    "carbG": 27.0
+   },
+   "why": "Strength at IF 0.95 = same 27 g — intensity-independent by ruling"
+  },
+  {
+   "id": "protbump-max-not-sum",
+   "status": "ratified",
+   "inputs": {
+    "weightKg": 75,
+    "sessions": [
+     {
+      "sport": "strength",
+      "IF": 0.7,
+      "durationHr": 1
+     },
+     {
+      "sport": "running",
+      "IF": 0.74,
+      "durationHr": 1.5
+     }
+    ]
+   },
+   "expected": {
+    "protBumpG": 22.5
+   },
+   "why": "Max-override across sessions, never a sum: max(22.5, 15) = 22.5"
+  },
+  {
+   "id": "f19-compound-two",
+   "status": "ratified",
+   "inputs": {
+    "weightKg": 75,
+    "sessions": [
+     {
+      "sport": "cycling",
+      "IF": 0.8,
+      "durationHr": 2
+     },
+     {
+      "sport": "running",
+      "IF": 0.78,
+      "durationHr": 0.75
+     }
+    ]
+   },
+   "expected": {
+    "sessionCarbG": 169.4
+   },
+   "why": "F19: 126.5 + 42.9*1.1 = 169.4 UNROUNDED (Q-002 ruled: F19 round() deleted; step 12 rounds)"
+  },
+  {
+   "id": "f19-strength-no-compound",
+   "status": "ratified",
+   "inputs": {
+    "weightKg": 75,
+    "sessions": [
+     {
+      "sport": "strength",
+      "IF": 0.7,
+      "durationHr": 1
+     },
+     {
+      "sport": "running",
+      "IF": 0.74,
+      "durationHr": 1.5
+     }
+    ]
+   },
+   "expected": {
+    "sessionCarbG": 96.0
+   },
+   "why": "Q-003's vindicated row: 27 + 69 = 96; strength neither compounds nor advances the endurance index"
+  },
+  {
+   "id": "zoneless-if-default",
+   "status": "ratified",
+   "inputs": {
+    "pctConv": 0.7,
+    "pctTempo": 0.2,
+    "pctAllout": 0.1
+   },
+   "expected": {
+    "IF": 0.7715
+   },
+   "why": "§4c RULED 2026-08-22 (intraday-display.md) — a session with NO zone distribution takes 70/20/10 on EVERY surface, engine input and display alike, and derives IF from it via F3 RMS. The distribution is the ratified constant; the IF stays derived. Retires the unratified flat-0.74 display fallback. tol 0.005."
+  },
+  {
+   "id": "zoneless-cost-mockday-run",
+   "status": "ratified",
+   "inputs": {
+    "sport": "running",
+    "IF": 0.7715,
+    "durationHr": 1.5,
+    "weightKg": 75
+   },
+   "expected": {
+    "kcal": 1309.467
+   },
+   "why": "§4c consequence — the canonical mock day's 90-min planned run at 75 kg. Displays as 1,309 (rounded); was 1,205 under the retired flat-0.74 fallback; macro-dashboard.goldens.yaml and the app goldens move with it. Pins the DIRECTION of the ruling: display conforms to the engine, never the reverse."
+  }
+ ]
 }

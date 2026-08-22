@@ -197,9 +197,10 @@ class MacroDashboardAssembler {
   /// stack onto a wrong weight — an unresolvable weight aborts the formula
   /// rung entirely instead of estimating):
   ///  * IF — zones when present (RMS over the planned distribution, the same
-  ///    derivation the engine uses), else the documented flat 0.74
-  ///    representative endurance IF (ruling 2026-08-20: zones-when-present /
-  ///    0.74 fallback on every surface).
+  ///    derivation the engine uses), else the ENGINE's default 70/20/10
+  ///    distribution through that same derivation (IF 0.7715). Superseding
+  ///    the 2026-08-20 flat-0.74 fallback, which made a zoneless session cost
+  ///    ~8% less on screen than in the targets beside it.
   ///  * duration — [SessionInputResolver.durationMinutes], the SAME ladder
   ///    that builds the engine's `SessionInput`: actual beats planned, then
   ///    distance × the session's own prescribed pace, then the flat fallback.
@@ -232,7 +233,14 @@ class MacroDashboardAssembler {
             pctTempo: dist.tempoPct / 100,
             pctAllout: dist.allOutPct / 100,
           )
-        : 0.74; // documented flat fallback when zones are absent
+        // RULED 2026-08-22: a zoneless session takes the ENGINE's default
+        // distribution, through the same RMS derivation — not a separate flat
+        // IF. See SessionInputResolver.defaultZ1Z2Pct.
+        : DailyBaselineCalculator.zoneDistributionToIf(
+            pctConversational: SessionInputResolver.defaultZ1Z2Pct / 100,
+            pctTempo: SessionInputResolver.defaultZ3Z4Pct / 100,
+            pctAllout: SessionInputResolver.defaultZ5Pct / 100,
+          );
     return DailyBaselineCalculator.sessionCost(
       // `other` → strength, as the engine prices it: same rate either way, but
       // it also carries the engine's 30-minute default instead of 60. The
