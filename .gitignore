@@ -130,3 +130,6 @@ benchmarks/*/_derived/uncompressed/
 # git merge artifacts — never commit these
 *.orig
 *.rej
+
+# Flutter golden-test diff artifacts (written on failure, never source)
+**/test/**/failures/
