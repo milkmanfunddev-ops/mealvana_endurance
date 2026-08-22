@@ -361,6 +361,11 @@ class _InfoDot extends StatelessWidget {
 }
 
 String _clockLabel(int minutesSinceMidnight) {
+  // 1440 is the end of the day, not a clock reading. Left unclamped it takes
+  // the h24 = 24 branch, where `24 % 12 == 0 -> 12` and `24 < 12` is false,
+  // and renders midnight-at-day's-end as "12:00 PM" — noon, the furthest
+  // possible point from what it means. A completed day says so in words.
+  if (minutesSinceMidnight >= 1440) return 'end of day';
   final h24 = minutesSinceMidnight ~/ 60;
   final minute = (minutesSinceMidnight % 60).toString().padLeft(2, '0');
   final hour12 = h24 % 12 == 0 ? 12 : h24 % 12;

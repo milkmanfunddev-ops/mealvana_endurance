@@ -294,8 +294,36 @@ class MacroDashboardAssembler {
     List<MealLog> meals,
     List<DailyMacroTargets?> weeklyTargets,
   ) {
+    // Elapsed minutes of the SELECTED day — the denominator every "so far"
+    // quantity is prorated against (intraday-display.md §1:
+    // `neat_so_far = neat_kcal × (waking_minutes_elapsed / total_waking_minutes)`).
+    // It is a fact about the day, not a product choice: a past day is over
+    // (1440), today has run as far as the clock says, and a FUTURE day has not
+    // started (0).
+    //
+    // The `: 1440` that used to cover both non-today cases claimed a day a week
+    // away was fully elapsed, so the sheet showed a full day's resting + NEAT
+    // under "so far" while workout and digestion — which key off completed
+    // items — stayed at 0. That is self-contradictory (I4) in two directions at
+    // once: it read "100% of the day done" while so-far ≠ by-day's-end, and it
+    // published a −1,339 kcal net balance with "deficit — time to eat" for a day
+    // that had not begun.
+    // Bug: ops/data/bug-reports/2026-08-22-breakdown-sheet-future-day-claims-day-is-over.md
+    //
+    // NOT decided here: whether a future day should show the net-balance card
+    // at all, and in which copy register. That is genuinely unspecified and is
+    // open as qa/intake/2026-08-20-future-day-net-balance-copy.md. This change
+    // only stops the surface from asserting elapsed time it does not have.
+    final selected = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
+    final todayDay = DateTime(now.year, now.month, now.day);
     final isToday = _sameDay(selectedDate, now);
-    final minutesSinceMidnight = isToday ? now.hour * 60 + now.minute : 1440;
+    final minutesSinceMidnight = isToday
+        ? now.hour * 60 + now.minute
+        : (selected.isBefore(todayDay) ? 1440 : 0);
 
     // S-2 (skip scope): a SKIPPED workout's kcal and fuel leave EVERY
     // surface figure — net balance, band copy, Active Energy sheet,
