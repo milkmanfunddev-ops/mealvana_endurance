@@ -96,7 +96,7 @@ DailyMacroTargets _targets() => DailyMacroTargets(
   fatG: 138,
   tdee: 4152,
   rmr: 1908,
-  sessionKcal: 1434,
+  sessionKcal: 1538,
   neatKcal: 394.9,
   mode: 'prospective',
   algorithmVersion: 'v6.0.0',

@@ -25,7 +25,7 @@ mock_day:
   athlete: 75 kg / LBM 64 / RMR 1908, serious tier, desk
   workouts:
     - { name: Swim, time: "08:00", detail: "2,000 yd - 40 min", kcal: 229, state: DONE_VERIFIED }
-    - { name: Run,  time: "17:30", detail: "90 min",            kcal: 1205, state: PLANNED }
+    - { name: Run,  time: "17:30", detail: "90 min",            kcal: 1309, state: PLANNED }
   snapshot_time: "15:00"
   eaten_kcal: 1650
   targets: { kcal: 4152, carb_g: 596, prot_g: 130, fat_g: 138 }   # fat = 30.0 %E (Q-014)
@@ -62,7 +62,7 @@ goldens:
   - { id: energy_card_all_expanded,      component: energy-card, face: ALL,     expanded: true,
       notes: "equation 1,650 - 1,783 = -133; burn-side figures electrolyte, intake orange (Q-D3)" }
   - { id: energy_card_workout_collapsed, component: energy-card, face: WORKOUT, expanded: false,
-      notes: "TODAY'S WORKOUT 229 done - 1,205 planned" }
+      notes: "TODAY'S WORKOUT 229 done - 1,309 planned" }
   - { id: energy_card_workout_expanded,  component: energy-card, face: WORKOUT, expanded: true,
       notes: "ACTIVE ENERGY + per-session rows + projected 1,434" }
   - { id: energy_card_meals_collapsed,   component: energy-card, face: MEALS,   expanded: false,

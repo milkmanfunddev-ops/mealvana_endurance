@@ -697,10 +697,20 @@ Map<String, dynamic> _sessionFromActivityRow(QueryRow row) {
   return {
     'sport': sport,
     'duration_hr': durationMinutes / 60.0,
+    // Same default distribution the display resolves a zoneless session with
+    // (RULED 2026-08-22) — shared so the two cannot drift apart again.
     'pct_conversational':
-        (row.readNullable<int>('intensity_z1_z2_pct') ?? 70) / 100.0,
-    'pct_tempo': (row.readNullable<int>('intensity_z3_z4_pct') ?? 20) / 100.0,
-    'pct_allout': (row.readNullable<int>('intensity_z5_pct') ?? 10) / 100.0,
+        (row.readNullable<int>('intensity_z1_z2_pct') ??
+                SessionInputResolver.defaultZ1Z2Pct) /
+            100.0,
+    'pct_tempo':
+        (row.readNullable<int>('intensity_z3_z4_pct') ??
+                SessionInputResolver.defaultZ3Z4Pct) /
+            100.0,
+    'pct_allout':
+        (row.readNullable<int>('intensity_z5_pct') ??
+                SessionInputResolver.defaultZ5Pct) /
+            100.0,
     'tss': row.readNullable<double>('tss'),
     'activity_id': row.read<String>('id'),
   };

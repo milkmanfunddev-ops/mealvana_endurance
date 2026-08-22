@@ -60,6 +60,25 @@ class SessionInputResolver {
   static const int fallbackMinutes = 60;
   static const int fallbackOtherMinutes = 30;
 
+  /// Zone distribution assumed when a session carries none — a representative
+  /// endurance session, mostly conversational with some tempo.
+  ///
+  /// RULED 2026-08-22 (`qa/intake/2026-08-20-zoneless-if-default-engine-vs-display.md`):
+  /// display surfaces adopt the ENGINE's default rather than keeping their own.
+  /// Until this ruling the engine assumed 70/20/10 (IF 0.7715) while display
+  /// surfaces used a flat IF 0.74, so a zoneless session was priced ~8% lower
+  /// on screen than in the macro targets beside it — visible to an athlete as a
+  /// projected burn of 2,933 against a 3,037 target on the same card.
+  ///
+  /// The DISTRIBUTION is the constant, not the IF: both sides feed these
+  /// percentages through the one RMS derivation
+  /// ([DailyBaselineCalculator.zoneDistributionToIf], F3), so there is a single
+  /// place where zones become an intensity factor. Hard-coding 0.7715 would
+  /// have recreated the same class of drift one level down.
+  static const int defaultZ1Z2Pct = 70;
+  static const int defaultZ3Z4Pct = 20;
+  static const int defaultZ5Pct = 10;
+
   /// Planned/actual duration in whole minutes.
   ///
   /// Ladder: an explicit duration wins; otherwise derive from the session's own
