@@ -4,6 +4,7 @@ import '../../daily_macros/domain/intraday_display.dart';
 import '../../meal_logging/domain/consumed_totals.dart';
 import '../../meal_logging/domain/meal_log.dart';
 import '../../nutrition_plan/application/daily_baseline_calculator.dart';
+import '../../../shared/domain/session_input_resolver.dart';
 import '../domain/dashboard_models.dart';
 
 /// The assembled macro-dashboard view state.
@@ -199,9 +200,14 @@ class MacroDashboardAssembler {
   ///    derivation the engine uses), else the documented flat 0.74
   ///    representative endurance IF (ruling 2026-08-20: zones-when-present /
   ///    0.74 fallback on every surface).
-  ///  * duration — actual beats planned; a session with neither is priced at
-  ///    the 60-minute planning convention (matches the engine's default for
-  ///    duration-less endurance sessions).
+  ///  * duration — [SessionInputResolver.durationMinutes], the SAME ladder
+  ///    that builds the engine's `SessionInput`: actual beats planned, then
+  ///    distance × the session's own prescribed pace, then the flat fallback.
+  ///    Sharing the ladder is the point — this surface previously kept only
+  ///    the last rung (`?? 60`) and so priced a 3 mi and a 15 mi run alike,
+  ///    contradicting the macro targets beside it by 649 kcal on a real
+  ///    account (bug 2026-08-22-dashboard-prices-distance-sessions-at-flat-
+  ///    60min).
   ///  * weight — required; null means the formula rung is unpriceable and
   ///    this returns null (never a stand-in constant — see
   ///    [WorkoutCardData.kcal]).
@@ -209,8 +215,16 @@ class MacroDashboardAssembler {
     final measured = a.caloriesBurned;
     if (measured != null && measured > 0) return measured;
     if (weightKg == null) return null;
-    final durationHr =
-        (a.actualDurationMinutes ?? a.durationMinutes ?? 60) / 60.0;
+    final durationHr = SessionInputResolver.durationMinutes(
+          activityType: a.activityType.name,
+          // Display precedence: what it actually took beats what was planned.
+          explicitMinutes: a.actualDurationMinutes ?? a.durationMinutes,
+          distanceMiles: a.distanceMiles,
+          paceTargetMinutesPerMile: a.paceTargetMinutesPerMile,
+          cyclingSpeedMph: a.cyclingSpeedMph,
+          swimmingPacePer100mSeconds: a.swimmingPacePer100mSeconds,
+        ) /
+        60.0;
     final dist = a.intensityDistribution;
     final intensityFactor = dist != null
         ? DailyBaselineCalculator.zoneDistributionToIf(
@@ -220,7 +234,12 @@ class MacroDashboardAssembler {
           )
         : 0.74; // documented flat fallback when zones are absent
     return DailyBaselineCalculator.sessionCost(
-      sport: a.activityType.name,
+      // `other` → strength, as the engine prices it: same rate either way, but
+      // it also carries the engine's 30-minute default instead of 60. The
+      // composite types stay on the interim conservative rate pending
+      // qa/intake/2026-08-20-session-cost-unknown-activity-types.md — that is
+      // a rate question, out of scope for this duration fix.
+      sport: SessionInputResolver.displaySport(a.activityType.name),
       durationHr: durationHr,
       intensityFactor: intensityFactor,
       weightKg: weightKg,

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/core/revisioned_single_flight.dart';
+import '../../../shared/domain/session_input_resolver.dart';
 import '../../../shared/services/performance_telemetry.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../data/daily_macro_targets_repository.dart';
@@ -671,39 +672,27 @@ DateTime _activityDate(QueryRow row) => DateTime.fromMillisecondsSinceEpoch(
 );
 
 Map<String, dynamic> _sessionFromActivityRow(QueryRow row) {
-  var durationMinutes = row.readNullable<int>('duration_minutes') ?? 0;
   final activityType = row.read<String>('activity_type');
 
-  if (durationMinutes == 0) {
-    final distanceMiles = row.readNullable<double>('distance_miles');
-    if (activityType == 'running') {
-      final pace = row.readNullable<double>('pace_target_minutes_per_mile');
-      if (distanceMiles != null && pace != null && pace > 0) {
-        durationMinutes = (distanceMiles * pace).round();
-      }
-    } else if (activityType == 'cycling') {
-      final speed = row.readNullable<double>('cycling_speed_mph');
-      if (distanceMiles != null && speed != null && speed > 0) {
-        durationMinutes = ((distanceMiles / speed) * 60).round();
-      }
-    } else if (activityType == 'swimming') {
-      final swimPace = row.readNullable<int>('swimming_pace_per_100m_seconds');
-      if (distanceMiles != null && swimPace != null && swimPace > 0) {
-        final distanceMeters = distanceMiles * 1609.34;
-        durationMinutes = ((distanceMeters / 100) * swimPace / 60).round();
-      }
-    }
-    if (durationMinutes == 0) {
-      durationMinutes = activityType == 'other' ? 30 : 60;
-    }
-  }
+  // The ladder lives in SessionInputResolver so display surfaces price a
+  // session exactly the way the engine is fed. Behaviour here is unchanged —
+  // this call is the same ladder, lifted out of this function so it can be
+  // shared rather than copied (bug 2026-08-22-dashboard-prices-distance-
+  // sessions-at-flat-60min: the dashboard had copied only the last rung).
+  final durationMinutes = SessionInputResolver.durationMinutes(
+    activityType: activityType,
+    explicitMinutes: row.readNullable<int>('duration_minutes'),
+    distanceMiles: row.readNullable<double>('distance_miles'),
+    paceTargetMinutesPerMile: row.readNullable<double>(
+      'pace_target_minutes_per_mile',
+    ),
+    cyclingSpeedMph: row.readNullable<double>('cycling_speed_mph'),
+    swimmingPacePer100mSeconds: row.readNullable<int>(
+      'swimming_pace_per_100m_seconds',
+    ),
+  );
 
-  final sport = switch (activityType) {
-    'cycling' => 'cycling',
-    'swimming' => 'swimming',
-    'other' => 'strength',
-    _ => 'running',
-  };
+  final sport = SessionInputResolver.engineSport(activityType);
 
   return {
     'sport': sport,
