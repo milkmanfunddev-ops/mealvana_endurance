@@ -235,9 +235,26 @@ ops/docs/supabase-deploy-playbook.md + the brief docs/ssot/intake/
   new dashboard; local builds still opt in via `.env.dev.local`, prod and
   the code default stay OFF (the default-on flip remains its own decision,
   see Epilogue).
-- Remaining: the prod half — steps **P1–P7** of the playbook §7 (renumbered
-  2026-08-20; read the playbook's §0 standing orders first). Nothing prod
-  has been touched.
+- **Prod status (verified against the prod project 2026-08-22, QA read-only probe —
+  supersedes the earlier "nothing prod has been touched"):**
+  - **P1 schema — DONE.** `activities.planned_time` / `actual_time` and
+    `public.plan_recalc_log` all present on prod (no 42703).
+  - **P2 functions — DONE.** `calculate-daily-macros-v6` live; the frozen
+    `calculate-daily-macros` (v5) still parked beside it.
+  - **P3 local gate — RUN 2026-08-21**, 87/90 files green; the three reds are
+    pre-existing and belong to the pre-workout/nutrition-plan engines, NOT this
+    bundle (reproduce at `develop` with a clean tree) —
+    `ops/data/bug-reports/2026-08-21-pre-workout-engine-suites-red.md`.
+  - **P4 release branch — DONE.** `release/1.24.0` @ `1ff3e659` pushed (CodeMagic
+    release build triggered).
+  - **P5 TestFlight hand smoke / P6 release notes — status not known to QA** (human
+    steps). A simulator-based prod smoke DID pass on a prod-flavor local build of
+    `release/1.24.0` (`qa/runs/2026-08-21-sim-explore-prod-release-smoke.md`) — that is
+    NOT a substitute for P5: the upgrade-from-old-install path cannot be simulator-tested.
+  - **P7 `app_config` flip — PENDING.** Prod still reads
+    `current_schema_version = latest_schema_version = 17`, `min_supported = 11`;
+    P7 sets current/latest → 18, min stays 17. **This is the only remaining
+    playbook step QA can see.**
 
 ### Phase C — original plan (kept for the record; superseded by the playbook §7)
 Strict order:
