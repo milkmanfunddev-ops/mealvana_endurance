@@ -248,6 +248,66 @@ async function mirrorGarminBodyCompToUser(
   }
 }
 
+/**
+ * Persist an inbound Garmin payload verbatim, BEFORE any gate can drop it.
+ *
+ * Why this exists (2026-08-24): an athlete's pool swim was recorded natively by
+ * a Forerunner 955, reached Final Surge and Bevel Health through Garmin's API,
+ * and never appeared in our `activities` table. Every drop point in this
+ * function was audited and cleared — sport mapping normalizes case, no
+ * tombstone existed, the planned matcher would have matched, the insert
+ * fallback admits swimming — so the payload either never arrived or was
+ * discarded somewhere unlogged. We could not tell which, because inbound
+ * ACTIVITY payloads were never persisted (`garmin_health_data` held only
+ * daily/epoch/sleep/stress/body-composition) and the Supabase log tables
+ * return nothing through the Management API. That question must be a lookup,
+ * not archaeology.
+ * See ops/data/bug-reports/2026-08-24-final-surge-completed-workouts-import-as-planned.md
+ *
+ * Storage note: reuses `garmin_health_data`'s generic (data_type, data jsonb)
+ * shape rather than adding a table — deliberately, so this ships as a function
+ * deploy with no migration. Every existing reader of that table filters on
+ * data_type (app: body_composition; engine: daily / body_composition), so a new
+ * type is invisible to all of them. `summary_id` carries a GLOBAL unique, hence
+ * the `act:` / `actdet:` prefix and the conflict-ignore.
+ *
+ * MUST NOT THROW. This diagnoses a path that already loses activities silently;
+ * a logging failure that aborted the enclosing try would make the very bug it
+ * exists to catch worse.
+ */
+async function logInboundGarminPayload(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  kind: "activity" | "activity_detail",
+  garminUserId: string | null | undefined,
+  userId: string | null,
+  summaryId: string | null | undefined,
+  payload: unknown,
+): Promise<void> {
+  try {
+    const prefix = kind === "activity" ? "act" : "actdet";
+    const key = summaryId
+      ? `${prefix}:${summaryId}`
+      : `${prefix}:nosummary:${garminUserId ?? "unknown"}:${
+        // deno-lint-ignore no-explicit-any
+        (payload as any)?.startTimeInSeconds ?? "0"
+      }`;
+    await supabase
+      .from("garmin_health_data")
+      .upsert({
+        user_id: userId,
+        garmin_user_id: garminUserId ?? null,
+        summary_id: key,
+        data_type: kind === "activity" ? "activity_raw" : "activity_detail_raw",
+        calendar_date: new Date().toISOString().slice(0, 10),
+        data: payload,
+      }, { onConflict: "summary_id", ignoreDuplicates: true });
+  } catch (err) {
+    // Swallow deliberately — see the contract above.
+    console.warn("[garmin-push] inbound payload log failed (non-fatal):", err);
+  }
+}
+
 async function processPushBody(body: GarminPushNotification): Promise<void> {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -273,6 +333,22 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .select("user_id")
             .eq("garmin_user_id", activity.userId)
             .single();
+
+          // Forensic log FIRST — before the tombstone gate, the sport mapping
+          // and the matcher, so an activity dropped by ANY of them still
+          // leaves a trace. Non-fatal by contract.
+          console.log(
+            `[garmin-push] inbound activity type="${activity.activityType}" ` +
+              `summaryId=${activity.summaryId ?? "none"} start=${activity.startTimeInSeconds}`,
+          );
+          await logInboundGarminPayload(
+            supabase,
+            "activity",
+            activity.userId,
+            mapping?.user_id ?? null,
+            activity.summaryId != null ? String(activity.summaryId) : null,
+            activity,
+          );
 
           if (!mapping) {
             console.warn(
@@ -798,6 +874,24 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .select("user_id")
             .eq("garmin_user_id", detail.userId)
             .single();
+
+          // Forensic log FIRST, same contract as the activities loop. Only the
+          // SUMMARY is stored — ActivityDetails carries per-second sample
+          // arrays that would bloat the row for no diagnostic value.
+          console.log(
+            `[garmin-push] inbound activityDetail type="${detail.summary?.activityType}" ` +
+              `summaryId=${detail.summary?.summaryId ?? "none"}`,
+          );
+          await logInboundGarminPayload(
+            supabase,
+            "activity_detail",
+            detail.userId,
+            mapping?.user_id ?? null,
+            detail.summary?.summaryId != null
+              ? String(detail.summary.summaryId)
+              : null,
+            detail.summary,
+          );
 
           if (!mapping) {
             console.warn(
