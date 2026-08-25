@@ -2,6 +2,9 @@
 
 **Status: RATIFIED v2 (Xuan, 2026-08-17 — carries the workout-card v2 skip contract, Q-D6;
 supersedes v1, RATIFIED Xuan 2026-08-14).**
+**Reference rendering:** [`../renderings/macro-dashboard@v1.html`](../renderings/macro-dashboard@v1.html)
+(rendering ratified Xuan 2026-08-25; frozen copy of `prototypes/macro-dashboard/index.html` @ `5a22ca8`).
+Rendering versions track the rendering, not this spec — see [`../source-authority.md`](../source-authority.md) §3.
 **Changes from v1:** pins workout-card v2; S-2 is now the *skip* scope (delete deferred to a future
 bundle); S-7 added (timeline position of a skipped card).
 **Surface contract** — owns composition and cross-component behaviour. Component internals live in

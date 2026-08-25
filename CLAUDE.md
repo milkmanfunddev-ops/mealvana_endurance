@@ -54,6 +54,10 @@ mealvana_endurance/
 - Run `/release-cut` whenever a dev or prod build is cut or pushed — it keeps the Notion cut card an
   honest manifest of what the build carries. A missed cut is what makes the whole board go stale.
 - Run `/sprint-sync` after landing work that maps to a Sprint Task, to keep the swimlane right.
+- Run `/design-sync` (user-invoked; Claude cannot launch it) after any change under `lib/theme/` or
+  `lib/shared/widgets/kyle_design/`, and after a design ratification lands in `docs/ssot/spec/design/`.
+  The Claude Design project is a sink regenerated from this repo — never hand-edit it. Authority map
+  and promotion path: `docs/ssot/spec/design/source-authority.md`.
 - Notion writes are scoped to Lee-owned cards. Never edit a card owned by Xuan; never set Status or
   Branch on the Feature Request / Bug Report boards — those belong to Xuan's worker. See
   `.claude/notion/boards.md`.

@@ -146,3 +146,16 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
 - **Related:** `ops/data/bug-reports/2026-08-22-dashboard-prices-distance-sessions-at-flat-60min.md`
   (the duration half of this same split, fixed 2026-08-22 by sharing the ladder — which removed
   the 649 kcal error but not the architecture that allowed it).
+
+## D-006 — White surfaces on the light theme (design; brand rule says never white)
+
+- **status:** `documented` — RULED (Xuan, 2026-08-25, Q-SA1 in `spec/design/source-authority.md`):
+  a deviation to log, not a rule to revise.
+- **Where:** `app/lib/theme/kyle_design/app_colors.dart` — `surfaceLight = #FFFFFF`,
+  `surfaceLightSecondary = #F9F9F9`; light-mode cards and sheets render on white.
+- **What the SSOT says:** the design library's golden rule 2 — *"Cream bg + Blackberry text, or
+  Blackberry bg + Cream text. Never white."* Cream is `--me-cream` in `spec/design/tokens.md`.
+- **Why it is a deviation and not a bug:** the app's light theme was built on Material's white
+  surfaces before the Endurance palette existed; nobody chose white against the rule. The rule
+  stands; the code does not conform; resolving it is a deliberate light-theme pass, not a hotfix.
+- **Surfaced by:** the 2026-08-25 brand-fidelity audit (app-side).

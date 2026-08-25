@@ -15,6 +15,7 @@ registry. Everywhere else, values are screenshot-held.)*
 | `--me-electrolyte` | rgb(28, 249, 207) | **Burn / activity side** (RULED Xuan, 2026-08-14 — widened from verified-only): burn-side figures, workout accents, verified chips and the done-swipe fill. May not signify anything outside the burn/verified domain — never intake, never planning |
 | `--me-orange` | rgb(247, 139, 20) | Energy & intake accent; planned-workout accent |
 | `--me-dragonfruit` | rgb(220, 37, 151) | **Destructive.** May not signify anything else |
+| `--me-yolk` | rgb(255, 198, 41) | **RESERVED — no meaning contract yet** (RULED Xuan, 2026-08-25, Q-SA2 in `source-authority.md`, post-ratification addition). Kyle's secondary `#FFC629`; kept in the registry so code stops inventing yellows. Assigning what it may signify is a sweep-time ruling; until then a component using it fails conformance |
 
 **The contract is the meaning column.** A component using `electrolyte` for a non-verified element,
 or `dragonfruit` for a non-destructive one, fails conformance even if it "looks right."

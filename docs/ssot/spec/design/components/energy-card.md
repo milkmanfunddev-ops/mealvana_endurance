@@ -6,7 +6,8 @@ three cards. The face follows the active filter lens; the expansion state is the
 **Tokens:** [`../tokens.md`](../tokens.md). **Numbers authority:**
 `spec/daily-macros/intraday-display.md` (so-far arithmetic, band copy) and the engine outputs —
 this file contracts *presentation*, never values.
-**Reference rendering:** `prototypes/macro-dashboard/index.html` (all six faces verified 2026-08-14).
+**Reference rendering:** [`../renderings/macro-dashboard@v1.html`](../renderings/macro-dashboard@v1.html)
+(ratified Xuan 2026-08-25; frozen copy of `prototypes/macro-dashboard/index.html` @ `5a22ca8`; all six faces verified 2026-08-14).
 
 ## State model
 

@@ -9,8 +9,9 @@ same day). Ships as `daily-macros-dashboard@v3` — a contract change, not a v2.
 appears. Composition into a screen (and cross-component side-effects) belongs to the surface spec
 that uses it, e.g. [`../surfaces/macro-dashboard.md`](../surfaces/macro-dashboard.md).
 **Tokens:** [`../tokens.md`](../tokens.md). **Reference rendering:**
-`prototypes/macro-dashboard/index.html` @ `5a22ca8` (2026-08-17) — the prototype illustrates, this
-file governs. Reconciliation of that rendering against this text:
+[`../renderings/macro-dashboard@v1.html`](../renderings/macro-dashboard@v1.html) (ratified Xuan
+2026-08-25; frozen copy of `prototypes/macro-dashboard/index.html` @ `5a22ca8`, 2026-08-17) — the
+rendering illustrates, this file governs. Reconciliation of that rendering against this text:
 [`docs/design-reconciliation/macro-dashboard-2026-08-17-skip-revision.md`](../../../docs/design-reconciliation/macro-dashboard-2026-08-17-skip-revision.md).
 
 ## Changes from v2 (the contract change that makes this v3, not v2.1)
