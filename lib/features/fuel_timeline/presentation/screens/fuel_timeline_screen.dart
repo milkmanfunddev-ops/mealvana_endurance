@@ -313,7 +313,7 @@ class FuelTimelineScreen extends ConsumerWidget {
         // spine — "a live preview of the brick".
         if (picking) {
           final notifier = ref.read(brickSelectionControllerProvider.notifier);
-          final candidates = adjacentBrickCandidateIds(
+          final candidates = brickCandidateIds(
             workoutNodes
                 .map<Activity?>((n) => n.activity)
                 .toList(growable: false),

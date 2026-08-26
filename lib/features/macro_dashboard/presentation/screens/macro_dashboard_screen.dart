@@ -45,8 +45,9 @@ import '../widgets/workout_card.dart';
 /// the Fuel Timeline design (Notion 3a7e3fdb) so a design session has the
 /// real thing to ratify from:
 ///   · a third `⛓ Brick` pill in the add row, after a divider, offered only
-///     while `hasAdjacentBrickCandidates` holds (brick_eligibility.dart — an
-///     UNRATIFIED condition, pending a logic-SSOT ruling);
+///     while `hasBrickCandidates` holds (brick_eligibility.dart: 2+ swim /
+///     bike / run on the day, 2+ sports — adjacency NOT required, legs in
+///     pick order; ruled Lee 2026-08-26, logic-SSOT record pending);
 ///   · tapping it swaps the add row for "Pick legs to link · Cancel" and the
 ///     day's workout cards become pickable in place (rail geometry unchanged);
 ///   · a docked LEG ORDER panel (Swap · Create Brick (n)) commits directly;
@@ -632,8 +633,9 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   /// Leg-picking: rows stay on the rail and simply become pickable, so the
   /// timeline never reflows mid-flow. Chosen rows get the orange outline and
-  /// their leg number — "a live preview of the brick". Rows outside the
-  /// adjacent-candidate run are dimmed and untouchable.
+  /// their leg number in PICK order — which need not match dashboard order.
+  /// Ineligible rows (strength, imports, an existing brick) are dimmed and
+  /// untouchable.
   Widget _pickableWorkout(
     WidgetRef ref,
     WorkoutCardData data,
@@ -642,7 +644,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     final notifier = ref.read(brickSelectionControllerProvider.notifier);
     // Watch so the outline/number repaint as the selection changes.
     ref.watch(brickSelectionControllerProvider);
-    final candidates = adjacentBrickCandidateIds(
+    final candidates = brickCandidateIds(
       dayWorkouts.cast<Activity?>().toList(growable: false),
     );
     final selectable = candidates.contains(data.activityId);

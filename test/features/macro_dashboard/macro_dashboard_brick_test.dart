@@ -10,15 +10,15 @@
 // docs/ssot/spec/design/, re-anchor these tests to its rows.
 //
 // - The Brick entry is a third pill in the ADD ROW (after a divider, with a
-//   chain icon). It appears only when 2+ adjacent, brick-eligible workouts of
-//   different sports exist on the selected day.
+//   chain icon). It appears when 2+ brick-eligible workouts of different
+//   sports exist on the selected day — adjacency NOT required, legs in pick
+//   order (Lee, 2026-08-26).
 // - Tapping it swaps the add row for "Pick legs to link … Cancel".
 // - A created brick renders as a TimelineBrickTile — one time-dot on the rail
 //   with its legs in an indented bracket.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
@@ -148,6 +148,51 @@ void main() {
     expect(brickPill, findsNothing);
   });
 
+  testWidgets(
+    'non-adjacent eligible workouts (strength between) still show the pill',
+    (tester) async {
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 7),
+        _activity('gym', ActivityType.other, 12),
+        _activity('ride1', ActivityType.cycling, 18),
+      ]);
+      expect(brickPill, findsOneWidget);
+    },
+  );
+
+  testWidgets('legs are numbered in PICK order, not dashboard order', (
+    tester,
+  ) async {
+    // Taller viewport: in the default 800×600 the docked LEG ORDER panel
+    // covers the second card, so the tap never reaches it. Width stays 800
+    // (the Ahem test font is wide; a phone width overflows unrelated rows).
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _pump(tester, [
+      _activity('run1', ActivityType.running, 8),
+      _activity('ride1', ActivityType.cycling, 16),
+    ]);
+    await tester.tap(brickPill);
+    await tester.pumpAndSettle();
+    // Pick the later (ride) first, then the earlier (run). The test viewport
+    // is short, so scroll each card clear of the docked panel before tapping.
+    // Pick the later (ride) first, then the earlier (run).
+    for (final id in ['ride1', 'run1']) {
+      await tester.tap(find.byKey(ValueKey('macro_dashboard.brick_pick_$id')));
+      await tester.pumpAndSettle();
+    }
+
+    // LEG ORDER panel: ① RIDE → ② RUN.
+    final ride = tester.getCenter(find.text('RIDE'));
+    final run = tester.getCenter(find.text('RUN'));
+    expect(ride.dx, lessThan(run.dx));
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.brick_create')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a single activity shows no pill', (tester) async {
     await _pump(tester, [_activity('run1', ActivityType.running, 8)]);
     expect(brickPill, findsNothing);
@@ -176,9 +221,7 @@ void main() {
     expect(brickPill, findsOneWidget);
   });
 
-  testWidgets('a created brick renders as a TimelineBrickTile', (
-    tester,
-  ) async {
+  testWidgets('a created brick renders as a TimelineBrickTile', (tester) async {
     const metadata = BrickMetadata(
       segmentOrder: ['cycling', 'running'],
       segments: [
