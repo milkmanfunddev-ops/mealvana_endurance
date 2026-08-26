@@ -27,9 +27,10 @@ import '../../../../../../features/nutrition_plan/domain/run_parameters.dart'
 ///
 /// Main content widget for the brick workout tab in the New Activity screen.
 /// Displays:
-/// - Sport toggle selector (horizontal row of toggle buttons)
-/// - Expandable segment cards with full sport-specific inputs
-///   matching the standalone swim/bike/run tabs
+/// - Add-a-leg row (Swim / Bike / Run — a sport may be added more than once;
+///   a brick is an ordered list of legs, e.g. Run → Bike → Run)
+/// - Expandable, reorderable, removable leg cards with full sport-specific
+///   inputs matching the standalone swim/bike/run tabs
 ///
 /// Note: The "Generate Plan" button is in the parent NewActivityScreen.
 class BrickTabContent extends ConsumerWidget {
@@ -60,12 +61,11 @@ class BrickTabContent extends ConsumerWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // Sport toggle selector (horizontal row)
+        // Add-a-leg row (horizontal)
         BrickSportToggleSelector(
-          selectedSports: formState.selectedSports,
-          onToggle: (sport) {
-            controller.toggleSport(sport);
-          },
+          legCount: formState.legs.length,
+          canAdd: formState.canAddLeg,
+          onAdd: controller.addLeg,
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -96,8 +96,8 @@ class BrickTabContent extends ConsumerWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // Ordered list of expandable segments
-        if (formState.selectedSports.length >= 2)
+        // Ordered list of expandable legs
+        if (formState.legs.length >= BrickFormState.minLegs)
           _buildSegmentList(
             context,
             ref,
@@ -131,15 +131,12 @@ class BrickTabContent extends ConsumerWidget {
     BrickFormState formState,
     BrickInputController controller,
   ) {
-    // Warn if any segment is swimming, any segment is hard (conversational < 70),
+    // Warn if any leg is swimming, any leg is hard (conversational < 70),
     // or the total brick duration is long.
-    if (formState.selectedSports.contains('swimming')) return true;
-
-    for (final sport in formState.selectedSports) {
-      final input = formState.segmentInputs[sport];
-      if (input == null) continue;
+    for (final leg in formState.legs) {
+      if (leg.sport == 'swimming') return true;
       final intensity =
-          input.intensityDistribution ??
+          leg.intensityDistribution ??
           IntensityDistribution.defaultDistribution();
       if (intensity.conversationalPct < 70) return true;
     }
@@ -158,16 +155,13 @@ class BrickTabContent extends ConsumerWidget {
     bool isDark,
     bool useImperial,
   ) {
-    // Filter to only show selected sports in the current order
-    final orderedSelectedSports = formState.sportOrder
-        .where((sport) => formState.selectedSports.contains(sport))
-        .toList();
+    final legs = formState.legs;
 
     return ReorderableListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: orderedSelectedSports.length,
-      onReorder: controller.reorderSports,
+      itemCount: legs.length,
+      onReorder: controller.reorderLegs,
       proxyDecorator: (child, index, animation) {
         return Material(
           color: Colors.transparent,
@@ -178,17 +172,19 @@ class BrickTabContent extends ConsumerWidget {
         );
       },
       itemBuilder: (context, index) {
-        final sport = orderedSelectedSports[index];
-        final segmentInput = formState.segmentInputs[sport];
+        final leg = legs[index];
 
         return _ExpandableSegmentCard(
           key: ValueKey('brick.segment_card_$index'),
-          sport: sport,
+          sport: leg.sport,
           order: index + 1,
-          segmentInput: segmentInput,
+          segmentInput: leg,
           isDark: isDark,
           useImperial: useImperial,
-          onUpdate: (updated) => controller.updateSegmentInput(sport, updated),
+          onUpdate: (updated) => controller.updateSegmentInput(index, updated),
+          onRemove: formState.canRemoveLeg
+              ? () => controller.removeLegAt(index)
+              : null,
         );
       },
     );
@@ -204,6 +200,9 @@ class _ExpandableSegmentCard extends StatefulWidget {
   final bool useImperial;
   final ValueChanged<BrickSegmentInput> onUpdate;
 
+  /// Null when the brick is at its minimum leg count (remove disabled).
+  final VoidCallback? onRemove;
+
   const _ExpandableSegmentCard({
     required super.key,
     required this.sport,
@@ -212,6 +211,7 @@ class _ExpandableSegmentCard extends StatefulWidget {
     required this.isDark,
     required this.useImperial,
     required this.onUpdate,
+    required this.onRemove,
   });
 
   @override
@@ -311,6 +311,32 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
                     color:
                         (widget.isDark ? AppColors.cream : AppColors.blackberry)
                             .withValues(alpha: 0.5),
+                  ),
+
+                  // Remove leg (disabled at the minimum leg count)
+                  Semantics(
+                    button: true,
+                    enabled: widget.onRemove != null,
+                    label: 'Remove leg ${widget.order}',
+                    child: GestureDetector(
+                      key: ValueKey('brick.segment_remove_${widget.order - 1}'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: widget.onRemove,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: AppSpacing.xs),
+                        child: Icon(
+                          Icons.close,
+                          size: 18,
+                          color:
+                              (widget.isDark
+                                      ? AppColors.cream
+                                      : AppColors.blackberry)
+                                  .withValues(
+                                    alpha: widget.onRemove == null ? 0.2 : 0.6,
+                                  ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

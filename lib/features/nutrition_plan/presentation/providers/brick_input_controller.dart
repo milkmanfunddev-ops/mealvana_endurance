@@ -250,7 +250,12 @@ class BrickSegmentInput {
   }
 }
 
-/// Brick form state
+/// Brick form state.
+///
+/// A brick is an ORDERED LIST OF LEGS, not a set of sports: the same sport may
+/// appear more than once (Run → Bike → Run) and the legs are fuelled in the
+/// order they appear. Ruled Lee 2026-08-26 (see brick_eligibility.dart); the
+/// earlier sport-keyed model silently collapsed a second run onto the first.
 class BrickFormState {
   /// Activity title shown on the new activity screen.
   final String activityTitle;
@@ -258,14 +263,9 @@ class BrickFormState {
   /// Whether the activity title was explicitly edited by the user.
   final bool activityTitleManuallySet;
 
-  /// Which sports are checked/selected (minimum 2)
-  final Set<String> selectedSports;
-
-  /// Segment order (determines which segment is 1st, 2nd, 3rd)
-  final List<String> sportOrder;
-
-  /// Form data for each sport
-  final Map<String, BrickSegmentInput> segmentInputs;
+  /// The legs, in brick order. Index == position; each leg's `order` is kept
+  /// at index + 1 by the controller. Valid bricks have 2–3 legs.
+  final List<BrickSegmentInput> legs;
 
   /// Brick-level pre-activity fueling window in minutes (0-240, see FuelingWindowLimits / D-016)
   final int preActivityMinutes;
@@ -283,9 +283,7 @@ class BrickFormState {
   const BrickFormState({
     required this.activityTitle,
     required this.activityTitleManuallySet,
-    required this.selectedSports,
-    required this.sportOrder,
-    required this.segmentInputs,
+    required this.legs,
     required this.preActivityMinutes,
     required this.preActivityMinutesManuallySet,
     required this.isFasted,
@@ -293,12 +291,27 @@ class BrickFormState {
     required this.selectedTime,
   });
 
+  /// The sport of each leg, in brick order — what the engine receives as
+  /// `segment_order`. Repeats are meaningful (`[running, cycling, running]`).
+  List<String> get segmentOrder =>
+      legs.map((l) => l.sport).toList(growable: false);
+
+  /// The distinct sports present (hero art, header icons) — NOT the legs.
+  Set<String> get sports => legs.map((l) => l.sport).toSet();
+
+  /// Maximum legs a brick may carry (the nutrition engine models T1/T2 only).
+  static const int maxLegs = 3;
+
+  /// Minimum legs for a valid brick.
+  static const int minLegs = 2;
+
+  bool get canAddLeg => legs.length < maxLegs;
+  bool get canRemoveLeg => legs.length > minLegs;
+
   BrickFormState copyWith({
     String? activityTitle,
     bool? activityTitleManuallySet,
-    Set<String>? selectedSports,
-    List<String>? sportOrder,
-    Map<String, BrickSegmentInput>? segmentInputs,
+    List<BrickSegmentInput>? legs,
     int? preActivityMinutes,
     bool? preActivityMinutesManuallySet,
     bool? isFasted,
@@ -309,9 +322,7 @@ class BrickFormState {
       activityTitle: activityTitle ?? this.activityTitle,
       activityTitleManuallySet:
           activityTitleManuallySet ?? this.activityTitleManuallySet,
-      selectedSports: selectedSports ?? this.selectedSports,
-      sportOrder: sportOrder ?? this.sportOrder,
-      segmentInputs: segmentInputs ?? this.segmentInputs,
+      legs: legs ?? this.legs,
       preActivityMinutes: preActivityMinutes ?? this.preActivityMinutes,
       preActivityMinutesManuallySet:
           preActivityMinutesManuallySet ?? this.preActivityMinutesManuallySet,
@@ -325,9 +336,9 @@ class BrickFormState {
 /// Brick Input Controller
 ///
 /// Manages brick workout form state including:
-/// - Sport selection (which sports are included)
-/// - Segment order (drag to reorder)
-/// - Form inputs for each sport segment
+/// - The ordered list of legs (add / remove / drag to reorder; a sport may
+///   repeat)
+/// - Form inputs for each leg
 ///
 /// FOA COMPLIANT: Contains form state management only, business logic
 /// delegated to services.
@@ -337,99 +348,17 @@ class BrickInputController extends _$BrickInputController {
   BrickFormState build() {
     final now = DateTime.now();
 
-    // Default: Swimming and Running selected (classic brick)
-    final defaultSports = {'swimming', 'running'};
-    final defaultOrder = ['swimming', 'running'];
-
-    // Default intensity distribution (70/20/10)
-    final defaultIntensity = IntensityDistribution.defaultDistribution();
-    // Default durations for each sport
-    final defaultSwimDuration = ((1500 / 100) * (120 / 60)).round(); // 30 min
-    final defaultCycleDuration = ((20.0 / 18.0) * 60).round(); // 67 min
-    final defaultRunDuration = (3.0 * 9.0).round(); // 27 min
-
-    final defaultPreSwimMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.swimming,
-                  defaultIntensity,
-                  durationMinutes: defaultSwimDuration,
-                ) *
-                60)
-            .round();
-    final defaultPreRideMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.cycling,
-                  defaultIntensity,
-                  durationMinutes: defaultCycleDuration,
-                ) *
-                60)
-            .round();
-    final defaultPreRunMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.running,
-                  defaultIntensity,
-                  durationMinutes: defaultRunDuration,
-                ) *
-                60)
-            .round();
-
-    // Initialize segment inputs for all possible sports
-    final defaultInputs = <String, BrickSegmentInput>{
-      'swimming': BrickSegmentInput(
-        sport: 'swimming',
-        order: 1,
-        intensityDistribution: defaultIntensity,
-        poolOrOpenWater: 'pool',
-        waterTempC: 24.0,
-        distanceMeters: 1500,
-        pacePer100mSeconds: 120,
-        sessionGoal: 'endurance',
-        deckTemperature: 22.0,
-        deckHumidity: 50.0,
-        preActivityMinutes: defaultPreSwimMinutes,
-        durationMinutes: defaultSwimDuration,
-      ),
-      'cycling': BrickSegmentInput(
-        sport: 'cycling',
-        order: 2,
-        intensityDistribution: defaultIntensity,
-        terrain: 'flat_outdoor',
-        indoorOutdoor: 'outdoor',
-        distanceMiles: 20.0,
-        speedMph: 18.0,
-        sessionGoal: 'endurance',
-        temperatureC: 20.0,
-        humidityPct: 50.0,
-        windCondition: 'still',
-        sunExposure: 'mixed',
-        preActivityMinutes: defaultPreRideMinutes,
-        durationMinutes: defaultCycleDuration,
-      ),
-      'running': BrickSegmentInput(
-        sport: 'running',
-        order: 2,
-        intensityDistribution: defaultIntensity,
-        distanceMiles: 3.0,
-        paceMinutesPerMile: 9.0,
-        temperatureC: 20.0,
-        humidityPct: 50.0,
-        preActivityMinutes: defaultPreRunMinutes,
-        durationMinutes: defaultRunDuration,
-      ),
-    };
-
-    final defaultBrickPreActivityMinutes = _recommendedPreActivityMinutes(
-      selectedSports: defaultSports,
-      segmentInputs: defaultInputs,
-    );
+    // Default: Swim → Run (classic brick)
+    final defaultLegs = _renumber([
+      _createDefaultSegmentInput('swimming', 1),
+      _createDefaultSegmentInput('running', 2),
+    ]);
 
     return BrickFormState(
-      activityTitle: _buildBrickTitle(defaultOrder, defaultSports),
+      activityTitle: _buildBrickTitle(defaultLegs),
       activityTitleManuallySet: false,
-      selectedSports: defaultSports,
-      sportOrder: defaultOrder,
-      segmentInputs: defaultInputs,
-      preActivityMinutes: defaultBrickPreActivityMinutes,
+      legs: defaultLegs,
+      preActivityMinutes: _recommendedPreActivityMinutes(legs: defaultLegs),
       preActivityMinutesManuallySet: false,
       isFasted: false,
       selectedDate: now,
@@ -445,198 +374,84 @@ class BrickInputController extends _$BrickInputController {
     );
   }
 
-  /// Toggle sport selection (add or remove)
-  /// Enforces minimum 2 sports requirement
-  void toggleSport(String sport) {
-    final newSelected = Set<String>.from(state.selectedSports);
-    final newOrder = List<String>.from(state.sportOrder);
-    final newInputs = Map<String, BrickSegmentInput>.from(state.segmentInputs);
-
-    if (newSelected.contains(sport)) {
-      // Removing sport - enforce minimum 2
-      if (newSelected.length <= 2) {
-        DebugLogger.warning(
-          '🧱 BRICK CONTROLLER: Cannot remove $sport - minimum 2 sports required',
-        );
-        return;
-      }
-
-      newSelected.remove(sport);
-      newOrder.remove(sport);
-      DebugLogger.info('🧱 BRICK CONTROLLER: Removed sport: $sport');
-    } else {
-      // Adding sport - enforce maximum 3
-      if (newSelected.length >= 3) {
-        DebugLogger.warning(
-          '🧱 BRICK CONTROLLER: Cannot add $sport - maximum 3 sports allowed',
-        );
-        return;
-      }
-
-      newSelected.add(sport);
-      newOrder.add(sport);
-
-      // Create default segment input if one doesn't exist
-      if (!newInputs.containsKey(sport)) {
-        newInputs[sport] = _createDefaultSegmentInput(sport, newOrder.length);
-        DebugLogger.info(
-          '🧱 BRICK CONTROLLER: Created default segment input for $sport',
-        );
-      }
-
-      DebugLogger.info('🧱 BRICK CONTROLLER: Added sport: $sport');
+  /// Append a leg of [sport] at the end of the brick. The same sport may be
+  /// added more than once. Enforces the maximum leg count.
+  void addLeg(String sport) {
+    if (!state.canAddLeg) {
+      DebugLogger.warning(
+        '🧱 BRICK CONTROLLER: Cannot add $sport - maximum '
+        '${BrickFormState.maxLegs} legs allowed',
+      );
+      return;
     }
-
-    final shouldUpdatePreActivity = !state.preActivityMinutesManuallySet;
-    final updatedPreActivityMinutes = shouldUpdatePreActivity
-        ? _recommendedPreActivityMinutes(
-            selectedSports: newSelected,
-            segmentInputs: newInputs,
-          )
-        : state.preActivityMinutes;
-    final updatedTitle = state.activityTitleManuallySet
-        ? state.activityTitle
-        : _buildBrickTitle(newOrder, newSelected);
-
-    state = state.copyWith(
-      selectedSports: newSelected,
-      sportOrder: newOrder,
-      segmentInputs: newInputs,
-      preActivityMinutes: updatedPreActivityMinutes,
-      activityTitle: updatedTitle,
-    );
+    final newLegs = _renumber([
+      ...state.legs,
+      _createDefaultSegmentInput(sport, state.legs.length + 1),
+    ]);
+    _commitLegs(newLegs);
+    DebugLogger.info('🧱 BRICK CONTROLLER: Added leg: $sport');
   }
 
-  /// Create a default segment input for a sport
-  BrickSegmentInput _createDefaultSegmentInput(String sport, int order) {
-    // All segments start with default 70/20/10 intensity distribution
-    final defaultIntensity = IntensityDistribution.defaultDistribution();
-    // Default durations for each sport (used for fueling window calculation)
-    const defaultSwimDuration = 30; // 1500m at 2:00/100m
-    const defaultCycleDuration = 67; // 20mi at 18mph
-    const defaultRunDuration = 27; // 3mi at 9:00/mi
-    final defaultPreSwimMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.swimming,
-                  defaultIntensity,
-                  durationMinutes: defaultSwimDuration,
-                ) *
-                60)
-            .round();
-    final defaultPreRideMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.cycling,
-                  defaultIntensity,
-                  durationMinutes: defaultCycleDuration,
-                ) *
-                60)
-            .round();
-    final defaultPreRunMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.running,
-                  defaultIntensity,
-                  durationMinutes: defaultRunDuration,
-                ) *
-                60)
-            .round();
-
-    switch (sport) {
-      case 'swimming':
-        return BrickSegmentInput(
-          sport: sport,
-          order: order,
-          intensityDistribution: defaultIntensity,
-          poolOrOpenWater: 'pool',
-          waterTempC: 24.0,
-          distanceMeters: 1500,
-          pacePer100mSeconds: 120,
-          sessionGoal: 'endurance',
-          deckTemperature: 22.0,
-          deckHumidity: 50.0,
-          preActivityMinutes: defaultPreSwimMinutes,
-          durationMinutes: ((1500 / 100) * (120 / 60)).round(),
-        );
-      case 'cycling':
-        return BrickSegmentInput(
-          sport: sport,
-          order: order,
-          intensityDistribution: defaultIntensity,
-          terrain: 'flat_outdoor',
-          indoorOutdoor: 'outdoor',
-          distanceMiles: 20.0,
-          speedMph: 18.0,
-          sessionGoal: 'endurance',
-          temperatureC: 20.0,
-          humidityPct: 50.0,
-          windCondition: 'still',
-          sunExposure: 'mixed',
-          preActivityMinutes: defaultPreRideMinutes,
-          durationMinutes: ((20.0 / 18.0) * 60).round(),
-        );
-      case 'running':
-        return BrickSegmentInput(
-          sport: sport,
-          order: order,
-          intensityDistribution: defaultIntensity,
-          distanceMiles: 3.0,
-          paceMinutesPerMile: 9.0,
-          temperatureC: 20.0,
-          humidityPct: 50.0,
-          preActivityMinutes: defaultPreRunMinutes,
-          durationMinutes: (3.0 * 9.0).round(),
-        );
-      default:
-        return BrickSegmentInput(
-          sport: sport,
-          order: order,
-          durationMinutes: 30,
-          intensityDistribution: defaultIntensity,
-        );
+  /// Remove the leg at [index]. Enforces the minimum leg count.
+  void removeLegAt(int index) {
+    if (index < 0 || index >= state.legs.length) return;
+    if (!state.canRemoveLeg) {
+      DebugLogger.warning(
+        '🧱 BRICK CONTROLLER: Cannot remove leg - minimum '
+        '${BrickFormState.minLegs} legs required',
+      );
+      return;
     }
+    final newLegs = List<BrickSegmentInput>.from(state.legs)..removeAt(index);
+    _commitLegs(_renumber(newLegs));
+    DebugLogger.info('🧱 BRICK CONTROLLER: Removed leg at $index');
   }
 
-  /// Reorder sports (drag to reorder)
-  void reorderSports(int oldIndex, int newIndex) {
-    final newOrder = List<String>.from(state.sportOrder);
+  /// Reorder legs (drag to reorder)
+  void reorderLegs(int oldIndex, int newIndex) {
+    final newLegs = List<BrickSegmentInput>.from(state.legs);
 
     // Handle Flutter's ReorderableListView behavior (newIndex adjusts if moving down)
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
 
-    final sport = newOrder.removeAt(oldIndex);
-    newOrder.insert(newIndex, sport);
+    final leg = newLegs.removeAt(oldIndex);
+    newLegs.insert(newIndex, leg);
+    final renumbered = _renumber(newLegs);
     final updatedTitle = state.activityTitleManuallySet
         ? state.activityTitle
-        : _buildBrickTitle(newOrder, state.selectedSports);
+        : _buildBrickTitle(renumbered);
 
-    state = state.copyWith(sportOrder: newOrder, activityTitle: updatedTitle);
+    state = state.copyWith(legs: renumbered, activityTitle: updatedTitle);
     DebugLogger.info(
-      '🧱 BRICK CONTROLLER: Reordered sports - new order: $newOrder',
+      '🧱 BRICK CONTROLLER: Reordered legs - new order: ${state.segmentOrder}',
     );
   }
 
-  /// Update segment input data for a specific sport
-  void updateSegmentInput(String sport, BrickSegmentInput input) {
-    final newInputs = Map<String, BrickSegmentInput>.from(state.segmentInputs);
-    newInputs[sport] = input;
+  /// Update the leg at [index]. The leg's sport and order are preserved.
+  void updateSegmentInput(int index, BrickSegmentInput input) {
+    if (index < 0 || index >= state.legs.length) {
+      DebugLogger.warning(
+        '🧱 BRICK CONTROLLER: Cannot update leg $index - out of range',
+      );
+      return;
+    }
+    final current = state.legs[index];
+    final newLegs = List<BrickSegmentInput>.from(state.legs)
+      ..[index] = input.copyWith(sport: current.sport, order: index + 1);
 
     if (state.preActivityMinutesManuallySet) {
-      state = state.copyWith(segmentInputs: newInputs);
-      DebugLogger.info('🧱 BRICK CONTROLLER: Updated $sport segment input');
+      state = state.copyWith(legs: newLegs);
+      DebugLogger.info('🧱 BRICK CONTROLLER: Updated leg $index input');
       return;
     }
 
-    final updatedPreActivityMinutes = _recommendedPreActivityMinutes(
-      selectedSports: state.selectedSports,
-      segmentInputs: newInputs,
-    );
-
     state = state.copyWith(
-      segmentInputs: newInputs,
-      preActivityMinutes: updatedPreActivityMinutes,
+      legs: newLegs,
+      preActivityMinutes: _recommendedPreActivityMinutes(legs: newLegs),
     );
-    DebugLogger.info('🧱 BRICK CONTROLLER: Updated $sport segment input');
+    DebugLogger.info('🧱 BRICK CONTROLLER: Updated leg $index input');
   }
 
   void updatePreActivityMinutes(int minutes) {
@@ -665,124 +480,45 @@ class BrickInputController extends _$BrickInputController {
     }
   }
 
-  /// Update intensity distribution for a specific segment
-  void updateSegmentIntensity(String sport, IntensityDistribution intensity) {
-    final currentInput = state.segmentInputs[sport];
-    if (currentInput == null) {
+  /// Update intensity distribution for the leg at [index]
+  void updateSegmentIntensity(int index, IntensityDistribution intensity) {
+    if (index < 0 || index >= state.legs.length) {
       DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Cannot update intensity - no segment found for $sport',
+        '🧱 BRICK CONTROLLER: Cannot update intensity - no leg at $index',
       );
       return;
     }
-
-    final updatedInput = currentInput.copyWith(
-      intensityDistribution: intensity,
+    updateSegmentInput(
+      index,
+      state.legs[index].copyWith(intensityDistribution: intensity),
     );
-    updateSegmentInput(sport, updatedInput);
     DebugLogger.info(
-      '🧱 BRICK CONTROLLER: Updated $sport intensity distribution - $intensity',
+      '🧱 BRICK CONTROLLER: Updated leg $index intensity distribution - $intensity',
     );
   }
 
-  int _recommendedPreActivityMinutes({
-    Set<String>? selectedSports,
-    Map<String, BrickSegmentInput>? segmentInputs,
-  }) {
-    // Use the most conservative recommendation across selected segments.
-    final sports = selectedSports ?? state.selectedSports;
-    final inputs = segmentInputs ?? state.segmentInputs;
-    final defaultIntensity = IntensityDistribution.defaultDistribution();
-
-    if (sports.isEmpty) {
-      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60)
-          .round();
-    }
-
-    int maxMinutes = 0;
-    for (final sport in sports) {
-      final input = inputs[sport];
-      final intensity = input?.intensityDistribution ?? defaultIntensity;
-      final duration = input?.durationMinutes ?? 90;
-      final minutes =
-          (recommendedHoursBefore(
-                    ActivityType.brick,
-                    intensity,
-                    durationMinutes: duration,
-                  ) *
-                  60)
-              .round();
-      if (minutes > maxMinutes) {
-        maxMinutes = minutes;
-      }
-    }
-
-    if (maxMinutes == 0) {
-      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60)
-          .round();
-    }
-
-    return maxMinutes;
-  }
-
-  /// Get list of BrickSegment objects in proper order
-  List<BrickSegment> getSegments() {
-    final segments = <BrickSegment>[];
-
-    for (int i = 0; i < state.sportOrder.length; i++) {
-      final sport = state.sportOrder[i];
-      if (state.selectedSports.contains(sport)) {
-        final input = state.segmentInputs[sport];
-        if (input != null) {
-          // Update order to match current position
-          final segmentWithOrder = input.copyWith(order: i + 1);
-          segments.add(segmentWithOrder.toBrickSegment());
-        }
-      }
-    }
-
-    return segments;
-  }
+  /// Get list of BrickSegment objects in brick order (order = 1..n)
+  List<BrickSegment> getSegments() => [
+    for (var i = 0; i < state.legs.length; i++)
+      state.legs[i].copyWith(order: i + 1).toBrickSegment(),
+  ];
 
   /// Check if all form data is valid for macro generation
-  bool isValid() {
-    // Must have at least 2 sports selected
-    if (state.selectedSports.length < 2) {
-      return false;
-    }
+  bool isValid() =>
+      state.legs.length >= BrickFormState.minLegs &&
+      state.legs.every((leg) => leg.isValid());
 
-    // All selected sports must have valid segment inputs
-    for (final sport in state.selectedSports) {
-      final input = state.segmentInputs[sport];
-      if (input == null || !input.isValid()) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /// Get total duration across all segments
-  int getTotalDuration() {
-    int total = 0;
-    for (final sport in state.selectedSports) {
-      final input = state.segmentInputs[sport];
-      if (input != null) {
-        total += input.effectiveDurationMinutes;
-      }
-    }
-    return total;
-  }
+  /// Get total duration across all legs
+  int getTotalDuration() =>
+      state.legs.fold(0, (sum, leg) => sum + leg.effectiveDurationMinutes);
 
   /// Get a human-readable brick type (e.g., "SWIM/RUN BRICK")
-  String getBrickType() {
-    return _buildBrickTitle(state.sportOrder, state.selectedSports);
-  }
+  String getBrickType() => _buildBrickTitle(state.legs);
 
   /// Initialize form from event subtype distances (triathlon/duathlon/multisport)
   ///
-  /// Determines which sports to include based on which distances are non-null,
-  /// sets the distances with default paces/speeds, and uses byPace mode so
-  /// duration auto-computes from distance/pace.
+  /// Adds one leg per provided distance in swim → bike → run order, with
+  /// default paces/speeds, using byPace mode so duration auto-computes.
   void initializeFromEventSubtype({
     double? swimMeters,
     double? bikeMiles,
@@ -794,133 +530,98 @@ class BrickInputController extends _$BrickInputController {
     );
 
     final defaultIntensity = IntensityDistribution.defaultDistribution();
+    final legs = <BrickSegmentInput>[];
 
-    // Determine which sports to include based on provided distances
-    final selectedSports = <String>{};
-    final sportOrder = <String>[];
-
-    // Build sport order based on typical event structure
     if (swimMeters != null) {
-      selectedSports.add('swimming');
-      sportOrder.add('swimming');
-    }
-    if (bikeMiles != null) {
-      selectedSports.add('cycling');
-      sportOrder.add('cycling');
-    }
-    if (runMiles != null) {
-      selectedSports.add('running');
-      sportOrder.add('running');
+      const defaultPace = 120; // 2:00 per 100m
+      final duration = ((swimMeters / 100) * (defaultPace / 60)).round();
+      legs.add(
+        BrickSegmentInput(
+          sport: 'swimming',
+          order: legs.length + 1,
+          intensityDistribution: defaultIntensity,
+          durationPaceMode: DurationPaceMode.byPace,
+          poolOrOpenWater: 'open_water',
+          waterTempC: 20.0,
+          distanceMeters: swimMeters,
+          pacePer100mSeconds: defaultPace,
+          sessionGoal: 'endurance',
+          deckTemperature: 22.0,
+          deckHumidity: 50.0,
+          preActivityMinutes: _preMinutesFor(
+            ActivityType.swimming,
+            defaultIntensity,
+            duration,
+          ),
+          durationMinutes: duration,
+        ),
+      );
     }
 
-    // Must have at least 2 sports for a brick
-    if (selectedSports.length < 2) {
+    if (bikeMiles != null) {
+      const defaultSpeed = 18.0; // 18 mph
+      final duration = ((bikeMiles / defaultSpeed) * 60).round();
+      legs.add(
+        BrickSegmentInput(
+          sport: 'cycling',
+          order: legs.length + 1,
+          intensityDistribution: defaultIntensity,
+          durationPaceMode: DurationPaceMode.byPace,
+          terrain: 'flat_outdoor',
+          indoorOutdoor: 'outdoor',
+          distanceMiles: bikeMiles,
+          speedMph: defaultSpeed,
+          sessionGoal: 'endurance',
+          temperatureC: 20.0,
+          humidityPct: 50.0,
+          windCondition: 'still',
+          sunExposure: 'mixed',
+          preActivityMinutes: _preMinutesFor(
+            ActivityType.cycling,
+            defaultIntensity,
+            duration,
+          ),
+          durationMinutes: duration,
+        ),
+      );
+    }
+
+    if (runMiles != null) {
+      const defaultPace = 9.0; // 9:00/mile
+      final duration = (runMiles * defaultPace).round();
+      legs.add(
+        BrickSegmentInput(
+          sport: 'running',
+          order: legs.length + 1,
+          intensityDistribution: defaultIntensity,
+          durationPaceMode: DurationPaceMode.byPace,
+          distanceMiles: runMiles,
+          paceMinutesPerMile: defaultPace,
+          temperatureC: 20.0,
+          humidityPct: 50.0,
+          preActivityMinutes: _preMinutesFor(
+            ActivityType.running,
+            defaultIntensity,
+            duration,
+          ),
+          durationMinutes: duration,
+        ),
+      );
+    }
+
+    // Must have at least 2 legs for a brick
+    if (legs.length < BrickFormState.minLegs) {
       DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Not enough sports from event subtype, keeping defaults',
+        '🧱 BRICK CONTROLLER: Not enough legs from event subtype, keeping defaults',
       );
       return;
     }
 
-    // Create segment inputs with event distances + default paces
-    final segmentInputs = <String, BrickSegmentInput>{};
-    int order = 1;
-
-    if (selectedSports.contains('swimming')) {
-      const defaultPace = 120; // 2:00 per 100m
-      final duration = ((swimMeters! / 100) * (defaultPace / 60)).round();
-      final preMinutes =
-          (recommendedHoursBefore(
-                    ActivityType.swimming,
-                    defaultIntensity,
-                    durationMinutes: duration,
-                  ) *
-                  60)
-              .round();
-
-      segmentInputs['swimming'] = BrickSegmentInput(
-        sport: 'swimming',
-        order: order++,
-        intensityDistribution: defaultIntensity,
-        durationPaceMode: DurationPaceMode.byPace,
-        poolOrOpenWater: 'open_water',
-        waterTempC: 20.0,
-        distanceMeters: swimMeters,
-        pacePer100mSeconds: defaultPace,
-        sessionGoal: 'endurance',
-        deckTemperature: 22.0,
-        deckHumidity: 50.0,
-        preActivityMinutes: preMinutes,
-        durationMinutes: duration,
-      );
-    }
-
-    if (selectedSports.contains('cycling')) {
-      const defaultSpeed = 18.0; // 18 mph
-      final duration = ((bikeMiles! / defaultSpeed) * 60).round();
-      final preMinutes =
-          (recommendedHoursBefore(
-                    ActivityType.cycling,
-                    defaultIntensity,
-                    durationMinutes: duration,
-                  ) *
-                  60)
-              .round();
-
-      segmentInputs['cycling'] = BrickSegmentInput(
-        sport: 'cycling',
-        order: order++,
-        intensityDistribution: defaultIntensity,
-        durationPaceMode: DurationPaceMode.byPace,
-        terrain: 'flat_outdoor',
-        indoorOutdoor: 'outdoor',
-        distanceMiles: bikeMiles,
-        speedMph: defaultSpeed,
-        sessionGoal: 'endurance',
-        temperatureC: 20.0,
-        humidityPct: 50.0,
-        windCondition: 'still',
-        sunExposure: 'mixed',
-        preActivityMinutes: preMinutes,
-        durationMinutes: duration,
-      );
-    }
-
-    if (selectedSports.contains('running')) {
-      const defaultPace = 9.0; // 9:00/mile
-      final duration = (runMiles! * defaultPace).round();
-      final preMinutes =
-          (recommendedHoursBefore(
-                    ActivityType.running,
-                    defaultIntensity,
-                    durationMinutes: duration,
-                  ) *
-                  60)
-              .round();
-
-      segmentInputs['running'] = BrickSegmentInput(
-        sport: 'running',
-        order: order++,
-        intensityDistribution: defaultIntensity,
-        durationPaceMode: DurationPaceMode.byPace,
-        distanceMiles: runMiles,
-        paceMinutesPerMile: defaultPace,
-        temperatureC: 20.0,
-        humidityPct: 50.0,
-        preActivityMinutes: preMinutes,
-        durationMinutes: duration,
-      );
-    }
-
     state = BrickFormState(
-      activityTitle: _buildBrickTitle(sportOrder, selectedSports),
+      activityTitle: _buildBrickTitle(legs),
       activityTitleManuallySet: false,
-      selectedSports: selectedSports,
-      sportOrder: sportOrder,
-      segmentInputs: segmentInputs,
-      preActivityMinutes: _recommendedPreActivityMinutes(
-        selectedSports: selectedSports,
-        segmentInputs: segmentInputs,
-      ),
+      legs: legs,
+      preActivityMinutes: _recommendedPreActivityMinutes(legs: legs),
       preActivityMinutesManuallySet: false,
       isFasted: false,
       selectedDate: state.selectedDate,
@@ -929,12 +630,15 @@ class BrickInputController extends _$BrickInputController {
 
     DebugLogger.info(
       '🧱 BRICK CONTROLLER: Initialized from event subtype with '
-      '${selectedSports.length} sports in order: $sportOrder',
+      '${legs.length} legs in order: ${state.segmentOrder}',
     );
   }
 
   /// Initialize form from existing brick metadata
   /// Called when opening an existing brick activity that needs a nutrition plan
+  ///
+  /// Every segment becomes its own leg, in `order`, with its own duration —
+  /// two runs stay two runs.
   void initializeFromBrickMetadata(
     BrickMetadata metadata,
     DateTime activityDate,
@@ -943,53 +647,31 @@ class BrickInputController extends _$BrickInputController {
       '🧱 BRICK CONTROLLER: Initializing from existing brick metadata',
     );
 
-    // Extract sports and order from segments
-    final sports = <String>{};
-    final sportOrder = <String>[];
-    final segmentInputs = <String, BrickSegmentInput>{};
     final defaultIntensity = IntensityDistribution.defaultDistribution();
+    final ordered = List<BrickSegment>.from(metadata.segments)
+      ..sort((a, b) => a.order.compareTo(b.order));
 
-    for (final segment in metadata.segments) {
-      sports.add(segment.sport);
-      if (!sportOrder.contains(segment.sport)) {
-        sportOrder.add(segment.sport);
-      }
-
-      // Convert BrickSegment to BrickSegmentInput
-      // Note: intensityDistribution is nullable to support existing segments without this field
-      // Defaults to 70/20/10 if not present
-      final segmentDuration = segment.durationMinutes;
-      final preActivityMinutes = switch (segment.sport) {
-        'swimming' =>
-          (recommendedHoursBefore(
-                    ActivityType.swimming,
-                    defaultIntensity,
-                    durationMinutes: segmentDuration,
-                  ) *
-                  60)
-              .round(),
-        'cycling' =>
-          (recommendedHoursBefore(
-                    ActivityType.cycling,
-                    defaultIntensity,
-                    durationMinutes: segmentDuration,
-                  ) *
-                  60)
-              .round(),
-        'running' =>
-          (recommendedHoursBefore(
-                    ActivityType.running,
-                    defaultIntensity,
-                    durationMinutes: segmentDuration,
-                  ) *
-                  60)
-              .round(),
-        _ => 0,
+    final legs = <BrickSegmentInput>[];
+    for (final segment in ordered) {
+      // Note: intensityDistribution is nullable to support existing segments
+      // without this field. Defaults to 70/20/10 if not present.
+      final sportType = switch (segment.sport) {
+        'swimming' => ActivityType.swimming,
+        'cycling' => ActivityType.cycling,
+        'running' => ActivityType.running,
+        _ => null,
       };
+      final preActivityMinutes = sportType == null
+          ? 0
+          : _preMinutesFor(
+              sportType,
+              defaultIntensity,
+              segment.durationMinutes,
+            );
 
-      segmentInputs[segment.sport] = BrickSegmentInput(
+      final input = BrickSegmentInput(
         sport: segment.sport,
-        order: segment.order,
+        order: legs.length + 1,
         durationMinutes: segment.durationMinutes,
         intensity: segment.intensity,
         intensityDistribution: defaultIntensity,
@@ -1008,23 +690,15 @@ class BrickInputController extends _$BrickInputController {
         // Running fields
         paceMinutesPerMile: segment.paceMinutesPerMile,
       );
-
-      segmentInputs[segment.sport] = _hydrateDerivedFields(
-        segmentInputs[segment.sport]!,
-      );
+      legs.add(_hydrateDerivedFields(input));
     }
 
     // Update state with loaded data
     state = BrickFormState(
-      activityTitle: _buildBrickTitle(sportOrder, sports),
+      activityTitle: _buildBrickTitle(legs),
       activityTitleManuallySet: false,
-      selectedSports: sports,
-      sportOrder: sportOrder,
-      segmentInputs: segmentInputs,
-      preActivityMinutes: _recommendedPreActivityMinutes(
-        selectedSports: sports,
-        segmentInputs: segmentInputs,
-      ),
+      legs: legs,
+      preActivityMinutes: _recommendedPreActivityMinutes(legs: legs),
       preActivityMinutesManuallySet: false,
       isFasted: false,
       selectedDate: activityDate,
@@ -1035,7 +709,8 @@ class BrickInputController extends _$BrickInputController {
     );
 
     DebugLogger.info(
-      '🧱 BRICK CONTROLLER: Loaded ${sports.length} segments in order: $sportOrder',
+      '🧱 BRICK CONTROLLER: Loaded ${legs.length} legs in order: '
+      '${state.segmentOrder}',
     );
   }
 
@@ -1055,15 +730,146 @@ class BrickInputController extends _$BrickInputController {
     );
   }
 
-  String _buildBrickTitle(List<String> sportOrder, Set<String> selectedSports) {
-    final sportNames = sportOrder
-        .where((sport) => selectedSports.contains(sport))
-        .map((sport) => sport.toUpperCase())
-        .toList();
-    if (sportNames.isEmpty) {
-      return 'BRICK';
+  // ── helpers ────────────────────────────────────────────────────────────
+
+  /// Commit a new leg list, refreshing the derived pre-activity window and
+  /// title unless the user pinned them.
+  void _commitLegs(List<BrickSegmentInput> legs) {
+    state = state.copyWith(
+      legs: legs,
+      preActivityMinutes: state.preActivityMinutesManuallySet
+          ? state.preActivityMinutes
+          : _recommendedPreActivityMinutes(legs: legs),
+      activityTitle: state.activityTitleManuallySet
+          ? state.activityTitle
+          : _buildBrickTitle(legs),
+    );
+  }
+
+  /// Keep every leg's `order` equal to its position + 1.
+  static List<BrickSegmentInput> _renumber(List<BrickSegmentInput> legs) => [
+    for (var i = 0; i < legs.length; i++) legs[i].copyWith(order: i + 1),
+  ];
+
+  static int _preMinutesFor(
+    ActivityType sport,
+    IntensityDistribution intensity,
+    int durationMinutes,
+  ) =>
+      (recommendedHoursBefore(
+                sport,
+                intensity,
+                durationMinutes: durationMinutes,
+              ) *
+              60)
+          .round();
+
+  /// Create a default segment input for a sport
+  BrickSegmentInput _createDefaultSegmentInput(String sport, int order) {
+    // All segments start with default 70/20/10 intensity distribution
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+    // Default durations for each sport (used for fueling window calculation)
+    const defaultSwimDuration = 30; // 1500m at 2:00/100m
+    const defaultCycleDuration = 67; // 20mi at 18mph
+    const defaultRunDuration = 27; // 3mi at 9:00/mi
+
+    switch (sport) {
+      case 'swimming':
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          intensityDistribution: defaultIntensity,
+          poolOrOpenWater: 'pool',
+          waterTempC: 24.0,
+          distanceMeters: 1500,
+          pacePer100mSeconds: 120,
+          sessionGoal: 'endurance',
+          deckTemperature: 22.0,
+          deckHumidity: 50.0,
+          preActivityMinutes: _preMinutesFor(
+            ActivityType.swimming,
+            defaultIntensity,
+            defaultSwimDuration,
+          ),
+          durationMinutes: ((1500 / 100) * (120 / 60)).round(),
+        );
+      case 'cycling':
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          intensityDistribution: defaultIntensity,
+          terrain: 'flat_outdoor',
+          indoorOutdoor: 'outdoor',
+          distanceMiles: 20.0,
+          speedMph: 18.0,
+          sessionGoal: 'endurance',
+          temperatureC: 20.0,
+          humidityPct: 50.0,
+          windCondition: 'still',
+          sunExposure: 'mixed',
+          preActivityMinutes: _preMinutesFor(
+            ActivityType.cycling,
+            defaultIntensity,
+            defaultCycleDuration,
+          ),
+          durationMinutes: ((20.0 / 18.0) * 60).round(),
+        );
+      case 'running':
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          intensityDistribution: defaultIntensity,
+          distanceMiles: 3.0,
+          paceMinutesPerMile: 9.0,
+          temperatureC: 20.0,
+          humidityPct: 50.0,
+          preActivityMinutes: _preMinutesFor(
+            ActivityType.running,
+            defaultIntensity,
+            defaultRunDuration,
+          ),
+          durationMinutes: (3.0 * 9.0).round(),
+        );
+      default:
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          durationMinutes: 30,
+          intensityDistribution: defaultIntensity,
+        );
     }
-    return '${sportNames.join('/')} BRICK';
+  }
+
+  int _recommendedPreActivityMinutes({List<BrickSegmentInput>? legs}) {
+    // Use the most conservative recommendation across the legs.
+    final inputs = legs ?? state.legs;
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+
+    int maxMinutes = 0;
+    for (final input in inputs) {
+      final intensity = input.intensityDistribution ?? defaultIntensity;
+      final minutes = _preMinutesFor(
+        ActivityType.brick,
+        intensity,
+        input.durationMinutes,
+      );
+      if (minutes > maxMinutes) {
+        maxMinutes = minutes;
+      }
+    }
+
+    if (maxMinutes == 0) {
+      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60)
+          .round();
+    }
+
+    return maxMinutes;
+  }
+
+  /// "RUN/BIKE/RUN BRICK" — one short name per leg, in brick order.
+  static String _buildBrickTitle(List<BrickSegmentInput> legs) {
+    if (legs.isEmpty) return 'BRICK';
+    return '${legs.map((l) => brickLegShortName(l.sport)).join('/')} BRICK';
   }
 
   BrickSegmentInput _hydrateDerivedFields(BrickSegmentInput input) {
@@ -1162,3 +968,11 @@ class BrickInputController extends _$BrickInputController {
     );
   }
 }
+
+/// Short display name for a brick leg's sport: SWIM / BIKE / RUN.
+String brickLegShortName(String sport) => switch (sport) {
+  'swimming' => 'SWIM',
+  'cycling' => 'BIKE',
+  'running' => 'RUN',
+  _ => sport.toUpperCase(),
+};
