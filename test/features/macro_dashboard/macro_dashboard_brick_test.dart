@@ -195,6 +195,42 @@ void main() {
     );
   });
 
+  testWidgets('the LEG ORDER panel and the hint panel both offer Cancel', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _pump(tester, [
+      _activity('run1', ActivityType.running, 8),
+      _activity('ride1', ActivityType.cycling, 16),
+    ]);
+    await tester.tap(brickPill);
+    await tester.pumpAndSettle();
+
+    // <2 legs: the hint panel carries a Cancel.
+    final hintCancel = find.byKey(
+      const ValueKey('macro_dashboard.brick_hint_cancel'),
+    );
+    expect(hintCancel, findsOneWidget);
+
+    for (final id in ['run1', 'ride1']) {
+      await tester.tap(find.byKey(ValueKey('macro_dashboard.brick_pick_$id')));
+      await tester.pumpAndSettle();
+    }
+    // 2+ legs: the LEG ORDER panel carries a Cancel; tapping it backs out
+    // entirely — selection cleared, add row (and pill) restored.
+    final panelCancel = find.byKey(
+      const ValueKey('macro_dashboard.brick_panel_cancel'),
+    );
+    expect(panelCancel, findsOneWidget);
+    await tester.tap(panelCancel);
+    await tester.pumpAndSettle();
+    expect(panelCancel, findsNothing);
+    expect(cancel, findsNothing);
+    expect(brickPill, findsOneWidget);
+  });
+
   testWidgets('a single activity shows no pill', (tester) async {
     await _pump(tester, [_activity('run1', ActivityType.running, 8)]);
     expect(brickPill, findsNothing);

@@ -727,7 +727,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     final selection = ref.watch(brickSelectionControllerProvider);
     final notifier = ref.read(brickSelectionControllerProvider.notifier);
     final legs = selection.selectedActivities;
-    if (legs.length < 2) return _brickPickHint();
+    if (legs.length < 2) return _brickPickHint(ref);
 
     final canSwap = legs.length >= 2;
     return Container(
@@ -755,6 +755,10 @@ class MacroDashboardScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              // A way out that is always on screen: the pick bar's Cancel
+              // scrolls away with the list, this panel does not.
+              _brickCancel(ref, key: 'macro_dashboard.brick_panel_cancel'),
+              const SizedBox(width: 16),
               GestureDetector(
                 key: const ValueKey('macro_dashboard.brick_swap'),
                 onTap: canSwap ? notifier.swapOrder : null,
@@ -813,7 +817,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _brickPickHint() {
+  Widget _brickPickHint(WidgetRef ref) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
@@ -823,10 +827,36 @@ class MacroDashboardScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MeTokens.creamAlpha(0.12)),
       ),
-      child: Text(
-        'Tap two or more activities to link into a brick',
-        textAlign: TextAlign.center,
-        style: _brickText(MeTokens.creamAlpha(0.6)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Tap two or more activities to link into a brick',
+              style: _brickText(MeTokens.creamAlpha(0.6)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          _brickCancel(ref, key: 'macro_dashboard.brick_hint_cancel'),
+        ],
+      ),
+    );
+  }
+
+  /// Backs out of leg-picking: clears the selection and restores the add row.
+  Widget _brickCancel(WidgetRef ref, {required String key}) {
+    return Semantics(
+      button: true,
+      label: 'Cancel brick',
+      child: GestureDetector(
+        key: ValueKey(key),
+        behavior: HitTestBehavior.opaque,
+        onTap: ref
+            .read(brickSelectionControllerProvider.notifier)
+            .exitSelectionMode,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text('Cancel', style: _brickText(MeTokens.creamAlpha(0.75))),
+        ),
       ),
     );
   }
