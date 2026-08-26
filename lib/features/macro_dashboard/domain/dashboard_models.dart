@@ -6,6 +6,8 @@
 /// already-derived quantities; they invent no arithmetic (P-3/S-3).
 library;
 
+import '../../activities/domain/activity.dart';
+
 /// The workout card's state machine — exactly one state at a time
 /// (workout-card.md, states table).
 enum WorkoutCardState {
@@ -224,6 +226,7 @@ class DashboardNode {
   const DashboardNode.workout({
     required this.timeLabel,
     required WorkoutCardData this.workout,
+    this.brick,
   }) : mealGroupLabel = null,
        meals = const [];
 
@@ -231,14 +234,23 @@ class DashboardNode {
     required this.timeLabel,
     required String this.mealGroupLabel,
     required this.meals,
-  }) : workout = null;
+  }) : workout = null,
+       brick = null;
 
   final String timeLabel;
   final WorkoutCardData? workout;
+
+  /// CANDIDATE (not ratified — see the brick note in macro_dashboard_screen):
+  /// the created brick itself when this workout row IS a brick, so the
+  /// surface can render it as a legs-bracket tile instead of a plain card.
+  /// [workout] is still populated (energy figures, filter lens, rail) so
+  /// every ratified path treats the brick exactly like any other workout.
+  final Activity? brick;
   final String? mealGroupLabel;
   final List<MealItemData> meals;
 
   bool get isWorkout => workout != null;
+  bool get isBrick => brick != null;
 
   /// S-7: a SKIPPED card has lost its timeline slot — it renders with no
   /// timestamp ([timeLabel] is empty), tucked after every timed card of its
