@@ -47,6 +47,14 @@ mealvana_endurance/
 - Skills, agents, and commands must not restate these rules or hardcode volatile facts (schema
   versions, table lists, tier limits) — point at CLAUDE.md and `/docs` instead, and read the
   current code for specifics.
+- **Design-bearing components live in the library, and trace to their spec.** Any widget that
+  carries a ratified contract — a state set, a gesture, a meaning-bound color, or has a
+  `docs/ssot/spec/design/components/<name>.md` — is implemented once in
+  `lib/shared/widgets/kyle_design/` under the spec's name, with a header comment citing the spec
+  path and version. Feature folders compose library components; they never redefine one. Tokens
+  have one registry (`lib/theme/kyle_design/`): no second token class, no `Color(0x…)` literal, no
+  Material `Colors.*` for brand semantics outside `lib/theme/`. A port prompt names the library
+  destination before it names the pixels.
 - Keep initialization invariant explicit: `main()` for non-recoverable setup, recoverable init in startup flow.
 - Do not run `flutter build` as assistant execution.
 - Run codegen after Riverpod/Drift annotation/schema changes.

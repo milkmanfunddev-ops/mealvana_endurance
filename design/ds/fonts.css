@@ -1,0 +1,14 @@
+/* Brand fonts, resolved from the app's own asset tree. design-sync parses this file and
+   copies the referenced files into fonts/. Compadre ships as demo builds — see NOTES.md. */
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-Regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-Italic.otf") format("opentype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-Light.otf") format("opentype"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-Medium.otf") format("opentype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-Medium.otf") format("opentype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-Bold.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Apercu"; src: url("../../assets/fonts/Apercu/Apercu-BoldItalic.otf") format("opentype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Apercu Mono"; src: url("../../assets/fonts/ApercuMono/ApercuMono-Regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Compadre"; src: url("../../assets/fonts/Compadre/Compadre-Demo-Regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Compadre Wide"; src: url("../../assets/fonts/Compadre/Compadre-Demo-Wide.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Sansita"; src: url("../../assets/fonts/Sansita/Sansita-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Sansita"; src: url("../../assets/fonts/Sansita/Sansita-BoldItalic.ttf") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
