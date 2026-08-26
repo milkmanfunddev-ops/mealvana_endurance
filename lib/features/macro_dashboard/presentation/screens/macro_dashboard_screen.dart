@@ -1050,6 +1050,11 @@ class MacroDashboardScreen extends ConsumerWidget {
     }
   }
 
+  /// "Delete brick" returns the day to the UNGROUPED state (Notion 3a7e3fdb,
+  /// "rules that fall out"): the legs come back as separate workouts and the
+  /// brick — with its nutrition plan — goes away. A plain tombstone of the
+  /// brick row is wrong here: it leaves the legs `archivedForBrick`, i.e.
+  /// invisible, which is what happened on-sim 2026-08-26.
   Future<void> _deleteBrick(
     BuildContext context,
     WidgetRef ref,
@@ -1060,7 +1065,8 @@ class MacroDashboardScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete Brick Workout?'),
         content: const Text(
-          'Delete this brick workout? This will also delete the nutrition plan.',
+          'Delete this brick and its nutrition plan? The legs return to the '
+          'day as separate workouts.',
         ),
         actions: [
           TextButton(
@@ -1085,12 +1091,12 @@ class MacroDashboardScreen extends ConsumerWidget {
 
     try {
       await ref
-          .read(activitiesControllerProvider.notifier)
-          .deleteActivity(brick.id);
+          .read(brickActionsControllerProvider.notifier)
+          .ungroupBrick(brick.id);
       if (!context.mounted) return;
       ref.invalidate(activitiesControllerProvider);
       dismiss();
-      MealvanaSnackbar.showSuccess(context, 'Brick deleted successfully');
+      MealvanaSnackbar.showSuccess(context, 'Brick deleted · legs restored');
     } catch (e) {
       dismiss();
       if (context.mounted) {

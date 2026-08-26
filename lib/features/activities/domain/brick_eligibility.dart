@@ -20,27 +20,18 @@ extension BrickEligibleActivity on Activity {
   bool get isBrickEligible => activityType.isBrickEligible && !isBrick;
 }
 
-/// True when the day's workouts contain 2+ brick-eligible workouts of at
-/// least two different sports — the condition under which the Brick entry
-/// point is offered.
+/// True when the day holds 2+ brick-eligible workouts — the condition under
+/// which the Brick entry point is offered.
 ///
 /// Ruled (Lee, 2026-08-26, resurrecting the brick flow on the macro
-/// dashboard): **adjacency is NOT required.** Any swim / bike / run on the
-/// day may be linked, in whatever order the athlete picks them, regardless
-/// of where they sit on the dashboard or what lies between them. The earlier
-/// "2+ positionally adjacent workouts" gate (Notion 3a7e3fdb) is withdrawn.
-/// Pending the logic-SSOT ruling that records this:
-/// qa/intake/2026-08-26-brick-eligibility-logic-ssot.md.
-///
-/// The two-different-sports floor remains because
-/// `BrickSelectionController.canCreateBrick` rejects duplicate sports — so
-/// offering the pill for two runs alone would walk the user into a flow they
-/// cannot finish.
-bool hasBrickCandidates(Iterable<Activity?> workouts) {
-  final eligible = _eligible(workouts);
-  return eligible.length >= 2 &&
-      eligible.map((a) => a.activityType).toSet().length >= 2;
-}
+/// dashboard): the ONLY filter is the sport — swim / bike / run, not already
+/// a brick. **Adjacency is not required**, **same-sport legs are allowed**
+/// (run + run + ride is a brick), and the legs are linked in whatever order
+/// the athlete picks them. The earlier "2+ positionally adjacent workouts of
+/// 2+ sports" gate (Notion 3a7e3fdb) is withdrawn. Pending the logic-SSOT
+/// record: qa/intake/2026-08-26-brick-eligibility-logic-ssot.md.
+bool hasBrickCandidates(Iterable<Activity?> workouts) =>
+    _eligible(workouts).length >= 2;
 
 /// The ids of every workout selectable once the user taps Brick: all
 /// brick-eligible workouts on the day, whenever [hasBrickCandidates] holds.

@@ -10,9 +10,9 @@
 // docs/ssot/spec/design/, re-anchor these tests to its rows.
 //
 // - The Brick entry is a third pill in the ADD ROW (after a divider, with a
-//   chain icon). It appears when 2+ brick-eligible workouts of different
-//   sports exist on the selected day — adjacency NOT required, legs in pick
-//   order (Lee, 2026-08-26).
+//   chain icon). It appears when 2+ brick-eligible (swim/bike/run) workouts
+//   exist on the selected day — adjacency NOT required, same sport allowed,
+//   legs in pick order (Lee, 2026-08-26).
 // - Tapping it swaps the add row for "Pick legs to link … Cancel".
 // - A created brick renders as a TimelineBrickTile — one time-dot on the rail
 //   with its legs in an indented bracket.
@@ -138,14 +138,16 @@ void main() {
     },
   );
 
-  testWidgets('two same-day activities of the SAME sport show no pill', (
+  testWidgets('two same-day activities of the SAME sport show the pill', (
     tester,
   ) async {
+    // Same-sport legs are allowed (Lee, 2026-08-26): a double-run day can
+    // be a brick.
     await _pump(tester, [
       _activity('run1', ActivityType.running, 8),
       _activity('run2', ActivityType.running, 16),
     ]);
-    expect(brickPill, findsNothing);
+    expect(brickPill, findsOneWidget);
   });
 
   testWidgets(

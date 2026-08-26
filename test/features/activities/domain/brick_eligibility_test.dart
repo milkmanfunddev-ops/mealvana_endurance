@@ -5,7 +5,7 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 /// Only the three triathlon disciplines are groupable (Notion 3a7e3fdb), and
 /// the Brick entry point appears whenever the day holds 2+ eligible workouts
-/// of 2+ sports — adjacency withdrawn, pick order free (Lee, 2026-08-26;
+/// — adjacency withdrawn, same-sport allowed, pick order free (Lee, 2026-08-26;
 /// logic-SSOT record: qa/intake/2026-08-26-brick-eligibility-logic-ssot.md).
 void main() {
   Activity act(String id, ActivityType type) => Activity(
@@ -84,15 +84,13 @@ void main() {
       );
     });
 
-    test('false for two workouts of the SAME sport', () {
-      // canCreateBrick rejects duplicate sports, so offering the pill here
-      // would be a dead end.
+    test('same-sport legs allowed: true for two runs (Lee, 2026-08-26)', () {
       expect(
         hasBrickCandidates([
           act('a', ActivityType.running),
           act('b', ActivityType.running),
         ]),
-        isFalse,
+        isTrue,
       );
     });
 
@@ -118,13 +116,13 @@ void main() {
       expect(ids, {'run', 'swim', 'bike'});
     });
 
-    test('same-sport day is not selectable', () {
+    test('same-sport day is selectable', () {
       expect(
         brickCandidateIds([
           act('r1', ActivityType.running),
           act('r2', ActivityType.running),
         ]),
-        isEmpty,
+        {'r1', 'r2'},
       );
     });
 

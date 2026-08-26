@@ -170,12 +170,6 @@ class BrickSelectionController extends _$BrickSelectionController {
       return false;
     }
 
-    // Check that all sports are different
-    final sportTypes = activities.map((a) => a.activityType).toSet();
-    if (sportTypes.length != activities.length) {
-      return false; // Duplicate sport found
-    }
-
     // Check that all activities are on same calendar day
     if (activities.isNotEmpty) {
       final firstDate = activities.first.scheduledDateTime;
@@ -242,7 +236,6 @@ class BrickSelectionController extends _$BrickSelectionController {
   /// Throws:
   /// - BrickValidationException.minimumSports() if less than 2 activities selected
   /// - BrickValidationException.maximumActivities() if more than 3 activities selected
-  /// - BrickValidationException.duplicateSports() if activities have duplicate sports
   /// - BrickValidationException.sameDayRequired() if activities are on different days
   void validateSelection() {
     final currentState = state;
@@ -263,11 +256,7 @@ class BrickSelectionController extends _$BrickSelectionController {
       throw BrickValidationException.ineligibleSport();
     }
 
-    // Check that all sports are different
-    final sportTypes = activities.map((a) => a.activityType).toSet();
-    if (sportTypes.length != activities.length) {
-      throw BrickValidationException.duplicateSports();
-    }
+    // Same-sport legs are allowed (run + run + ride) — ruled Lee 2026-08-26.
 
     // Check that all activities are on same calendar day
     if (activities.isNotEmpty) {
@@ -299,18 +288,12 @@ class BrickSelectionController extends _$BrickSelectionController {
 
     // Check minimum count
     if (activities.length < 2) {
-      return 'Select at least 2 activities from different sports';
+      return 'Select at least 2 workouts';
     }
 
     // Check maximum count
     if (activities.length > 3) {
       return 'Maximum 3 activities allowed per brick';
-    }
-
-    // Check that all sports are different
-    final sportTypes = activities.map((a) => a.activityType).toSet();
-    if (sportTypes.length != activities.length) {
-      return 'All activities must be different sports';
     }
 
     // Check that all activities are on same calendar day

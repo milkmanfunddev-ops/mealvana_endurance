@@ -863,15 +863,17 @@ class FuelTimelineScreen extends ConsumerWidget {
     }
 
     try {
+      // Delete = return to the ungrouped state (legs restored); a plain
+      // tombstone strands the legs as archivedForBrick (fixed 2026-08-26).
       await ref
-          .read(activitiesControllerProvider.notifier)
-          .deleteActivity(brick.id);
+          .read(brickActionsControllerProvider.notifier)
+          .ungroupBrick(brick.id);
 
       if (!context.mounted) return;
       ref.invalidate(activitiesControllerProvider);
 
       dismissLoadingSnackbar();
-      MealvanaSnackbar.showSuccess(context, 'Brick deleted successfully');
+      MealvanaSnackbar.showSuccess(context, 'Brick deleted · legs restored');
     } catch (e) {
       dismissLoadingSnackbar();
       if (context.mounted) {
