@@ -172,7 +172,11 @@ abstract final class PreWorkoutBeforeCardAssembler {
       check = HydrationCheckViewState(
         answer: hydrationCheck?.answer ?? HydrationCheckAnswer.none,
         targetOz: flOzTarget(fluidTarget),
-        alreadyCovered: hydrationCheck?.alreadyCovered ?? false,
+        deliveredOz: flOzDelivered(fluidMl),
+        // The tag governs (P3): present iff a tagged row is on the plan NOW.
+        waterRowPresent: feedings.any(
+          (f) => f.rows.any((r) => r.isHydrationCheckRow),
+        ),
       );
     }
 

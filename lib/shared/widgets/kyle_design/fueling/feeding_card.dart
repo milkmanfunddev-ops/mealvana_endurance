@@ -306,9 +306,13 @@ class _FoodRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // F-7: the name wraps to a second line (the rendering sets no
+                // nowrap on it) — "Rice Cake (plain)" must never lose its
+                // parenthetical to an ellipsis at phone width (ops bug
+                // 2026-08-26-food-row-names-truncate-at-narrow-width).
                 Text(
                   row.name,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: fuelingDisplayStyle(fontSize: 15),
                 ),

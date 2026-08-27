@@ -55,6 +55,10 @@ class HydrationCheckControl extends StatefulWidget {
   static const Key questionKey = Key('hydration_check.question');
   static const Key bodyKey = Key('hydration_check.body');
   static const Key changeAnswerKey = Key('hydration_check.change_answer');
+
+  /// HIG minimum tap target for the Change answer link.
+  static const double changeAnswerMinTapHeight = 44;
+
   static Key optionKey(HydrationCheckAnswer a) =>
       Key('hydration_check.option.${a.name}');
 
@@ -250,7 +254,10 @@ class _HydrationCheckControlState extends State<HydrationCheckControl> {
             color: creamAlpha(.75),
           ),
         ),
-        const SizedBox(height: 8),
+        // "Change answer" — the text sits 8 px below the body as in the
+        // rendering, but the HIT TARGET is a 44 pt band (Apple HIG minimum)
+        // so a finger tap wins the arena against the scroll view (ops bug
+        // 2026-08-26-hydration-check-change-answer-tap-target-too-small).
         GestureDetector(
           key: HydrationCheckControl.changeAnswerKey,
           behavior: HitTestBehavior.opaque,
@@ -258,14 +265,21 @@ class _HydrationCheckControlState extends State<HydrationCheckControl> {
             setState(() => _expanded = true);
             widget.onChangeAnswer();
           },
-          child: const Text(
-            HydrationCheckCopy.changeAnswer,
-            style: TextStyle(
-              fontFamily: AppTextStyles.apercu,
-              fontSize: 12,
-              color: AppColors.orange,
-              decoration: TextDecoration.underline,
-              decorationColor: AppColors.orange,
+          child: Container(
+            constraints: const BoxConstraints(
+              minHeight: HydrationCheckControl.changeAnswerMinTapHeight,
+            ),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(top: 8, right: 24),
+            child: const Text(
+              HydrationCheckCopy.changeAnswer,
+              style: TextStyle(
+                fontFamily: AppTextStyles.apercu,
+                fontSize: 12,
+                color: AppColors.orange,
+                decoration: TextDecoration.underline,
+                decorationColor: AppColors.orange,
+              ),
             ),
           ),
         ),

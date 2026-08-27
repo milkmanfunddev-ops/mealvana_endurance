@@ -322,7 +322,7 @@ void main() {
         tester,
         control(r.data.hydrationCheck!, expanded: true),
         'check_pale',
-        height: 220,
+        height: 260,
       );
     });
 
@@ -356,7 +356,7 @@ void main() {
         tester,
         control(r.data.hydrationCheck!, expanded: true),
         'check_not_sure',
-        height: 220,
+        height: 260,
       );
     });
   });

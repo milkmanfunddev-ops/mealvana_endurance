@@ -15,7 +15,11 @@
 // components/{hydration-check,feeding-card,fuel-stat}.md} v1 (RATIFIED Xuan
 // 2026-08-26); behaviour authority pre-workout-hydration.md v6 + PW-021.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/pre_workout_before_card_assembler.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/pre_workout_hydration_check_service.dart';
@@ -952,6 +956,172 @@ void main() {
         );
         // DEFERRED (S-G4): the ?-fine-print-matches-notes-§7 clause — see
         // s_fine_print_absent below.
+      },
+    );
+
+    // N3 — ops bug 2026-08-26-hydration-check-result-copy-stale-after-edits:
+    // the result line is derived from CURRENT state, never stored at answer time.
+    testWidgets(
+      'N3: result copy re-derives after a row edit (covered → shortfall; added → removed)',
+      (tester) async {
+        // (a) covered: 6 cups in the meal → DARK adds nothing.
+        final host = await _pump(tester, mealWaterCups: 6);
+        await tester.tap(
+          find.byKey(
+            HydrationCheckControl.optionKey(HydrationCheckAnswer.dark),
+          ),
+        );
+        await tester.pump();
+        expect(find.textContaining('already covered'), findsWidgets);
+
+        // Step the meal water down until delivered < the raised target (24 oz):
+        // 6 cups (48 oz) → 2 cups (16 oz).
+        for (var i = 0; i < 4; i++) {
+          await tester.tap(find.byKey(FeedingCard.decKey('wat')));
+          await tester.pump();
+        }
+        expect(host.data.fluids.delivered, lessThan(host.data.fluids.target!));
+        expect(find.textContaining('already covered'), findsNothing);
+        expect(find.textContaining('was added'), findsNothing);
+        expect(
+          _text(tester, HydrationCheckControl.statusKey),
+          'Dark · target raised to 24 oz',
+        );
+        expect(
+          _text(tester, HydrationCheckControl.bodyKey),
+          'Your fluid target rises to 24 oz.',
+        );
+
+        // (b) added: 2 cups → DARK adds the tagged row; step it to 0 (removed).
+        final host2 = await _pump(tester);
+        await tester.tap(
+          find.byKey(
+            HydrationCheckControl.optionKey(HydrationCheckAnswer.dark),
+          ),
+        );
+        await tester.pump();
+        expect(find.textContaining('was added'), findsOneWidget);
+        final addedId = host2.plan.preWorkoutHydrationCheck!.addedWaterFoodId!;
+        // The water row steps by 0.5 (divisible): 1 → 0.5 keeps the tag (N2),
+        // 0.5 → 0 removes the row (P3).
+        await tester.tap(find.byKey(FeedingCard.decKey(addedId)));
+        await tester.pump();
+        expect(find.byKey(FeedingCard.noteKey(addedId)), findsOneWidget);
+        expect(find.textContaining('was added'), findsOneWidget);
+        await tester.tap(find.byKey(FeedingCard.decKey(addedId)));
+        await tester.pump();
+        expect(find.byKey(FeedingCard.rowKey(addedId)), findsNothing);
+        expect(find.textContaining('was added'), findsNothing);
+        expect(
+          _text(tester, HydrationCheckControl.bodyKey),
+          'Your fluid target rises to 24 oz.',
+        );
+      },
+    );
+
+    // N5 — ops bug 2026-08-26-hydration-check-change-answer-tap-target-too-small.
+    testWidgets('N5: "Change answer" hit-tests across a ≥ 44 pt band', (
+      tester,
+    ) async {
+      final host = await _pump(tester);
+      await tester.tap(
+        find.byKey(HydrationCheckControl.optionKey(HydrationCheckAnswer.pale)),
+      );
+      await tester.pump();
+      final link = find.byKey(HydrationCheckControl.changeAnswerKey);
+      final box = tester.getRect(link);
+      expect(box.height, greaterThanOrEqualTo(44));
+      // A finger landing 18 pt above and 18 pt below the text centre both hit.
+      final textCentre = tester.getCenter(
+        find.text(HydrationCheckCopy.changeAnswer),
+      );
+      for (final dy in [-18.0, 18.0]) {
+        final y = (textCentre.dy + dy).clamp(box.top + 1, box.bottom - 1);
+        await tester.tapAt(Offset(textCentre.dx, y));
+        await tester.pump();
+        expect(
+          host.plan.preWorkoutHydrationCheck,
+          isNull,
+          reason: 'reverted at dy=$dy',
+        );
+        // Re-answer for the next probe.
+        await tester.tap(
+          find.byKey(
+            HydrationCheckControl.optionKey(HydrationCheckAnswer.pale),
+          ),
+        );
+        await tester.pump();
+      }
+    });
+
+    // F-7 — ops bug 2026-08-26-food-row-names-truncate-at-narrow-width: the
+    // name wraps to a second line rather than losing its parenthetical.
+    testWidgets(
+      'F-7: a long food name wraps to two lines, no single-line ellipsis',
+      (tester) async {
+        tester.view.physicalSize = const Size(402, 2400); // iPhone 17 width
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        // Real font: the fallback test face (Ahem) is a 1 em square per glyph
+        // and would overflow any width — the rule under test is the wrap.
+        final loader = FontLoader('Sansita')
+          ..addFont(
+            Future.value(
+              ByteData.view(
+                Uint8List.fromList(
+                  File(
+                    'assets/fonts/Sansita/Sansita-Bold.ttf',
+                  ).readAsBytesSync(),
+                ).buffer,
+              ),
+            ),
+          );
+        await loader.load();
+        final plan = mockPlan([
+          BeforeSubPhase(
+            subPhaseType: 'snack',
+            foodItems: [
+              FoodItemData(
+                id: 'rc',
+                name: 'Oatmeal (½ cup dry) with banana',
+                quantity: '1 bowl Oatmeal (½ cup dry) with banana',
+                isIndivisible: true,
+                nutritionalInfo: const NutritionalInfo(
+                  carbs: 14,
+                  sodium: 58,
+                  fluids: 0,
+                ),
+              ),
+            ],
+          ),
+        ]);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: _Host(
+                  key: UniqueKey(),
+                  t: 90,
+                  plan: plan,
+                  targets: mockMacroTargets(mockPreRun(t: 90)),
+                  expanded: const {'snack'},
+                ),
+              ),
+            ),
+          ),
+        );
+        final name = find.text('Oatmeal (½ cup dry) with banana');
+        final text = tester.widget<Text>(name);
+        expect(text.maxLines, 2);
+        final paragraph = tester.renderObject<RenderParagraph>(name);
+        expect(
+          paragraph.didExceedMaxLines,
+          isFalse,
+          reason: 'no ellipsis at two lines',
+        );
+        // Two lines tall (15 px × 1.2 line height ≈ 18 per line).
+        expect(tester.getSize(name).height, greaterThan(30));
+        expect(find.textContaining('…'), findsNothing);
       },
     );
 

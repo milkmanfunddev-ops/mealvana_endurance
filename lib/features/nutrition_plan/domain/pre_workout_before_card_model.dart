@@ -223,11 +223,24 @@ class FeedingCardData {
 }
 
 /// The hydration check's presentation state (hydration-check v1).
+///
+/// The result copy is DERIVED from the current plan every build — never
+/// chosen at answer time and stored — so it cannot go stale after the
+/// athlete edits rows (ops bug
+/// 2026-08-26-hydration-check-result-copy-stale-after-edits):
+///
+/// * DARK / NOT_YET with the tagged water row present → "An 8 oz water entry
+///   was added…"
+/// * DARK / NOT_YET, no row, delivered ≥ target → "…already covered…"
+/// * DARK / NOT_YET, no row, delivered < target (the athlete removed the row
+///   or stepped a drink down) → the state-independent sentence only:
+///   "Your fluid target rises to N oz."
 class HydrationCheckViewState {
   const HydrationCheckViewState({
     required this.answer,
     required this.targetOz,
-    required this.alreadyCovered,
+    required this.deliveredOz,
+    required this.waterRowPresent,
   });
 
   /// NONE = the TO-DO state.
@@ -237,10 +250,23 @@ class HydrationCheckViewState {
   /// (`round(fluidMl / 29.5735)`).
   final int targetOz;
 
-  /// The DARK/NOT_YET "already covered" branch (target rose, no row added).
-  final bool alreadyCovered;
+  /// Σ fluid over every feeding row, in oz, as of THIS build.
+  final int deliveredOz;
+
+  /// Whether the tagged "added by hydration check" row is on the plan NOW.
+  final bool waterRowPresent;
 
   bool get isAnswered => answer != HydrationCheckAnswer.none;
+
+  /// The DARK / NOT_YET "already covered" branch, evaluated now.
+  bool get alreadyCovered =>
+      answer.raisesTarget && !waterRowPresent && deliveredOz >= targetOz;
+
+  /// DARK / NOT_YET where the row is gone and the plan no longer covers the
+  /// target — neither ratified sentence is true, so only the target line
+  /// renders.
+  bool get shortfallWithoutRow =>
+      answer.raisesTarget && !waterRowPresent && deliveredOz < targetOz;
 
   /// The short status after the head: "target raised to 25 oz".
   String get resultShort {
@@ -262,21 +288,28 @@ class HydrationCheckViewState {
   /// "Dark · target raised to 25 oz".
   String get resultLine => '${answer.resultHead} · $resultShort';
 
-  /// The result body (copy register, hydration-check v1).
+  String get _raisedBody {
+    final rises = 'Your fluid target rises to $targetOz oz.';
+    if (waterRowPresent) {
+      return '$rises An 8 oz water entry was added to help you get there — '
+          'adjust it like any other item.';
+    }
+    if (alreadyCovered) {
+      return '$rises What you already have planned covers it, so nothing '
+          'was added.';
+    }
+    return rises;
+  }
+
+  /// The result body (copy register, hydration-check v1), derived now.
   String get resultBody {
     switch (answer) {
       case HydrationCheckAnswer.pale:
         return "You're hydrated. Your fluid target is unchanged.";
       case HydrationCheckAnswer.dark:
-        return alreadyCovered
-            ? 'Your fluid target rises to $targetOz oz. What you already have '
-                  'planned covers it, so nothing was added.'
-            : 'Your fluid target rises to $targetOz oz. An 8 oz water entry '
-                  'was added to help you get there — adjust it like any other '
-                  'item.';
+        return _raisedBody;
       case HydrationCheckAnswer.notYet:
-        return 'Treated as dark for now — update after you go. '
-            '${alreadyCovered ? 'Your fluid target rises to $targetOz oz. What you already have planned covers it, so nothing was added.' : 'Your fluid target rises to $targetOz oz. An 8 oz water entry was added to help you get there — adjust it like any other item.'}';
+        return 'Treated as dark for now — update after you go. $_raisedBody';
       case HydrationCheckAnswer.notSure:
         return 'Recorded with no change to your target. Check when you can '
             'and update your answer.';
