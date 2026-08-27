@@ -1,5 +1,6 @@
 import 'plan_section.dart';
 import 'plan_macro_summary.dart';
+import 'pre_workout_hydration_check.dart';
 
 // Re-export split files for backward compatibility
 export 'plan_section.dart';
@@ -25,6 +26,7 @@ class NutritionPlan {
     this.updatedAt,
     this.isDeleted = false,
     this.conflictResolution = 'last_write_wins',
+    this.preWorkoutHydrationCheck,
   });
 
   final String id;
@@ -48,6 +50,10 @@ class NutritionPlan {
   final bool isDeleted;
   final String conflictResolution; // 'last_write_wins', 'manual', etc.
 
+  /// The hydration check's answer and what it wrote (deferred-ledger P2:
+  /// persisted beside the plan in `nutrition_plan_data`). Null = TO-DO.
+  final PreWorkoutHydrationCheckRecord? preWorkoutHydrationCheck;
+
   /// Create a copy with updated fields
   NutritionPlan copyWith({
     String? id,
@@ -67,6 +73,8 @@ class NutritionPlan {
     DateTime? updatedAt,
     bool? isDeleted,
     String? conflictResolution,
+    PreWorkoutHydrationCheckRecord? preWorkoutHydrationCheck,
+    bool clearPreWorkoutHydrationCheck = false,
   }) {
     return NutritionPlan(
       id: id ?? this.id,
@@ -86,6 +94,9 @@ class NutritionPlan {
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       conflictResolution: conflictResolution ?? this.conflictResolution,
+      preWorkoutHydrationCheck: clearPreWorkoutHydrationCheck
+          ? null
+          : preWorkoutHydrationCheck ?? this.preWorkoutHydrationCheck,
     );
   }
 
@@ -122,6 +133,9 @@ class NutritionPlan {
       'updatedAt': updatedAt?.toIso8601String(),
       'isDeleted': isDeleted,
       'conflictResolution': conflictResolution,
+      if (preWorkoutHydrationCheck != null)
+        PreWorkoutHydrationCheckRecord.jsonKey: preWorkoutHydrationCheck!
+            .toJson(),
     };
   }
 

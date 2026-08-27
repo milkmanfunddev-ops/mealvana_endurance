@@ -10,7 +10,11 @@ import '../../../domain/food_item_data.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/time_slot_assignment.dart';
-import 'before_phase_widget.dart';
+import 'pre_workout_before_card.dart';
+import '../../../application/pre_workout_before_card_assembler.dart';
+import '../../../domain/fueling_window_limits.dart';
+import '../../../domain/pre_workout_before_card_model.dart';
+import '../../../domain/pre_workout_hydration_check.dart';
 import 'dismissible_food_item.dart';
 import 'during_phase_section_widget.dart';
 import 'macro_summary_row.dart';
@@ -37,6 +41,9 @@ class BrickNutritionSections extends StatelessWidget {
     this.onAdjustSlotQuantity,
     this.onMoveSipFoodToSlot,
     this.onScaleSubPhase,
+    this.onAnswerHydrationCheck,
+    this.onChangeHydrationAnswer,
+    this.bodyWeightKgOrNull,
     this.macroTargets,
     this.showSwipeHint = false,
     this.useImperial = false,
@@ -48,6 +55,14 @@ class BrickNutritionSections extends StatelessWidget {
 
   final Activity brick;
   final NutritionPlan planData;
+
+  /// Hydration check H-2 / H-3 for the brick's one shared BEFORE card (H10).
+  final ValueChanged<HydrationCheckAnswer>? onAnswerHydrationCheck;
+  final VoidCallback? onChangeHydrationAnswer;
+
+  /// Body weight with absence preserved (no 70-kg stand-in) for the FC-1
+  /// naming threshold.
+  final double? bodyWeightKgOrNull;
   final Function(String category) onAddFood;
   final Function(String foodId, String foodName, String category) onSwapFood;
   final Function(String foodId, String category) onDeleteFood;
@@ -226,27 +241,33 @@ class BrickNutritionSections extends StatelessWidget {
       );
     }
 
-    // For before sections with sub-phases, use BeforePhaseWidget
+    // The ratified BEFORE card — a brick has ONE shared Before (H10). The
+    // component's oz conversion (R-01) is applied once, in the assembler, so
+    // the brick path can no longer label ml as oz (D-004a).
     if (section.hasSubPhases && section.id.startsWith('before')) {
-      return BeforePhaseWidget(
-        section: section,
-        sectionColor: sectionColor,
-        sectionTitle: displayTitle.toUpperCase(),
-        useImperial: useImperial,
-        planId: brick.id,
+      final data = PreWorkoutBeforeCardAssembler.assemble(
+        preRun: macroTargets?.preRun,
+        subPhases: section.subPhases!,
+        timeBeforeWorkoutMin: clampFuelingWindowMinutes(
+          brick.timeBeforeMinutes ?? 0,
+        ).toDouble(),
+        bodyWeightKg: bodyWeightKgOrNull,
+        hydrationCheck: planData.preWorkoutHydrationCheck,
         categoryPrefix: 'before',
-        onSwapFood: (foodId, foodName, cat) =>
-            onSwapFood(foodId, foodName, cat),
-        onDeleteFood: (foodId, cat) => onDeleteFood(foodId, cat),
-        onUpdateQuantity: (foodId, cat, newQuantity) =>
-            onUpdateQuantity(foodId, cat, newQuantity),
-        onScaleSubPhase: onScaleSubPhase!,
+      );
+      return PreWorkoutBeforeCard(
+        data: data,
+        title: displayTitle.toUpperCase(),
+        onStep: (row, newQuantity) {
+          if (newQuantity <= 0) {
+            onDeleteFood(row.id, row.category);
+          } else {
+            onUpdateQuantity(row.id, row.category, newQuantity);
+          }
+        },
         onAddFood: (cat) => onAddFood(cat),
-        showSwipeHint: showSwipeHint,
-        macroTargets: macroTargets,
-        bodyWeightKg: bodyWeightKg,
-        sportLabel: 'Brick',
-        onRegenerate: onRegenerate,
+        onAnswerHydrationCheck: onAnswerHydrationCheck ?? (_) {},
+        onChangeHydrationAnswer: onChangeHydrationAnswer ?? () {},
       );
     }
 
