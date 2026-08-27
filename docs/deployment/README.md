@@ -117,6 +117,10 @@ supabase functions list --project-ref wvmvsodrvbkxfydabqed
 - `connection_web.dart` still references `sqlite3.wasm` and `drift_worker.js` and those files exist in `web/`.
 
 ## Related Docs
+- **`supabase-deploy-playbook.md`** — the ordering rules (schema → functions → build → `app_config`
+  last), the `app_config` two-step window, edge-function versioning / frozen functions, and the
+  standing orders. This README is the mechanics; the playbook is the *why and in what order*.
+- `bundle-runbook-template.md` — per-bundle runbooks live in `../ops/docs/deploys/`.
 - `/docs/business_logic/README.md`
 - `/docs/web_mode/README.md`
 - `/docs/ci-cd/README.md`
