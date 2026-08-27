@@ -84,7 +84,11 @@ class MacroDashboardAssembler {
         if (c.data.counts)
           _TimedNode(
             c.time,
-            DashboardNode.workout(timeLabel: c.data.timeLabel, workout: c.data),
+            DashboardNode.workout(
+              timeLabel: c.data.timeLabel,
+              workout: c.data,
+              brick: c.activity.isBrick ? c.activity : null,
+            ),
           ),
       ...mealNodes,
     ]..sort((a, b) => a.time.compareTo(b.time));
@@ -93,7 +97,11 @@ class MacroDashboardAssembler {
         if (c.data.isSkipped)
           _TimedNode(
             c.time,
-            DashboardNode.workout(timeLabel: '', workout: c.data),
+            DashboardNode.workout(
+              timeLabel: '',
+              workout: c.data,
+              brick: c.activity.isBrick ? c.activity : null,
+            ),
           ),
     ]..sort((a, b) => a.time.compareTo(b.time));
     final nodes = [...timed, ...tucked];
@@ -167,6 +175,7 @@ class MacroDashboardAssembler {
 
     return _TimedCard(
       displayTime,
+      a,
       WorkoutCardData(
         activityId: a.id,
         name: a.title,
@@ -216,7 +225,8 @@ class MacroDashboardAssembler {
     final measured = a.caloriesBurned;
     if (measured != null && measured > 0) return measured;
     if (weightKg == null) return null;
-    final durationHr = SessionInputResolver.durationMinutes(
+    final durationHr =
+        SessionInputResolver.durationMinutes(
           activityType: a.activityType.name,
           // Display precedence: what it actually took beats what was planned.
           explicitMinutes: a.actualDurationMinutes ?? a.durationMinutes,
@@ -556,9 +566,10 @@ class _TimedNode {
 }
 
 class _TimedCard {
-  const _TimedCard(this.time, this.data);
+  const _TimedCard(this.time, this.activity, this.data);
   final DateTime time;
   final WorkoutCardData data;
+  final Activity activity;
 }
 
 class _BuiltEnergy {

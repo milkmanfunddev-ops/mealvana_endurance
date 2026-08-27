@@ -3,9 +3,10 @@ import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/activities/domain/brick_eligibility.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
-/// Brick redesign (Notion 3a7e3fdb): only the three triathlon disciplines are
-/// groupable, and the Brick entry point only appears when 2+ eligible workouts
-/// are adjacent.
+/// Only the three triathlon disciplines are groupable (Notion 3a7e3fdb), and
+/// the Brick entry point appears whenever the day holds 2+ eligible workouts
+/// — adjacency withdrawn, same-sport allowed, pick order free (Lee, 2026-08-26;
+/// logic-SSOT record: qa/intake/2026-08-26-brick-eligibility-logic-ssot.md).
 void main() {
   Activity act(String id, ActivityType type) => Activity(
     id: id,
@@ -36,17 +37,14 @@ void main() {
     });
   });
 
-  group('hasAdjacentBrickCandidates', () {
+  group('hasBrickCandidates', () {
     test('false for a single eligible workout', () {
-      expect(
-        hasAdjacentBrickCandidates([act('a', ActivityType.running)]),
-        isFalse,
-      );
+      expect(hasBrickCandidates([act('a', ActivityType.running)]), isFalse);
     });
 
-    test('true for two adjacent eligible workouts', () {
+    test('true for two eligible workouts of different sports', () {
       expect(
-        hasAdjacentBrickCandidates([
+        hasBrickCandidates([
           act('a', ActivityType.swimming),
           act('b', ActivityType.running),
         ]),
@@ -54,20 +52,31 @@ void main() {
       );
     });
 
-    test('false when an ineligible workout separates the two', () {
+    test('adjacency withdrawn: true with an ineligible workout between', () {
       expect(
-        hasAdjacentBrickCandidates([
+        hasBrickCandidates([
           act('a', ActivityType.swimming),
           act('b', ActivityType.other),
           act('c', ActivityType.running),
         ]),
-        isFalse,
+        isTrue,
+      );
+    });
+
+    test('adjacency withdrawn: true with a non-workout row between', () {
+      expect(
+        hasBrickCandidates([
+          act('a', ActivityType.swimming),
+          null,
+          act('b', ActivityType.running),
+        ]),
+        isTrue,
       );
     });
 
     test('false for two ineligible workouts — strength cannot brick', () {
       expect(
-        hasAdjacentBrickCandidates([
+        hasBrickCandidates([
           act('a', ActivityType.other),
           act('b', ActivityType.other),
         ]),
@@ -75,38 +84,20 @@ void main() {
       );
     });
 
-    test(
-      'true when a later pair is adjacent even if an earlier one is not',
-      () {
-        expect(
-          hasAdjacentBrickCandidates([
-            act('a', ActivityType.running),
-            act('b', ActivityType.other),
-            act('c', ActivityType.swimming),
-            act('d', ActivityType.cycling),
-          ]),
-          isTrue,
-        );
-      },
-    );
-
-    test('false for two adjacent workouts of the SAME sport', () {
-      // A brick is a change of discipline; canCreateBrick rejects duplicate
-      // sports, so offering the pill here would be a dead end.
+    test('same-sport legs allowed: true for two runs (Lee, 2026-08-26)', () {
       expect(
-        hasAdjacentBrickCandidates([
+        hasBrickCandidates([
           act('a', ActivityType.running),
           act('b', ActivityType.running),
         ]),
-        isFalse,
+        isTrue,
       );
     });
 
-    test('null rows (non-workout timeline entries) break a run', () {
+    test('an existing brick does not count toward the two', () {
       expect(
-        hasAdjacentBrickCandidates([
-          act('a', ActivityType.swimming),
-          null,
+        hasBrickCandidates([
+          act('a', ActivityType.brick),
           act('b', ActivityType.running),
         ]),
         isFalse,
@@ -114,44 +105,46 @@ void main() {
     });
   });
 
-  group('adjacentBrickCandidateIds', () {
-    test('returns only ids inside a run of 2+', () {
-      final ids = adjacentBrickCandidateIds([
-        act('lonely', ActivityType.running),
+  group('brickCandidateIds', () {
+    test('every eligible workout on the day is selectable', () {
+      final ids = brickCandidateIds([
+        act('run', ActivityType.running),
         act('blocker', ActivityType.other),
-        act('leg1', ActivityType.swimming),
-        act('leg2', ActivityType.cycling),
+        act('swim', ActivityType.swimming),
+        act('bike', ActivityType.cycling),
       ]);
-      expect(ids, {'leg1', 'leg2'});
+      expect(ids, {'run', 'swim', 'bike'});
     });
 
-    test('same-sport run is not selectable', () {
+    test('same-sport day is selectable', () {
       expect(
-        adjacentBrickCandidateIds([
+        brickCandidateIds([
           act('r1', ActivityType.running),
           act('r2', ActivityType.running),
+        ]),
+        {'r1', 'r2'},
+      );
+    });
+
+    test('returns empty when fewer than two are eligible', () {
+      expect(
+        brickCandidateIds([
+          act('a', ActivityType.running),
+          act('b', ActivityType.other),
         ]),
         isEmpty,
       );
     });
 
-    test('returns empty when nothing is adjacent', () {
-      final ids = adjacentBrickCandidateIds([
-        act('a', ActivityType.running),
-        act('b', ActivityType.other),
-      ]);
-      expect(ids, isEmpty);
-    });
-
-    test('collects two separate runs', () {
-      final ids = adjacentBrickCandidateIds([
-        act('a1', ActivityType.swimming),
-        act('a2', ActivityType.running),
-        act('gap', ActivityType.other),
-        act('b1', ActivityType.cycling),
-        act('b2', ActivityType.running),
-      ]);
-      expect(ids, {'a1', 'a2', 'b1', 'b2'});
+    test('an existing brick is never selectable', () {
+      expect(
+        brickCandidateIds([
+          act('old', ActivityType.brick),
+          act('swim', ActivityType.swimming),
+          act('run', ActivityType.running),
+        ]),
+        {'swim', 'run'},
+      );
     });
   });
 }

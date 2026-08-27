@@ -245,7 +245,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           }
 
           final segments = brickController.getSegments();
-          final segmentOrder = brickController.state.sportOrder;
+          final segmentOrder = brickController.state.segmentOrder;
           final selectedDate = brickController.state.selectedDate;
           final selectedTime = brickController.state.selectedTime;
           final isFasted = brickController.state.isFasted;
