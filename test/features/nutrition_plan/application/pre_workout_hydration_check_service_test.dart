@@ -441,12 +441,12 @@ void main() {
         // 161 lb: server used 0.453592 (73.028 kg), the device recomputes at
         // 0.45359237 (73.028 kg) — the bands differ by ~0.1 ml; the old
         // 1e-3 assert threw inside the tap and nothing was written.
-        final serverPre = mockPreRun(t: 135, bodyWeightKg: 161 * 0.453592);
+        final serverPre = serverPreRun(t: 135, weightLb: 161, durationMin: 168);
         final w = PreWorkoutHydrationCheckService.answer(
           plan: mockPlan(mockSubPhases(135)),
           targets: mockMacroTargets(serverPre),
           answer: HydrationCheckAnswer.dark,
-          bodyWeightKg: 161 * 0.45359237,
+          bodyWeightKg: 161 * kDeviceKgPerLb,
           workoutDurationMin: 168,
           timeBeforeWorkoutMin: 135,
           tempC: null,
@@ -458,7 +458,7 @@ void main() {
         );
         expect(
           w.targets.preRun.fluidsMl,
-          closeTo(serverPre.fluidsMl! + 4 * 161 * 0.45359237, 0.05),
+          closeTo(serverPre.fluidsMl! + 4 * 161 * kDeviceKgPerLb, 0.05),
         );
         // The STORED band is what survives, byte for byte.
         expect(w.targets.preRun.fluidsLowMl, serverPre.fluidsLowMl);

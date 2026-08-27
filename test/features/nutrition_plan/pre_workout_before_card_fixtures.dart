@@ -271,3 +271,55 @@ Activity mockActivity({
   createdAt: DateTime(2026, 8, 26),
   updatedAt: DateTime(2026, 8, 26),
 );
+
+/// The server twin's lb→kg factor (`_getUserMetrics`: `weightPounds * 0.453592`).
+const double kServerKgPerLb = 0.453592;
+
+/// The device's lb→kg factor (`UnitFormatter.kKgPerLb` / macro_repository).
+const double kDeviceKgPerLb = 0.45359237;
+
+/// STORED targets as the SERVER produces them — the shape every seam test
+/// must feed, not `mockPreRun()`.
+///
+/// Why this exists (2026-08-26): the hydration-check service compared the
+/// stored band to its own recompute with a 1e-3 ml assert; every test built
+/// both sides from the same `mockPreRun()` call so they were byte-identical
+/// by construction, and the first real device (server band at 0.453592,
+/// device recompute at 0.45359237 — ~0.1 ml apart) threw inside the tap and
+/// wrote nothing. Data that crossed a process boundary is never bit-equal to
+/// a local recompute: build the stored side from the producer's factor and
+/// the wire's rounding, so "stored ≠ recomputed" is the DEFAULT in tests.
+PreRunMacros serverPreRun({
+  required double t,
+  required double weightLb,
+  double durationMin = kMockDurationMin,
+  bool gated = false,
+  bool fasted = false,
+}) {
+  final pre = mockPreRun(
+    t: t,
+    gated: gated,
+    fasted: fasted,
+    bodyWeightKg: weightLb * kServerKgPerLb,
+  );
+  // The wire rounds to 3 decimals (generate-macros-v4 `round3`); mirror it.
+  double? r3(double? v) => v == null ? null : (v * 1000).round() / 1000;
+  return PreRunMacros(
+    carbsG: r3(pre.carbsG)!,
+    proteinG: pre.proteinG,
+    fatCapG: pre.fatCapG,
+    carbsLowG: r3(pre.carbsLowG),
+    carbsHighG: r3(pre.carbsHighG),
+    carbTargetBasis: pre.carbTargetBasis,
+    carbTiers: pre.carbTiers,
+    fluidsMl: r3(pre.fluidsMl),
+    fluidsLowMl: r3(pre.fluidsLowMl),
+    fluidsHighMl: r3(pre.fluidsHighMl),
+    hydrationRegime: pre.hydrationRegime,
+    fluidTargetBasis: pre.fluidTargetBasis,
+    hydrationCheckUsed: pre.hydrationCheckUsed,
+    fluidTiers: pre.fluidTiers
+        ?.map((x) => PreRunFluidTier(tier: x.tier, fluidMl: r3(x.fluidMl)!))
+        .toList(),
+  );
+}

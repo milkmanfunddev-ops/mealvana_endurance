@@ -73,6 +73,31 @@ export SUPABASE_ANON_KEY=<anon-key>
 deno test --allow-net --allow-env supabase/functions/generate-macros-v4/index.test.ts
 ```
 
+## Seam tests: stored ≠ recomputed (rule, 2026-08-26)
+
+A **seam** is any place where data that crossed a process boundary (the server twin, a
+persisted row, a cached blob) meets a local recompute — e.g. the hydration check comparing the
+plan's stored fluid band to `OfflineMacroCalculator`'s answer. Two rules, learned from the
+BEFORE-card hydration check being "not clickable" on the first real device while 74 unit tests
+were green:
+
+1. **Feed the seam producer-shaped data, never the local engine's own output.** Tests that build
+   the "stored" side with the same call the code recomputes with are equal by construction and
+   cannot fail. Use a fixture that mirrors the producer (`serverPreRun()` in
+   `test/features/nutrition_plan/pre_workout_before_card_fixtures.dart`: the server's lb→kg
+   factor `0.453592` vs the device's `0.45359237`, and the wire's 3-decimal rounding). Make
+   "stored ≠ recomputed" the default fixture, not a special case.
+2. **Never `assert` on data that crossed a process boundary.** A debug `assert` inside a tap
+   callback kills the Future silently — no red test, no console error, the button just "does
+   nothing". Compare with a tolerance, log, and keep the stored value; put the invariant in a
+   test instead.
+
+And the harness rule that follows: **every controller write path gets one test through the real
+notifier** (`ProviderContainer` + the seeded-controller pattern in
+`test/features/nutrition_plan/presentation/providers/hydration_check_controller_test.dart`), not
+only through a widget-test host that stands in for the controller. The host proves the widget
+contract; the notifier test proves the lookups (weight, frozen lead time, tempC) and the save.
+
 ## Verification Checklist
 - `flutter test` completes without failures.
 - `flutter test test/new_sync` passes (sync architecture safety net).

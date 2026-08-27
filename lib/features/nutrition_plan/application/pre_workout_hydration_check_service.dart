@@ -105,12 +105,51 @@ abstract final class PreWorkoutHydrationCheckService {
       );
     }
 
-    final newTargetMl = result.fluidMl!;
+    // H-2: PALE / NOT_SURE leave the STORED target untouched; DARK / NOT_YET
+    // raise it by exactly the engine's top-up. The delta comes from the
+    // engine (dark recompute − pale recompute = TOPUP_ML_KG·BW) and is added
+    // to the stored figure, so a stored value that crossed a process boundary
+    // (server twin, other lb→kg factor, wire rounding) is never overwritten
+    // by a locally recomputed near-equal — and Change answer restores it
+    // byte for byte.
+    final double storedTargetMl = pre.fluidsMl!;
+    double newTargetMl = storedTargetMl;
+    List<PreRunFluidTier>? newTiers = pre.fluidTiers;
+    if (answer.raisesTarget) {
+      final base = MacroRepositoryImpl.preWorkoutHydrationFor(
+        bodyWeightKg: bodyWeightKg,
+        workoutDurationMin: workoutDurationMin,
+        timeBeforeWorkoutMin: timeBeforeWorkoutMin,
+        tempC: tempC,
+        hydrationCheck: HydrationCheck.pale,
+      );
+      final topUpMl = result.fluidMl! - (base.fluidMl ?? result.fluidMl!);
+      newTargetMl = storedTargetMl + topUpMl;
+      final stored = pre.fluidTiers;
+      if (stored != null && stored.isNotEmpty) {
+        // The correction lands in the snack window (hydration v6 Tier
+        // integration); a plan whose tiers lack a snack gets one.
+        final hasSnack = stored.any(
+          (t) =>
+              PreWorkoutFeedingTier.parse(t.tier) ==
+              PreWorkoutFeedingTier.snack,
+        );
+        newTiers = [
+          for (final t in stored)
+            PreWorkoutFeedingTier.parse(t.tier) == PreWorkoutFeedingTier.snack
+                ? PreRunFluidTier(tier: t.tier, fluidMl: t.fluidMl + topUpMl)
+                : t,
+          if (!hasSnack) PreRunFluidTier(tier: 'snack', fluidMl: topUpMl),
+        ];
+      } else {
+        newTiers = result.tiers
+            .map((t) => PreRunFluidTier(tier: t.tier, fluidMl: t.fluidMl))
+            .toList();
+      }
+    }
     final updatedPre = pre.copyWith(
       fluidsMl: newTargetMl,
-      fluidTiers: result.tiers
-          .map((t) => PreRunFluidTier(tier: t.tier, fluidMl: t.fluidMl))
-          .toList(),
+      fluidTiers: newTiers,
       hydrationCheckUsed: result.hydrationCheckUsed,
     );
 

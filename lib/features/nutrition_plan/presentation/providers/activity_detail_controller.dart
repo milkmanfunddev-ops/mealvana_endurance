@@ -585,6 +585,12 @@ class ActivityDetailController extends _$ActivityDetailController {
   ) async {
     final current = state.value;
     if (current == null) return;
+    // A no-op from the service (sub-2 h, gated, already answered, no record
+    // to revert) writes nothing — the plan is untouched, so is the row.
+    if (identical(write.plan, current.nutritionPlan) &&
+        identical(write.targets, current.macroTargets)) {
+      return;
+    }
     // State first (B-3: the whole card re-renders from one new state), then
     // the durable record. `_saveNutritionPlanToActivity` builds
     // `nutrition_plan_data` from the plan (answer record + tagged row) and the
