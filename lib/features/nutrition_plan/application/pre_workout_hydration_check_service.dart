@@ -16,7 +16,7 @@
 /// * `timeBeforeWorkoutMin` is the plan's frozen lead time (the activity's
 ///   `time_before_minutes`), never the clock (hydration v6 *Inputs*).
 /// * Only `fluidMl` (and the per-tier split) moves; the band is byte-identical
-///   across answers (inv. 8b) — asserted here, not trusted.
+///   across answers (inv. 8b) — the stored band is kept; a >1 % drift is logged.
 /// * The water row is the *means*, added only when delivered fluid is below
 ///   the new target ("already covered" is the stateless-consumer rule). It is
 ///   tagged `origin: hydration_check` and its id is recorded, so Change
@@ -27,6 +27,8 @@
 ///   sub-phase's `foodItems` — one JSON, one atomic write (the controller's
 ///   `_saveNutritionPlanToActivity`).
 library;
+
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 import '../data/macro_repository.dart';
 import '../data/offline_macro_calculator.dart';
@@ -88,18 +90,20 @@ abstract final class PreWorkoutHydrationCheckService {
       return HydrationCheckWrite(plan: plan, targets: targets);
     }
 
-    // inv. 8b: the band never moves on any answer. The stored band stays;
-    // only the target and the tier split are taken from the recompute.
-    assert(
-      pre.fluidsLowMl == null ||
-          (pre.fluidsLowMl! - (result.fluidLowMl ?? -1)).abs() < 1e-3,
-      'hydration v6 inv. 8b: fluidLowMl moved on a hydration answer',
-    );
-    assert(
-      pre.fluidsHighMl == null ||
-          (pre.fluidsHighMl! - (result.fluidHighMl ?? -1)).abs() < 1e-3,
-      'hydration v6 inv. 8b: fluidHighMl moved on a hydration answer',
-    );
+    // inv. 8b: the band never moves on any answer. The STORED band stays;
+    // only the target and the tier split are taken from the recompute. The
+    // stored band may come from the server twin at a slightly different
+    // lb→kg factor (0.453592 vs 0.45359237 — handoff §5.8), so this is a
+    // 1 % sanity guard that logs, never a hard assert: a hard assert here
+    // swallowed the whole write on the first real device (2026-08-26).
+    if (!_bandMatches(pre.fluidsLowMl, result.fluidLowMl) ||
+        !_bandMatches(pre.fluidsHighMl, result.fluidHighMl)) {
+      DebugLogger.warning(
+        'hydration check: recomputed band differs from the stored band by '
+        '> 1% (stored ${pre.fluidsLowMl}–${pre.fluidsHighMl}, recomputed '
+        '${result.fluidLowMl}–${result.fluidHighMl}); keeping the stored band',
+      );
+    }
 
     final newTargetMl = result.fluidMl!;
     final updatedPre = pre.copyWith(
@@ -207,6 +211,12 @@ abstract final class PreWorkoutHydrationCheckService {
       ),
       targets: targets.copyWith(preRun: restoredPre),
     );
+  }
+
+  static bool _bandMatches(double? stored, double? recomputed) {
+    if (stored == null || recomputed == null) return true;
+    final scale = stored.abs() < 1 ? 1.0 : stored.abs();
+    return (stored - recomputed).abs() / scale <= 0.01;
   }
 
   /// Σ fluid (ml) over every BEFORE sub-phase's rows — the surface's delivered

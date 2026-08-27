@@ -433,4 +433,37 @@ void main() {
       },
     );
   });
+
+  group('regression — a server-computed band at a different lb→kg factor', () {
+    test(
+      'still writes (2026-08-26: a hard inv-8b assert swallowed the first real answer)',
+      () {
+        // 161 lb: server used 0.453592 (73.028 kg), the device recomputes at
+        // 0.45359237 (73.028 kg) — the bands differ by ~0.1 ml; the old
+        // 1e-3 assert threw inside the tap and nothing was written.
+        final serverPre = mockPreRun(t: 135, bodyWeightKg: 161 * 0.453592);
+        final w = PreWorkoutHydrationCheckService.answer(
+          plan: mockPlan(mockSubPhases(135)),
+          targets: mockMacroTargets(serverPre),
+          answer: HydrationCheckAnswer.dark,
+          bodyWeightKg: 161 * 0.45359237,
+          workoutDurationMin: 168,
+          timeBeforeWorkoutMin: 135,
+          tempC: null,
+          newFoodId: () => 'hwat-1',
+        );
+        expect(
+          w.plan.preWorkoutHydrationCheck?.answer,
+          HydrationCheckAnswer.dark,
+        );
+        expect(
+          w.targets.preRun.fluidsMl,
+          closeTo(serverPre.fluidsMl! + 4 * 161 * 0.45359237, 0.05),
+        );
+        // The STORED band is what survives, byte for byte.
+        expect(w.targets.preRun.fluidsLowMl, serverPre.fluidsLowMl);
+        expect(w.targets.preRun.fluidsHighMl, serverPre.fluidsHighMl);
+      },
+    );
+  });
 }
