@@ -25,6 +25,7 @@ import 'package:mealvana_endurance/features/activities/application/activities_se
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/auth/application/auth_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/macro_repository.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/data/nutrition_plan_mapper.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/macro_targets.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_hydration_check.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_controller.dart';
@@ -238,6 +239,66 @@ void main() {
         verify(
           () => macroRepo.saveMacroTargetsForActivity(s.activity!.id, any()),
         ).called(1);
+      },
+    );
+
+    // N2 — ops bug 2026-08-26-hydration-check-water-row-loses-tag-on-edit:
+    // stepping the tagged row rebuilt the FoodItemData without `origin`, so
+    // the tag vanished and Change answer could no longer revert (P3: the tag
+    // governs — an EDITED tagged row is still removed).
+    test(
+      'N2: stepping the tagged water row keeps origin == hydration_check (persisted); Change answer then removes it',
+      () async {
+        final s = seed();
+        final b = boot(s);
+        final id = s.activity!.id;
+        await b.notifier.answerHydrationCheck(HydrationCheckAnswer.dark);
+        final addedId = stateOf(
+          b.container,
+          id,
+        ).nutritionPlan!.preWorkoutHydrationCheck!.addedWaterFoodId!;
+
+        // The real stepper path (FeedingCard → onStep → updateFoodQuantity).
+        await b.notifier.updateFoodQuantity(addedId, 'before_run:snack', 0.5);
+
+        final after = stateOf(b.container, id);
+        final row = after.nutritionPlan!.sections.first.subPhases!
+            .expand((sp) => sp.foodItems)
+            .firstWhere((f) => f.id == addedId);
+        expect(
+          row.origin,
+          kHydrationCheckRowOrigin,
+          reason: 'tag survives the edit',
+        );
+        expect(row.quantity, startsWith('0.5'));
+
+        // ...and in what was persisted (the second save), round-tripped
+        // through the load-path mapper.
+        expect(savedActivities, hasLength(2));
+        final persisted = NutritionPlanMapper.fromJson(
+          Map<String, dynamic>.from(savedActivities.last.nutritionPlanData!),
+        );
+        final persistedRow = persisted.sections.first.subPhases!
+            .expand((sp) => sp.foodItems)
+            .firstWhere((f) => f.id == addedId);
+        expect(persistedRow.origin, kHydrationCheckRowOrigin);
+
+        // P3: Change answer removes the edited row and restores the target.
+        await b.notifier.clearHydrationCheckAnswer();
+        final reverted = stateOf(b.container, id);
+        expect(
+          reverted.nutritionPlan!.sections.first.subPhases!
+              .expand((sp) => sp.foodItems)
+              .where(
+                (f) => f.id == addedId || f.origin == kHydrationCheckRowOrigin,
+              ),
+          isEmpty,
+        );
+        expect(
+          reverted.macroTargets!.preRun.fluidsMl,
+          s.macroTargets!.preRun.fluidsMl,
+        );
+        expect(reverted.nutritionPlan!.preWorkoutHydrationCheck, isNull);
       },
     );
 

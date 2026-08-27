@@ -1360,6 +1360,7 @@ class ActivityDetailController extends _$ActivityDetailController {
                 derivedTimingCategory == TimingCategory.sipThroughout ||
                 derivedTimingCategory == TimingCategory.fuelDrink,
             templateId: food.templateId,
+            origin: food.origin,
             scaleMultiplier: food.scaleMultiplier,
             timingCategory: food.timingCategory ?? derivedTimingCategory,
             isIndivisible: food.isIndivisible,
@@ -1855,6 +1856,7 @@ class ActivityDetailController extends _$ActivityDetailController {
             isDrink: item.isDrink,
             isIndivisible: item.isIndivisible,
             templateId: item.templateId,
+            origin: item.origin,
             scaleMultiplier: item.scaleMultiplier,
             timingCategory: item.timingCategory,
             nutritionalInfo: scaledNutrition,
@@ -2327,6 +2329,7 @@ class ActivityDetailController extends _$ActivityDetailController {
             isDrink: food.isDrink,
             isIndivisible: food.isIndivisible,
             templateId: food.templateId,
+            origin: food.origin,
             scaleMultiplier: food.scaleMultiplier,
             timingCategory: food.timingCategory,
             nutritionalInfo: ni != null
