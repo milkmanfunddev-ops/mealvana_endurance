@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,9 @@ import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_sync_service.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/brick_macro_service.dart';
+import '../../application/pre_workout_hydration_check_service.dart';
+import '../../domain/fueling_window_limits.dart';
+import '../../domain/pre_workout_hydration_check.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../activities/data/activities_repository.dart';
@@ -503,6 +507,111 @@ class ActivityDetailController extends _$ActivityDetailController {
       _logger.error('Error saving nutrition plan to activity', error: e);
       rethrow;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hydration check (design SSOT hydration-check v1 H-2/H-3; surface B-3)
+  // ---------------------------------------------------------------------------
+
+  /// H-2: record [answer], recompute the fluid target through the engine and
+  /// (dark branch, not already covered) add the tagged water row to the
+  /// SNACK feeding — then persist plan + targets + answer in ONE atomic write
+  /// to `activities.nutrition_plan_data` (deferred-ledger P2).
+  Future<void> answerHydrationCheck(HydrationCheckAnswer answer) async {
+    final current = state.value;
+    final plan = current?.nutritionPlan;
+    final targets = current?.macroTargets;
+    final activity = current?.activity;
+    if (current == null ||
+        plan == null ||
+        targets == null ||
+        activity == null) {
+      _logger.warning('answerHydrationCheck: no plan / targets / activity');
+      return;
+    }
+    final weightPounds = ref
+        .read(settingsControllerProvider)
+        .value
+        ?.weightPounds;
+    if (weightPounds == null || weightPounds <= 0) {
+      // Absent weight ⇒ absent numbers: the recompute is a body-weight
+      // function, so there is no honest target to move (no 70-kg stand-in).
+      _logger.warning('answerHydrationCheck: no body weight on the profile');
+      return;
+    }
+
+    final write = PreWorkoutHydrationCheckService.answer(
+      plan: plan,
+      targets: targets,
+      answer: answer,
+      bodyWeightKg: weightPounds * UnitFormatter.kKgPerLb,
+      workoutDurationMin:
+          (activity.durationMinutes ?? targets.metrics.durationMin).toDouble(),
+      // The plan's FROZEN lead time — never the clock (hydration v6 Inputs).
+      timeBeforeWorkoutMin: clampFuelingWindowMinutes(
+        activity.timeBeforeMinutes ?? 0,
+      ).toDouble(),
+      tempC: targets.duringRun.tempC,
+      newFoodId: () =>
+          'hydration-check-water-${DateTime.now().microsecondsSinceEpoch}',
+      categoryPrefix: activity.isBrick ? 'before' : 'before_run',
+    );
+    await _commitHydrationCheckWrite(activity.id, write);
+  }
+
+  /// H-3 / H-4: Change answer — the target returns to its pre-answer value and
+  /// the tagged water row is removed (even if edited, P3). Nothing else moves.
+  Future<void> clearHydrationCheckAnswer() async {
+    final current = state.value;
+    final plan = current?.nutritionPlan;
+    final targets = current?.macroTargets;
+    final activity = current?.activity;
+    if (current == null ||
+        plan == null ||
+        targets == null ||
+        activity == null) {
+      return;
+    }
+    final write = PreWorkoutHydrationCheckService.revert(
+      plan: plan,
+      targets: targets,
+    );
+    await _commitHydrationCheckWrite(activity.id, write);
+  }
+
+  Future<void> _commitHydrationCheckWrite(
+    String activityId,
+    HydrationCheckWrite write,
+  ) async {
+    final current = state.value;
+    if (current == null) return;
+    // A no-op from the service (sub-2 h, gated, already answered, no record
+    // to revert) writes nothing — the plan is untouched, so is the row.
+    if (identical(write.plan, current.nutritionPlan) &&
+        identical(write.targets, current.macroTargets)) {
+      return;
+    }
+    // State first (B-3: the whole card re-renders from one new state), then
+    // the durable record. `_saveNutritionPlanToActivity` builds
+    // `nutrition_plan_data` from the plan (answer record + tagged row) and the
+    // state's macro targets (moved fluidMl) — one JSON, one row write.
+    state = AsyncData(
+      current.copyWith(
+        nutritionPlan: write.plan,
+        macroTargets: write.targets,
+        hasUnsavedChanges: false,
+      ),
+    );
+    try {
+      // The activity-scoped targets cache is read FIRST on the next load
+      // (see build()), so it must carry the moved target too.
+      await ref
+          .read(macroRepositoryProvider)
+          .saveMacroTargetsForActivity(activityId, write.targets);
+    } catch (e) {
+      _logger.warning('hydration check: failed to refresh targets cache: $e');
+    }
+    await _saveNutritionPlanToActivity(activityId, write.plan);
   }
 
   Map<String, dynamic> _buildNutritionPlanData({
@@ -1251,6 +1360,7 @@ class ActivityDetailController extends _$ActivityDetailController {
                 derivedTimingCategory == TimingCategory.sipThroughout ||
                 derivedTimingCategory == TimingCategory.fuelDrink,
             templateId: food.templateId,
+            origin: food.origin,
             scaleMultiplier: food.scaleMultiplier,
             timingCategory: food.timingCategory ?? derivedTimingCategory,
             isIndivisible: food.isIndivisible,
@@ -1746,6 +1856,7 @@ class ActivityDetailController extends _$ActivityDetailController {
             isDrink: item.isDrink,
             isIndivisible: item.isIndivisible,
             templateId: item.templateId,
+            origin: item.origin,
             scaleMultiplier: item.scaleMultiplier,
             timingCategory: item.timingCategory,
             nutritionalInfo: scaledNutrition,
@@ -2218,6 +2329,7 @@ class ActivityDetailController extends _$ActivityDetailController {
             isDrink: food.isDrink,
             isIndivisible: food.isIndivisible,
             templateId: food.templateId,
+            origin: food.origin,
             scaleMultiplier: food.scaleMultiplier,
             timingCategory: food.timingCategory,
             nutritionalInfo: ni != null

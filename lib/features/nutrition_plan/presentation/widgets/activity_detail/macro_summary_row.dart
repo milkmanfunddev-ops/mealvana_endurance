@@ -3,9 +3,23 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
-import '../../../domain/pre_workout_display_rounding.dart';
 import '../../utils/activity_detail_helpers.dart';
 import 'macro_range_indicator.dart';
+
+// Retained ONLY for the DURING / AFTER summary rows (this widget is no longer
+// composed by the BEFORE surface — `pre_workout_before_card.dart` renders the
+// ratified fuel-stat family, whole oz / whole g per R-01 / M-5). The 25-ml /
+// 5-g grid below is the digest-§5 rule the old BEFORE row used; it stays here
+// privately so the untouched DURING / AFTER surfaces do not change (S-G1).
+double round25(double ml) => (ml / 25).round() * 25.0;
+double floor25(double ml) => (ml / 25).floorToDouble() * 25.0;
+double ceil25(double ml) => (ml / 25).ceilToDouble() * 25.0;
+double round5(double grams) => (grams / 5).round() * 5.0;
+({double low, double high})? roundCarbBand(double? lowG, double? highG) {
+  if (lowG == null || highG == null) return null;
+  if (lowG == 0 && highG == 0) return null;
+  return (low: round5(lowG), high: round5(highG));
+}
 
 /// Reusable macro summary row for nutrition plan sections
 /// Shows actual/target for carbs, fluids/protein (phase-dependent), and sodium

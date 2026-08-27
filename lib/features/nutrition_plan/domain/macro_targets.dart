@@ -759,11 +759,13 @@ class PreRunMacros {
   final double proteinG;
   final double fatCapG;
 
-  /// Plan-total pre-workout fluid, in ml, **already collapsed to 0 on the
-  /// gate path**. Read [isHydrationGated] before showing it — a gated 0 means
-  /// "we set no target", not "drink nothing". Never render raw: the display
-  /// layer rounds it to the nearest 25 ml.
-  final double fluidsMl;
+  /// Plan-total pre-workout fluid, in ml — **`null` on the hydration gate
+  /// path** (hydration v6: "no statement is made"), never collapsed to 0.
+  /// A consumer that renders `null` as "0 oz" tells the athlete to drink
+  /// nothing, which is the coach-complaint class fuel-stat F-1 forbids; render
+  /// "No fluid target for this session" instead. Display rounding is the
+  /// card's (R-01: whole fl oz).
+  final double? fluidsMl;
 
   /// Delivered/observed pre-workout sodium, or `null` when no figure is
   /// available.
@@ -811,12 +813,13 @@ class PreRunMacros {
   /// Urine-colour reading actually used — `pale` | `dark` | `unknown`.
   final String? hydrationCheckUsed;
 
-  /// Convert fluids to US units (fl oz)
-  double get fluidsFlOz => fluidsMl * 0.033814;
+  /// Convert fluids to US units (fl oz); null when no target is stated.
+  double? get fluidsFlOz => fluidsMl == null ? null : fluidsMl! * 0.033814;
 
   /// True when the hydration gate fired: short + mild session, so **no fluid
   /// target was set**. Distinct from a target of zero.
   bool get isHydrationGated =>
+      fluidsMl == null ||
       hydrationRegime == PreRunHydrationRegime.gated ||
       fluidTargetBasis == PreRunTargetBasis.none;
 
@@ -915,7 +918,7 @@ class PreRunMacros {
       carbsG: (json['carbsG'] as num).toDouble(),
       proteinG: (json['proteinG'] as num).toDouble(),
       fatCapG: (json['fatCapG'] as num).toDouble(),
-      fluidsMl: (json['fluidsMl'] as num).toDouble(),
+      fluidsMl: (json['fluidsMl'] as num?)?.toDouble(),
       sodiumMg: (json['sodiumMg'] as num?)?.toDouble(),
       carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
       carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),

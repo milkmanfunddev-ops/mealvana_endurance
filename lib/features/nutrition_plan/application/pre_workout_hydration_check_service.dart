@@ -1,0 +1,340 @@
+/// The hydration check's write path: answer → recompute → target + water row;
+/// Change answer → exact revert.
+///
+/// SSOT: `docs/ssot/spec/design/components/hydration-check.md` v1 (state
+/// table, H-2..H-5) and `surfaces/pre-workout-before-card.md` B-3, over
+/// `spec/fueling/pre-workout-hydration.md` v6 *The urine check* (+PW-021).
+///
+/// Decision record (deferred-ledger **P2**, handoff §5.4 I10 — written before
+/// coding):
+///
+/// * The recompute is **client-only**, through the same engine seam the
+///   offline plan path uses (`MacroRepositoryImpl.preWorkoutHydrationFor` →
+///   `OfflineMacroCalculator.calculatePreWorkoutHydration`). The engine is the
+///   authority per its file header; no `generate-macros-v4` request field is
+///   added this iteration.
+/// * `timeBeforeWorkoutMin` is the plan's frozen lead time (the activity's
+///   `time_before_minutes`), never the clock (hydration v6 *Inputs*).
+/// * Only `fluidMl` (and the per-tier split) moves; the band is byte-identical
+///   across answers (inv. 8b) — the stored band is kept; a >1 % drift is logged.
+/// * The water row is the *means*, added only when delivered fluid is below
+///   the new target ("already covered" is the stateless-consumer rule). It is
+///   tagged `origin: hydration_check` and its id is recorded, so Change
+///   answer removes it even after the athlete edited its quantity (P3).
+/// * Persistence: the answer + baseline + row id live in
+///   `nutrition_plan_data.preWorkoutHydrationCheck`, the moved target in
+///   `nutrition_plan_data.detailedMacroTargets.preRun`, the row in the SNACK
+///   sub-phase's `foodItems` — one JSON, one atomic write (the controller's
+///   `_saveNutritionPlanToActivity`).
+library;
+
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+
+import '../data/macro_repository.dart';
+import '../data/offline_macro_calculator.dart';
+import '../domain/food_item_data.dart';
+import '../domain/macro_targets.dart';
+import '../domain/nutrition_plan.dart';
+import '../domain/plan_section.dart';
+import '../domain/pre_workout_before_card_model.dart';
+import '../domain/pre_workout_feeding_labels.dart';
+import '../domain/pre_workout_hydration_check.dart';
+
+/// The plan + targets after an answer (or a revert).
+class HydrationCheckWrite {
+  const HydrationCheckWrite({required this.plan, required this.targets});
+
+  final NutritionPlan plan;
+  final MacroTargets targets;
+}
+
+/// One US cup of water — the 8 oz entry the DARK branch adds.
+const double kHydrationCheckWaterRowMl = 236.588;
+
+abstract final class PreWorkoutHydrationCheckService {
+  /// Apply [answer] (H-2). Returns the plan/targets unchanged when the check
+  /// does not exist for this plan (sub-2 h or gated — P1) or an answer is
+  /// already recorded (call [revert] first).
+  static HydrationCheckWrite answer({
+    required NutritionPlan plan,
+    required MacroTargets targets,
+    required HydrationCheckAnswer answer,
+    required double bodyWeightKg,
+    required double workoutDurationMin,
+    required double timeBeforeWorkoutMin,
+    required double? tempC,
+    required String Function() newFoodId,
+    String categoryPrefix = 'before_run',
+  }) {
+    if (answer == HydrationCheckAnswer.none) {
+      return HydrationCheckWrite(plan: plan, targets: targets);
+    }
+    if (plan.preWorkoutHydrationCheck != null) {
+      return HydrationCheckWrite(plan: plan, targets: targets);
+    }
+    final pre = targets.preRun;
+    if (timeBeforeWorkoutMin < kTierMealMin || pre.isHydrationGated) {
+      return HydrationCheckWrite(plan: plan, targets: targets);
+    }
+
+    final result = MacroRepositoryImpl.preWorkoutHydrationFor(
+      bodyWeightKg: bodyWeightKg,
+      workoutDurationMin: workoutDurationMin,
+      timeBeforeWorkoutMin: timeBeforeWorkoutMin,
+      tempC: tempC,
+      hydrationCheck: answer.toEngineCheck(),
+    );
+    if (result.gateTriggered || result.fluidMl == null) {
+      // The engine gated a plan the stored targets did not — inputs drifted.
+      // Do not write a half-state.
+      return HydrationCheckWrite(plan: plan, targets: targets);
+    }
+
+    // inv. 8b: the band never moves on any answer. The STORED band stays;
+    // only the target and the tier split are taken from the recompute. The
+    // stored band may come from the server twin at a slightly different
+    // lb→kg factor (0.453592 vs 0.45359237 — handoff §5.8), so this is a
+    // 1 % sanity guard that logs, never a hard assert: a hard assert here
+    // swallowed the whole write on the first real device (2026-08-26).
+    if (!_bandMatches(pre.fluidsLowMl, result.fluidLowMl) ||
+        !_bandMatches(pre.fluidsHighMl, result.fluidHighMl)) {
+      DebugLogger.warning(
+        'hydration check: recomputed band differs from the stored band by '
+        '> 1% (stored ${pre.fluidsLowMl}–${pre.fluidsHighMl}, recomputed '
+        '${result.fluidLowMl}–${result.fluidHighMl}); keeping the stored band',
+      );
+    }
+
+    // H-2: PALE / NOT_SURE leave the STORED target untouched; DARK / NOT_YET
+    // raise it by exactly the engine's top-up. The delta comes from the
+    // engine (dark recompute − pale recompute = TOPUP_ML_KG·BW) and is added
+    // to the stored figure, so a stored value that crossed a process boundary
+    // (server twin, other lb→kg factor, wire rounding) is never overwritten
+    // by a locally recomputed near-equal — and Change answer restores it
+    // byte for byte.
+    final double storedTargetMl = pre.fluidsMl!;
+    double newTargetMl = storedTargetMl;
+    List<PreRunFluidTier>? newTiers = pre.fluidTiers;
+    if (answer.raisesTarget) {
+      final base = MacroRepositoryImpl.preWorkoutHydrationFor(
+        bodyWeightKg: bodyWeightKg,
+        workoutDurationMin: workoutDurationMin,
+        timeBeforeWorkoutMin: timeBeforeWorkoutMin,
+        tempC: tempC,
+        hydrationCheck: HydrationCheck.pale,
+      );
+      final topUpMl = result.fluidMl! - (base.fluidMl ?? result.fluidMl!);
+      newTargetMl = storedTargetMl + topUpMl;
+      final stored = pre.fluidTiers;
+      if (stored != null && stored.isNotEmpty) {
+        // The correction lands in the snack window (hydration v6 Tier
+        // integration); a plan whose tiers lack a snack gets one.
+        final hasSnack = stored.any(
+          (t) =>
+              PreWorkoutFeedingTier.parse(t.tier) ==
+              PreWorkoutFeedingTier.snack,
+        );
+        newTiers = [
+          for (final t in stored)
+            PreWorkoutFeedingTier.parse(t.tier) == PreWorkoutFeedingTier.snack
+                ? PreRunFluidTier(tier: t.tier, fluidMl: t.fluidMl + topUpMl)
+                : t,
+          if (!hasSnack) PreRunFluidTier(tier: 'snack', fluidMl: topUpMl),
+        ];
+      } else {
+        newTiers = result.tiers
+            .map((t) => PreRunFluidTier(tier: t.tier, fluidMl: t.fluidMl))
+            .toList();
+      }
+    }
+    final updatedPre = pre.copyWith(
+      fluidsMl: newTargetMl,
+      fluidTiers: newTiers,
+      hydrationCheckUsed: result.hydrationCheckUsed,
+    );
+
+    // The water row: only on the dark branch, only when not already covered.
+    String? addedId;
+    var sections = plan.sections;
+    if (answer.raisesTarget) {
+      final delivered = _deliveredFluidMl(plan);
+      if (delivered < newTargetMl) {
+        addedId = newFoodId();
+        sections = _mapSnack(
+          plan.sections,
+          (snack) => snack.copyWith(
+            foodItems: [...snack.foodItems, _waterRow(addedId!)],
+          ),
+        );
+      }
+    }
+
+    final record = PreWorkoutHydrationCheckRecord(
+      answer: answer,
+      baselineFluidMl: pre.fluidsMl,
+      baselineFluidTiers: pre.fluidTiers,
+      baselineHydrationCheckUsed: pre.hydrationCheckUsed,
+      addedWaterFoodId: addedId,
+    );
+
+    return HydrationCheckWrite(
+      plan: plan.copyWith(
+        sections: sections,
+        preWorkoutHydrationCheck: record,
+        updatedAt: DateTime.now(),
+      ),
+      targets: targets.copyWith(preRun: updatedPre),
+    );
+  }
+
+  /// Change answer (H-3/H-4): answer → NONE, the target returns to its
+  /// pre-answer value, the tagged water row is removed (even if edited — P3).
+  /// Nothing else changes.
+  static HydrationCheckWrite revert({
+    required NutritionPlan plan,
+    required MacroTargets targets,
+  }) {
+    final record = plan.preWorkoutHydrationCheck;
+    if (record == null) {
+      return HydrationCheckWrite(plan: plan, targets: targets);
+    }
+
+    final pre = targets.preRun;
+    final restoredPre = PreRunMacros(
+      carbsG: pre.carbsG,
+      proteinG: pre.proteinG,
+      fatCapG: pre.fatCapG,
+      fluidsMl: record.baselineFluidMl,
+      sodiumMg: pre.sodiumMg,
+      carbsLowG: pre.carbsLowG,
+      carbsHighG: pre.carbsHighG,
+      proteinLowG: pre.proteinLowG,
+      proteinHighG: pre.proteinHighG,
+      fluidsLowMl: pre.fluidsLowMl,
+      fluidsHighMl: pre.fluidsHighMl,
+      hydrationRegime: pre.hydrationRegime,
+      fluidTargetBasis: pre.fluidTargetBasis,
+      carbTargetBasis: pre.carbTargetBasis,
+      fluidTiers: record.baselineFluidTiers,
+      carbTiers: pre.carbTiers,
+      hydrationCheckUsed: record.baselineHydrationCheckUsed,
+    );
+
+    final addedId = record.addedWaterFoodId;
+    final sections = plan.sections
+        .map((section) {
+          if (!section.hasSubPhases) return section;
+          return section.copyWith(
+            subPhases: section.subPhases!
+                .map(
+                  (sp) => sp.copyWith(
+                    foodItems: sp.foodItems
+                        .where(
+                          (f) =>
+                              f.id != addedId &&
+                              f.origin != kHydrationCheckRowOrigin,
+                        )
+                        .toList(),
+                  ),
+                )
+                .toList(),
+          );
+        })
+        .toList(growable: false);
+
+    return HydrationCheckWrite(
+      plan: plan.copyWith(
+        sections: sections,
+        clearPreWorkoutHydrationCheck: true,
+        updatedAt: DateTime.now(),
+      ),
+      targets: targets.copyWith(preRun: restoredPre),
+    );
+  }
+
+  static bool _bandMatches(double? stored, double? recomputed) {
+    if (stored == null || recomputed == null) return true;
+    final scale = stored.abs() < 1 ? 1.0 : stored.abs();
+    return (stored - recomputed).abs() / scale <= 0.01;
+  }
+
+  /// Σ fluid (ml) over every BEFORE sub-phase's rows — the surface's delivered
+  /// figure (B-1) in engine units.
+  static double _deliveredFluidMl(NutritionPlan plan) {
+    var total = 0.0;
+    for (final section in plan.sections) {
+      if (!_isBefore(section)) continue;
+      final items = section.hasSubPhases
+          ? section.subPhases!.expand((sp) => sp.foodItems)
+          : section.foodItems;
+      for (final f in items) {
+        total += f.nutritionalInfo?.fluids ?? 0;
+      }
+    }
+    return total;
+  }
+
+  static bool _isBefore(PlanSection s) =>
+      s.id.toLowerCase().contains('before') ||
+      s.title.toLowerCase().contains('before');
+
+  static List<PlanSection> _mapSnack(
+    List<PlanSection> sections,
+    BeforeSubPhase Function(BeforeSubPhase) transform,
+  ) {
+    return sections
+        .map((section) {
+          if (!_isBefore(section) || !section.hasSubPhases) return section;
+          final subPhases = section.subPhases!;
+          final hasSnack = subPhases.any(
+            (sp) =>
+                PreWorkoutFeedingTier.parse(sp.subPhaseType) ==
+                PreWorkoutFeedingTier.snack,
+          );
+          final updated = hasSnack
+              ? subPhases
+                    .map(
+                      (sp) =>
+                          PreWorkoutFeedingTier.parse(sp.subPhaseType) ==
+                              PreWorkoutFeedingTier.snack
+                          ? transform(sp)
+                          : sp,
+                    )
+                    .toList()
+              // FC-6: the check lives in the SNACK card; a ≥ 2 h plan always
+              // has one, but a plan whose explosion omitted it gets the
+              // sub-phase created so the row has a home.
+              : [
+                  ...subPhases,
+                  transform(
+                    const BeforeSubPhase(subPhaseType: 'snack', foodItems: []),
+                  ),
+                ];
+          return section.copyWith(subPhases: updated);
+        })
+        .toList(growable: false);
+  }
+
+  static FoodItemData _waterRow(String id) => FoodItemData(
+    id: id,
+    name: HydrationCheckCopy.addedRowName,
+    quantity: '1 cup Water',
+    displayName: 'Water',
+    displayNamePlural: 'cups Water',
+    servingSize: '1 cup',
+    isDrink: true,
+    origin: kHydrationCheckRowOrigin,
+    nutritionalInfo: const NutritionalInfo(
+      calories: 0,
+      carbs: 0,
+      protein: 0,
+      fat: 0,
+      sodium: 0,
+      fluids: kHydrationCheckWaterRowMl,
+    ),
+  );
+}
+
+/// Re-exported so the controller can name the engine enum without importing
+/// the calculator directly.
+typedef EngineHydrationCheck = HydrationCheck;

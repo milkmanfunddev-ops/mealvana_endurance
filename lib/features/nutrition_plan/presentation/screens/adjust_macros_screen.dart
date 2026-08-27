@@ -305,9 +305,14 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final useMetric = state.unitSystem == UnitSystem.metric;
 
     // Calculate fluid values based on unit preference
-    final preFluids = useMetric
-        ? macros.preRun.fluidsMl.round()
-        : (macros.preRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
+    // Gate path (`fluidsMl == null`): no fluid target is stated — the table
+    // renders an em dash (as it does for sodium), never 0oz.
+    final preFluidMl = macros.preRun.fluidsMl;
+    final int? preFluids = preFluidMl == null
+        ? null
+        : useMetric
+        ? preFluidMl.round()
+        : (preFluidMl * UnitFormatter.kFlOzPerMl).round();
 
     final duringFluids = useMetric
         ? macros.duringRun.fluidTotalMl.round()
@@ -373,7 +378,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preProtein: macros.preRun.proteinG.round(),
           duringProtein: 0,
           postProtein: macros.postRun.proteinG.round(),
-          preFluids: fluids(macros.preRun.fluidsMl),
+          // Gate path → null → em dash (never 0oz).
+          preFluids: macros.preRun.fluidsMl == null
+              ? null
+              : fluids(macros.preRun.fluidsMl!),
           duringFluids: fluids(macros.duringRun.fluidTotalMl),
           postFluids: fluids(macros.postRun.fluidsMl),
           // Sodium v3: no pre-workout sodium target. Null renders as an

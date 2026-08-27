@@ -1,55 +1,74 @@
 # Release bundle manifest — a pinned set of ratified SSOTs for one app release.
-# A code agent checks out the tag `pre-workout-macros@v1` and implements exactly these
-# slices to green conformance. This file is the durable "what"; run-instructions are ephemeral.
-# First entry of the spec registry (one manifest per release bundle).
+# A code agent checks out the tag `pre-workout-macros@v2` and implements exactly these slices
+# to green conformance. This file is the durable "what"; run-instructions are ephemeral.
+#
+# v2 SUPERSEDES v1 (tag pre-workout-macros@v1 @ 9ee1283 on qa/pre-workout-drawers stays
+# immutable). What moved: (1) the ratified DESIGN FAMILY for the BEFORE card — surface +
+# fuel-stat / feeding-card / hydration-check components, tokens Q-D8/Q-D9, rendering @v2, two
+# conformance manifests (Xuan, 2026-08-26); (2) PW-021 (Xuan, 2026-08-26): the live clock is
+# retired, the urine check is athlete-timed and lives in the snack-window card, no inline cue
+# below 2 h — a contract change to hydration v6's "The urine check" section (folded in place,
+# no v7 stamp). Math slices carbs v2 / hydration v6 / sodium v3 are otherwise byte-identical
+# to @v1's content.
+#
+# TERRAIN NOTE (verified 2026-08-26): the app's engine ALREADY implements the three math slices
+# (test/qa_conformance 74/74 green in CI). The expected-red surface of @v2 is the DESIGN family
+# — the card UI, the hydrationCheck producer, the persistence write path — not the math.
 
-bundle: pre-workout-macros
-version: v1
-status: ratified
-ratified: 2026-08-04            # Xuan
-ships: pre-workout macro calculations only (fluid ml, carbohydrate g, sodium)
+bundle:  pre-workout-macros
+version: v2
+status:  ratified
+ratified: 2026-08-26            # Xuan — design family + PW-021; math slices as @v1 (2026-08-04)
+supersedes: v1                  # ratified 2026-08-04; tag pre-workout-macros@v1 @ 9ee1283
+ships: pre-workout macro calculations (fluid ml, carbohydrate g, sodium null) + the BEFORE card (design family: fuel-stat row, feeding cards, the hydration check)
 
 specs:
-  - slice:   pre-workout-hydration
-    version: v6
-    spec:    spec/fueling/pre-workout-hydration.md
-    vectors: vectors/fueling/pre-workout-hydration.json
-    engine:  OfflineMacroCalculator.calculatePreWorkoutHydration
-
-  - slice:   pre-workout-carbs
-    version: v2
-    spec:    spec/fueling/pre-workout-carbs.md
-    vectors: vectors/fueling/pre-workout-carbs.json
-    engine:  OfflineMacroCalculator.calculatePreWorkoutTargets
-
-  - slice:   pre-workout-sodium
-    version: v3
-    spec:    spec/fueling/pre-workout-sodium.md
-    vectors: vectors/fueling/pre-workout-sodium.json
-    engine:  OfflineMacroCalculator.calculatePreWorkoutHydration   # sodium fields
+  # --- calculation (engine: OfflineMacroCalculator, Dart; mirrored by generate-macros-v4/pre-workout.ts) ---
+  - { slice: pre-workout-hydration, version: v6, spec: spec/fueling/pre-workout-hydration.md, vectors: vectors/fueling/pre-workout-hydration.json, engine: OfflineMacroCalculator.calculatePreWorkoutHydration }   # v6 as amended by PW-021 (2026-08-26); 21 vectors
+  - { slice: pre-workout-carbs,     version: v2, spec: spec/fueling/pre-workout-carbs.md,     vectors: vectors/fueling/pre-workout-carbs.json,     engine: OfflineMacroCalculator.calculatePreWorkoutCarbs }        # 19 vectors (v1 named calculatePreWorkoutTargets — that is now the LEGACY map)
+  - { slice: pre-workout-sodium,    version: v3, spec: spec/fueling/pre-workout-sodium.md,    vectors: vectors/fueling/pre-workout-sodium.json,    engine: OfflineMacroCalculator.calculatePreWorkoutHydration }   # sodium fields, null; 8 vectors
+  # --- design (conformance = manifests, not vectors) ---
+  - { slice: design-tokens,            version: v1, spec: spec/design/tokens.md,                            vectors: conformance/design/pre-workout-before-card.goldens.yaml,  engine: app widget layer }   # Q-D8 electrolyte / Q-D9 dragonfruit widened 2026-08-26
+  - { slice: fuel-stat,                version: v1, spec: spec/design/components/fuel-stat.md,             vectors: conformance/design/pre-workout-before-card.gestures.yaml, engine: app widget layer }   # M-4 no basis signifier (RULED)
+  - { slice: feeding-card,             version: v1, spec: spec/design/components/feeding-card.md,          vectors: conformance/design/pre-workout-before-card.gestures.yaml, engine: app widget layer }   # FC-2 delivered-only header (RULED)
+  - { slice: hydration-check,          version: v1, spec: spec/design/components/hydration-check.md,       vectors: conformance/design/pre-workout-before-card.gestures.yaml, engine: app widget layer }   # PW-021: athlete-timed, no clock
+  - { slice: pre-workout-before-card,  version: v1, spec: spec/design/surfaces/pre-workout-before-card.md, vectors: conformance/design/pre-workout-before-card.goldens.yaml,  engine: app widget layer }   # pins component versions; rendering spec/design/renderings/pre-workout@v2.html
 
 excludes:
-  - slice:  pre-workout-food-composition
-    reason: separate bundle — food selection / composition, not macro math
+  - { slice: pre-workout-food-composition, reason: "own bundle (pre-workout-food-composition@v1) — which foods, not how much; no engine yet, 87 vectors expected-red there" }
+  - { slice: during-and-after-cards,       reason: "surface S-G1: BEFORE card only; DURING / AFTER are separate surfaces, untouched" }
+  - { slice: fine-print,                   reason: "surface S-G4 (Xuan, 2026-08-26): the `?` fine print is DEFERRED pending the fine-print/explanation SSOT; the control is absent, not inert; golden before_fine_print and the s_copy_registers fine-print clause are deferred" }
+  - { slice: live-window-indicator,        reason: "PW-021 / S-G2: no live/current-feeding indicator, deliberately — not forgotten" }
+  - { slice: fluid-progress-ring,          reason: "S-G3: no ring, counter, completion state or streak on fluid (fluidLowMl = 0)" }
+  - { slice: brick-before-card,            reason: "H10 says one shared Before per brick; brick eligibility is an open domain-rule intake (2026-08-26); the component's oz conversion must apply once so D-004a cannot recur, but no brick-specific contract ships" }
+  - { slice: explanation-drawers,          reason: "the calculation-panel / Full-Story drawers (notes §6) are not part of this surface; they must consume tiers[]/regime/gateTriggered, not re-derive (test plan §6.3), but their own spec is a later slice" }
+  - { slice: open-questions-P1-P12,        reason: "DEFERRED to the next iteration (Xuan, 2026-08-26) — each ships with a recorded interim default in bundles/pre-workout-macros.deferred.md" }
 
 conformance:
-  runner: qa/conformance/run_dart.sh
+  runner: "math: app-side test/qa_conformance/pre_workout_{carbs,hydration,sodium}_conformance_test.dart (CI gate; 74/74 green 2026-08-26) — the qa-side qa/conformance/run_dart.sh copies are BROKEN (intake 2026-08-25) and are replaced verbatim from the app at handback. design: goldens + gesture tests per conformance/design/pre-workout-before-card.{goldens,gestures}.yaml"
   invoke:
-    - run_dart.sh pre-workout-hydration
-    - run_dart.sh pre-workout-carbs
-    - run_dart.sh pre-workout-sodium
-  done_when: all three slices green
+    - "flutter test test/qa_conformance   (math; already green — must STAY green; add hydrationCheck plumbing without moving a number)"
+    - "goldens + gesture tests per conformance/design/pre-workout-before-card.*.yaml (18 goldens of which before_fine_print deferred; 17 gesture tests + the four interim-default negatives named in the handoff)"
+  done_when: >
+    the three math slices stay green (74 tests, plus hydrationCheck threaded through
+    macro_repository so all three check values reach the engine); every artifact in both design
+    manifests exists and passes in CI — 17 goldens blessed from the first correct rendering
+    (before_fine_print deferred), 17 gesture tests plus h_suppressed_when_gated, s_fine_print_absent,
+    fc_stepper_clamp and the oz-conversion golden (487.5 ml -> 16 oz, 756 ml -> 26 oz); the
+    BEFORE card reads fluid from v6 fluidMl (null renders "No fluid target", never 0 oz) and sodium
+    as the sum of food rows (never the legacy map); the two boundary collapses
+    (macro_repository.dart:210 fluidMl ?? 0, macro_generation_service.dart:652 weight ?? 70.0) are
+    fixed with tests; the fueling-window cap is 240 with clamp-on-load (D-016); the old
+    before_phase_widget and its rounding helpers are retired; the docs/ssot mirror is re-synced to
+    this tag; feature test plan rows flip.
   note: >
-    Vectors are EXPECTED-RED until the engine implements v6/v2/v3 (repo code implements v1).
-    The .dart harnesses still assert the v1 shapes and must be updated alongside the calculator:
-    exact-double comparison with the per-file tolerance, null on the gate path, tiers arrays,
-    the retired integer `tier`, sodium null (not int), and threading hydrationCheck through.
-    Harness and calculator co-evolve — that is the implementation task, not a pre-req.
+    Vectors are the contract — never edited to pass. The math is NOT the red surface here; the
+    design family is. Expected-red inventory, terrain and the producer/consumer inventory:
+    bundles/pre-workout-macros.handoff.md (carries docs/feature-test-plans/pre-workout-before-card.md
+    §6 verbatim). Vector counts from scripts/count-vectors.mjs fueling (2026-08-26): 164 for the
+    family; this bundle's three slices = 21 + 19 + 8 = 48.
 
 deviations:
-  - id:     D-001
-    slice:  pre-workout-carbs
-    status: unratified
-    note: >
-      isFasted -> zero pre-workout fuel. Shipped, never team-discussed. NOT ratified by this
-      bundle; carried in the spec as-is pending a separate ruling.
+  - { id: D-001, slice: pre-workout-carbs, status: unratified, note: "isFasted -> zero pre-workout fuel. Shipped, never team-discussed. NOT ratified by this bundle; rendered per feeding-card FC-4 as characterization." }
+  - { id: D-016, slice: pre-workout-carbs, status: code-must-catch-up, note: "app fueling-window stepper allows 480 min; spec caps at 240 (PW-011). Fix is in this bundle's done_when." }
+  - { id: legacy-map, slice: pre-workout-sodium, status: superseded-not-deviant, note: "OfflineMacroCalculator.calculatePreWorkoutTargets still emits v1 sodium (300/450/600 mg) and water (6.5/5.5 ml/kg, 250 ml) on the offline plan path. Not a deviation to log — it is the superseded engine the card must not read (PW-012). Retiring it is app work, not a spec question." }

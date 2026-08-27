@@ -346,7 +346,9 @@ class ClientPlanService {
         // none. Leaving `sodiumMg` at its 0 default disables sodium seeking
         // entirely (`sodiumDeficit` is gated on `> 0`) — which is the point:
         // a salted pre-workout item is doing its job, not a defect.
-        fluidMl: macroTargets.preRun.fluidsMl,
+        // Hydration v6 gate: no fluid target stated → nothing for the
+        // solver to seek (0 disables fluid seeking), not a 0-ml target.
+        fluidMl: macroTargets.preRun.fluidsMl ?? 0,
       ),
       activityType: activityType,
     );

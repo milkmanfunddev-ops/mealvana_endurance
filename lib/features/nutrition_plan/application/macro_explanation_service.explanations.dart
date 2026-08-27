@@ -49,9 +49,12 @@ extension _$ExplanationsExt on MacroExplanationService {
     );
 
     // Fluids (Before: Carbs, Fluids, Sodium — no Protein)
+    // Explanation drawers are a later slice (surface S-G1); on the gate
+    // path (`fluidsMl == null`) this copy is not shown by the BEFORE card.
+    final preFluidsMl = pre.fluidsMl ?? 0;
     final fluidsVal = useImperial
-        ? pre.fluidsFlOz.round()
-        : pre.fluidsMl.round();
+        ? (pre.fluidsFlOz ?? 0).round()
+        : preFluidsMl.round();
     final fluidsUnit = useImperial ? 'oz' : 'mL';
     final fluidsMlPerKg = mealType == 'full meal'
         ? 6.5
@@ -81,7 +84,7 @@ extension _$ExplanationsExt on MacroExplanationService {
             : 'Your pre-workout fluid target is based on your body weight '
                   'and $mealType timing.\n\n'
                   'Formula:  weight  x  $fluidsMlPerKg mL/kg\n'
-                  '${wt}kg  x  $fluidsMlPerKg mL/kg  =  ${_fmtMlAmount(pre.fluidsMl.round(), useImperial)}\n\n'
+                  '${wt}kg  x  $fluidsMlPerKg mL/kg  =  ${_fmtMlAmount(preFluidsMl.round(), useImperial)}\n\n'
                   'Range: 50%–150% of target.',
         rangeRationale: 'Adjust based on how thirsty you feel and the weather.',
       ),

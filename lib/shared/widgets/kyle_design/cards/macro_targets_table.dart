@@ -121,7 +121,13 @@ class MacroTargetsTable extends ConsumerWidget {
           rowKey: const ValueKey('adjust_macros.row_fluids'),
           cells: [
             'FLUIDS',
-            '${macroData.preFluids}$fluidUnit',
+            // Hydration v6 gate: no pre-workout fluid target is stated, so
+            // this cell is an em dash like sodium — never "0oz", which reads
+            // as "drink nothing" (fuel-stat F-1; ops bug
+            // 2026-08-26-adjust-macros-renders-gated-fluid-as-0oz).
+            macroData.preFluids == null
+                ? '—'
+                : '${macroData.preFluids}$fluidUnit',
             '${macroData.duringFluids}$fluidUnit',
             '${macroData.postFluids}$fluidUnit',
           ],
@@ -239,7 +245,10 @@ class MacroTableData {
   final int preProtein;
   final int duringProtein;
   final int postProtein;
-  final int preFluids;
+
+  /// Hydration v6: `null` on the gate path — no pre-workout fluid target is
+  /// stated. Renders as an em dash, never `0`.
+  final int? preFluids;
   final int duringFluids;
   final int postFluids;
 
@@ -307,7 +316,7 @@ class MacroTargetsCard extends ConsumerWidget {
                 context,
                 label: 'FLUIDS',
                 value:
-                    '${macroData.preFluids + macroData.duringFluids + macroData.postFluids}mL',
+                    '${(macroData.preFluids ?? 0) + macroData.duringFluids + macroData.postFluids}mL',
                 color: AppColors.dragonfruit,
               ),
             ],

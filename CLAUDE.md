@@ -57,6 +57,9 @@ mealvana_endurance/
   destination before it names the pixels.
 - Keep initialization invariant explicit: `main()` for non-recoverable setup, recoverable init in startup flow.
 - Do not run `flutter build` as assistant execution.
+- Seam tests feed producer-shaped data (server factor + wire rounding), never the local engine's
+  own output; never `assert` on data that crossed a process boundary; every controller write path
+  gets one test through the real notifier. Rationale + fixtures: `docs/test/README.md` §Seam tests.
 - Run codegen after Riverpod/Drift annotation/schema changes.
 - Run `/task-checker` after major changes and before commit.
 - Run `/release-cut` whenever a dev or prod build is cut or pushed — it keeps the Notion cut card an
@@ -72,13 +75,16 @@ mealvana_endurance/
 
 ## Backend Deploys & Codemagic Cost Discipline
 - Before ANY backend/deploy/schema/edge-function work, read
-  `../ops/docs/supabase-deploy-playbook.md` — **§0 first** (current state + standing orders), then
-  the agent brief `docs/ssot/intake/2026-08-19-phase-c-deploy-brief.md`. Ruling precedence there:
-  ▶ Lee 08-20 > ▶ Lee 08-19 > older text > the brief.
+  `docs/deployment/supabase-deploy-playbook.md` (generic rules: ordering, `app_config` window,
+  function versioning, standing orders), then the **status header of the current bundle runbook**
+  in `../ops/docs/deploys/` (playbook §10 lists them). Runbook rulings (newest first) beat the
+  playbook; both beat older docs. New bundles start from `docs/deployment/bundle-runbook-template.md`.
+- Prod `app_config` is written only at Xuan's explicit direction, in default (non-auto) permission
+  mode, after a read-only check — see playbook §7.
 - **Codemagic bills real minutes (free tier, ~9¢/min; no Pro plan). Pushing = spending.**
   Per `codemagic.yaml` (read it for current truth): a push to `develop` auto-cuts the dev iOS
   TestFlight build (put `[skip ci]` in the commit title for docs-only pushes — there is no changeset filter); a push to any `release/*` branch auto-cuts
-  the release builds. Batch work into few pushes; never push `release/*` until the playbook's
+  the release builds. Batch work into few pushes; never push `release/*` until the playbook §8's
   P1–P3 gates are green; never add or re-arm a Codemagic workflow without asking.
 - **Codemagic never runs integration/Patrol tests** (Lee, 2026-08-20 — one develop-push run billed
   1h31m ≈ $9). The three `integration-tests*` workflows are trigger-disabled (`events: []`) in
