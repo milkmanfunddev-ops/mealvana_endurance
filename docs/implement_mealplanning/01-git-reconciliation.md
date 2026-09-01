@@ -1,5 +1,7 @@
 # Phase 0 — Git reconciliation
 
+> **Status: DONE 2026-09-01.** Executed as written below with two deviations: the branch is named `mealplanning` (not `feature/meal-planning`), and the changelog was auto-published by `changelog-on-main.yml` (secrets were present) and then hand-corrected in Sanity (release date → 2026-08-13, tester-SKU bullet removed). Xuan's branches were left untouched for Lee to raise with her.
+
 Goal: `main` = what shipped; `develop` = everything (release-only commits + Xuan's stranded fixes);
 `feature/meal-planning` off the new develop = the meal-planning migrations + docs; prototype repo
 committed, pushed, self-contained; the 1.23.x changelog published to Sanity.
