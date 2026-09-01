@@ -1,0 +1,79 @@
+# Release bundle manifest — a pinned set of ratified SSOTs for one app release.
+# A code agent checks out the tag `brick-transition@v1` and implements exactly these
+# slices to green conformance. Durable "what" only; run-instructions are ephemeral.
+
+bundle:  brick-transition
+version: v1
+status:  ratified
+ratified: 2026-09-01            # Xuan (specs 2026-08-31 + 2026-09-01; in-chat ratification after the e4542244 review)
+ships: >
+  Brick MACRO layer only (Xuan's scope, 2026-09-01): what a brick is and when the link is
+  offered (domain), the transition carb dose (math), the transition card + drawer rendering
+  (design), and the catalog fluid/unit conventions the implementation depends on. Which foods
+  fill any target is NOT this bundle.
+
+specs:
+  - slice:   transition-nutrition
+    version: v1
+    spec:    spec/fueling/transition-nutrition.md
+    vectors: vectors/fueling/transition-nutrition.json   # 10 (count-vectors.mjs fueling: file row "transition-nutrition.json 10")
+    engine:  none yet — defining the published entry point (Dart mirror + generate-macros-v4 brick path) is part of this bundle; replaces the weight×0.3/0.35 g/kg tiers
+  - slice:   brick-eligibility
+    version: v1
+    spec:    spec/domain/brick.md
+    vectors: vectors/domain/brick-eligibility.json       # 14 (count-vectors.mjs domain: TOTAL 14) — first domain-family slice
+    engine:  none yet — brick_eligibility.dart is app-internal; publishing the predicate is part of this bundle
+  - slice:   transition-card
+    version: v1
+    spec:    spec/design/components/transition-card.md
+    vectors: none — design slice; conformance/design/transition-card.yaml written at implementation (TC-1/2/4/5 lines + goldens)
+    engine:  n/a (rendering)
+  - slice:   catalog-conventions
+    version: v1
+    spec:    spec/domain/catalog-conventions.md
+    vectors: none — data/policy slice; conformance = the C1/C3 catalog migration replayed dev+prod + the C2 pairing tests (twin), per intake/2026-09-01-handback-catalog-conventions.md
+    engine:  template_foods + electrolyte-water-pairing (edge + Dart twin)
+
+excludes:
+  - slice:  food-recommendation / selection
+    reason: >
+      Xuan's scope ruling 2026-09-01 — quantity before selection. The 3-gels-vs-0g-target
+      selector rewrite, portion caps (P18), fasted policy (D-001/P17), and generate-plan H6
+      fluid live on qa/food-recommendation. C4's transition constraints (whole units, ≤2 items
+      + water) ARE in scope via catalog-conventions.
+  - slice:  multi-segment hydration redistribution
+    reason: reserved follow-up slice per during-workout-hydration.md §scope — the 300 ml carve-out constant, run→bike redistribution double-count, ×0.8 per-pair question all live there
+  - slice:  during-workout single-sport core
+    reason: rate SOURCE for T-2, inherited not shipped; its own status is 'recorded' with one open boundary question (60-min band edge) — ratifying this bundle does not ratify it
+  - slice:  open questions Q-TN1–4 · Q-TC1 · Q-BR1/2
+    reason: deliberately open; ratified defaults stand (transition_min 3, flat 30 g clamp, aggregate untouched, done/verified+past-day linkable as characterization, no direct extension)
+
+conformance:
+  runner: qa/conformance/run_dart.sh
+  invoke:
+    - run_dart.sh transition-nutrition
+    - run_dart.sh brick-eligibility
+  done_when: >
+    both vector slices green + the R8 producer-shaped SEAM TEST green (three shapes:
+    bike→run, swim→bike→run, bike→run→bike — qa rule 8b12b9d) + design conformance manifest
+    green + D-007/D-008 fixes verified + dev attestation by Xuan.
+  note: >
+    Vectors are EXPECTED-RED by design. Harness co-evolution: run_dart.sh has no arms for
+    these slices yet, and brick-eligibility is the first vectors/domain/ file — extending the
+    runner is part of the implementation task, not a prerequisite. The R8 seam cannot be
+    proven by any single-engine vector: the mismatch lives between generate-macros-v4 (writes)
+    and generate-nutrition-plan-v3 (reads).
+
+deviations:
+  - id:     D-007
+    slice:  brick-eligibility
+    status: ruled-against — fixed by this bundle
+    note:   skipped legs silently linkable today; R5 forbids; r5-* vectors are the red gate.
+  - id:     D-008
+    slice:  transition-nutrition
+    status: ruled-against — fixed by this bundle
+    note:   sport-pair transition naming vs positional consumer lookup; bike→run falls to zero-defaults today. R8 + seam test.
+  - id:     during-carbs status
+    slice:  transition-nutrition
+    status: unratified dependency, carried
+    note:   T-2's rate source spec is 'recorded', not RATIFIED, with one open worked-example boundary question. Carried, not blessed here.

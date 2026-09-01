@@ -33,6 +33,11 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
 - **Conformance:** pinned by the `fasted-all-zero` vector, marked `status: characterization`.
 - **Open (only if the team later rules to keep it):** fold into the SSOT + update the results
   drawer to explain the fasted case (today the fasted guidance lives only on the *input* screen).
+- **Observed 2026-08-26 (sim-explore, app `feature/pre-workout-before-card` @ `8bac1c1e`):** the
+  engine returns zero/`tiers: []` and the BEFORE card renders "No carbs this session" (FC-4 ✓), but
+  the food selector still places a carbohydrate food (Applesauce Pouch, 11 g) in the fasted snack.
+  Known gap, **not** an app bug (Xuan, 2026-08-27) — resolved by the food-recommendation
+  ratification together with this deviation. Ledger: `bundles/pre-workout-macros.deferred.md` P17.
 
 ## D-004 — Brick anomalies (UNCONFIRMED — need harness/code to adjudicate)
 - **Status:** `pending-ruling` (2026-07-28). Two observations from the brick sim sweep (Ravi,
@@ -159,3 +164,25 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
   surfaces before the Endurance palette existed; nobody chose white against the rule. The rule
   stands; the code does not conform; resolving it is a deliberate light-theme pass, not a hotfix.
 - **Surfaced by:** the 2026-08-25 brand-fidelity audit (app-side).
+
+## D-007 — Brick: SKIPPED legs are silently linkable
+- **Status:** `documented` (2026-08-31). **Spec now rules against it** — `spec/domain/brick.md`
+  R5 (Xuan, 2026-08-31): a SKIPPED leg may not be linked.
+- **Observed:** `brick_eligibility.dart` / `brick_selection_controller.dart` apply only the
+  sport-set + not-already-a-brick filters; a `status = skipped` workout passes and can become a
+  leg of a fueled brick.
+- **Resolution path:** app fix per the 2026-08-31 handback; pinned by a `brick-eligibility`
+  vector (R5 negative case) once `spec-to-vectors` runs on the domain slice.
+
+## D-008 — Brick: transition identity keyed by sport pair; consumer looks up positionally
+- **Status:** `documented` (2026-08-31). **Spec now rules against it** — `spec/domain/brick.md`
+  R8: transition identity is positional; the sport pair is a label only.
+- **Observed:** `generate-macros-v4/brick-workout.ts:286-292,449-456` names swim→bike `T1`,
+  bike→run `T2`, else `T{i+1}`; `generate-nutrition-plan-v3/brick-handler.ts:519` looks up
+  `T{i+1}` positionally. A plain **bike→run** brick (one transition, index 0) emits `T2`, the
+  consumer asks for `T1`, misses, and falls to zero-default transition targets
+  (`brick-handler.ts:66-73` logs the fallback). Repeat legs (R2, now legal) additionally
+  collide: bike→run→bike emits `T2`,`T2` and the name-keyed map keeps only the last.
+- **Resolution path:** app/edge fix per the 2026-08-31 handback (emit positional ids, keep the
+  pair as a label field) + the R8 producer-shaped seam test. The fuel *amounts* at transitions
+  stay owned by the in-progress transition-nutrition slice — this entry is identity only.
