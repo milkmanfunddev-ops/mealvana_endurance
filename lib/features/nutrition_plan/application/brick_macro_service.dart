@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_target_overrides.dart';
+import '../domain/transition_identity.dart';
 import '../data/macro_repository.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
@@ -780,10 +781,14 @@ class BrickMacroService {
 
         parsedTransitions.add(
           BrickTransitionMacroTarget(
+            // Positional identity per brick.md R8; normalize legacy
+            // spellings, fall back to list position.
             transitionName:
-                transitionData['transition_name'] as String? ??
-                transitionData['transition_id'] as String? ??
-                'T${parsedTransitions.length + 1}',
+                normalizeTransitionName(
+                  transitionData['transition_name'] as String? ??
+                      transitionData['transition_id'] as String?,
+                ) ??
+                transitionKeyForIndex(parsedTransitions.length),
             carbsG: _toDouble(transitionData['carbs_g'], 'transition.carbs_g'),
             carbsLowG: _toDoubleOrNull(transitionData['carbs_low_g']),
             carbsHighG: _toDoubleOrNull(transitionData['carbs_high_g']),
