@@ -1,0 +1,96 @@
+{
+  "parts": [],
+  "meal": {
+    "meal": {
+      "source": "library",
+      "id": "D-048",
+      "name": "Marathon Bolognese over pasta",
+      "mealType": "dinner",
+      "contexts": [
+        "carb-load",
+        "everyday",
+        "pre-session"
+      ],
+      "batch": true,
+      "prepMinutes": 45,
+      "kcal": 700,
+      "carbsG": 95,
+      "proteinG": 36,
+      "fatG": 18,
+      "allergens": [
+        "gluten"
+      ],
+      "dietsOk": [
+        "omnivore"
+      ],
+      "swaps": "pasta→GF pasta (gluten-free); pasta→wholemeal (more fibre for everyday, the Cyclist.co.uk pro-team version); beef→lentils (vegan)",
+      "why": "veg-loaded meat sauce over pasta — the night-before-a-long-run dinner a marathon champion cooked from",
+      "attribution": "Shalane Flanagan & Elyse Kopecky, \"Run Fast. Cook Fast. Eat Slow.\" — a favourite during Flanagan's 2017 NYC Marathon build https://justcook.butcherbox.com/the-amazing-simple-marathon-bolognese-recipe-from-the-authors-of-run-fast-cook-fast-eat-slow/ ; Jonny Brownlee's meatballs-and-pasta rotation, 220triathlon.com",
+      "attributionShort": "Shalane Flanagan & Elyse Kopecky,…",
+      "ingredients": "ground beef 100g, carrot ½, celery 1 stalk, onion ¼, crushed tomatoes 200g, red wine splash, pasta 120g dry (makes 6)",
+      "libraryMealId": "D-048",
+      "score": 1,
+      "kind": "recipe",
+      "pattern": null,
+      "frequency": null,
+      "icon": "pasta",
+      "myVote": 0
+    },
+    "ingredients": [
+      {
+        "qty": "100g",
+        "name": "ground beef"
+      },
+      {
+        "qty": "½",
+        "name": "carrot"
+      },
+      {
+        "qty": "1 stalk",
+        "name": "celery"
+      },
+      {
+        "qty": "¼",
+        "name": "onion"
+      },
+      {
+        "qty": "200g",
+        "name": "crushed tomatoes"
+      },
+      {
+        "qty": "",
+        "name": "red wine splash"
+      },
+      {
+        "qty": "120g dry",
+        "name": "pasta"
+      }
+    ],
+    "methodSteps": [
+      "Heat 1 tbsp olive oil in a large pot over medium-high heat. Add 100g ground beef with a pinch of salt and cook, breaking it into bite-size pieces, about 3 minutes until lightly browned.",
+      "Finely dice ½ carrot, 1 stalk celery and ¼ onion, add to the pot and cook, stirring occasionally, about 5 minutes until softened.",
+      "Pour in a splash of red wine and let it bubble for 1 minute to cook off the alcohol.",
+      "Add 200g crushed tomatoes, bring to the boil, then reduce to a simmer and cook uncovered, stirring occasionally, about 25 minutes until the sauce thickens.",
+      "Taste and add more salt and pepper if needed.",
+      "Meanwhile, cook 120g pasta in salted boiling water until al dente; drain and serve topped with the bolognese."
+    ],
+    "directions": {
+      "origin": "source",
+      "sourceUrl": "https://justcook.butcherbox.com/the-amazing-simple-marathon-bolognese-recipe-from-the-authors-of-run-fast-cook-fast-eat-slow/",
+      "sourceName": "justcook.butcherbox.com",
+      "verbatim": false
+    },
+    "image": null,
+    "sourceUrl": "https://justcook.butcherbox.com/the-amazing-simple-marathon-bolognese-recipe-from-the-authors-of-run-fast-cook-fast-eat-slow/",
+    "source": "Shalane Flanagan & Elyse Kopecky, \"Run Fast. Cook Fast. Eat Slow.\" — a favourite during Flanagan's 2017 NYC Marathon build https://justcook.butcherbox.com/the-amazing-simple-marathon-bolognese-recipe-from-the-authors-of-run-fast-cook-fast-eat-slow/ ; Jonny Brownlee's meatballs-and-pasta rotation, 220triathlon.com",
+    "swaps": [
+      "pasta→GF pasta (gluten-free)",
+      "pasta→wholemeal (more fibre for everyday, the Cyclist.co.uk pro-team version)",
+      "beef→lentils (vegan)"
+    ],
+    "prep": "batch — 45 min, 6 servings, freezes well",
+    "servings": 6,
+    "notes": null,
+    "vote": 0
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "kind": "staples",
+  "meals": [
+    {
+      "source": "saved",
+      "id": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+      "name": "Egg & Veggie Scramble",
+      "mealType": "dinner",
+      "contexts": [],
+      "batch": false,
+      "prepMinutes": null,
+      "kcal": 280,
+      "carbsG": 8,
+      "proteinG": 22,
+      "fatG": 18,
+      "allergens": [],
+      "dietsOk": [],
+      "swaps": null,
+      "why": "one of your saved meals",
+      "attribution": "your saved meal",
+      "attributionShort": "your saved meal",
+      "ingredients": "Egg & Veggie Scramble",
+      "libraryMealId": null,
+      "score": 1,
+      "pattern": null,
+      "frequency": null,
+      "icon": "egg",
+      "myVote": 0,
+      "timesLogged": 0,
+      "ticked": true
+    }
+  ]
+}
