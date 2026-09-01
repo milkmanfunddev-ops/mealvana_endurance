@@ -41,6 +41,15 @@ class AppColors {
   static const Color dragonfruitLight = Color(0xFFF060A8);
   static const Color dragonfruitDark = Color(0xFFD0357E);
 
+  // Yolk — Kyle's secondary. Brand-exact (#FFC629).
+  //
+  // RESERVED: no meaning contract yet. Ruled Xuan 2026-08-25 (qa Q-SA2,
+  // docs/ssot/spec/design/source-authority.md §6): the token exists so widgets
+  // stop inventing yellows; what it may *signify* is assigned at the component
+  // sweep. Until docs/ssot/spec/design/tokens.md gives `--me-yolk` a contract,
+  // do not introduce new semantic uses — legacy AppTheme aliases are grandfathered.
+  static const Color yolk = Color(0xFFFFC629);
+
   // === Semantic Colors ===
 
   // Success (uses Electrolyte)

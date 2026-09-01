@@ -8,6 +8,19 @@ part of 'macro_explanation_service.dart';
 // the transparency card (which only knows the `unit` suffix) displays the
 // right magnitude. See audit doc `docs/features/sodium_hydration/2026-04-22_audit.md`
 // U1 for the bug this fixes (e.g. `1688mL` rendering as `1688oz`).
+// Digest §5 display rounding for the DRAWERS (25-ml grid). Kept private to
+// the explanation layer: the BEFORE card itself displays whole fl oz per R-01
+// (`pre_workout_display_units.dart`); notes §6 is not folded this iteration
+// (deferred-ledger P5), so the drawer copy stays on its own grid until the
+// fine-print / explanation SSOT lands.
+double round25(double ml) => (ml / 25).round() * 25.0;
+double floor25(double ml) => (ml / 25).floorToDouble() * 25.0;
+double ceil25(double ml) => (ml / 25).ceilToDouble() * 25.0;
+({double low, double high})? roundFluidBand(double? lowMl, double? highMl) {
+  if (lowMl == null || highMl == null) return null;
+  return (low: floor25(lowMl), high: ceil25(highMl));
+}
+
 double _mlToDisplay(double ml, bool useImperial) =>
     useImperial ? (ml * 0.033814).roundToDouble() : ml;
 
@@ -67,7 +80,7 @@ extension _$FluidExt on MacroExplanationService {
     // Display rounding lives here, never in the engine — the engine's 487.5 ml
     // is exact, and printing it raw reads as though it were measured.
     // Digest §5: target `round25`, band `[floor25(low), ceil25(high)]`.
-    final fluidsMl = round25(pre.fluidsMl).round();
+    final fluidsMl = round25(pre.fluidsMl ?? 0).round();
     final roundedBand = roundFluidBand(pre.fluidsLowMl, pre.fluidsHighMl);
     final rangeLowMl =
         roundedBand?.low.round() ?? floor25(fluidsMl * 0.8).round();
@@ -170,7 +183,9 @@ extension _$FluidExt on MacroExplanationService {
       // not from a constant restated here — a restated constant is how the
       // card ended up quoting a 5–7 ml/kg band the engine had stopped using.
       // Hydration v6's cited regime is 7.5 ml/kg with a [5, 12] ml/kg band.
-      final rawPerKg = bodyWeightKg > 0 ? pre.fluidsMl / bodyWeightKg : 7.5;
+      final rawPerKg = bodyWeightKg > 0
+          ? (pre.fluidsMl ?? 0) / bodyWeightKg
+          : 7.5;
       final mlPerKg = _trimZero(rawPerKg);
       // Band ends come from the engine and are rounded outward for display.
       final floorMl = rangeLowMl;

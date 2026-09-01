@@ -1,12 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/shared/domain/session_input_resolver.dart';
 
-/// Mirrors the duration estimation logic added to
-/// `DailyMacroService._loadSessionsForDate` to fix the bug where activities
-/// with null `duration_minutes` defaulted to 60 min regardless of distance/pace.
+/// Regression suite for the duration ladder.
 ///
-/// The function under test is private and tightly coupled to Drift row reads,
-/// so we extract the pure arithmetic here to keep the regression test fast and
-/// dependency-free.
+/// **This file used to test a copy of the logic.** It declared its own
+/// `estimateDurationMinutes` and `mapSportForActivity` in the test file —
+/// "the function under test is private and tightly coupled to Drift row
+/// reads, so we extract the pure arithmetic here" — which meant it imported
+/// no production code and would have stayed green if the real derivation had
+/// been deleted outright. It could not, and did not, notice a SECOND consumer
+/// (the macro dashboard) shipping without the ladder at all
+/// (`ops/data/bug-reports/2026-08-22-dashboard-prices-distance-sessions-at-flat-60min.md`).
+///
+/// It now exercises [SessionInputResolver] — the real, shared implementation.
+/// Cases below are preserved verbatim from the copy so the original 2026-06-15
+/// coverage is not lost in the move.
 int estimateDurationMinutes({
   required int? durationMinutes,
   required String activityType,
@@ -14,50 +22,18 @@ int estimateDurationMinutes({
   double? paceTargetMinutesPerMile,
   double? cyclingSpeedMph,
   int? swimmingPacePer100mSeconds,
-}) {
-  var result = durationMinutes ?? 0;
+}) =>
+    SessionInputResolver.durationMinutes(
+      activityType: activityType,
+      explicitMinutes: durationMinutes,
+      distanceMiles: distanceMiles,
+      paceTargetMinutesPerMile: paceTargetMinutesPerMile,
+      cyclingSpeedMph: cyclingSpeedMph,
+      swimmingPacePer100mSeconds: swimmingPacePer100mSeconds,
+    );
 
-  if (result == 0) {
-    if (activityType == 'running') {
-      if (distanceMiles != null &&
-          paceTargetMinutesPerMile != null &&
-          paceTargetMinutesPerMile > 0) {
-        result = (distanceMiles * paceTargetMinutesPerMile).round();
-      }
-    } else if (activityType == 'cycling') {
-      if (distanceMiles != null &&
-          cyclingSpeedMph != null &&
-          cyclingSpeedMph > 0) {
-        result = ((distanceMiles / cyclingSpeedMph) * 60).round();
-      }
-    } else if (activityType == 'swimming') {
-      if (distanceMiles != null &&
-          swimmingPacePer100mSeconds != null &&
-          swimmingPacePer100mSeconds > 0) {
-        final distanceMeters = distanceMiles * 1609.34;
-        result = ((distanceMeters / 100) * swimmingPacePer100mSeconds / 60)
-            .round();
-      }
-    }
-    if (result == 0) result = activityType == 'other' ? 30 : 60;
-  }
-
-  return result;
-}
-
-/// Mirrors the sport-mapping switch in `_loadSessionsForDate`.
-String mapSportForActivity(String activityType) {
-  switch (activityType) {
-    case 'cycling':
-      return 'cycling';
-    case 'swimming':
-      return 'swimming';
-    case 'other':
-      return 'strength';
-    default:
-      return 'running';
-  }
-}
+String mapSportForActivity(String activityType) =>
+    SessionInputResolver.engineSport(activityType);
 
 void main() {
   group('estimateDurationMinutes – regression for calorie bug', () {

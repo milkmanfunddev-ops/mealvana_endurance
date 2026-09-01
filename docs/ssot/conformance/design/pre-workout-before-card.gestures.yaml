@@ -1,0 +1,133 @@
+# Design conformance manifest — GESTURE / BEHAVIOR TESTS for the pre-workout BEFORE card.
+# Names every widget/Patrol test that MUST exist, with its required assertions,
+# across the surface AND its three components (macro-dashboard pattern: one
+# gestures manifest per surface). Test code lives in the app repo; qa audits this
+# manifest against the real test tree. A test pins its contract only if it
+# executes the REAL code path.
+#
+# Contract source: spec/design/
+#   components/hydration-check.md, components/feeding-card.md, components/fuel-stat.md,
+#   surfaces/pre-workout-before-card.md   (all RATIFIED Xuan 2026-08-26)
+# Behaviour authority: spec/fueling/pre-workout-hydration.md v6 as amended by PW-021.
+
+manifest: pre-workout-before-card-gestures
+version: v1
+status: ratified            # RATIFIED (Xuan, 2026-08-26), with rendering pre-workout@v2
+spec_family: spec/design/
+
+tests:
+  # --- hydration-check component (components/hydration-check.md H-1..H-5) ---
+  - id: h1_expand
+    contract: hydration-check H-1
+    assert:
+      - tap the collapsed TO-DO chip -> question, timing line, 4 answers, caveat render in place
+      - no navigation occurs
+  - id: h2_answer_writes_target       # the CORE fix (register F-01)
+    contract: hydration-check H-2 + state table + hydration v6 inv. 8b
+    assert:
+      - DARK    -> fluid TARGET += TOPUP_ML_KG*BW (63 kg: 16 -> 25 oz); target marker MOVES
+      - NOT_YET -> identical effect to DARK (maps to the dark branch)
+      - PALE    -> target UNCHANGED
+      - NOT_SURE-> target UNCHANGED (maps to unknown -> treated as pale, v6)
+      - band (fluidLowMl/fluidHighMl) BYTE-IDENTICAL across all four answers — only fluidMl moves
+      - carbs, sodium and the tier structure untouched by any answer
+  - id: h2_already_covered            # stateless-consumer rule
+    contract: hydration-check state table "already covered" + hydration v6 (fluidMl - intake, floored 0)
+    assert:
+      - with delivered fluid already >= the raised target, DARK/NOT_YET STILL raises the target by
+        4*BW but adds NO water row; result copy reads the "already covered" branch
+  - id: h3_change_answer_reverts
+    contract: hydration-check H-3/H-4
+    assert:
+      - Change answer -> answer NONE; fluid target returns to its pre-answer value
+      - the tagged "added by hydration check" water row is removed (if it had been added)
+  - id: h_suppressed_below_2h         # NEGATIVE TEST — suppression contract
+    contract: hydration-check "When it exists at all" + surface B-4 + PW-021 pt 3
+    assert:
+      - on a plan with timeBeforeWorkoutMin < T_REF the hydration-check control is ABSENT (no node),
+        not merely disabled
+      - the sub-2h fluid cue is reachable only via the "?" fine print, not inline
+  - id: h_no_live_clock               # NEGATIVE TEST — PW-021 (register F-02)
+    contract: surface B-2 / S-G2 (live window retired)
+    assert:
+      - no "NOW"/"PASSED" indicator, no per-feeding live/muted styling driven by a clock
+      - feeding membership depends ONLY on timeBeforeWorkoutMin, never on current time
+      - the hydration check renders on every >= 2h plan regardless of any clock value
+
+  # --- feeding-card component (components/feeding-card.md FC-*) ---
+  - id: fc_naming_threshold           # register F-08
+    contract: feeding-card FC-1
+    assert:
+      - a SNACK whose carb aim crosses LIGHT_MEAL_G_PER_KG*BW flips its title Snack <-> Light Meal
+      - the MEAL tier is always "Pre-Run Meal" (never renamed by size)
+  - id: fc_header_delivered_only      # FC-2 as RULED Xuan 2026-08-26 (supersedes the delivered/aim pair of F-07)
+    contract: feeding-card FC-2 + FC-G2
+    assert:
+      - the feeding header shows the DELIVERED figure only ("52g" labeled "carbs"); it moves with
+        the steppers
+      - NO aim figure and NO "DONE / AIM" node anywhere on the card (NEGATIVE)
+      - the +/-12.5% match window is NOT rendered (FC-3)
+  - id: fc_hydration_row_placement
+    contract: feeding-card FC-6
+    assert:
+      - the hydration-check row is the FIRST row of the SNACK card on >= 2h plans; absent otherwise
+      - a DARK answer adds a tagged "added by hydration check" water row to this card
+
+  # --- fuel-stat component (components/fuel-stat.md F-*, M-*) ---
+  - id: fs_three_no_number_states     # register F-03
+    contract: fuel-stat F-1
+    assert:
+      - GATED  -> FLUIDS "No fluid target for this session", no band/marker; carbs band + feedings intact
+      - FASTED -> CARBS "No carbs this session", no carb band/pair; fluid plan intact
+      - START LINE (zero) -> real "0g", NO carb band drawn (carbs dagger-rule)
+      - the three states are pairwise visually distinct
+  - id: fs_fluid_one_way_carbs_two_way
+    contract: fuel-stat M-2 + hydration §4
+    assert:
+      - drive delivered fluid BELOW floor (to 0 oz) -> marker does NOT recolour
+      - drive delivered fluid ABOVE ceiling -> marker recolours to the overshoot token
+      - drive delivered carbs out of band EITHER way -> marker recolours
+  - id: fs_two_markers
+    contract: fuel-stat M-1 + M-3
+    assert:
+      - the delivered (diamond) marker moves on a food-row change; the suggested (triangle) does not
+      - a suggested marker sitting exactly on a band end is NOT an out-of-band state
+  - id: fs_sodium_never_banded        # NEGATIVE TEST
+    contract: fuel-stat F-2
+    assert:
+      - no band, marker or range node under SODIUM in any state
+  - id: fs_no_basis_signifier         # NEGATIVE TEST — M-4 as RULED Xuan 2026-08-26 (supersedes the caption form of F-04)
+    contract: fuel-stat M-4
+    assert:
+      - NO "guideline" / "our estimate" caption (or any other basis signifier) renders on any band
+        in any scenario — bands are visually identical across targetBasis values
+      - all rails solid (no dashed-rail encoding)
+      - targetBasis is still present in the engine output feeding the band (data, not pixels)
+
+  # --- surface (surfaces/pre-workout-before-card.md B-*) ---
+  - id: s_delivered_is_surface_sum    # B-1
+    contract: surface B-1
+    assert:
+      - a fuel-stat delivered figure equals the sum of that macro over every feeding card's rows
+      - a stepper change on any feeding re-totals the matching stat in the same frame
+  - id: s_answer_propagates           # B-3 / register P-6
+    contract: surface B-3
+    assert:
+      - a DARK answer re-totals the FLUIDS delivered figure AND inserts the tagged water row into
+        the snack card in the SAME frame; the band does not move
+      - Change answer reverses both in one frame
+  - id: s_copy_registers              # B-4 + string-level
+    contract: surface B-4 + hydration-check copy register
+    assert:
+      - the check question/timing/caveat/result strings match components/hydration-check.md
+      - "DEFERRED (S-G4, Xuan 2026-08-26): the ?-fine-print-matches-notes-§7 assertion — the ?
+        is suppressed this iteration pending the fine-print SSOT; reinstate with B-4"
+
+
+resolved_questions:  # both RULED Xuan 2026-08-26 (option a) — see spec/design/tokens.md
+  - Q-D8   # electrolyte widened to the per-workout fuel side — teal assertions now bless
+  - Q-D9   # dragonfruit widened to out-of-range caution — overshoot golden now blesses
+
+# Known reference-rendering scaffold — do NOT encode as truth:
+#  - switching the plannedAhead prop resets the hydration answer + clears the added row
+#    (demo scenario-switcher artifact; the shipping app has one plan, not a switcher).

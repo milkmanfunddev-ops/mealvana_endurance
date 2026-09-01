@@ -202,6 +202,54 @@ void main() {
       expect(insights.sessions, isEmpty);
     });
 
+    test('weekday load is averaged per occurrence, not summed', () {
+      // A 10-day window contains two Fridays but only one Wednesday.
+      // Ranking by totals would promote Friday purely for coming round
+      // twice; averaging per occurrence is what makes the comparison fair.
+      //
+      // Fri: 40 + 40 = 80 over 2 Fridays → avg 40
+      // Wed: 70 over 1 Wednesday        → avg 70
+      // Mon: 30 over 1                  → avg 30
+      // Thu: 60 over 1                  → avg 60
+      final insights = TrainingInsightService.digest([
+        // Fri Jul 24 and Fri Jul 31 — same weekday, twice.
+        _activity(
+          id: 'f1',
+          type: ActivityType.running,
+          when: DateTime(2026, 7, 24),
+          durationMinutes: 40,
+        ),
+        _activity(
+          id: 'f2',
+          type: ActivityType.running,
+          when: DateTime(2026, 7, 31),
+          durationMinutes: 40,
+        ),
+        _activity(
+          id: 'w',
+          type: ActivityType.running,
+          when: DateTime(2026, 7, 29),
+          durationMinutes: 70,
+        ),
+        _activity(
+          id: 'm',
+          type: ActivityType.running,
+          when: DateTime(2026, 7, 27),
+          durationMinutes: 30,
+        ),
+        _activity(
+          id: 't',
+          type: ActivityType.running,
+          when: DateTime(2026, 7, 30),
+          durationMinutes: 60,
+        ),
+      ]);
+
+      // By SUM Friday (80) would top the list; by average it sits third.
+      expect(insights.heavyWeekdays, [DateTime.wednesday, DateTime.thursday]);
+      expect(insights.lightWeekdays, [DateTime.monday, DateTime.friday]);
+    });
+
     test('fewer than 4 distinct weekdays yields no weekday pattern', () {
       final insights = TrainingInsightService.digest([
         _activity(

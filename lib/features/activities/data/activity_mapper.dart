@@ -49,6 +49,9 @@ class ActivityMapper {
       intensityTarget: row.intensityTarget,
       timeBeforeMinutes: row.timeBeforeMinutes,
       isFasted: row.isFasted,
+      plannedTime: row.plannedTime,
+      actualTime: row.actualTime,
+      caloriesBurned: row.caloriesBurned,
       completedAt: row.completedAt,
       completionRating: row.completionRating,
       nutritionRating: null, // local drift table has no nutrition_rating column
@@ -116,6 +119,9 @@ class ActivityMapper {
       timeBeforeMinutes: (json['time_before_minutes'] as num?)?.toInt(),
       // Tolerate old remote rows without the column (null → false).
       isFasted: (json['is_fasted'] as bool?) ?? false,
+      plannedTime: parseDateTime(json['planned_time']),
+      actualTime: parseDateTime(json['actual_time']),
+      caloriesBurned: (json['calories_burned'] as num?)?.toDouble(),
       completedAt: parseDateTime(json['completed_at']),
       completionRating: (json['completion_rating'] as num?)?.toInt(),
       nutritionRating: (json['nutrition_rating'] as num?)?.toInt(),
@@ -181,6 +187,9 @@ class ActivityMapper {
     required String? intensityTarget,
     required int? timeBeforeMinutes,
     required bool isFasted,
+    DateTime? plannedTime,
+    DateTime? actualTime,
+    double? caloriesBurned,
     required DateTime? completedAt,
     required int? completionRating,
     required int? nutritionRating,
@@ -283,6 +292,9 @@ class ActivityMapper {
       intensityTarget: intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes,
       isFasted: isFasted,
+      plannedTime: plannedTime,
+      actualTime: actualTime,
+      caloriesBurned: caloriesBurned,
       completedAt: completedAt,
       completionRating: completionRating,
       nutritionRating: resolvedNutritionRating,
@@ -355,6 +367,13 @@ class ActivityMapper {
       intensityZ5Pct: Value(activity.intensityDistribution?.allOutPct),
       timeBeforeMinutes: Value(activity.timeBeforeMinutes),
       isFasted: Value(activity.isFasted),
+      // planned_time is set at scheduling (two-time model): new rows stamp
+      // it from the scheduled time; existing rows keep whatever they carry.
+      plannedTime: Value(
+        activity.plannedTime ?? (forInsert ? activity.scheduledDateTime : null),
+      ),
+      actualTime: Value(activity.actualTime),
+      caloriesBurned: Value(activity.caloriesBurned),
       notes: Value(activity.notes),
       cyclingSpeedMph: Value(activity.cyclingSpeedMph),
       cyclingTerrain: Value(activity.cyclingTerrain),
@@ -439,6 +458,14 @@ class ActivityMapper {
       'intensity_z5_pct': activity.intensityDistribution?.allOutPct,
       'time_before_minutes': activity.timeBeforeMinutes,
       'is_fasted': activity.isFasted,
+      // Inserts stamp planned_time from the scheduled time (two-time model),
+      // matching toCompanion's forInsert behavior.
+      'planned_time':
+          (activity.plannedTime ??
+                  (includeCreatedAt ? activity.scheduledDateTime : null))
+              ?.toIso8601String(),
+      'actual_time': activity.actualTime?.toIso8601String(),
+      'calories_burned': activity.caloriesBurned,
       'notes': activity.notes,
       'cycling_speed_mph': activity.cyclingSpeedMph,
       'cycling_terrain': activity.cyclingTerrain,
@@ -470,6 +497,9 @@ class ActivityMapper {
       'brick_id': activity.brickId,
       'garmin_summary_id': activity.garminSummaryId,
       'garmin_device_name': activity.garminDeviceName,
+      // Tombstones must round-trip: without deleted_at in the payload a
+      // status='deleted' row would arrive live-looking on other devices.
+      'deleted_at': activity.deletedAt?.toIso8601String(),
       if (includeCreatedAt) 'created_at': activity.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     };
@@ -503,6 +533,9 @@ class ActivityMapper {
       'intensity_z5_pct': record.intensityZ5Pct,
       'time_before_minutes': record.timeBeforeMinutes,
       'is_fasted': record.isFasted,
+      'planned_time': record.plannedTime?.toIso8601String(),
+      'actual_time': record.actualTime?.toIso8601String(),
+      'calories_burned': record.caloriesBurned,
       'notes': record.notes,
       'cycling_speed_mph': record.cyclingSpeedMph,
       'cycling_terrain': record.cyclingTerrain,
@@ -542,6 +575,8 @@ class ActivityMapper {
       'brick_id': record.brickId,
       'garmin_summary_id': record.garminSummaryId,
       'garmin_device_name': record.garminDeviceName,
+      // Tombstones must round-trip (see buildSupabasePayload).
+      'deleted_at': record.deletedAt?.toIso8601String(),
       'created_at': record.createdAt.toIso8601String(),
       'updated_at': record.updatedAt.toIso8601String(),
     };
@@ -570,6 +605,10 @@ class ActivityMapper {
       case 'archived_for_brick':
       case 'archivedForBrick':
         return domain.ActivityStatus.archivedForBrick;
+      case 'deleted':
+        // Tombstone MUST round-trip: falling through to 'planned' here would
+        // resurrect deleted workouts on every read.
+        return domain.ActivityStatus.deleted;
       default:
         return domain.ActivityStatus.planned;
     }

@@ -29,6 +29,7 @@ import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
 import '../../data/runna_ics_client.dart';
 import '../../domain/integration.dart';
+import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../domain/runna_defaults.dart';
 import 'integrations_providers.dart';
 
@@ -643,7 +644,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
   }
 
-  /// Generic provider disconnect helper to reduce duplication
+  /// Generic provider disconnect helper to reduce duplication.
+  ///
+  /// Disconnecting removes what the provider gave us, not just the token:
+  /// every workout imported from it is deleted, and any onboarding answers
+  /// it pre-filled are cleared. Leaving that data behind meant a
+  /// disconnected platform still silently shaped the athlete's plan, with
+  /// no way to tell which numbers came from where.
   Future<void> _disconnectProvider({
     required String providerId,
     required Future<void> Function() disconnect,
@@ -652,13 +659,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     if (_currentUserId == null) return;
     try {
       await disconnect();
-      // The disconnect await is an async gap on an auto-dispose provider —
+      final removedWorkouts = await _purgeProviderData(providerId);
+      // The awaits above are async gaps on an auto-dispose provider —
       // writing state through a stale ref throws UnmountedRefException
-      // (Sentry MEALVANA-ENDURANCE-AV family). The disconnect itself already
-      // persisted; only the (now-invisible) UI update is skipped.
+      // (Sentry MEALVANA-ENDURANCE-AV family). The disconnect and the purge
+      // already persisted; only the (now-invisible) UI update is skipped.
       if (!ref.mounted) return;
       state = AsyncData(updateState());
       _trackIntegrationDisconnected(providerId, reason: 'user_initiated');
+      if (kDebugMode) {
+        print('🧹 Disconnect $providerId: removed $removedWorkouts workouts');
+      }
     } catch (e, stackTrace) {
       _reportFailureToSentry(providerId, 'disconnect', e, stackTrace);
       if (ref.mounted) {
@@ -667,6 +678,52 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         );
       }
     }
+  }
+
+  /// Deletes everything [providerId] contributed: its imported workouts,
+  /// and the onboarding draft answers it pre-filled.
+  ///
+  /// Deletes are the repository's normal soft-delete, so they sync like any
+  /// other user deletion rather than silently diverging from the server.
+  /// Failures here are reported but never fail the disconnect itself — the
+  /// integration is already gone by this point, and leaving the user
+  /// "still connected" would be worse than leaving stale rows.
+  Future<int> _purgeProviderData(String providerId) async {
+    final userId = _currentUserId;
+    if (userId == null) return 0;
+
+    var removed = 0;
+    try {
+      final activities = await _activitiesRepo.getActivitiesByUserAndProvider(
+        userId,
+        providerId,
+      );
+      for (final activity in activities) {
+        // Hard delete, deliberately NOT the tombstone path: a disconnect
+        // wipe must not leave status='deleted' rows around, or the matcher
+        // would suppress re-import when the athlete reconnects later.
+        await _activitiesRepo.hardDeleteActivityForProviderPurge(
+          userId: userId,
+          activityId: activity.id,
+        );
+        removed++;
+      }
+    } catch (e, stackTrace) {
+      _reportFailureToSentry(providerId, 'purge_workouts', e, stackTrace);
+    }
+
+    // Onboarding-only: drop the personal details this provider pre-filled.
+    // No-op once onboarding is over — by then the values live on the saved
+    // profile and are the athlete's to edit in Settings.
+    try {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .clearIntegrationAutofill();
+    } catch (e, stackTrace) {
+      _reportFailureToSentry(providerId, 'purge_autofill', e, stackTrace);
+    }
+
+    return removed;
   }
 
   Future<void> disconnectFinalSurge() async {

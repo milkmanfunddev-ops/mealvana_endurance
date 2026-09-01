@@ -69,9 +69,11 @@ import '../helpers/flow_launcher.dart';
 //
 // Deriving from `preWorkoutFeedingTitle` means a future rename moves these with
 // the app. The flow builds a RUNNING activity, so that is the sport to pass.
-final _fullMeal = preWorkoutFeedingTitle('meal', sport: ActivityType.running);
-final _snack = preWorkoutFeedingTitle('snack');
-final _topOff = preWorkoutFeedingTitle('top_up');
+// FC-1 (feeding-card v1, RATIFIED 2026-08-26): "Pre-Run Meal" for every
+// sport — the sport-aware variant is retired (deferred-ledger P4).
+final _fullMeal = preWorkoutFeedingTitle(PreWorkoutFeedingTier.meal);
+final _snack = preWorkoutFeedingTitle(PreWorkoutFeedingTier.snack);
+final _topOff = preWorkoutFeedingTitle(PreWorkoutFeedingTier.topOff);
 
 void main() {
   patrolTest(

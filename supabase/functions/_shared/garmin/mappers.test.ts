@@ -591,6 +591,58 @@ describe('Garmin Mappers', () => {
 });
 
 // Run tests if executed directly
+
+// ---------------------------------------------------------------------------
+// 22P02 regression (2026-08-24): a float written into an INTEGER column.
+//
+// `swimming_pace_per_100m_seconds` and `cycling_elevation_gain_ft` are
+// `integer` in Postgres. Writing 100/speed or metres*3.28084 unrounded made
+// PostgREST reject the ENTIRE insert/update with
+//   22P02 invalid input syntax for type integer: "94.2507..."
+// so the activity was never imported. This silently swallowed EVERY Garmin
+// swim, for every athlete, for the life of the integration — while runs and
+// rides synced normally, because only these two branches derive a float into
+// an int column.
+// ops/data/bug-reports/2026-08-24-garmin-swims-never-imported-22P02.md
+// ---------------------------------------------------------------------------
+describe('integer columns never receive a fractional value (22P02)', () => {
+  it('swimming pace is rounded', () => {
+    const mapped = mapGarminActivityToActivity(
+      {
+        summaryId: 's1',
+        activityType: 'LAP_SWIMMING',
+        startTimeInSeconds: 1787563547,
+        startTimeOffsetInSeconds: 0,
+        durationInSeconds: 3523,
+        // 1.061 m/s -> 100/speed = 94.2507... s per 100 m
+        averageSpeedInMetersPerSecond: 1.061,
+        averageSwimCadenceInStrokesPerMinute: 30,
+      } as unknown as GarminActivitySummary,
+      'u1',
+    );
+    const pace = mapped.swimming_pace_per_100m_seconds as number;
+    assertEquals(Number.isInteger(pace), true);
+    assertEquals(pace, 94);
+  });
+
+  it('cycling elevation gain is rounded', () => {
+    const mapped = mapGarminActivityToActivity(
+      {
+        summaryId: 's2',
+        activityType: 'CYCLING',
+        startTimeInSeconds: 1787563547,
+        startTimeOffsetInSeconds: 0,
+        durationInSeconds: 3600,
+        elevationGainInMeters: 123.4, // x3.28084 = 404.85...
+      } as unknown as GarminActivitySummary,
+      'u1',
+    );
+    const gain = mapped.cycling_elevation_gain_ft as number;
+    assertEquals(Number.isInteger(gain), true);
+    assertEquals(gain, 405);
+  });
+});
+
 if (import.meta.main) {
   console.log('Running Garmin mapper tests...');
 }

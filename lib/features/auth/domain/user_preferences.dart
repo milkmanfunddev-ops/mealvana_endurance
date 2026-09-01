@@ -316,9 +316,14 @@ class UserProfile {
       birthday:
           DateTime.tryParse(row['birthday'] as String? ?? '') ??
           DateTime(1990, 1, 1),
-      heightFeet: row['height_feet'] as int? ?? 5,
-      heightInches: row['height_inches'] as int? ?? 8,
-      weightPounds: (row['weight_pounds'] as num?)?.toDouble() ?? 150.0,
+      // Absent body metrics map to 0, NEVER an invented default (the old
+      // ?? 150.0 / ?? 5'8" silently priced incomplete profiles at a fiction
+      // and defeated profileValidationError's loud "Your weight is missing"
+      // path — ops bug 2026-08-20-user-dao-silent-150lb-weight-default.md,
+      // same class as the dashboard's 70-kg constant).
+      heightFeet: row['height_feet'] as int? ?? 0,
+      heightInches: row['height_inches'] as int? ?? 0,
+      weightPounds: (row['weight_pounds'] as num?)?.toDouble() ?? 0,
       runsWithWaterBottle: row['runs_with_water_bottle'] as bool? ?? false,
       createdAt:
           DateTime.tryParse(row['created_at'] as String? ?? '') ??

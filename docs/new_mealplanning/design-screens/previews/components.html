@@ -1,0 +1,225 @@
+<!-- @dsCard group="Widgets" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Repeatable widgets</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sansita:wght@400;700&family=Archivo:wght@500;600&display=swap">
+  <style>
+    body { margin: 0; background: #381633; font-family: "Apercu", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #F8F6EB; -webkit-font-smoothing: antialiased; }
+    a { color: #1CF9CF; } a:hover { color: #3FD4C0; }
+    * { box-sizing: border-box; }
+    .phone { width: 402px; height: 874px; background: #381633; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    .display { font-family: "Sansita", Georgia, serif; font-weight: 700; }
+    .tracked { font-family: "Compadre", "Archivo", "Helvetica Neue", sans-serif; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; }
+    .body14 { font-size: 14px; line-height: 1.5; }
+    .body12 { font-size: 12px; line-height: 1.3; font-weight: 500; }
+    .muted { color: rgba(248,246,235,0.6); }
+    .card { background: #4A2143; border-radius: 15px; }
+    .mc { color: #3FD4C0; font-weight: 600; } .mp { color: #8E6FD8; font-weight: 600; } .mf { color: #DC2597; font-weight: 600; }
+    .slot { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; }
+    .pill { border-radius: 999px; }
+    .btn-primary { background: #F78B14; color: #381633; border-radius: 999px; height: 56px; display: flex; align-items: center; justify-content: center; font-family: "Sansita", Georgia, serif; font-weight: 700; font-size: 16px; }
+    .btn-outline { border: 2px solid #F78B14; color: #F78B14; border-radius: 999px; height: 48px; display: flex; align-items: center; justify-content: center; font-family: "Sansita", Georgia, serif; font-weight: 700; font-size: 16px; }
+    .choice { border: 1px solid rgba(28,249,207,0.6); background: rgba(28,249,207,0.10); color: #1CF9CF; border-radius: 999px; padding: 8px 16px; font-size: 12px; font-weight: 500; line-height: 1.3; }
+    .choice.sel { background: #1CF9CF; color: #381633; font-weight: 700; border-color: #1CF9CF; }
+    .choice.dis { border-color: rgba(248,246,235,0.15); background: transparent; color: rgba(248,246,235,0.3); }
+    .bubble-ai { background: #4A2143; border-radius: 8px 20px 20px 20px; padding: 12px 16px; font-size: 14px; line-height: 1.5; color: #F8F6EB; }
+    .bubble-user { background: #1CF9CF; color: #381633; border-radius: 20px 20px 8px 20px; padding: 12px 16px; font-size: 14px; line-height: 1.5; align-self: flex-end; max-width: 300px; }
+    .island { display: flex; align-items: center; gap: 6px; border: 1px solid rgba(248,246,235,0.18); border-radius: 999px; padding: 6px 12px 6px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; color: #F8F6EB; background: rgba(74,33,67,0.6); }
+    .island svg { width: 14px; height: 14px; stroke: #1CF9CF; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ico { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; }
+    .tabpill { display: flex; gap: 8px; align-items: center; border: 1px solid #F8F6EB; border-radius: 25px; padding: 0 4px; height: 43px; background: rgba(56,22,51,0.35); backdrop-filter: blur(8px); }
+    .tab { width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #F8F6EB; }
+    .tab.on { background: #F8F6EB; color: #381633; }
+    .seg { display: flex; background: #4A2143; border-radius: 999px; padding: 4px; }
+    .seg div { flex: 1; text-align: center; padding: 10px 12px; border-radius: 999px; font-size: 16px; color: #F8F6EB; }
+    .seg .on { background: #F8F6EB; color: #381633; font-weight: 500; }
+    .macro { font-size: 12px; font-weight: 500; color: rgba(248,246,235,0.75); }
+    .tag { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 4px 8px; background: rgba(28,249,207,0.15); border: 0.5px solid rgba(28,249,207,0.4); color: #3FD4C0; }
+    .tag.orange { background: rgba(247,139,20,0.15); border-color: rgba(247,139,20,0.5); color: #F78B14; }
+    .tag.pink { background: rgba(220,37,151,0.15); border-color: rgba(220,37,151,0.5); color: #F060A8; }
+    .check { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid rgba(248,246,235,0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .check.on { background: #1CF9CF; border-color: #1CF9CF; color: #381633; }
+    .stepper { display: flex; align-items: center; gap: 8px; }
+    .stepper div { width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid #F78B14; color: #F78B14; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; }
+    .stepper span { font-size: 14px; font-weight: 600; min-width: 22px; text-align: center; }
+    .input { background: #4A2143; border-radius: 20px; height: 48px; display: flex; align-items: center; padding: 0 16px; color: rgba(248,246,235,0.4); font-size: 16px; flex: 1; }
+    .send { width: 44px; height: 44px; border-radius: 999px; background: #1CF9CF; color: #381633; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; background: #DC2597; color: #F8F6EB; display: flex; align-items: center; justify-content: center; font-family: "Sansita", Georgia, serif; font-weight: 700; font-size: 20px; flex-shrink: 0; }
+    .backbtn { width: 44px; height: 44px; border-radius: 999px; background: #4A2143; display: flex; align-items: center; justify-content: center; }
+    .brief { background: #4A2143; border: 1px solid rgba(220,37,151,0.5); border-radius: 15px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .section { font-family: "Compadre", "Archivo", sans-serif; letter-spacing: 2px; text-transform: uppercase; font-size: 12px; font-weight: 500; color: rgba(248,246,235,0.6); }
+    .row { display: flex; align-items: center; gap: 12px; }
+    .adjust { display: flex; align-items: center; gap: 8px; background: #381633; border: 1.5px solid #DC2597; border-radius: 20px; height: 40px; padding: 0 6px 0 14px; font-size: 13px; }
+    .adjust span { flex: 1; color: #F8F6EB; }
+    .adjust i { width: 30px; height: 30px; border-radius: 999px; background: #DC2597; color: #F8F6EB; display: flex; align-items: center; justify-content: center; font-style: normal; }
+    .disc { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; color: #3FD4C0; }
+    .rangebar { position: relative; height: 2px; background: rgba(248,246,235,0.35); margin: 8px 0 4px; }
+    .rangebar i { position: absolute; top: -4px; width: 10px; height: 10px; background: #1CF9CF; transform: rotate(45deg); }
+    .rangebar b { position: absolute; top: -6px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #F78B14; }
+  </style>
+<style>html,body{background:#2a1127;margin:0;padding:24px;display:flex;justify-content:center} .frame{box-shadow:0 8px 32px rgba(0,0,0,.5);border-radius:24px;overflow:hidden}</style></head><body><div class="frame">
+<div style="width:1180px;min-height:2700px;background:#381633;padding:32px;display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:32px;">
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="tracked" style="font-size:12px;color:#F78B14;">Agent identity</div>
+    <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;"><div class="avatar" style="width:48px;height:48px;font-size:24px;">V</div><div><div class="display" style="font-size:20px;">Vana</div><div class="body12 muted">Dragonfruit disc, Sansita V — distinct from the existing coach-chat avatar (electrolyte disc, M)</div></div></div>
+      <div style="display:flex;gap:12px;align-items:center;"><div class="avatar" style="width:32px;height:32px;font-size:16px;">V</div><div class="avatar" style="width:28px;height:28px;font-size:14px;">V</div><div class="avatar" style="width:24px;height:24px;font-size:12px;">V</div><div class="body12 muted">48 header · 32 app bar · 28 bubble · 24 inline nudge</div></div>
+    </div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Context island</div>
+    <div class="body12 muted">Chips Vana cites in its opener. One per data source; tap to see what it knows.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <div class="island"><svg viewBox="0 0 24 24"><path d="M5 21V4h11l-1 4 1 4H5"></path></svg>Ironman Florida · Sat</div>
+      <div class="island"><svg viewBox="0 0 24 24"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0M6 21l4-7 3 2 2-5 4 2"></path></svg>18 mi run · yesterday</div>
+      <div class="island"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>91°F · humid</div>
+      <div class="island"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>No tree nuts</div>
+      <div class="island"><svg viewBox="0 0 24 24"><path d="M3 11h18a9 9 0 0 1-18 0z"></path></svg>3 saved meals</div>
+      <div class="island"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18"></path></svg>Tue intervals · Thu long ride</div>
+      <div class="island"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14M5 16h14"></path></svg>2 meals logged today</div>
+      <div class="island"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>Taper starts Fri</div>
+    </div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Message bubbles</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:8px;align-items:flex-start;"><div class="avatar" style="width:28px;height:28px;font-size:14px;margin-top:4px;">V</div><div class="bubble-ai">Vana bubble — #4A2143, 8/20/20/20 radius, Apercu 14 at 1.5. Bottom-left corner flattens to 8 when a widget follows.</div></div>
+      <div class="bubble-user">User bubble — electrolyte fill, 20/20/8/20</div>
+      <div style="display:flex;gap:8px;align-items:center;padding-left:36px;"><div style="width:8px;height:8px;border-radius:999px;background:rgba(248,246,235,0.5);"></div><div style="width:8px;height:8px;border-radius:999px;background:rgba(248,246,235,0.3);"></div><div style="width:8px;height:8px;border-radius:999px;background:rgba(248,246,235,0.15);"></div><div class="body12 muted">Vana is thinking · avatar pulses 1.0→1.12</div></div>
+    </div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Choice buttons · askChoice</div>
+    <div class="body12 muted">Wrap of pills. One tap sends the label as the user's message and locks the group.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="choice">Enabled</div><div class="choice sel">Selected</div><div class="choice dis">Disabled</div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="choice">Yes</div><div class="choice">No</div><div class="choice">Not sure — why?</div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="choice">Sunday</div><div class="choice">Saturday</div><div class="choice">Split it in two</div><div class="choice">I don't batch cook</div></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="tracked" style="font-size:12px;color:#F78B14;">Meal card · suggestMeals (library)</div>
+    <div class="body12 muted">A meal is a simple set of foods — no method, no chef steps. Multi-select; source badge tells the user whose it is.</div>
+    <div style="display:flex;gap:10px;align-items:flex-start;background:#4A2143;border:1px solid rgba(248,246,235,0.15);border-radius:12px;padding:10px;">
+      <div class="check"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:14px;font-weight:600;">Default</div><div class="tag">library meal</div></div>
+        <div class="body12 muted" style="font-weight:400;">Item · Item · Item · Item</div>
+        <div class="macro">590 kcal · <span class="mc">88C</span> <span class="mp">41P</span> <span class="mf">9F</span> · 20 min</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-start;background:#4A2143;border:1px solid #1CF9CF;border-radius:12px;padding:10px;">
+      <div class="check on"><svg class="ico" viewBox="0 0 24 24" style="width:14px;height:14px;stroke-width:3;"><path d="M5 12l5 5 9-11"></path></svg></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:14px;font-weight:600;">Selected</div><div class="tag orange">High-carb</div></div>
+        <div class="body12 muted" style="font-weight:400;">Electrolyte border · check filled</div>
+        <div class="macro">620 kcal · <span class="mc">78C</span> <span class="mp">45P</span> <span class="mf">12F</span> · 12 min</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-start;background:#4A2143;border:1px solid rgba(248,246,235,0.15);border-radius:12px;padding:10px;opacity:0.55;">
+      <div class="check"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:14px;font-weight:600;">Excluded by allergy</div><div class="tag pink">Contains almonds</div></div>
+        <div class="body12 muted" style="font-weight:400;">Shown greyed so the user sees why it was skipped</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-start;background:#4A2143;border:1px solid rgba(248,246,235,0.15);border-radius:12px;padding:10px;">
+      <div class="check"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:14px;font-weight:600;">Already in batch</div><div class="tag">In batch ×4</div></div>
+        <div class="body12 muted" style="font-weight:400;">Tap adds a serving instead of a duplicate</div>
+      </div>
+    </div>
+    <div class="tag">Tags: Recovery</div>
+    <div style="display:flex;gap:8px;"><div class="tag orange">High-carb</div><div class="tag orange">Carb-load</div><div class="tag pink">Logged 6×</div><div class="tag">Low-fiber</div><div class="tag">library meal</div></div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Batch bar · updateBatch</div>
+    <div class="body12 muted">Persistent at the bottom of the chat. Collapsed shows count; expanded shows rows with servings steppers and coverage.</div>
+    <div class="card" style="border:1px solid rgba(248,246,235,0.15);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <div><div class="display" style="font-size:16px;">Your batch <span style="color:#F78B14;">· 0 meals</span></div><div class="body12 muted">Empty state</div></div>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"></path></svg>
+    </div>
+    <div class="card" style="border:1px solid rgba(248,246,235,0.15);padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;"><div class="display" style="font-size:16px;">Your batch <span style="color:#F78B14;">· 4 meals · 14 servings</span></div><svg class="ico" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;"><div>Chicken, jasmine rice &amp; broccoli</div><div class="stepper"><div>−</div><span>×5</span><div>+</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;"><div>Salmon, jasmine rice &amp; greens</div><div class="stepper"><div>−</div><span>×4</span><div>+</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;"><div>Chicken breast &amp; white rice with salt <span class="tag orange">Fri fresh</span></div><div class="stepper"><div>−</div><span>×1</span><div>+</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;"><div>Marathon Bolognese over pasta <span class="tag orange">Wed top-up</span></div><div class="stepper"><div>−</div><span>×4</span><div>+</div></div></div>
+      <div style="height:4px;border-radius:2px;background:rgba(248,246,235,0.2);overflow:hidden;"><div style="width:100%;height:4px;background:#1CF9CF;"></div></div>
+      <div style="display:flex;justify-content:space-between;"><div class="body12 muted">Covers 14 of 14 lunches + dinners</div><div style="font-size:12px;font-weight:700;color:#F78B14;">View batch →</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Week brief · weeklyBrief</div>
+    <div class="body12 muted">Sunday/Monday ritual, not a chat opener. Cites 2–3 things Vana looked at. Accept / adjust / skip — always a bypass.</div>
+    <div class="brief">
+      <div class="row"><div class="avatar" style="width:32px;height:32px;font-size:16px;">V</div><div style="flex:1;"><div class="display" style="font-size:16px;">Vana's week brief</div><div class="body12 muted">looked at your log, plan, race + weather</div></div></div>
+      <div class="body14">One high-carb dinner meal Wed–Fri closes the gap. Cook once today.</div>
+      <div style="display:flex;gap:8px;"><div class="btn-primary" style="height:40px;padding:0 18px;font-size:14px;">Show me</div><div class="choice" style="display:flex;align-items:center;">Adjust</div><div class="choice dis" style="display:flex;align-items:center;">Not this week</div></div>
+    </div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Rest-day card · dayGuidance</div>
+    <div class="body12 muted">Deterministic (budget seam), no LLM. Minimums, never limits.</div>
+    <div class="card" style="border:1px solid rgba(28,249,207,0.4);padding:12px 16px;display:flex;flex-direction:column;gap:6px;">
+      <div class="row"><div class="tag">Today · low-load day</div><div class="body12 muted">45 min recovery ride</div></div>
+      <div class="body14">At least <b>250g carbs</b>, protein at every meal.</div>
+    </div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Staples row · diagnoseStaples</div>
+    <div class="body12 muted">Pre-ticked from logs + saved meals. The first move is always "here's what you already eat".</div>
+    <div class="card" style="padding:4px 16px;"><div class="row" style="height:48px;"><div class="check on"><svg class="ico" viewBox="0 0 24 24" style="width:14px;height:14px;stroke-width:3;"><path d="M5 12l5 5 9-11"></path></svg></div><div style="flex:1;font-size:14px;font-weight:600;">Chicken, jasmine rice &amp; broccoli</div><div class="body12 muted">logged 6×</div></div></div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Inline adjust · adjustMeal (library swaps)</div>
+    <div class="body12 muted">One line on the meal itself; the card updates. Full chat is the escalation, not the default.</div>
+    <div class="adjust"><span>swap salmon for chicken</span><i><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></i></div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Macro disclosure</div>
+    <div class="body12 muted">Numbers are one tap away, never the default, always with the daily total.</div>
+    <div class="card" style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;"><div class="disc"><span>Show carbs / protein</span><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M6 9l6 6 6-6"></path></svg></div><div class="body12 muted">→ 174g carbs / day from the batch · ~400g with formulas Wed–Fri</div></div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">What Vana knows · drawer</div>
+    <div class="body12 muted">Visible, editable list of every data source used. Trust layer.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="island"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-11"></path></svg>Logged meals · 14 d</div><div class="island"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-11"></path></svg>Planned workouts · 7 d</div><div class="island"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-11"></path></svg>Allergies · no tree nuts</div><div class="island" style="border-style:dashed;"><svg viewBox="0 0 24 24" style="stroke:#F78B14;"><path d="M12 5v14M5 12h14"></path></svg>Pantry · not yet</div></div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Feedback chips · every turn</div>
+    <div class="body12 muted">Vana states, never confirms. Every turn ends with these; Confirm plan appears once coverage ≥ 10 / 14.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="choice">Looks good</div><div class="choice">Change something</div><div class="choice">Swap a meal</div><div class="choice sel">Confirm plan</div></div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Plan bar · horizontal, pinned above the composer</div>
+    <div class="body12 muted">One card per meal (name · slot · ×servings), a + card, coverage pill, Confirm plan always visible. Picker ticks land here immediately.</div>
+    <div style="background:#381633;border-radius:12px;padding:8px 0 8px 10px;display:flex;flex-direction:column;gap:8px;"><div style="display:flex;gap:8px;overflow:hidden;"><div style="min-width:128px;max-width:128px;background:#4A2143;border:1px solid rgba(248,246,235,0.15);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;"><div style="font-size:12px;font-weight:600;line-height:1.2;">Chicken, rice &amp; broccoli</div><div class="row" style="gap:6px;"><div class="slot" style="background:rgba(142,111,216,0.18);color:#8E6FD8;">Dinner</div><div class="body12 muted">×5</div></div></div><div style="min-width:128px;max-width:128px;background:#4A2143;border:1px solid rgba(248,246,235,0.15);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;"><div style="font-size:12px;font-weight:600;line-height:1.2;">Porridge, banana, PB</div><div class="row" style="gap:6px;"><div class="slot" style="background:rgba(247,139,20,0.18);color:#F78B14;">Breakfast</div><div class="body12 muted">×7</div></div></div><div style="min-width:128px;max-width:128px;background:#4A2143;border:1px solid #DC2597;border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;"><div style="font-size:12px;font-weight:600;line-height:1.2;">Marathon Bolognese</div><div class="row" style="gap:6px;"><div class="slot" style="background:rgba(142,111,216,0.18);color:#8E6FD8;">Dinner</div><div class="body12 muted">×4</div></div></div><div style="min-width:44px;max-width:44px;border:1.5px dashed rgba(248,246,235,0.3);border-radius:12px;display:flex;align-items:center;justify-content:center;color:rgba(248,246,235,0.6);"><svg class="ico" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M12 5v14M5 12h14"></path></svg></div></div><div style="display:flex;align-items:center;gap:8px;padding-right:10px;"><div class="tag">13 / 14</div><div style="flex:1;"></div><div class="btn-primary" style="height:36px;padding:0 16px;font-size:13px;">Confirm plan</div></div></div>
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Swap sheet · tap a plan card</div>
+    <div class="body12 muted">Servings stepper · Swap (picker filtered to the same slot, replaces in place, keeps servings) · Remove. Same sheet on the Plan tab and plan detail rows.</div>
+    <div class="card" style="border:1px solid rgba(220,37,151,0.6);padding:12px;display:flex;flex-direction:column;gap:10px;"><div class="row"><div style="flex:1;"><div class="display" style="font-size:16px;">Marathon Bolognese over pasta</div><div class="body12 muted">Dinner · Top-up Wednesday</div></div><div class="stepper"><div>−</div><span>×4</span><div>+</div></div></div><div style="display:flex;gap:8px;"><div class="btn-primary" style="flex:1;height:40px;font-size:14px;">Swap</div><div class="btn-outline" style="flex:1;height:40px;font-size:14px;">Remove</div><div class="choice" style="display:flex;align-items:center;">Done</div></div></div>
+<div class="tracked" style="font-size:12px;color:#F78B14;">Plan comment thread</div>
+    <div class="body12 muted">Comments live on a meal row. Vana answers in-thread and edits the plan; the edit shows as a diff line.</div>
+    <div class="card" style="padding:12px 16px;display:flex;flex-direction:column;gap:6px;">
+      <div class="bubble-user" style="font-size:13px;padding:8px 12px;">Swap broccoli for green beans?</div>
+      <div style="display:flex;gap:6px;"><div class="avatar" style="width:22px;height:22px;font-size:11px;">V</div><div class="bubble-ai" style="font-size:13px;padding:8px 12px;">Done on all 5 servings.</div></div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;padding-left:28px;"><span style="color:#DC2597;text-decoration:line-through;">Broccoli</span><span style="color:#1CF9CF;">Green beans</span><span class="muted">· fiber −3g</span></div>
+    </div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Rule chip</div>
+    <div class="body12 muted">The only day-specific thing in a batch. Vana proposes; the user accepts via choice buttons.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;"><div class="island"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-11"></path></svg>Fri · low-fiber only</div><div class="island" style="border-style:dashed;"><svg viewBox="0 0 24 24" style="stroke:#F78B14;"><path d="M12 5v14M5 12h14"></path></svg>Proposed · Wed–Fri +120g carbs/day</div></div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Coverage meter</div>
+    <div class="body12 muted">Same range-bar as the fuel plan: diamond = batch per-day average (lunch + dinner), triangle = target.</div>
+    <div class="card" style="padding:12px 16px;display:flex;justify-content:space-between;">
+      <div style="text-align:center;width:90px;"><div style="font-size:24px;font-weight:600;color:#3FD4C0;">174g</div><div class="tracked" style="font-size:10px;letter-spacing:0.5px;">Carbs</div><div class="rangebar"><b style="left:67%;"></b><i style="left:57%;"></i></div></div>
+      <div style="text-align:center;width:90px;"><div style="font-size:24px;font-weight:600;color:#8E6FD8;">82g</div><div class="tracked" style="font-size:10px;letter-spacing:0.5px;">Protein</div><div class="rangebar"><b style="left:50%;"></b><i style="left:40%;"></i></div></div>
+      <div style="text-align:center;width:90px;"><div style="font-size:24px;font-weight:600;">1,300</div><div class="tracked" style="font-size:10px;letter-spacing:0.5px;">kcal</div><div class="rangebar"><b style="left:50%;"></b><i style="left:33%;"></i></div></div>
+    </div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Shopping row · shoppingList</div>
+    <div class="card" style="padding:4px 16px;">
+      <div style="display:flex;align-items:center;gap:12px;height:48px;border-bottom:1px solid rgba(248,246,235,0.1);"><div class="check"></div><div style="flex:1;font-size:14px;">Carrots</div><div class="body12 muted">4</div></div>
+      <div style="display:flex;align-items:center;gap:12px;height:48px;border-bottom:1px solid rgba(248,246,235,0.1);"><div class="check on"><svg class="ico" viewBox="0 0 24 24" style="width:14px;height:14px;stroke-width:3;"><path d="M5 12l5 5 9-11"></path></svg></div><div style="flex:1;font-size:14px;color:rgba(248,246,235,0.5);text-decoration:line-through;">Green beans</div><div class="body12 muted">2 lb</div></div>
+      <div style="display:flex;align-items:center;gap:12px;height:48px;"><div class="check"></div><div style="flex:1;font-size:14px;">Soy sauce</div><div class="choice" style="padding:3px 8px;font-size:11px;">have it?</div></div>
+    </div>
+
+    <div class="tracked" style="font-size:12px;color:#F78B14;padding-top:8px;">Log-from-plan row</div>
+    <div class="card" style="border:1px solid rgba(248,246,235,0.12);padding:10px 12px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:999px;background:#1CF9CF;display:flex;align-items:center;justify-content:center;color:#381633;"><svg class="ico" viewBox="0 0 24 24" style="width:20px;height:20px;"><path d="M3 11h18a9 9 0 0 1-18 0z"></path><path d="M9 4l2 3M15 4l-2 3"></path></svg></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:14px;font-weight:600;">Meal name</div><div class="slot" style="background:rgba(142,111,216,0.18);color:#8E6FD8;">Dinner</div></div>
+        <div class="macro"><span style="font-size:14px;font-weight:700;color:#F8F6EB;">620</span> kcal  ·  <span class="mc">78C</span> <span class="mp">45P</span> <span class="mf">12F</span></div>
+        <div style="display:flex;gap:3px;"><div style="width:22px;height:4px;border-radius:2px;background:rgba(248,246,235,0.25);"></div><div style="width:22px;height:4px;border-radius:2px;background:#1CF9CF;"></div><div style="width:22px;height:4px;border-radius:2px;background:#1CF9CF;"></div><div class="body12 muted" style="margin-left:6px;line-height:4px;">2 left</div></div>
+      </div>
+      <div class="btn-primary" style="height:36px;padding:0 16px;font-size:14px;">Log</div>
+    </div>
+    <div class="body12 muted">Servings pips decrement as meals are logged; slot is a suggestion (last-used), editable in the confirm sheet.</div>
+  </div>
+</div>
+</div></body></html>

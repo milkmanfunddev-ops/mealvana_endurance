@@ -130,3 +130,17 @@ benchmarks/*/_derived/uncompressed/
 # git merge artifacts — never commit these
 *.orig
 *.rej
+
+# Flutter golden-test diff artifacts (written on failure, never source)
+**/test/**/failures/
+
+# design-sync (claude.ai/design) — staged converter, build output, machine state
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+design/ds/node_modules/
+design/ds/dist/
+# Scraped source pages (regenerate with scripts/fetch_recipe_sources.mjs)
+.cache/

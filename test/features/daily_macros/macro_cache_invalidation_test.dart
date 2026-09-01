@@ -181,6 +181,28 @@ void main() {
       });
     });
 
+    test('a Skip / Unskip toggles the day (v2 unified-skip model)', () {
+      // status='skipped' rows are filtered out of every macro input query,
+      // so skipping (or unskipping) moves the day's inputs.
+      final planned = activityOn(wednesday, durationMinutes: 60);
+      final skipped = planned.copyWith(status: ActivityStatus.skipped);
+      expect(changedActivityDates([planned], [skipped]), equals({wednesday}));
+      expect(changedActivityDates([skipped], [planned]), equals({wednesday}));
+    });
+
+    test('mark-done / mark-undone (planned <-> completed) changes nothing', () {
+      // The prospective calculation reads no status other than `skipped`;
+      // a swipe must not cost the user a cached week and an edge-function
+      // round trip (the invalidation-storm flicker, fixed in 3ca2ee27).
+      final planned = activityOn(wednesday, durationMinutes: 60);
+      final done = planned.copyWith(
+        status: ActivityStatus.completed,
+        actualTime: DateTime(2026, 7, 15, 15, 0),
+      );
+      expect(changedActivityDates([planned], [done]), isEmpty);
+      expect(changedActivityDates([done], [planned]), isEmpty);
+    });
+
     test('a macro-irrelevant edit changes nothing', () {
       // Title never reaches the edge function. Renaming a workout should not
       // cost the user a cached week and a network round trip.

@@ -76,6 +76,14 @@ class AppRadius {
   static const double xxl = 32.0;
   static const double circular = 999.0;
 
+  // === Ratified shape tokens ===
+  // Card corners are 15 px — ruled Xuan 2026-08-25 (qa Q-SA4; the design
+  // library's golden rule 6). `cardRadius` below has always said 15; the
+  // literal `BorderRadius.circular(16)` sites that bypassed it are the defect.
+  // Use `card` where a double is needed, `cardRadius` where a BorderRadius is.
+  static const double card = 15.0;
+  static const double pill = 100.0;
+
   // === Pre-defined BorderRadius ===
   static const BorderRadius xxsRadius = BorderRadius.all(Radius.circular(xxs));
   static const BorderRadius xsRadius = BorderRadius.all(Radius.circular(xs));
@@ -92,12 +100,12 @@ class AppRadius {
 
   // Buttons (100px fully rounded from Figma)
   static const BorderRadius buttonRadius = BorderRadius.all(
-    Radius.circular(100.0),
+    Radius.circular(pill),
   );
 
-  // Cards (15px from Figma)
+  // Cards (15px from Figma; ratified Q-SA4)
   static const BorderRadius cardRadius = BorderRadius.all(
-    Radius.circular(15.0),
+    Radius.circular(card),
   );
 
   // Input fields (15px from Figma)
