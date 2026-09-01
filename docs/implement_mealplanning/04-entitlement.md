@@ -1,5 +1,44 @@
 # 04 — Pro entitlement (Phase 3)
 
+## Status — **built 2026-09-01** (branch `mealplanning`, dev only)
+| Piece | Where | State |
+|---|---|---|
+| `user_entitlements` + `has_entitlement()` + `users.is_internal` | `supabase/migrations/20260902080000_user_entitlements.sql` | applied to **dev** (`vlmtsdzpnjnavdgytcmi`); QA `test@test.com` is `is_internal`. **Prod: not applied** (Phase 5 runbook). |
+| Webhook subscription branch | `supabase/functions/revenuecat-webhook/{index,entitlements}.ts` | deployed to **dev** as v19 (deploy counter). Prod still runs the credits-only build. |
+| Drift v19 `user_entitlements` cache | `lib/shared/database/tables/user_entitlements_table.dart`, `database_schemas/drift_schemas/drift_schema_v19.json` | in code; `app_config.current_schema_version` **not** bumped yet (bump to 19 with the build that ships this, per the v17/v18 precedent). |
+| `lib/features/subscription/` | domain / data / application / presentation as specified below | built + unit/widget tested (`test/features/subscription/`). |
+| `/pro` screen | `lib/features/subscription/presentation/screens/pro_version_screen.dart` (old `pro_version/` removed) | real `$rc_monthly` / `$rc_annual` prices, Restore works, Buy behind `PRO_PURCHASE_ENABLED`. |
+| Flags | `AppConfig.proGateEnabled` / `proPurchaseEnabled`, `codemagic.yaml`, `.env.example` | dev builds forced `PRO_GATE_ENABLED=false`; prod builds fail if the key is absent. |
+| Router / tabs / startup / sign-out | `app_router.dart`, `tabs_screen.dart`, `app_startup_service.dart`, `settings_controller.dart` | `/food/*` + `/vana/*` → `/pro` when locked; tabs watch `proUnlockedProvider`; startup primes after `logIn`; sign-out clears the cache. |
+
+### Deviations from the spec (and why)
+- **Provider naming.** The notifier class is `SubscriptionStatusController`; the provider is exposed as
+  `subscriptionStatusProvider` via `@Riverpod(name:)` because the generated default would clash with the
+  `SubscriptionStatus` domain type.
+- **`isProUnlocked(ref)`** takes a Riverpod `Ref` (router redirect). Widgets watch `proUnlockedProvider`
+  instead — a `WidgetRef` is not a `Ref` in Riverpod 3. The pure rule is `computeProUnlocked()`.
+- **Purchase call.** `SubscriptionService.purchase` delegates to `RevenueCatService.purchase`
+  (`Purchases.purchase(PurchaseParams.package(pkg))`, the SDK's current form of `purchasePackage`) so the
+  cancel-vs-error reporting and Sentry tagging are not duplicated.
+- **Webhook extras beyond the spec list:** `SUBSCRIPTION_EXTENDED` and `TEST` are handled; `TRANSFER`
+  moves the row to `transferred_to` and deactivates `transferred_from`; an event older than the stored
+  row's `updated_at` (= RC `event_timestamp_ms`) is acked as `stale_event` so out-of-order deliveries
+  cannot roll the state back. The Play SKUs are matched with and without the `:basePlan` suffix.
+- **Fail-closed while loading.** With the gate on, a status still resolving counts as locked (deep link
+  lands on `/pro`, not an error). The Drift cache keeps that window short for a subscriber.
+- **`users.is_internal`** already existed on dev; the migration's `add column if not exists` is a no-op
+  there. `has_entitlement()` returns true for internal users (server-side tester bypass).
+- **Pro welcome credit bundle** (open question below): not implemented — default "no" stands.
+- **Food tab** is deliberately absent (Phase 4); `TabsScreen` only subscribes to `proUnlockedProvider` so
+  the tab list rebuilds on a status flip once the tab exists.
+
+### Still to do
+- Prod: apply the migration, redeploy the webhook, bump `app_config` (Phase 5 runbook).
+- Upload the App Review screenshot of `/pro`, submit the four ASC subscriptions, then flip
+  `PRO_PURCHASE_ENABLED=true`.
+- Sandbox purchase → webhook → provider-flip acceptance run on a device (needs the ASC products
+  approved for sandbox, which they are; needs `PRO_PURCHASE_ENABLED=true` on a local debug build).
+
 ## What exists (verified 2026-09-01 via the RevenueCat API)
 - Project `proj77b3c48f` already has entitlement **`pro`** ("Mealvana Endurance Pro", since 2025-11)
   with products `mealvana_pro_monthly` ($9.95/mo, P1M) and `mealvana_pro_annual` ($69/yr, P1Y), in the

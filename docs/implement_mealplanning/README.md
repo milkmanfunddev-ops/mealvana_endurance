@@ -8,7 +8,7 @@ Research corpus + specs stay in `docs/new_mealplanning/`. Updated 2026-09-01 aft
 | `01-git-reconciliation.md` | 0 — branches, prototype self-contained, changelog | **done 2026-09-01** |
 | `02-contract.md` | 1 — the frozen Dart↔TS contract (types, parts, actions, wire protocol) | **done 2026-09-01 — prototype tag `contract-v1`** |
 | `03-backend.md` | 2 — `vana-chat` / `vana-action` / `vana-day-notes` edge fns + RPCs | spec ready |
-| `04-entitlement.md` | 3 — Pro entitlement: store products, `user_entitlements`, `subscription/` feature, gate | spec ready |
+| `04-entitlement.md` | 3 — Pro entitlement: store products, `user_entitlements`, `subscription/` feature, gate | **built 2026-09-01 (dev only)** — see its Status table; prod DDL/webhook/app_config bump in Phase 5 |
 | `05-flutter-feature.md` | 4 — `lib/features/meal_planning/`: file tree, Drift v19, reuse map, screen specs | spec ready |
 | `06-sync-schema-envs.md` | 5 — sync registration, schema bumps, prod DDL + seed runbook | spec ready |
 | `07-verification-release.md` | 6 — tests, Patrol, manual verification, dark launch | spec ready |
