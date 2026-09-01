@@ -48,6 +48,7 @@ import 'tables/race_checklist_items_table.dart';
 import 'tables/meal_logs_table.dart';
 import 'tables/saved_meals_table.dart';
 import 'tables/recipes_table.dart';
+import 'tables/user_entitlements_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -152,6 +153,10 @@ part 'app_database.g.dart';
 
     // Curated recipe catalog (read-only mirror)
     RecipesTable,
+
+    // Pro subscription entitlement cache (read-only mirror of the user's own
+    // user_entitlements rows; written server-side by the RevenueCat webhook)
+    UserEntitlementsTable,
   ],
   daos: [
     UserDao,
@@ -278,7 +283,14 @@ class AppDatabase extends _$AppDatabase {
   /// no schema change locally; Supabase's activity_status_enum gains the
   /// value in migration 20260814120000). Supabase
   /// app_config.current_schema_version must be bumped to 18 when this ships.
-  int get schemaVersion => 18;
+  ///
+  /// v19 added `user_entitlements` — a read-only local mirror of the user's
+  /// Pro subscription rows (docs/implement_mealplanning/04-entitlement.md).
+  /// Server-side the table is written only by the revenuecat-webhook edge
+  /// function; the app caches its own row so the Pro gate can answer offline
+  /// and before RevenueCat responds on a cold start. Supabase
+  /// app_config.current_schema_version must be bumped to 19 when this ships.
+  int get schemaVersion => 19;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -540,6 +552,13 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'planned_time', 'INTEGER');
           await addColumn('activities', 'actual_time', 'INTEGER');
           await addColumn('activities', 'calories_burned', 'REAL');
+        }
+
+        // v19: user_entitlements — local cache of the Pro subscription row
+        // (Phase 3 of meal planning). ensureTable is idempotent for web
+        // user_version replays; no columns change on existing tables.
+        if (from < 19) {
+          await ensureTable(userEntitlementsTable);
         }
       },
 
