@@ -86,7 +86,7 @@ function getTransitionTargets(
   };
 }
 
-function normalizeTransitionName(name?: string | null): string | null {
+export function normalizeTransitionName(name?: string | null): string | null {
   if (!name) return null;
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -95,7 +95,10 @@ function normalizeTransitionName(name?: string | null): string | null {
   return `T${match[1]}`;
 }
 
-function collectTransitionTargets(
+// Exported for the R8 producer-shaped seam test (transition-seam.test.ts):
+// the generate-macros-v4 payload's transition keys must equal this
+// function's lookup keys — a single-engine vector cannot see that seam.
+export function collectTransitionTargets(
   input: PlanInputV2,
 ): Map<string, MacroTargets> {
   const collected: Array<Record<string, unknown>> = [];
