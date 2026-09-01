@@ -39,10 +39,10 @@ Research corpus + specs stay in `docs/new_mealplanning/`. Updated 2026-09-01 aft
 2. Agent → Supabase edge functions (`vana-chat`, `vana-action`, `vana-day-notes`), not a Vercel service.
 3. Wire protocol → the `jade-chat` NDJSON envelope (+ `status` lines), so the Flutter client is an
    extension of `ai_coach`, and `/jade` becomes `Vana · general`.
-4. Gating → Pro entitlement (server-enforced via `user_entitlements`, client via
-   `subscriptionStatusProvider`) **plus** per-turn credits. Feature ships dark on prod behind
-   `PRO_GATE_ENABLED=true` until the paywall design + store products exist. ⚠️ Conflicts with the
-   monetization docs (credit-gated) — confirm before Phase 3.
+4. Gating → **Pro only** (decided by Lee 2026-09-01). Server-enforced via `user_entitlements`, client via
+   `subscriptionStatusProvider`. Meal planning does **not** debit AI credits — Pro is the price. Feature
+   ships dark on prod behind `PRO_GATE_ENABLED=true` until the paywall design exists. (Supersedes the
+   monetization docs that listed meal planning as credit-gated.)
 5. Local-first only for user-owned rows (`meal_plans`, `plan_meals`, `user_memories`, shopping ticks,
    settings). `meal_library` search/detail is online (in-memory cache). Pick/swap/confirm/log are
    remote-ack. Chat is online.
@@ -78,7 +78,6 @@ Phase 5 (2 d) → Phase 6 (1 wk) — prod DDL/seed can happen any time after Pha
 Single engineer ≈ 7 weeks; with Xuan on the catalog/detail/cooking-mode screens ≈ 5.
 
 ## Open decisions
-1. Pro vs credits vs both (default in this plan: both).
 2. Dev/prod Apple product ids for the Pro subscriptions (team-unique rule) — see 04.
 3. Whether `jade-chat` is kept as an alias for 1.23.x clients until `min_app_version` moves past 1.24
    (default: yes, one release).

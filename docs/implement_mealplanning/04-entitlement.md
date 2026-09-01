@@ -9,20 +9,21 @@
   (`.dev`), Play prod `app7d2f8e3b85`, Play dev `app7536cff235` — has a Pro subscription product.
 - App side: `lib/features/ai_credits/data/revenuecat_service.dart` (configure/logIn/getOfferings/
   purchase/restore — no `getCustomerInfo`, no listener), `/pro` static screen, no `user_entitlements`.
-- Docs conflict: `docs/features/revenue_cat/README.md` + the Notion monetization doc planned meal
-  planning as **credit-gated, not Pro**. Lee's 2026-08-31 direction: Pro-gated. Plan = Pro gate +
-  per-turn credits (see 03 §3). **Confirm before starting this phase.**
+- Decision 2026-09-01 (Lee): **Pro only.** The older monetization docs (credit-gated meal planning) are superseded.
 
-## Store work (Lee / Xuan, not code)
-1. App Store Connect (prod app 6751113738, dev app 6756683509): create a subscription group "Mealvana
-   Pro" with `mealvana_pro_monthly` + `mealvana_pro_annual` on **both** apps (product ids are
-   team-unique per memory — dev needs distinct ids, e.g. `mealvana_pro_monthly_dev`, or share the
-   group if Apple allows; decide with the IAP lessons from 1.23.x). Fill metadata, price tiers,
-   review screenshot. They can sit "Ready to Submit" until the paywall ships.
-2. Play Console: same two subscriptions on prod + dev packages (base plans monthly/annual).
-3. RevenueCat: attach the four new store products to entitlement `pro` and to the `default`
-   offering's `$rc_monthly`/`$rc_annual` packages (per app). Keep `credits` offering untouched.
-4. RC webhook: already configured (prod URL, env-unfiltered — keep it that way).
+## Store work — DONE via API 2026-09-01 (Claude)
+| Store | App | Product ids | State |
+|---|---|---|---|
+| App Store Connect | prod 6751113738 | group `Mealvana Pro` 22351111 → `mealvana_pro_monthly_prod` (6807411442, $9.99), `mealvana_pro_annual_prod` (6807411640, $69.99) | MISSING_METADATA — needs the App Review screenshot (paywall) |
+| App Store Connect | dev 6756683509 | group `Mealvana Pro` 22351029 → `mealvana_pro_monthly` (6807411443, $9.99), `mealvana_pro_annual` (6807411689, $69.99) | MISSING_METADATA — same; sandbox purchases work without review |
+| Google Play | `com.milkman.mealvanaendurance` + `.dev` | `mealvana_pro_monthly:monthly` (P1M $9.99), `mealvana_pro_annual:annual` (P1Y $69.99), en-US listing, 7-day grace | base plans ACTIVE |
+| RevenueCat | all 4 store apps | 8 products created, attached to entitlement `pro` (entla441faaeb4) and to `default` offering packages `$rc_monthly` (pkge316803098d) / `$rc_annual` (pkge4a1810d707) | done |
+
+All four ASC subscriptions: en-US localization, all 175 territories, USA price set (Apple equalizes the rest).
+Remaining manual: upload the review screenshot once the paywall exists, then submit with the next binary.
+Tooling: `asc.mjs` / `play.mjs` (JWT helpers, no deps) lived in the session scratchpad — recreate from
+`secrets/apple/AuthKey_Codemagic_565CMLNU3G.p8` and `secrets/google/mealvanaendurance-61d62e739439.json`
+(Play activation is eventually consistent: retry `:activate` until 200).
 
 ## DB
 ```sql

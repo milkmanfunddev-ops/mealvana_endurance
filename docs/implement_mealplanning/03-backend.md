@@ -35,8 +35,8 @@ via the AI Gateway key already in edge secrets. Open-Meteo/holidays: unchanged (
 2. **Port `_shared/vana/`** (≈2,500 lines TS). Replace TanStack server-fn imports; `createServerFn`
    bodies become plain functions. Keep `contracts.ts` byte-identical to the prototype's.
 3. **`vana-chat`**: body per `02-contract §5`. `opener:true` + `kind=meal_planning` runs the scripted
-   opener (`OPENERS`) and persists it. `shownMealIds` from prior `vana_messages.parts`. Credits: debit
-   1 per turn like `jade-chat` (`debitForUsage(client, userId, 'vana-chat')`); opener turns free.
+   opener (`OPENERS`) and persists it. `shownMealIds` from prior `vana_messages.parts`. No credit debit (Pro only, §3);
+   `logAiUsage` still records every call.
    `x-conversation-id` header before first byte.
 4. **`vana-action`**: switch on `type`; add the app-only actions (`get_home`, `get_meal`, `recent_meals`,
    `set_saved_meal_notes`, `set_meal_feedback`). `confirm_plan` = transactional RPC `confirm_meal_plan(p_plan_id)`
@@ -58,18 +58,19 @@ via the AI Gateway key already in edge secrets. Open-Meteo/holidays: unchanged (
    schema generated from `contracts.ts` — the same schema the Dart `fromJson` tests use.
 9. Deploy both refs with `/deploy-edge` (`--no-verify-jwt`); update `EDGE_FUNCTION_AUDIT.md`.
 
-## 3. Entitlement + credits semantics (decided)
-- `vana-chat`/`vana-action` return **403 `pro_required`** unless `user_entitlements` has an active
-  `pro` row OR the caller is in `internal_users` (tester bypass) OR `PRO_GATE_ENABLED` secret is `false`
-  (dev default). Client maps 403 → `/pro`.
-- Each model turn debits 1 credit (`vana-chat`); actions are free; day-notes regen is free (logged).
-  This keeps the credits meter meaningful even for Pro users — revisit once pricing is decided.
+## 3. Entitlement semantics (decided 2026-09-01: Pro only)
+- `vana-chat`/`vana-action`/`vana-day-notes` return **403 `pro_required`** unless `user_entitlements` has an
+  active `pro` row OR the caller is an internal tester OR the `PRO_GATE_ENABLED` secret is `false` (dev
+  default). Client maps 403 → `/pro`.
+- **No credit debit** for meal planning. Every model call is still logged to `vana_calls` (cost
+  telemetry) and rate-limited. `ensureAndCheckCredits` is NOT called on the Vana paths; the general-kind
+  chat that replaces Jade keeps its existing 1-credit debit for free-tier users and is free for Pro.
 
 ## 4. Acceptance
 - Signed in as the dev test user, `curl vana-chat` with `opener:true` streams the opener + a
   `meal_picker` whose meals exclude the user's allergens; `vana-action pick_meals` returns a `batch`
   with the meal; `confirm_plan` returns `shopping_list` and `meal_plans.status='confirmed'`;
   `log_from_plan` writes a `meal_logs` row with `source='plan'`, `plan_meal_id` set, `servings_left−1`.
-- `vana_calls` has one row per model call; 429 after 5 rapid chats; 402 at zero balance; 403 for a
+- `vana_calls` has one row per model call; 429 after 5 rapid chats; **no** credit debit for Pro users; 403 for a
   non-pro user when the gate is on.
 - `run-algorithm-tests.sh` green incl. the new vana suite.
