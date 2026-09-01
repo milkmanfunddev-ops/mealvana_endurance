@@ -110,7 +110,7 @@ final class ProPaywallControllerProvider
 }
 
 String _$proPaywallControllerHash() =>
-    r'0e40c1ebbcbbac254ba51c70314f50d69978fbdf';
+    r'ced4b436a85b8eb0823b512ddef079d4264caf21';
 
 /// Drives purchase and restore for the Pro subscription.
 ///

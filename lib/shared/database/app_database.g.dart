@@ -38685,6 +38685,17 @@ class $MealLogsTableTable extends MealLogsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _planMealIdMeta = const VerificationMeta(
+    'planMealId',
+  );
+  @override
+  late final GeneratedColumn<String> planMealId = GeneratedColumn<String>(
+    'plan_meal_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -38785,6 +38796,7 @@ class $MealLogsTableTable extends MealLogsTable
     photoPath,
     recipeId,
     savedMealId,
+    planMealId,
     notes,
     eatenAt,
     createdAt,
@@ -38900,6 +38912,15 @@ class $MealLogsTableTable extends MealLogsTable
         savedMealId.isAcceptableOrUnknown(
           data['saved_meal_id']!,
           _savedMealIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plan_meal_id')) {
+      context.handle(
+        _planMealIdMeta,
+        planMealId.isAcceptableOrUnknown(
+          data['plan_meal_id']!,
+          _planMealIdMeta,
         ),
       );
     }
@@ -39024,6 +39045,10 @@ class $MealLogsTableTable extends MealLogsTable
         DriftSqlType.string,
         data['${effectivePrefix}saved_meal_id'],
       ),
+      planMealId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_meal_id'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -39078,7 +39103,8 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
   final String name;
 
   /// How the entry was created:
-  /// 'photo' | 'manual' | 'describe' | 'saved' | 'recipe' | 'jade_baseline'.
+  /// 'photo' | 'manual' | 'describe' | 'saved' | 'recipe' | 'jade_baseline' |
+  /// 'plan'.
   final String source;
 
   /// JSON-encoded array of food components
@@ -39096,6 +39122,10 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
   /// Provenance pointers (no FKs — sources may be deleted independently).
   final String? recipeId;
   final String? savedMealId;
+
+  /// The `plan_meals` row this was logged from (source == plan). Set by the
+  /// `plan_log_from_plan` RPC server-side; mirrored here for Recents.
+  final String? planMealId;
   final String? notes;
 
   /// When the meal was eaten (user-adjustable), distinct from createdAt.
@@ -39121,6 +39151,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     this.photoPath,
     this.recipeId,
     this.savedMealId,
+    this.planMealId,
     this.notes,
     this.eatenAt,
     required this.createdAt,
@@ -39164,6 +39195,9 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     }
     if (!nullToAbsent || savedMealId != null) {
       map['saved_meal_id'] = Variable<String>(savedMealId);
+    }
+    if (!nullToAbsent || planMealId != null) {
+      map['plan_meal_id'] = Variable<String>(planMealId);
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -39214,6 +39248,9 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       savedMealId: savedMealId == null && nullToAbsent
           ? const Value.absent()
           : Value(savedMealId),
+      planMealId: planMealId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planMealId),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -39253,6 +39290,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       photoPath: serializer.fromJson<String?>(json['photoPath']),
       recipeId: serializer.fromJson<String?>(json['recipeId']),
       savedMealId: serializer.fromJson<String?>(json['savedMealId']),
+      planMealId: serializer.fromJson<String?>(json['planMealId']),
       notes: serializer.fromJson<String?>(json['notes']),
       eatenAt: serializer.fromJson<DateTime?>(json['eatenAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -39281,6 +39319,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       'photoPath': serializer.toJson<String?>(photoPath),
       'recipeId': serializer.toJson<String?>(recipeId),
       'savedMealId': serializer.toJson<String?>(savedMealId),
+      'planMealId': serializer.toJson<String?>(planMealId),
       'notes': serializer.toJson<String?>(notes),
       'eatenAt': serializer.toJson<DateTime?>(eatenAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -39307,6 +39346,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     Value<String?> photoPath = const Value.absent(),
     Value<String?> recipeId = const Value.absent(),
     Value<String?> savedMealId = const Value.absent(),
+    Value<String?> planMealId = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     Value<DateTime?> eatenAt = const Value.absent(),
     DateTime? createdAt,
@@ -39330,6 +39370,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     photoPath: photoPath.present ? photoPath.value : this.photoPath,
     recipeId: recipeId.present ? recipeId.value : this.recipeId,
     savedMealId: savedMealId.present ? savedMealId.value : this.savedMealId,
+    planMealId: planMealId.present ? planMealId.value : this.planMealId,
     notes: notes.present ? notes.value : this.notes,
     eatenAt: eatenAt.present ? eatenAt.value : this.eatenAt,
     createdAt: createdAt ?? this.createdAt,
@@ -39359,6 +39400,9 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       savedMealId: data.savedMealId.present
           ? data.savedMealId.value
           : this.savedMealId,
+      planMealId: data.planMealId.present
+          ? data.planMealId.value
+          : this.planMealId,
       notes: data.notes.present ? data.notes.value : this.notes,
       eatenAt: data.eatenAt.present ? data.eatenAt.value : this.eatenAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -39391,6 +39435,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           ..write('photoPath: $photoPath, ')
           ..write('recipeId: $recipeId, ')
           ..write('savedMealId: $savedMealId, ')
+          ..write('planMealId: $planMealId, ')
           ..write('notes: $notes, ')
           ..write('eatenAt: $eatenAt, ')
           ..write('createdAt: $createdAt, ')
@@ -39419,6 +39464,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     photoPath,
     recipeId,
     savedMealId,
+    planMealId,
     notes,
     eatenAt,
     createdAt,
@@ -39446,6 +39492,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           other.photoPath == this.photoPath &&
           other.recipeId == this.recipeId &&
           other.savedMealId == this.savedMealId &&
+          other.planMealId == this.planMealId &&
           other.notes == this.notes &&
           other.eatenAt == this.eatenAt &&
           other.createdAt == this.createdAt &&
@@ -39471,6 +39518,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
   final Value<String?> photoPath;
   final Value<String?> recipeId;
   final Value<String?> savedMealId;
+  final Value<String?> planMealId;
   final Value<String?> notes;
   final Value<DateTime?> eatenAt;
   final Value<DateTime> createdAt;
@@ -39495,6 +39543,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.photoPath = const Value.absent(),
     this.recipeId = const Value.absent(),
     this.savedMealId = const Value.absent(),
+    this.planMealId = const Value.absent(),
     this.notes = const Value.absent(),
     this.eatenAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -39520,6 +39569,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.photoPath = const Value.absent(),
     this.recipeId = const Value.absent(),
     this.savedMealId = const Value.absent(),
+    this.planMealId = const Value.absent(),
     this.notes = const Value.absent(),
     this.eatenAt = const Value.absent(),
     required DateTime createdAt,
@@ -39550,6 +39600,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Expression<String>? photoPath,
     Expression<String>? recipeId,
     Expression<String>? savedMealId,
+    Expression<String>? planMealId,
     Expression<String>? notes,
     Expression<DateTime>? eatenAt,
     Expression<DateTime>? createdAt,
@@ -39575,6 +39626,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
       if (photoPath != null) 'photo_path': photoPath,
       if (recipeId != null) 'recipe_id': recipeId,
       if (savedMealId != null) 'saved_meal_id': savedMealId,
+      if (planMealId != null) 'plan_meal_id': planMealId,
       if (notes != null) 'notes': notes,
       if (eatenAt != null) 'eaten_at': eatenAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -39602,6 +39654,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Value<String?>? photoPath,
     Value<String?>? recipeId,
     Value<String?>? savedMealId,
+    Value<String?>? planMealId,
     Value<String?>? notes,
     Value<DateTime?>? eatenAt,
     Value<DateTime>? createdAt,
@@ -39627,6 +39680,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
       photoPath: photoPath ?? this.photoPath,
       recipeId: recipeId ?? this.recipeId,
       savedMealId: savedMealId ?? this.savedMealId,
+      planMealId: planMealId ?? this.planMealId,
       notes: notes ?? this.notes,
       eatenAt: eatenAt ?? this.eatenAt,
       createdAt: createdAt ?? this.createdAt,
@@ -39686,6 +39740,9 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     if (savedMealId.present) {
       map['saved_meal_id'] = Variable<String>(savedMealId.value);
     }
+    if (planMealId.present) {
+      map['plan_meal_id'] = Variable<String>(planMealId.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -39731,6 +39788,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
           ..write('photoPath: $photoPath, ')
           ..write('recipeId: $recipeId, ')
           ..write('savedMealId: $savedMealId, ')
+          ..write('planMealId: $planMealId, ')
           ..write('notes: $notes, ')
           ..write('eatenAt: $eatenAt, ')
           ..write('createdAt: $createdAt, ')
@@ -39850,6 +39908,59 @@ class $SavedMealsTableTable extends SavedMealsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mealTypesMeta = const VerificationMeta(
+    'mealTypes',
+  );
+  @override
+  late final GeneratedColumn<String> mealTypes = GeneratedColumn<String>(
+    'meal_types',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _batchMeta = const VerificationMeta('batch');
+  @override
+  late final GeneratedColumn<bool> batch = GeneratedColumn<bool>(
+    'batch',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("batch" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _libraryMealIdMeta = const VerificationMeta(
+    'libraryMealId',
+  );
+  @override
+  late final GeneratedColumn<String> libraryMealId = GeneratedColumn<String>(
+    'library_meal_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
     'lastUsedAt',
   );
@@ -39936,6 +40047,11 @@ class $SavedMealsTableTable extends SavedMealsTable
     fatG,
     sodiumMg,
     photoPath,
+    icon,
+    notes,
+    mealTypes,
+    batch,
+    libraryMealId,
     lastUsedAt,
     createdAt,
     updatedAt,
@@ -40014,6 +40130,39 @@ class $SavedMealsTableTable extends SavedMealsTable
       context.handle(
         _photoPathMeta,
         photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
+      );
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('meal_types')) {
+      context.handle(
+        _mealTypesMeta,
+        mealTypes.isAcceptableOrUnknown(data['meal_types']!, _mealTypesMeta),
+      );
+    }
+    if (data.containsKey('batch')) {
+      context.handle(
+        _batchMeta,
+        batch.isAcceptableOrUnknown(data['batch']!, _batchMeta),
+      );
+    }
+    if (data.containsKey('library_meal_id')) {
+      context.handle(
+        _libraryMealIdMeta,
+        libraryMealId.isAcceptableOrUnknown(
+          data['library_meal_id']!,
+          _libraryMealIdMeta,
+        ),
       );
     }
     if (data.containsKey('last_used_at')) {
@@ -40114,6 +40263,26 @@ class $SavedMealsTableTable extends SavedMealsTable
         DriftSqlType.string,
         data['${effectivePrefix}photo_path'],
       ),
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      mealTypes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meal_types'],
+      )!,
+      batch: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}batch'],
+      ),
+      libraryMealId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_meal_id'],
+      ),
       lastUsedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_used_at'],
@@ -40161,6 +40330,21 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
   final double? sodiumMg;
   final String? photoPath;
 
+  /// `MealIcon` key (`saved_meals.icon`), classified when missing.
+  final String? icon;
+
+  /// The athlete's own directions (`saved_meals.notes`, <= 2000 chars).
+  final String? notes;
+
+  /// JSON array of meal types this meal suits (`saved_meals.meal_types`).
+  final String mealTypes;
+
+  /// Batch-cookable; null = unknown (`saved_meals.batch`).
+  final bool? batch;
+
+  /// `meal_library.id` this saved meal was matched/copied from.
+  final String? libraryMealId;
+
   /// Bumped each time the saved meal is re-logged (sorts the picker).
   final DateTime? lastUsedAt;
   final DateTime createdAt;
@@ -40179,6 +40363,11 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
     this.fatG,
     this.sodiumMg,
     this.photoPath,
+    this.icon,
+    this.notes,
+    required this.mealTypes,
+    this.batch,
+    this.libraryMealId,
     this.lastUsedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -40210,6 +40399,19 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
     }
     if (!nullToAbsent || photoPath != null) {
       map['photo_path'] = Variable<String>(photoPath);
+    }
+    if (!nullToAbsent || icon != null) {
+      map['icon'] = Variable<String>(icon);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['meal_types'] = Variable<String>(mealTypes);
+    if (!nullToAbsent || batch != null) {
+      map['batch'] = Variable<bool>(batch);
+    }
+    if (!nullToAbsent || libraryMealId != null) {
+      map['library_meal_id'] = Variable<String>(libraryMealId);
     }
     if (!nullToAbsent || lastUsedAt != null) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt);
@@ -40248,6 +40450,17 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
       photoPath: photoPath == null && nullToAbsent
           ? const Value.absent()
           : Value(photoPath),
+      icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      mealTypes: Value(mealTypes),
+      batch: batch == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batch),
+      libraryMealId: libraryMealId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryMealId),
       lastUsedAt: lastUsedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastUsedAt),
@@ -40279,6 +40492,11 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
       fatG: serializer.fromJson<double?>(json['fatG']),
       sodiumMg: serializer.fromJson<double?>(json['sodiumMg']),
       photoPath: serializer.fromJson<String?>(json['photoPath']),
+      icon: serializer.fromJson<String?>(json['icon']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      mealTypes: serializer.fromJson<String>(json['mealTypes']),
+      batch: serializer.fromJson<bool?>(json['batch']),
+      libraryMealId: serializer.fromJson<String?>(json['libraryMealId']),
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -40301,6 +40519,11 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
       'fatG': serializer.toJson<double?>(fatG),
       'sodiumMg': serializer.toJson<double?>(sodiumMg),
       'photoPath': serializer.toJson<String?>(photoPath),
+      'icon': serializer.toJson<String?>(icon),
+      'notes': serializer.toJson<String?>(notes),
+      'mealTypes': serializer.toJson<String>(mealTypes),
+      'batch': serializer.toJson<bool?>(batch),
+      'libraryMealId': serializer.toJson<String?>(libraryMealId),
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -40321,6 +40544,11 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
     Value<double?> fatG = const Value.absent(),
     Value<double?> sodiumMg = const Value.absent(),
     Value<String?> photoPath = const Value.absent(),
+    Value<String?> icon = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    String? mealTypes,
+    Value<bool?> batch = const Value.absent(),
+    Value<String?> libraryMealId = const Value.absent(),
     Value<DateTime?> lastUsedAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -40338,6 +40566,13 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
     fatG: fatG.present ? fatG.value : this.fatG,
     sodiumMg: sodiumMg.present ? sodiumMg.value : this.sodiumMg,
     photoPath: photoPath.present ? photoPath.value : this.photoPath,
+    icon: icon.present ? icon.value : this.icon,
+    notes: notes.present ? notes.value : this.notes,
+    mealTypes: mealTypes ?? this.mealTypes,
+    batch: batch.present ? batch.value : this.batch,
+    libraryMealId: libraryMealId.present
+        ? libraryMealId.value
+        : this.libraryMealId,
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -40359,6 +40594,13 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
       fatG: data.fatG.present ? data.fatG.value : this.fatG,
       sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
       photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      mealTypes: data.mealTypes.present ? data.mealTypes.value : this.mealTypes,
+      batch: data.batch.present ? data.batch.value : this.batch,
+      libraryMealId: data.libraryMealId.present
+          ? data.libraryMealId.value
+          : this.libraryMealId,
       lastUsedAt: data.lastUsedAt.present
           ? data.lastUsedAt.value
           : this.lastUsedAt,
@@ -40387,6 +40629,11 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
           ..write('fatG: $fatG, ')
           ..write('sodiumMg: $sodiumMg, ')
           ..write('photoPath: $photoPath, ')
+          ..write('icon: $icon, ')
+          ..write('notes: $notes, ')
+          ..write('mealTypes: $mealTypes, ')
+          ..write('batch: $batch, ')
+          ..write('libraryMealId: $libraryMealId, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -40398,7 +40645,7 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     userId,
     name,
@@ -40409,13 +40656,18 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
     fatG,
     sodiumMg,
     photoPath,
+    icon,
+    notes,
+    mealTypes,
+    batch,
+    libraryMealId,
     lastUsedAt,
     createdAt,
     updatedAt,
     isDeleted,
     needsUpload,
     localUpdatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -40430,6 +40682,11 @@ class SavedMealEntry extends DataClass implements Insertable<SavedMealEntry> {
           other.fatG == this.fatG &&
           other.sodiumMg == this.sodiumMg &&
           other.photoPath == this.photoPath &&
+          other.icon == this.icon &&
+          other.notes == this.notes &&
+          other.mealTypes == this.mealTypes &&
+          other.batch == this.batch &&
+          other.libraryMealId == this.libraryMealId &&
           other.lastUsedAt == this.lastUsedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -40449,6 +40706,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
   final Value<double?> fatG;
   final Value<double?> sodiumMg;
   final Value<String?> photoPath;
+  final Value<String?> icon;
+  final Value<String?> notes;
+  final Value<String> mealTypes;
+  final Value<bool?> batch;
+  final Value<String?> libraryMealId;
   final Value<DateTime?> lastUsedAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -40467,6 +40729,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
     this.fatG = const Value.absent(),
     this.sodiumMg = const Value.absent(),
     this.photoPath = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.mealTypes = const Value.absent(),
+    this.batch = const Value.absent(),
+    this.libraryMealId = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -40486,6 +40753,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
     this.fatG = const Value.absent(),
     this.sodiumMg = const Value.absent(),
     this.photoPath = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.mealTypes = const Value.absent(),
+    this.batch = const Value.absent(),
+    this.libraryMealId = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -40508,6 +40780,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
     Expression<double>? fatG,
     Expression<double>? sodiumMg,
     Expression<String>? photoPath,
+    Expression<String>? icon,
+    Expression<String>? notes,
+    Expression<String>? mealTypes,
+    Expression<bool>? batch,
+    Expression<String>? libraryMealId,
     Expression<DateTime>? lastUsedAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -40527,6 +40804,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
       if (fatG != null) 'fat_g': fatG,
       if (sodiumMg != null) 'sodium_mg': sodiumMg,
       if (photoPath != null) 'photo_path': photoPath,
+      if (icon != null) 'icon': icon,
+      if (notes != null) 'notes': notes,
+      if (mealTypes != null) 'meal_types': mealTypes,
+      if (batch != null) 'batch': batch,
+      if (libraryMealId != null) 'library_meal_id': libraryMealId,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -40548,6 +40830,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
     Value<double?>? fatG,
     Value<double?>? sodiumMg,
     Value<String?>? photoPath,
+    Value<String?>? icon,
+    Value<String?>? notes,
+    Value<String>? mealTypes,
+    Value<bool?>? batch,
+    Value<String?>? libraryMealId,
     Value<DateTime?>? lastUsedAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -40567,6 +40854,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
       fatG: fatG ?? this.fatG,
       sodiumMg: sodiumMg ?? this.sodiumMg,
       photoPath: photoPath ?? this.photoPath,
+      icon: icon ?? this.icon,
+      notes: notes ?? this.notes,
+      mealTypes: mealTypes ?? this.mealTypes,
+      batch: batch ?? this.batch,
+      libraryMealId: libraryMealId ?? this.libraryMealId,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -40610,6 +40902,21 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
     if (photoPath.present) {
       map['photo_path'] = Variable<String>(photoPath.value);
     }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (mealTypes.present) {
+      map['meal_types'] = Variable<String>(mealTypes.value);
+    }
+    if (batch.present) {
+      map['batch'] = Variable<bool>(batch.value);
+    }
+    if (libraryMealId.present) {
+      map['library_meal_id'] = Variable<String>(libraryMealId.value);
+    }
     if (lastUsedAt.present) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
     }
@@ -40647,6 +40954,11 @@ class SavedMealsTableCompanion extends UpdateCompanion<SavedMealEntry> {
           ..write('fatG: $fatG, ')
           ..write('sodiumMg: $sodiumMg, ')
           ..write('photoPath: $photoPath, ')
+          ..write('icon: $icon, ')
+          ..write('notes: $notes, ')
+          ..write('mealTypes: $mealTypes, ')
+          ..write('batch: $batch, ')
+          ..write('libraryMealId: $libraryMealId, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -42368,6 +42680,3167 @@ class UserEntitlementsTableCompanion
   }
 }
 
+class $MealPlansTableTable extends MealPlansTable
+    with TableInfo<$MealPlansTableTable, MealPlanEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MealPlansTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weekStartMeta = const VerificationMeta(
+    'weekStart',
+  );
+  @override
+  late final GeneratedColumn<String> weekStart = GeneratedColumn<String>(
+    'week_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('draft'),
+  );
+  static const VerificationMeta _batchCookingMeta = const VerificationMeta(
+    'batchCooking',
+  );
+  @override
+  late final GeneratedColumn<bool> batchCooking = GeneratedColumn<bool>(
+    'batch_cooking',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("batch_cooking" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _rulesMeta = const VerificationMeta('rules');
+  @override
+  late final GeneratedColumn<String> rules = GeneratedColumn<String>(
+    'rules',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _shoppingMeta = const VerificationMeta(
+    'shopping',
+  );
+  @override
+  late final GeneratedColumn<String> shopping = GeneratedColumn<String>(
+    'shopping',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _briefMeta = const VerificationMeta('brief');
+  @override
+  late final GeneratedColumn<String> brief = GeneratedColumn<String>(
+    'brief',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _daysMeta = const VerificationMeta('days');
+  @override
+  late final GeneratedColumn<String> days = GeneratedColumn<String>(
+    'days',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _dayNotesMeta = const VerificationMeta(
+    'dayNotes',
+  );
+  @override
+  late final GeneratedColumn<String> dayNotes = GeneratedColumn<String>(
+    'day_notes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _dayNotesStaleMeta = const VerificationMeta(
+    'dayNotesStale',
+  );
+  @override
+  late final GeneratedColumn<bool> dayNotesStale = GeneratedColumn<bool>(
+    'day_notes_stale',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("day_notes_stale" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _dayNotesAtMeta = const VerificationMeta(
+    'dayNotesAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dayNotesAt = GeneratedColumn<DateTime>(
+    'day_notes_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    weekStart,
+    status,
+    batchCooking,
+    rules,
+    shopping,
+    brief,
+    conversationId,
+    days,
+    dayNotes,
+    dayNotesStale,
+    dayNotesAt,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'meal_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MealPlanEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('week_start')) {
+      context.handle(
+        _weekStartMeta,
+        weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekStartMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('batch_cooking')) {
+      context.handle(
+        _batchCookingMeta,
+        batchCooking.isAcceptableOrUnknown(
+          data['batch_cooking']!,
+          _batchCookingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rules')) {
+      context.handle(
+        _rulesMeta,
+        rules.isAcceptableOrUnknown(data['rules']!, _rulesMeta),
+      );
+    }
+    if (data.containsKey('shopping')) {
+      context.handle(
+        _shoppingMeta,
+        shopping.isAcceptableOrUnknown(data['shopping']!, _shoppingMeta),
+      );
+    }
+    if (data.containsKey('brief')) {
+      context.handle(
+        _briefMeta,
+        brief.isAcceptableOrUnknown(data['brief']!, _briefMeta),
+      );
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('days')) {
+      context.handle(
+        _daysMeta,
+        days.isAcceptableOrUnknown(data['days']!, _daysMeta),
+      );
+    }
+    if (data.containsKey('day_notes')) {
+      context.handle(
+        _dayNotesMeta,
+        dayNotes.isAcceptableOrUnknown(data['day_notes']!, _dayNotesMeta),
+      );
+    }
+    if (data.containsKey('day_notes_stale')) {
+      context.handle(
+        _dayNotesStaleMeta,
+        dayNotesStale.isAcceptableOrUnknown(
+          data['day_notes_stale']!,
+          _dayNotesStaleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('day_notes_at')) {
+      context.handle(
+        _dayNotesAtMeta,
+        dayNotesAt.isAcceptableOrUnknown(
+          data['day_notes_at']!,
+          _dayNotesAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MealPlanEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MealPlanEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      weekStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}week_start'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      batchCooking: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}batch_cooking'],
+      )!,
+      rules: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rules'],
+      )!,
+      shopping: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}shopping'],
+      )!,
+      brief: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brief'],
+      ),
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      ),
+      days: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}days'],
+      )!,
+      dayNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_notes'],
+      )!,
+      dayNotesStale: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}day_notes_stale'],
+      )!,
+      dayNotesAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}day_notes_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $MealPlansTableTable createAlias(String alias) {
+    return $MealPlansTableTable(attachedDatabase, alias);
+  }
+}
+
+class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
+  final String id;
+  final String userId;
+
+  /// Monday of the week as 'yyyy-MM-dd' (Supabase DATE, no tz drift).
+  final String weekStart;
+
+  /// 'draft' | 'confirmed' | 'archived'.
+  final String status;
+  final bool batchCooking;
+
+  /// JSON array of `PlanRule`.
+  final String rules;
+
+  /// JSON array of `ShoppingItem`.
+  final String shopping;
+
+  /// Vana's one-line week brief (legacy; null today).
+  final String? brief;
+
+  /// The Vana conversation that owns this draft; null = week-level plan.
+  final String? conversationId;
+
+  /// JSON object `{ 'yyyy-MM-dd': DayPlan }` — the day-planner slots.
+  final String days;
+
+  /// JSON object `{ 'yyyy-MM-dd': text }` — precomputed day notes.
+  final String dayNotes;
+
+  /// True while an edit has invalidated [dayNotes] (server regenerates).
+  final bool dayNotesStale;
+  final DateTime? dayNotesAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const MealPlanEntry({
+    required this.id,
+    required this.userId,
+    required this.weekStart,
+    required this.status,
+    required this.batchCooking,
+    required this.rules,
+    required this.shopping,
+    this.brief,
+    this.conversationId,
+    required this.days,
+    required this.dayNotes,
+    required this.dayNotesStale,
+    this.dayNotesAt,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['week_start'] = Variable<String>(weekStart);
+    map['status'] = Variable<String>(status);
+    map['batch_cooking'] = Variable<bool>(batchCooking);
+    map['rules'] = Variable<String>(rules);
+    map['shopping'] = Variable<String>(shopping);
+    if (!nullToAbsent || brief != null) {
+      map['brief'] = Variable<String>(brief);
+    }
+    if (!nullToAbsent || conversationId != null) {
+      map['conversation_id'] = Variable<String>(conversationId);
+    }
+    map['days'] = Variable<String>(days);
+    map['day_notes'] = Variable<String>(dayNotes);
+    map['day_notes_stale'] = Variable<bool>(dayNotesStale);
+    if (!nullToAbsent || dayNotesAt != null) {
+      map['day_notes_at'] = Variable<DateTime>(dayNotesAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  MealPlansTableCompanion toCompanion(bool nullToAbsent) {
+    return MealPlansTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      weekStart: Value(weekStart),
+      status: Value(status),
+      batchCooking: Value(batchCooking),
+      rules: Value(rules),
+      shopping: Value(shopping),
+      brief: brief == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brief),
+      conversationId: conversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conversationId),
+      days: Value(days),
+      dayNotes: Value(dayNotes),
+      dayNotesStale: Value(dayNotesStale),
+      dayNotesAt: dayNotesAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dayNotesAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isDeleted: Value(isDeleted),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory MealPlanEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MealPlanEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      weekStart: serializer.fromJson<String>(json['weekStart']),
+      status: serializer.fromJson<String>(json['status']),
+      batchCooking: serializer.fromJson<bool>(json['batchCooking']),
+      rules: serializer.fromJson<String>(json['rules']),
+      shopping: serializer.fromJson<String>(json['shopping']),
+      brief: serializer.fromJson<String?>(json['brief']),
+      conversationId: serializer.fromJson<String?>(json['conversationId']),
+      days: serializer.fromJson<String>(json['days']),
+      dayNotes: serializer.fromJson<String>(json['dayNotes']),
+      dayNotesStale: serializer.fromJson<bool>(json['dayNotesStale']),
+      dayNotesAt: serializer.fromJson<DateTime?>(json['dayNotesAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'weekStart': serializer.toJson<String>(weekStart),
+      'status': serializer.toJson<String>(status),
+      'batchCooking': serializer.toJson<bool>(batchCooking),
+      'rules': serializer.toJson<String>(rules),
+      'shopping': serializer.toJson<String>(shopping),
+      'brief': serializer.toJson<String?>(brief),
+      'conversationId': serializer.toJson<String?>(conversationId),
+      'days': serializer.toJson<String>(days),
+      'dayNotes': serializer.toJson<String>(dayNotes),
+      'dayNotesStale': serializer.toJson<bool>(dayNotesStale),
+      'dayNotesAt': serializer.toJson<DateTime?>(dayNotesAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  MealPlanEntry copyWith({
+    String? id,
+    String? userId,
+    String? weekStart,
+    String? status,
+    bool? batchCooking,
+    String? rules,
+    String? shopping,
+    Value<String?> brief = const Value.absent(),
+    Value<String?> conversationId = const Value.absent(),
+    String? days,
+    String? dayNotes,
+    bool? dayNotesStale,
+    Value<DateTime?> dayNotesAt = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isDeleted,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => MealPlanEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    weekStart: weekStart ?? this.weekStart,
+    status: status ?? this.status,
+    batchCooking: batchCooking ?? this.batchCooking,
+    rules: rules ?? this.rules,
+    shopping: shopping ?? this.shopping,
+    brief: brief.present ? brief.value : this.brief,
+    conversationId: conversationId.present
+        ? conversationId.value
+        : this.conversationId,
+    days: days ?? this.days,
+    dayNotes: dayNotes ?? this.dayNotes,
+    dayNotesStale: dayNotesStale ?? this.dayNotesStale,
+    dayNotesAt: dayNotesAt.present ? dayNotesAt.value : this.dayNotesAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    isDeleted: isDeleted ?? this.isDeleted,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  MealPlanEntry copyWithCompanion(MealPlansTableCompanion data) {
+    return MealPlanEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
+      status: data.status.present ? data.status.value : this.status,
+      batchCooking: data.batchCooking.present
+          ? data.batchCooking.value
+          : this.batchCooking,
+      rules: data.rules.present ? data.rules.value : this.rules,
+      shopping: data.shopping.present ? data.shopping.value : this.shopping,
+      brief: data.brief.present ? data.brief.value : this.brief,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      days: data.days.present ? data.days.value : this.days,
+      dayNotes: data.dayNotes.present ? data.dayNotes.value : this.dayNotes,
+      dayNotesStale: data.dayNotesStale.present
+          ? data.dayNotesStale.value
+          : this.dayNotesStale,
+      dayNotesAt: data.dayNotesAt.present
+          ? data.dayNotesAt.value
+          : this.dayNotesAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MealPlanEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('status: $status, ')
+          ..write('batchCooking: $batchCooking, ')
+          ..write('rules: $rules, ')
+          ..write('shopping: $shopping, ')
+          ..write('brief: $brief, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('days: $days, ')
+          ..write('dayNotes: $dayNotes, ')
+          ..write('dayNotesStale: $dayNotesStale, ')
+          ..write('dayNotesAt: $dayNotesAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    weekStart,
+    status,
+    batchCooking,
+    rules,
+    shopping,
+    brief,
+    conversationId,
+    days,
+    dayNotes,
+    dayNotesStale,
+    dayNotesAt,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MealPlanEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.weekStart == this.weekStart &&
+          other.status == this.status &&
+          other.batchCooking == this.batchCooking &&
+          other.rules == this.rules &&
+          other.shopping == this.shopping &&
+          other.brief == this.brief &&
+          other.conversationId == this.conversationId &&
+          other.days == this.days &&
+          other.dayNotes == this.dayNotes &&
+          other.dayNotesStale == this.dayNotesStale &&
+          other.dayNotesAt == this.dayNotesAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isDeleted == this.isDeleted &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class MealPlansTableCompanion extends UpdateCompanion<MealPlanEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> weekStart;
+  final Value<String> status;
+  final Value<bool> batchCooking;
+  final Value<String> rules;
+  final Value<String> shopping;
+  final Value<String?> brief;
+  final Value<String?> conversationId;
+  final Value<String> days;
+  final Value<String> dayNotes;
+  final Value<bool> dayNotesStale;
+  final Value<DateTime?> dayNotesAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isDeleted;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const MealPlansTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.weekStart = const Value.absent(),
+    this.status = const Value.absent(),
+    this.batchCooking = const Value.absent(),
+    this.rules = const Value.absent(),
+    this.shopping = const Value.absent(),
+    this.brief = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.days = const Value.absent(),
+    this.dayNotes = const Value.absent(),
+    this.dayNotesStale = const Value.absent(),
+    this.dayNotesAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MealPlansTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String weekStart,
+    this.status = const Value.absent(),
+    this.batchCooking = const Value.absent(),
+    this.rules = const Value.absent(),
+    this.shopping = const Value.absent(),
+    this.brief = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.days = const Value.absent(),
+    this.dayNotes = const Value.absent(),
+    this.dayNotesStale = const Value.absent(),
+    this.dayNotesAt = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       weekStart = Value(weekStart),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<MealPlanEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? weekStart,
+    Expression<String>? status,
+    Expression<bool>? batchCooking,
+    Expression<String>? rules,
+    Expression<String>? shopping,
+    Expression<String>? brief,
+    Expression<String>? conversationId,
+    Expression<String>? days,
+    Expression<String>? dayNotes,
+    Expression<bool>? dayNotesStale,
+    Expression<DateTime>? dayNotesAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isDeleted,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (weekStart != null) 'week_start': weekStart,
+      if (status != null) 'status': status,
+      if (batchCooking != null) 'batch_cooking': batchCooking,
+      if (rules != null) 'rules': rules,
+      if (shopping != null) 'shopping': shopping,
+      if (brief != null) 'brief': brief,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (days != null) 'days': days,
+      if (dayNotes != null) 'day_notes': dayNotes,
+      if (dayNotesStale != null) 'day_notes_stale': dayNotesStale,
+      if (dayNotesAt != null) 'day_notes_at': dayNotesAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MealPlansTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? weekStart,
+    Value<String>? status,
+    Value<bool>? batchCooking,
+    Value<String>? rules,
+    Value<String>? shopping,
+    Value<String?>? brief,
+    Value<String?>? conversationId,
+    Value<String>? days,
+    Value<String>? dayNotes,
+    Value<bool>? dayNotesStale,
+    Value<DateTime?>? dayNotesAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? isDeleted,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return MealPlansTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      weekStart: weekStart ?? this.weekStart,
+      status: status ?? this.status,
+      batchCooking: batchCooking ?? this.batchCooking,
+      rules: rules ?? this.rules,
+      shopping: shopping ?? this.shopping,
+      brief: brief ?? this.brief,
+      conversationId: conversationId ?? this.conversationId,
+      days: days ?? this.days,
+      dayNotes: dayNotes ?? this.dayNotes,
+      dayNotesStale: dayNotesStale ?? this.dayNotesStale,
+      dayNotesAt: dayNotesAt ?? this.dayNotesAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (weekStart.present) {
+      map['week_start'] = Variable<String>(weekStart.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (batchCooking.present) {
+      map['batch_cooking'] = Variable<bool>(batchCooking.value);
+    }
+    if (rules.present) {
+      map['rules'] = Variable<String>(rules.value);
+    }
+    if (shopping.present) {
+      map['shopping'] = Variable<String>(shopping.value);
+    }
+    if (brief.present) {
+      map['brief'] = Variable<String>(brief.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (days.present) {
+      map['days'] = Variable<String>(days.value);
+    }
+    if (dayNotes.present) {
+      map['day_notes'] = Variable<String>(dayNotes.value);
+    }
+    if (dayNotesStale.present) {
+      map['day_notes_stale'] = Variable<bool>(dayNotesStale.value);
+    }
+    if (dayNotesAt.present) {
+      map['day_notes_at'] = Variable<DateTime>(dayNotesAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MealPlansTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('status: $status, ')
+          ..write('batchCooking: $batchCooking, ')
+          ..write('rules: $rules, ')
+          ..write('shopping: $shopping, ')
+          ..write('brief: $brief, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('days: $days, ')
+          ..write('dayNotes: $dayNotes, ')
+          ..write('dayNotesStale: $dayNotesStale, ')
+          ..write('dayNotesAt: $dayNotesAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PlanMealsTableTable extends PlanMealsTable
+    with TableInfo<$PlanMealsTableTable, PlanMealEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlanMealsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _libraryMealIdMeta = const VerificationMeta(
+    'libraryMealId',
+  );
+  @override
+  late final GeneratedColumn<String> libraryMealId = GeneratedColumn<String>(
+    'library_meal_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _savedMealIdMeta = const VerificationMeta(
+    'savedMealId',
+  );
+  @override
+  late final GeneratedColumn<String> savedMealId = GeneratedColumn<String>(
+    'saved_meal_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mealTypeMeta = const VerificationMeta(
+    'mealType',
+  );
+  @override
+  late final GeneratedColumn<String> mealType = GeneratedColumn<String>(
+    'meal_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionMeta = const VerificationMeta(
+    'session',
+  );
+  @override
+  late final GeneratedColumn<String> session = GeneratedColumn<String>(
+    'session',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servingsMeta = const VerificationMeta(
+    'servings',
+  );
+  @override
+  late final GeneratedColumn<int> servings = GeneratedColumn<int>(
+    'servings',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _servingsLeftMeta = const VerificationMeta(
+    'servingsLeft',
+  );
+  @override
+  late final GeneratedColumn<int> servingsLeft = GeneratedColumn<int>(
+    'servings_left',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _kcalMeta = const VerificationMeta('kcal');
+  @override
+  late final GeneratedColumn<int> kcal = GeneratedColumn<int>(
+    'kcal',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _carbsGMeta = const VerificationMeta('carbsG');
+  @override
+  late final GeneratedColumn<double> carbsG = GeneratedColumn<double>(
+    'carbs_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _proteinGMeta = const VerificationMeta(
+    'proteinG',
+  );
+  @override
+  late final GeneratedColumn<double> proteinG = GeneratedColumn<double>(
+    'protein_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fatGMeta = const VerificationMeta('fatG');
+  @override
+  late final GeneratedColumn<double> fatG = GeneratedColumn<double>(
+    'fat_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _swapsAppliedMeta = const VerificationMeta(
+    'swapsApplied',
+  );
+  @override
+  late final GeneratedColumn<String> swapsApplied = GeneratedColumn<String>(
+    'swaps_applied',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _commentsMeta = const VerificationMeta(
+    'comments',
+  );
+  @override
+  late final GeneratedColumn<String> comments = GeneratedColumn<String>(
+    'comments',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    planId,
+    userId,
+    source,
+    libraryMealId,
+    savedMealId,
+    name,
+    mealType,
+    session,
+    servings,
+    servingsLeft,
+    kcal,
+    carbsG,
+    proteinG,
+    fatG,
+    swapsApplied,
+    comments,
+    position,
+    icon,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'plan_meals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlanMealEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('library_meal_id')) {
+      context.handle(
+        _libraryMealIdMeta,
+        libraryMealId.isAcceptableOrUnknown(
+          data['library_meal_id']!,
+          _libraryMealIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('saved_meal_id')) {
+      context.handle(
+        _savedMealIdMeta,
+        savedMealId.isAcceptableOrUnknown(
+          data['saved_meal_id']!,
+          _savedMealIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('meal_type')) {
+      context.handle(
+        _mealTypeMeta,
+        mealType.isAcceptableOrUnknown(data['meal_type']!, _mealTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mealTypeMeta);
+    }
+    if (data.containsKey('session')) {
+      context.handle(
+        _sessionMeta,
+        session.isAcceptableOrUnknown(data['session']!, _sessionMeta),
+      );
+    }
+    if (data.containsKey('servings')) {
+      context.handle(
+        _servingsMeta,
+        servings.isAcceptableOrUnknown(data['servings']!, _servingsMeta),
+      );
+    }
+    if (data.containsKey('servings_left')) {
+      context.handle(
+        _servingsLeftMeta,
+        servingsLeft.isAcceptableOrUnknown(
+          data['servings_left']!,
+          _servingsLeftMeta,
+        ),
+      );
+    }
+    if (data.containsKey('kcal')) {
+      context.handle(
+        _kcalMeta,
+        kcal.isAcceptableOrUnknown(data['kcal']!, _kcalMeta),
+      );
+    }
+    if (data.containsKey('carbs_g')) {
+      context.handle(
+        _carbsGMeta,
+        carbsG.isAcceptableOrUnknown(data['carbs_g']!, _carbsGMeta),
+      );
+    }
+    if (data.containsKey('protein_g')) {
+      context.handle(
+        _proteinGMeta,
+        proteinG.isAcceptableOrUnknown(data['protein_g']!, _proteinGMeta),
+      );
+    }
+    if (data.containsKey('fat_g')) {
+      context.handle(
+        _fatGMeta,
+        fatG.isAcceptableOrUnknown(data['fat_g']!, _fatGMeta),
+      );
+    }
+    if (data.containsKey('swaps_applied')) {
+      context.handle(
+        _swapsAppliedMeta,
+        swapsApplied.isAcceptableOrUnknown(
+          data['swaps_applied']!,
+          _swapsAppliedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('comments')) {
+      context.handle(
+        _commentsMeta,
+        comments.isAcceptableOrUnknown(data['comments']!, _commentsMeta),
+      );
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PlanMealEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlanMealEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      libraryMealId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_meal_id'],
+      ),
+      savedMealId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}saved_meal_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      mealType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meal_type'],
+      )!,
+      session: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session'],
+      ),
+      servings: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}servings'],
+      )!,
+      servingsLeft: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}servings_left'],
+      )!,
+      kcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kcal'],
+      ),
+      carbsG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carbs_g'],
+      ),
+      proteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_g'],
+      ),
+      fatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_g'],
+      ),
+      swapsApplied: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}swaps_applied'],
+      )!,
+      comments: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comments'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $PlanMealsTableTable createAlias(String alias) {
+    return $PlanMealsTableTable(attachedDatabase, alias);
+  }
+}
+
+class PlanMealEntry extends DataClass implements Insertable<PlanMealEntry> {
+  final String id;
+  final String planId;
+  final String userId;
+
+  /// 'library' | 'saved'.
+  final String source;
+  final String? libraryMealId;
+  final String? savedMealId;
+  final String name;
+
+  /// 'breakfast' | 'lunch' | 'dinner' | 'snack'.
+  final String mealType;
+
+  /// 'cook-sun' | 'topup-wed' | 'fresh-fri' | null (batch cooking off).
+  final String? session;
+  final int servings;
+  final int servingsLeft;
+  final int? kcal;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
+
+  /// JSON array of `{from, to, effect?}`.
+  final String swapsApplied;
+
+  /// JSON array of `{role, text, at}`.
+  final String comments;
+  final int position;
+
+  /// `MealIcon` key copied from the source meal at add/swap time.
+  final String? icon;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  /// Local tombstone (see class doc) — not a Supabase column.
+  final bool isDeleted;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const PlanMealEntry({
+    required this.id,
+    required this.planId,
+    required this.userId,
+    required this.source,
+    this.libraryMealId,
+    this.savedMealId,
+    required this.name,
+    required this.mealType,
+    this.session,
+    required this.servings,
+    required this.servingsLeft,
+    this.kcal,
+    this.carbsG,
+    this.proteinG,
+    this.fatG,
+    required this.swapsApplied,
+    required this.comments,
+    required this.position,
+    this.icon,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['plan_id'] = Variable<String>(planId);
+    map['user_id'] = Variable<String>(userId);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || libraryMealId != null) {
+      map['library_meal_id'] = Variable<String>(libraryMealId);
+    }
+    if (!nullToAbsent || savedMealId != null) {
+      map['saved_meal_id'] = Variable<String>(savedMealId);
+    }
+    map['name'] = Variable<String>(name);
+    map['meal_type'] = Variable<String>(mealType);
+    if (!nullToAbsent || session != null) {
+      map['session'] = Variable<String>(session);
+    }
+    map['servings'] = Variable<int>(servings);
+    map['servings_left'] = Variable<int>(servingsLeft);
+    if (!nullToAbsent || kcal != null) {
+      map['kcal'] = Variable<int>(kcal);
+    }
+    if (!nullToAbsent || carbsG != null) {
+      map['carbs_g'] = Variable<double>(carbsG);
+    }
+    if (!nullToAbsent || proteinG != null) {
+      map['protein_g'] = Variable<double>(proteinG);
+    }
+    if (!nullToAbsent || fatG != null) {
+      map['fat_g'] = Variable<double>(fatG);
+    }
+    map['swaps_applied'] = Variable<String>(swapsApplied);
+    map['comments'] = Variable<String>(comments);
+    map['position'] = Variable<int>(position);
+    if (!nullToAbsent || icon != null) {
+      map['icon'] = Variable<String>(icon);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  PlanMealsTableCompanion toCompanion(bool nullToAbsent) {
+    return PlanMealsTableCompanion(
+      id: Value(id),
+      planId: Value(planId),
+      userId: Value(userId),
+      source: Value(source),
+      libraryMealId: libraryMealId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryMealId),
+      savedMealId: savedMealId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(savedMealId),
+      name: Value(name),
+      mealType: Value(mealType),
+      session: session == null && nullToAbsent
+          ? const Value.absent()
+          : Value(session),
+      servings: Value(servings),
+      servingsLeft: Value(servingsLeft),
+      kcal: kcal == null && nullToAbsent ? const Value.absent() : Value(kcal),
+      carbsG: carbsG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carbsG),
+      proteinG: proteinG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proteinG),
+      fatG: fatG == null && nullToAbsent ? const Value.absent() : Value(fatG),
+      swapsApplied: Value(swapsApplied),
+      comments: Value(comments),
+      position: Value(position),
+      icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isDeleted: Value(isDeleted),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory PlanMealEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlanMealEntry(
+      id: serializer.fromJson<String>(json['id']),
+      planId: serializer.fromJson<String>(json['planId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      source: serializer.fromJson<String>(json['source']),
+      libraryMealId: serializer.fromJson<String?>(json['libraryMealId']),
+      savedMealId: serializer.fromJson<String?>(json['savedMealId']),
+      name: serializer.fromJson<String>(json['name']),
+      mealType: serializer.fromJson<String>(json['mealType']),
+      session: serializer.fromJson<String?>(json['session']),
+      servings: serializer.fromJson<int>(json['servings']),
+      servingsLeft: serializer.fromJson<int>(json['servingsLeft']),
+      kcal: serializer.fromJson<int?>(json['kcal']),
+      carbsG: serializer.fromJson<double?>(json['carbsG']),
+      proteinG: serializer.fromJson<double?>(json['proteinG']),
+      fatG: serializer.fromJson<double?>(json['fatG']),
+      swapsApplied: serializer.fromJson<String>(json['swapsApplied']),
+      comments: serializer.fromJson<String>(json['comments']),
+      position: serializer.fromJson<int>(json['position']),
+      icon: serializer.fromJson<String?>(json['icon']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'planId': serializer.toJson<String>(planId),
+      'userId': serializer.toJson<String>(userId),
+      'source': serializer.toJson<String>(source),
+      'libraryMealId': serializer.toJson<String?>(libraryMealId),
+      'savedMealId': serializer.toJson<String?>(savedMealId),
+      'name': serializer.toJson<String>(name),
+      'mealType': serializer.toJson<String>(mealType),
+      'session': serializer.toJson<String?>(session),
+      'servings': serializer.toJson<int>(servings),
+      'servingsLeft': serializer.toJson<int>(servingsLeft),
+      'kcal': serializer.toJson<int?>(kcal),
+      'carbsG': serializer.toJson<double?>(carbsG),
+      'proteinG': serializer.toJson<double?>(proteinG),
+      'fatG': serializer.toJson<double?>(fatG),
+      'swapsApplied': serializer.toJson<String>(swapsApplied),
+      'comments': serializer.toJson<String>(comments),
+      'position': serializer.toJson<int>(position),
+      'icon': serializer.toJson<String?>(icon),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  PlanMealEntry copyWith({
+    String? id,
+    String? planId,
+    String? userId,
+    String? source,
+    Value<String?> libraryMealId = const Value.absent(),
+    Value<String?> savedMealId = const Value.absent(),
+    String? name,
+    String? mealType,
+    Value<String?> session = const Value.absent(),
+    int? servings,
+    int? servingsLeft,
+    Value<int?> kcal = const Value.absent(),
+    Value<double?> carbsG = const Value.absent(),
+    Value<double?> proteinG = const Value.absent(),
+    Value<double?> fatG = const Value.absent(),
+    String? swapsApplied,
+    String? comments,
+    int? position,
+    Value<String?> icon = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isDeleted,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => PlanMealEntry(
+    id: id ?? this.id,
+    planId: planId ?? this.planId,
+    userId: userId ?? this.userId,
+    source: source ?? this.source,
+    libraryMealId: libraryMealId.present
+        ? libraryMealId.value
+        : this.libraryMealId,
+    savedMealId: savedMealId.present ? savedMealId.value : this.savedMealId,
+    name: name ?? this.name,
+    mealType: mealType ?? this.mealType,
+    session: session.present ? session.value : this.session,
+    servings: servings ?? this.servings,
+    servingsLeft: servingsLeft ?? this.servingsLeft,
+    kcal: kcal.present ? kcal.value : this.kcal,
+    carbsG: carbsG.present ? carbsG.value : this.carbsG,
+    proteinG: proteinG.present ? proteinG.value : this.proteinG,
+    fatG: fatG.present ? fatG.value : this.fatG,
+    swapsApplied: swapsApplied ?? this.swapsApplied,
+    comments: comments ?? this.comments,
+    position: position ?? this.position,
+    icon: icon.present ? icon.value : this.icon,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    isDeleted: isDeleted ?? this.isDeleted,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  PlanMealEntry copyWithCompanion(PlanMealsTableCompanion data) {
+    return PlanMealEntry(
+      id: data.id.present ? data.id.value : this.id,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      source: data.source.present ? data.source.value : this.source,
+      libraryMealId: data.libraryMealId.present
+          ? data.libraryMealId.value
+          : this.libraryMealId,
+      savedMealId: data.savedMealId.present
+          ? data.savedMealId.value
+          : this.savedMealId,
+      name: data.name.present ? data.name.value : this.name,
+      mealType: data.mealType.present ? data.mealType.value : this.mealType,
+      session: data.session.present ? data.session.value : this.session,
+      servings: data.servings.present ? data.servings.value : this.servings,
+      servingsLeft: data.servingsLeft.present
+          ? data.servingsLeft.value
+          : this.servingsLeft,
+      kcal: data.kcal.present ? data.kcal.value : this.kcal,
+      carbsG: data.carbsG.present ? data.carbsG.value : this.carbsG,
+      proteinG: data.proteinG.present ? data.proteinG.value : this.proteinG,
+      fatG: data.fatG.present ? data.fatG.value : this.fatG,
+      swapsApplied: data.swapsApplied.present
+          ? data.swapsApplied.value
+          : this.swapsApplied,
+      comments: data.comments.present ? data.comments.value : this.comments,
+      position: data.position.present ? data.position.value : this.position,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlanMealEntry(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('userId: $userId, ')
+          ..write('source: $source, ')
+          ..write('libraryMealId: $libraryMealId, ')
+          ..write('savedMealId: $savedMealId, ')
+          ..write('name: $name, ')
+          ..write('mealType: $mealType, ')
+          ..write('session: $session, ')
+          ..write('servings: $servings, ')
+          ..write('servingsLeft: $servingsLeft, ')
+          ..write('kcal: $kcal, ')
+          ..write('carbsG: $carbsG, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('fatG: $fatG, ')
+          ..write('swapsApplied: $swapsApplied, ')
+          ..write('comments: $comments, ')
+          ..write('position: $position, ')
+          ..write('icon: $icon, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    planId,
+    userId,
+    source,
+    libraryMealId,
+    savedMealId,
+    name,
+    mealType,
+    session,
+    servings,
+    servingsLeft,
+    kcal,
+    carbsG,
+    proteinG,
+    fatG,
+    swapsApplied,
+    comments,
+    position,
+    icon,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlanMealEntry &&
+          other.id == this.id &&
+          other.planId == this.planId &&
+          other.userId == this.userId &&
+          other.source == this.source &&
+          other.libraryMealId == this.libraryMealId &&
+          other.savedMealId == this.savedMealId &&
+          other.name == this.name &&
+          other.mealType == this.mealType &&
+          other.session == this.session &&
+          other.servings == this.servings &&
+          other.servingsLeft == this.servingsLeft &&
+          other.kcal == this.kcal &&
+          other.carbsG == this.carbsG &&
+          other.proteinG == this.proteinG &&
+          other.fatG == this.fatG &&
+          other.swapsApplied == this.swapsApplied &&
+          other.comments == this.comments &&
+          other.position == this.position &&
+          other.icon == this.icon &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isDeleted == this.isDeleted &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class PlanMealsTableCompanion extends UpdateCompanion<PlanMealEntry> {
+  final Value<String> id;
+  final Value<String> planId;
+  final Value<String> userId;
+  final Value<String> source;
+  final Value<String?> libraryMealId;
+  final Value<String?> savedMealId;
+  final Value<String> name;
+  final Value<String> mealType;
+  final Value<String?> session;
+  final Value<int> servings;
+  final Value<int> servingsLeft;
+  final Value<int?> kcal;
+  final Value<double?> carbsG;
+  final Value<double?> proteinG;
+  final Value<double?> fatG;
+  final Value<String> swapsApplied;
+  final Value<String> comments;
+  final Value<int> position;
+  final Value<String?> icon;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isDeleted;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const PlanMealsTableCompanion({
+    this.id = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.source = const Value.absent(),
+    this.libraryMealId = const Value.absent(),
+    this.savedMealId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.mealType = const Value.absent(),
+    this.session = const Value.absent(),
+    this.servings = const Value.absent(),
+    this.servingsLeft = const Value.absent(),
+    this.kcal = const Value.absent(),
+    this.carbsG = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.swapsApplied = const Value.absent(),
+    this.comments = const Value.absent(),
+    this.position = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PlanMealsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String planId,
+    required String userId,
+    required String source,
+    this.libraryMealId = const Value.absent(),
+    this.savedMealId = const Value.absent(),
+    required String name,
+    required String mealType,
+    this.session = const Value.absent(),
+    this.servings = const Value.absent(),
+    this.servingsLeft = const Value.absent(),
+    this.kcal = const Value.absent(),
+    this.carbsG = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.swapsApplied = const Value.absent(),
+    this.comments = const Value.absent(),
+    this.position = const Value.absent(),
+    this.icon = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : planId = Value(planId),
+       userId = Value(userId),
+       source = Value(source),
+       name = Value(name),
+       mealType = Value(mealType),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<PlanMealEntry> custom({
+    Expression<String>? id,
+    Expression<String>? planId,
+    Expression<String>? userId,
+    Expression<String>? source,
+    Expression<String>? libraryMealId,
+    Expression<String>? savedMealId,
+    Expression<String>? name,
+    Expression<String>? mealType,
+    Expression<String>? session,
+    Expression<int>? servings,
+    Expression<int>? servingsLeft,
+    Expression<int>? kcal,
+    Expression<double>? carbsG,
+    Expression<double>? proteinG,
+    Expression<double>? fatG,
+    Expression<String>? swapsApplied,
+    Expression<String>? comments,
+    Expression<int>? position,
+    Expression<String>? icon,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isDeleted,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (planId != null) 'plan_id': planId,
+      if (userId != null) 'user_id': userId,
+      if (source != null) 'source': source,
+      if (libraryMealId != null) 'library_meal_id': libraryMealId,
+      if (savedMealId != null) 'saved_meal_id': savedMealId,
+      if (name != null) 'name': name,
+      if (mealType != null) 'meal_type': mealType,
+      if (session != null) 'session': session,
+      if (servings != null) 'servings': servings,
+      if (servingsLeft != null) 'servings_left': servingsLeft,
+      if (kcal != null) 'kcal': kcal,
+      if (carbsG != null) 'carbs_g': carbsG,
+      if (proteinG != null) 'protein_g': proteinG,
+      if (fatG != null) 'fat_g': fatG,
+      if (swapsApplied != null) 'swaps_applied': swapsApplied,
+      if (comments != null) 'comments': comments,
+      if (position != null) 'position': position,
+      if (icon != null) 'icon': icon,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PlanMealsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? planId,
+    Value<String>? userId,
+    Value<String>? source,
+    Value<String?>? libraryMealId,
+    Value<String?>? savedMealId,
+    Value<String>? name,
+    Value<String>? mealType,
+    Value<String?>? session,
+    Value<int>? servings,
+    Value<int>? servingsLeft,
+    Value<int?>? kcal,
+    Value<double?>? carbsG,
+    Value<double?>? proteinG,
+    Value<double?>? fatG,
+    Value<String>? swapsApplied,
+    Value<String>? comments,
+    Value<int>? position,
+    Value<String?>? icon,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? isDeleted,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return PlanMealsTableCompanion(
+      id: id ?? this.id,
+      planId: planId ?? this.planId,
+      userId: userId ?? this.userId,
+      source: source ?? this.source,
+      libraryMealId: libraryMealId ?? this.libraryMealId,
+      savedMealId: savedMealId ?? this.savedMealId,
+      name: name ?? this.name,
+      mealType: mealType ?? this.mealType,
+      session: session ?? this.session,
+      servings: servings ?? this.servings,
+      servingsLeft: servingsLeft ?? this.servingsLeft,
+      kcal: kcal ?? this.kcal,
+      carbsG: carbsG ?? this.carbsG,
+      proteinG: proteinG ?? this.proteinG,
+      fatG: fatG ?? this.fatG,
+      swapsApplied: swapsApplied ?? this.swapsApplied,
+      comments: comments ?? this.comments,
+      position: position ?? this.position,
+      icon: icon ?? this.icon,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (libraryMealId.present) {
+      map['library_meal_id'] = Variable<String>(libraryMealId.value);
+    }
+    if (savedMealId.present) {
+      map['saved_meal_id'] = Variable<String>(savedMealId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (mealType.present) {
+      map['meal_type'] = Variable<String>(mealType.value);
+    }
+    if (session.present) {
+      map['session'] = Variable<String>(session.value);
+    }
+    if (servings.present) {
+      map['servings'] = Variable<int>(servings.value);
+    }
+    if (servingsLeft.present) {
+      map['servings_left'] = Variable<int>(servingsLeft.value);
+    }
+    if (kcal.present) {
+      map['kcal'] = Variable<int>(kcal.value);
+    }
+    if (carbsG.present) {
+      map['carbs_g'] = Variable<double>(carbsG.value);
+    }
+    if (proteinG.present) {
+      map['protein_g'] = Variable<double>(proteinG.value);
+    }
+    if (fatG.present) {
+      map['fat_g'] = Variable<double>(fatG.value);
+    }
+    if (swapsApplied.present) {
+      map['swaps_applied'] = Variable<String>(swapsApplied.value);
+    }
+    if (comments.present) {
+      map['comments'] = Variable<String>(comments.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlanMealsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('userId: $userId, ')
+          ..write('source: $source, ')
+          ..write('libraryMealId: $libraryMealId, ')
+          ..write('savedMealId: $savedMealId, ')
+          ..write('name: $name, ')
+          ..write('mealType: $mealType, ')
+          ..write('session: $session, ')
+          ..write('servings: $servings, ')
+          ..write('servingsLeft: $servingsLeft, ')
+          ..write('kcal: $kcal, ')
+          ..write('carbsG: $carbsG, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('fatG: $fatG, ')
+          ..write('swapsApplied: $swapsApplied, ')
+          ..write('comments: $comments, ')
+          ..write('position: $position, ')
+          ..write('icon: $icon, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserMemoriesTableTable extends UserMemoriesTable
+    with TableInfo<$UserMemoriesTableTable, UserMemoryEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserMemoriesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _factMeta = const VerificationMeta('fact');
+  @override
+  late final GeneratedColumn<String> fact = GeneratedColumn<String>(
+    'fact',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  @override
+  late final GeneratedColumn<double> confidence = GeneratedColumn<double>(
+    'confidence',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.8),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('conversation'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastConfirmedAtMeta = const VerificationMeta(
+    'lastConfirmedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastConfirmedAt =
+      GeneratedColumn<DateTime>(
+        'last_confirmed_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    kind,
+    key,
+    fact,
+    value,
+    confidence,
+    source,
+    createdAt,
+    lastConfirmedAt,
+    expiresAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_memories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserMemoryEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    }
+    if (data.containsKey('fact')) {
+      context.handle(
+        _factMeta,
+        fact.isAcceptableOrUnknown(data['fact']!, _factMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_factMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_confirmed_at')) {
+      context.handle(
+        _lastConfirmedAtMeta,
+        lastConfirmedAt.isAcceptableOrUnknown(
+          data['last_confirmed_at']!,
+          _lastConfirmedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastConfirmedAtMeta);
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserMemoryEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserMemoryEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      ),
+      fact: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fact'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      ),
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}confidence'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastConfirmedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_confirmed_at'],
+      )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $UserMemoriesTableTable createAlias(String alias) {
+    return $UserMemoriesTableTable(attachedDatabase, alias);
+  }
+}
+
+class UserMemoryEntry extends DataClass implements Insertable<UserMemoryEntry> {
+  final String id;
+  final String userId;
+
+  /// 'preference' | 'constraint' | 'pattern' | 'episode' | 'setting'.
+  final String kind;
+
+  /// Settings key for `kind = 'setting'`; null otherwise.
+  final String? key;
+  final String fact;
+
+  /// JSON-encoded scalar/collection (`jsonb` on the server); null when unset.
+  final String? value;
+  final double confidence;
+
+  /// 'conversation' | 'inferred' | 'settings'.
+  final String source;
+  final DateTime createdAt;
+  final DateTime lastConfirmedAt;
+  final DateTime? expiresAt;
+  final bool isDeleted;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const UserMemoryEntry({
+    required this.id,
+    required this.userId,
+    required this.kind,
+    this.key,
+    required this.fact,
+    this.value,
+    required this.confidence,
+    required this.source,
+    required this.createdAt,
+    required this.lastConfirmedAt,
+    this.expiresAt,
+    required this.isDeleted,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || key != null) {
+      map['key'] = Variable<String>(key);
+    }
+    map['fact'] = Variable<String>(fact);
+    if (!nullToAbsent || value != null) {
+      map['value'] = Variable<String>(value);
+    }
+    map['confidence'] = Variable<double>(confidence);
+    map['source'] = Variable<String>(source);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['last_confirmed_at'] = Variable<DateTime>(lastConfirmedAt);
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  UserMemoriesTableCompanion toCompanion(bool nullToAbsent) {
+    return UserMemoriesTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      kind: Value(kind),
+      key: key == null && nullToAbsent ? const Value.absent() : Value(key),
+      fact: Value(fact),
+      value: value == null && nullToAbsent
+          ? const Value.absent()
+          : Value(value),
+      confidence: Value(confidence),
+      source: Value(source),
+      createdAt: Value(createdAt),
+      lastConfirmedAt: Value(lastConfirmedAt),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
+      isDeleted: Value(isDeleted),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory UserMemoryEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserMemoryEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      key: serializer.fromJson<String?>(json['key']),
+      fact: serializer.fromJson<String>(json['fact']),
+      value: serializer.fromJson<String?>(json['value']),
+      confidence: serializer.fromJson<double>(json['confidence']),
+      source: serializer.fromJson<String>(json['source']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastConfirmedAt: serializer.fromJson<DateTime>(json['lastConfirmedAt']),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'kind': serializer.toJson<String>(kind),
+      'key': serializer.toJson<String?>(key),
+      'fact': serializer.toJson<String>(fact),
+      'value': serializer.toJson<String?>(value),
+      'confidence': serializer.toJson<double>(confidence),
+      'source': serializer.toJson<String>(source),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastConfirmedAt': serializer.toJson<DateTime>(lastConfirmedAt),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  UserMemoryEntry copyWith({
+    String? id,
+    String? userId,
+    String? kind,
+    Value<String?> key = const Value.absent(),
+    String? fact,
+    Value<String?> value = const Value.absent(),
+    double? confidence,
+    String? source,
+    DateTime? createdAt,
+    DateTime? lastConfirmedAt,
+    Value<DateTime?> expiresAt = const Value.absent(),
+    bool? isDeleted,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => UserMemoryEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    kind: kind ?? this.kind,
+    key: key.present ? key.value : this.key,
+    fact: fact ?? this.fact,
+    value: value.present ? value.value : this.value,
+    confidence: confidence ?? this.confidence,
+    source: source ?? this.source,
+    createdAt: createdAt ?? this.createdAt,
+    lastConfirmedAt: lastConfirmedAt ?? this.lastConfirmedAt,
+    expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+    isDeleted: isDeleted ?? this.isDeleted,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  UserMemoryEntry copyWithCompanion(UserMemoriesTableCompanion data) {
+    return UserMemoryEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      key: data.key.present ? data.key.value : this.key,
+      fact: data.fact.present ? data.fact.value : this.fact,
+      value: data.value.present ? data.value.value : this.value,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
+      source: data.source.present ? data.source.value : this.source,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastConfirmedAt: data.lastConfirmedAt.present
+          ? data.lastConfirmedAt.value
+          : this.lastConfirmedAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserMemoryEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('kind: $kind, ')
+          ..write('key: $key, ')
+          ..write('fact: $fact, ')
+          ..write('value: $value, ')
+          ..write('confidence: $confidence, ')
+          ..write('source: $source, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastConfirmedAt: $lastConfirmedAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    kind,
+    key,
+    fact,
+    value,
+    confidence,
+    source,
+    createdAt,
+    lastConfirmedAt,
+    expiresAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserMemoryEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.kind == this.kind &&
+          other.key == this.key &&
+          other.fact == this.fact &&
+          other.value == this.value &&
+          other.confidence == this.confidence &&
+          other.source == this.source &&
+          other.createdAt == this.createdAt &&
+          other.lastConfirmedAt == this.lastConfirmedAt &&
+          other.expiresAt == this.expiresAt &&
+          other.isDeleted == this.isDeleted &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class UserMemoriesTableCompanion extends UpdateCompanion<UserMemoryEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> kind;
+  final Value<String?> key;
+  final Value<String> fact;
+  final Value<String?> value;
+  final Value<double> confidence;
+  final Value<String> source;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> lastConfirmedAt;
+  final Value<DateTime?> expiresAt;
+  final Value<bool> isDeleted;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const UserMemoriesTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.key = const Value.absent(),
+    this.fact = const Value.absent(),
+    this.value = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.source = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastConfirmedAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserMemoriesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String kind,
+    this.key = const Value.absent(),
+    required String fact,
+    this.value = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.source = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime lastConfirmedAt,
+    this.expiresAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       kind = Value(kind),
+       fact = Value(fact),
+       createdAt = Value(createdAt),
+       lastConfirmedAt = Value(lastConfirmedAt);
+  static Insertable<UserMemoryEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? kind,
+    Expression<String>? key,
+    Expression<String>? fact,
+    Expression<String>? value,
+    Expression<double>? confidence,
+    Expression<String>? source,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastConfirmedAt,
+    Expression<DateTime>? expiresAt,
+    Expression<bool>? isDeleted,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (kind != null) 'kind': kind,
+      if (key != null) 'key': key,
+      if (fact != null) 'fact': fact,
+      if (value != null) 'value': value,
+      if (confidence != null) 'confidence': confidence,
+      if (source != null) 'source': source,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastConfirmedAt != null) 'last_confirmed_at': lastConfirmedAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserMemoriesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? kind,
+    Value<String?>? key,
+    Value<String>? fact,
+    Value<String?>? value,
+    Value<double>? confidence,
+    Value<String>? source,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? lastConfirmedAt,
+    Value<DateTime?>? expiresAt,
+    Value<bool>? isDeleted,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return UserMemoriesTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      kind: kind ?? this.kind,
+      key: key ?? this.key,
+      fact: fact ?? this.fact,
+      value: value ?? this.value,
+      confidence: confidence ?? this.confidence,
+      source: source ?? this.source,
+      createdAt: createdAt ?? this.createdAt,
+      lastConfirmedAt: lastConfirmedAt ?? this.lastConfirmedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (fact.present) {
+      map['fact'] = Variable<String>(fact.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<double>(confidence.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastConfirmedAt.present) {
+      map['last_confirmed_at'] = Variable<DateTime>(lastConfirmedAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserMemoriesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('kind: $kind, ')
+          ..write('key: $key, ')
+          ..write('fact: $fact, ')
+          ..write('value: $value, ')
+          ..write('confidence: $confidence, ')
+          ..write('source: $source, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastConfirmedAt: $lastConfirmedAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -42442,6 +45915,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RecipesTableTable recipesTable = $RecipesTableTable(this);
   late final $UserEntitlementsTableTable userEntitlementsTable =
       $UserEntitlementsTableTable(this);
+  late final $MealPlansTableTable mealPlansTable = $MealPlansTableTable(this);
+  late final $PlanMealsTableTable planMealsTable = $PlanMealsTableTable(this);
+  late final $UserMemoriesTableTable userMemoriesTable =
+      $UserMemoriesTableTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final FoodPreferencesDao foodPreferencesDao = FoodPreferencesDao(
     this as AppDatabase,
@@ -42492,6 +45969,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     savedMealsTable,
     recipesTable,
     userEntitlementsTable,
+    mealPlansTable,
+    planMealsTable,
+    userMemoriesTable,
   ];
 }
 
@@ -59487,6 +62967,7 @@ typedef $$MealLogsTableTableCreateCompanionBuilder =
       Value<String?> photoPath,
       Value<String?> recipeId,
       Value<String?> savedMealId,
+      Value<String?> planMealId,
       Value<String?> notes,
       Value<DateTime?> eatenAt,
       required DateTime createdAt,
@@ -59513,6 +62994,7 @@ typedef $$MealLogsTableTableUpdateCompanionBuilder =
       Value<String?> photoPath,
       Value<String?> recipeId,
       Value<String?> savedMealId,
+      Value<String?> planMealId,
       Value<String?> notes,
       Value<DateTime?> eatenAt,
       Value<DateTime> createdAt,
@@ -59604,6 +63086,11 @@ class $$MealLogsTableTableFilterComposer
 
   ColumnFilters<String> get savedMealId => $composableBuilder(
     column: $table.savedMealId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planMealId => $composableBuilder(
+    column: $table.planMealId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -59727,6 +63214,11 @@ class $$MealLogsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get planMealId => $composableBuilder(
+    column: $table.planMealId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -59819,6 +63311,11 @@ class $$MealLogsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get planMealId => $composableBuilder(
+    column: $table.planMealId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
@@ -59891,6 +63388,7 @@ class $$MealLogsTableTableTableManager
                 Value<String?> photoPath = const Value.absent(),
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> savedMealId = const Value.absent(),
+                Value<String?> planMealId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> eatenAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -59915,6 +63413,7 @@ class $$MealLogsTableTableTableManager
                 photoPath: photoPath,
                 recipeId: recipeId,
                 savedMealId: savedMealId,
+                planMealId: planMealId,
                 notes: notes,
                 eatenAt: eatenAt,
                 createdAt: createdAt,
@@ -59941,6 +63440,7 @@ class $$MealLogsTableTableTableManager
                 Value<String?> photoPath = const Value.absent(),
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> savedMealId = const Value.absent(),
+                Value<String?> planMealId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> eatenAt = const Value.absent(),
                 required DateTime createdAt,
@@ -59965,6 +63465,7 @@ class $$MealLogsTableTableTableManager
                 photoPath: photoPath,
                 recipeId: recipeId,
                 savedMealId: savedMealId,
+                planMealId: planMealId,
                 notes: notes,
                 eatenAt: eatenAt,
                 createdAt: createdAt,
@@ -60011,6 +63512,11 @@ typedef $$SavedMealsTableTableCreateCompanionBuilder =
       Value<double?> fatG,
       Value<double?> sodiumMg,
       Value<String?> photoPath,
+      Value<String?> icon,
+      Value<String?> notes,
+      Value<String> mealTypes,
+      Value<bool?> batch,
+      Value<String?> libraryMealId,
       Value<DateTime?> lastUsedAt,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -60031,6 +63537,11 @@ typedef $$SavedMealsTableTableUpdateCompanionBuilder =
       Value<double?> fatG,
       Value<double?> sodiumMg,
       Value<String?> photoPath,
+      Value<String?> icon,
+      Value<String?> notes,
+      Value<String> mealTypes,
+      Value<bool?> batch,
+      Value<String?> libraryMealId,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -60096,6 +63607,31 @@ class $$SavedMealsTableTableFilterComposer
 
   ColumnFilters<String> get photoPath => $composableBuilder(
     column: $table.photoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mealTypes => $composableBuilder(
+    column: $table.mealTypes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get batch => $composableBuilder(
+    column: $table.batch,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryMealId => $composableBuilder(
+    column: $table.libraryMealId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -60189,6 +63725,31 @@ class $$SavedMealsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mealTypes => $composableBuilder(
+    column: $table.mealTypes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get batch => $composableBuilder(
+    column: $table.batch,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryMealId => $composableBuilder(
+    column: $table.libraryMealId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
     builder: (column) => ColumnOrderings(column),
@@ -60258,6 +63819,23 @@ class $$SavedMealsTableTableAnnotationComposer
 
   GeneratedColumn<String> get photoPath =>
       $composableBuilder(column: $table.photoPath, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get mealTypes =>
+      $composableBuilder(column: $table.mealTypes, builder: (column) => column);
+
+  GeneratedColumn<bool> get batch =>
+      $composableBuilder(column: $table.batch, builder: (column) => column);
+
+  GeneratedColumn<String> get libraryMealId => $composableBuilder(
+    column: $table.libraryMealId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
@@ -60331,6 +63909,11 @@ class $$SavedMealsTableTableTableManager
                 Value<double?> fatG = const Value.absent(),
                 Value<double?> sodiumMg = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
+                Value<String?> icon = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> mealTypes = const Value.absent(),
+                Value<bool?> batch = const Value.absent(),
+                Value<String?> libraryMealId = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -60349,6 +63932,11 @@ class $$SavedMealsTableTableTableManager
                 fatG: fatG,
                 sodiumMg: sodiumMg,
                 photoPath: photoPath,
+                icon: icon,
+                notes: notes,
+                mealTypes: mealTypes,
+                batch: batch,
+                libraryMealId: libraryMealId,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -60369,6 +63957,11 @@ class $$SavedMealsTableTableTableManager
                 Value<double?> fatG = const Value.absent(),
                 Value<double?> sodiumMg = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
+                Value<String?> icon = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> mealTypes = const Value.absent(),
+                Value<bool?> batch = const Value.absent(),
+                Value<String?> libraryMealId = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -60387,6 +63980,11 @@ class $$SavedMealsTableTableTableManager
                 fatG: fatG,
                 sodiumMg: sodiumMg,
                 photoPath: photoPath,
+                icon: icon,
+                notes: notes,
+                mealTypes: mealTypes,
+                batch: batch,
+                libraryMealId: libraryMealId,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -61231,6 +64829,1430 @@ typedef $$UserEntitlementsTableTableProcessedTableManager =
       UserEntitlementEntry,
       PrefetchHooks Function()
     >;
+typedef $$MealPlansTableTableCreateCompanionBuilder =
+    MealPlansTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String weekStart,
+      Value<String> status,
+      Value<bool> batchCooking,
+      Value<String> rules,
+      Value<String> shopping,
+      Value<String?> brief,
+      Value<String?> conversationId,
+      Value<String> days,
+      Value<String> dayNotes,
+      Value<bool> dayNotesStale,
+      Value<DateTime?> dayNotesAt,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$MealPlansTableTableUpdateCompanionBuilder =
+    MealPlansTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> weekStart,
+      Value<String> status,
+      Value<bool> batchCooking,
+      Value<String> rules,
+      Value<String> shopping,
+      Value<String?> brief,
+      Value<String?> conversationId,
+      Value<String> days,
+      Value<String> dayNotes,
+      Value<bool> dayNotesStale,
+      Value<DateTime?> dayNotesAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$MealPlansTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MealPlansTableTable> {
+  $$MealPlansTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get batchCooking => $composableBuilder(
+    column: $table.batchCooking,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rules => $composableBuilder(
+    column: $table.rules,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shopping => $composableBuilder(
+    column: $table.shopping,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brief => $composableBuilder(
+    column: $table.brief,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dayNotes => $composableBuilder(
+    column: $table.dayNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dayNotesStale => $composableBuilder(
+    column: $table.dayNotesStale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dayNotesAt => $composableBuilder(
+    column: $table.dayNotesAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MealPlansTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MealPlansTableTable> {
+  $$MealPlansTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get batchCooking => $composableBuilder(
+    column: $table.batchCooking,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rules => $composableBuilder(
+    column: $table.rules,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shopping => $composableBuilder(
+    column: $table.shopping,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get brief => $composableBuilder(
+    column: $table.brief,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dayNotes => $composableBuilder(
+    column: $table.dayNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dayNotesStale => $composableBuilder(
+    column: $table.dayNotesStale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dayNotesAt => $composableBuilder(
+    column: $table.dayNotesAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MealPlansTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MealPlansTableTable> {
+  $$MealPlansTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get batchCooking => $composableBuilder(
+    column: $table.batchCooking,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rules =>
+      $composableBuilder(column: $table.rules, builder: (column) => column);
+
+  GeneratedColumn<String> get shopping =>
+      $composableBuilder(column: $table.shopping, builder: (column) => column);
+
+  GeneratedColumn<String> get brief =>
+      $composableBuilder(column: $table.brief, builder: (column) => column);
+
+  GeneratedColumn<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get days =>
+      $composableBuilder(column: $table.days, builder: (column) => column);
+
+  GeneratedColumn<String> get dayNotes =>
+      $composableBuilder(column: $table.dayNotes, builder: (column) => column);
+
+  GeneratedColumn<bool> get dayNotesStale => $composableBuilder(
+    column: $table.dayNotesStale,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dayNotesAt => $composableBuilder(
+    column: $table.dayNotesAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$MealPlansTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MealPlansTableTable,
+          MealPlanEntry,
+          $$MealPlansTableTableFilterComposer,
+          $$MealPlansTableTableOrderingComposer,
+          $$MealPlansTableTableAnnotationComposer,
+          $$MealPlansTableTableCreateCompanionBuilder,
+          $$MealPlansTableTableUpdateCompanionBuilder,
+          (
+            MealPlanEntry,
+            BaseReferences<_$AppDatabase, $MealPlansTableTable, MealPlanEntry>,
+          ),
+          MealPlanEntry,
+          PrefetchHooks Function()
+        > {
+  $$MealPlansTableTableTableManager(
+    _$AppDatabase db,
+    $MealPlansTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MealPlansTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MealPlansTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MealPlansTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> weekStart = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> batchCooking = const Value.absent(),
+                Value<String> rules = const Value.absent(),
+                Value<String> shopping = const Value.absent(),
+                Value<String?> brief = const Value.absent(),
+                Value<String?> conversationId = const Value.absent(),
+                Value<String> days = const Value.absent(),
+                Value<String> dayNotes = const Value.absent(),
+                Value<bool> dayNotesStale = const Value.absent(),
+                Value<DateTime?> dayNotesAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MealPlansTableCompanion(
+                id: id,
+                userId: userId,
+                weekStart: weekStart,
+                status: status,
+                batchCooking: batchCooking,
+                rules: rules,
+                shopping: shopping,
+                brief: brief,
+                conversationId: conversationId,
+                days: days,
+                dayNotes: dayNotes,
+                dayNotesStale: dayNotesStale,
+                dayNotesAt: dayNotesAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String weekStart,
+                Value<String> status = const Value.absent(),
+                Value<bool> batchCooking = const Value.absent(),
+                Value<String> rules = const Value.absent(),
+                Value<String> shopping = const Value.absent(),
+                Value<String?> brief = const Value.absent(),
+                Value<String?> conversationId = const Value.absent(),
+                Value<String> days = const Value.absent(),
+                Value<String> dayNotes = const Value.absent(),
+                Value<bool> dayNotesStale = const Value.absent(),
+                Value<DateTime?> dayNotesAt = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MealPlansTableCompanion.insert(
+                id: id,
+                userId: userId,
+                weekStart: weekStart,
+                status: status,
+                batchCooking: batchCooking,
+                rules: rules,
+                shopping: shopping,
+                brief: brief,
+                conversationId: conversationId,
+                days: days,
+                dayNotes: dayNotes,
+                dayNotesStale: dayNotesStale,
+                dayNotesAt: dayNotesAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MealPlansTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MealPlansTableTable,
+      MealPlanEntry,
+      $$MealPlansTableTableFilterComposer,
+      $$MealPlansTableTableOrderingComposer,
+      $$MealPlansTableTableAnnotationComposer,
+      $$MealPlansTableTableCreateCompanionBuilder,
+      $$MealPlansTableTableUpdateCompanionBuilder,
+      (
+        MealPlanEntry,
+        BaseReferences<_$AppDatabase, $MealPlansTableTable, MealPlanEntry>,
+      ),
+      MealPlanEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$PlanMealsTableTableCreateCompanionBuilder =
+    PlanMealsTableCompanion Function({
+      Value<String> id,
+      required String planId,
+      required String userId,
+      required String source,
+      Value<String?> libraryMealId,
+      Value<String?> savedMealId,
+      required String name,
+      required String mealType,
+      Value<String?> session,
+      Value<int> servings,
+      Value<int> servingsLeft,
+      Value<int?> kcal,
+      Value<double?> carbsG,
+      Value<double?> proteinG,
+      Value<double?> fatG,
+      Value<String> swapsApplied,
+      Value<String> comments,
+      Value<int> position,
+      Value<String?> icon,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$PlanMealsTableTableUpdateCompanionBuilder =
+    PlanMealsTableCompanion Function({
+      Value<String> id,
+      Value<String> planId,
+      Value<String> userId,
+      Value<String> source,
+      Value<String?> libraryMealId,
+      Value<String?> savedMealId,
+      Value<String> name,
+      Value<String> mealType,
+      Value<String?> session,
+      Value<int> servings,
+      Value<int> servingsLeft,
+      Value<int?> kcal,
+      Value<double?> carbsG,
+      Value<double?> proteinG,
+      Value<double?> fatG,
+      Value<String> swapsApplied,
+      Value<String> comments,
+      Value<int> position,
+      Value<String?> icon,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$PlanMealsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PlanMealsTableTable> {
+  $$PlanMealsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryMealId => $composableBuilder(
+    column: $table.libraryMealId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get savedMealId => $composableBuilder(
+    column: $table.savedMealId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mealType => $composableBuilder(
+    column: $table.mealType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get session => $composableBuilder(
+    column: $table.session,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get servings => $composableBuilder(
+    column: $table.servings,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get servingsLeft => $composableBuilder(
+    column: $table.servingsLeft,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbsG => $composableBuilder(
+    column: $table.carbsG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get swapsApplied => $composableBuilder(
+    column: $table.swapsApplied,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comments => $composableBuilder(
+    column: $table.comments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PlanMealsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlanMealsTableTable> {
+  $$PlanMealsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryMealId => $composableBuilder(
+    column: $table.libraryMealId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get savedMealId => $composableBuilder(
+    column: $table.savedMealId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mealType => $composableBuilder(
+    column: $table.mealType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get session => $composableBuilder(
+    column: $table.session,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get servings => $composableBuilder(
+    column: $table.servings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get servingsLeft => $composableBuilder(
+    column: $table.servingsLeft,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbsG => $composableBuilder(
+    column: $table.carbsG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get swapsApplied => $composableBuilder(
+    column: $table.swapsApplied,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comments => $composableBuilder(
+    column: $table.comments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PlanMealsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlanMealsTableTable> {
+  $$PlanMealsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get libraryMealId => $composableBuilder(
+    column: $table.libraryMealId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get savedMealId => $composableBuilder(
+    column: $table.savedMealId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get mealType =>
+      $composableBuilder(column: $table.mealType, builder: (column) => column);
+
+  GeneratedColumn<String> get session =>
+      $composableBuilder(column: $table.session, builder: (column) => column);
+
+  GeneratedColumn<int> get servings =>
+      $composableBuilder(column: $table.servings, builder: (column) => column);
+
+  GeneratedColumn<int> get servingsLeft => $composableBuilder(
+    column: $table.servingsLeft,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get kcal =>
+      $composableBuilder(column: $table.kcal, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsG =>
+      $composableBuilder(column: $table.carbsG, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinG =>
+      $composableBuilder(column: $table.proteinG, builder: (column) => column);
+
+  GeneratedColumn<double> get fatG =>
+      $composableBuilder(column: $table.fatG, builder: (column) => column);
+
+  GeneratedColumn<String> get swapsApplied => $composableBuilder(
+    column: $table.swapsApplied,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get comments =>
+      $composableBuilder(column: $table.comments, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$PlanMealsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlanMealsTableTable,
+          PlanMealEntry,
+          $$PlanMealsTableTableFilterComposer,
+          $$PlanMealsTableTableOrderingComposer,
+          $$PlanMealsTableTableAnnotationComposer,
+          $$PlanMealsTableTableCreateCompanionBuilder,
+          $$PlanMealsTableTableUpdateCompanionBuilder,
+          (
+            PlanMealEntry,
+            BaseReferences<_$AppDatabase, $PlanMealsTableTable, PlanMealEntry>,
+          ),
+          PlanMealEntry,
+          PrefetchHooks Function()
+        > {
+  $$PlanMealsTableTableTableManager(
+    _$AppDatabase db,
+    $PlanMealsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlanMealsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlanMealsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlanMealsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> planId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> libraryMealId = const Value.absent(),
+                Value<String?> savedMealId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> mealType = const Value.absent(),
+                Value<String?> session = const Value.absent(),
+                Value<int> servings = const Value.absent(),
+                Value<int> servingsLeft = const Value.absent(),
+                Value<int?> kcal = const Value.absent(),
+                Value<double?> carbsG = const Value.absent(),
+                Value<double?> proteinG = const Value.absent(),
+                Value<double?> fatG = const Value.absent(),
+                Value<String> swapsApplied = const Value.absent(),
+                Value<String> comments = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> icon = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlanMealsTableCompanion(
+                id: id,
+                planId: planId,
+                userId: userId,
+                source: source,
+                libraryMealId: libraryMealId,
+                savedMealId: savedMealId,
+                name: name,
+                mealType: mealType,
+                session: session,
+                servings: servings,
+                servingsLeft: servingsLeft,
+                kcal: kcal,
+                carbsG: carbsG,
+                proteinG: proteinG,
+                fatG: fatG,
+                swapsApplied: swapsApplied,
+                comments: comments,
+                position: position,
+                icon: icon,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String planId,
+                required String userId,
+                required String source,
+                Value<String?> libraryMealId = const Value.absent(),
+                Value<String?> savedMealId = const Value.absent(),
+                required String name,
+                required String mealType,
+                Value<String?> session = const Value.absent(),
+                Value<int> servings = const Value.absent(),
+                Value<int> servingsLeft = const Value.absent(),
+                Value<int?> kcal = const Value.absent(),
+                Value<double?> carbsG = const Value.absent(),
+                Value<double?> proteinG = const Value.absent(),
+                Value<double?> fatG = const Value.absent(),
+                Value<String> swapsApplied = const Value.absent(),
+                Value<String> comments = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> icon = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlanMealsTableCompanion.insert(
+                id: id,
+                planId: planId,
+                userId: userId,
+                source: source,
+                libraryMealId: libraryMealId,
+                savedMealId: savedMealId,
+                name: name,
+                mealType: mealType,
+                session: session,
+                servings: servings,
+                servingsLeft: servingsLeft,
+                kcal: kcal,
+                carbsG: carbsG,
+                proteinG: proteinG,
+                fatG: fatG,
+                swapsApplied: swapsApplied,
+                comments: comments,
+                position: position,
+                icon: icon,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PlanMealsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlanMealsTableTable,
+      PlanMealEntry,
+      $$PlanMealsTableTableFilterComposer,
+      $$PlanMealsTableTableOrderingComposer,
+      $$PlanMealsTableTableAnnotationComposer,
+      $$PlanMealsTableTableCreateCompanionBuilder,
+      $$PlanMealsTableTableUpdateCompanionBuilder,
+      (
+        PlanMealEntry,
+        BaseReferences<_$AppDatabase, $PlanMealsTableTable, PlanMealEntry>,
+      ),
+      PlanMealEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$UserMemoriesTableTableCreateCompanionBuilder =
+    UserMemoriesTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String kind,
+      Value<String?> key,
+      required String fact,
+      Value<String?> value,
+      Value<double> confidence,
+      Value<String> source,
+      required DateTime createdAt,
+      required DateTime lastConfirmedAt,
+      Value<DateTime?> expiresAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$UserMemoriesTableTableUpdateCompanionBuilder =
+    UserMemoriesTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> kind,
+      Value<String?> key,
+      Value<String> fact,
+      Value<String?> value,
+      Value<double> confidence,
+      Value<String> source,
+      Value<DateTime> createdAt,
+      Value<DateTime> lastConfirmedAt,
+      Value<DateTime?> expiresAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$UserMemoriesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UserMemoriesTableTable> {
+  $$UserMemoriesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fact => $composableBuilder(
+    column: $table.fact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastConfirmedAt => $composableBuilder(
+    column: $table.lastConfirmedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserMemoriesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserMemoriesTableTable> {
+  $$UserMemoriesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fact => $composableBuilder(
+    column: $table.fact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastConfirmedAt => $composableBuilder(
+    column: $table.lastConfirmedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserMemoriesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserMemoriesTableTable> {
+  $$UserMemoriesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get fact =>
+      $composableBuilder(column: $table.fact, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastConfirmedAt => $composableBuilder(
+    column: $table.lastConfirmedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$UserMemoriesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserMemoriesTableTable,
+          UserMemoryEntry,
+          $$UserMemoriesTableTableFilterComposer,
+          $$UserMemoriesTableTableOrderingComposer,
+          $$UserMemoriesTableTableAnnotationComposer,
+          $$UserMemoriesTableTableCreateCompanionBuilder,
+          $$UserMemoriesTableTableUpdateCompanionBuilder,
+          (
+            UserMemoryEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $UserMemoriesTableTable,
+              UserMemoryEntry
+            >,
+          ),
+          UserMemoryEntry,
+          PrefetchHooks Function()
+        > {
+  $$UserMemoriesTableTableTableManager(
+    _$AppDatabase db,
+    $UserMemoriesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserMemoriesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserMemoriesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserMemoriesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> key = const Value.absent(),
+                Value<String> fact = const Value.absent(),
+                Value<String?> value = const Value.absent(),
+                Value<double> confidence = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> lastConfirmedAt = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserMemoriesTableCompanion(
+                id: id,
+                userId: userId,
+                kind: kind,
+                key: key,
+                fact: fact,
+                value: value,
+                confidence: confidence,
+                source: source,
+                createdAt: createdAt,
+                lastConfirmedAt: lastConfirmedAt,
+                expiresAt: expiresAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String kind,
+                Value<String?> key = const Value.absent(),
+                required String fact,
+                Value<String?> value = const Value.absent(),
+                Value<double> confidence = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime lastConfirmedAt,
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserMemoriesTableCompanion.insert(
+                id: id,
+                userId: userId,
+                kind: kind,
+                key: key,
+                fact: fact,
+                value: value,
+                confidence: confidence,
+                source: source,
+                createdAt: createdAt,
+                lastConfirmedAt: lastConfirmedAt,
+                expiresAt: expiresAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserMemoriesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserMemoriesTableTable,
+      UserMemoryEntry,
+      $$UserMemoriesTableTableFilterComposer,
+      $$UserMemoriesTableTableOrderingComposer,
+      $$UserMemoriesTableTableAnnotationComposer,
+      $$UserMemoriesTableTableCreateCompanionBuilder,
+      $$UserMemoriesTableTableUpdateCompanionBuilder,
+      (
+        UserMemoryEntry,
+        BaseReferences<_$AppDatabase, $UserMemoriesTableTable, UserMemoryEntry>,
+      ),
+      UserMemoryEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -61347,4 +66369,10 @@ class $AppDatabaseManager {
       $$RecipesTableTableTableManager(_db, _db.recipesTable);
   $$UserEntitlementsTableTableTableManager get userEntitlementsTable =>
       $$UserEntitlementsTableTableTableManager(_db, _db.userEntitlementsTable);
+  $$MealPlansTableTableTableManager get mealPlansTable =>
+      $$MealPlansTableTableTableManager(_db, _db.mealPlansTable);
+  $$PlanMealsTableTableTableManager get planMealsTable =>
+      $$PlanMealsTableTableTableManager(_db, _db.planMealsTable);
+  $$UserMemoriesTableTableTableManager get userMemoriesTable =>
+      $$UserMemoriesTableTableTableManager(_db, _db.userMemoriesTable);
 }

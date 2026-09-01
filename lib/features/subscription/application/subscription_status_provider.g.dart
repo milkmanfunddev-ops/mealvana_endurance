@@ -134,7 +134,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'2186b0ef2878f2102ba878b05d590e931f098df5';
+    r'd2a00700f3f912095744ac286ce9b49dffc3126f';
 
 /// The current user's Pro status: RevenueCat ∪ server row ∪ tester flag.
 ///

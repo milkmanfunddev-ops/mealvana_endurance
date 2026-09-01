@@ -26,6 +26,24 @@ class SavedMealsTable extends Table {
 
   TextColumn get photoPath => text().nullable().named('photo_path')();
 
+  // Meal-planning columns (Drift v20; Supabase 20260827090000 + later).
+
+  /// `MealIcon` key (`saved_meals.icon`), classified when missing.
+  TextColumn get icon => text().nullable()();
+
+  /// The athlete's own directions (`saved_meals.notes`, <= 2000 chars).
+  TextColumn get notes => text().nullable()();
+
+  /// JSON array of meal types this meal suits (`saved_meals.meal_types`).
+  TextColumn get mealTypes =>
+      text().withDefault(const Constant('[]')).named('meal_types')();
+
+  /// Batch-cookable; null = unknown (`saved_meals.batch`).
+  BoolColumn get batch => boolean().nullable()();
+
+  /// `meal_library.id` this saved meal was matched/copied from.
+  TextColumn get libraryMealId => text().nullable().named('library_meal_id')();
+
   /// Bumped each time the saved meal is re-logged (sorts the picker).
   DateTimeColumn get lastUsedAt =>
       dateTime().nullable().named('last_used_at')();

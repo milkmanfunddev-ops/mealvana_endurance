@@ -31,7 +31,8 @@ class MealLogsTable extends Table {
   TextColumn get name => text()();
 
   /// How the entry was created:
-  /// 'photo' | 'manual' | 'describe' | 'saved' | 'recipe' | 'jade_baseline'.
+  /// 'photo' | 'manual' | 'describe' | 'saved' | 'recipe' | 'jade_baseline' |
+  /// 'plan'.
   TextColumn get source => text()();
 
   /// JSON-encoded array of food components
@@ -51,6 +52,10 @@ class MealLogsTable extends Table {
   /// Provenance pointers (no FKs — sources may be deleted independently).
   TextColumn get recipeId => text().nullable().named('recipe_id')();
   TextColumn get savedMealId => text().nullable().named('saved_meal_id')();
+
+  /// The `plan_meals` row this was logged from (source == plan). Set by the
+  /// `plan_log_from_plan` RPC server-side; mirrored here for Recents.
+  TextColumn get planMealId => text().nullable().named('plan_meal_id')();
 
   TextColumn get notes => text().nullable()();
 
