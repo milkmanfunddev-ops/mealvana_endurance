@@ -266,9 +266,12 @@ definitions:
           # APP_ENVIRONMENT is a string ('dev'), the rest are booleans — do not
           # fold it into the loop or it ends up as APP_ENVIRONMENT=true and the
           # `appEnv == 'dev'` check fails just as silently as an absent key.
+          # PRO_GATE_ENABLED=false: dev builds see the Pro-only meal-planning
+          # surfaces without a subscription (AppConfig falls back to false on
+          # dev anyway; pinned here for the same reason as APP_ENVIRONMENT).
           for entry in "APP_ENVIRONMENT=dev" "DEV_MODE_ENABLED=true" \
                        "AI_CREDITS_ENABLED=true" "DESCRIBE_MEAL_ENABLED=true" \
-                       "COACH_INSIGHTS_ENABLED=true"; do
+                       "COACH_INSIGHTS_ENABLED=true" "PRO_GATE_ENABLED=false"; do
             key="${entry%%=*}"
             # Strip any existing definition (commented or not), then set ours.
             sed -i '' "/^[[:space:]]*#*[[:space:]]*${key}=/d" .env.dev.local 2>/dev/null \
@@ -359,6 +362,16 @@ definitions:
           if grep -q '^REVENUECAT_API_KEY_TEST=' .env.prod.local; then
             echo "  ERROR: REVENUECAT_API_KEY_TEST found in .env.prod.local — it must never be in the prod secret"
             missing="$missing REVENUECAT_API_KEY_TEST(forbidden)"
+          fi
+          # PRO_GATE_ENABLED must be stated explicitly on prod. AppConfig falls
+          # back to true (gate closed), so an absent key would not leak Pro —
+          # but a prod build that does not SAY which way the paywall is set is
+          # a build nobody can reason about from the manifest.
+          if grep -qE '^PRO_GATE_ENABLED=(true|false)$' .env.prod.local; then
+            echo "  PRO_GATE_ENABLED: $(grep '^PRO_GATE_ENABLED=' .env.prod.local | cut -d= -f2)"
+          else
+            echo "  ERROR: PRO_GATE_ENABLED must be exactly 'true' or 'false' in the prod secret (meal planning is Pro-gated)"
+            missing="$missing PRO_GATE_ENABLED"
           fi
           if [ -n "$missing" ]; then
             echo "FATAL: DOTENV_PROD_LOCAL is missing or mis-carrying:$missing"

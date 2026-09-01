@@ -24,6 +24,7 @@ import '../../../meal_logging/data/meal_log_repository.dart';
 import '../../../meal_logging/data/saved_meals_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
+import '../../../subscription/application/subscription_status_provider.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -728,6 +729,15 @@ class SettingsController extends _$SettingsController {
     // user's profile after a DB wipe, and surviving a deliberate sign-out
     // would let a later startup resurrect it under a different account.
     await prefs.remove(OnboardingSnapshotService.prefsKey);
+
+    // Drop the cached Pro entitlement so the next account on this device
+    // never inherits the outgoing user's subscription state. The provider
+    // also rebuilds on the auth change, but the Drift row must go explicitly.
+    try {
+      await ref.read(subscriptionStatusProvider.notifier).clear();
+    } catch (e) {
+      logger.error('Pro entitlement clear failed', context: 'SETTINGS', error: e);
+    }
 
     // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
     // IMPORTANT: After this call, the auth listener will invalidate this controller

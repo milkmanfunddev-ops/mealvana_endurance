@@ -1,6 +1,45 @@
 /// Content key constants that map to the content_defaults.json structure
 /// These provide type-safe access to all content strings
 class ContentKeys {
+  // Pro Version (subscription paywall) — lib/features/subscription
+  static const String proVersionTitle = 'pro_version.title';
+  static const String proVersionSubtitle = 'pro_version.subtitle';
+  static const String proVersionActiveBadge = 'pro_version.active_badge';
+  static const String proVersionTrialBadge = 'pro_version.trial_badge';
+  static const String proVersionActiveUntil = 'pro_version.active_until';
+  static const String proVersionFeaturesTitle = 'pro_version.features_title';
+  static const String proVersionFeature1Title = 'pro_version.feature_1_title';
+  static const String proVersionFeature1Description =
+      'pro_version.feature_1_description';
+  static const String proVersionFeature2Title = 'pro_version.feature_2_title';
+  static const String proVersionFeature2Description =
+      'pro_version.feature_2_description';
+  static const String proVersionFeature3Title = 'pro_version.feature_3_title';
+  static const String proVersionFeature3Description =
+      'pro_version.feature_3_description';
+  static const String proVersionPricingTitle = 'pro_version.pricing_title';
+  static const String proVersionPricingUnavailable =
+      'pro_version.pricing_unavailable';
+  static const String proVersionMonthlyLabel = 'pro_version.monthly_label';
+  static const String proVersionAnnualLabel = 'pro_version.annual_label';
+  static const String proVersionPerMonth = 'pro_version.per_month';
+  static const String proVersionPerYear = 'pro_version.per_year';
+  static const String proVersionSubscribeButton =
+      'pro_version.subscribe_button';
+  static const String proVersionPurchaseComingSoon =
+      'pro_version.purchase_coming_soon';
+  static const String proVersionRestoreButton = 'pro_version.restore_button';
+  static const String proVersionRestoreSuccess = 'pro_version.restore_success';
+  static const String proVersionRestoreNone = 'pro_version.restore_none';
+  static const String proVersionPurchaseSuccess =
+      'pro_version.purchase_success';
+  static const String proVersionPurchasePending =
+      'pro_version.purchase_pending';
+  static const String proVersionPurchaseFailed = 'pro_version.purchase_failed';
+  static const String proVersionSignInRequired =
+      'pro_version.sign_in_required';
+  static const String proVersionManageNote = 'pro_version.manage_note';
+
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';
   static const String mainScreenDistanceLabel = 'main_screen.distance_label';

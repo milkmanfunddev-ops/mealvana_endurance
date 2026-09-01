@@ -65,7 +65,9 @@ import '../../features/events/presentation/screens/event_form_screen.dart';
 import '../../features/race_checklist/presentation/screens/race_checklist_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
-import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
+import '../../features/subscription/application/pro_gate.dart';
+import '../../features/subscription/presentation/pro_gate_redirect.dart';
+import '../../features/subscription/presentation/screens/pro_version_screen.dart';
 import '../../features/ai_credits/presentation/screens/buy_credits_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
@@ -172,6 +174,16 @@ class AppRouter {
           final supabase = ref.read(appExternalDepsProvider).supabaseClient;
           if (supabase.auth.currentSession == null) {
             return '/welcome';
+          }
+          // Pro gate: meal planning (/food/*, /vana/*) is a Pro-only surface.
+          // The routes land in Phase 4; the guard is here so a deep link from
+          // a newer build, or a tab tap once the Food tab exists, resolves to
+          // the paywall instead of a locked screen. `isProGatedPath` is
+          // checked first so ordinary navigation never builds the
+          // subscription provider. The server row is the real paywall
+          // (edge functions call has_entitlement); this is UX.
+          if (isProGatedPath(currentPath) && !isProUnlocked(ref)) {
+            return '/pro';
           }
           return null; // Allow navigation to protected routes when authenticated
         }
